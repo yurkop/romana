@@ -23,7 +23,7 @@ ifdef ROOTSYS
   LDFLAGS   += $(shell  $(ROOTSYS)/bin/root-config --glibs) # -lXMLIO
 endif
 
-all: $(PROG).x
+all: $(OBJ_D) $(PROG).x
 #all: svnver $(PROG).x
 
 #$(PROG).x: $(OBJ) $(OBJL) $(OBJ_D)/romdict.o
@@ -44,6 +44,9 @@ $(OBJ_D)/romdict.cpp: src/LinkDef.h $(SRC_D)/*.h #$(LIB_D)/*.h
 
 $(OBJ_D)/romdict.o: $(OBJ_D)/romdict.cpp
 	g++ $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+$(OBJ_D):
+	mkdir -p $(OBJ_D)
 
 r2a: utils/root2ascii.cxx
 	g++ $(CXXFLAGS) $(CPPFLAGS) -o r2a.x utils/root2ascii.cxx $(LDFLAGS)
