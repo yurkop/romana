@@ -1,0 +1,32 @@
+detect crs type (2 or 32)
+detect number of channels
+read pulse counter BEFORE stop
+multithreading transfer
+check if Decode is not overlapped for different cbacks (threads?)
+
+cnt_prev - check counter consistency
+also use Counter and cnt for consistency check
+
+Class - data, pulses etc...
+
+Reset
+
+limits of parameters
+
+save/read parameters
+
+check chan for each 2byte or 8byte data (crs2 or crs32)
+
+make flip-flop buffers for Bevents
+
+join all threads at exit
+
+simulate too long pulse in readpulse2 (return 2)
+
+syncronize MAX_XH and MAXCH
+
+make DoReset/greset() - detect crs, clear everything
+
+set chanPresent for open files (no module)
+
+make colors in crspardlg

@@ -1,0 +1,14 @@
+#pragma link C++ class MainFrame+;
+#pragma link C++ class MyMainFrame+;
+//#pragma link C++ class NumDlg+;
+//#pragma link C++ class ParDlg+;
+//#pragma link C++ class MThreshDlg+;
+//#pragma link C++ class MParDlg+;
+//#pragma link C++ class ChanDlg+;
+//#pragma link C++ class MChanDlg+;
+#pragma link C++ class Toptions+;
+//#pragma link C++ class PulseClass+;
+#pragma link C++ class EventFrame+;
+#pragma link C++ class ParDlg+;
+#pragma link C++ class CrsParDlg+;
+#pragma link C++ class CRS+;
