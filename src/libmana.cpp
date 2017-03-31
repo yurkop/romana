@@ -563,43 +563,43 @@ void set_hist_attr() {
   //int i,j;
 
   for (int j=0;j<MAX_P;j++) {
-    hsum_ng[j]->SetLineColor(opt.lcolor[j]);
+    //hsum_ng[j]->SetLineColor(opt.lcolor[j]);
     hsum_ng[j]->GetXaxis()->SetNdivisions(505);
 
-    htdc_ng[j]->SetLineColor(opt.lcolor[j]);
+    //htdc_ng[j]->SetLineColor(opt.lcolor[j]);
     htdc_ng[j]->GetXaxis()->SetNdivisions(505);
 
-    htdc_a_ng[j]->SetLineColor(opt.lcolor[j]);
+    //htdc_a_ng[j]->SetLineColor(opt.lcolor[j]);
     htdc_a_ng[j]->GetXaxis()->SetNdivisions(505);
     //htdc_a_ng[j]->GetXaxis()->SetTimeDisplay(1);
 
-    hrms_ng[j]->SetLineColor(opt.lcolor[j]);
+    //hrms_ng[j]->SetLineColor(opt.lcolor[j]);
   }
 
   for (int i=0;i<MAX_CH;i++) {
-    hsum[i]->SetLineColor(opt.color[i]);
+    //hsum[i]->SetLineColor(opt.color[i]);
     hsum[i]->GetXaxis()->SetNdivisions(505);
 
-    hmax[i]->SetLineColor(opt.color[i]);
+    //hmax[i]->SetLineColor(opt.color[i]);
     hmax[i]->GetXaxis()->SetNdivisions(505);
 
-    htdc[i]->SetLineColor(opt.color[i]);
+    //htdc[i]->SetLineColor(opt.color[i]);
     htdc[i]->GetXaxis()->SetNdivisions(505);
 
-    htdc_a[i]->SetLineColor(opt.color[i]);
+    //htdc_a[i]->SetLineColor(opt.color[i]);
     htdc_a[i]->GetXaxis()->SetNdivisions(505);
     htdc_a[i]->GetXaxis()->SetTicks("+-");
     //htdc_a[i]->GetXaxis()->SetTimeDisplay(1);
 
-    htdc_frame[i]->SetLineColor(opt.lcolor[5]);
+    //htdc_frame[i]->SetLineColor(opt.lcolor[5]);
     htdc_frame[i]->GetXaxis()->SetNdivisions(505);
     //htdc_frame[i]->GetXaxis()->SetTimeDisplay(1);
 
-    htof[i]->SetLineColor(1);
+    //htof[i]->SetLineColor(1);
     htof[i]->GetXaxis()->SetNdivisions(505);
-    htof_g[i]->SetLineColor(2);
+    //htof_g[i]->SetLineColor(2);
     htof_g[i]->GetXaxis()->SetNdivisions(505);
-    htof_n[i]->SetLineColor(3);
+    //htof_n[i]->SetLineColor(3);
     htof_n[i]->GetXaxis()->SetNdivisions(505);
   }
 

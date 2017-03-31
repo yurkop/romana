@@ -21,13 +21,13 @@ class Toptions: public TObject {
   TTimeStamp F_start; //start and of the acquisition / start event in a file
   Float_t T_acq; //duration of the acquisition / file (in seconds)
 
-  Short_t Tstart,Tstop;
-  Short_t tsleep;
-  Short_t buf_size; //in kB
+  Int_t Tstart,Tstop;
+  Int_t tsleep;
+  Int_t buf_size; //in kB
 
-  Short_t event_buf; //length of event buffer
+  Int_t event_buf; //length of event buffer
   //analysis starts only after filling first event_buf
-  Short_t event_lag; //maximal lag of event analysis in mks
+  Int_t event_lag; //maximal lag of event analysis in mks
   // if current pulse has tstamp smaller than last event's T
   // by this value, the pulse is inserted into event_list
   // without  (if zero - calculate automatically)
@@ -138,7 +138,7 @@ class Toptions: public TObject {
   void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 80)
+  ClassDef(Toptions, 82)
 };
 
 ClassImp(Toptions)
