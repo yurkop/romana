@@ -140,8 +140,9 @@ static void cback(libusb_transfer *transfer) {
       //cout << "raw_start: " << *(int*) transfer->user_data << endl;
       crs->f_raw = gzopen(opt.fname_raw,"ab");
       if (crs->f_raw) {
-	gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
+	int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
 	gzclose(crs->f_raw);
+	crs->writtenbytes+=res;
       }
       else {
 	cout << "Can't open file: " << opt.fname_raw << endl;
@@ -923,6 +924,7 @@ int CRS::DoStartStop() {
     b_acq=true;
     bstart=true;
     totalbytes=0;
+    writtenbytes=0;
     //b_pevent=true;
     
     npulses=0;
@@ -1075,7 +1077,7 @@ void CRS::DoFopen(char* oname) {
     tp=0;
   }
   else {
-    cout << "Unknown file type: " << Fname << endl;
+    cout << "Unknown file type (extension): " << Fname << endl;
     if (f_raw) gzclose(f_raw);
     f_raw=0;
   }
@@ -1098,15 +1100,15 @@ void CRS::DoFopen(char* oname) {
 
     if (mod[0]==2) {
       Fmode=2;
-      cout << "CRS2 File: " << Fname << endl;
+      cout << "CRS2 File: " << Fname << " " << mod[1] << endl;
     }
     else if (mod[0]==32) {
       Fmode=32;
-      cout << "CRS32 File: " << Fname << endl;
+      cout << "CRS32 File: " << Fname << " " << mod[1] << endl;
     }
     else {
       Fmode=0;
-      cout << "Unknown file type: " << Fname << endl;
+      cout << "Unknown file type: " << Fname << " " << Fmode << endl;
       gzclose(f_raw);
       f_raw=0;
     }

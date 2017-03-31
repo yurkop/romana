@@ -30,3 +30,5 @@ make DoReset/greset() - detect crs, clear everything
 set chanPresent for open files (no module)
 
 make colors in crspardlg
+
+calculate data rate instantly (between subsequent buffers), not as integral

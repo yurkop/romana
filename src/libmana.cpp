@@ -2745,7 +2745,7 @@ void MainFrame::UpdateStatus() {
   fBar1->SetText(TGString::Format("%lld",crs->nbuffers),5);
   fBar1->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),6);
   fBar1->SetText(TGString::Format("%0.2f",rate),7);
-  fBar1->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),8);
+  fBar1->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),8);
 
   /*
   sprintf(txt,"Evt: %d",nevent);

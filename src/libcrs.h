@@ -141,6 +141,7 @@ RQ_OBJECT("CRS")
 
   //timeval t_start, t_stop;
   ULong64_t totalbytes;
+  ULong64_t writtenbytes;
   Long64_t npulses; //total number of pulses (zero at Reset (Start button))
   UInt_t npulses_buf; //pulses in the current buffer
   Long64_t nevents; //total number of events (zero at Reset (Start button))
