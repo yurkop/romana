@@ -4,7 +4,8 @@ git pull gitromana
 
 В конце работы - 
 
-git commit -a -m '[коментарий к коммиту]'
+git add -A   (add all new files)
+git commit -a -m '[коментарий к коммиту]'   (commit changes)
 
 git  push gitromana master
 
