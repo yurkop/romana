@@ -130,11 +130,13 @@ static void cback(libusb_transfer *transfer) {
   //goto skip;
   
   if (transfer->actual_length) {
-    if (crs->module==2) {
-      crs->Decode2(transfer->buffer,transfer->actual_length);
-    }
-    else if (crs->module==32) {
-      crs->Decode32(transfer->buffer,transfer->actual_length);
+    if (opt.decode) {
+      if (crs->module==2) {
+	crs->Decode2(transfer->buffer,transfer->actual_length);
+      }
+      else if (crs->module==32) {
+	crs->Decode32(transfer->buffer,transfer->actual_length);
+      }
     }
     if (opt.raw_write) {
       //cout << "raw_start: " << *(int*) transfer->user_data << endl;
@@ -783,7 +785,7 @@ void CRS::AllParameters32()
     else {
       int tmp,max;
       opt.GetPar("thresh",crs->module,chan,tmp,tmp,max);
-      cout << "Off: " << chan << " " << max << endl;
+      //cout << "Off: " << (int) chan << " " << max << endl;
       Command32(2,chan,6,0);
       Command32(2,chan,7,max);
     }
@@ -806,7 +808,7 @@ void CRS::AllParameters2()
    else {
      int tmp,max;
      opt.GetPar("thresh",crs->module,chan,tmp,tmp,max);
-     cout << "Off: " << chan << " " << max << endl;
+     //cout << "Off: " << (int) chan << " " << max << endl;
      Command2(2,chan,3,0);
      Command2(2,chan,4,max);
    }

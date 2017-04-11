@@ -194,12 +194,13 @@ void ParDlg::DoChk() {
   Int_t id = te->WidgetId();
   pmap pp = Plist[id-1];
 
+  /*
   cout << "DoChk: ";
   cout << id << " ";
   cout << *(Bool_t*) pp.data << " ";
   cout << (Int_t) pp.type << " ";
   cout << te->GetState() << endl;
-
+  */
 
   SetChk(pp,(Bool_t)te->GetState());
 
@@ -540,6 +541,20 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //opt.chk_raw=true;
   //opt.chk_dec=false;
   AddWrite("Write raw data",&opt.raw_write,opt.fname_raw);
+
+  int id;
+  char txt[99];
+  sprintf(txt,"Decode");
+  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fcont1,10,10);
+  fcont1->AddFrame(hframe1,fL1);
+  id = Plist.size()+1;
+  TGCheckButton *fchk = new TGCheckButton(hframe1, txt, id);
+  fchk->SetName(txt);
+  hframe1->AddFrame(fchk,fL3);
+  DoMap(fchk,&opt.decode,p_chk,0);
+  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+
   AddWrite("Write decoded data",&opt.dec_write,opt.fname_dec);
 
   hor = new TGSplitFrame(fcont1,10,10);

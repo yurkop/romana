@@ -79,6 +79,7 @@ class Toptions: public TObject {
 
   Bool_t raw_write;
   Bool_t dec_write;
+  Bool_t decode;
   char fname_raw[255];
   char fname_dec[255];
 
