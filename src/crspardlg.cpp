@@ -655,18 +655,21 @@ void ParParDlg::AddPar(TGCompositeFrame* frame) {
   label="Time limits";
   AddLine3(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_int);
 
-  //cout << opt.tsleep << endl;
   tip1= "Delay between drawing events (in msec)";
   tip2= "";
   label="DrawEvent delay";
   AddLine3(fF6,ww,&opt.tsleep,NULL,tip1,tip2,label,k_int,100,10000);
 
-  //cout << opt.tsleep << endl;
   tip1= "Size of the USB buffer in kilobytes";
   tip2= "";
   label="USB buffer size";
   AddLine3(fF6,ww,&opt.buf_size,NULL,tip1,tip2,label,k_int,1,2048,
 	   (char*) "DoNum_SetBuf()");
+
+  tip1= "Minimal size of the event list";
+  tip2= "Maximal size of the event list";
+  label="Event_list size";
+  AddLine3(fF6,ww,&opt.ev_min,&opt.ev_max,tip1,tip2,label,k_int);
 
 
   fF6->Resize();

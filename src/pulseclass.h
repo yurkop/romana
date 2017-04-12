@@ -113,6 +113,7 @@ class EventClass1 { //event of pulses
   //ClassDef(EventClass1, 0)
 };
 
+/*
 class EventClass2 { //event of peaks
 
  public:
@@ -127,6 +128,7 @@ class EventClass2 { //event of peaks
   //void PeakAna();
   //ClassDef(EventClass1, 0)
 };
+*/
 
 class PulseClass {
   // Pulse is a signal registered in physical channel Chan

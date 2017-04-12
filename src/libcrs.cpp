@@ -386,6 +386,7 @@ int CRS::Detect_device() {
   if (r1) {
     cout << "Error creating thread: " << r1 << endl;
   }
+
   //int r2 = pthread_create(&tid2, NULL, make_events_func, NULL);
   //if (r2) {
   //cout << "Error creating thread: " << r2 << endl;
@@ -1615,19 +1616,23 @@ void CRS::Make_Events(int nvp) {
   }
   */
 
+  //YK don't understand why this is needed...
+  //-----------
   std::list<EventClass1>::reverse_iterator evt;
   UInt_t nn=0;
   for (evt=crs->Levents.rbegin();evt!=crs->Levents.rend();evt++) {
     nn++;
     if (nn>2) break;
   }
-
   //cout << "Make_Events: " << evt->T << endl;
   //PEvent();
+  //-----------
 
-  if (Levents.size()>10000) {
+
+  //Analyse events and clean (part of) the event list
+  if ((int) Levents.size()>opt.ev_max) {
     //cout << "Size1: " << Levents.size() << endl;
-    UInt_t nn=0;
+    Int_t nn=0;
     std::list<EventClass1>::iterator rl;
     std::list<EventClass1>::iterator next;
 
@@ -1640,7 +1645,7 @@ void CRS::Make_Events(int nvp) {
       FillHist(&(*rl));
       Levents.erase(rl);
       nn++;
-      if (nn>=Levents.size()/2) break;
+      if (nn>=opt.ev_max-opt.ev_min) break;
     }
     //cout << "Size2: " << Levents.size() << endl;
   }

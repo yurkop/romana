@@ -83,7 +83,8 @@ class Toptions: public TObject {
   char fname_raw[255];
   char fname_dec[255];
 
-
+  Int_t ev_min; //minimal length of events list
+  Int_t ev_max; //maximal length of events list
 
   Float_t long_max,long_bins;
   Float_t tof_max,tof_bins;
@@ -139,7 +140,7 @@ class Toptions: public TObject {
   void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 82)
+  ClassDef(Toptions, 83)
 };
 
 ClassImp(Toptions)

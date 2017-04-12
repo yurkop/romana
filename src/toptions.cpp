@@ -14,6 +14,10 @@ Toptions::Toptions() {
     nsmoo[i]=2;
     enabl[i]=true;
   }
+
+  ev_min=5000;
+  ev_max=10000;
+
   //www[0]=1.0;
   //www[1]=5.0;
   /*
