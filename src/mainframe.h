@@ -6,7 +6,7 @@
 #include "TGTab.h"
 #include <TLegend.h>
 #include <TGFileDialog.h>
-#include "chandlg.h"
+//#include "chandlg.h"
 //#include "numdlg.h"
 //#include "pardlg.h"
 #include "crspardlg.h"
