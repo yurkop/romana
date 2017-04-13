@@ -1480,9 +1480,11 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //cout << "module: " << crs->module << " " << chanPresent << endl;
   //exit(-1);
 
-  if (crs->module==2) parname=(char*)"crs2.par";
-  else if (crs->module==32) parname=(char*)"crs32.par";
-  else parname=(char*)"romana.par";
+  // if (crs->module==2) parname=(char*)"crs2.par";
+  // else if (crs->module==32) parname=(char*)"crs32.par";
+  // else parname=(char*)"romana.par";
+
+  parname = (char*)"romana.par";
 
   readinit(parname);
 
