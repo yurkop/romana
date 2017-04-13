@@ -22,6 +22,9 @@ using namespace std;
 #ifndef CRSTXT
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
+extern ParParDlg *parpar;
+extern CrsParDlg *crspar;
+extern CrsParDlg *chanpar;
 #endif
 
 //bool bstart=true;
@@ -193,13 +196,18 @@ CRS::CRS() {
     //mylist.insert(mylist.begin(),21);
     std::cout << *rit << " " << mylist.back() << " " << *mylist.begin() << endl;
     std::cout << "mylist contains:";
+
     for (it=mylist.begin(); it!=mylist.end(); ++it)
       std::cout << ' ' << *it;
     std::cout << '\n';
 
+    for (it=--mylist.end(); it!=--mylist.begin(); --it) {
+      std::cout << ' ' << *(it);
+    }
+    std::cout << '\n';
+
     exit(1);
   */
-
 
   /*
     MemInfo_t mem;
@@ -256,10 +264,12 @@ CRS::CRS() {
 
   f_raw=0;
   f_dec=0;
-  
+  Fbuf=NULL;
+
   BPulses=NULL;
   BEvents=NULL;
 
+  strcpy(Fname," ");
   Reset();
 
   module=0;
@@ -268,8 +278,9 @@ CRS::CRS() {
 
   event_thread_run=1;
 
-  b_acq=false;
-  bstart=true;
+  // b_acq=false;
+  // b_fana=false;
+  // bstart=true;
   debug=0;
 
   chanPresent=32;
@@ -925,14 +936,14 @@ int CRS::DoStartStop() {
 
     //buf_out[0]=3;
     b_acq=true;
-    bstart=true;
-    totalbytes=0;
-    writtenbytes=0;
+    //bstart=true;
+    //totalbytes=0;
+    //writtenbytes=0;
     //b_pevent=true;
     
-    npulses=0;
-    nevents=0;
-    nbuffers=0;
+    //npulses=0;
+    //nevents=0;
+    //nbuffers=0;
 
     //Nsamp=0;
     nsmp=0;
@@ -958,16 +969,9 @@ int CRS::DoStartStop() {
 	}
       }
     }   
-    /*    
-    for (int i=0;i<ntrans;i++) {
-      int res;
-      res = libusb_submit_transfer(transfer[i]);
-      cout << i << " Submit: " << res << endl;
-      Vpulses[i].clear();
-    }
-    */
-    nvp=0;
-    Levents.clear();
+
+    //nvp=0;
+    //Levents.clear();
     
     cout << "Acquisition started" << endl;
     //gettimeofday(&t_start,NULL);
@@ -1041,8 +1045,18 @@ void CRS::Reset() {
 
   opt.T_acq=0;
 
+  //cout << "crs::reset: " << endl;
+  //cout << "crs::reset: " << (int) CRS::b_fana << endl;
+  //exit(1);
 
+  b_acq=false;
+  b_fana=false;
+  //bstart=true;
 
+  nvp=0;
+  Levents.clear();
+
+  /*
   BP_len=10000;
   BP_save = BP_len/10;
   iBP=0;
@@ -1058,17 +1072,46 @@ void CRS::Reset() {
   BEvents = new EventClass[EV_len];
   iEV=0;
   pul1a=0;
+  */
 
   npulses=0;
+  nevents=0;
+  nbuffers=0;
+
+  //npulses=0;
   npulses_buf=0;
 
-  MAX_LAG=opt.event_buf/2;
+  totalbytes=0;
+  writtenbytes=0;
+
+  //MAX_LAG=opt.event_buf/2;
+
+  DoFopen(NULL);
+
+  /*
+  if (f_raw) {
+    gzclose(f_raw);
+    cout << "reset file: " << Fname << endl;
+    f_raw = gzopen(Fname,"rb");
+    if (!f_raw) {
+      Fmode=0;
+      cout << "Can't open file: " << Fname << endl;
+      f_raw=0;
+    }
+  }
+  */
+
 }
 
 void CRS::DoFopen(char* oname) {
   int tp=0; //1 - adcm raw; 0 - crs2/32
 
-  strcpy(Fname,oname);
+  if (oname)
+    strcpy(Fname,oname);
+
+  if (TString(Fname).EqualTo(" ",TString::kIgnoreCase)) {
+    return;
+  }
 
   char dir[100], name[100], ext[100];
   SplitFilename(string(Fname),dir,name,ext);
@@ -1116,6 +1159,12 @@ void CRS::DoFopen(char* oname) {
       f_raw=0;
     }
 
+    //YK - opt is not read from the file
+    char* obuf = new char[mod[1]];
+    gzread(f_raw,obuf,mod[1]);
+    delete[] obuf;
+
+    /*
     if (Fmode) {
       if (mod[1] == sizeof(opt)) {
 	gzread(f_raw,&opt,sizeof(opt));
@@ -1132,26 +1181,32 @@ void CRS::DoFopen(char* oname) {
 	delete[] obuf;
       }
     }
+    */
+
 
   }
 
   if (Fmode) {
     opt.raw_write=false;
-    myM->parpar->Update();
-    myM->crspar->Update();
-    myM->chanpar->Update();
+    parpar->Update();
+    crspar->Update();
+    chanpar->Update();
+
+    if (Fbuf) delete[] Fbuf;
+    Fbuf = new UChar_t[opt.buf_size*1024];
+
   }
   //cout << f_raw << endl;
 
 }
 
 void CRS::DoFAna() {
-  if (!b_acq) { //start
-    b_acq=true;
+  if (!b_fana) { //start
+    b_fana=true;
     FAnalyze();
   }
   else {
-    b_acq=false;
+    b_fana=false;
   }
 }
 
@@ -1162,14 +1217,20 @@ void CRS::FAnalyze() {
     return;
   }
 
-  Fbuf = new UChar_t[opt.buf_size*1024];
+  //Fbuf = new UChar_t[opt.buf_size*1024];
 
-  int res=0;
-  int nbuf=0;
+  while (Do1Buf() && b_fana) {
+    //Do1Buf();
+    //if (!b_fana) break;
+  }
 
-  while ((res=gzread(f_raw,Fbuf,opt.buf_size*1024))) {
-    cout << "gzread: " << Fmode << " " << nbuf << " " << res << endl;
+}
 
+int CRS::Do1Buf() {
+
+  int res=gzread(f_raw,Fbuf,opt.buf_size*1024);
+  cout << "gzread: " << Fmode << " " << nbuffers << " " << res << endl;
+  if (res>0) {
     crs->totalbytes+=res;
 
     if (Fmode==2) {
@@ -1179,12 +1240,39 @@ void CRS::FAnalyze() {
       Decode32(Fbuf,res);
     }
 
+    //gSystem->Sleep(500);
+
+    if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
+      UInt_t nn=0;
+      for (EvtFrm->d_event=--crs->Levents.end();
+	   EvtFrm->d_event!=--crs->Levents.begin();--EvtFrm->d_event) {
+	nn++;
+	if (nn>2) break;
+      }
+
+      EvtFrm->DrawEvent2();      
+    }
+    nbuffers++;
     myM->UpdateStatus();
     gSystem->ProcessEvents();
-    //gSystem->Sleep(500);
-    
-    nbuf++;
-    if (!b_acq) break;
+    return 1;
+  }
+  else {
+    //b_fana=true;
+    myM->DoAna();
+    return 0;
+  }
+
+
+}
+
+void CRS::DoNBuf() {
+
+  b_fana=true;
+  for (int i=0;i<opt.num_buf;i++) {
+    if (!(Do1Buf() && b_fana)) {
+      break;
+    }
   }
 
 }
@@ -1540,11 +1628,13 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
       Levents.insert(rl.base(),EventClass1());
       nevents++;
       rl->Pulse_Ana_Add(newpulse);
+      cout << "nn: " << nn << endl;
       return;
     }
     else if (TMath::Abs(dt) <= opt.coinc_win) { //add newpulse to existing event
       // coincidence event
       rl->Pulse_Ana_Add(newpulse);
+      cout << "nn: " << nn << endl;
       return;
     }
     nn++;
@@ -1552,6 +1642,8 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
     }
   }
 
+  cout << "nn: " << nn << endl;
+  cout << "beginning" << endl;
   //add new event at the beginning of the eventlist
   Levents.insert(Levents.begin(),EventClass1());
   nevents++;
@@ -1647,7 +1739,7 @@ void CRS::Make_Events(int nvp) {
       nn++;
       if (nn>=opt.ev_max-opt.ev_min) break;
     }
-    //cout << "Size2: " << Levents.size() << endl;
+    cout << "Make_Events Size2: " << Levents.size() << endl;
   }
 
 }

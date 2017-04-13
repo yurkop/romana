@@ -35,11 +35,12 @@ private:
   //TGraph               *fGr[6];
   TGTextButton *fStart;
   TGTextButton *fAna;
+  TGTextButton *fNb;
 
  public:
-  ParParDlg            *parpar;
-  CrsParDlg            *crspar;
-  CrsParDlg            *chanpar;
+  //ParParDlg            *parpar;
+  //CrsParDlg            *crspar;
+  //CrsParDlg            *chanpar;
   bool                   bRun;
 
   TGTab                *fTab;
@@ -116,10 +117,6 @@ public:
   //TGCanvas             *fTst;
 
   int nPads;
-
-  ULong_t fGreen;
-  ULong_t fRed;
-  //ULong_t fCyan;
 
   ClassDef(MainFrame, 0)
 };

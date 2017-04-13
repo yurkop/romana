@@ -9,6 +9,9 @@
 
 //const char* t_raw = "Write raw data";
 
+extern ParParDlg *parpar;
+extern CrsParDlg *crspar;
+extern CrsParDlg *chanpar;
 
 const int ncrspar=12;
 
@@ -122,10 +125,10 @@ void ParDlg::DoNum() {
 
   pmap pp = Plist[id-1];
 
-  //cout << "DoNum: ";
-  //cout << *(Int_t*) pp.data << " ";
-  //cout << pp.data << " " << opt.bkg1[0] << " ";
-  //cout << (Int_t) pp.all << endl;
+  // cout << "DoNum: ";
+  // cout << *(Int_t*) pp.data << " ";
+  // cout << pp.data << " " << opt.bkg1[0] << " ";
+  // cout << (Int_t) pp.all << endl;
 
   SetNum(pp,te->GetNumber());
 
@@ -316,12 +319,12 @@ void ParDlg::DoCombo() {
        << " " << sel << " " << (chanPresent+sel)*nfld
        << endl;
 
-  cout << this << " " << myM->crspar << " " << myM->chanpar << endl;
+  cout << this << " " << crspar << " " << chanpar << endl;
 
   SetCombo(pp,sel);
 
-  myM->crspar->CopyParLine(sel,nline);
-  myM->chanpar->CopyParLine(sel,nline);
+  crspar->CopyParLine(sel,nline);
+  chanpar->CopyParLine(sel,nline);
 
   // if (sel<ADDCH) {
   //   for (int j=1;j<nfld;j++) {
@@ -338,8 +341,8 @@ void ParDlg::DoCombo() {
 	TGComboBox *te2 = (TGComboBox*) p2.field;
 	te2->Select(te->GetSelected(),false);
 
-	myM->crspar->CopyParLine(sel,i);
-	myM->chanpar->CopyParLine(sel,i);
+	crspar->CopyParLine(sel,i);
+	chanpar->CopyParLine(sel,i);
 
 	// if (sel<ADDCH) {
 	//   for (int j=1;j<nfld;j++) {

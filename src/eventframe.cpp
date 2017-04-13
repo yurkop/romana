@@ -18,6 +18,11 @@ extern MyMainFrame *myM;
 extern BufClass* Buffer;
 
 extern CRS* crs;
+extern ParParDlg *parpar;
+
+extern ULong_t fGreen;
+extern ULong_t fRed;
+extern ULong_t fCyan;
 
 Float_t xgr[DSIZE]; // x coordinate for graph
 Float_t ygr[DSIZE]; // y coordinate for graph
@@ -38,6 +43,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kHorizontalFrame)
 {
 
+  d_event = crs->Levents.begin();
   Emut = new TMutex();
 
   for (int i=0;i<3;i++) {
@@ -59,7 +65,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fLay2 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
   fLay3 = new TGLayoutHints(kLHintsExpandX,2,2,2,2);
   fLay4 = new TGLayoutHints(kLHintsLeft,2,2,2,2);
-  fLay5 = new TGLayoutHints(kLHintsLeft,10,2,2,2);
+  fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
   fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
 
   //Frames.....
@@ -106,27 +112,48 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor_but = new TGHorizontalFrame(fVer0, 10, 10);
   fVer0->AddFrame(fHor_but, fLay4);
 
-  freset = new TGTextButton(fHor_but,"Reset");
-  freset->Connect("Clicked()","EventFrame",this,"DoReset()");
-  fHor_but->AddFrame(freset, fLay4);
+  /*
+  
+  //freset = new TGTextButton(fHor_but,"Reset");
+  //freset->Connect("Clicked()","EventFrame",this,"DoReset()");
+  //fHor_but->AddFrame(freset, fLay4);
 
   f1buf = new TGTextButton(fHor_but,"1 buf");
   f1buf->Connect("Clicked()","EventFrame",this,"Do1buf()");
   fHor_but->AddFrame(f1buf, fLay4);
 
   fNbuf = new TGTextButton(fHor_but,"N buf");
+  fNbuf->ChangeBackground(fGreen);
   fNbuf->Connect("Clicked()","EventFrame",this,"DoNbuf()");
   fHor_but->AddFrame(fNbuf, fLay4);
 
+  int id;
+  id = parpar->Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(fHor_but, 0, 0, id,
+					   TGNumberFormat::kNESInteger,
+					   TGNumberFormat::kNEAAnyNumber,
+					   TGNumberFormat::kNELLimitMinMax,
+					   1,100000);
+  parpar->DoMap(fNum1->GetNumberEntry(),&opt.num_buf,p_inum,0);
+  fNum1->Resize(65, fNum1->GetDefaultHeight());
+  //fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "EventFrame", this,
+  //				   "DoNum()");
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
+				   "DoNum()");
+  fHor_but->AddFrame(fNum1,fLay4);
+
+  //cout << "num_buf: " << id << " " << opt.num_buf << endl;
+
   //fHor_but->AddSeparator();
+  */
 
   fFirst = new TGTextButton(fHor_but,"First");
   fFirst->Connect("Clicked()","EventFrame",this,"First()");
   fHor_but->AddFrame(fFirst, fLay5);
 
-  fmNev = new TGTextButton(fHor_but," -10 ");
-  fmNev->Connect("Clicked()","EventFrame",this,"MinusN()");
-  fHor_but->AddFrame(fmNev, fLay4);
+  fLast = new TGTextButton(fHor_but,"Last");
+  fLast->Connect("Clicked()","EventFrame",this,"Last()");
+  fHor_but->AddFrame(fLast, fLay4);
 
   fmOne = new TGTextButton(fHor_but," -1 ");
   fmOne->Connect("Clicked()","EventFrame",this,"Minus1()");
@@ -136,13 +163,30 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fOne->Connect("Clicked()","EventFrame",this,"Plus1()");
   fHor_but->AddFrame(fOne, fLay4);
 
-  fNev = new TGTextButton(fHor_but," +10 ");
+  fmNev = new TGTextButton(fHor_but," -N ");
+  fmNev->Connect("Clicked()","EventFrame",this,"MinusN()");
+  fHor_but->AddFrame(fmNev, fLay4);
+
+  fNev = new TGTextButton(fHor_but," +N ");
   fNev->Connect("Clicked()","EventFrame",this,"PlusN()");
   fHor_but->AddFrame(fNev, fLay4);
 
-  fLast = new TGTextButton(fHor_but,"Last");
-  fLast->Connect("Clicked()","EventFrame",this,"Last()");
-  fHor_but->AddFrame(fLast, fLay4);
+  int id;
+  id = parpar->Plist.size()+1;
+  TGNumberEntry* fNum2 = new TGNumberEntry(fHor_but, 0, 0, id,
+					   TGNumberFormat::kNESInteger,
+					   TGNumberFormat::kNEAAnyNumber,
+					   TGNumberFormat::kNELLimitMinMax,
+					   1,1000000);
+  parpar->DoMap(fNum2->GetNumberEntry(),&opt.num_events,p_inum,0);
+  fNum2->Resize(70, fNum2->GetDefaultHeight());
+  //fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "EventFrame", this,
+  //				   "DoNum()");
+  fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
+				   "DoNum()");
+  fHor_but->AddFrame(fNum2,fLay4);
+
+
 
   fDeriv[0] = new TGCheckButton(fVer_d, "'", 0);
   fDeriv[1] = new TGCheckButton(fVer_d, "\"", 1);
@@ -220,8 +264,10 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   }
 
 
-  fStat=new TGStatusBar(fVer_st,10,10);
-  fVer_st->AddFrame(fStat,fLay3);
+  fStat1=new TGStatusBar(fVer_st,10,10);
+  fStat2=new TGStatusBar(fVer_st,10,10);
+  fVer_st->AddFrame(fStat1,fLay3);
+  fVer_st->AddFrame(fStat2,fLay3);
 
 
   trd=0;
@@ -348,7 +394,14 @@ void *trd_handle(void* ptr)
       //Emut.Lock();
 
 
-
+      //std::list<EventClass1>::reverse_iterator evt;
+      UInt_t nn=0;
+      for (EvtFrm->d_event=--crs->Levents.end();
+	   EvtFrm->d_event!=--crs->Levents.begin();--EvtFrm->d_event) {
+	nn++;
+	if (nn>2) break;
+      }
+      //EvtFrm->d_event = &(*evt);
 
       EvtFrm->DrawEvent2();
       //Emut.UnLock();
@@ -389,64 +442,98 @@ void EventFrame::CloseWindow()
   delete this;
 }
 
-void EventFrame::DoReset() {
+// void EventFrame::DoReset() {
+//   myM->DoReset();
+// }
 
-  myM->DoReset();
+/*
+
+void EventFrame::DoNum() {
+
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  if (id==101) {
+    opt.num_buf=te->GetNumber();
+    cout << "num_buf: " << te->GetNumber() << endl;
+  }
+  
 
 }
 
 void EventFrame::Do1buf() {
 
-  myM->Do1buf();
+  crs->Do1Buf();
 
 }
 
 void EventFrame::DoNbuf() {
 
-  myM->DoNbuf();
+  // if (!crs->f_raw) {
+  //   cout << "File not open" << endl;
+  //   return;
+  // }
 
-}
+  //cout << "DoAna" << endl;
 
-void EventFrame::Plus1() {
-  ievent++;
-  if (ievent >= Buffer->nev) {
-    ievent=Buffer->nev-1;
+  if (crs->b_fana) {
+    fNbuf->ChangeBackground(fGreen);
   }
-  DrawEvent();
+  else {
+    fNbuf->ChangeBackground(fCyan);
+  }
+
+  crs->DoNBuf();
+
 }
 
-void EventFrame::Minus1() {
-  ievent--;
-  if (ievent < 0) {
-    ievent=0;
-  }
-  DrawEvent();
-}
-
-void EventFrame::PlusN() {
-  ievent+=10;
-  if (ievent >= Buffer->nev) {
-    ievent=Buffer->nev-1;
-  }
-  DrawEvent();
-}
-
-void EventFrame::MinusN() {
-  ievent-=10;
-  if (ievent < 0) {
-    ievent=0;
-  }
-  DrawEvent();
-}
+*/
 
 void EventFrame::First() {
-  ievent=0;
-  DrawEvent();
+  d_event = crs->Levents.begin();
+  DrawEvent2();
 }
 
 void EventFrame::Last() {
-  ievent=Buffer->nev-1;
-  DrawEvent();
+  d_event = --crs->Levents.end();
+  DrawEvent2();
+}
+
+void EventFrame::Plus1() {
+  ++d_event;
+  if (d_event==crs->Levents.end()) {
+    --d_event;
+  }
+  DrawEvent2();
+}
+
+void EventFrame::Minus1() {
+  if (d_event!=crs->Levents.begin())
+    --d_event;
+  DrawEvent2();
+}
+
+void EventFrame::PlusN() {
+  for (int i=0;i<opt.num_events;i++) {
+    ++d_event;
+    if (d_event==crs->Levents.end()) {
+      --d_event;
+      break;
+    }
+  }
+  DrawEvent2();
+}
+
+void EventFrame::MinusN() {
+  for (int i=0;i<opt.num_events;i++) {
+    if (d_event!=crs->Levents.begin()) {
+      --d_event;
+    }
+    else {
+      break;
+    }
+  }
+  DrawEvent2();
 }
 
 void EventFrame::Clear()
@@ -527,7 +614,7 @@ void EventFrame::DoPulseOff() {
 
 }
 
-void EventFrame::FillHist(std::list<EventClass1>::reverse_iterator evt, int dr) {
+void EventFrame::FillHist(int dr) {
   Float_t dat[40000];
   Float_t *pdat=0;
 
@@ -544,11 +631,11 @@ void EventFrame::FillHist(std::list<EventClass1>::reverse_iterator evt, int dr) 
   //if (!dr)
   //hst[dr]->SetTitle(ss);
   
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    int dt=evt->pulses.at(i).Tstamp64 - evt->T;
-    //cout << "Dt: " << i << " " << evt->T << " " << dt
-    // << " " << evt->pulses.size() << " " << hst[dr]->GetNhists() << endl;
-    PulseClass2 *pulse = &evt->pulses.at(i);
+  for (UInt_t i=0;i<d_event->pulses.size();i++) {
+    int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
+    //cout << "Dt: " << i << " " << d_event->T << " " << dt
+    // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
+    PulseClass2 *pulse = &d_event->pulses.at(i);
     UInt_t ch= pulse->Chan;
 
     if (dr==0) {
@@ -613,14 +700,7 @@ void EventFrame::DrawEvent2() {
     return;
   }
 
-  std::list<EventClass1>::reverse_iterator evt;
-  UInt_t nn=0;
-  for (evt=crs->Levents.rbegin();evt!=crs->Levents.rend();evt++) {
-    nn++;
-    if (nn>2) break;
-  }
-
-  //printf("Draw1:\n");
+  printf("Draw1:\n");
 
   TCanvas *cv=fCanvas->GetCanvas();
 
@@ -628,7 +708,7 @@ void EventFrame::DrawEvent2() {
 
   ndiv=1;
 
-  if (evt->pulses.empty()) {
+  if (d_event->pulses.empty()) {
     //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
     cv->Update();
@@ -636,16 +716,16 @@ void EventFrame::DrawEvent2() {
     return;
   }
 
-  //printf("Draw22: %lld\n", evt->T);
+  //printf("Draw22: %lld\n", d_event->T);
 
-  FillHist(evt,0);
+  FillHist(0);
 
   if (opt.b_deriv[0]) {
-    FillHist(evt,1);
+    FillHist(1);
     ndiv++;
   }    
   if (opt.b_deriv[1]) {
-    FillHist(evt,2);
+    FillHist(2);
     ndiv++;
   }
 
@@ -656,18 +736,21 @@ void EventFrame::DrawEvent2() {
   for (int j=0;j<ndiv;j++) {
     cv->cd(j+1);
     hst[j]->Draw("nostack");
-    DrawPeaks(evt,hst[j]->GetMinimum("nostack"),
+    DrawPeaks(hst[j]->GetMinimum("nostack"),
 	      hst[j]->GetMaximum("nostack")*1.05);
   }
 
   //cv->cd(1);
   //char ss[99];
-  //sprintf(ss,"Event %lld",evt->T);
+  //sprintf(ss,"Event %lld",d_event->T);
   //txt.DrawTextNDC(0.3,0.92,ss);
 
   char ss[99];
-  sprintf(ss,"Tstamp: %lld",evt->T);
-  fStat->SetText(ss);
+  sprintf(ss,"Evt: %d",std::distance(crs->Levents.begin(),d_event));
+  fStat1->SetText(ss);
+
+  sprintf(ss,"Tstamp: %lld",d_event->T);
+  fStat2->SetText(ss);
   
   
   cv->Update();
@@ -676,8 +759,7 @@ void EventFrame::DrawEvent2() {
 
 } //DrawEvent2
 
-void EventFrame::DrawPeaks(std::list<EventClass1>::reverse_iterator evt,
-			   double y1,double y2) {
+void EventFrame::DrawPeaks(double y1,double y2) {
 
   //gPad->Update();
   //double ux1=gPad->GetUxmin();
@@ -685,11 +767,11 @@ void EventFrame::DrawPeaks(std::list<EventClass1>::reverse_iterator evt,
   //double uy1=gPad->GetUymin();
   //double uy2=gPad->GetUymax();
 
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    int dt=evt->pulses.at(i).Tstamp64 - evt->T;
-    //cout << "Dt: " << i << " " << evt->T << " " << dt
-    // << " " << evt->pulses.size() << " " << hst[dr]->GetNhists() << endl;
-    PulseClass2 *pulse = &evt->pulses.at(i);
+  for (UInt_t i=0;i<d_event->pulses.size();i++) {
+    int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
+    //cout << "Dt: " << i << " " << d_event->T << " " << dt
+    // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
+    PulseClass2 *pulse = &d_event->pulses.at(i);
     //UInt_t ch= pulse->Chan;
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];
@@ -699,213 +781,18 @@ void EventFrame::DrawPeaks(std::list<EventClass1>::reverse_iterator evt,
       //cout <<"DrawPeaksT2: " << pk->T2+dt << endl;
     }
   }
-  //cout <<"DrawPeaks: " << evt->T0 << endl;
-  if (evt->T0>0.1) {
-    doXline(&ln1,evt->T0,y1,y2,7,1);
+  //cout <<"DrawPeaks: " << d_event->T0 << endl;
+  if (d_event->T0>0.1) {
+    doXline(&ln1,d_event->T0,y1,y2,7,1);
   }
 
 }
 
 void EventFrame::DrawEvent() {
 
-  //opt.b_deriv[id] = !opt.b_deriv[id];
-
-  cout << "b_deriv0: " << fDeriv[0]->GetState() << endl;
-  cout << "b_deriv1: " << fDeriv[1]->GetState() << endl;
-
-  opt.b_deriv[0] = fDeriv[0]->GetState();
-  opt.b_deriv[1] = fDeriv[1]->GetState();
-
-  //char ss[100];
-
-  //cout << "Draw: " << crs->npulses << " " << crs->iBP << " " << crs->iEV << endl;
-
-  //cout << this << endl;
-  //return;
-
-  //printf("Draw: %lld %d\n", crs->npulses, crs->iBP);
-
-  //return;
-  /*
-    for (int i=0;i<MAX_CH;i++) {
-    cout << "fChn: " << i << endl;
-    cout << "fChn: " << fChn[i] << endl;
-    fChn[i]->SetState(kButtonDisabled);
-    }
-
-    return;
-  */
-
-  printf("Draw1:\n");
-
-  TCanvas *cv=fCanvas->GetCanvas();
-  //cout << "cv: " << cv << endl;
-
-  cv->Clear();
-
-  ndiv=0;
-
-  /*
-    if (!Buffer->nev) {
-    //cout << "No Events" << endl;
-    TText tt;
-    tt.DrawTextNDC(0.2,0.7,"No events in this buffer");
-    cv->Update();
-    return;
-    }
-  */
-
-  d_event = crs->BEvents+crs->iEV;
-  //event=Buffer->Bevents+ievent;
-
-  //sprintf(ss,"Buffer: %d, Event: %d, Tstamp: %lld",
-  //	  Buffer->nEbuf-1,ievent,event->Tstamp64);
-  //fMain->SetWindowName(ss);
-
-  if (d_event->nEpulses==0) {
-    //TText tt;
-    txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
-    cv->Update();
-    return;
-  }
-
-  //cout << "Drawevent: " << event->nEpulses << endl;
-  //return;
-
-  //sprintf(ss,"Ev: %u Pk: %u Tst: %u", nevent, nPk, tstamp);
-  //cout << "nevent2: " << nevent << " " << tstamp << endl;
-
-  printf("Draw2: %d\n", d_event->nEpulses);
-  gx1= 1e99;
-  gx2= -1e99;
-  DoGraph(ndiv,0);
-  if (opt.b_deriv[0]) {
-    ndiv++;
-    DoGraph(ndiv,1);
-  }
-  if (opt.b_deriv[1]) {
-    ndiv++;
-    DoGraph(ndiv,2);
-  }
-
-  cv->Divide(1,ndiv+1);
-
-  printf("Draw3: %d\n", d_event->nEpulses);
-
-  ReDraw();
-
-  printf("Draw4: %d\n", d_event->nEpulses);
-
 } //DrawEvent
 
 void EventFrame::DoGraph(int ndiv, int dd) {
-
-  char ss[100];
-  const char* title[] = {"Pulse","1st deriv","2nd deriv"};
-
-  gy1[ndiv]= 1e99;
-  gy2[ndiv]= -1e99;
-
-  //NGr=0;
-
-  //cout << "DoGraph 1 ##############: " << event->nEpulses << endl;
-
-  divtype[ndiv]= dd;
-
-  for (int i=0;i<d_event->nEpulses;i++) {
-
-    PulseClass *pulse = d_event->Epulses[i];
-    if (pulse->Nsamp==0) {
-      Gr[ndiv][i]= TGraph(0);
-      //Gr[ndiv][i].Set(0);
-      continue;
-    }
-    int chn=pulse->Chan;
-
-    //printf("DoGraph: %d %d %d\n",dd,i,pulse->Nsamp);
-    //cout << pulse->sData << endl;
-
-    switch (dd) {
-    case 0:
-
-      fChn[chn]->SetState(kButtonDown);
-      for (int j=0;j<pulse->Nsamp;j++) {
-	//ygr[j]=pulse->sData[j]-pulse->sData[0];
-	ygr[j]=pulse->sData[j];
-	xgr[j]=j+pulse->tdif;
-      }
-      Gr[ndiv][i]= TGraph (pulse->Nsamp, xgr, ygr);
-      sprintf(ss,"ch %d",chn);
-      //}
-      break;
-    case 1:
-      //else {
-      ygr[0]=0;
-      xgr[0]=pulse->tdif;
-      for (int j=1;j<pulse->Nsamp;j++) {
-	ygr[j]=pulse->sData[j]-pulse->sData[j-1];
-	xgr[j]=j+pulse->tdif;
-      }
-      Gr[ndiv][i]= TGraph (pulse->Nsamp, xgr, ygr);
-      sprintf(ss,"ch %d deriv",chn);
-      //}
-      break;
-    case 2:
-      ygr[0]=0;
-      ygr[1]=0;
-      xgr[0]=pulse->tdif;
-      xgr[1]=1+pulse->tdif;
-      for (int j=2;j<pulse->Nsamp;j++) {
-	ygr[j]=pulse->sData[j]-2*pulse->sData[j-1]+pulse->sData[j-2];
-	xgr[j]=j+pulse->tdif;
-      }
-      Gr[ndiv][i]= TGraph (pulse->Nsamp, xgr, ygr);
-      sprintf(ss,"ch %d deriv2",chn);
-      //}
-      break;
-    }
-    int col=opt.color[chn];
-    cout << "Color: " << i << " " << col << endl;
-    Gr[ndiv][i].SetLineColor(col);
-    Gr[ndiv][i].SetMarkerStyle(20);
-    Gr[ndiv][i].SetMarkerSize(0.5);
-    Gr[ndiv][i].SetMarkerColor(col);
-    //Gr[ndiv][i]->SetFillColor(0);
-    //Gr[ndiv][i]->SetLineWidth(3);
-    //Gr[ndiv][i].SetTitle(ss);
-
-    //printf("Chan: %d %d %d\n",i,chn,col);
-    //delete gr1;
-
-    double x1,x2,y1,y2;
-    Gr[ndiv][i].ComputeRange(x1,y1,x2,y2);
-    if (x1-1<gx1) gx1=x1-1;
-    if (x2+1>gx2) gx2=x2+1;
-    if (y1<gy1[ndiv]) gy1[ndiv]=y1;
-    if (y2>gy2[ndiv]) gy2[ndiv]=y2;
-
-    //printf("MAXmin: %d %f %f %f %f\n",i, x1,x2,y1,y2);
-
-    //NGr++;
-
-  } //for
-  //malloc_stats();
-
-  //printf("MAXmin: %f %f %f %f\n",gx1,gx2,gy1,gy2);
-
-  gy1[ndiv]*=1.2;
-  gy2[ndiv]*=1.2;
-
-  sprintf(ss,"fPaint%d",dd);
-  fPaint[ndiv]=TH2F(ss,title[dd],100,gx1,gx2,100,gy1[ndiv],gy2[ndiv]);
-  fPaint[ndiv].SetBit(TH1::kNoStats);
-  fPaint[ndiv].SetDirectory(0);
-
-  //fPaint[ndiv].SetTitleSize(0.91);
-  gStyle->SetTitleFontSize(0.07);
-
-  fPaint[ndiv].SetLabelSize(0.05,"X");
-  fPaint[ndiv].SetLabelSize(0.05,"Y");
 
   /*
     fPaint[dd].Draw("AXIS");
@@ -1129,87 +1016,6 @@ void EventFrame::DoGraph(int ndiv, int dd) {
 
 void EventFrame::ReDraw() {
 
-  //EventClass* event=Buffer->Bevents+ievent;
-
-  if (d_event->nEpulses==0) {
-    return;
-  }
-
-  TCanvas *cv=fCanvas->GetCanvas();
-
-  //ndiv=cv->GetListOfPrimitives()->GetEntries();
-  //cout << "Pads: " << ndiv << endl;
-
-
-  TLine lpk  = TLine();
-  TLine lb1  = TLine();
-  TLine lb2  = TLine();
-  TLine lthr = TLine();
-
-  float x1,x2;
-  fHslider->GetPosition(x1,x2);
-
-  //printf("ReDraw: %d %d\n",ndiv, ievent);
-  //cout << event << endl;
-
-  float dx=gx2-gx1;
-  float dx1=dx*x1;
-  float dx2=dx*x2;
-
-  for (int n=0;n<ndiv+1;n++) {
-    fPaint[n].GetXaxis()->SetRangeUser(gx1+dx1,gx1+dx2);
-  }
-
-  for (int n=0;n<ndiv+1;n++) {
-    cv->cd(n+1);
-    fPaint[n].Draw("AXIS");
-    gPad->Update();
-
-    double ux1=gPad->GetUxmin();
-    double ux2=gPad->GetUxmax();
-    double uy1=gPad->GetUymin();
-    double uy2=gPad->GetUymax();
-
-    //printf("ReDraw: %f %f\n",uy1,uy2);
-
-    for (int i=0;i<d_event->nEpulses;i++) {
-      if (Gr[n][i].GetN()) {
-	PulseClass *pulse = d_event->Epulses[i];
-	int chn=pulse->Chan;
-
-	if (fChn[chn]->IsOn()) {
-	  Gr[n][i].Draw("LP");
-	  if (opt.b_peak[0]) {
-
-	    int col=opt.color[chn];
-	    //lpk.SetLineColor(col);
-	    for (int j=0;j<pulse->Npeaks;j++) {
-	      if (opt.b_peak[1]) {//Pos
-		doXline(&lpk,pulse->Peaks[j].Pos+pulse->tdif,uy1,uy2,col,1);
-	      }
-	      if (opt.b_peak[2] && divtype[n]==1) {//Time
-		doXline(&lpk,pulse->Peaks[j].Time+pulse->tdif,uy1,uy2,col,2);
-	      }
-	      if (opt.b_peak[3] && divtype[n]==2) {//Time2
-		doXline(&lpk,pulse->Peaks[j].Time2+pulse->tdif,uy1,uy2,col,2);
-	      }
-	      if (opt.b_peak[4]) {//left
-		//doXline(&lpk,pulse->Peaks[j].Time2+pulse->tdif,uy1,uy2,col,1);
-	      }
-	    }
-	    if (opt.b_peak[8] && divtype[n]==1) {
-	      int col=opt.color[chn];
-	      lthr.SetLineColor(col);
-	      lthr.SetLineStyle(3);
-	      //lthr.DrawLine(ux1,opt.ng_thresh,ux2,opt.ng_thresh);
-	    }
-
-	  } //if opt.b_peak[0]
-	}
-      }
-    } //for i
-  }
-
-  cv->Update();
+  //cv->Update();
   
 }

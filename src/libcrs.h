@@ -100,7 +100,7 @@ RQ_OBJECT("CRS")
   std::vector<PulseClass2> Vpulses[MAXTRANS];
   std::list<EventClass1> Levents;
   //int i_ev; // - current Vevents buffer 
-  Short_t MAX_LAG; // maximal e_lag, equals to half of the event_buf
+  //Short_t MAX_LAG; // maximal e_lag, equals to half of the event_buf
   Short_t e_lag; //event analysis lag - see also opt.event_lag
 
 
@@ -149,8 +149,9 @@ RQ_OBJECT("CRS")
   
 
   int debug; // for printing debug messages
-  bool bstart; //needed for FindStart
+  //bool bstart; //needed for FindStart
   bool b_acq; // true - acquisition running
+  bool b_fana; // true - file analysis running
 
   //Bool_t b_pevent;
   //vars for decoding...
@@ -202,6 +203,8 @@ RQ_OBJECT("CRS")
   void DoFopen(char* oname);
   void DoFAna();
   void FAnalyze();
+  int Do1Buf();
+  void DoNBuf();
 
   void AllParameters32(); // load all parameters
   //void AllParameters32_old(); // load all parameters

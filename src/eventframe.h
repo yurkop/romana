@@ -26,7 +26,7 @@ protected:
    TGHorizontalFrame      *fHor;
    TGHorizontalFrame      *fHor2;
 
-   TGTextButton           *freset;
+   //TGTextButton           *freset;
    TGTextButton           *f1buf;
    TGTextButton           *fNbuf;
    TGTextButton           *fOne;
@@ -44,7 +44,8 @@ protected:
    TGCheckButton          *fPeak[10];
    TGCheckButton          *fChn[MAX_CH];
 
-   TGStatusBar            *fStat;
+   TGStatusBar            *fStat1;
+   TGStatusBar            *fStat2;
    
    TGLayoutHints          *fLay1;
    TGLayoutHints          *fLay2;
@@ -60,7 +61,8 @@ protected:
 
    int ntab; //tab number where eventframe is placed
    int ievent; //current event to be drawn
-   EventClass* d_event; //current event
+   std::list<EventClass1>::iterator d_event;
+   //EventClass1* d_event; //current event
    int ndiv;
    int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
    //int NGr;
@@ -83,16 +85,16 @@ public:
 
    void Clear();
    //void Start();
-   void DoReset();
-   void FillHist(std::list<EventClass1>::reverse_iterator evt, int dr);
+   //void DoReset();
+   void FillHist(int dr);
    void DrawEvent2();
-   void DrawPeaks(std::list<EventClass1>::reverse_iterator evt,
-		  double y1,double y2);
+   void DrawPeaks(double y1,double y2);
    void DrawEvent();
    void DoGraph(int ndiv, int deriv);
    void ReDraw();
-   void Do1buf();
-   void DoNbuf();
+   /* void DoNum(); */
+   /* void Do1buf(); */
+   /* void DoNbuf(); */
    void Plus1();
    void Minus1();
    void PlusN();

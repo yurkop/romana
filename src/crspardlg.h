@@ -52,6 +52,7 @@ class ParDlg: public TGCompositeFrame {
 
   int nfld; //number of fields in a line
 
+ public:
   std::vector<pmap> Plist;
 
  public:

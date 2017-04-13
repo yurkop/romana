@@ -79,6 +79,14 @@ int chanPresent;
 
 EventFrame* EvtFrm;
 
+ParParDlg *parpar;
+CrsParDlg *crspar;
+CrsParDlg *chanpar;
+
+ULong_t fGreen;
+ULong_t fRed;
+ULong_t fCyan;
+
 const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
 //extern const char* parname;
@@ -1237,7 +1245,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fEv=NULL;
 
   TGLayoutHints* l_Gr = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
-  TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY,0,0,5,5);
+  //TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY,0,0,5,5);
+  TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsTop,0,0,5,5);
+  TGLayoutHints* lay2 = new TGLayoutHints(kLHintsLeft | kLHintsTop,1,1,1,1);
 
   bRun = false;
 
@@ -1378,7 +1388,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   const int butx=80,buty=40;
   //ULong_t fGreen;
   //ULong_t fRed;
-  ULong_t fCyan;
+  //ULong_t fCyan;
   ULong_t fBluevio;
 
   gClient->GetColorByName("green", fGreen);
@@ -1422,7 +1432,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fGr1->AddFrame(fReset, l_But);
 
   TGGroupFrame* fGr2 = new TGGroupFrame(vframe1, "Analysis", kVerticalFrame);
-  fGr2->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  fGr2->SetTitlePos(TGGroupFrame::kCenter);
   vframe1->AddFrame(fGr2, l_Gr);
 
 
@@ -1439,17 +1449,26 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fReset2->SetFont(tfont,false);
   fReset2->Resize(butx,buty);
   fReset2->ChangeOptions(fReset2->GetOptions() | kFixedSize);
-  //fAna->ChangeBackground(fCyan);
-  //fReset2->Connect("Clicked()","MainFrame",this,"DoAna()");
+  fReset2->ChangeBackground(fCyan);
+  fReset2->Connect("Clicked()","MainFrame",this,"DoReset()");
+  //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
   fGr2->AddFrame(fReset2, l_But);
 
   fAna = new TGTextButton(fGr2,"Analyze");
   fAna->SetFont(tfont,false);
   fAna->Resize(butx,buty);
   fAna->ChangeOptions(fAna->GetOptions() | kFixedSize);
-  //fAna->ChangeBackground(fCyan);
+  fAna->ChangeBackground(fGreen);
   fAna->Connect("Clicked()","MainFrame",this,"DoAna()");
   fGr2->AddFrame(fAna, l_But);
+
+  TGTextButton* f1b = new TGTextButton(fGr2,"1 buf");
+  f1b->SetFont(tfont,false);
+  f1b->Resize(butx,buty);
+  f1b->ChangeOptions(f1b->GetOptions() | kFixedSize);
+  f1b->ChangeBackground(fGreen);
+  f1b->Connect("Clicked()","MainFrame",this,"Do1buf()");
+  fGr2->AddFrame(f1b, l_But);
 
   //exit(-1);
 
@@ -1481,7 +1500,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGCompositeFrame* fr1 = new TGCompositeFrame(tab1, 10, 10, kHorizontalFrame);
   tab1->AddFrame(fr1, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
   parpar = new ParParDlg(fr1, 600, 500);
-  parpar->Update();
+  //parpar->Update();
   fr1->AddFrame(parpar, 
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
@@ -1530,11 +1549,44 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     fReset->SetEnabled(false);
 
     opt.raw_write=false;
-    parpar->Update();
+    //parpar->Update();
     TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
     if (te) 
       te->SetEnabled(false);
   }
+
+
+
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
+  fGr2->AddFrame(hfr1, l_But);
+
+  int id;
+  id = parpar->Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id,
+					   TGNumberFormat::kNESInteger,
+					   TGNumberFormat::kNEAAnyNumber,
+					   TGNumberFormat::kNELLimitMinMax,
+					   1,100000);
+  parpar->DoMap(fNum1->GetNumberEntry(),&opt.num_buf,p_inum,0);
+  fNum1->Resize(65, fNum1->GetDefaultHeight());
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
+				   "DoNum()");
+  hfr1->AddFrame(fNum1,lay2);
+
+  fNb = new TGTextButton(hfr1,"N buf");
+  //fNb->SetFont(tfont,false);
+  fNb->Resize(35,22);
+  fNb->ChangeOptions(fNb->GetOptions() | kFixedSize);
+  fNb->ChangeBackground(fGreen);
+  fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
+  hfr1->AddFrame(fNb, lay2);
+
+
+
+
+
+  parpar->Update();
 
   /*
 
@@ -1793,7 +1845,7 @@ void MainFrame::DoAna() {
 
   cout << "DoAna" << endl;
 
-  if (crs->b_acq) {
+  if (crs->b_fana) {
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
   }
@@ -1804,6 +1856,33 @@ void MainFrame::DoAna() {
 
   crs->DoFAna();
 }
+
+void MainFrame::Do1buf() {
+
+  //cout << "Do1buf" << endl;
+  crs->Do1Buf();
+
+}
+
+void MainFrame::DoNbuf() {
+
+  cout << "DoNbuf" << endl;
+
+  if (crs->b_fana) {
+    fAna->ChangeBackground(fGreen);
+    fAna->SetText("Analyse");
+    fNb->ChangeBackground(fGreen);
+    crs->b_fana=false;
+  }
+  else {
+    fAna->ChangeBackground(fRed);
+    fAna->SetText("Stop");
+    fNb->ChangeBackground(fRed);
+    crs->DoNBuf();
+  }
+
+}
+
 void MainFrame::DoRWinit(EFileDialogMode nn) {
 
   if (bRun) return;
@@ -1836,9 +1915,9 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
       readinit(pname);
 
 
-      myM->crspar->Update();
-      myM->chanpar->Update();
-      myM->parpar->Update();
+      crspar->Update();
+      chanpar->Update();
+      parpar->Update();
 
 
 
@@ -1918,7 +1997,9 @@ void MainFrame::DoReset() {
   if (bRun) return;
 
   greset();
-  Buffer->NewFile();
+
+  crs->Reset();
+  //Buffer->NewFile();
 
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
   UpdateStatus();
@@ -2921,45 +3002,6 @@ void MainFrame::DoChkPoint() {
   bRun=false;
   }
 */
-
-void MainFrame::Do1buf() {
-
-  if (bRun) return;
-  bRun=true;
-
-  //malloc_stats();
-  Buffer->Do1buf();
-
-  UpdateStatus();
-
-  DoDraw();
-
-  bRun=false;
-}
-
-void MainFrame::DoNbuf() {
-  int i;
-
-  if (bRun) return;
-  bRun=true;
-
-  DoSetNumBuf();
-
-  for (i=0;i<opt.num_buf;i++) {
-
-    Buffer->Do1buf();
-
-    if (!bRun || Buffer->EoF) {
-      break;
-    }
-
-    UpdateStatus();
-    gSystem->ProcessEvents();
-  }
-
-  DoDraw();
-  bRun=false;
-}
 
 void MainFrame::DoSetNumBuf() {
 
