@@ -3964,7 +3964,7 @@ int BufClass::ReadBuf() {
 //
 
 void FillHist(EventClass1* evt) {
-  cout << "fillhist" << endl;
+  //cout << "fillhist" << endl;
   double DT = opt.period*1e-9;
 
   for (UInt_t i=0;i<evt->pulses.size();i++) {
