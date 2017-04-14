@@ -665,7 +665,7 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
 
   //tip1= "Coincidence window for events";
   tip2= "Coincidence window for makeing events";
-  label="Coincidence window";
+  label="Coincidence window (ns)";
   AddLine3(fF6,ww,NULL,&opt.tgate1,tip1,tip2,label,k_int);
 
   tip1= "Minimal multiplicity";

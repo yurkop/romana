@@ -27,6 +27,8 @@ extern CrsParDlg *crspar;
 extern CrsParDlg *chanpar;
 #endif
 
+const double MB = 1024*1024;
+
 //bool bstart=true;
 //bool btest=false;
 
@@ -104,32 +106,16 @@ void *ballast(void* xxx) {
 
 static void cback(libusb_transfer *transfer) {
 
-  Mut.Lock();
-  crs->npulses_buf=0;
-  
-  //cout << "cback32 (remove/correct this line) : " << endl;
-  //gettimeofday(&crs->t_stop,NULL);
-  //cout << crs->t_start.tv_sec << " " << crs->t_stop.tv_sec << endl;
+  static TTimeStamp t1;
+  ULong64_t rbytes=0;
 
-  //double diff = crs->t_stop.tv_sec - crs->t_start.tv_sec;
-  //diff+=(crs->t_stop.tv_usec-crs->t_start.tv_usec)*1e-6;
-
-  crs->totalbytes+=transfer->actual_length;
+  //Mut.Lock();
   TTimeStamp t2;
-  //t2.Set();
-  opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
-    (t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
+  t2.Set();
 
-  //cout << "Time: " << opt.F_start.GetSec() << " " << t2.GetSec() << endl;
+  crs->npulses_buf=0;
 
-  // if ((crs->totalbytes/1000000) % 100==0) {
-     // double rate = crs->totalbytes/diff/1024/1024;
-     // int nbuf = *(int*) transfer->user_data;
-     // cout << nbuf << " Total: " << crs->totalbytes << " bytes. Rate: "
-     // 	 << rate << " MB/sec" << endl;
-  // }
-
-  Mut.UnLock();
+  //Mut.UnLock();
   //goto skip;
   
   if (transfer->actual_length) {
@@ -162,13 +148,30 @@ static void cback(libusb_transfer *transfer) {
   if (crs->b_acq) {
     libusb_submit_transfer(transfer);
 
-    myM->UpdateStatus();
-  }
-  //skip:
-  
-  //int res = libusb_submit_transfer(transfer);
-  //cout << "cback32 res (remove/correct this line) : " << res << endl;
+    crs->totalbytes+=transfer->actual_length;
+    rbytes+=transfer->actual_length;
+    opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
+      (t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
 
+    double dt = t2.GetSec()-t1.GetSec()+
+      (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
+    crs->mb_rate = rbytes/MB/dt;
+
+    //cout << "t1: "; t1.Print();
+    //cout << "t2: "; t2.Print();
+    //cout << dt << endl;
+
+    t1=t2;
+
+    if (!crs->nvp) {
+      myM->UpdateStatus();
+      rbytes=0;
+    }
+
+  }
+
+  crs->nvp = (crs->nvp+1)%crs->ntrans;
+  
 }
 
 CRS::CRS() {
@@ -499,10 +502,10 @@ void CRS::Free_Transfer() {
   Cancel_all();
   gSystem->Sleep(50);
 
-  cout << "---Free_Transfer---" << endl;
+  //cout << "---Free_Transfer---" << endl;
 
   for (int i=0;i<ntrans;i++) {
-    cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
+    //cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
     //int res = libusb_cancel_transfer(transfer[i]);
     libusb_free_transfer(transfer[i]);
 
@@ -534,7 +537,7 @@ void CRS::Submit_all() {
       break;
     }
     else {
-      cout << "Submit_Transfer: " << res << " " << *(int*) transfer[i]->user_data << endl;
+      //cout << "Submit_Transfer: " << res << " " << *(int*) transfer[i]->user_data << endl;
       ntrans++;
     }
   }
@@ -545,20 +548,20 @@ void CRS::Cancel_all() {
     int res;
     if (transfer[i]) {
       res = libusb_cancel_transfer(transfer[i]);
-      cout << i << " Cancel: " << res << endl;
+      //cout << i << " Cancel: " << res << endl;
     }
   }
 }
 
 int CRS::Init_Transfer() {
 
-  cout << "---Init_Transfer---" << endl;
+  //cout << "---Init_Transfer---" << endl;
 
   //Cancel_all();
 
-  cout << "---Init_Transfer2---" << endl;
+  //cout << "---Init_Transfer2---" << endl;
   int r=cyusb_reset_device(cy_handle);
-  cout << "cyusb_reset: " << r << endl;
+  //cout << "cyusb_reset: " << r << endl;
 
   for (int i=0;i<MAXTRANS;i++) {
     //if (buftr[i]) {
@@ -1432,7 +1435,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   
   //nvp++;
   //if (nvp>=ntrans) nvp=0;
-  nvp = (nvp+1)%ntrans;
+  //nvp = (nvp+1)%ntrans;
 }
 
 //-------------------------------------
@@ -1599,7 +1602,7 @@ void CRS::AllParameters2()
 
   //nvp++;
   //if (nvp>=ntrans) nvp=0;
-  nvp = (nvp+1)%ntrans;
+  //nvp = (nvp+1)%ntrans;
 
 }
 

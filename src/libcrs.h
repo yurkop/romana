@@ -146,7 +146,8 @@ RQ_OBJECT("CRS")
   UInt_t npulses_buf; //pulses in the current buffer
   Long64_t nevents; //total number of events (zero at Reset (Start button))
   Long64_t nbuffers; //total number of buffers (zero at Reset (Start button))
-  
+  double mb_rate;
+  double ev_rate;
 
   int debug; // for printing debug messages
   //bool bstart; //needed for FindStart

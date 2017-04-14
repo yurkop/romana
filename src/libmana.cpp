@@ -2813,15 +2813,18 @@ void MainFrame::UpdateStatus() {
   char txt[100];
   //TGString ss;
 
-  double rate = 0;
-  if (opt.T_acq>0.01) rate = crs->totalbytes/MB/opt.T_acq;
+  //double rate = 0;
+  //if (opt.T_acq>0.01) rate = crs->totalbytes/MB/opt.T_acq;
 
   time_t tt = opt.F_start.GetSec();
   struct tm *ptm = localtime(&tt);
   strftime(txt,sizeof(txt),"%F %T",ptm);
   
+  //cout << txt << endl;
+  //return;
   fBar1->SetText(txt,0);
 
+  
   //opt.T_acq=0.235345;
   fBar1->SetText(TGString::Format("%0.2f",opt.T_acq),1);
 
@@ -2832,7 +2835,7 @@ void MainFrame::UpdateStatus() {
   fBar1->SetText(TGString::Format("%lld",crs->npulses),4);
   fBar1->SetText(TGString::Format("%lld",crs->nbuffers),5);
   fBar1->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),6);
-  fBar1->SetText(TGString::Format("%0.2f",rate),7);
+  fBar1->SetText(TGString::Format("%0.2f",crs->mb_rate),7);
   fBar1->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),8);
 
   /*

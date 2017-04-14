@@ -7,6 +7,6 @@ git pull gitromana
 git add -A   (add all new files)
 git commit -a -m '[коментарий к коммиту]'   (commit changes)
 
-git  push gitromana master
+git push gitromana master
 
 gitromana - псевдоним удаленного репозитория
