@@ -18,6 +18,11 @@ Toptions::Toptions() {
   ev_min=5000;
   ev_max=10000;
 
+  tgate1=500;
+  tgate2=100;
+  mult1=1;
+  mult2=32;
+  
   //www[0]=1.0;
   //www[1]=5.0;
   /*
@@ -175,7 +180,6 @@ Toptions::Toptions() {
   rBSIZE=131072; //1024*128
   EBufsize=100;
   period=5;
-  coinc_win=100;
 
   buf_size=1024;
   tsleep=500;

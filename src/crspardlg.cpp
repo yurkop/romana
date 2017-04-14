@@ -65,6 +65,24 @@ extern Toptions opt;
 extern int chanPresent;
 extern MyMainFrame *myM;
 
+// TGLayoutHints* fL0;
+// TGLayoutHints* fL1;
+// TGLayoutHints* fL2;
+// TGLayoutHints* fL3;
+// TGLayoutHints* fL4;
+// TGLayoutHints* fL5;
+// TGLayoutHints* fL6;
+// TGLayoutHints* fLexp;
+TGLayoutHints* fL0 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 0, 0);
+TGLayoutHints* fL1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
+TGLayoutHints* fL2 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY);
+TGLayoutHints* fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
+TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
+TGLayoutHints* fL5 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
+TGLayoutHints* fL6 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 2, 2);
+TGLayoutHints* fL7 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 11, 1, 2, 2);
+TGLayoutHints* fLexp = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
+
 using namespace std;
 
 ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
@@ -74,22 +92,14 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   nfld=0;
 
   // fL0 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 0, 0);
-  // fL1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 1, 1, 1);
+  // fL1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
   // fL2 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY);
-  // fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 1, 1);
-  // fL4 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 1, 1, 5, 5);
-  // fL5 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 1, 1, 2, 2);
+  // fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
+  // fL4 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
+  // fL5 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
   // fL6 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 2, 2);
 
-  fL0 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 0, 0);
-  fL1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
-  fL2 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY);
-  fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
-  fL4 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
-  fL5 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
-  fL6 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 2, 2);
-
-  fLexp = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
+  // fLexp = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 
 }
 
@@ -566,7 +576,8 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   ver1 = hor->GetFirst();
   ver2 = hor->GetSecond();
 
-  AddPar(ver1);
+  AddOpt(ver1);
+  AddAna(ver1);
   AddHist(ver2);
 
 }
@@ -604,54 +615,16 @@ void ParParDlg::AddWrite(const char* txt, Bool_t* opt_chk, char* opt_fname) {
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
 }
 
-void ParParDlg::AddPar(TGCompositeFrame* frame) {
+void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   
   int ww=70;
 
-  /*
-  TGLabel* fLabel = new TGLabel(frame, "---  Parameters  ---");
-  frame->AddFrame(fLabel, fL5);
-  frame->AddFrame(new TGHorizontal3DLine(frame), fL5);
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Options", kVerticalFrame);
+  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame->AddFrame(fF6, fL6);
 
-  tip1= "Analysis start (in sec)";
-  tip2= "Analysis stop (in sec)";
-  label="Time limits";
-  AddLine3(frame,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_int);
-  
-  frame->AddFrame(new TGHorizontal3DLine(frame), fL5);
-
-  tip1= "Analysis start (in sec)";
-  tip2= "Analysis stop (in sec)";
-  label="Time limits";
-  AddLine3(frame,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_int);
-
-  tip1= "Delay between drawing events (in msec)";
-  tip2= "";
-  label="DrawEvent delay";
-  AddLine3(frame,ww,&opt.tsleep,NULL,tip1,tip2,label,k_int);
-  */
-
-   TGGroupFrame* fF6 = new TGGroupFrame(frame, "Options", kVerticalFrame);
-   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-   frame->AddFrame(fF6, fL6);
-
-   // 2 column, n rows
-   fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
-
-   // char buff[100];
-   // for (int j = 0; j < 5; j++) {
-   //    sprintf(buff, "Module %i", j+1);
-   //    fF6->AddFrame(new TGLabel(fF6, new TGHotString(buff)));
-
-   //    TGTextBuffer *tbuf = new TGTextBuffer(10);
-   //    tbuf->AddText(0, "0.0");
-
-   //    TGTextEntry  *tent = new TGTextEntry(fF6, tbuf);
-   //    tent->Resize(50, tent->GetDefaultHeight());
-   //    tent->SetFont("-adobe-courier-bold-r-*-*-14-*-*-*-*-*-iso8859-1");
-   //    fF6->AddFrame(tent);
-   // }
-
+  // 2 column, n rows
+  //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
 
   tip1= "Analysis start (in sec)";
   tip2= "Analysis stop (in sec)";
@@ -661,12 +634,12 @@ void ParParDlg::AddPar(TGCompositeFrame* frame) {
   tip1= "Delay between drawing events (in msec)";
   tip2= "";
   label="DrawEvent delay";
-  AddLine3(fF6,ww,&opt.tsleep,NULL,tip1,tip2,label,k_int,100,10000);
+  AddLine3(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000);
 
   tip1= "Size of the USB buffer in kilobytes";
   tip2= "";
   label="USB buffer size";
-  AddLine3(fF6,ww,&opt.buf_size,NULL,tip1,tip2,label,k_int,1,2048,
+  AddLine3(fF6,ww,NULL,&opt.buf_size,tip1,tip2,label,k_int,1,2048,
 	   (char*) "DoNum_SetBuf()");
 
   tip1= "Minimal size of the event list";
@@ -677,7 +650,30 @@ void ParParDlg::AddPar(TGCompositeFrame* frame) {
 
   fF6->Resize();
 
+}
 
+void ParParDlg::AddAna(TGCompositeFrame* frame) {
+  
+  int ww=70;
+
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Analysis", kVerticalFrame);
+  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame->AddFrame(fF6, fL6);
+
+  // 2 column, n rows
+  //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
+
+  //tip1= "Coincidence window for events";
+  tip2= "Coincidence window for makeing events";
+  label="Coincidence window";
+  AddLine3(fF6,ww,NULL,&opt.tgate1,tip1,tip2,label,k_int);
+
+  tip1= "Minimal multiplicity";
+  tip2= "Maximal multiplicity";
+  label="Multiplicity (min, max)";
+  AddLine3(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH);
+
+  fF6->Resize();
 
 }
 
@@ -689,13 +685,12 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   //frame->AddFrame(fLabel, fL5);
 
 
-   TGGroupFrame* frame = new TGGroupFrame(frame2, "Histograms", kVerticalFrame);
-   frame->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-   frame2->AddFrame(frame, fL6);
+  TGGroupFrame* frame = new TGGroupFrame(frame2, "Histograms", kVerticalFrame);
+  frame->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame2->AddFrame(frame, fL6);
 
    // 2 column, n rows
-   frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
-
+   //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
 
   tip1= "Initial bins per second for long_tdc";
   tip2= "Initial length of long_tdc (in seconds)";
@@ -788,6 +783,9 @@ void ParParDlg::AddLine3(TGGroupFrame* frame, int width, void *x1, void *x2,
 			 double min, double max, char* connect)
 {
 
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
   if (connect==NULL) {
     connect = (char*) "DoNum()";
   }
@@ -803,42 +801,54 @@ void ParParDlg::AddLine3(TGGroupFrame* frame, int width, void *x1, void *x2,
     pdef=p_fnum;
   }
 
-  TGLabel* fLabel = new TGLabel(frame, label);
-  frame->AddFrame(fLabel);
-
   TGNumberFormat::ELimit limits = TGNumberFormat::kNELNoLimits;
   if (max!=0) {
     limits = TGNumberFormat::kNELLimitMinMax;
   }
 
-  id = Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(frame, 0, 0, id, style, 
-					   TGNumberFormat::kNEAAnyNumber,
-			     limits,min,max);
-  DoMap(fNum1->GetNumberEntry(),x1,pdef,0);
-  fNum1->GetNumberEntry()->SetToolTipText(tip1);
-  //fNum1->SetWidth(5);
-  fNum1->Resize(width, fNum1->GetDefaultHeight());
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this, connect);
-  frame->AddFrame(fNum1);
-
+  if (x1!=NULL) {
+    id = Plist.size()+1;
+    TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, style, 
+					     TGNumberFormat::kNEAAnyNumber,
+					     limits,min,max);
+    DoMap(fNum1->GetNumberEntry(),x1,pdef,0);
+    fNum1->GetNumberEntry()->SetToolTipText(tip1);
+    fNum1->SetWidth(width);
+    //fNum1->Resize(width, fNum1->GetDefaultHeight());
+    fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this, connect);
+    hfr1->AddFrame(fNum1,fL7);
+  }
+  else {
+    TGLabel* fskip = new TGLabel(hfr1, "");
+    fskip->ChangeOptions(fskip->GetOptions()|kFixedWidth);
+    fskip->SetWidth(width);
+    //fskip->Resize(width, fskip->GetDefaultHeight());
+    hfr1->AddFrame(fskip,fL7);
+  }
+  
   if (x2!=NULL) {
     id = Plist.size()+1;
-    TGNumberEntry* fNum2 = new TGNumberEntry(frame, 0, 0, id, style, 
+    TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, style, 
 					     TGNumberFormat::kNEAAnyNumber,
 					     limits,min,max);
     DoMap(fNum2->GetNumberEntry(),x2,pdef,0);
     fNum2->GetNumberEntry()->SetToolTipText(tip2);
-    //fNum2->SetWidth(width);
-    fNum2->Resize(width, fNum2->GetDefaultHeight());
+    fNum2->SetWidth(width);
+    //fNum2->Resize(width, fNum2->GetDefaultHeight());
     fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this, connect);
-    frame->AddFrame(fNum2);
+    hfr1->AddFrame(fNum2,fL7);
   }
   else {
-    TGLabel* fskip = new TGLabel(frame, "");
-    //fskip->SetWidth(width);
-    frame->AddFrame(fskip);
+    TGLabel* fskip = new TGLabel(hfr1, "");
+    fskip->ChangeOptions(fskip->GetOptions()|kFixedWidth);
+    fskip->SetWidth(width);
+    //fskip->Resize(width, fskip->GetDefaultHeight());
+    hfr1->AddFrame(fskip,fL7);
   }
+
+  TGLabel* fLabel = new TGLabel(hfr1, label);
+  hfr1->AddFrame(fLabel,fL7);
+
 }
 
 /*

@@ -1850,19 +1850,24 @@ void MainFrame::DoAna() {
   if (crs->b_fana) {
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
+    crs->b_fana=false;
   }
   else {
     fAna->ChangeBackground(fRed);
     fAna->SetText("Stop");
+    crs->b_fana=true;
+    crs->FAnalyze();
   }
 
-  crs->DoFAna();
+  //crs->DoFAna();
 }
 
 void MainFrame::Do1buf() {
 
   //cout << "Do1buf" << endl;
   crs->Do1Buf();
+
+  crs->b_stop=true;
 
 }
 
@@ -3663,7 +3668,7 @@ void BufClass::AddFirstPulse() { //nev=0 at this point
   //printf("Addpulse: %d %lld %lld %lld\n",
   // nev,iPulse->Tstamp64,event->Tstamp64,dt);
 
-  if (abs(dt)<opt.coinc_win/opt.period) {// coincidence -> add it to the current event
+  if (abs(dt)<opt.tgate1/opt.period) {// coincidence -> add it to the current event
   iPulse->tdif = iPulse->Tstamp64 - event->Tstamp64;
   event->Epulses.push_back(iPulse);
   event->nEpulses=event->Epulses.size();
@@ -3691,7 +3696,7 @@ void BufClass::AddPulse() {
   //printf("Addpulse: %d %lld %lld %lld\n",
   // nev,iPulse->Tstamp64,event->Tstamp64,dt);
 
-  if (abs(dt)<opt.coinc_win/opt.period) {// coincidence -> add it to the current event
+  if (abs(dt)<opt.tgate1/opt.period) {// coincidence -> add it to the current event
     iPulse->tdif = iPulse->Tstamp64 - event->Tstamp64;
     event->Epulses.push_back(iPulse);
     event->nEpulses=event->Epulses.size();
@@ -3959,6 +3964,7 @@ int BufClass::ReadBuf() {
 //
 
 void FillHist(EventClass1* evt) {
+  cout << "fillhist" << endl;
   double DT = opt.period*1e-9;
 
   for (UInt_t i=0;i<evt->pulses.size();i++) {

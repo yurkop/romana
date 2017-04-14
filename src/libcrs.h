@@ -152,6 +152,7 @@ RQ_OBJECT("CRS")
   //bool bstart; //needed for FindStart
   bool b_acq; // true - acquisition running
   bool b_fana; // true - file analysis running
+  bool b_stop; // true if acquisition or analysis has stopped
 
   //Bool_t b_pevent;
   //vars for decoding...
@@ -201,7 +202,7 @@ RQ_OBJECT("CRS")
   int DoStartStop(); // start-stop acquisition
   void Reset(); //reset BPulses
   void DoFopen(char* oname);
-  void DoFAna();
+  //void DoFAna();
   void FAnalyze();
   int Do1Buf();
   void DoNBuf();

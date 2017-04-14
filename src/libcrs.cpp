@@ -936,6 +936,7 @@ int CRS::DoStartStop() {
 
     //buf_out[0]=3;
     b_acq=true;
+    b_stop=false;
     //bstart=true;
     //totalbytes=0;
     //writtenbytes=0;
@@ -996,6 +997,7 @@ int CRS::DoStartStop() {
 
     gSystem->Sleep(300);
     Cancel_all();
+    b_stop=true;
   }
 
   /*
@@ -1051,6 +1053,7 @@ void CRS::Reset() {
 
   b_acq=false;
   b_fana=false;
+  b_stop=false;
   //bstart=true;
 
   nvp=0;
@@ -1200,15 +1203,15 @@ void CRS::DoFopen(char* oname) {
 
 }
 
-void CRS::DoFAna() {
-  if (!b_fana) { //start
-    b_fana=true;
-    FAnalyze();
-  }
-  else {
-    b_fana=false;
-  }
-}
+// void CRS::DoFAna() {
+//   if (!b_fana) { //start
+//     b_fana=true;
+//     FAnalyze();
+//   }
+//   else {
+//     b_fana=false;
+//   }
+// }
 
 void CRS::FAnalyze() {
 
@@ -1219,10 +1222,13 @@ void CRS::FAnalyze() {
 
   //Fbuf = new UChar_t[opt.buf_size*1024];
 
+  b_stop=false;
   while (Do1Buf() && b_fana) {
     //Do1Buf();
     //if (!b_fana) break;
   }
+
+  b_stop=true;
 
 }
 
@@ -1269,11 +1275,14 @@ int CRS::Do1Buf() {
 void CRS::DoNBuf() {
 
   b_fana=true;
+  b_stop=false;
   for (int i=0;i<opt.num_buf;i++) {
     if (!(Do1Buf() && b_fana)) {
       break;
     }
   }
+
+  b_stop=true;
 
 }
 
@@ -1623,18 +1632,20 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
   int nn=0;
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
     Long64_t dt = newpulse->Tstamp64 - rl->T;
-    if (dt > opt.coinc_win) {
+    if (dt > opt.tgate1) {
       //add new event at the current position of the eventlist
       Levents.insert(rl.base(),EventClass1());
       nevents++;
       rl->Pulse_Ana_Add(newpulse);
-      cout << "nn: " << nn << endl;
+      if (nn>10)
+	cout << "nn: " << nn << endl;
       return;
     }
-    else if (TMath::Abs(dt) <= opt.coinc_win) { //add newpulse to existing event
+    else if (TMath::Abs(dt) <= opt.tgate1) { //add newpulse to existing event
       // coincidence event
       rl->Pulse_Ana_Add(newpulse);
-      cout << "nn: " << nn << endl;
+      if (nn>10)
+	cout << "nn: " << nn << endl;
       return;
     }
     nn++;
@@ -1642,7 +1653,8 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
     }
   }
 
-  cout << "nn: " << nn << endl;
+  if (nn>10)
+    cout << "nn: " << nn << endl;
   cout << "beginning" << endl;
   //add new event at the beginning of the eventlist
   Levents.insert(Levents.begin(),EventClass1());
@@ -1757,7 +1769,7 @@ void CRS::Make_Events(int nvp) {
 
   Long64_t dt = ip1->Tstamp64 - event->Tstamp64;
 
-  //if (abs(dt)<opt.coinc_win/opt.period) {// coincidence -> add it to the current event
+  //if (abs(dt)<opt.tgate1/opt.period) {// coincidence -> add it to the current event
   if (abs(dt)<100) {// coincidence -> add it to the current event
   ip1->tdif = ip1->Tstamp64 - event->Tstamp64;
   event->Epulses.push_back(ip1);

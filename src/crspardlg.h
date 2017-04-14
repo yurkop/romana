@@ -38,14 +38,14 @@ class ParDlg: public TGCompositeFrame {
 
  protected:
 
-  TGLayoutHints* fL0;
-  TGLayoutHints* fL1;
-  TGLayoutHints* fL2;
-  TGLayoutHints* fL3;
-  TGLayoutHints* fL4;
-  TGLayoutHints* fL5;
-  TGLayoutHints* fL6;
-  TGLayoutHints* fLexp;
+  // TGLayoutHints* fL0;
+  // TGLayoutHints* fL1;
+  // TGLayoutHints* fL2;
+  // TGLayoutHints* fL3;
+  // TGLayoutHints* fL4;
+  // TGLayoutHints* fL5;
+  // TGLayoutHints* fL6;
+  // TGLayoutHints* fLexp;
 
   TGCanvas* fCanvas;
   TGCompositeFrame* fcont1;  
@@ -123,7 +123,8 @@ class ParParDlg: public ParDlg {
 		double min=0, double max=0, char* connect=NULL);
   void AddWrite(const char* txt, Bool_t* opt_chk, char* opt_fname);
   void AddHist(TGCompositeFrame* frame);
-  void AddPar(TGCompositeFrame* frame);
+  void AddOpt(TGCompositeFrame* frame);
+  void AddAna(TGCompositeFrame* frame);
   //void Update();
 
 };
