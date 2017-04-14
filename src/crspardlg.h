@@ -152,6 +152,8 @@ class CrsParDlg: public ParDlg {
 	      const char* name, void* apar);
   void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       void* apar, double min, double max, P_Def ptype);
+  void DoNum();
+  void DoChk();
   //void DoPar(int k, int i, Long_t num);
   //void *MapPar(int id);
   //void Update();

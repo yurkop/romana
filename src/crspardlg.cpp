@@ -1103,9 +1103,9 @@ void CrsParDlg::AddLine1(int i) {
   DoMap(f_inv,&opt.inv[i],p_chk,all);
   DoMap(f_acdc,&opt.acdc[i],p_chk,all);
 
-  f_en->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  f_inv->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  f_acdc->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  f_en->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
+  f_inv->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
+  f_acdc->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
 
   //f_inv->ChangeOptions(facdc->GetOptions()|kFixedSize);
   //f_acdc->ChangeOptions(facdc->GetOptions()|kFixedSize);
@@ -1196,7 +1196,7 @@ void CrsParDlg::AddLine2(int i) {
   TGCheckButton *fst = new TGCheckButton(hframe1, "", id);
   DoMap(fst,&opt.Start[i],p_chk,all);
 
-  fst->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  fst->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
 
   hframe1->AddFrame(fst,fL3);
   kk++;
@@ -1236,7 +1236,7 @@ void CrsParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
   
   fNum->SetWidth(tlen[kk]);
 
-  fNum->Connect("TextChanged(char*)", "ParDlg", this, "DoNum()");
+  fNum->Connect("TextChanged(char*)", "CrsParDlg", this, "DoNum()");
 
   hframe1->AddFrame(fNum,fL0);
 
@@ -1264,10 +1264,19 @@ void CrsParDlg::AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
   DoMap(fNum,apar,ptype, all);
   fNum->SetWidth(tlen2[kk]);
-  fNum->Connect("TextChanged(char*)", "ParDlg", this, "DoNum()");
+  fNum->Connect("TextChanged(char*)", "CrsParDlg", this, "DoNum()");
   hframe1->AddFrame(fNum,fL0);
 
 }
+
+void CrsParDlg::DoNum() {
+  ParDlg::DoNum();
+}
+
+void CrsParDlg::DoChk() {
+  ParDlg::DoChk();
+}
+
 
 /*
 void CrsParDlg::Update() {

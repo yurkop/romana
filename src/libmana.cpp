@@ -2001,7 +2001,19 @@ void MainFrame::DoReadRoot() {
 
 void MainFrame::DoReset() {
 
+  /*
+  opt.enabl[0]=false;
+  int tmp,max;
+  opt.GetPar("thresh",crs->module,0,tmp,tmp,max);
+  //cout << "Off: " << (int) chan << " " << max << endl;
+  crs->Command2(4,0,0,0);
+  crs->Command32(2,0,6,0);
+  crs->Command32(2,0,7,max);
+  crs->Command2(3,0,0,0);
 
+  return;
+  */
+  
   if (crs->b_acq) return;
 
   greset();
