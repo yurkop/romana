@@ -783,9 +783,9 @@ void CRS::SendParametr(const char* name, int len_out) {
 }
 */
 
-void CRS::Command_crs(byte type, byte chan, int par) {
+void CRS::Command_crs(byte cmd, byte chan, int par) {
   if (module==32) {
-    switch (type) {
+    switch (cmd) {
     case 1: //enabl
       if (opt.enabl[chan]) {
 	Command32(2,chan,6,(int)opt.kderiv[chan]);
@@ -829,7 +829,7 @@ void CRS::Command_crs(byte type, byte chan, int par) {
     }
   }
   else if (module==2) {
-    switch (type) {
+    switch (cmd) {
     case 1: //enabl
       if (opt.enabl[chan]) {
 	Command2(2,chan,3,(int)opt.kderiv[chan]);

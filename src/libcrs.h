@@ -19,8 +19,8 @@
 #include "common.h"
 
 typedef unsigned char byte;
-typedef unsigned long long ULong64_t;
-typedef long long Long64_t;
+//typedef unsigned long long ULong64_t;
+//typedef long long Long64_t;
 
 //#define MAXTRANS 8
 //const int MAXCH=32;
@@ -197,7 +197,7 @@ RQ_OBJECT("CRS")
   void Submit_all();
   void Cancel_all();
   //int Command_old(int len_out, int len_in); //send and receive command
-  void Command_crs(byte type, byte chan, int par);
+  void Command_crs(byte cmd, byte chan, int par);
   void Command32(byte cmd, byte ch, byte type, int par);
   void Command2(byte cmd, byte ch, byte type, int par);
   //void SendParametr(const char* name, int len_out); //send one parameter

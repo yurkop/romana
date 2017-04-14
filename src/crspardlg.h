@@ -16,6 +16,8 @@
 //#define p_cmb 4
 //#define p_txt 5
 
+typedef unsigned char byte;
+
 enum P_Def {
   p_null,
   p_fnum,
@@ -31,6 +33,8 @@ struct pmap {
   void* data; //address of the parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
   char all; //1 - all parameters, >1 - channel type
+  byte cmd; //for Command_crs
+  byte chan; //for Command_crs
 };
 
 //-----------------------------------------------
@@ -152,6 +156,7 @@ class CrsParDlg: public ParDlg {
 	      const char* name, void* apar);
   void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       void* apar, double min, double max, P_Def ptype);
+  void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan);
   void DoNum();
   void DoChk();
   //void DoPar(int k, int i, Long_t num);

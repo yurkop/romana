@@ -948,7 +948,7 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
     int id = Plist.size()+1;
     TGCheckButton *fforce = new TGCheckButton(hforce, "", id);
     hforce->AddFrame(fforce,fL3);
-    DoMap((TGWidget*)fforce,&opt.forcewr,p_chk,0);
+    DoMap((TGWidget*)fforce,&opt.forcewr,p_chk,0,0,0);
     fforce->Connect("Clicked()", "ParDlg", this, "DoChk()");
     
     // pmap pp;
@@ -956,7 +956,7 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
     // pp.data = &opt.forcewr;
     // pp.type = 2;
     // Plist.push_back(pp);
-    TGLabel* lforce = new TGLabel(hforce, "  Force writing all channels");
+    TGLabel* lforce = new TGLabel(hforce, "  Force_write all channels");
     hforce->AddFrame(lforce,fL1);
   }
 
@@ -1091,7 +1091,7 @@ void CrsParDlg::AddLine1(int i) {
     fCombo->SetEnabled(false);
   }
 
-  DoMap(fCombo,&opt.chtype[i],p_cmb,all);
+  DoMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
 
@@ -1099,9 +1099,9 @@ void CrsParDlg::AddLine1(int i) {
   TGCheckButton *f_en = new TGCheckButton(hframe1, "", id);
   TGCheckButton *f_inv = new TGCheckButton(hframe1, "", id+1);
   TGCheckButton *f_acdc = new TGCheckButton(hframe1, "", id+2);
-  DoMap(f_en,&opt.enabl[i],p_chk,all);
-  DoMap(f_inv,&opt.inv[i],p_chk,all);
-  DoMap(f_acdc,&opt.acdc[i],p_chk,all);
+  DoMap(f_en,&opt.enabl[i],p_chk,all,1,i);
+  DoMap(f_inv,&opt.inv[i],p_chk,all,2,i);
+  DoMap(f_acdc,&opt.acdc[i],p_chk,all,3,i);
 
   f_en->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
   f_inv->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
@@ -1187,14 +1187,14 @@ void CrsParDlg::AddLine2(int i) {
     fCombo->SetEnabled(false);
   }
 
-  DoMap(fCombo,&opt.chtype[i],p_cmb,all);
+  DoMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
 
 
   id = Plist.size()+1;
   TGCheckButton *fst = new TGCheckButton(hframe1, "", id);
-  DoMap(fst,&opt.Start[i],p_chk,all);
+  DoMap(fst,&opt.Start[i],p_chk,all,0,0);
 
   fst->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
 
@@ -1232,7 +1232,7 @@ void CrsParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
 			   TGNumberFormat::kNEAAnyNumber,
 			   TGNumberFormat::kNELLimitMinMax,min,max);
 
-  DoMap(fNum,apar,p_inum, all);
+  DoMap(fNum,apar,p_inum, all,kk-1,i);
   
   fNum->SetWidth(tlen[kk]);
 
@@ -1262,11 +1262,18 @@ void CrsParDlg::AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 			   TGNumberFormat::kNEAAnyNumber,
 			   TGNumberFormat::kNELLimitMinMax,min,max);
 
-  DoMap(fNum,apar,ptype, all);
+  DoMap(fNum,apar,ptype, all,0,0);
   fNum->SetWidth(tlen2[kk]);
   fNum->Connect("TextChanged(char*)", "CrsParDlg", this, "DoNum()");
   hframe1->AddFrame(fNum,fL0);
 
+}
+
+void CrsParDlg::DoMap(TGWidget *f, void *d, P_Def t, int all,
+		      byte cmd, byte chan) {
+  ParDlg::DoMap(f,d,t,all);
+  Plist.back().cmd=cmd;
+  Plist.back().chan=chan;
 }
 
 void CrsParDlg::DoNum() {
