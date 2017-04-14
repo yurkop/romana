@@ -783,6 +783,98 @@ void CRS::SendParametr(const char* name, int len_out) {
 }
 */
 
+void CRS::Command_crs(byte type, byte chan, int par) {
+  if (module==32) {
+    switch (type) {
+    case 1: //enabl
+      if (opt.enabl[chan]) {
+	Command32(2,chan,6,(int)opt.kderiv[chan]);
+	Command32(2,chan,7,(int)opt.threshold[chan]);
+      }
+      else {
+	int tmp,max;
+	opt.GetPar("thresh",module,chan,tmp,tmp,max);
+	//cout << "Off: " << (int) chan << " " << max << endl;
+	Command32(2,chan,6,0);
+	Command32(2,chan,7,max);
+      }
+      break;
+    case 2: //inv
+      Command32(2,chan,1,(int)opt.inv[chan]);
+      break;
+    case 3: //acdc
+      Command32(2,chan,0,(int)opt.acdc[chan]);
+      break;
+    case 4: //smooth
+      Command32(2,chan,2,(int)opt.smooth[chan]);
+      break;
+    case 5: //Dt
+      Command32(2,chan,3,(int)opt.deadTime[chan]);
+      break;
+    case 6: //Pre
+      Command32(2,chan,4,(int)opt.preWr[chan]);
+      break;
+    case 7: //Len
+      Command32(2,chan,5,(int)opt.durWr[chan]);
+      break;
+    case 8: //Gain
+      Command32(2,chan,8,(int)opt.adcGain[chan]);
+      break;
+    case 9: //Drv
+      Command32(2,chan,6,(int)opt.kderiv[chan]);
+      break;
+    case 10: //thresh
+      Command32(2,chan,7,(int)opt.threshold[chan]);
+      break;
+    }
+  }
+  else if (module==2) {
+    switch (type) {
+    case 1: //enabl
+      if (opt.enabl[chan]) {
+	Command2(2,chan,3,(int)opt.kderiv[chan]);
+	Command2(2,chan,4,(int)opt.threshold[chan]);
+      }
+      else {
+	int tmp,max;
+	opt.GetPar("thresh",module,chan,tmp,tmp,max);
+	//cout << "Off: " << (int) chan << " " << max << endl;
+	Command2(2,chan,3,0);
+	Command2(2,chan,4,max);
+      }
+      break;
+    case 2: //inv
+      Command2(2,chan,1,(int)opt.inv[chan]);
+      break;
+    case 3: //acdc
+      //no acdc
+      break;
+    case 4: //smooth
+      Command2(2,chan,2,(int)opt.smooth[chan]);
+      break;
+    case 5: //Dt
+      //no Dt
+      break;
+    case 6: //Pre
+      Command2(2,chan,5,(int)opt.preWr[chan]);
+      break;
+    case 7: //Len
+      Command2(2,chan,6,(int)opt.durWr[chan]);
+      break;
+    case 8: //Gain
+      Command2(2,chan,0,(int)opt.adcGain[chan]);
+      break;
+    case 9: //Drv
+      Command2(2,chan,3,(int)opt.kderiv[chan]);
+      break;
+    case 10: //thresh
+      Command2(2,chan,4,(int)opt.threshold[chan]);
+      break;
+    }
+  }
+
+}
+
 void CRS::AllParameters32()
 {
 
@@ -799,7 +891,7 @@ void CRS::AllParameters32()
     }
     else {
       int tmp,max;
-      opt.GetPar("thresh",crs->module,chan,tmp,tmp,max);
+      opt.GetPar("thresh",module,chan,tmp,tmp,max);
       //cout << "Off: " << (int) chan << " " << max << endl;
       Command32(2,chan,6,0);
       Command32(2,chan,7,max);
@@ -822,7 +914,7 @@ void CRS::AllParameters2()
     }
    else {
      int tmp,max;
-     opt.GetPar("thresh",crs->module,chan,tmp,tmp,max);
+     opt.GetPar("thresh",module,chan,tmp,tmp,max);
      //cout << "Off: " << (int) chan << " " << max << endl;
      Command2(2,chan,3,0);
      Command2(2,chan,4,max);

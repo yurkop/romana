@@ -15,7 +15,7 @@ extern CrsParDlg *chanpar;
 
 const int ncrspar=12;
 
-const int tlen[ncrspar]={26,60,25,25,25,21,45,40,40,36,21,37};
+const int tlen[ncrspar]={26,60,24,25,24,21,45,40,40,21,36,37};
 const char* tlab[ncrspar]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","Drv","G","Thr"};
 const char* tip[ncrspar]={
   "Channel number",
@@ -1121,8 +1121,8 @@ void CrsParDlg::AddLine1(int i) {
   AddNum1(i,kk++,all,hframe1,"dt"    ,&opt.deadTime[i]);
   AddNum1(i,kk++,all,hframe1,"pre"   ,&opt.preWr[i]);
   AddNum1(i,kk++,all,hframe1,"len"   ,&opt.durWr[i]);
-  AddNum1(i,kk++,all,hframe1,"deriv" ,&opt.kderiv[i]);
   AddNum1(i,kk++,all,hframe1,"gain"  ,&opt.adcGain[i]);
+  AddNum1(i,kk++,all,hframe1,"deriv" ,&opt.kderiv[i]);
   AddNum1(i,kk++,all,hframe1,"thresh",&opt.threshold[i]);
 
 }

@@ -197,6 +197,7 @@ RQ_OBJECT("CRS")
   void Submit_all();
   void Cancel_all();
   //int Command_old(int len_out, int len_in); //send and receive command
+  void Command_crs(byte type, byte chan, int par);
   void Command32(byte cmd, byte ch, byte type, int par);
   void Command2(byte cmd, byte ch, byte type, int par);
   //void SendParametr(const char* name, int len_out); //send one parameter
