@@ -2001,7 +2001,8 @@ void MainFrame::DoReadRoot() {
 
 void MainFrame::DoReset() {
 
-  if (bRun) return;
+
+  if (crs->b_acq) return;
 
   greset();
 
