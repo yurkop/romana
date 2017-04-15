@@ -43,7 +43,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kHorizontalFrame)
 {
 
-  d_event = crs->Levents.begin();
+  Levents = &Tevents;
+  d_event = Levents->begin();
+  cout << "d_event: " << &(*d_event) << endl;
   //d_event = new EventClass();
   //Emut = new TMutex();
 
@@ -393,25 +395,25 @@ void EventFrame::DoNbuf() {
 */
 
 void EventFrame::First() {
-  d_event = crs->Levents.begin();
+  d_event = Levents->begin();
   DrawEvent2();
 }
 
 void EventFrame::Last() {
-  d_event = --crs->Levents.end();
+  d_event = --Levents->end();
   DrawEvent2();
 }
 
 void EventFrame::Plus1() {
   ++d_event;
-  if (d_event==crs->Levents.end()) {
+  if (d_event==Levents->end()) {
     --d_event;
   }
   DrawEvent2();
 }
 
 void EventFrame::Minus1() {
-  if (d_event!=crs->Levents.begin())
+  if (d_event!=Levents->begin())
     --d_event;
   DrawEvent2();
 }
@@ -419,7 +421,7 @@ void EventFrame::Minus1() {
 void EventFrame::PlusN() {
   for (int i=0;i<opt.num_events;i++) {
     ++d_event;
-    if (d_event==crs->Levents.end()) {
+    if (d_event==Levents->end()) {
       --d_event;
       break;
     }
@@ -429,7 +431,7 @@ void EventFrame::PlusN() {
 
 void EventFrame::MinusN() {
   for (int i=0;i<opt.num_events;i++) {
-    if (d_event!=crs->Levents.begin()) {
+    if (d_event!=Levents->begin()) {
       --d_event;
     }
     else {
@@ -595,17 +597,20 @@ void EventFrame::FillHist(int dr) {
 
 void EventFrame::DrawEvent2() {
 
+  TCanvas *cv=fCanvas->GetCanvas();
+  cv->Clear();
+
+  //printf("Draw0:\n");
+
   //Emut->Lock();
-  if (crs->Levents.empty()) {
+  if (Levents->empty()) {
     //Emut->UnLock();
+    txt.DrawTextNDC(0.2,0.7,"Empty event");
+    cv->Update();
     return;
   }
 
-  printf("Draw1:\n");
-
-  TCanvas *cv=fCanvas->GetCanvas();
-
-  cv->Clear();
+  //printf("Draw1:\n");
 
   ndiv=1;
 
@@ -647,7 +652,7 @@ void EventFrame::DrawEvent2() {
   //txt.DrawTextNDC(0.3,0.92,ss);
 
   char ss[99];
-  sprintf(ss,"Evt: %ld",std::distance(crs->Levents.begin(),d_event));
+  sprintf(ss,"Evt: %ld",std::distance(Levents->begin(),d_event));
   fStat1->SetText(ss);
 
   sprintf(ss,"Tstamp: %lld",d_event->T);

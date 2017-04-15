@@ -42,7 +42,7 @@ RQ_OBJECT("CRS")
   gzFile f_raw;
   gzFile f_dec;
 
-  Short_t Fmode;
+  Short_t Fmode; //1 - adcm raw; 2- crs2; 32 - crs32
   char Fname[255];
   UChar_t* Fbuf;
 

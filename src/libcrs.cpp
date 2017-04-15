@@ -106,6 +106,15 @@ void *handle_stat(void *ctx)
   return NULL;
 }
 
+void Select_Event() {
+  UInt_t nn=0;
+  for (EvtFrm->d_event=--crs->Levents.end();
+       EvtFrm->d_event!=--crs->Levents.begin() && nn<=2 ;--EvtFrm->d_event) {
+    nn++;
+    //if (nn>2) break;
+  }
+}
+
 void *handle_evt(void* ptr)
 {
   //static int nn;
@@ -122,13 +131,11 @@ void *handle_evt(void* ptr)
       //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << endl; 
 
       //std::list<EventClass>::reverse_iterator evt;
-      UInt_t nn=0;
-      for (EvtFrm->d_event=--crs->Levents.end();
-	   EvtFrm->d_event!=--crs->Levents.begin();--EvtFrm->d_event) {
-	nn++;
-	if (nn>2) break;
-      }
-      //EvtFrm->d_event = &(*evt);
+
+      Select_Event();
+      EvtFrm->Tevents.clear();
+      EvtFrm->Tevents.push_back(*EvtFrm->d_event);
+      EvtFrm->d_event=EvtFrm->Tevents.begin();
 
       EvtFrm->DrawEvent2();
       //Emut.UnLock();
@@ -1025,6 +1032,9 @@ int CRS::DoStartStop() {
   if (!b_acq) { //start
     Reset();
 
+    //EvtFrm->Levents = &Levents;
+    EvtFrm->Levents = &EvtFrm->Tevents;
+
     //if (module==32) {
     //Command32(7,0,0,0); //reset usb command
     //}
@@ -1228,6 +1238,7 @@ void CRS::DoFopen(char* oname) {
 
   if (tp) { //adcm raw
     cout << "ADCM RAW File: " << Fname << endl;
+    Fmode=1;
   }
   else {
     UShort_t mod[2];
@@ -1284,6 +1295,8 @@ void CRS::DoFopen(char* oname) {
     if (Fbuf) delete[] Fbuf;
     Fbuf = new UChar_t[opt.buf_size*1024];
 
+    EvtFrm->Levents = &Levents;
+
   }
   //cout << f_raw << endl;
 
@@ -1335,13 +1348,7 @@ int CRS::Do1Buf() {
     //gSystem->Sleep(500);
 
     if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-      UInt_t nn=0;
-      for (EvtFrm->d_event=--crs->Levents.end();
-	   EvtFrm->d_event!=--crs->Levents.begin();--EvtFrm->d_event) {
-	nn++;
-	if (nn>2) break;
-      }
-
+      Select_Event();
       EvtFrm->DrawEvent2();      
     }
     nbuffers++;
