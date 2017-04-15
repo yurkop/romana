@@ -61,8 +61,9 @@ protected:
 
    int ntab; //tab number where eventframe is placed
    int ievent; //current event to be drawn
-   std::list<EventClass1>::iterator d_event;
-   //EventClass1* d_event; //current event
+   std::list<EventClass>::iterator d_event;
+   //std::list<EventClass> *Levents;
+   //EventClass *d_event; //current event to draw
    int ndiv;
    int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
    //int NGr;

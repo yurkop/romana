@@ -44,34 +44,6 @@
 
 #include "libcrs.h"
 
-/*
-
-
-  #include <string.h>
-  #include <errno.h>
-  #include <fcntl.h>
-  #include <TROOT.h>
-  #include <TGClient.h>
-  #include <TH2F.h>
-  #include <TPolyLine.h>
-  #include <TBox.h>
-  #include <TGraph.h>
-  #include <TRandom.h>
-  #include <TGButton.h>
-  #include <TObject.h>
-  #include <TDatime.h>
-  #include <TGResourcePool.h>
-
-  #include <TGButtonGroup.h>
-  #include <TGColorDialog.h>
-  #include <THStack.h>
-
-  #include <TQObject.h>
-
-*/
-
-//TGTextButton *tmp_buf;
-
 const double MB = 1024*1024;
 
 extern CRS* crs;
@@ -104,12 +76,6 @@ char maintitle[180];
 char startdir[180];
 
 const char* ng_name[] = {"gamma","neutrons","tail","other","pileup"};
-
-//unsigned short buf2[BSIZE+BOFFSET];
-
-//unsigned short *buf = NULL;
-//short *signed_buf;
-//unsigned int nbuf;
 
 int idx,idnext;
 Long64_t recd;
@@ -171,12 +137,6 @@ int peaks0[MAX_CH][DSIZE];
 int peak_flag[MAX_CH][DSIZE]; 
 // 0 -undetermined; 2 - gamma; 3 - neutron; 4 - tail; 5 - unknown; 6 - NIM;
 // 11 - bad "left"; 12 - bad "right"; 13 - true pileup; 14 - false pileup
-
-BufClass* Buffer;
-//int nPulses; //number of pulses in the buffer
-//PulseClass *Pulse;
-//int nEvents; //number of Events in the buffer
-//EventClass *Events;
 
 double evmax[MAX_CH];
 
@@ -256,44 +216,6 @@ int main(int argc, char **argv)
 
   bool batch=false;
 
-
-  // unsigned char cc=2;
-  // cc |= p_start;
-  // cout << hex << (int) cc << endl;
-  // cc &= ~p_start;
-  // cout << hex << (int) cc << " " << (int) p_start << " " << (int) ~p_start << endl;
-  // exit(2);
-
-  /*
-  opt.F_start.Set();
-  cout << opt.F_start.AsSQLString() << endl;
-  opt.F_start.Print();
-
-  TTimeStamp t1 = TTimeStamp();
-  gSystem->Sleep(1550);
-  TTimeStamp t2 = TTimeStamp();
-
-  Double_t dt = t2.GetSec()-t1.GetSec()+(t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
-
-  t1.Print();
-  t2.Print();
-  //t3.Print();
-
-
-  cout << t1.GetDate(false) << " " << t1.GetTime(false) << " " << t1.GetSec() << " " << t1.GetNanoSec() << endl;
-
-  char tstr[64];
-  time_t tt = t1.GetSec();
-  struct tm *ptm = localtime(&tt);
-
-  strftime(tstr,sizeof(tstr),"%F %T",ptm);
-
-  cout << tstr << " " << dt << endl;
-
-  exit(1);
-  */
-
-
   struct sigaction sigIntHandler;
   sigIntHandler.sa_handler = ctrl_c_handler;
   sigemptyset(&sigIntHandler.sa_mask);
@@ -302,22 +224,9 @@ int main(int argc, char **argv)
 
 
   cout << "sizeof(TDatime): " << sizeof(TDatime) << endl;
-  cout << "sizeof(PulseClass): " << sizeof(PulseClass) << endl;
   cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
   cout << "sizeof(opt): " << sizeof(opt) << endl;
   
-  //std::set_new_handler(out_of_memory);
-
-  //for (int i=0;i<100000;i++) {
-  //int *ttr = new int[900000000];
-  //}
-
-  /*
-    if (argc < 2) {
-    printf("usage: %s infile\n",argv[0]);
-    exit(-1);
-    }
-  */
 
 #ifdef LINUX
   if (getcwd(startdir,100)) {}
@@ -326,29 +235,11 @@ int main(int argc, char **argv)
 #endif
   //cout << "startdir: " << startdir << endl;
 
-  /*
-    for (int i=0;i<DSIZE;i++) {
-    xgr[i]=i;
-    }
-  */
-
   strcpy(pr_name,argv[0]);
-
-  //strcat(pr_name," v.");
-  //strcat(pr_name,SVNVERSION);
-
-  //strcpy(pr_name,"asdfsadf Превед");
 
   strcpy(maintitle,pr_name);
 
   int argnn=1;
-
-  /*
-    crs = new CRS();
-    crs->Detect_device();
-    crs->parm.threshold[0]=50;
-    crs->parm.threshold[1]=50;
-  */
 
   //strcpy(fname," ");
   if (argc > 1) {
@@ -377,7 +268,7 @@ int main(int argc, char **argv)
   }
 
   greset();
-  int nf = Buffer->NewFile();
+  int nf = 0;//YK - ?? Buffer->NewFile();
 
   if (batch && nf) {
     return -1;
@@ -416,8 +307,6 @@ int main(int argc, char **argv)
   //gClient->GetColorByName("yellow", yellow);
   theApp.Run();
   //return 0;
-
-  delete Buffer;
 
   //fclose(fp);
   //gzclose(fp);
@@ -768,9 +657,6 @@ void greset() { //global reset
 
   //if (buf) delete[] buf;
   //buf = new unsigned short[opt.rBSIZE];
-
-  if (Buffer) delete Buffer;
-  Buffer = new BufClass();//opt.EBufsize);
 
   //nEvents=0;
 
@@ -2870,6 +2756,7 @@ void MainFrame::UpdateStatus() {
 
 void MainFrame::DoAllevents() {
 
+  /*
   if (bRun) return;
   bRun=true;
 
@@ -2877,23 +2764,6 @@ void MainFrame::DoAllevents() {
     bRun=false;
     return;
   }
-
-  /*
-    int ret=0;
-    while (nextevent() && bRun) {
-    if (analyze()==11)
-    break;
-    if (! (nevent % 1000)) {
-    UpdateStatus();
-    gSystem->ProcessEvents();
-    }
-
-    if (opt.num_events > 99999) {
-    if (nevent % (int) opt.num_events == 0) {
-    DoDraw();
-    }
-    }
-    }
   */
 
   for (int j=0;j<24;j++) {
@@ -2901,9 +2771,8 @@ void MainFrame::DoAllevents() {
     //cout << "Integr: " 
   }
 
-  Long64_t nbytes = (recd-Buffer->r_buf+idx)*2;
-
-  cout << "Bytes analyzed: " << nbytes << endl;
+  //Long64_t nbytes = (recd-Buffer->r_buf+idx)*2;
+  //cout << "Bytes analyzed: " << nbytes << endl;
 
   //printf("Bytes analyzed: %d\n",nbytes);
   
@@ -2920,25 +2789,14 @@ void MainFrame::DoFindBeam() {
   if (bRun) return;
   bRun=true;
 
+  /*
   if (!Buffer->gzF || !Buffer->r_buf) {
     //if (!fp) {
     bRun=false;
     return;
   }
-  /*
-    while (nextevent() && bRun) {
-    int aaa=analyze();
-    if (aaa==11)
-    break;
-    if (aaa==2) {
-    break;
-    }
-    if (! (nevent % 1000)) {
-    UpdateStatus();
-    gSystem->ProcessEvents();
-    }
-    } 
   */
+
   UpdateStatus();
 
   DoDraw();
@@ -2951,25 +2809,12 @@ void MainFrame::DoChkPoint() {
 
   if (bRun) return;
   bRun=true;
-
+  /*
   if (!Buffer->gzF || !Buffer->r_buf) {
     //if (!fp) {
     bRun=false;
     return;
   }
-  /*
-    while (nextevent() && bRun) {
-    int aaa=analyze();
-    if (aaa==11)
-    break;
-    if (aaa==7) {
-    break;
-    }
-    if (! (nevent % 1000)) {
-    UpdateStatus();
-    gSystem->ProcessEvents();
-    }
-    } 
   */
   UpdateStatus();
   DoDraw();
@@ -3532,16 +3377,10 @@ void fitpeak(TH1* hh, double ww) {
 
 void allevents() {
 
+  /*
   if (!Buffer->gzF || !Buffer->r_buf) {
     return;
   }
-
-  //int ret=0;
-  /*
-    while (nextevent()) {
-    if (analyze()==11)
-    break;
-    }
   */
 }
 
@@ -3609,367 +3448,6 @@ void dumpevent()
 }
 
 //-----------------------------
-
-EventClass::EventClass() {
-  nEpulses=0;
-  Tstamp64=0;
-}
-
-EventClass::~EventClass() {
-  //for (int i=0;i<nEpulses;i++) {
-  //delete Epulses[i];
-  //}
-}
-
-void EventClass::Clear() {
-  nEpulses=0;
-  Epulses.clear();
-  //Tstamp64=1e18;
-}
-//-----------------------------
-
-BufClass::BufClass() {
-  gzF=0;
-  r_buf=0;
-  nEbuf=0;
-  nev=0;
-  EoF = false;
-  Bevents = NULL;
-  //Bevents = new EventClass[size];
-  //iPulse = new PulseClass(maxsamp);//NULL
-  iPulse = NULL;
-  istamp64=0;
-  uBuf2 = new unsigned short[opt.rBSIZE*2];
-  uBuf = uBuf2+opt.rBSIZE;
-}
-
-BufClass::~BufClass() {
-  //cout << "delete buffer 1" << endl;
-  gzclose(gzF);
-  if (Bevents) delete[] Bevents;
-  //cout << "delete buffer 2: " << iPulse << endl;
-  //if (iPulse) 
-  delete iPulse;
-  //cout << "delete buffer 3" << endl;
-  delete uBuf2;  
-}
-
-void BufClass::Do1buf() {
-  if (!EoF) {
-    if (Bevents) delete[] Bevents;
-    Bevents = new EventClass[opt.EBufsize];
-    //LoadBuf_adc2();
-    nEbuf++;
-  }
-}
-
-void BufClass::AddFirstPulse() { //nev=0 at this point
-
-  //printf("Addfirstpulse: %d %lld\n",
-  //	 nev,iPulse->Tstamp64);
-
-  Bevents->Epulses.push_back(iPulse);
-  Bevents->nEpulses=Bevents->Epulses.size();
-  Bevents->Tstamp64=iPulse->Tstamp64;
-  //iPulse = new PulseClass();
-
-}
-/*
-  void BufClass::AddPulse_old() {
-
-  EventClass* event = Bevents+nev;
-
-  Long64_t dt = iPulse->Tstamp64 - event->Tstamp64;
-
-  //printf("Addpulse: %d %lld %lld %lld\n",
-  // nev,iPulse->Tstamp64,event->Tstamp64,dt);
-
-  if (abs(dt)<opt.tgate1/opt.period) {// coincidence -> add it to the current event
-  iPulse->tdif = iPulse->Tstamp64 - event->Tstamp64;
-  event->Epulses.push_back(iPulse);
-  event->nEpulses=event->Epulses.size();
-  //iPulse = new PulseClass(maxsamp);
-  }
-  else { //this is the first pulse
-  nev++;
-  if (nev<opt.EBufsize) {
-  event = Bevents+nev;
-  event->Tstamp64=iPulse->Tstamp64;
-  event->Epulses.push_back(iPulse);
-  event->nEpulses=event->Epulses.size();
-  //iPulse = new PulseClass(maxsamp);
-  }
-  }
-
-  }
-*/
-void BufClass::AddPulse() {
-
-  EventClass* event = Bevents+nev;
-
-  Long64_t dt = iPulse->Tstamp64 - event->Tstamp64;
-
-  //printf("Addpulse: %d %lld %lld %lld\n",
-  // nev,iPulse->Tstamp64,event->Tstamp64,dt);
-
-  if (abs(dt)<opt.tgate1/opt.period) {// coincidence -> add it to the current event
-    iPulse->tdif = iPulse->Tstamp64 - event->Tstamp64;
-    event->Epulses.push_back(iPulse);
-    event->nEpulses=event->Epulses.size();
-    //iPulse = new PulseClass(maxsamp);
-  }
-  else { //this is the first pulse
-    nev++;
-    if (nev<opt.EBufsize) {
-      event = Bevents+nev;
-      event->Tstamp64=iPulse->Tstamp64;
-      event->Epulses.push_back(iPulse);
-      event->nEpulses=event->Epulses.size();
-      //iPulse = new PulseClass(maxsamp);
-    }
-  }
-
-}
-
-/*
-  void BufClass::ChangeSize(int size) {
-  delete[] Bevents;
-  Bevents = new EventClass[size];
-  }
-*/
-
-/*
-  void BufClass::ReadHeader()
-  // reads file header, and first data word
-  {
-  if (ReadBuf()) {
-  EoF = true;
-  }
-  else {
-  idx = 0;
-  unsigned short uword = uBuf[idx];
-  idx++;
-  istamp64 = uword & 0xFFF;
-  }
-  }
-*/
-
-
-/*
-  int BufClass::ReadPulse()
-  // read one pulse from file
-  {
-
-  //static unsigned short uword;
-  short data;
-  //static unsigned short count = 0;
-  //static unsigned short last_count = 0;
-
-  //iPulse = new PulseClass(maxsamp); 
-  iPulse->Tstamp64=istamp64;
-
-  while (true) {
-
-  if (idx>=r_buf) idx=0;
-  if (idx==0) {
-  if (ReadBuf()) {
-  printf("ReadPulse: eof: %d %d\n",idx,r_buf);
-  EoF = true;
-  return 0; //YK????? это конец файла. что делать в конце?
-  }
-  }
-
-  unsigned short uword = uBuf[idx];
-  idx++;
-
-  //int nch = (uword & (0x8000))>>15;
-  unsigned short type = (uword & (0x7000))>>12;
-  //last_count = count;
-
-  if (type==0) { //this is a new pulse
-  istamp64=uword & 0xFFF;
-  break;
-  }
-  else if (type<4) {
-  Long64_t t64 = uword & 0xFFF;
-  iPulse->Tstamp64+= (t64 << type*12);
-  }
-  else if (type==4) {
-  iPulse->Count=uword & 0xFFF;
-  iPulse->Chan=(uword & (0x8000))>>15;
-  }
-  else if (type==5) {
-  data=uword & 0xFFF;
-  data<<=5;
-  data>>=5;
-  if (opt.chinv[iPulse->Chan]) {
-  iPulse->sData[iPulse->Nsamp++]=-data;
-  //Event[mult][num++]=-data;
-  }
-  else {
-  iPulse->sData[iPulse->Nsamp++]=data;
-  //Event[mult][num++]=data;
-  }
-
-  if (iPulse->Nsamp > maxsamp) {
-  cout << "Nsamp > maxsamp: " << iPulse->Nsamp << " " << nevent << endl;
-  return 1;
-  }
-
-  }
-  else {
-  cout << "wrong type: " << type << endl;
-  return 2;
-  }
-
-  } //while
-
-  //cout << "Readpulse: " << iPulse->Tstamp64 << " " << nevent << endl;
-
-  iPulse->Analyze();
-
-  return 0;
-
-  }
-*/
-
-
-/*
-
-  void BufClass::LoadBuf_adc2()
-  //convert raw buffer to Pulses[] buffer
-  // ???? calls analyze for each Pulse
-  {
-  //int starts[BSIZE/4];
-
-  //unsigned int* ibuf;
-
-  //PulseClass *pulse = NULL;
-
-  //static unsigned short count = 0;
-  //static unsigned short last_count = 0;
-  //static int num=0;
-  //  short data;
-
-  //nevent=0; //current event in anabuf !YK: should change it to local variable
-
-  //idx points to the 1st word in the buffer
-
-  nev=0;
-  AddFirstPulse(); //add pulse from previous buffer (no check for coincidence)
-
-  while (nev<opt.EBufsize && !EoF) {
-
-  if (ReadPulse()) {
-  cout << "bad pulse" << endl;
-  }
-  else {
-  AddPulse();
-  }
-  //printf("Loadbuf: %d\n",nev);
-  }
-
-  //return 1;
-
-  } //Loadbuf_adc2
-
-*/
-
-void BufClass::LoadBuf_crs()
-//convert raw buffer to Pulses[] buffer
-// ???? calls analyze for each Pulse
-{
-  //int starts[BSIZE/4];
-
-  //unsigned int* ibuf;
-
-  //PulseClass *pulse = NULL;
-
-  //static unsigned short count = 0;
-  //static unsigned short last_count = 0;
-  //static int num=0;
-  //  short data;
-
-  //nevent=0; //current event in anabuf !YK: should change it to local variable
-
-  //idx points to the 1st word in the buffer
-
-  nev=0;
-  AddFirstPulse(); //add pulse from previous buffer (no check for coincidence)
-
-  while (nev<opt.EBufsize && !EoF) {
-
-    /* YK
-       if (ReadPulse()) {
-       cout << "bad pulse" << endl;
-       }
-       else {
-       AddPulse();
-       }
-    */
-    //printf("Loadbuf: %d\n",nev);
-  }
-
-  //return 1;
-
-} //Loadbuf_adc2
-
-int BufClass::NewFile() // 0 - good file; 1 - end of file / bad file
-{
-
-  if (gzF != 0) {
-    //fclose(fp);
-    gzclose(gzF);
-  }
-  gzF=gzopen(fname,"rb");
-  //ReadHeader();
-  //ReadPulse();
-
-  Long_t id;
-  Long64_t size;
-  Long_t flags;
-  Long_t modtime;
-
-  // gSystem->GetPathInfo(fname, &id, &size, &flags, &modtime);
-  // opt.F_stop.Set(modtime);
-  // cout << "NewFile:" << endl;
-  // opt.F_stop.Print();
-  // gStyle->SetTimeOffset(opt.F_start.Convert(false));
-
-  if (gzF==0) {
-    printf("Can't open file %s\n",fname);
-  }
-
-  if (b_tree) {
-    newtree(fname);
-  }
-
-  return 0;
-
-}
-
-int BufClass::ReadBuf() {
-  if (gzF) {
-    //r_buf=fread(buf,sizeof(short),BSIZE,fp);
-    r_buf=gzread(gzF,uBuf,sizeof(short)*opt.rBSIZE)/2;
-  }
-  else {
-    r_buf=0;
-  }
-
-  //dumpbuf(1024);
-
-  if (r_buf == 0) {
-    return 1;
-  }
-  else {
-    recd+=r_buf;
-    //nbuf++;
-    return 0;
-  }
-}
-
-//-----------------------------
 //#############################################
 // END
 //
@@ -3979,7 +3457,7 @@ int BufClass::ReadBuf() {
 //
 //
 
-void FillHist(EventClass1* evt) {
+void FillHist(EventClass* evt) {
   //cout << "fillhist" << endl;
   double DT = opt.period*1e-9;
 

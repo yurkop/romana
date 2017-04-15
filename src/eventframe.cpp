@@ -15,7 +15,7 @@ TLine ln1;
 
 extern Toptions opt;
 extern MyMainFrame *myM;
-extern BufClass* Buffer;
+//extern BufClass* Buffer;
 
 extern CRS* crs;
 extern ParParDlg *parpar;
@@ -44,6 +44,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 {
 
   d_event = crs->Levents.begin();
+  //d_event = new EventClass();
   //Emut = new TMutex();
 
   for (int i=0;i<3;i++) {
@@ -537,7 +538,7 @@ void EventFrame::FillHist(int dr) {
     int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
     //cout << "Dt: " << i << " " << d_event->T << " " << dt
     // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
-    PulseClass2 *pulse = &d_event->pulses.at(i);
+    PulseClass *pulse = &d_event->pulses.at(i);
     UInt_t ch= pulse->Chan;
 
     if (dr==0) {
@@ -671,7 +672,7 @@ void EventFrame::DrawPeaks(double y1,double y2) {
     int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
     //cout << "Dt: " << i << " " << d_event->T << " " << dt
     // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
-    PulseClass2 *pulse = &d_event->pulses.at(i);
+    PulseClass *pulse = &d_event->pulses.at(i);
     //UInt_t ch= pulse->Chan;
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];

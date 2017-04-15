@@ -121,7 +121,7 @@ void *handle_evt(void* ptr)
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
       //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << endl; 
 
-      //std::list<EventClass1>::reverse_iterator evt;
+      //std::list<EventClass>::reverse_iterator evt;
       UInt_t nn=0;
       for (EvtFrm->d_event=--crs->Levents.end();
 	   EvtFrm->d_event!=--crs->Levents.begin();--EvtFrm->d_event) {
@@ -278,55 +278,6 @@ CRS::CRS() {
     exit(1);
   */
 
-  /*
-    MemInfo_t mem;
-    gSystem->GetMemInfo(&mem);
-    cout << mem.fMemFree << endl;
-
-    PulseClass *pp[1000];
-
-  
-    for (int i=0;i<100;i++) {
-    pp[i] = new PulseClass(1000000000);
-    //pp[i]->sData = new Float_t[1000000000];
-    //pp[i]->sData = (Float_t*) malloc(sizeof(Float_t)*100000000);
-    gSystem->Sleep(150);
-    cout << i << " " << mallinfo().fordblks
-    << " " << mallinfo().uordblks
-    << " " << mallinfo().usmblks
-    << " " << mallinfo().fsmblks
-    << endl;
-    //malloc_stats();
-    //gSystem->GetMemInfo(&mem);
-    //cout << i << " " << mem.fMemFree << endl;
-    }
-
-    gSystem->Sleep(5000);
-    exit(-1);
-  */
-
-
-
-
-
-  
-  /*
-    int nbuf=0;
-    PulseClass pp = PulseClass();
-    cout << "tdif1: " << pp.tdif << endl;
-
-    std::vector<PulseClass> *vv = Vpulses+nbuf;
-    vv->clear();
-
-    for (int i=0;i<1000000000;i++) {
-    vv->push_back(PulseClass());
-    PulseClass *ipp = &vv->back();
-    //cout << "tdif2: " << i << " " << ipp->tdif << " " << ipp->sData << endl;
-    }
-
-    exit(-1);
-  */
-
 
   for (int i=0;i<MAXTRANS;i++)
     cond[i]=new TCondition(0);
@@ -334,9 +285,6 @@ CRS::CRS() {
   f_raw=0;
   f_dec=0;
   Fbuf=NULL;
-
-  BPulses=NULL;
-  BEvents=NULL;
 
   strcpy(Fname," ");
   Reset();
@@ -362,20 +310,6 @@ CRS::CRS() {
     buftr[i]=NULL;
   }
 
-  //Connect("PEvent()", "EventFrame", EvtFrm, "DrawEvent2()");
-  //Connect("SigEvent()", "CRS", this, "Make_Event()");
-  //Connect("PEvent()", "CRS", this, "ShowEvent()");
-
-  //Connect("Created()", "CRS", this, "Welcome()");
-  //Created();
-
-  //parm = MODPAR();
-
-  //cout << "threshold0: " << parm.threshold[0] << endl;
-  //cout << "threshold0: " << opt.threshold[0] << endl;
-
-  //pulse = new CRSPulse();
-
 }
 
 CRS::~CRS() {
@@ -385,13 +319,6 @@ CRS::~CRS() {
     DoStartStop();
     }
   */
-
-
-  if (BPulses)
-    delete[] BPulses;
-
-  if (BEvents)
-    delete[] BEvents;
 
   //if (opt.raw_write) {
   //gzclose(f_raw);
@@ -1236,24 +1163,6 @@ void CRS::Reset() {
   nvp=0;
   Levents.clear();
 
-  /*
-  BP_len=10000;
-  BP_save = BP_len/10;
-  iBP=0;
-  if (BPulses)
-    delete[] BPulses;
-  BPulses = new PulseClass[BP_len];
-
-  EV_len=10000;
-  EV_draw = EV_len/10;
-
-  if (BEvents)
-    delete[] BEvents;
-  BEvents = new EventClass[EV_len];
-  iEV=0;
-  pul1a=0;
-  */
-
   npulses=0;
   nevents=0;
   nbuffers=0;
@@ -1465,20 +1374,20 @@ void CRS::DoNBuf() {
 
 void CRS::Decode32(UChar_t *buffer, int length) {
 
-  PulseClass2 *ipp;
+  PulseClass *ipp;
 
   ULong64_t* buf8 = (ULong64_t*) buffer;
   //unsigned char* buf1 = (unsigned char*) buf8;
   //int nbuf = *(int*) transfer->user_data;
 
-  std::vector<PulseClass2> *vv = Vpulses+nvp;
+  std::vector<PulseClass> *vv = Vpulses+nvp;
   vv->clear();
 
   int nvp2=nvp-1;
   if (nvp2<0) nvp2=ntrans-1;
 
   if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
-    vv->push_back(PulseClass2());
+    vv->push_back(PulseClass());
     npulses++;
     ipp = &vv->back();
     ipp->Chan = buffer[7];
@@ -1527,7 +1436,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 	//}
 
 	ipp->ptype&=~P_NOSTOP; //pulse has stop
-	vv->push_back(PulseClass2());
+	vv->push_back(PulseClass());
 	npulses++;
 	ipp = &vv->back();
       }
@@ -1580,36 +1489,9 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     idx1=idx8*8;
   }
 
-  /*
-  if (nbuffers <= 5) {
-    std::vector<PulseClass2>::iterator newpulse;
-    std::vector<PulseClass2>::iterator p0=vv->begin();
 
-    std::vector<PulseClass2> *vv2 = Vpulses+nvp2;
-
-    cout << "nbuf:" << nbuf << endl;
-
-    //if (!vv2->empty()) vv2->back().PrintPulse();
-    //vv->front().PrintPulse();
-    //vv->at(1).PrintPulse();
-    //vv->at(2).PrintPulse();
-    //vv->back().PrintPulse();
-    for (newpulse=p0; newpulse != vv->end(); ++newpulse) {
-      //cout << nbuf << " ";
-      newpulse->PrintPulse();
-    }
-  }
-  */
-
-  //return;
-  //cond[nvp]->Signal();
-
-  //Fill_Tail(nvp);
   Make_Events(nvp);
   
-  //nvp++;
-  //if (nvp>=ntrans) nvp=0;
-  //nvp = (nvp+1)%ntrans;
 }
 
 //-------------------------------------
@@ -1683,19 +1565,19 @@ void CRS::AllParameters2()
 
  void CRS::Decode2(UChar_t* buffer, int length) {
 
-  PulseClass2 *ipp;
+  PulseClass *ipp;
 
   unsigned short* buf2 = (unsigned short*) buffer;
   //int nbuf = *(int*) transfer->user_data;
 
-  std::vector<PulseClass2> *vv = Vpulses+nvp;
+  std::vector<PulseClass> *vv = Vpulses+nvp;
   vv->clear();
 
   int nvp2=nvp-1;
   if (nvp2<0) nvp2=ntrans-1;
 
   if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
-    vv->push_back(PulseClass2());
+    vv->push_back(PulseClass());
     npulses++;
     ipp = &vv->back();
     ipp->Chan = ((*buf2) & 0x8000)>>15;
@@ -1732,7 +1614,7 @@ void CRS::AllParameters2()
       //For the first record new pulse is already created at the beginning
       if (idx2) {
 	ipp->ptype&=~P_NOSTOP; //pulse has stop
-	vv->push_back(PulseClass2());
+	vv->push_back(PulseClass());
 	npulses++;
 	ipp = &vv->back();
       }
@@ -1782,6 +1664,7 @@ void CRS::AllParameters2()
 
 //-------------------------------
 
+/*
 void CRS::PrintPulse(int udata, bool pdata) {
 
   printf("Pulse: %d %d %lld %d %lld %d %lld\n",
@@ -1795,8 +1678,9 @@ void CRS::PrintPulse(int udata, bool pdata) {
   }
 
 }
+*/
 
-void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
+void CRS::Event_Insert_Pulse(PulseClass *newpulse) {
 
   //if (nbuffers < 1) {
   //newpulse->PrintPulse();
@@ -1805,13 +1689,13 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
   newpulse->FindPeaks();
   newpulse->PeakAna();
 
-  std::list<EventClass1>::reverse_iterator rl;
+  std::list<EventClass>::reverse_iterator rl;
   int nn=0;
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
     Long64_t dt = newpulse->Tstamp64 - rl->T;
     if (dt > opt.tgate1) {
       //add new event at the current position of the eventlist
-      Levents.insert(rl.base(),EventClass1());
+      Levents.insert(rl.base(),EventClass());
       nevents++;
       rl->Pulse_Ana_Add(newpulse);
       if (debug && nn>10)
@@ -1836,7 +1720,7 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
   if (debug) 
     cout << "beginning" << endl;
   //add new event at the beginning of the eventlist
-  Levents.insert(Levents.begin(),EventClass1());
+  Levents.insert(Levents.begin(),EventClass());
   nevents++;
   Levents.begin()->Pulse_Ana_Add(newpulse);
 
@@ -1844,13 +1728,13 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
 
 void CRS::Make_Events(int nvp) {
 
-  std::vector<PulseClass2>::iterator newpulse;
+  std::vector<PulseClass>::iterator newpulse;
 
   int nvp2=nvp-1;
   if (nvp2<0) nvp2=ntrans-1;
 
   //first insert last pulse from the previous buffer
-  std::vector<PulseClass2> *vv = Vpulses+nvp2;
+  std::vector<PulseClass> *vv = Vpulses+nvp2;
   if (!vv->empty() && vv->back().ptype&P_NOSTOP) {
     //cout << "Make_events: " << (int) newpulse->ptype << " " << newpulse->Tstamp64 << endl;
     //vv->back().FindPeaks();
@@ -1864,44 +1748,17 @@ void CRS::Make_Events(int nvp) {
 
   if (vv->size()<=1) return; //if vv contains 0 or 1 event, don't analyze it 
 
-  //std::vector<PulseClass2>::iterator p1=vv->begin();
-  //std::vector<PulseClass2>::iterator p2=vv->end();
-  //--p2;
-
   for (newpulse=vv->begin(); newpulse != --vv->end(); ++newpulse) {
     if (!(newpulse->ptype&P_NOSTOP)) {
       //newpulse->FindPeaks();
       //newpulse->PeakAna();
       Event_Insert_Pulse(&(*newpulse));
-
-      // cout << "Make_Events: " << Levents.size()
-      // 	 << " " << Levents.back().pulses.size()
-      // 	 << " " << Levents.back().T
-      // 	 << endl;
     }
   }
-
-  //myM->DoStartStop();
-  //cout << "here3" << endl;
-
-  /*
-  int i=0;
-  if (nbuffers == 5) {
-    cout << "------------------- Levents.size: " << Levents.size() << endl;
-    std::list<EventClass1>::iterator rl;
-    for (rl=Levents.begin(); rl!=Levents.end(); ++rl) {
-      cout << "Event: " << i << " " << rl->pulses.size() << " " << rl->T << endl;
-      //for (int j=0;j<rl->pulses.size();j++) {
-      //rl->pulses.at(j).PrintPulse();
-      //}
-      i++;
-    }
-  }
-  */
 
   //YK don't understand why this is needed...
   //-----------
-  std::list<EventClass1>::reverse_iterator evt;
+  std::list<EventClass>::reverse_iterator evt;
   UInt_t nn=0;
   for (evt=crs->Levents.rbegin();evt!=crs->Levents.rend();evt++) {
     nn++;
@@ -1916,8 +1773,8 @@ void CRS::Make_Events(int nvp) {
   if ((int) Levents.size()>opt.ev_max) {
     //cout << "Size1: " << Levents.size() << " " << opt.ev_max-opt.ev_min << endl;
     Int_t nn=0;
-    std::list<EventClass1>::iterator rl;
-    std::list<EventClass1>::iterator next;
+    std::list<EventClass>::iterator rl;
+    std::list<EventClass>::iterator next;
 
     for (rl=Levents.begin(); rl!=Levents.end(); rl=next) {
       next = rl;
@@ -1932,57 +1789,5 @@ void CRS::Make_Events(int nvp) {
     }
     //cout << "Make_Events Size2: " << Levents.size() << endl;
   }
-
-}
-
-/*
-  void CRS::Make_Event() {
-
-  EventClass* event;
-  PulseClass* ip1;
-  int ii=pul1;
-
-  do {
-  ip1 = (BPulses+ii);
-  event = BEvents+iEV;
-
-  Long64_t dt = ip1->Tstamp64 - event->Tstamp64;
-
-  //if (abs(dt)<opt.tgate1/opt.period) {// coincidence -> add it to the current event
-  if (abs(dt)<100) {// coincidence -> add it to the current event
-  ip1->tdif = ip1->Tstamp64 - event->Tstamp64;
-  event->Epulses.push_back(ip1);
-  event->nEpulses=event->Epulses.size();
-  //ip1 = new PulseClass(maxsamp);
-  }
-  else { // new event
-  iEV++;
-  if (iEV>=EV_len) {
-  iEV=0;
-  }
-
-  event = BEvents+iEV;
-  event->Clear();
-  event->Tstamp64=ip1->Tstamp64;
-  event->Epulses.push_back(ip1);
-  event->nEpulses=event->Epulses.size();
-  //ip1 = new PulseClass(maxsamp);
-  }
-  ii++;
-  if (ii>=BP_len) {
-  ii=0;
-  }
-  } while (ii!=pul2);
-
-  //printf("Make_Event: %d %d %d pul2=%d %d %d\n",iEV,iBP,pul1,pul2,ii,pul1a);
-
-  //PEvent();
-
-  }
-*/
-void CRS::ShowEvent() {
-
-  printf("Show: %d %lld %d %lld %d %lld\n",
-	 iBP,npulses,ipp->Chan,ipp->Counter,ipp->Nsamp,ipp->Tstamp64);
 
 }

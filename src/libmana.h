@@ -64,7 +64,7 @@ void mkstart();
 void mktof();
 void peaktime(int ch, double* dat, int method, int twin);
 
-void FillHist(EventClass1* evt);
+void FillHist(EventClass* evt);
 
 typedef struct {
 

@@ -6,7 +6,7 @@ extern Toptions opt;
 
 using namespace std;
 
-PulseClass2::PulseClass2() {
+PulseClass::PulseClass() {
   ptype=P_NOSTOP;
   //Nsamp=0;
   //Npeaks=0;
@@ -18,7 +18,7 @@ PulseClass2::PulseClass2() {
   //Peaks=NULL;
 }
 
-void PulseClass2::FindPeaks() {
+void PulseClass::FindPeaks() {
   // always K-th derivative (D) is used
   // T1 - D>0, D(-1)<=0 (left zero-crossing of D)
   // T2 - D<=0, d(-1)>0 (right zero-crossing of D)
@@ -104,7 +104,7 @@ void PulseClass2::FindPeaks() {
 
 //-----------------------------
 
-void PulseClass2::PeakAna() {
+void PulseClass::PeakAna() {
 
   for (UInt_t i=0;i<Peaks.size();i++) {
     peak_type *pk = &Peaks[i];
@@ -199,12 +199,12 @@ void PulseClass2::PeakAna() {
 
 }
 
-EventClass1::EventClass1() {
+EventClass::EventClass() {
   T=0;
   T0=0;
 }
 
-void EventClass1::Pulse_Ana_Add(PulseClass2 *newpulse) {
+void EventClass::Pulse_Ana_Add(PulseClass *newpulse) {
   pulses.push_back(*newpulse);
 
   if (T==0 || newpulse->Tstamp64 < T) {
@@ -221,185 +221,7 @@ void EventClass1::Pulse_Ana_Add(PulseClass2 *newpulse) {
   }
 }
 
-//---------------------------------------
-PulseClass::PulseClass() {
-  ptype=0;
-  Nsamp=0;
-  Npeaks=0;
-  Analyzed=false;
-  Tstamp64=0;
-  //Data=NULL;
-  //sData = new Float_t[size];
-  Control=0;
-  sData = NULL;
-  tdif=99;
-  //sData=NULL;
-  Peaks=NULL;
-}
-
-PulseClass::PulseClass(ULong64_t size) {
-  ptype=0;
-  Nsamp=0;
-  Npeaks=0;
-  Analyzed=false;
-  Tstamp64=0;
-  //Data=NULL;
-  sData = new Float_t[size];
-  Control=0;
-  //sData = NULL;
-  tdif=99;
-  //sData=NULL;
-  Peaks=NULL;
-}
-
-PulseClass::~PulseClass() {
-  /*
-    if (Data) {
-    //cout << "deleting Data" << endl;
-    delete[] Data;
-    }
-  */
-  /*
-    if (sData)
-    //cout << "delete pulse: " << sData << endl;
-    delete[] sData;
-    if (Peaks)
-    delete[] Peaks;
-  */
-}
-
-void PulseClass::Analyze() {
-
-  //cout << "PulseClass::Analyze" << endl;
-
-  if (opt.nsmoo[Chan]) {
-    Smooth(opt.nsmoo[Chan]);
-  }
-
-  //FindPeaks(opt.ng_thresh,0);
-  //PeakAna();
-
-  switch (Chan) {
-  case ch_gam:
-    //findpeaks_gam(Chan, Nsamp, sData);
-    //peaktime(Chan,sData,opt.gam_timing,opt.gam_twin);
-    break;
-  case ch_ng:
-    break;
-  case ch_nim:
-    //findpeaks_ng(ch,NSamp, sEvent[i]);
-    //peaktime(ch,sEvent[i],opt.ng_timing,opt.ng_twin);
-    break;
-  }
-
-}
-
-void PulseClass::FindPeaks(Float_t thresh, int deadtime) {
-  // always first derivative is used
-  // peak is the first maximum in deriv, above the threshold
-  // if deadtime=0 - next peak is searched only after deriv crosses zero
-  // if deadtime!=0 - next peak is searched after 
-  // N=deadtime samples from the previous peak
-
-  Npeaks=0;
-  bool in_peak=false;
-  Float_t dif[DSIZE];
-  int peakpos[DSIZE];
-  int jmax=0;
-
-  dif[0]=0;
-  for (int j=1;j<Nsamp;j++) {
-    dif[j]=sData[j]-sData[j-1];
-    if (!in_peak) {
-      if (dif[j] >= thresh) {
-	in_peak=true;
-	//printf("in_peak: %d %d %f %f\n",Chan,j,dif[j],thresh);
-	continue;
-      }
-    }
-    else { //in_peak
-      if (!jmax && dif[j]<dif[j-1]) {//first maximum of dif -> peak position
-	peakpos[Npeaks]=jmax=j-1;
-	Npeaks++;
-	if (deadtime) {
-	  j+=deadtime;
-	  in_peak=false;
-	  continue;
-	}
-      }
-      if (dif[j]<0) { //zero crossing -> end of the peak
-	in_peak=false;
-	jmax=0;
-      }
-    }
-  }
-
-  Peaks = new peak_type[Npeaks];
-  for (int i=0;i<Npeaks;i++) {
-    Peaks[i].Pos = peakpos[i];
-  }
-
-  //printf("FindPeaks: %d\n",Npeaks);
-
-}
-
 /*
-  void PulseClass::PeakAna() {
-
-  for (int i=0;i<Npeaks;i++) {
-  //determine exact time
-  //1st deriv
-  Float_t mean1=0,sum1=0;
-  for (int j=Peaks[i].Pos+1;j<Nsamp;j++) {
-  Float_t dif=sData[j]-sData[j-1];
-  if (dif<=0) {
-  break;
-  }
-  mean1+=dif*j;
-  sum1+=dif;
-  }
-  for (int j=Peaks[i].Pos;j>0;j--) {
-  Float_t dif=sData[j]-sData[j-1];
-  if (opt.ng_twin) {
-  if (Peaks[i].Pos - j > opt.ng_twin) {
-  break;
-  }
-  }
-  else {
-  if (dif<=0) {
-  break;
-  }
-  }
-  mean1+=dif*j;
-  sum1+=dif;
-  }
-  Peaks[i].Time=mean1/sum1;
-
-  //2nd deriv
-  Float_t mean2=0,sum2=0;
-  for (int j=Peaks[i].Pos;j>1;j--) {
-  Float_t dif=sData[j]-2*sData[j-1]+sData[j-2];
-  if (opt.ng_twin) {
-  if (Peaks[i].Pos - j > opt.ng_twin) {
-  break;
-  }
-  }
-  else {
-  if (dif<=0) {
-  break;
-  }
-  }
-  mean2+=dif*j;
-  sum2+=dif;
-  }
-  Peaks[i].Time2=mean2/sum2;
-
-  printf("Peak Time: %d %f %f\n",i,Peaks[i].Time,Peaks[i].Time2);
-
-  }
-
-  }
-*/
 void PulseClass::Smooth(int nn) {
 
   //sData = new double[nsamp];
@@ -429,7 +251,8 @@ void PulseClass::Smooth(int nn) {
   }
 
 }
+*/
 
-void PulseClass2::PrintPulse() {
+void PulseClass::PrintPulse() {
   printf("Pulse: %2d %2d %6ld %10lld %10lld\n",Chan,ptype,sData.size(),Counter,Tstamp64);
 }

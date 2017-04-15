@@ -64,7 +64,7 @@ const unsigned char P_BADCNT=16;
 // It may (or may not) contain raw data (oscillogram)
 // It may (or may not) contain peaks
 
-class PulseClass2 {
+class PulseClass {
 
  public:
   Long64_t Tstamp64; //64-bit timestamp (corrected for overflows)
@@ -85,8 +85,8 @@ class PulseClass2 {
 
   bool Analyzed; //true if pulse is already analyzed
  public:
-  PulseClass2();// {};
-  virtual ~PulseClass2() {};
+  PulseClass();// {};
+  virtual ~PulseClass() {};
 
   void Analyze();
   void FindPeaks();
@@ -98,71 +98,19 @@ class PulseClass2 {
   //ClassDef(PulseClass, 0)
 };
 
-class EventClass1 { //event of pulses
+class EventClass { //event of pulses
 
  public:
   Long64_t T; //Timestamp
   Float_t T0; //time of the earliest start peak
-  std::vector <PulseClass2> pulses;
+  std::vector <PulseClass> pulses;
   
  public:
-  EventClass1();
-  virtual ~EventClass1() {};
-  void Pulse_Ana_Add(PulseClass2 *newpulse);
+  EventClass();
+  virtual ~EventClass() {};
+  void Pulse_Ana_Add(PulseClass *newpulse);
   //void PeakAna();
-  //ClassDef(EventClass1, 0)
-};
-
-/*
-class EventClass2 { //event of peaks
-
- public:
-  Long64_t T; //Timestamp
-  Float_t T0; //time of the earliest start peak
-  std::vector <PulseClass2> pulses;
-  
- public:
-  EventClass2();
-  virtual ~EventClass2() {};
-  void Pulse_Ana_Add(PulseClass2 *newpulse);
-  //void PeakAna();
-  //ClassDef(EventClass1, 0)
-};
-*/
-
-class PulseClass {
-  // Pulse is a signal registered in physical channel Chan
-  // It may (or may not) contain raw data (oscillogram)
-  // It may (or may not) contain peaks
-
- public:
-  Long64_t Tstamp64; //64-bit timestamp (corrected for overflows)
-  Long64_t Counter; //pulse counter
-  int Nsamp; //actual number of samples in the pulse
-  Float_t *sData; //smoothed pulse data
-
-  int Npeaks; // number of peaks found in the pulse
-  peak_type *Peaks;
-
-  int tdif; //difference in tstamp from the event tstamp
-
-  UChar_t Chan; //channel number
-  UChar_t Control; //Control word
-  UChar_t ptype; //pulse type: 0 - good pulse; (see 
-  //short *Data; //raw pulse data
-
-  bool Analyzed; //true if pulse is already analyzed
- public:
-  PulseClass(ULong64_t size);// {};
-  PulseClass();// {};
-  virtual ~PulseClass();
-
-  void Analyze();
-  void FindPeaks(Float_t thresh, int deadtime);
-  void PeakAna();
-  void Smooth(int n);
-
-  //ClassDef(PulseClass, 0)
+  //ClassDef(EventClass, 0)
 };
 
 #endif
