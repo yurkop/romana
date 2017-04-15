@@ -4,7 +4,7 @@
 
 #include <sys/stat.h>
 #include "cyusb.h"
-#include <pthread.h>
+//#include <pthread.h>
 #include "eventframe.h"
 #include "romana.h"
 #include <malloc.h>
@@ -33,8 +33,9 @@ const double MB = 1024*1024;
 //bool btest=false;
 
 cyusb_handle *cy_handle;
-pthread_t tid1;
-pthread_t tid2;
+//pthread_t tid1;
+TThread* tid1;
+int event_thread_run;//=1;
 
 volatile char astat[CRS::MAXTRANS];
 
@@ -107,7 +108,7 @@ void *ballast(void* xxx) {
 static void cback(libusb_transfer *transfer) {
 
   static TTimeStamp t1;
-  ULong64_t rbytes=0;
+  //ULong64_t rbytes=0;
 
   //Mut.Lock();
   TTimeStamp t2;
@@ -148,25 +149,24 @@ static void cback(libusb_transfer *transfer) {
   if (crs->b_acq) {
     libusb_submit_transfer(transfer);
 
+    /*
     crs->totalbytes+=transfer->actual_length;
-    rbytes+=transfer->actual_length;
+    //rbytes+=transfer->actual_length;
     opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
       (t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
 
     double dt = t2.GetSec()-t1.GetSec()+
       (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
-    crs->mb_rate = rbytes/MB/dt;
-
-    //cout << "t1: "; t1.Print();
-    //cout << "t2: "; t2.Print();
-    //cout << dt << endl;
+    //if (dt)
+    //crs->mb_rate = rbytes/MB/dt;
 
     t1=t2;
 
     if (!crs->nvp) {
       myM->UpdateStatus();
-      rbytes=0;
+      //rbytes=0;
     }
+    */
 
   }
 
@@ -396,16 +396,14 @@ int CRS::Detect_device() {
   }
   else printf("Successfully claimed interface\n");
 
-  int r1 = pthread_create(&tid1, NULL, handle_events_func, NULL);
-  if (r1) {
-    cout << "Error creating thread: " << r1 << endl;
-  }
-
-  //int r2 = pthread_create(&tid2, NULL, make_events_func, NULL);
-  //if (r2) {
-  //cout << "Error creating thread: " << r2 << endl;
+  //int r1 = pthread_create(&tid1, NULL, handle_events_func, NULL);
+  //if (r1) {
+  //cout << "Error creating thread: " << r1 << endl;
   //}
-  //sleep(2);
+
+  tid1 = new TThread("tid1", handle_events_func, (void*) 0);
+  tid1->Run();
+
   cout << "threads created... " << endl;
 
   //memset(buf_out,'\0',64);
@@ -472,8 +470,10 @@ void CRS::DoExit()
 {
   event_thread_run=0;
   cyusb_close();
-  pthread_join(tid1,NULL);
-  pthread_join(tid2,NULL);
+  if (tid1) {
+    tid1->Delete();
+  }
+  //pthread_join(tid1,NULL);
   //gzclose(fp);
   //exit(-1);
 }
@@ -784,6 +784,7 @@ void CRS::SendParametr(const char* name, int len_out) {
 */
 
 void CRS::Command_crs(byte cmd, byte chan, int par) {
+
   if (module==32) {
     switch (cmd) {
     case 1: //enabl
@@ -1732,14 +1733,14 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
       Levents.insert(rl.base(),EventClass1());
       nevents++;
       rl->Pulse_Ana_Add(newpulse);
-      if (nn>10)
-	cout << "nn: " << nn << endl;
+      if (debug && nn>10)
+	cout << "nn: " << nn << " " << Levents.size() << " " << opt.ev_max << endl;
       return;
     }
     else if (TMath::Abs(dt) <= opt.tgate1) { //add newpulse to existing event
       // coincidence event
       rl->Pulse_Ana_Add(newpulse);
-      if (nn>10)
+      if (debug && nn>10)
 	cout << "nn: " << nn << endl;
       return;
     }
@@ -1748,9 +1749,11 @@ void CRS::Event_Insert_Pulse(PulseClass2 *newpulse) {
     }
   }
 
-  if (nn>10)
+  
+  if (debug && nn>10)
     cout << "nn: " << nn << endl;
-  cout << "beginning" << endl;
+  if (debug) 
+    cout << "beginning" << endl;
   //add new event at the beginning of the eventlist
   Levents.insert(Levents.begin(),EventClass1());
   nevents++;
@@ -1830,7 +1833,7 @@ void CRS::Make_Events(int nvp) {
 
   //Analyse events and clean (part of) the event list
   if ((int) Levents.size()>opt.ev_max) {
-    //cout << "Size1: " << Levents.size() << endl;
+    //cout << "Size1: " << Levents.size() << " " << opt.ev_max-opt.ev_min << endl;
     Int_t nn=0;
     std::list<EventClass1>::iterator rl;
     std::list<EventClass1>::iterator next;
@@ -1844,7 +1847,7 @@ void CRS::Make_Events(int nvp) {
       FillHist(&(*rl));
       Levents.erase(rl);
       nn++;
-      if (nn>=opt.ev_max-opt.ev_min) break;
+      if (Levents.size()<=opt.ev_min) break;
     }
     //cout << "Make_Events Size2: " << Levents.size() << endl;
   }

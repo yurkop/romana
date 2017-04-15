@@ -1278,99 +1278,21 @@ void CrsParDlg::DoMap(TGWidget *f, void *d, P_Def t, int all,
 
 void CrsParDlg::DoNum() {
   ParDlg::DoNum();
+
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  pmap pp = Plist[id-1];
+
+  if (pp.cmd && crs->b_acq) {
+    crs->Command2(4,0,0,0);
+    printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
+    crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
+    crs->Command2(3,0,0,0);
+  }
+
 }
 
 void CrsParDlg::DoChk() {
   ParDlg::DoChk();
 }
-
-
-/*
-void CrsParDlg::Update() {
-
-  //cout << "chtype: " << opt.chtype[0] << endl;
-
-  for (std::vector<pmap>::iterator pp = Plist.begin();
-       pp != Plist.end(); ++pp) {
-
-      // int i = pp-Plist.begin();
-      // if (i==1) {
-      // cout << "Update: " << i << " " ;
-      // cout << *(Int_t*) pp->data << " " ;
-      // cout << opt.bkg1[0];
-      // //cout << *(Int_t*) pp->type;
-      // cout << endl;
-      // }
-
-    //cout << (int) pp->type << endl;
-    if (pp->type==p_inum) {
-      TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      te->SetNumber(*(Int_t*) pp->data);
-    }
-    else if (pp->type==p_chk) {
-      TGCheckButton *te = (TGCheckButton*) pp->field;
-      Bool_t bb = *(Bool_t*) pp->data;
-      te->SetState((EButtonState) bb);
-    }
-    else if (pp->type==p_cmb) {
-      TGComboBox *te = (TGComboBox*) pp->field;
-      te->Select(*(ChDef*) pp->data,false);
-    }
-
-  }
-
-  //cout << "threshold0: " << opt.threshold[0] << endl;
-}
-*/
-
-/*
-  void CrsParDlg::DoPar(int k, int i, Long_t num) {
-  switch (k) {
-  case 1:
-  opt.smooth[i]=num;
-  break;
-  case 2:
-  opt.deadTime[i]=num;
-  break;
-  case 3:
-  opt.preWr[i]=num;
-  break;
-  case 4:
-  opt.durWr[i]=num;
-  break;
-  case 5:
-  opt.kderiv[i]=num;
-  break;
-  case 6:
-  opt.adcGain[i]=num;
-  break;
-  case 7:
-  opt.threshold[i]=num;
-  break;
-  }
-  }
-
-  void *CrsParDlg::MapPar(int id) {
-
-  int i = id%1000;
-  int k = id/1000;
-
-  switch (k) {
-  case 1:
-  return &opt.smooth[i];
-  case 2:
-  return &opt.deadTime[i];
-  case 3:
-  return &opt.preWr[i];
-  case 4:
-  return &opt.durWr[i];
-  case 5:
-  return &opt.kderiv[i];
-  case 6:
-  return &opt.adcGain[i];
-  case 7:
-  return &opt.threshold[i];
-  }
-  return NULL;
-  }
-*/
