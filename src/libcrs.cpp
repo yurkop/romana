@@ -15,6 +15,7 @@
 #include "TThread.h"
 
 TMutex Mut;
+TMutex stat_mut;
 TCondition* cond[CRS::MAXTRANS];
 
 using namespace std;
@@ -34,7 +35,8 @@ const double MB = 1024*1024;
 
 cyusb_handle *cy_handle;
 //pthread_t tid1;
-TThread* tid1;
+TThread* trd_crs;
+TThread* trd_stat;
 int event_thread_run;//=1;
 
 volatile char astat[CRS::MAXTRANS];
@@ -66,6 +68,38 @@ void *handle_events_func(void *ctx)
 {
   while (event_thread_run) {
     libusb_handle_events_completed(NULL,NULL);
+  }
+  return NULL;
+}
+
+void *handle_stat(void *ctx)
+{
+
+  static Long64_t bytes1=0;
+  static Long64_t bytes2;
+
+  static double t1;
+  //static TTimeStamp t2;
+
+  while (event_thread_run) {
+
+    gSystem->Sleep(1234);
+
+    stat_mut.Lock();
+    bytes2 = crs->totalbytes;
+    stat_mut.UnLock();
+    //t2.Set();
+    double dt = opt.T_acq - t1;
+    if (dt>0.1)
+      crs->mb_rate = (bytes2-bytes1)/MB/dt;
+    else
+      crs->mb_rate=0;
+
+    t1=opt.T_acq;
+    bytes1=bytes2;
+
+    myM->UpdateStatus();
+    //cout << "handle_stat: " << dt << " " << crs->mb_rate << endl;
   }
   return NULL;
 }
@@ -112,7 +146,7 @@ static void cback(libusb_transfer *transfer) {
 
   //Mut.Lock();
   TTimeStamp t2;
-  t2.Set();
+  //t2.Set();
 
   crs->npulses_buf=0;
 
@@ -149,11 +183,13 @@ static void cback(libusb_transfer *transfer) {
   if (crs->b_acq) {
     libusb_submit_transfer(transfer);
 
-    /*
+    stat_mut.Lock();
     crs->totalbytes+=transfer->actual_length;
-    //rbytes+=transfer->actual_length;
     opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
       (t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
+    stat_mut.UnLock();
+    /*
+    //rbytes+=transfer->actual_length;
 
     double dt = t2.GetSec()-t1.GetSec()+
       (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
@@ -331,6 +367,7 @@ CRS::~CRS() {
   //gzclose(f_raw);
   //}  
 
+  DoExit();
   cout << "~CRS()" << endl;
 
 }
@@ -401,8 +438,11 @@ int CRS::Detect_device() {
   //cout << "Error creating thread: " << r1 << endl;
   //}
 
-  tid1 = new TThread("tid1", handle_events_func, (void*) 0);
-  tid1->Run();
+  trd_crs = new TThread("trd_crs", handle_events_func, (void*) 0);
+  trd_crs->Run();
+
+  trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
+  trd_stat->Run();
 
   cout << "threads created... " << endl;
 
@@ -468,10 +508,15 @@ int CRS::Detect_device() {
 
 void CRS::DoExit()
 {
+  cout << "CRS::DoExit" << endl;
+
   event_thread_run=0;
   cyusb_close();
-  if (tid1) {
-    tid1->Delete();
+  if (trd_crs) {
+    trd_crs->Delete();
+  }
+  if (trd_stat) {
+    trd_stat->Delete();
   }
   //pthread_join(tid1,NULL);
   //gzclose(fp);
@@ -1847,7 +1892,7 @@ void CRS::Make_Events(int nvp) {
       FillHist(&(*rl));
       Levents.erase(rl);
       nn++;
-      if (Levents.size()<=opt.ev_min) break;
+      if ((int)Levents.size()<=opt.ev_min) break;
     }
     //cout << "Make_Events Size2: " << Levents.size() << endl;
   }
