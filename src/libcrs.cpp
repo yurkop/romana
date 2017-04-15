@@ -1172,9 +1172,9 @@ void CRS::Reset() {
 
   nvp=0;
   Levents.clear();
+  nevents=0;
 
   npulses=0;
-  nevents=0;
   nbuffers=0;
 
   //npulses=0;
@@ -1703,6 +1703,7 @@ void CRS::Event_Insert_Pulse(PulseClass *newpulse) {
     if (dt > opt.tgate1) {
       //add new event at the current position of the eventlist
       Levents.insert(rl.base(),EventClass());
+      rl->Nevt=nevents;
       nevents++;
       rl->Pulse_Ana_Add(newpulse);
       if (debug && nn>10)
@@ -1724,10 +1725,11 @@ void CRS::Event_Insert_Pulse(PulseClass *newpulse) {
   
   if (debug && nn>10)
     cout << "nn: " << nn << endl;
-  if (debug) 
+  if (debug)
     cout << "beginning" << endl;
   //add new event at the beginning of the eventlist
   Levents.insert(Levents.begin(),EventClass());
+  rl->Nevt=nevents;
   nevents++;
   Levents.begin()->Pulse_Ana_Add(newpulse);
 

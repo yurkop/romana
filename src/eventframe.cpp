@@ -652,7 +652,7 @@ void EventFrame::DrawEvent2() {
   //txt.DrawTextNDC(0.3,0.92,ss);
 
   char ss[99];
-  sprintf(ss,"Evt: %ld",std::distance(Levents->begin(),d_event));
+  sprintf(ss,"Evt: %lld",d_event->Nevt);//std::distance(Levents->begin(),d_event));
   fStat1->SetText(ss);
 
   sprintf(ss,"Tstamp: %lld",d_event->T);

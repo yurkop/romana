@@ -39,7 +39,7 @@ class peak_type {
   Float_t Height;
   Float_t Width;
   Float_t Time; //exact time relative to pulse start (from 1st deriv)
-  Float_t Time2; //exact time (from 2nd deriv)
+  //Float_t Time2; //exact time (from 2nd deriv)
   Short_t Pos; //position relative to pulse start (in samples)
   Short_t T1; //left zero crossing of deriv
   Short_t T2; //right zero crossing of deriv
@@ -101,8 +101,9 @@ class PulseClass {
 class EventClass { //event of pulses
 
  public:
+  Long64_t Nevt;
   Long64_t T; //Timestamp
-  Float_t T0; //time of the earliest start peak
+  Float_t T0; //time of the earliest *START* peak
   std::vector <PulseClass> pulses;
   
  public:

@@ -1121,7 +1121,10 @@ void CrsParDlg::AddLine1(int i) {
   AddNum1(i,kk++,all,hframe1,"dt"    ,&opt.deadTime[i]);
   AddNum1(i,kk++,all,hframe1,"pre"   ,&opt.preWr[i]);
   AddNum1(i,kk++,all,hframe1,"len"   ,&opt.durWr[i]);
-  AddNum1(i,kk++,all,hframe1,"gain"  ,&opt.adcGain[i]);
+  if (crs->module==2) 
+    AddNum1(i,kk++,1,hframe1,"gain"  ,&opt.adcGain[i]);
+  else
+    AddNum1(i,kk++,all,hframe1,"gain"  ,&opt.adcGain[i]);
   AddNum1(i,kk++,all,hframe1,"deriv" ,&opt.kderiv[i]);
   AddNum1(i,kk++,all,hframe1,"thresh",&opt.threshold[i]);
 
