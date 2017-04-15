@@ -6,6 +6,7 @@
 #include <TG3DLine.h>
 #include <TSystem.h>
 #include "romana.h"
+#include <TColor.h>
 
 //const char* t_raw = "Write raw data";
 
@@ -262,8 +263,17 @@ void ParDlg::DoChkWrite() {
 
   Bool_t state = (Bool_t) te->GetState();      
 
-  te2->SetEnabled(state);
-  but->SetEnabled(state);
+  if (state) {
+    te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
+    but->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
+  }
+  else {
+    te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
+    but->ChangeBackground(gROOT->GetColor(18)->GetPixel());
+  }
+
+  //te2->SetEnabled(state);
+  //but->SetEnabled(state);
 
 }
 
@@ -488,8 +498,17 @@ void ParDlg::UpdateField(int nn) {
       if (str.Contains("write",TString::kIgnoreCase)) {
 	TGTextButton *but = (TGTextButton*) (pp+1)->field;
 	TGTextEntry *te2 = (TGTextEntry*) (pp+2)->field;	
-	te2->SetEnabled(bb);
-	but->SetEnabled(bb);
+
+	if (bb) {
+	  te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
+	  but->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
+	}
+	else {
+	  te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
+	  but->ChangeBackground(gROOT->GetColor(18)->GetPixel());
+	}
+	//te2->SetEnabled(bb);
+	//but->SetEnabled(bb);
       }
     }
       break;

@@ -22,6 +22,8 @@ Toptions::Toptions() {
   tgate2=100;
   mult1=1;
   mult2=32;
+
+  seltab=0;
   
   //www[0]=1.0;
   //www[1]=5.0;

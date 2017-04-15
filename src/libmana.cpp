@@ -1443,8 +1443,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
       te->SetEnabled(false);
   }
 
-
-
+  fTab->SetTab(opt.seltab);
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
   fGr2->AddFrame(hfr1, l_But);
@@ -3011,7 +3010,10 @@ void MainFrame::DoTab(Int_t num) {
 
   TString name = TString(tab->GetCurrentTab()->GetString());
 
-  //cout << "dotab: " << tab->GetCurrentTab()->GetString() << endl;
+  opt.seltab = tab->GetCurrent();
+
+  //cout << "dotab: " << tab->GetCurrent() << " " 
+  //     << tab->GetCurrentTab()->GetString() << endl;
   //cout << "dotab: " << name.EqualTo("Parameters",TString::kIgnoreCase) << endl;
 
 
