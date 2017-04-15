@@ -31,7 +31,7 @@ char hname[3][MAX_CH+1][20]; //+all
  
 TText txt;
 
-TMutex *Emut;
+//TMutex *Emut;
 
 void doXline(TLine* ln, Float_t xx, Float_t y1, Float_t y2, int col, int type) {
   ln->SetLineColor(col);
@@ -44,7 +44,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 {
 
   d_event = crs->Levents.begin();
-  Emut = new TMutex();
+  //Emut = new TMutex();
 
   for (int i=0;i<3;i++) {
     for (int j=0;j<MAX_CH;j++) {
@@ -270,7 +270,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fVer_st->AddFrame(fStat2,fLay3);
 
 
-  trd=0;
+  //trd=0;
   //cout << "fVer0->Opt: "<<fVer0->GetOptions() << endl;
 
   //cout << "fCanvas: " << fCanvas << endl;
@@ -306,7 +306,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //mgr[j]=0;
   //}
 
-  StartThread();
+  //StartThread();
   
 }
 
@@ -314,12 +314,12 @@ EventFrame::~EventFrame()
 {
 
   //cout << "~Emut" << endl;
-  delete Emut;
+  //delete Emut;
   //gSystem->Sleep(100);
 
-  if (trd) {
-    trd->Delete();
-  }
+  //if (trd) {
+  //trd->Delete();
+  //}
 
   //cout << "~trd" << endl;
   //gSystem->Sleep(100);
@@ -333,109 +333,11 @@ EventFrame::~EventFrame()
 
 extern EventFrame* EvtFrm;
 
-void *trd_handle(void* ptr)
-{
-  //static int nn;
-
-  //TEllipse * el1 = new TEllipse(0.25,0.25,.10,.20);
-  //el1->SetFillColor(6);
-  //el1->SetFillStyle(3008);
-
-  while (true) {
-    //nn++;
-    //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << " " <<
-    //EvtFrm->ntab << endl; 
-    if (crs->b_acq && myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-      //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << endl; 
-
-      /*
-	TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
-	//el1->DrawEllipse();
-	double xx=gRandom->Rndm();
-	double yy=gRandom->Rndm();
-	//cv->Update();
-	//cv->cd();
-	cv->Clear();
-	TText tt;
-	tt.DrawTextNDC(xx,yy,"No pulses");
-	cv->Update();
-      */
-
-      //TSytem::IgnoreSignal();
-
-      /*
-	for (int i=0;i<15;i++) {
-	gSystem->IgnoreSignal((ESignals)i);
-	}
-      */
-
-      /*
-	kSigBus,
-	kSigSegmentationViolation,
-	kSigSystem,
-	kSigPipe,
-	kSigIllegalInstruction,
-	kSigQuit,
-	kSigInterrupt,
-	kSigWindowChanged,
-	kSigAlarm,
-	kSigChild,
-	kSigUrgent,
-	kSigFloatingException,
-	kSigTermination,
-	kSigUser1,
-	kSigUser2
-      */
-
-      //cout << "Block: " << EvtFrm->BlockAllSignals(true) << endl;
-
-      //opt.b_deriv[1] = !opt.b_deriv[1];
-
-      //Emut.Lock();
-
-
-      //std::list<EventClass1>::reverse_iterator evt;
-      UInt_t nn=0;
-      for (EvtFrm->d_event=--crs->Levents.end();
-	   EvtFrm->d_event!=--crs->Levents.begin();--EvtFrm->d_event) {
-	nn++;
-	if (nn>2) break;
-      }
-      //EvtFrm->d_event = &(*evt);
-
-      EvtFrm->DrawEvent2();
-      //Emut.UnLock();
-
-
-      //Emut.UnLock();
-
-      //gSystem->Sleep(50);
-
-      //TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
-      //cv->Update();
-
-
-    }
-    else {
-      //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
-    }
-
-    //cout << "Block: " << EvtFrm->BlockAllSignals(false) << endl;
-
-    gSystem->Sleep(opt.tsleep);
-
-  }
-
-  return 0;
-
-}
-
-
-void EventFrame::StartThread()
-{
-  trd = new TThread("trd", trd_handle, (void*) 0);
-  trd->Run();
-}
+// void EventFrame::StartThread()
+// {
+//   trd = new TThread("trd", trd_handle, (void*) 0);
+//   trd->Run();
+// }
 
 void EventFrame::CloseWindow()
 {
@@ -692,11 +594,9 @@ void EventFrame::FillHist(int dr) {
 
 void EventFrame::DrawEvent2() {
 
-  Emut->Lock();
-  //crs->b_pevent=false;
-  //EventClass1* d_event;
+  //Emut->Lock();
   if (crs->Levents.empty()) {
-    Emut->UnLock();
+    //Emut->UnLock();
     return;
   }
 
@@ -712,7 +612,7 @@ void EventFrame::DrawEvent2() {
     //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
     cv->Update();
-    Emut->UnLock();
+    //Emut->UnLock();
     return;
   }
 
@@ -755,7 +655,7 @@ void EventFrame::DrawEvent2() {
   
   cv->Update();
 
-  Emut->UnLock();
+  //Emut->UnLock();
 
 } //DrawEvent2
 

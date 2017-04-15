@@ -14,7 +14,7 @@
 #include <TMultiGraph.h>
 #include <TGStatusBar.h>
 
-#include "TThread.h"
+//#include "TThread.h"
 #include <list>
 
 //-----------------------------------------------
@@ -75,13 +75,13 @@ protected:
 
    //bool bprint;
 
-   TThread *trd;
+   //TThread *trd;
 
 public:
    EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
    virtual ~EventFrame();
 
-   void StartThread();
+   //void StartThread();
 
    void Clear();
    //void Start();

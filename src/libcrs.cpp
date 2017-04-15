@@ -37,6 +37,8 @@ cyusb_handle *cy_handle;
 //pthread_t tid1;
 TThread* trd_crs;
 TThread* trd_stat;
+TThread* trd_evt;
+
 int event_thread_run;//=1;
 
 volatile char astat[CRS::MAXTRANS];
@@ -102,6 +104,50 @@ void *handle_stat(void *ctx)
     //cout << "handle_stat: " << dt << " " << crs->mb_rate << endl;
   }
   return NULL;
+}
+
+void *handle_evt(void* ptr)
+{
+  //static int nn;
+
+  //TEllipse * el1 = new TEllipse(0.25,0.25,.10,.20);
+  //el1->SetFillColor(6);
+  //el1->SetFillStyle(3008);
+
+  while (event_thread_run) {
+    //nn++;
+    //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << " " <<
+    //EvtFrm->ntab << endl; 
+    if (crs->b_acq && myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
+      //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << endl; 
+
+      //std::list<EventClass1>::reverse_iterator evt;
+      UInt_t nn=0;
+      for (EvtFrm->d_event=--crs->Levents.end();
+	   EvtFrm->d_event!=--crs->Levents.begin();--EvtFrm->d_event) {
+	nn++;
+	if (nn>2) break;
+      }
+      //EvtFrm->d_event = &(*evt);
+
+      EvtFrm->DrawEvent2();
+      //Emut.UnLock();
+
+      //Emut.UnLock();
+
+    }
+    else {
+      //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
+    }
+
+    //cout << "Block: " << EvtFrm->BlockAllSignals(false) << endl;
+
+    gSystem->Sleep(opt.tsleep);
+
+  }
+
+  return 0;
+
 }
 
 // void *make_events_func(void *ctx)
@@ -188,22 +234,6 @@ static void cback(libusb_transfer *transfer) {
     opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
       (t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
     stat_mut.UnLock();
-    /*
-    //rbytes+=transfer->actual_length;
-
-    double dt = t2.GetSec()-t1.GetSec()+
-      (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
-    //if (dt)
-    //crs->mb_rate = rbytes/MB/dt;
-
-    t1=t2;
-
-    if (!crs->nvp) {
-      myM->UpdateStatus();
-      //rbytes=0;
-    }
-    */
-
   }
 
   crs->nvp = (crs->nvp+1)%crs->ntrans;
@@ -444,6 +474,9 @@ int CRS::Detect_device() {
   trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
   trd_stat->Run();
 
+  trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
+  trd_evt->Run();
+
   cout << "threads created... " << endl;
 
   //memset(buf_out,'\0',64);
@@ -517,6 +550,9 @@ void CRS::DoExit()
   }
   if (trd_stat) {
     trd_stat->Delete();
+  }
+  if (trd_evt) {
+    trd_evt->Delete();
   }
   //pthread_join(tid1,NULL);
   //gzclose(fp);
