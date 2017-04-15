@@ -64,7 +64,7 @@ static int timeout = 0;
 
 void *handle_events_func(void *ctx)
 {
-  while (crs->event_thread_run) {
+  while (event_thread_run) {
     libusb_handle_events_completed(NULL,NULL);
   }
   return NULL;

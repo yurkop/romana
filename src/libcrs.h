@@ -117,7 +117,6 @@ RQ_OBJECT("CRS")
 
   PulseClass* ipp; //current Pulse
 
-  int event_thread_run;//=1;
   //pthread_t tid1;
 
   Int_t module; //2 - crs2; 32 - crs32
