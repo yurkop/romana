@@ -1,6 +1,7 @@
 #ifndef crspardlg_H
 #define crspardlg_H 1
 
+#include "common.h"
 #include <TGFrame.h>
 #include <TGCanvas.h>
 #include <TGLabel.h>
@@ -135,37 +136,47 @@ class ParParDlg: public ParDlg {
 
 //-----------------------------------------------
 class ChanParDlg: public ParDlg {
-  //class CrsParDlg {
 
- protected:
-  TGCanvas* fCanvas2;
-  TGCompositeFrame* fcont2;
+protected:
+TGCanvas* fCanvas2;
+TGCompositeFrame* fcont2;
+TGHorizontalFrame *head_frame;
 
- public:
-  ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~ChanParDlg() {};
+public:
+ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+virtual ~ChanParDlg() {};
 
-  void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
-  void Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h);
+void Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h);
 
-  //void AddNum(int id, int k, 
-  //	      TGHorizontalFrame *hframe1, const char* name);
-  void AddHeader1();
-  void AddHeader2();
-  void AddLine1(int i, TGCompositeFrame* fcont1);
-  void AddLine2(int i, TGCompositeFrame* fcont1);
-  void AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
-	      const char* name, void* apar);
-  void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
+void AddHeader();
+void AddLine2(int i, TGCompositeFrame* fcont1);
+void AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
+	       const char* name, void* apar);
+void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       void* apar, double min, double max, P_Def ptype);
-  void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan);
-  void DoNum();
-  void DoChk();
-  //void DoPar(int k, int i, Long_t num);
-  //void *MapPar(int id);
-  //void Update();
+void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan);
+void DoNum();
+void DoChk();
 
-  ClassDef(ChanParDlg, 0)
-    };
+ClassDef(ChanParDlg, 0)
+};
+
+//-----------------------------------------------
+class CrsParDlg: public ChanParDlg {
+
+public:
+
+TGLabel *fStat[MAX_CH];
+
+public:
+CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+virtual ~CrsParDlg() {};
+
+void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
+void AddHeader();
+void AddLine1(int i, TGCompositeFrame* fcont1);
+
+ClassDef(CrsParDlg, 0)
+};
 
 #endif

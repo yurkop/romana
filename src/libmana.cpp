@@ -52,7 +52,7 @@ int chanPresent;
 EventFrame* EvtFrm;
 
 ParParDlg *parpar;
-ChanParDlg *crspar;
+CrsParDlg *crspar;
 ChanParDlg *chanpar;
 
 ULong_t fGreen;
@@ -1396,7 +1396,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGCompositeFrame *tab2 = fTab->AddTab("DAQ");
   TGCompositeFrame* fr2 = new TGCompositeFrame(tab2, 10, 10, kHorizontalFrame);
   tab2->AddFrame(fr2, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
-  crspar = new ChanParDlg(fr2, 600, 500);
+  crspar = new CrsParDlg(fr2, 600, 500);
   crspar->Make_crspar(fr2, 600, 210);
   fr2->AddFrame(crspar,
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));

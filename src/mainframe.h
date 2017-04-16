@@ -6,10 +6,10 @@
 #include "TGTab.h"
 #include <TLegend.h>
 #include <TGFileDialog.h>
+#include <TGNumberEntry.h>
 //#include "chandlg.h"
 //#include "numdlg.h"
 //#include "pardlg.h"
-#include "crspardlg.h"
 #include "eventframe.h"
 
 //-----------------------------------------------
@@ -38,9 +38,6 @@ private:
   TGTextButton *fNb;
 
  public:
-  //ParParDlg            *parpar;
-  //CrsParDlg            *crspar;
-  //CrsParDlg            *chanpar;
   bool                   bRun;
 
   TGTab                *fTab;
