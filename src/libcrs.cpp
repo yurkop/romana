@@ -24,8 +24,8 @@ using namespace std;
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern ParParDlg *parpar;
-extern CrsParDlg *crspar;
-extern CrsParDlg *chanpar;
+extern ChanParDlg *crspar;
+extern ChanParDlg *chanpar;
 #endif
 
 const double MB = 1024*1024;
@@ -1173,6 +1173,7 @@ void CRS::Reset() {
   nvp=0;
   Levents.clear();
   nevents=0;
+  nevents2=0;
 
   npulses=0;
   nbuffers=0;
@@ -1781,19 +1782,22 @@ void CRS::Make_Events(int nvp) {
   //Analyse events and clean (part of) the event list
   if ((int) Levents.size()>opt.ev_max) {
     //cout << "Size1: " << Levents.size() << " " << opt.ev_max-opt.ev_min << endl;
-    Int_t nn=0;
+    //Int_t nn=0;
     std::list<EventClass>::iterator rl;
     std::list<EventClass>::iterator next;
 
-    for (rl=Levents.begin(); rl!=Levents.end(); rl=next) {
+    for (rl=Levents.begin(); 
+	 rl!=Levents.end(); rl=next) {
       next = rl;
       ++next;
+      ++nevents2;
       // if (rl->pulses.size()!=2) {
       // 	cout << "Event: " << nn << " " << rl->pulses.size() << " " << rl->T << endl;
       // }
       FillHist(&(*rl));
       Levents.erase(rl);
-      nn++;
+      //++nn;
+      //cout << "makeev: " << Levents.size() << endl;
       if ((int)Levents.size()<=opt.ev_min) break;
     }
     //cout << "Make_Events Size2: " << Levents.size() << endl;

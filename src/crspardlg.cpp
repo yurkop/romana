@@ -11,8 +11,8 @@
 //const char* t_raw = "Write raw data";
 
 extern ParParDlg *parpar;
-extern CrsParDlg *crspar;
-extern CrsParDlg *chanpar;
+extern ChanParDlg *crspar;
+extern ChanParDlg *chanpar;
 
 const int ncrspar=12;
 
@@ -77,6 +77,7 @@ extern MyMainFrame *myM;
 TGLayoutHints* fL0 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 0, 0);
 TGLayoutHints* fL1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
 TGLayoutHints* fL2 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY);
+TGLayoutHints* fL2a = new TGLayoutHints(kLHintsLeft | kLHintsBottom,0,0,5,0);
 TGLayoutHints* fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
 TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
 TGLayoutHints* fL5 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
@@ -919,46 +920,52 @@ void ParParDlg::Update() {
 
 }
 */
-//------ CrsParDlg -------
+//------ ChanParDlg -------
 
-CrsParDlg::CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h)
+ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :ParDlg(p,w,h)
 {
 }
 
-void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
+void ChanParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   AddHeader1();
 
-  fCanvas = new TGCanvas(this,w,h);
-  AddFrame(fCanvas,fL2);
+  // Hsplitter
+  TGVerticalFrame *vFrame = new TGVerticalFrame(this, 10, 10);
+  AddFrame(vFrame, new TGLayoutHints(kLHintsRight | kLHintsExpandX | kLHintsExpandY));
+  TGHorizontalFrame *fH1 = new TGHorizontalFrame(vFrame, 10, 320, kFixedHeight);
+  TGHorizontalFrame *fH2 = new TGHorizontalFrame(vFrame, 10, 10);
+  vFrame->AddFrame(fH1, new TGLayoutHints(kLHintsTop | kLHintsExpandX));
+  TGHSplitter *hsplitter = new TGHSplitter(vFrame,2,2);
+  hsplitter->SetFrame(fH1, kTRUE);
+  vFrame->AddFrame(hsplitter, new TGLayoutHints(kLHintsTop | kLHintsExpandX));
+  vFrame->AddFrame(fH2, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));   
 
+
+  fCanvas = new TGCanvas(fH1,10,10);
   fcont1 = new TGCompositeFrame(fCanvas->GetViewPort(), 
 				100, 100, kVerticalFrame);
   fCanvas->SetContainer(fcont1);
+  fH1->AddFrame(fCanvas,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
+                                          kLHintsExpandX, 0, 0, 1, 1));
+
+  fCanvas2 = new TGCanvas(fH2,10,10);
+  fcont2 = new TGCompositeFrame(fCanvas2->GetViewPort(), 
+  				100, 100, kVerticalFrame);
+  fCanvas2->SetContainer(fcont2);
+  fH2->AddFrame(fCanvas2,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
+                                             kLHintsExpandX, 0, 0, 1, 1));
 
   for (int i=0;i<chanPresent;i++) {
-    AddLine1(i);
+    AddLine1(i,fcont1);
   }
 
-  //TGHorizontal3DLine* separator1 = new TGHorizontal3DLine(fcont1);
-  //TGHorizontal3DLine* separator2 = new TGHorizontal3DLine(fcont1);
-  //fcont1->AddFrame(separator1, fL5);
-
-  //TGHorizontalFrame *separ = new TGHorizontalFrame(fcont1,10,10);
-  //fcont1->AddFrame(separ,fL4);
-
-  fcont1->AddFrame(new TGHorizontal3DLine(fcont1), fL5);
-  AddLine1(MAX_CH);
-  //fcont1->AddFrame(new TGHorizontal3DLine(fcont1), fL5);
-  //fcont1->AddFrame(separ,fL4);
+  AddLine1(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
-    AddLine1(MAX_CH+i);
-    //fcont1->AddFrame(new TGTextButton(fcont1, "&Test button1", 0), fL1);
+    AddLine1(MAX_CH+i,fcont2);
   }
-
-  //cout << "module: " << crs->module << endl;
 
   if (crs->module==2) {
     TGHorizontalFrame *hforce = new TGHorizontalFrame(fcont1,10,10);
@@ -970,51 +977,60 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
     DoMap((TGWidget*)fforce,&opt.forcewr,p_chk,0,0,0);
     fforce->Connect("Clicked()", "ParDlg", this, "DoChk()");
     
-    // pmap pp;
-    // pp.field = &fforce;
-    // pp.data = &opt.forcewr;
-    // pp.type = 2;
-    // Plist.push_back(pp);
     TGLabel* lforce = new TGLabel(hforce, "  Force_write all channels");
     hforce->AddFrame(lforce,fL1);
   }
 
-  //cout << "nfld2: " << Plist.size() << " " << nfld << endl;
-
 }
 
-void CrsParDlg::Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h) {
+void ChanParDlg::Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   AddHeader2();
 
-  fCanvas = new TGCanvas(this,w,h);
-  AddFrame(fCanvas,fL2);
+  // Hsplitter
+  TGVerticalFrame *vFrame = new TGVerticalFrame(this, 10, 10);
+  AddFrame(vFrame, new TGLayoutHints(kLHintsRight | kLHintsExpandX | kLHintsExpandY));
+  TGHorizontalFrame *fH1 = new TGHorizontalFrame(vFrame, 10, 320, kFixedHeight);
+  TGHorizontalFrame *fH2 = new TGHorizontalFrame(vFrame, 10, 10);
+  vFrame->AddFrame(fH1, new TGLayoutHints(kLHintsTop | kLHintsExpandX));
+  TGHSplitter *hsplitter = new TGHSplitter(vFrame,2,2);
+  hsplitter->SetFrame(fH1, kTRUE);
+  vFrame->AddFrame(hsplitter, new TGLayoutHints(kLHintsTop | kLHintsExpandX));
+  vFrame->AddFrame(fH2, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));   
 
+
+
+
+  fCanvas = new TGCanvas(fH1,10,10);
   fcont1 = new TGCompositeFrame(fCanvas->GetViewPort(), 
 				100, 100, kVerticalFrame);
   fCanvas->SetContainer(fcont1);
+  fH1->AddFrame(fCanvas,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
+                                          kLHintsExpandX, 0, 0, 1, 1));
+
+
+  fCanvas2 = new TGCanvas(fH2,10,10);
+  fcont2 = new TGCompositeFrame(fCanvas2->GetViewPort(), 
+  				100, 100, kVerticalFrame);
+  fCanvas2->SetContainer(fcont2);
+  fH2->AddFrame(fCanvas2,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
+                                             kLHintsExpandX, 0, 0, 1, 1));
+
 
   for (int i=0;i<chanPresent;i++) {
-    AddLine2(i);
+    AddLine2(i,fcont1);
   }
 
-  //TGHorizontalFrame *separ = new TGHorizontalFrame(fcont1,10,10);
-  //fcont1->AddFrame(separ,fL4);
-
-  fcont1->AddFrame(new TGHorizontal3DLine(fcont1), fL5);
-  AddLine2(MAX_CH);
-  //fcont1->AddFrame(new TGHorizontal3DLine(fcont1), fL5);
-
-  //fcont1->AddFrame(separ,fL4);
+  AddLine2(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
-    AddLine2(MAX_CH+i);
+    AddLine2(MAX_CH+i,fcont2);
   }
 
 
 }
 
-void CrsParDlg::AddHeader1() {
+void ChanParDlg::AddHeader1() {
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
   AddFrame(hframe1,fL1);
@@ -1032,7 +1048,7 @@ void CrsParDlg::AddHeader1() {
 
 }
 
-void CrsParDlg::AddHeader2() {
+void ChanParDlg::AddHeader2() {
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
   AddFrame(hframe1,fL1);
@@ -1050,7 +1066,7 @@ void CrsParDlg::AddHeader2() {
 
 }
 
-void CrsParDlg::AddLine1(int i) {
+void ChanParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
   char txt[255];
   int kk=0;
   int all=0;
@@ -1122,9 +1138,9 @@ void CrsParDlg::AddLine1(int i) {
   DoMap(f_inv,&opt.inv[i],p_chk,all,2,i);
   DoMap(f_acdc,&opt.acdc[i],p_chk,all,3,i);
 
-  f_en->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
-  f_inv->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
-  f_acdc->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
+  f_en->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
+  f_inv->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
+  f_acdc->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
 
   //f_inv->ChangeOptions(facdc->GetOptions()|kFixedSize);
   //f_acdc->ChangeOptions(facdc->GetOptions()|kFixedSize);
@@ -1149,7 +1165,7 @@ void CrsParDlg::AddLine1(int i) {
 
 }
 
-void CrsParDlg::AddLine2(int i) {
+void ChanParDlg::AddLine2(int i, TGCompositeFrame* fcont1) {
   char txt[255];
   int kk=0;
   int all=0;
@@ -1218,7 +1234,7 @@ void CrsParDlg::AddLine2(int i) {
   TGCheckButton *fst = new TGCheckButton(hframe1, "", id);
   DoMap(fst,&opt.Start[i],p_chk,all,0,0);
 
-  fst->Connect("Clicked()", "CrsParDlg", this, "DoChk()");
+  fst->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
 
   hframe1->AddFrame(fst,fL3);
   kk++;
@@ -1241,7 +1257,7 @@ void CrsParDlg::AddLine2(int i) {
   AddNum2(i,kk++,all,hframe1,&opt.elim2[i],0,99999,p_fnum);
 }
 
-void CrsParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
+void ChanParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
 		       const char* name, void* apar) {  //const char* name) {
 
   int par, min, max;
@@ -1258,13 +1274,13 @@ void CrsParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
   
   fNum->SetWidth(tlen[kk]);
 
-  fNum->Connect("TextChanged(char*)", "CrsParDlg", this, "DoNum()");
+  fNum->Connect("TextChanged(char*)", "ChanParDlg", this, "DoNum()");
 
   hframe1->AddFrame(fNum,fL0);
 
 }
 
-void CrsParDlg::AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
+void ChanParDlg::AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 			void* apar, double min, double max, P_Def ptype) {
 
   //opt.GetPar(name,crs->module,i,par,min,max);
@@ -1286,19 +1302,19 @@ void CrsParDlg::AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
   DoMap(fNum,apar,ptype, all,0,0);
   fNum->SetWidth(tlen2[kk]);
-  fNum->Connect("TextChanged(char*)", "CrsParDlg", this, "DoNum()");
+  fNum->Connect("TextChanged(char*)", "ChanParDlg", this, "DoNum()");
   hframe1->AddFrame(fNum,fL0);
 
 }
 
-void CrsParDlg::DoMap(TGWidget *f, void *d, P_Def t, int all,
+void ChanParDlg::DoMap(TGWidget *f, void *d, P_Def t, int all,
 		      byte cmd, byte chan) {
   ParDlg::DoMap(f,d,t,all);
   Plist.back().cmd=cmd;
   Plist.back().chan=chan;
 }
 
-void CrsParDlg::DoNum() {
+void ChanParDlg::DoNum() {
   ParDlg::DoNum();
 
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
@@ -1315,6 +1331,6 @@ void CrsParDlg::DoNum() {
 
 }
 
-void CrsParDlg::DoChk() {
+void ChanParDlg::DoChk() {
   ParDlg::DoChk();
 }

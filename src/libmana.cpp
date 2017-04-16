@@ -52,8 +52,8 @@ int chanPresent;
 EventFrame* EvtFrm;
 
 ParParDlg *parpar;
-CrsParDlg *crspar;
-CrsParDlg *chanpar;
+ChanParDlg *crspar;
+ChanParDlg *chanpar;
 
 ULong_t fGreen;
 ULong_t fRed;
@@ -1393,14 +1393,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
-    TGCompositeFrame *tab2 = fTab->AddTab("DAQ");
-    TGCompositeFrame* fr2 = new TGCompositeFrame(tab2, 10, 10, kHorizontalFrame);
-    tab2->AddFrame(fr2, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
-    crspar = new CrsParDlg(fr2, 600, 500);
-    crspar->Make_crspar(fr2, 600, 500);
-    fr2->AddFrame(crspar,
-		  new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-    ntab++;
+  TGCompositeFrame *tab2 = fTab->AddTab("DAQ");
+  TGCompositeFrame* fr2 = new TGCompositeFrame(tab2, 10, 10, kHorizontalFrame);
+  tab2->AddFrame(fr2, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
+  crspar = new ChanParDlg(fr2, 600, 500);
+  crspar->Make_crspar(fr2, 600, 210);
+  fr2->AddFrame(crspar,
+		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
+  ntab++;
 
   //crspar->Update();
 
@@ -1410,8 +1410,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGCompositeFrame* fr3 = new TGCompositeFrame(tab3, 10, 10, kHorizontalFrame);
   tab3->AddFrame(fr3, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
 
-  chanpar = new CrsParDlg(fr3, 600, 500);
-  chanpar->Make_chanpar(fr3, 600, 500);
+  chanpar = new ChanParDlg(fr3, 600, 500);
+  chanpar->Make_chanpar(fr3, 600, 210);
   fr3->AddFrame(chanpar, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
@@ -2729,7 +2729,7 @@ void MainFrame::UpdateStatus() {
   //ss.Clear();
 
   fBar1->SetText(TGString::Format("%lld",crs->nevents),2);
-  fBar1->SetText(TGString::Format("%lld",crs->nevents),3);
+  fBar1->SetText(TGString::Format("%lld",crs->nevents2),3);
   fBar1->SetText(TGString::Format("%lld",crs->npulses),4);
   fBar1->SetText(TGString::Format("%lld",crs->nbuffers),5);
   fBar1->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),6);

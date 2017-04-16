@@ -52,7 +52,7 @@ class ParDlg: public TGCompositeFrame {
   // TGLayoutHints* fLexp;
 
   TGCanvas* fCanvas;
-  TGCompositeFrame* fcont1;  
+  TGCompositeFrame* fcont1;
 
   int nfld; //number of fields in a line
 
@@ -134,14 +134,16 @@ class ParParDlg: public ParDlg {
 };
 
 //-----------------------------------------------
-class CrsParDlg: public ParDlg {
+class ChanParDlg: public ParDlg {
   //class CrsParDlg {
 
  protected:
+  TGCanvas* fCanvas2;
+  TGCompositeFrame* fcont2;
 
  public:
-  CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~CrsParDlg() {};
+  ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~ChanParDlg() {};
 
   void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
   void Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h);
@@ -150,8 +152,8 @@ class CrsParDlg: public ParDlg {
   //	      TGHorizontalFrame *hframe1, const char* name);
   void AddHeader1();
   void AddHeader2();
-  void AddLine1(int i);
-  void AddLine2(int i);
+  void AddLine1(int i, TGCompositeFrame* fcont1);
+  void AddLine2(int i, TGCompositeFrame* fcont1);
   void AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	      const char* name, void* apar);
   void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
@@ -163,7 +165,7 @@ class CrsParDlg: public ParDlg {
   //void *MapPar(int id);
   //void Update();
 
-  ClassDef(CrsParDlg, 0)
+  ClassDef(ChanParDlg, 0)
     };
 
 #endif

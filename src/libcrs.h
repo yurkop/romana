@@ -69,6 +69,7 @@ RQ_OBJECT("CRS")
   Long64_t npulses; //total number of pulses (zero at Reset (Start button))
   UInt_t npulses_buf; //pulses in the current buffer
   Long64_t nevents; //total number of events (zero at Reset (Start button))
+  Long64_t nevents2; //number of analyzed/saved events
   Long64_t nbuffers; //total number of buffers (zero at Reset (Start button))
   double mb_rate;
   double ev_rate;
