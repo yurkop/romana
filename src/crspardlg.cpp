@@ -33,7 +33,7 @@ const char* tip[ncrspar]={
   "Trigger threshold"};
 
 const int nchpar=16;
-const int tlen2[nchpar]={26,60,25,25,35,35,42,42,35,35,20,35,35,35,42,42};
+const int tlen2[nchpar]={26,60,26,25,35,35,42,42,35,35,20,35,35,35,42,42};
 const char* tlab2[nchpar]={"Ch","Type","St","sS","Bkg1","Bkg2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
 const char* tip2[nchpar]={
   "Channel number",
@@ -684,10 +684,10 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   // 2 column, n rows
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
 
-  //tip1= "Coincidence window for events";
-  tip2= "Coincidence window for makeing events";
-  label="Coincidence window (ns)";
-  AddLine3(fF6,ww,NULL,&opt.tgate1,tip1,tip2,label,k_int);
+  tip1= "Coincidence window for making events";
+  tip2= "Period of digitizer";
+  label="Coincidence, period (ns)";
+  AddLine3(fF6,ww,&opt.tgate,&opt.period,tip1,tip2,label,k_int);
 
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";

@@ -1043,7 +1043,8 @@ int CRS::DoStartStop() {
     cout << "cyusb_reset: " << r << endl;
 
     Submit_all();
-    
+    opt.period=5; //5ns for CRS module
+
     if (SetPar()) {
       return 3;
     }
@@ -1348,8 +1349,8 @@ int CRS::Do1Buf() {
 
     //gSystem->Sleep(500);
 
+    Select_Event();
     if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-      Select_Event();
       EvtFrm->DrawEvent2();      
     }
     nbuffers++;
@@ -1688,32 +1689,38 @@ void CRS::PrintPulse(int udata, bool pdata) {
 }
 */
 
-void CRS::Event_Insert_Pulse(PulseClass *newpulse) {
+void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   //if (nbuffers < 1) {
-  //newpulse->PrintPulse();
+  //pls->PrintPulse();
   //}
 
-  newpulse->FindPeaks();
-  newpulse->PeakAna();
+  if (pls->ptype) {
+    cout << "bad pulse: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
+	 << (int) pls->ptype << endl;
+    return;
+  }
+  
+  pls->FindPeaks();
+  pls->PeakAna();
 
   std::list<EventClass>::reverse_iterator rl;
   int nn=0;
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
-    Long64_t dt = newpulse->Tstamp64 - rl->T;
-    if (dt > opt.tgate1) {
+    Long64_t dt = (pls->Tstamp64 - rl->T)*opt.period;
+    if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
       Levents.insert(rl.base(),EventClass());
       rl->Nevt=nevents;
       nevents++;
-      rl->Pulse_Ana_Add(newpulse);
+      rl->Pulse_Ana_Add(pls);
       if (debug && nn>10)
 	cout << "nn: " << nn << " " << Levents.size() << " " << opt.ev_max << endl;
       return;
     }
-    else if (TMath::Abs(dt) <= opt.tgate1) { //add newpulse to existing event
+    else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
       // coincidence event
-      rl->Pulse_Ana_Add(newpulse);
+      rl->Pulse_Ana_Add(pls);
       if (debug && nn>10)
 	cout << "nn: " << nn << endl;
       return;
@@ -1732,13 +1739,13 @@ void CRS::Event_Insert_Pulse(PulseClass *newpulse) {
   Levents.insert(Levents.begin(),EventClass());
   rl->Nevt=nevents;
   nevents++;
-  Levents.begin()->Pulse_Ana_Add(newpulse);
+  Levents.begin()->Pulse_Ana_Add(pls);
 
 }
 
 void CRS::Make_Events(int nvp) {
 
-  std::vector<PulseClass>::iterator newpulse;
+  std::vector<PulseClass>::iterator pls;
 
   int nvp2=nvp-1;
   if (nvp2<0) nvp2=ntrans-1;
@@ -1746,7 +1753,7 @@ void CRS::Make_Events(int nvp) {
   //first insert last pulse from the previous buffer
   std::vector<PulseClass> *vv = Vpulses+nvp2;
   if (!vv->empty() && vv->back().ptype&P_NOSTOP) {
-    //cout << "Make_events: " << (int) newpulse->ptype << " " << newpulse->Tstamp64 << endl;
+    //cout << "Make_events: " << (int) pls->ptype << " " << pls->Tstamp64 << endl;
     //vv->back().FindPeaks();
     //vv->back().PeakAna();
     Event_Insert_Pulse(&vv->back());
@@ -1758,11 +1765,11 @@ void CRS::Make_Events(int nvp) {
 
   if (vv->size()<=1) return; //if vv contains 0 or 1 event, don't analyze it 
 
-  for (newpulse=vv->begin(); newpulse != --vv->end(); ++newpulse) {
-    if (!(newpulse->ptype&P_NOSTOP)) {
-      //newpulse->FindPeaks();
-      //newpulse->PeakAna();
-      Event_Insert_Pulse(&(*newpulse));
+  for (pls=vv->begin(); pls != --vv->end(); ++pls) {
+    if (!(pls->ptype&P_NOSTOP)) {
+      //pls->FindPeaks();
+      //pls->PeakAna();
+      Event_Insert_Pulse(&(*pls));
     }
   }
 
@@ -1790,11 +1797,13 @@ void CRS::Make_Events(int nvp) {
 	 rl!=Levents.end(); rl=next) {
       next = rl;
       ++next;
-      ++nevents2;
       // if (rl->pulses.size()!=2) {
       // 	cout << "Event: " << nn << " " << rl->pulses.size() << " " << rl->T << endl;
       // }
-      FillHist(&(*rl));
+      if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
+	FillHist(&(*rl));
+	++nevents2;
+      }
       Levents.erase(rl);
       //++nn;
       //cout << "makeev: " << Levents.size() << endl;

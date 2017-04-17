@@ -18,8 +18,8 @@ Toptions::Toptions() {
   ev_min=5000;
   ev_max=10000;
 
-  tgate1=500;
-  tgate2=100;
+  tgate=500;
+  //tgate2=100;
   mult1=1;
   mult2=32;
 

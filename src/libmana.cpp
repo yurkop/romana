@@ -3470,7 +3470,7 @@ void FillHist(EventClass* evt) {
       double tt = evt->pulses[i].Tstamp64 + pk->Pos;
       //cout << "FilHist: " << ch << " " << tt*DT << endl;
       htdc_a[ch]->Fill(tt*DT);
-      hsum[ch]->Fill(pk->Area);
+      hsum[ch]->Fill(pk->Area*opt.emult[ch]);
       hmax[ch]->Fill(pk->Height);
     }
   }

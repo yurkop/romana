@@ -537,11 +537,17 @@ void EventFrame::FillHist(int dr) {
   //hst[dr]->SetTitle(ss);
   
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
-    int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
-    //cout << "Dt: " << i << " " << d_event->T << " " << dt
-    // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
     PulseClass *pulse = &d_event->pulses.at(i);
     UInt_t ch= pulse->Chan;
+
+    int dt=pulse->Tstamp64 - d_event->T - opt.preWr[ch];
+
+    if (d_event->pulses.size()>1) {
+      cout << "Dt: " << i << " " << (int) pulse->Chan << " "
+	   << pulse->Tstamp64 << " " << d_event->T << " " << dt
+	   << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists()
+	   << endl;
+    }
 
     if (dr==0) {
       pdat=&pulse->sData[0];
