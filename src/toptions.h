@@ -35,7 +35,7 @@ class Toptions: public TObject {
   //----------------------------------------------
   // parameters of the crs32 or crs2 module
 
-  Int_t smooth[MAX_CH+ADDCH]; //Smooth - SS=0..10; S=2^SS
+  Int_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
   Int_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
   Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
   Int_t durWr[MAX_CH+ADDCH]; // total length N = 1…32763 (internally - multiple of 4)
