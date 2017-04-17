@@ -221,11 +221,13 @@ void EventClass::Pulse_Ana_Add(PulseClass *newpulse) {
   }
 }
 
-/*
+
 void PulseClass::Smooth(int nn) {
 
   //sData = new double[nsamp];
   //memset(sData,0,nsamp*sizeof(double));
+
+  int Nsamp = sData.size();
 
   for (int i=0;i<Nsamp;i++) {
     //int ll=1;
@@ -251,7 +253,7 @@ void PulseClass::Smooth(int nn) {
   }
 
 }
-*/
+
 
 void PulseClass::PrintPulse() {
   printf("Pulse: %2d %2d %6ld %10lld %10lld\n",Chan,ptype,sData.size(),Counter,Tstamp64);

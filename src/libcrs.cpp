@@ -1695,12 +1695,15 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   //pls->PrintPulse();
   //}
 
-  if (pls->ptype) {
+  if (pls->ptype & 0x7) {
     cout << "bad pulse: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
 	 << (int) pls->ptype << endl;
     return;
   }
   
+  if (opt.nsmoo[pls->Chan]) {
+    pls->Smooth(opt.nsmoo[pls->Chan]);
+  }
   pls->FindPeaks();
   pls->PeakAna();
 
