@@ -195,17 +195,12 @@ void *ballast(void* xxx) {
 static void cback(libusb_transfer *transfer) {
 
   static TTimeStamp t1;
-  //ULong64_t rbytes=0;
 
-  //Mut.Lock();
   TTimeStamp t2;
   //t2.Set();
 
   crs->npulses_buf=0;
 
-  //Mut.UnLock();
-  //goto skip;
-  
   if (transfer->actual_length) {
     if (opt.decode) {
       if (crs->module==2) {
@@ -1356,6 +1351,9 @@ int CRS::Do1Buf() {
     nbuffers++;
     myM->UpdateStatus();
     gSystem->ProcessEvents();
+
+    nvp = (nvp+1)%ntrans;
+
     return 1;
   }
   else {
@@ -1425,7 +1423,9 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     //cout << "vv: " << vv << endl;
     if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
       cout << "32: Bad channel: " << (int) ch
-	   << " " << (int) ipp->Chan << endl;
+	   << " " << (int) ipp->Chan
+	   << " " << idx8 << " " << nvp
+	   << endl;
       ipp->ptype|=P_BADCH;
 
       idx8++;
