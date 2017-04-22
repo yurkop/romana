@@ -37,3 +37,5 @@ write/read durWr[],preWr[] for each raw .gz file additionally to toptions
 /or split toptions into two varibles:
 opt1, opt2 - with fixed and non-fixed structures
 
+implement dock/undock - see e.g. tutorials/eve
+
