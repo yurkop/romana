@@ -9,6 +9,7 @@
 #pragma link C++ class Toptions+;
 //#pragma link C++ class PulseClass+;
 #pragma link C++ class EventFrame+;
+#pragma link C++ class HistFrame+;
 #pragma link C++ class ParDlg+;
 #pragma link C++ class ChanParDlg+;
 #pragma link C++ class CrsParDlg+;

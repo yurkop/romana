@@ -11,6 +11,7 @@
 //#include "numdlg.h"
 //#include "pardlg.h"
 #include "eventframe.h"
+#include "histframe.h"
 
 //-----------------------------------------------
 class MainFrame : public TGMainFrame {
