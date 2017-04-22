@@ -1,5 +1,5 @@
-detect crs type (2 or 32)
-detect number of channels
+# OK detect crs type (2 or 32)
+# OK detect number of channels
 read pulse counter BEFORE stop
 multithreading transfer
 check if Decode is not overlapped for different cbacks (threads?)
@@ -11,24 +11,29 @@ Class - data, pulses etc...
 
 Reset
 
-limits of parameters
+# OK limits of parameters
 
-save/read parameters
+# OK save/read parameters
 
 check chan for each 2byte or 8byte data (crs2 or crs32)
 
-make flip-flop buffers for Bevents
+# OKOK make flip-flop buffers for Bevents
 
-join all threads at exit
+# ??OK?? join all threads at exit
 
 simulate too long pulse in readpulse2 (return 2)
 
-syncronize MAX_XH and MAXCH
-
 make DoReset/greset() - detect crs, clear everything
 
-set chanPresent for open files (no module)
+# ?? set chanPresent for open files (no module)
 
 make colors in crspardlg
 
-calculate data rate instantly (between subsequent buffers), not as integral
+# OK calculate data rate instantly (between subsequent buffers), not as integral
+
+clean obsolete variables
+
+write/read durWr[],preWr[] for each raw .gz file additionally to toptions
+/or split toptions into two varibles:
+opt1, opt2 - with fixed and non-fixed structures
+
