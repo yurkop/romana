@@ -13,9 +13,25 @@
 #include <THStack.h>
 #include <TMultiGraph.h>
 #include <TGStatusBar.h>
+#include <TGListTree.h>
 
 //#include "TThread.h"
 #include <list>
+
+//-----------------------------------------------
+class MECanvas: public TRootEmbeddedCanvas {
+ public:
+ MECanvas(const char* name = 0, const TGWindow* p = 0, UInt_t w = 10, 
+	  UInt_t h = 10, UInt_t options = kSunkenFrame|kDoubleBorder,
+	  Pixel_t back = GetDefaultFrameBackground())
+   : TRootEmbeddedCanvas(name,p,w,h,options,back) {};
+
+
+  //~TECanvas() {};
+
+  Bool_t HandleDNDDrop(TDNDData *data);
+
+};
 
 //-----------------------------------------------
 class HistFrame: public TGCompositeFrame {
@@ -47,15 +63,11 @@ protected:
    TGStatusBar            *fStat1;
    TGStatusBar            *fStat2;
    
-   TGLayoutHints          *fLay1;
-   TGLayoutHints          *fLay2;
-   TGLayoutHints          *fLay3;
-   TGLayoutHints          *fLay4;
-   TGLayoutHints          *fLay5;
-   TGLayoutHints          *fLay6;
-
  public:
-   TRootEmbeddedCanvas    *fCanvas;
+   TGCanvas               *fCanvas;
+   //TRootEmbeddedCanvas    *fEc;
+   MECanvas    *fEc;
+   TGListTree             *fListTree;    // list tree with histograms
 
  public:
 

@@ -50,6 +50,7 @@ extern CRS* crs;
 int chanPresent;
 
 EventFrame* EvtFrm;
+HistFrame* HiFrm;
 
 ParParDlg *parpar;
 CrsParDlg *crspar;
@@ -1124,6 +1125,18 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   : TGMainFrame(p,w,h) {
   // Create a main frame
 
+  /*
+   fDNDTypeList = new Atom_t[3];
+   fDNDTypeList[0] = gVirtualX->InternAtom("application/root", kFALSE);
+   fDNDTypeList[1] = gVirtualX->InternAtom("text/uri-list", kFALSE);
+   fDNDTypeList[2] = 0;
+   if (gDNDManager) delete gDNDManager;
+   gDNDManager = new TGDNDManager(this, fDNDTypeList);
+  */
+
+
+
+
   //int nn=2;
   //double xx[nn];
   //double yy[nn];
@@ -1422,10 +1435,16 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   tab4->AddFrame(EvtFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
-
   TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
-  fEcanvas = new TRootEmbeddedCanvas("Pad",tab5,600,400);
-  tab5->AddFrame(fEcanvas, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,
+  //TGDockableFrame *tab4 = fTab->AddTab("Events");
+  HiFrm = new HistFrame(tab5, 800, 500,ntab);
+  tab5->AddFrame(HiFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
+  ntab++;
+
+
+  TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
+  fEcanvas = new TRootEmbeddedCanvas("Pad",tab6,600,400);
+  tab6->AddFrame(fEcanvas, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,
 					     2,2,2,2));
   ntab++;
 
@@ -1626,6 +1645,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     fHS[5]->SetTitle("Time");
   */
 
+
+  hlist = new TList();
+  Make_hist();
+
   DoDraw2();
 
 }
@@ -1654,6 +1677,37 @@ MainFrame::~MainFrame() {
   //DoExit();
   //delete fMain;
   gApplication->Terminate(0);
+}
+
+void MainFrame::Make_hist() {
+
+  //char title[100];
+  char nam[100];
+
+  for (int i=0;i<MAX_CH;i++) {
+    sprintf(nam,"ampl_%02d",i);
+    h_ampl[i]=new TH1F(nam,nam,opt.sum_max*opt.sum_bins,0.,opt.sum_max);
+    hlist->Add(h_ampl[i]);
+  }
+  
+  for (int i=0;i<MAX_CH;i++) {
+    sprintf(nam,"height_%02d",i);
+    h_height[i]=new TH1F(nam,nam,opt.sum_max*opt.sum_bins,0.,opt.sum_max);
+    hlist->Add(h_height[i]);
+  }
+  
+  for (int i=0;i<MAX_CH;i++) {
+    sprintf(nam,"time_%02d",i);
+    h_time[i]=new TH1F(nam,nam,opt.long_max*opt.long_bins,0.,opt.long_max);
+    hlist->Add(h_time[i]);
+  }
+  
+  for (int i=0;i<MAX_CH;i++) {
+    sprintf(nam,"tof_%02d",i);
+    h_tof[i]=new TH1F(nam,nam,opt.tof_max*opt.tof_bins,0.,opt.tof_max);
+    hlist->Add(h_tof[i]);
+  }
+
 }
 
 void MainFrame::DoStartStop() {

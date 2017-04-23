@@ -24,275 +24,90 @@ extern ULong_t fGreen;
 extern ULong_t fRed;
 extern ULong_t fCyan;
 
+extern TH1F *hrms;
+extern TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)
+
 //TText txt;
 
 //TMutex *Emut;
 
+TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
+TGLayoutHints* fLay2 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
+TGLayoutHints* fLay3 = new TGLayoutHints(kLHintsExpandX | kLHintsBottom,20,20,20,20);
+TGLayoutHints* fLay4 = new TGLayoutHints(kLHintsLeft,2,2,2,2);
+TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
+TGLayoutHints* fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
+TGLayoutHints* fLay7 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,5,0,0,0);
+
+//------------------------------
+
+Bool_t MECanvas::HandleDNDDrop(TDNDData *data) {
+  //TRootEmbeddedCanvas(data);
+  cout << "DND" << endl;
+  return TRootEmbeddedCanvas::HandleDNDDrop(data);
+}
+
+//------------------------------
+
 HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
-  :TGCompositeFrame(p,w,h,kHorizontalFrame)
+  :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
 
-  Levents = &Tevents;
-  d_event = Levents->begin();
-  cout << "d_event: " << &(*d_event) << endl;
-  //d_event = new EventClass();
-  //Emut = new TMutex();
+  cout << "HistFrame: " << gDNDManager << endl;
 
   ntab=nt;
-  // build widgets
 
-  //bprint=false;
+  const TGPicture *pic = 0;
+  TGListTreeItem *item;
+  TGListTreeItem *idir;
 
-  //cout << "HistFrame: " << p->GetName() << endl;
-  
   char ss[100];
-
-  fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
-  fLay2 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
-  fLay3 = new TGLayoutHints(kLHintsExpandX,2,2,2,2);
-  fLay4 = new TGLayoutHints(kLHintsLeft,2,2,2,2);
-  fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
-  fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
 
   //Frames.....
 
-  TGVerticalFrame        *fVer0; //contains canvas, fHor1
-  TGVerticalFrame        *fVer_d; //contains deriv etc
-  TGVerticalFrame        *fVer_ch; //contains fHor_ch
-  TGHorizontalFrame      *fHor_ch; //contains fVer[..]
-  TGVerticalFrame        *fVer[(MAX_CH-1)/16+1];
+  TGHorizontalFrame      *fHor1; //contains canvas and list of histograms
+  TGHorizontalFrame      *fHor2; //contains buttons etc
 
-  TGHorizontalFrame      *fHor_but; //contains buttons
-  TGVerticalFrame        *fVer_st; //status etc //contains fHor_st + statusbar
-  TGHorizontalFrame      *fHor_st; //contains fVer_d, fVer_ch
+  fHor1 = new TGHorizontalFrame(this, 10, 10);
+  AddFrame(fHor1, fLay1);
 
-  TGVertical3DLine       *separator1;
+  fHor2 = new TGHorizontalFrame(this, 10, 10);
+  AddFrame(fHor2, fLay3);
 
-  fVer0 = new TGVerticalFrame(this, 10, 10);
-  AddFrame(fVer0, fLay1);
+  //fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
+  fEc = new MECanvas("Hcanvas", fHor1, 10, 10);
+  fHor1->AddFrame(fEc, fLay1);
 
-  separator1 = new TGVertical3DLine(this);
-  AddFrame(separator1, fLay2);
+  //TGVertical3DLine *separator1 = new TGVertical3DLine(fHor1);
+  //fHor1->AddFrame(separator1, fLay2);
 
-  fVer_st = new TGVerticalFrame(this, 10, 10);
-  AddFrame(fVer_st, fLay4);
+  fCanvas = new TGCanvas(fHor1, 150, 100);
+  fHor1->AddFrame(fCanvas, fLay7);
+  fListTree = new TGListTree(fCanvas, kHorizontalFrame);
+  fListTree->Associate(this);
+  fEc->SetDNDTarget(kTRUE);
 
-  fHor_st = new TGHorizontalFrame(fVer_st, 10, 10);
-  fVer_st->AddFrame(fHor_st, fLay4);
+  //fCanvas = fEc->GetCanvas();
 
+  //TH1F *hpx = (TH1F *)GetObject("1D Hist");
+  pic = gClient->GetPicture("h1_t.xpm");
+  item = fListTree->AddItem(0, hrms->GetName(), hrms, pic, pic);
+  fListTree->SetToolTipItem(item, "1D Histogram");
+  item->SetDNDSource(kTRUE);
 
-  fVer_d = new TGVerticalFrame(fHor_st, 10, 10);
-  fHor_st->AddFrame(fVer_d, fLay4);
-
-  fCanvas = new TRootEmbeddedCanvas("Events",fVer0,w,h);
-  fVer0->AddFrame(fCanvas, fLay1);
-
-  fHslider = new TGDoubleHSlider(fVer0, 300, kDoubleScaleBoth);
-  fHslider->SetRange(0,1);
-  fHslider->SetPosition(0,1);
-  fVer0->AddFrame(fHslider, fLay3);
-
-  fHslider->Connect("PositionChanged()", "HistFrame", 
-		    this, "DoSlider()");
-
-  fHor_but = new TGHorizontalFrame(fVer0, 10, 10);
-  fVer0->AddFrame(fHor_but, fLay4);
-
-  /*
-  
-  //freset = new TGTextButton(fHor_but,"Reset");
-  //freset->Connect("Clicked()","HistFrame",this,"DoReset()");
-  //fHor_but->AddFrame(freset, fLay4);
-
-  f1buf = new TGTextButton(fHor_but,"1 buf");
-  f1buf->Connect("Clicked()","HistFrame",this,"Do1buf()");
-  fHor_but->AddFrame(f1buf, fLay4);
-
-  fNbuf = new TGTextButton(fHor_but,"N buf");
-  fNbuf->ChangeBackground(fGreen);
-  fNbuf->Connect("Clicked()","HistFrame",this,"DoNbuf()");
-  fHor_but->AddFrame(fNbuf, fLay4);
-
-  int id;
-  id = parpar->Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(fHor_but, 0, 0, id,
-					   TGNumberFormat::kNESInteger,
-					   TGNumberFormat::kNEAAnyNumber,
-					   TGNumberFormat::kNELLimitMinMax,
-					   1,100000);
-  parpar->DoMap(fNum1->GetNumberEntry(),&opt.num_buf,p_inum,0);
-  fNum1->Resize(65, fNum1->GetDefaultHeight());
-  //fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "HistFrame", this,
-  //				   "DoNum()");
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
-				   "DoNum()");
-  fHor_but->AddFrame(fNum1,fLay4);
-
-  //cout << "num_buf: " << id << " " << opt.num_buf << endl;
-
-  //fHor_but->AddSeparator();
-  */
-
-  fFirst = new TGTextButton(fHor_but,"First");
-  fFirst->Connect("Clicked()","HistFrame",this,"First()");
-  fHor_but->AddFrame(fFirst, fLay5);
-
-  fLast = new TGTextButton(fHor_but,"Last");
-  fLast->Connect("Clicked()","HistFrame",this,"Last()");
-  fHor_but->AddFrame(fLast, fLay4);
-
-  fmOne = new TGTextButton(fHor_but," -1 ");
-  fmOne->Connect("Clicked()","HistFrame",this,"Minus1()");
-  fHor_but->AddFrame(fmOne, fLay4);
-
-  fOne = new TGTextButton(fHor_but," +1 ");
-  fOne->Connect("Clicked()","HistFrame",this,"Plus1()");
-  fHor_but->AddFrame(fOne, fLay4);
-
-  fmNev = new TGTextButton(fHor_but," -N ");
-  fmNev->Connect("Clicked()","HistFrame",this,"MinusN()");
-  fHor_but->AddFrame(fmNev, fLay4);
-
-  fNev = new TGTextButton(fHor_but," +N ");
-  fNev->Connect("Clicked()","HistFrame",this,"PlusN()");
-  fHor_but->AddFrame(fNev, fLay4);
-
-  int id;
-  id = parpar->Plist.size()+1;
-  TGNumberEntry* fNum2 = new TGNumberEntry(fHor_but, 0, 0, id,
-					   TGNumberFormat::kNESInteger,
-					   TGNumberFormat::kNEAAnyNumber,
-					   TGNumberFormat::kNELLimitMinMax,
-					   1,1000000);
-  parpar->DoMap(fNum2->GetNumberEntry(),&opt.num_events,p_inum,0);
-  fNum2->Resize(70, fNum2->GetDefaultHeight());
-  //fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "HistFrame", this,
-  //				   "DoNum()");
-  fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
-				   "DoNum()");
-  fHor_but->AddFrame(fNum2,fLay4);
-
-
-
-  fDeriv[0] = new TGCheckButton(fVer_d, "'", 0);
-  fDeriv[1] = new TGCheckButton(fVer_d, "\"", 1);
-  fDeriv[0]->SetState((EButtonState) opt.b_deriv[0]);
-  fDeriv[1]->SetState((EButtonState) opt.b_deriv[1]);
-  fDeriv[0]->Connect("Clicked()","HistFrame",this,"DoChkDeriv()");
-  fDeriv[1]->Connect("Clicked()","HistFrame",this,"DoChkDeriv()");
-  fVer_d->AddFrame(fDeriv[0], fLay4);
-  fVer_d->AddFrame(fDeriv[1], fLay4);
-  fDeriv[0]->SetToolTipText("Show 1st derivative");
-  fDeriv[1]->SetToolTipText("Show 2nd derivative");
-
-  fPeak[0] = new TGCheckButton(fVer_d, "peaks", 0);
-  fPeak[1] = new TGCheckButton(fVer_d, "Pos", 1);
-  fPeak[2] = new TGCheckButton(fVer_d, "Time\'", 2);
-  fPeak[3] = new TGCheckButton(fVer_d, "Time\"", 3);
-  fPeak[4] = new TGCheckButton(fVer_d, "left", 4);
-  fPeak[5] = new TGCheckButton(fVer_d, "right", 5);
-  fPeak[6] = new TGCheckButton(fVer_d, "Bleft", 6);
-  fPeak[7] = new TGCheckButton(fVer_d, "Bright", 7);
-  fPeak[8] = new TGCheckButton(fVer_d, "thresh", 8);
-
-  fPeak[0]->SetToolTipText("Show peaks");
-  fPeak[1]->SetToolTipText("Peak Position");
-  fPeak[2]->SetToolTipText("Exact time from 1st derivative");
-  fPeak[3]->SetToolTipText("Exact time from 2nd derivative");
-  fPeak[4]->SetToolTipText("Left border of the peak integration");
-  fPeak[5]->SetToolTipText("Right border of the peak integration");
-  fPeak[6]->SetToolTipText("Left border of the background integration");
-  fPeak[7]->SetToolTipText("Right border of the background integration");
-  fPeak[8]->SetToolTipText("Threshold (only in 1st derivative)");
-
-  for (int i=0;i<9;i++) {
-    fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
-    fPeak[i]->Connect("Clicked()","HistFrame",this,"DoChkPeak()");
-    fVer_d->AddFrame(fPeak[i], fLay4);
-  }
-
-
-  fVer_ch = new TGVerticalFrame(fHor_st, 10, 10);
-  fHor_st->AddFrame(fVer_ch, fLay4);
-
-  fLabel2 = new TGLabel(fVer_ch, "Channels");
-  fVer_ch->AddFrame(fLabel2, fLay4);
-
-  fHor_ch = new TGHorizontalFrame(fVer_ch, 10, 10);
-  fVer_ch->AddFrame(fHor_ch, fLay1);
+  idir = fListTree->AddItem(0, "Time");
+  idir->SetDNDSource(kTRUE);
 
   for (int i=0;i<MAX_CH;i++) {
-    fChn[i] = NULL;
+    item = fListTree->AddItem(idir, htdc_a[i]->GetName(), htdc_a[i],
+			      pic, pic);
+    fListTree->SetToolTipItem(item, "1D Histogram");
+    item->SetDNDSource(kTRUE);
   }
 
-  int nx=(MAX_CH-1)/16+1;
-  int k;
-  for (int i=0;i<nx;i++) {
-    fVer[i] = new TGVerticalFrame(fHor_ch, 10, 10);
-    fHor_ch->AddFrame(fVer[i], fLay1);
-
-    for (int j=0;j<16;j++) {
-      k=i*16+j;
-      if (k<MAX_CH) {
-	sprintf(ss,"%d",k);
-	fChn[k] = new TGCheckButton(fVer[i], ss, k);
-	int col=gROOT->GetColor(opt.color[k])->GetPixel();
-	int fcol=0xffffff-col;
-	//printf("Color: %d %x %x\n",i,col,fcol);
-
-	fChn[k]->SetBackgroundColor(col);
-	fChn[k]->SetForegroundColor(fcol);
-	fChn[k]->Connect("Clicked()","HistFrame",this,"DoPulseOff()");
-	fChn[k]->SetState(kButtonDisabled);
-	fVer[i]->AddFrame(fChn[k], fLay6);
-      }
-    }
-  }
-
-
-  fStat1=new TGStatusBar(fVer_st,10,10);
-  fStat2=new TGStatusBar(fVer_st,10,10);
-  fVer_st->AddFrame(fStat1,fLay3);
-  fVer_st->AddFrame(fStat2,fLay3);
-
-
-  //trd=0;
-  //cout << "fVer0->Opt: "<<fVer0->GetOptions() << endl;
-
-  //cout << "fCanvas: " << fCanvas << endl;
-
-  for (int i=0;i<MAX_CH;i++) {
-    for (int j=0;j<3;j++) {
-      hh[j][i]=0;
-      sprintf(ss,"ch_%02d_%d",i,j);
-      hh[j][i]=new TH1F(ss,ss,10,0.,10.);
-      //hh[j][i]->SetLineColor(i+1);
-      hh[j][i]->SetDirectory(0);
-    }
-  }  
 
   /*
-    for (int i=0;i<MAX_CH;i++) {
-    for (int j=0;j<3;j++) {
-    sprintf(ss,"gr_%d_%d",i,j);
-    Gr[j][i]=TGraph(ss,ss,10,0.,10.);
-    hh[j][i]->SetLineColor(i+1);
-    }
-    }  
   */
-
-  for (int j=0;j<3;j++) {
-    sprintf(ss,"hst_%d",j);
-    hst[j]=new THStack(ss,"");
-  }
-
-  //for (int j=0;j<3;j++) {
-  ////sprintf(ss,"mgr_%d",j);
-  ////mgr[j]=new TMultiGraph(ss,ss);
-  //mgr[j]=0;
-  //}
-
-  //StartThread();
   
 }
 
@@ -426,7 +241,7 @@ void HistFrame::MinusN() {
 
 void HistFrame::Clear()
 {
-  fCanvas->GetCanvas()->Clear();
+
 }
 
 void HistFrame::DoSlider() {
@@ -507,71 +322,6 @@ void HistFrame::FillHist(int dr) {
 
 void HistFrame::DrawEvent2() {
 
-  TCanvas *cv=fCanvas->GetCanvas();
-  cv->Clear();
-
-  //printf("Draw0:\n");
-
-  //Emut->Lock();
-  if (Levents->empty()) {
-    //Emut->UnLock();
-    //txt.DrawTextNDC(0.2,0.7,"Empty event");
-    cv->Update();
-    return;
-  }
-
-  //printf("Draw1:\n");
-
-  ndiv=1;
-
-  if (d_event->pulses.empty()) {
-    //TText tt;
-    //txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
-    cv->Update();
-    //Emut->UnLock();
-    return;
-  }
-
-  //printf("Draw22: %lld\n", d_event->T);
-
-  FillHist(0);
-
-  if (opt.b_deriv[0]) {
-    FillHist(1);
-    ndiv++;
-  }    
-  if (opt.b_deriv[1]) {
-    FillHist(2);
-    ndiv++;
-  }
-
-
-  //cout << "hst: " << hst[0]->GetNhists() << endl;
-
-  cv->Divide(1,ndiv);
-  for (int j=0;j<ndiv;j++) {
-    cv->cd(j+1);
-    hst[j]->Draw("nostack");
-    DrawPeaks(hst[j]->GetMinimum("nostack"),
-	      hst[j]->GetMaximum("nostack")*1.05);
-  }
-
-  //cv->cd(1);
-  //char ss[99];
-  //sprintf(ss,"Event %lld",d_event->T);
-  //txt.DrawTextNDC(0.3,0.92,ss);
-
-  char ss[99];
-  sprintf(ss,"Evt: %lld",d_event->Nevt);//std::distance(Levents->begin(),d_event));
-  fStat1->SetText(ss);
-
-  sprintf(ss,"Tstamp: %lld",d_event->T);
-  fStat2->SetText(ss);
-  
-  
-  cv->Update();
-
-  //Emut->UnLock();
 
 } //DrawEvent2
 

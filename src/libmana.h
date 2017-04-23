@@ -89,4 +89,8 @@ class MFileDialog: public TGFileDialog {
 
 };
 */
+
+//class HClass {
+//}
+
 #endif
