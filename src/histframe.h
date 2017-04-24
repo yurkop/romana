@@ -97,6 +97,9 @@ public:
 
    //void StartThread();
 
+   void DoClick(TGListTreeItem* item,Int_t but);
+   void DoKey(TGListTreeItem* entry, UInt_t keysym);
+   //void DoDblClick(TGListTreeItem* item,Int_t but);
    void Clear();
    //void Start();
    //void DoReset();

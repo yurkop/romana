@@ -27,6 +27,8 @@ extern ULong_t fCyan;
 extern TH1F *hrms;
 extern TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)
 
+extern HistFrame* EvtFrm;
+
 //TText txt;
 
 //TMutex *Emut;
@@ -84,7 +86,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fCanvas = new TGCanvas(fHor1, 150, 100);
   fHor1->AddFrame(fCanvas, fLay7);
   fListTree = new TGListTree(fCanvas, kHorizontalFrame);
-  fListTree->Associate(this);
+  //fListTree->Associate(this);
   fEc->SetDNDTarget(kTRUE);
 
   //fCanvas = fEc->GetCanvas();
@@ -105,7 +107,15 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     item->SetDNDSource(kTRUE);
   }
 
+  //fListTree->Connect("Clicked()","HistFrame",this,"DoClick()");
 
+  fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
+		     "DoClick(TGListTreeItem*,Int_t)");
+  //fListTree->Connect("DoubleClicked(TGListTreeItem*,Int_t)","HistFrame",this,
+  //		     "DoDblClick(TGListTreeItem*,Int_t)");
+
+  fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
+		     this,"DoKey(TGListTreeItem*, UInt_t)");
   /*
   */
   
@@ -132,8 +142,6 @@ HistFrame::~HistFrame()
 }
 
 
-extern HistFrame* EvtFrm;
-
 // void HistFrame::StartThread()
 // {
 //   trd = new TThread("trd", trd_handle, (void*) 0);
@@ -144,6 +152,28 @@ void HistFrame::CloseWindow()
 {
   delete this;
 }
+
+void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
+{
+  cout << "DoClick: " << item << " " << but << endl;
+  if (but==1) {
+    if (item->IsOpen()) {
+      fListTree->CloseItem(item);
+    }
+    else {
+      fListTree->OpenItem(item);
+    }
+  }
+}
+
+void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym) {
+  cout << "key: " << entry << " " << keysym << endl;
+}
+
+//void HistFrame::DoDblClick(TGListTreeItem* item,Int_t but)
+//{
+//  cout << "DoDblClick: " << item << " " << but << endl;
+//}
 
 // void HistFrame::DoReset() {
 //   myM->DoReset();
