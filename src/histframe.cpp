@@ -114,10 +114,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fListTree->Connect("DoubleClicked(TGListTreeItem*,Int_t)","HistFrame",this,
   //		     "DoDblClick(TGListTreeItem*,Int_t)");
 
-  fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
-		     this,"DoKey(TGListTreeItem*, UInt_t)");
-  /*
-  */
+   //fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
+   //		     this,"DoKey(TGListTreeItem*, UInt_t)");
   
 }
 
