@@ -8,7 +8,7 @@
 #include "eventframe.h"
 #include "romana.h"
 #include <malloc.h>
-
+#include <TClass.h>
 
 //#include <TSemaphore.h>
 //TSemaphore sem;
@@ -243,6 +243,10 @@ static void cback(libusb_transfer *transfer) {
 }
 
 CRS::CRS() {
+
+
+  //cout << TClass::GetClass("Toptions")->GetClassVersion() << endl;
+  //exit(1);
 
   /*
     std::list<int> mylist;
@@ -1071,8 +1075,10 @@ int CRS::DoStartStop() {
 	if (crs->f_raw) {
 	  //Int_t size = sizeof(opt);
 	  //opt.F_start.Print();
+	  Version_t ver = TClass::GetClass("Toptions")->GetClassVersion();
 	  gzwrite(f_raw,mod,sizeof(mod));
 	  gzwrite(f_raw,&opt,sizeof(opt));
+	  gzwrite(f_raw,&ver, sizeof(ver));
 	  gzclose(f_raw);
 	}
 	else {
@@ -1258,6 +1264,9 @@ void CRS::DoFopen(char* oname) {
 
     //YK - opt is not read from the file
     char* obuf = new char[mod[1]];
+    //gzwrite(f_raw,&ver, sizeof(ver));
+    Version_t ver;
+    gzread(f_raw,&ver,sizeof(ver));
     gzread(f_raw,obuf,mod[1]);
     delete[] obuf;
 
