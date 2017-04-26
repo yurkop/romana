@@ -2,6 +2,7 @@
 #include "toptions.h"
 #include <iostream>
 
+extern Coptions cpar;
 extern Toptions opt;
 
 using namespace std;
@@ -30,7 +31,7 @@ void PulseClass::FindPeaks() {
   // N=deadtime samples from the previous peak
   */
   
-  UInt_t kk=opt.kderiv[Chan];
+  UInt_t kk=cpar.kderiv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
   peak_type *pk=0;
@@ -47,7 +48,7 @@ void PulseClass::FindPeaks() {
     D=sData[j]-sData[j-kk];
     if (!in_peak) {
       if (D>0 && pD<=0) pp0=j; 
-      if (D >= opt.threshold[Chan]) {
+      if (D >= cpar.threshold[Chan]) {
 	Peaks.push_back(peak_type());
 	pk = &Peaks.back();
 	pk->T1=pp0;
@@ -76,7 +77,7 @@ void PulseClass::FindPeaks() {
 	jmax=0;
 	if (Peaks.size()>1) { //this is at least second peak
 	  p_prev = pk-1;
-	  if (pk->Pos - p_prev->Pos < opt.deadTime[Chan])
+	  if (pk->Pos - p_prev->Pos < cpar.deadTime[Chan])
 	    Peaks.pop_back();
 	  else if (pk->Pos - p_prev->Pos < opt.pile[Chan]) {
 	    p_prev->Type|=P_PILE1;
@@ -178,7 +179,7 @@ void PulseClass::PeakAna() {
     else
       t4=tt+opt.twin2[Chan];
 
-    UInt_t kk=opt.kderiv[Chan];
+    UInt_t kk=cpar.kderiv[Chan];
     if (kk<1 || kk>=sData.size()) kk=1;
 
     if (t3<(int)kk) {t3=kk; pk->Type|=P_B111;}

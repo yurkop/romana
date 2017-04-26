@@ -3,6 +3,101 @@
 
 using namespace std;
 
+Coptions::Coptions() {
+  for (int i=0;i<MAX_CH;i++) {
+    enabl[i]=true;
+  }
+}
+
+void Coptions::InitPar(int module) {
+
+  if (module==2) {
+    for (int i=0;i<MAX_CH+ADDCH;i++) {
+      acdc[i]=false;
+      inv[i]=false;
+      smooth[i]=0;
+      deadTime[i]=1;
+      preWr[i]=100;
+      durWr[i]=200;
+      kderiv[i]=0;
+      threshold[i]=1500;
+      adcGain[i]=0;
+    }
+    forcewr=false;
+  }
+  else if (module==32) {
+    for (int i=0;i<MAX_CH+ADDCH;i++) {
+      acdc[i]=false;
+      inv[i]=false;
+      smooth[i]=0;
+      deadTime[i]=1;
+      preWr[i]=100;
+      durWr[i]=200;
+      kderiv[i]=0;
+      threshold[i]=1500;
+      adcGain[i]=0;
+    }
+    forcewr=false;
+  }
+  else {
+    cout << "InitPar: wrong module: " << module << endl;
+  }
+
+}
+
+void Coptions::GetPar(const char* name, int module, int i, int &par, int &min, int &max) {
+
+  min=0;
+  max=0;
+
+  if (!strcmp(name,"smooth")) {
+    par = smooth[i];
+    min = 0;
+    max=10;
+  }
+  else if (!strcmp(name,"dt")) {
+    par = deadTime[i];
+    min = 1;
+    max=16383;
+  }
+  else if (!strcmp(name,"pre")) {
+    par = preWr[i];
+    min = 0;
+    if (module==32) {
+      max=4094;
+    }
+    else if (module==2) {
+      max=8184;
+    }
+  }
+  else if (!strcmp(name,"len")) {
+    par = durWr[i];
+    min = 1;
+    if (module==32) {
+      max=32763;
+    }
+    else if (module==2) {
+      max=16379;
+    }
+  }
+  else if (!strcmp(name,"deriv")) {
+    par = kderiv[i];
+    min = 0;
+    max=1023;
+  }
+  else if (!strcmp(name,"gain")) {
+    par = adcGain[i];
+    min = 0;
+    max=12;
+  }
+  else if (!strcmp(name,"thresh")) {
+    par = threshold[i];
+    min = 0;
+    max=2047;
+  }
+
+}
+
 Toptions::Toptions() {
 
   //cout << "toptions" << endl;
@@ -12,7 +107,7 @@ Toptions::Toptions() {
     channels[i]=ch_off2;
     //cout << i << " toptions " << channels[i] << endl;
     nsmoo[i]=2;
-    enabl[i]=true;
+    //enabl[i]=true;
   }
 
   ev_min=5000;
@@ -25,37 +120,6 @@ Toptions::Toptions() {
 
   seltab=0;
   
-  //www[0]=1.0;
-  //www[1]=5.0;
-  /*
-  gam_thresh = 20;
-  gam_elim1=20;
-  gam_elim2=9999;
-  gam_bkg1=-20;
-  gam_bkg2=-6;
-  gam_border1=-5;
-  gam_border2=100;
-  gam_pile1=20;
-  gam_pile2=120;
-  gam_timing=1;
-  gam_twin=0;
-
-  ng_thresh = 15;
-  ng_elim1=5;
-  ng_elim2=9999;
-  ng_bkg1=-15;
-  ng_bkg2=-8;
-  ng_border1=-7;
-  ng_border2=8;
-  ng_pile=20;
-  ng_timing=1;
-  ng_twin=0;
-
-  nim_thresh1=500;
-  nim_thresh2=50;
-  nim_timing=1;
-  nim_twin=0;
-  */
   long_max=200;
   long_bins=1000;
 
@@ -86,15 +150,6 @@ Toptions::Toptions() {
   beam1=0.0;
   beam2=0.0;
 
-  /*
-  wgam1=2;
-  wgam2=3;
-  wneu1=3;
-  wneu2=4;
-  wtail1=4;
-  wtail2=5;
-  */
-
   gcut[0]=NULL;
   gcut[1]=NULL;
   gcut[2]=NULL;
@@ -120,13 +175,6 @@ Toptions::Toptions() {
   LL=20.0;
 
   draw_opt=M_DEMON;
-
-  /*
-  for (int i=0;i<30;i++) {
-    opt_label[i]="";
-    opt_tip[i]="";
-  }
-  */
 
   for (int i=0;i<MAX_CH;i++) {
     sprintf(chname[i],"ch%02d",i);    
@@ -188,95 +236,6 @@ Toptions::Toptions() {
   event_buf=1000;
   event_lag=10;
   //printf("opt: %f\n", *(double*) opt_id[9]);
-
-}
-
-void Toptions::InitPar(int module) {
-
-  if (module==2) {
-    for (int i=0;i<MAX_CH+ADDCH;i++) {
-      acdc[i]=false;
-      inv[i]=false;
-      smooth[i]=0;
-      deadTime[i]=1;
-      preWr[i]=100;
-      durWr[i]=200;
-      kderiv[i]=0;
-      threshold[i]=1500;
-      adcGain[i]=0;
-    }
-    forcewr=false;
-  }
-  else if (module==32) {
-    for (int i=0;i<MAX_CH+ADDCH;i++) {
-      acdc[i]=false;
-      inv[i]=false;
-      smooth[i]=0;
-      deadTime[i]=1;
-      preWr[i]=100;
-      durWr[i]=200;
-      kderiv[i]=0;
-      threshold[i]=1500;
-      adcGain[i]=0;
-    }
-    forcewr=false;
-  }
-  else {
-    cout << "InitPar: wrong module: " << module << endl;
-  }
-
-}
-
-void Toptions::GetPar(const char* name, int module, int i, int &par, int &min, int &max) {
-
-  min=0;
-  max=0;
-
-  if (!strcmp(name,"smooth")) {
-    par = smooth[i];
-    min = 0;
-    max=10;
-  }
-  else if (!strcmp(name,"dt")) {
-    par = deadTime[i];
-    min = 1;
-    max=16383;
-  }
-  else if (!strcmp(name,"pre")) {
-    par = preWr[i];
-    min = 0;
-    if (module==32) {
-      max=4094;
-    }
-    else if (module==2) {
-      max=8184;
-    }
-  }
-  else if (!strcmp(name,"len")) {
-    par = durWr[i];
-    min = 1;
-    if (module==32) {
-      max=32763;
-    }
-    else if (module==2) {
-      max=16379;
-    }
-  }
-  else if (!strcmp(name,"deriv")) {
-    par = kderiv[i];
-    min = 0;
-    max=1023;
-  }
-  else if (!strcmp(name,"gain")) {
-    par = adcGain[i];
-    min = 0;
-    max=12;
-  }
-  else if (!strcmp(name,"thresh")) {
-    par = threshold[i];
-    min = 0;
-    max=2047;
-  }
 
 }
 

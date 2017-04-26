@@ -44,6 +44,7 @@ int event_thread_run;//=1;
 volatile char astat[CRS::MAXTRANS];
 
 CRS* crs;
+Coptions cpar;
 extern Toptions opt;
 extern int chanPresent;
 
@@ -436,7 +437,7 @@ int CRS::Detect_device() {
 
   cout << "module: " << module << " chanPresent: " << chanPresent << endl;
 
-  opt.InitPar(module);
+  cpar.InitPar(module);
 
   // for (int i=0;i<10000;i++) {
   //   Init_Transfer();
@@ -802,88 +803,88 @@ void CRS::Command_crs(byte cmd, byte chan, int par) {
   if (module==32) {
     switch (cmd) {
     case 1: //enabl
-      if (opt.enabl[chan]) {
-	Command32(2,chan,6,(int)opt.kderiv[chan]);
-	Command32(2,chan,7,(int)opt.threshold[chan]);
+      if (cpar.enabl[chan]) {
+	Command32(2,chan,6,(int)cpar.kderiv[chan]);
+	Command32(2,chan,7,(int)cpar.threshold[chan]);
       }
       else {
 	int tmp,max;
-	opt.GetPar("thresh",module,chan,tmp,tmp,max);
+	cpar.GetPar("thresh",module,chan,tmp,tmp,max);
 	//cout << "Off: " << (int) chan << " " << max << endl;
 	Command32(2,chan,6,0);
 	Command32(2,chan,7,max);
       }
       break;
     case 2: //inv
-      Command32(2,chan,1,(int)opt.inv[chan]);
+      Command32(2,chan,1,(int)cpar.inv[chan]);
       break;
     case 3: //acdc
-      Command32(2,chan,0,(int)opt.acdc[chan]);
+      Command32(2,chan,0,(int)cpar.acdc[chan]);
       break;
     case 4: //smooth
-      Command32(2,chan,2,(int)opt.smooth[chan]);
+      Command32(2,chan,2,(int)cpar.smooth[chan]);
       break;
     case 5: //Dt
-      Command32(2,chan,3,(int)opt.deadTime[chan]);
+      Command32(2,chan,3,(int)cpar.deadTime[chan]);
       break;
     case 6: //Pre
-      Command32(2,chan,4,(int)opt.preWr[chan]);
+      Command32(2,chan,4,(int)cpar.preWr[chan]);
       break;
     case 7: //Len
-      Command32(2,chan,5,(int)opt.durWr[chan]);
+      Command32(2,chan,5,(int)cpar.durWr[chan]);
       break;
     case 8: //Gain
-      Command32(2,chan,8,(int)opt.adcGain[chan]);
+      Command32(2,chan,8,(int)cpar.adcGain[chan]);
       break;
     case 9: //Drv
-      Command32(2,chan,6,(int)opt.kderiv[chan]);
+      Command32(2,chan,6,(int)cpar.kderiv[chan]);
       break;
     case 10: //thresh
-      Command32(2,chan,7,(int)opt.threshold[chan]);
+      Command32(2,chan,7,(int)cpar.threshold[chan]);
       break;
     }
   }
   else if (module==2) {
     switch (cmd) {
     case 1: //enabl
-      if (opt.enabl[chan]) {
-	Command2(2,chan,3,(int)opt.kderiv[chan]);
-	Command2(2,chan,4,(int)opt.threshold[chan]);
+      if (cpar.enabl[chan]) {
+	Command2(2,chan,3,(int)cpar.kderiv[chan]);
+	Command2(2,chan,4,(int)cpar.threshold[chan]);
       }
       else {
 	int tmp,max;
-	opt.GetPar("thresh",module,chan,tmp,tmp,max);
+	cpar.GetPar("thresh",module,chan,tmp,tmp,max);
 	//cout << "Off: " << (int) chan << " " << max << endl;
 	Command2(2,chan,3,0);
 	Command2(2,chan,4,max);
       }
       break;
     case 2: //inv
-      Command2(2,chan,1,(int)opt.inv[chan]);
+      Command2(2,chan,1,(int)cpar.inv[chan]);
       break;
     case 3: //acdc
       //no acdc
       break;
     case 4: //smooth
-      Command2(2,chan,2,(int)opt.smooth[chan]);
+      Command2(2,chan,2,(int)cpar.smooth[chan]);
       break;
     case 5: //Dt
       //no Dt
       break;
     case 6: //Pre
-      Command2(2,chan,5,(int)opt.preWr[chan]);
+      Command2(2,chan,5,(int)cpar.preWr[chan]);
       break;
     case 7: //Len
-      Command2(2,chan,6,(int)opt.durWr[chan]);
+      Command2(2,chan,6,(int)cpar.durWr[chan]);
       break;
     case 8: //Gain
-      Command2(2,chan,0,(int)opt.adcGain[chan]);
+      Command2(2,chan,0,(int)cpar.adcGain[chan]);
       break;
     case 9: //Drv
-      Command2(2,chan,3,(int)opt.kderiv[chan]);
+      Command2(2,chan,3,(int)cpar.kderiv[chan]);
       break;
     case 10: //thresh
-      Command2(2,chan,4,(int)opt.threshold[chan]);
+      Command2(2,chan,4,(int)cpar.threshold[chan]);
       break;
     }
   }
@@ -894,24 +895,24 @@ void CRS::AllParameters32()
 {
 
   for (byte chan = 0; chan < chanPresent; chan++) {
-    Command32(2,chan,0,(int)opt.acdc[chan]);
-    Command32(2,chan,1,(int)opt.inv[chan]);
-    Command32(2,chan,2,(int)opt.smooth[chan]);
-    Command32(2,chan,3,(int)opt.deadTime[chan]);
-    Command32(2,chan,4,(int)opt.preWr[chan]);
-    Command32(2,chan,5,(int)opt.durWr[chan]);
-    if (opt.enabl[chan]) {
-      Command32(2,chan,6,(int)opt.kderiv[chan]);
-      Command32(2,chan,7,(int)opt.threshold[chan]);
+    Command32(2,chan,0,(int)cpar.acdc[chan]);
+    Command32(2,chan,1,(int)cpar.inv[chan]);
+    Command32(2,chan,2,(int)cpar.smooth[chan]);
+    Command32(2,chan,3,(int)cpar.deadTime[chan]);
+    Command32(2,chan,4,(int)cpar.preWr[chan]);
+    Command32(2,chan,5,(int)cpar.durWr[chan]);
+    if (cpar.enabl[chan]) {
+      Command32(2,chan,6,(int)cpar.kderiv[chan]);
+      Command32(2,chan,7,(int)cpar.threshold[chan]);
     }
     else {
       int tmp,max;
-      opt.GetPar("thresh",module,chan,tmp,tmp,max);
+      cpar.GetPar("thresh",module,chan,tmp,tmp,max);
       //cout << "Off: " << (int) chan << " " << max << endl;
       Command32(2,chan,6,0);
       Command32(2,chan,7,max);
     }
-    Command32(2,chan,8,(int)opt.adcGain[chan]);
+    Command32(2,chan,8,(int)cpar.adcGain[chan]);
   }
 
 }
@@ -920,26 +921,26 @@ void CRS::AllParameters2()
 {
 
   for (byte chan = 0; chan < chanPresent; chan++) {
-    Command2(2,chan,0,(int)opt.adcGain[chan]);
-    Command2(2,chan,1,(int)opt.inv[chan]);
-    Command2(2,chan,2,(int)opt.smooth[chan]);
-   if (opt.enabl[chan]) {
-      Command2(2,chan,3,(int)opt.kderiv[chan]);
-      Command2(2,chan,4,(int)opt.threshold[chan]);
+    Command2(2,chan,0,(int)cpar.adcGain[chan]);
+    Command2(2,chan,1,(int)cpar.inv[chan]);
+    Command2(2,chan,2,(int)cpar.smooth[chan]);
+   if (cpar.enabl[chan]) {
+      Command2(2,chan,3,(int)cpar.kderiv[chan]);
+      Command2(2,chan,4,(int)cpar.threshold[chan]);
     }
    else {
      int tmp,max;
-     opt.GetPar("thresh",module,chan,tmp,tmp,max);
+     cpar.GetPar("thresh",module,chan,tmp,tmp,max);
      //cout << "Off: " << (int) chan << " " << max << endl;
      Command2(2,chan,3,0);
      Command2(2,chan,4,max);
    }
 
-   Command2(2,chan,5,(int)opt.preWr[chan]);
-   Command2(2,chan,6,(int)opt.durWr[chan]);
+   Command2(2,chan,5,(int)cpar.preWr[chan]);
+   Command2(2,chan,6,(int)cpar.durWr[chan]);
   }
 
-  Command2(2,0,7,(int)opt.forcewr);
+  Command2(2,0,7,(int)cpar.forcewr);
 
 }
 
@@ -956,43 +957,43 @@ void CRS::AllParameters32_old()
       buf_out[1] = (byte)chan;     // номер канала
 
       buf_out[2] = 0;         // тип параметра - связь по переменному/постоянному току
-      if (opt.acdc[chan] == false) buf_out[5] = 0;
+      if (cpar.acdc[chan] == false) buf_out[5] = 0;
       else buf_out[5] = 1;
       SendParametr("coupling",6);
 
       buf_out[2] = 1;         // тип параметра - инверсия
-      if (opt.inv[chan] == false) buf_out[5] = 0;
+      if (cpar.inv[chan] == false) buf_out[5] = 0;
       else buf_out[5] = 1;
       SendParametr("inversion",6);
 
       buf_out[2] = 2;         // тип параметра - сглаживание
-      buf_out[5] = (byte)opt.smooth[chan];
+      buf_out[5] = (byte)cpar.smooth[chan];
       SendParametr("smoothing",6);
                         
       buf_out[2] = 3;         // тип параметра - мертвое время дискриминатора
-      buf_out[4] = (byte)(opt.deadTime[chan] >> 8);
-      buf_out[5] = (byte)opt.deadTime[chan];
+      buf_out[4] = (byte)(cpar.deadTime[chan] >> 8);
+      buf_out[5] = (byte)cpar.deadTime[chan];
       SendParametr("dead time",6);
 
       buf_out[2] = 4;         // тип параметра - предзапись
-      buf_out[4] = (byte)(opt.preWr[chan] >> 8);
-      buf_out[5] = (byte)opt.preWr[chan];
+      buf_out[4] = (byte)(cpar.preWr[chan] >> 8);
+      buf_out[5] = (byte)cpar.preWr[chan];
       SendParametr("pre-record length",6);
 
       buf_out[2] = 5;         // тип параметра - длительность записи
-      buf_out[4] = (byte)(opt.durWr[chan] >> 8);
-      buf_out[5] = (byte)opt.durWr[chan];
+      buf_out[4] = (byte)(cpar.durWr[chan] >> 8);
+      buf_out[5] = (byte)cpar.durWr[chan];
       SendParametr("record length",6);
 
-      if (opt.enabl[chan]) {
+      if (cpar.enabl[chan]) {
 	buf_out[2] = 6;         // тип параметра - производная
-	buf_out[4] = (byte)(opt.kderiv[chan] >> 8);
-	buf_out[5] = (byte)opt.kderiv[chan];
+	buf_out[4] = (byte)(cpar.kderiv[chan] >> 8);
+	buf_out[5] = (byte)cpar.kderiv[chan];
 	SendParametr("derivative",6);
 
 	buf_out[2] = 7;         // тип параметра - порог
-	buf_out[4] = (byte)(opt.threshold[chan] >> 8);
-	buf_out[5] = (byte)opt.threshold[chan];
+	buf_out[4] = (byte)(cpar.threshold[chan] >> 8);
+	buf_out[5] = (byte)cpar.threshold[chan];
 	SendParametr("threshold",6);
       }
       else {
@@ -1002,7 +1003,7 @@ void CRS::AllParameters32_old()
 	SendParametr("derivative",6);
 
 	int tmp,max;
-	opt.GetPar("thresh",crs->module,chan,tmp,tmp,max);
+	cpar.GetPar("thresh",crs->module,chan,tmp,tmp,max);
 	cout << "Off: " << chan << " " << max << endl;
 	
 	buf_out[2] = 7;         // тип параметра - порог
@@ -1012,7 +1013,7 @@ void CRS::AllParameters32_old()
       }
 
       buf_out[2] = 8;         // тип параметра - дополнительное усиление
-      buf_out[5] = (byte)opt.adcGain[chan];
+      buf_out[5] = (byte)cpar.adcGain[chan];
       SendParametr("gain",6);
     }
 
@@ -1477,10 +1478,10 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     }
     else if (frmt==2) {
 
-      if ((int)ipp->sData.size()>=opt.durWr[ipp->Chan]) {
+      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
 	// cout << "32: ERROR Nsamp: " << nbuf << " " << cnt
 	//      << " " << (ipp->Counter & 0x0F)
-	//      << " " << ipp->sData.size() << " " << opt.durWr[ipp->Chan]
+	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
 	//      << " " << (int) ch << " " << (int) ipp->Chan
 	//      << " " << idx8 << " " << transfer->actual_length
 	//      << endl;
@@ -1490,7 +1491,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 	else if (ipp->sData.size()%1000 == 0) {
 	cout << "32: Nsamp: " << nbuf << " " << cnt
 	<< " " << (ipp->Counter & 0x0F)
-	<< " " << ipp->sData.size() << " " << opt.durWr[ipp->Chan]
+	<< " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
 	<< " " << (int) ch << " " << (int) ipp->Chan
 	<< " " << idx8 << " " << transfer->actual_length
 	<< endl;
@@ -1531,27 +1532,27 @@ void CRS::AllParameters2()
       buf_out[1] = (byte)chan;     // номер канала
 
       buf_out[2] = 0;         // Gain
-      buf_out[3] = (byte)opt.adcGain[chan];
+      buf_out[3] = (byte)cpar.adcGain[chan];
       SendParametr("gain",5);
 
       buf_out[2] = 1;         // тип параметра - инверсия
-      if (opt.inv[chan] == false) buf_out[3] = 0;
+      if (cpar.inv[chan] == false) buf_out[3] = 0;
       else buf_out[3] = 1;
       SendParametr("inversion",5);
 
       buf_out[2] = 2;         // тип параметра - сглаживание
-      buf_out[3] = (byte)opt.smooth[chan];
+      buf_out[3] = (byte)cpar.smooth[chan];
       SendParametr("smoothing",5);
                         
-      if (opt.enabl[chan]) {
+      if (cpar.enabl[chan]) {
 	buf_out[2] = 3;         // тип параметра - производная
-	buf_out[4] = (byte)(opt.kderiv[chan] >> 8);
-	buf_out[3] = (byte)opt.kderiv[chan];
+	buf_out[4] = (byte)(cpar.kderiv[chan] >> 8);
+	buf_out[3] = (byte)cpar.kderiv[chan];
 	SendParametr("derivative",5);
 
 	buf_out[2] = 4;         // тип параметра - порог
-	buf_out[4] = (byte)(opt.threshold[chan] >> 8);
-	buf_out[3] = (byte)opt.threshold[chan];
+	buf_out[4] = (byte)(cpar.threshold[chan] >> 8);
+	buf_out[3] = (byte)cpar.threshold[chan];
 	SendParametr("threshold",5);
       }
       else {
@@ -1561,7 +1562,7 @@ void CRS::AllParameters2()
 	SendParametr("derivative",5);
 
 	int tmp,max;
-	opt.GetPar("thresh",crs->module,chan,tmp,tmp,max);
+	cpar.GetPar("thresh",crs->module,chan,tmp,tmp,max);
 	cout << "Off: " << chan << " " << max << endl;
 
 	buf_out[2] = 4;         // тип параметра - порог
@@ -1571,17 +1572,17 @@ void CRS::AllParameters2()
       }
 
       buf_out[2] = 5;         // тип параметра - предзапись
-      buf_out[4] = (byte)(opt.preWr[chan] >> 8);
-      buf_out[3] = (byte)opt.preWr[chan];
+      buf_out[4] = (byte)(cpar.preWr[chan] >> 8);
+      buf_out[3] = (byte)cpar.preWr[chan];
       SendParametr("pre-record length",5);
 
       buf_out[2] = 6;         // тип параметра - длительность записи
-      buf_out[4] = (byte)(opt.durWr[chan] >> 8);
-      buf_out[3] = (byte)opt.durWr[chan];
+      buf_out[4] = (byte)(cpar.durWr[chan] >> 8);
+      buf_out[3] = (byte)cpar.durWr[chan];
       SendParametr("record length",5);
 
       buf_out[2] = 7;         // тип параметра - принудительная запись
-      buf_out[3] = (byte)opt.forcewr;
+      buf_out[3] = (byte)cpar.forcewr;
       SendParametr("gain",5);
     }
 }
@@ -1657,7 +1658,7 @@ void CRS::AllParameters2()
       ipp->Counter=data;
     }
     else if (frmt==5) {
-      if ((int)ipp->sData.size()>=opt.durWr[ipp->Chan]) {
+      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
 	// cout << "2: Nsamp error: " << ipp->sData.size()
 	//      << " " << (int) ch << " " << (int) ipp->Chan
 	//      << " " << idx2

@@ -62,6 +62,7 @@ const char* types[ADDCH+1]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
 const int nchtype=9;
 
 extern CRS* crs;
+extern Coptions cpar;
 extern Toptions opt;
 extern int chanPresent;
 extern MyMainFrame *myM;
@@ -1077,7 +1078,7 @@ void ChanParDlg::AddLine2(int i, TGCompositeFrame* fcont1) {
   AddNum2(i,kk++,all,hframe1,&opt.bkg2[i],-999,999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.peak1[i],-999,16500,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.peak2[i],-999,16500,p_inum);
-  AddNum2(i,kk++,all,hframe1,&opt.deadTime[i],0,9999,p_inum);
+  AddNum2(i,kk++,all,hframe1,&cpar.deadTime[i],0,9999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.pile[i],0,9999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.timing[i],0,1,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.twin1[i],-99,99,p_inum);
@@ -1093,7 +1094,7 @@ void ChanParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
   int par, min, max;
 
-  opt.GetPar(name,crs->module,i,par,min,max);
+  cpar.GetPar(name,crs->module,i,par,min,max);
 
   int id = Plist.size()+1;
   TGNumberEntryField* fNum =
@@ -1225,7 +1226,7 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
     int id = Plist.size()+1;
     TGCheckButton *fforce = new TGCheckButton(hforce, "", id);
     hforce->AddFrame(fforce,fL3);
-    DoMap((TGWidget*)fforce,&opt.forcewr,p_chk,0,0,0);
+    DoMap((TGWidget*)fforce,&cpar.forcewr,p_chk,0,0,0);
     fforce->Connect("Clicked()", "ParDlg", this, "DoChk()");
     
     TGLabel* lforce = new TGLabel(hforce, "  Force_write all channels");
@@ -1320,9 +1321,9 @@ void CrsParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
   TGCheckButton *f_en = new TGCheckButton(hframe1, "", id);
   TGCheckButton *f_inv = new TGCheckButton(hframe1, "", id+1);
   TGCheckButton *f_acdc = new TGCheckButton(hframe1, "", id+2);
-  DoMap(f_en,&opt.enabl[i],p_chk,all,1,i);
-  DoMap(f_inv,&opt.inv[i],p_chk,all,2,i);
-  DoMap(f_acdc,&opt.acdc[i],p_chk,all,3,i);
+  DoMap(f_en,&cpar.enabl[i],p_chk,all,1,i);
+  DoMap(f_inv,&cpar.inv[i],p_chk,all,2,i);
+  DoMap(f_acdc,&cpar.acdc[i],p_chk,all,3,i);
 
   f_en->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
   f_inv->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
@@ -1338,16 +1339,16 @@ void CrsParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
   hframe1->AddFrame(f_acdc,fL3);
   kk+=3;
 
-  AddNum1(i,kk++,all,hframe1,"smooth",&opt.smooth[i]);
-  AddNum1(i,kk++,all,hframe1,"dt"    ,&opt.deadTime[i]);
-  AddNum1(i,kk++,all,hframe1,"pre"   ,&opt.preWr[i]);
-  AddNum1(i,kk++,all,hframe1,"len"   ,&opt.durWr[i]);
+  AddNum1(i,kk++,all,hframe1,"smooth",&cpar.smooth[i]);
+  AddNum1(i,kk++,all,hframe1,"dt"    ,&cpar.deadTime[i]);
+  AddNum1(i,kk++,all,hframe1,"pre"   ,&cpar.preWr[i]);
+  AddNum1(i,kk++,all,hframe1,"len"   ,&cpar.durWr[i]);
   if (crs->module==2) 
-    AddNum1(i,kk++,1,hframe1,"gain"  ,&opt.adcGain[i]);
+    AddNum1(i,kk++,1,hframe1,"gain"  ,&cpar.adcGain[i]);
   else
-    AddNum1(i,kk++,all,hframe1,"gain"  ,&opt.adcGain[i]);
-  AddNum1(i,kk++,all,hframe1,"deriv" ,&opt.kderiv[i]);
-  AddNum1(i,kk++,all,hframe1,"thresh",&opt.threshold[i]);
+    AddNum1(i,kk++,all,hframe1,"gain"  ,&cpar.adcGain[i]);
+  AddNum1(i,kk++,all,hframe1,"deriv" ,&cpar.kderiv[i]);
+  AddNum1(i,kk++,all,hframe1,"thresh",&cpar.threshold[i]);
 
   if (i<MAX_CH) {
     fStat[i] = new TGLabel(hframe1, "");

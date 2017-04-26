@@ -6,6 +6,7 @@
 //#pragma link C++ class MParDlg+;
 //#pragma link C++ class ChanDlg+;
 //#pragma link C++ class MChanDlg+;
+#pragma link C++ class Coptions+;
 #pragma link C++ class Toptions+;
 //#pragma link C++ class PulseClass+;
 #pragma link C++ class EventFrame+;

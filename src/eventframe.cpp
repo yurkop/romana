@@ -13,6 +13,7 @@
 
 TLine ln1;
 
+extern Coptions cpar;
 extern Toptions opt;
 extern MyMainFrame *myM;
 //extern BufClass* Buffer;
@@ -540,7 +541,7 @@ void EventFrame::FillHist(int dr) {
     PulseClass *pulse = &d_event->pulses.at(i);
     UInt_t ch= pulse->Chan;
 
-    int dt=pulse->Tstamp64 - d_event->T - opt.preWr[ch];
+    int dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
 
     if (d_event->pulses.size()>1) {
       cout << "Dt: " << i << " " << (int) pulse->Chan << " "
@@ -554,7 +555,7 @@ void EventFrame::FillHist(int dr) {
     }
     else if (dr==1) {
 
-      UInt_t kk=opt.kderiv[ch];
+      UInt_t kk=cpar.kderiv[ch];
       if (kk<1 || kk>=pulse->sData.size()) kk=1;
 
       //dat = new Float_t[pulse->sData.size()];
@@ -682,7 +683,7 @@ void EventFrame::DrawPeaks(double y1,double y2) {
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     PulseClass *pulse = &d_event->pulses.at(i);
     UInt_t ch= pulse->Chan;
-    int dt=pulse->Tstamp64 - d_event->T - opt.preWr[ch];
+    int dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
     //int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
     //cout << "Dt: " << i << " " << d_event->T << " " << dt
     // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
