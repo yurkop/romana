@@ -1077,8 +1077,9 @@ int CRS::DoStartStop() {
 	  //opt.F_start.Print();
 	  Version_t ver = TClass::GetClass("Toptions")->GetClassVersion();
 	  gzwrite(f_raw,mod,sizeof(mod));
+	  gzwrite(f_raw,&ver,sizeof(ver));
 	  gzwrite(f_raw,&opt,sizeof(opt));
-	  gzwrite(f_raw,&ver, sizeof(ver));
+
 	  gzclose(f_raw);
 	}
 	else {
@@ -1245,7 +1246,7 @@ void CRS::DoFopen(char* oname) {
   }
   else {
     UShort_t mod[2];
-    gzread(f_raw,mod,sizeof(Int_t));
+    gzread(f_raw,mod,sizeof(mod));
 
     if (mod[0]==2) {
       Fmode=2;
@@ -1265,9 +1266,14 @@ void CRS::DoFopen(char* oname) {
     //YK - opt is not read from the file
     char* obuf = new char[mod[1]];
     //gzwrite(f_raw,&ver, sizeof(ver));
-    Version_t ver;
+    Version_t ver,ver2;
     gzread(f_raw,&ver,sizeof(ver));
     gzread(f_raw,obuf,mod[1]);
+
+    ver2 = TClass::GetClass("Toptions")->GetClassVersion();
+
+    cout << "ver: " << ver << " " << ver2 << endl;
+
     delete[] obuf;
 
     /*

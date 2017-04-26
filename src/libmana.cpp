@@ -209,9 +209,55 @@ void ctrl_c_handler(int s){
   //exit(1); 
 }
 
+void change_gz_file(char* name1, char* name2) {
+
+  //exit(-1);
+
+  gzFile f1 = gzopen(name1,"rb");
+  gzFile f2 = gzopen(name2,"wb");
+
+  char buf[1000000];
+  Version_t ver;
+  UShort_t mod[2];
+  
+  cout << name1 << " " << name2 << " " << f1 << " " << f2 << endl;
+
+  if (!f1 || !f2) {
+    cout << "can't open file" << endl;
+    exit(-1);
+  }
+  
+  gzread(f1,mod,sizeof(mod));
+  gzread(f1,buf,mod[1]);
+  gzread(f1,&ver,sizeof(ver));
+  
+  gzwrite(f2,mod,sizeof(mod));
+  gzwrite(f2,&ver,sizeof(ver));
+  gzwrite(f2,buf,mod[1]);
+
+  
+  int res=1;
+  do {
+    res = gzread(f1,buf,sizeof(buf));
+    gzwrite(f2,buf,sizeof(buf));
+  } while (res>0);
+
+  gzclose(f1);
+  gzclose(f2);
+
+  exit(-1);
+
+}
+
 int main(int argc, char **argv)
 {
 
+  // if (argc<3) {
+  //   cout << "need two arguments" << endl;
+  //   return 1;
+  // }
+  // change_gz_file(argv[1],argv[2]);
+  
   char s_name[200], dir[100], name[100], ext[100];
   char* pname = (char*) parname;
 
