@@ -193,6 +193,7 @@ TH1F *hsync;
 
 MyMainFrame *myM;
 
+Coptions cpar;
 Toptions opt;
 int *opt_id[MXNUM];
 
@@ -248,16 +249,91 @@ void change_gz_file(char* name1, char* name2) {
   exit(-1);
 
 }
+/*
+void change_gz_file2(char* name1, char* name2) {
+
+  gzFile f1 = gzopen(name1,"rb");
+  gzFile f2 = gzopen(name2,"wb");
+
+  char buf[1000000];
+  Version_t ver;
+  UShort_t mod2[2];
+  UShort_t mod[8];
+
+  cout << name1 << " " << name2 << " " << f1 << " " << f2 << endl;
+
+  if (!f1 || !f2) {
+    cout << "can't open file" << endl;
+    exit(-1);
+  }
+  
+  gzread(f1,mod2,sizeof(mod2));
+  gzread(f1,&ver,sizeof(ver));
+  gzread(f1,&opt,mod2[1]);
+
+  memcpy(&cpar.smooth,   &opt.smooth,   sizeof(cpar.smooth));
+  memcpy(&cpar.deadTime, &opt.deadTime, sizeof(cpar.deadTime));
+  memcpy(&cpar.preWr,    &opt.preWr,    sizeof(cpar.preWr));
+  memcpy(&cpar.durWr,    &opt.durWr,    sizeof(cpar.durWr));
+  memcpy(&cpar.kderiv,   &opt.kderiv,   sizeof(cpar.kderiv));
+  memcpy(&cpar.threshold,&opt.threshold,sizeof(cpar.threshold));
+  memcpy(&cpar.adcGain,  &opt.adcGain,  sizeof(cpar.adcGain));
+  memcpy(&cpar.acdc,     &opt.acdc,     sizeof(cpar.acdc));
+  memcpy(&cpar.inv,      &opt.inv,      sizeof(cpar.inv));
+  memcpy(&cpar.forcewr,  &opt.forcewr,  sizeof(cpar.forcewr));
+  memcpy(&cpar.enabl,    &opt.enabl,    sizeof(cpar.enabl));
+  memcpy(&cpar.chtype,   &opt.chtype,   sizeof(cpar.chtype));
+
+  cout << "ver: " << ver << " " << opt.durWr[0] << endl;
+  cout << "ver2: " << ver << " " << cpar.durWr[0] << endl;
+
+
+  memset(mod,0,sizeof(mod));
+  mod[0]=mod2[0];
+  mod[1]=sizeof(cpar);
+  mod[2]=TClass::GetClass("Coptions")->GetClassVersion();
+  mod[3]=sizeof(opt);
+  mod[4]=TClass::GetClass("Toptions")->GetClassVersion();
+
+
+  cout << sizeof(Coptions) << " "
+       << mod[0] << " "
+       << mod[1] << " "
+       << mod[2] << " "
+       << mod[3] << " "
+       << mod[4] << endl;
+
+  gzwrite(f2,mod,sizeof(mod));
+  gzwrite(f2,&cpar,sizeof(cpar));
+  gzwrite(f2,&opt,sizeof(opt));
+
+  
+  int res=1;
+  do {
+    res = gzread(f1,buf,sizeof(buf));
+    gzwrite(f2,buf,sizeof(buf));
+  } while (res>0);
+
+  gzclose(f1);
+  gzclose(f2);
+
+  exit(-1);
+
+}
+*/
 
 int main(int argc, char **argv)
 {
+
+  //cpar.ver=TClass::GetClass("Coptions")->GetClassVersion();
 
   // if (argc<3) {
   //   cout << "need two arguments" << endl;
   //   return 1;
   // }
-  // change_gz_file(argv[1],argv[2]);
-  
+  // change_gz_file2(argv[1],argv[2]);
+
+
   char s_name[200], dir[100], name[100], ext[100];
   char* pname = (char*) parname;
 
@@ -1432,6 +1508,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   parname = (char*)"romana.par";
 
   readinit(parname);
+
 
   fTab = new TGTab(hframe1, 300, 300);
   //TGLayoutHints *fL5 = new TGLayoutHints(kLHintsTop | kLHintsExpandX |

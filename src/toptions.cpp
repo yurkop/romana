@@ -1,10 +1,13 @@
 #include <iostream>
 #include "toptions.h"
+#include <TClass.h>
 
 using namespace std;
 
 Coptions::Coptions() {
+  //ver = TClass::GetClass("Coptions")->GetClassVersion();
   for (int i=0;i<MAX_CH;i++) {
+    chtype[i]=ch_other;
     enabl[i]=true;
   }
 }

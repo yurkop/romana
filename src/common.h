@@ -36,6 +36,7 @@ enum ChannelDef {
 };
 
 enum ChDef {
+  ch_null,
   ch_nai,
   ch_bgo,
   ch_si1,
@@ -43,6 +44,7 @@ enum ChDef {
   ch_stilb,
   ch_demon,
   ch_hpge,
+  ch_NIM,
   ch_other,
   ch_empty
 };

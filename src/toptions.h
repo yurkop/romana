@@ -14,6 +14,7 @@ class Coptions: public TObject {
   Coptions();
   virtual ~Coptions() {};
 
+  //Version_t ver;
   // parameters of the crs32 or crs2 module
 
   Int_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
@@ -29,13 +30,14 @@ class Coptions: public TObject {
   // 0 - only triggered channel is written; 
   // 1 - both channels are written with any trigger
   Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
+  ChDef chtype[MAX_CH+ADDCH]; //channel type
   //----------------------------------------------
 
  public:
   void InitPar(Int_t module);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 87)
+  ClassDef(Coptions, 1)
 };
 
 //------------------------------------
@@ -63,7 +65,28 @@ class Toptions: public TObject {
   // by this value, the pulse is inserted into event_list
   // without  (if zero - calculate automatically)
 
+  /*
+  //----------------------------------------------
+  // parameters of the crs32 or crs2 module
+
+  Int_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
+  Int_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
+  Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
+  Int_t durWr[MAX_CH+ADDCH]; // total length N = 1…32763 (internally - multiple of 4)
+  Int_t kderiv[MAX_CH+ADDCH]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
+  Int_t threshold[MAX_CH+ADDCH]; // T = –2048 .. +2047
+  Int_t adcGain[MAX_CH+ADDCH]; // G = 0..12
+  Bool_t acdc[MAX_CH+ADDCH]; // AC-1; DC-0
+  Bool_t inv[MAX_CH+ADDCH]; //0 - no inversion; 1 - inversion (individual)
+  Bool_t forcewr; //only for crs2
+  // 0 - only triggered channel is written; 
+  // 1 - both channels are written with any trigger
+  Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
+
   ChDef chtype[MAX_CH+ADDCH]; //channel type
+
+  //----------------------------------------------
+  */
   
   Bool_t Start[MAX_CH+ADDCH]; //
   //UInt_t ch_flag[MAX_CH+ADDCH];
@@ -160,7 +183,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 87)
+  ClassDef(Toptions, 88)
 };
 
 ClassImp(Toptions)

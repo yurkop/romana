@@ -44,7 +44,7 @@ int event_thread_run;//=1;
 volatile char astat[CRS::MAXTRANS];
 
 CRS* crs;
-Coptions cpar;
+extern Coptions cpar;
 extern Toptions opt;
 extern int chanPresent;
 
@@ -1069,16 +1069,25 @@ int CRS::DoStartStop() {
       struct stat buffer;
       if (stat (opt.fname_raw, &buffer)) {
     	cout << "stat: " << stat (opt.fname_raw, &buffer) << endl;
-	UShort_t mod[2];
+	UShort_t mod[8];
+	//UShort_t mod[2];
+
+	memset(mod,0,sizeof(mod));
 	mod[0]=module;
-	mod[1]=sizeof(opt);
+	mod[1]=sizeof(cpar);
+	mod[2]=TClass::GetClass("Coptions")->GetClassVersion();
+	mod[3]=sizeof(opt);
+	mod[4]=TClass::GetClass("Toptions")->GetClassVersion();
+
+	//mod[0]=module;
+	//mod[1]=sizeof(opt);
     	f_raw = gzopen(opt.fname_raw,"wb");
 	if (crs->f_raw) {
 	  //Int_t size = sizeof(opt);
 	  //opt.F_start.Print();
 	  Version_t ver = TClass::GetClass("Toptions")->GetClassVersion();
 	  gzwrite(f_raw,mod,sizeof(mod));
-	  gzwrite(f_raw,&ver,sizeof(ver));
+	  gzwrite(f_raw,&cpar,sizeof(cpar));
 	  gzwrite(f_raw,&opt,sizeof(opt));
 
 	  gzclose(f_raw);
@@ -1191,7 +1200,8 @@ void CRS::Reset() {
   //MAX_LAG=opt.event_buf/2;
 
   DoFopen(NULL);
-
+  //gzrewind(f_raw);
+  
   /*
   if (f_raw) {
     gzclose(f_raw);
@@ -1246,7 +1256,7 @@ void CRS::DoFopen(char* oname) {
     Fmode=1;
   }
   else {
-    UShort_t mod[2];
+    UShort_t mod[8];
     gzread(f_raw,mod,sizeof(mod));
 
     if (mod[0]==2) {
@@ -1264,18 +1274,36 @@ void CRS::DoFopen(char* oname) {
       f_raw=0;
     }
 
-    //YK - opt is not read from the file
-    char* obuf = new char[mod[1]];
-    //gzwrite(f_raw,&ver, sizeof(ver));
-    Version_t ver,ver2;
-    gzread(f_raw,&ver,sizeof(ver));
-    gzread(f_raw,obuf,mod[1]);
+    char *cbuf = new char[mod[1]];
+    char *tbuf = new char[mod[3]];
+    gzread(f_raw,cbuf,mod[1]);
+    gzread(f_raw,tbuf,mod[3]);
+    
+    if (oname) { //read parameters if the file is newly open
+      if (mod[1]==sizeof(Coptions) &&
+	  mod[2] == TClass::GetClass("Coptions")->GetClassVersion()) {
+	cout << "reading cpar... " << mod[1] << " " << mod[2] << endl;
+	memcpy(&cpar,cbuf,sizeof(cpar));
+      }
+      else {
+	cout << "cpar is unchanged: " << mod[1] << " " << mod[2] << " "
+	     << sizeof(Coptions) << " "
+	     << TClass::GetClass("Coptions")->GetClassVersion() <<endl;
+      }
+      if (mod[3]==sizeof(Toptions) &&
+	  mod[4] == TClass::GetClass("Toptions")->GetClassVersion()) {
+	cout << "reading opt... " << mod[3] << " " << mod[4] << endl;
+	memcpy(&opt,tbuf,sizeof(opt));
+      }
+      else {
+	cout << "opt is unchanged: " << mod[3] << " " << mod[4] << " "
+	     << sizeof(Toptions) << " "
+	     << TClass::GetClass("Toptions")->GetClassVersion() <<endl;
+      }
+    }
 
-    ver2 = TClass::GetClass("Toptions")->GetClassVersion();
-
-    cout << "ver: " << ver << " " << ver2 << endl;
-
-    delete[] obuf;
+    delete[] cbuf;
+    delete[] tbuf;
 
     /*
     if (Fmode) {
@@ -1296,8 +1324,9 @@ void CRS::DoFopen(char* oname) {
     }
     */
 
-
   }
+
+  //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
 
   if (Fmode) {
     opt.raw_write=false;
@@ -1313,6 +1342,8 @@ void CRS::DoFopen(char* oname) {
   }
   //cout << f_raw << endl;
 
+  //cout << "smooth: " << cpar.smooth[0] << endl;
+    
 }
 
 // void CRS::DoFAna() {

@@ -139,10 +139,10 @@ void ParDlg::DoNum() {
 
   pmap pp = Plist[id-1];
 
-  // cout << "DoNum: ";
-  // cout << *(Int_t*) pp.data << " ";
-  // cout << pp.data << " " << opt.bkg1[0] << " ";
-  // cout << (Int_t) pp.all << endl;
+  cout << "DoNum: ";
+  cout << *(Int_t*) pp.data << " ";
+  cout << pp.data << " " << opt.bkg1[0] << " ";
+  cout << (Int_t) pp.all << endl;
 
   SetNum(pp,te->GetNumber());
 
@@ -150,7 +150,7 @@ void ParDlg::DoNum() {
     if (nfld) {
       int kk = (id-1)%nfld;
       for (int i=0;i<chanPresent;i++) {
-	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
+	if (pp.all==1 || cpar.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetNum(p2,te->GetNumber());
 	  TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
@@ -161,7 +161,7 @@ void ParDlg::DoNum() {
     // int kk;
     // (nfld ? (kk=(id-1)%nfld) : (kk=0));
     // for (int i=0;i<chanPresent;i++) {
-    //   if (pp.all==1 || opt.chtype[i]==pp.all-1) {
+    //   if (pp.all==1 || cpar.chtype[i]==pp.all-1) {
     // 	pmap p2 = Plist[i*nfld+kk];
     // 	SetNum(p2,te->GetNumber());
     // 	TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
@@ -225,7 +225,7 @@ void ParDlg::DoChk() {
     if (nfld) {
       int kk = (id-1)%nfld;
       for (int i=0;i<chanPresent;i++) {
-	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
+	if (pp.all==1 || cpar.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetChk(p2,te->GetState());
 	  TGCheckButton *te2 = (TGCheckButton*) p2.field;
@@ -236,7 +236,7 @@ void ParDlg::DoChk() {
     // int kk;
     // (nfld ? (kk=(id-1)%nfld) : (kk=0));
     // for (int i=0;i<chanPresent;i++) {
-    //   if (pp.all==1 || opt.chtype[i]==pp.all-1) {
+    //   if (pp.all==1 || cpar.chtype[i]==pp.all-1) {
     // 	pmap p2 = Plist[i*nfld+kk];
     // 	SetChk(p2,te->GetState());
     // 	TGCheckButton *te2 = (TGCheckButton*) p2.field;
@@ -390,7 +390,7 @@ void ParDlg::DoCombo() {
     // }
   }
 
-  //cout << "DoCombo chtype: " << opt.chtype[0] << " " << id << endl;
+  //cout << "DoCombo chtype: " << cpar.chtype[0] << " " << id << endl;
 
 }
 
@@ -482,19 +482,27 @@ void ParDlg::UpdateField(int nn) {
 
   pmap* pp = &Plist[nn];
   
-    switch (pp->type) {
+  TQObject* tq = (TQObject*) pp->field;
+  tq->BlockAllSignals(true);
+
+  switch (pp->type) {
     case p_inum: {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
+      //te->BlockSignals(true);
       te->SetNumber(*(Int_t*) pp->data);
+      //te->BlockSignals(false);
     }
       break;
     case p_fnum: {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
+      //te->BlockSignals(true);
       te->SetNumber(*(Float_t*) pp->data);
+      //te->BlockSignals(false);
     }
       break;
     case p_chk: {
       TGCheckButton *te = (TGCheckButton*) pp->field;
+      //te->BlockSignals(true);
       Bool_t bb = *(Bool_t*) pp->data;
       te->SetState((EButtonState) bb);
       TString str = TString(te->GetName());
@@ -513,30 +521,43 @@ void ParDlg::UpdateField(int nn) {
 	//te2->SetEnabled(bb);
 	//but->SetEnabled(bb);
       }
+      //te->BlockSignals(false);
     }
       break;
     case p_cmb: {
       TGComboBox *te = (TGComboBox*) pp->field;
+      //te->BlockSignals(true);
       te->Select(*(ChDef*) pp->data,false);
+      //te->BlockSignals(false);
     }
       break;
     case p_txt: {
       TGTextEntry *te = (TGTextEntry*) pp->field;
+      //te->BlockSignals(true);
       te->SetText((char*) pp->data);
+      //te->BlockSignals(false);
     }
       break;
     case p_open:
       break;
     default:
       cout << "unknown pp->type: " << pp->type << endl;
-    } //switch  
+    } //switch
+
+  tq->BlockAllSignals(false);
+
 }
 
 void ParDlg::Update() {
 
+  //cout << "smooth39: " << cpar.smooth[39] << " " << Plist.size() << endl;
+  //cout << "smooth1: " << cpar.smooth[0] << " " << Plist.size() << endl;
   for (UInt_t i=0;i<Plist.size();i++) {
+    //cout << "smooth3: " << cpar.smooth[0] << " " << i << endl;
     UpdateField(i);
+    //cout << "smooth4: " << cpar.smooth[0] << " " << i << endl;
   }
+  //cout << "smooth2: " << cpar.smooth[0] << endl;
 }
 
 TGWidget *ParDlg::FindWidget(void* p) {
@@ -1057,7 +1078,7 @@ void ChanParDlg::AddLine2(int i, TGCompositeFrame* fcont1) {
     fCombo->SetEnabled(false);
   }
 
-  DoMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
+  DoMap(fCombo,&cpar.chtype[i],p_cmb,all,0,0);
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
 
@@ -1211,12 +1232,14 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   for (int i=0;i<chanPresent;i++) {
     AddLine1(i,fcont1);
+    cout << "crs: addLine1: " << Plist.size() << endl; 
   }
 
   AddLine1(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
     AddLine1(MAX_CH+i,fcont2);
+    cout << "crs2: addLine1: " << Plist.size() << endl; 
   }
 
   if (crs->module==2) {
@@ -1313,7 +1336,7 @@ void CrsParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
     fCombo->SetEnabled(false);
   }
 
-  DoMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
+  DoMap(fCombo,&cpar.chtype[i],p_cmb,all,0,0);
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
 
