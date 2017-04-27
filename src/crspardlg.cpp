@@ -1232,14 +1232,14 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   for (int i=0;i<chanPresent;i++) {
     AddLine1(i,fcont1);
-    cout << "crs: addLine1: " << Plist.size() << endl; 
+    //cout << "crs: addLine1: " << Plist.size() << endl; 
   }
 
   AddLine1(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
     AddLine1(MAX_CH+i,fcont2);
-    cout << "crs2: addLine1: " << Plist.size() << endl; 
+    //cout << "crs2: addLine1: " << Plist.size() << endl; 
   }
 
   if (crs->module==2) {

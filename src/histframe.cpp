@@ -74,7 +74,17 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   AddFrame(fHor1, fLay1);
 
   fHor2 = new TGHorizontalFrame(this, 10, 10);
-  AddFrame(fHor2, fLay3);
+  AddFrame(fHor2, fLay1);
+
+  TGRadioButton* rb1= new TGRadioButton(fHor2,"1x1",1);
+  TGRadioButton* rb2= new TGRadioButton(fHor2,"2x2",2);
+  TGRadioButton* rb3= new TGRadioButton(fHor2,"3x2",3);
+  TGRadioButton* rb4= new TGRadioButton(fHor2,"4x2",4);
+
+  fHor2->AddFrame(rb1, fLay1);
+  fHor2->AddFrame(rb2, fLay1);
+  fHor2->AddFrame(rb3, fLay1);
+  fHor2->AddFrame(rb4, fLay1);
 
   //fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
   fEc = new MECanvas("Hcanvas", fHor1, 10, 10);

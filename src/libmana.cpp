@@ -693,6 +693,7 @@ void saveroot(char *name) {
 
   opt.Nevt=nevent;
   opt.Tof=tof;
+  cpar.Write();
   opt.Write();
 
   cout << "Histograms and parameters are saved in file: " << name << endl;
@@ -882,6 +883,7 @@ void readinit(const char* pname)
 
   TFile *f2 = new TFile(pname,"READ");
 
+  cpar.Read("Coptions");
   opt.Read("Toptions");
 
   greset();
@@ -912,6 +914,7 @@ void saveinit(const char* pname)
 
   TFile *f2 = new TFile(pname,"RECREATE");
 
+  cpar.Write();
   opt.Write();
 
   //TNamed2 *tn = new TNamed2("Name1","Title2");
