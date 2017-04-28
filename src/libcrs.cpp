@@ -1287,6 +1287,10 @@ void CRS::DoFopen(char* oname) {
 	  mod[2] == TClass::GetClass("Coptions")->GetClassVersion()) {
 	cout << "reading cpar... " << mod[1] << " " << mod[2] << endl;
 	memcpy(&cpar,cbuf,sizeof(cpar));
+	// cout << "cpar: " << &cpar << " " 
+	//      << &cpar.smooth << " "
+	//      << &cpar.chtype << " "
+	//      << endl;
       }
       else {
 	cout << "cpar is unchanged: " << mod[1] << " " << mod[2] << " "

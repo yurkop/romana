@@ -527,6 +527,7 @@ void ParDlg::UpdateField(int nn) {
     case p_cmb: {
       TGComboBox *te = (TGComboBox*) pp->field;
       //te->BlockSignals(true);
+      //cout << "Combo2: " << nn << " " << *(ChDef*) pp->data << endl;
       te->Select(*(ChDef*) pp->data,false);
       //te->BlockSignals(false);
     }

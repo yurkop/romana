@@ -17,6 +17,7 @@ class Coptions: public TObject {
   //Version_t ver;
   // parameters of the crs32 or crs2 module
 
+  Int_t chtype[MAX_CH+ADDCH]; //channel type
   Int_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
   Int_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
   Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
@@ -30,14 +31,14 @@ class Coptions: public TObject {
   // 0 - only triggered channel is written; 
   // 1 - both channels are written with any trigger
   Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
-  ChDef chtype[MAX_CH+ADDCH]; //channel type
+  //ChDef chtype[MAX_CH+ADDCH]; //channel type
   //----------------------------------------------
 
  public:
   void InitPar(Int_t module);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 1)
+  ClassDef(Coptions, 2)
 };
 
 //------------------------------------

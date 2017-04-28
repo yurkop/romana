@@ -907,10 +907,14 @@ void saveinit(const char* pname)
   _chdir(startdir);
 #endif
 
+  cout << "saveinit1" << endl;
   TFile *f2 = new TFile(pname,"RECREATE");
+  cout << "saveinit2" << endl;
 
   cpar.Write();
+  cout << "saveinit3" << endl;
   opt.Write();
+  cout << "saveinit4" << endl;
 
   //TNamed2 *tn = new TNamed2("Name1","Title2");
   //tn->Dump();

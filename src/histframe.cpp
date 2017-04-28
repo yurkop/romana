@@ -404,12 +404,13 @@ void HistFrame::DrawHist()
   TIter next(hlist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
-    TH1 *hh = (TH1*) obj;
+    cout << "DrawHist: " << fEc->GetCanvas()->GetPad(nn) << endl;
+    if (!fEc->GetCanvas()->GetPad(nn)) break;
     fEc->GetCanvas()->cd(nn);
+    TH1 *hh = (TH1*) obj;
     hh->Draw();
     nn++;
-    cout << fEc->GetCanvas()->GetPad(nn) << endl;
-    if (!fEc->GetCanvas()->GetPad(nn)) break;
     //cout << "Checked: " << hh->GetName() << endl;
   }
+  fEc->GetCanvas()->Update();
 }
