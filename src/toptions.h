@@ -47,24 +47,6 @@ class Toptions: public TObject {
   Toptions();
   virtual ~Toptions() {};
 
-  //----------------------------------------------
-  // Important common parameters
-
-  //TDatime F_start,F_stop; //start and stop of the acquisition (?)
-  TTimeStamp F_start; //start and of the acquisition / start event in a file
-  Float_t T_acq; //duration of the acquisition / file (in seconds)
-
-  Int_t Tstart,Tstop;
-  Int_t tsleep;
-  Int_t buf_size; //in kB
-
-  Int_t event_buf; //length of event buffer
-  //analysis starts only after filling first event_buf
-  Int_t event_lag; //maximal lag of event analysis in mks
-  // if current pulse has tstamp smaller than last event's T
-  // by this value, the pulse is inserted into event_list
-  // without  (if zero - calculate automatically)
-
   /*
   //----------------------------------------------
   // parameters of the crs32 or crs2 module
@@ -111,8 +93,28 @@ class Toptions: public TObject {
   Int_t lcolor[MAX_L];
   char chname[MAX_CH+1][16]; //+all
 
+  //----------------------------------------------
+  // Important common parameters
+
+  //TDatime F_start,F_stop; //start and stop of the acquisition (?)
+  TTimeStamp F_start; //start and of the acquisition / start event in a file
+  Float_t T_acq; //duration of the acquisition / file (in seconds)
+
+  Int_t Tstart,Tstop;
+  Int_t tsleep;
+  Int_t buf_size; //in kB
+
+  Int_t event_buf; //length of event buffer
+  //analysis starts only after filling first event_buf
+  Int_t event_lag; //maximal lag of event analysis in mks
+  // if current pulse has tstamp smaller than last event's T
+  // by this value, the pulse is inserted into event_list
+  // without  (if zero - calculate automatically)
+
   //Bool_t chinv[MAX_CH+1];
 
+  Int_t sel_hdiv; //number of divisions in histframe
+  
   Bool_t raw_write;
   Bool_t dec_write;
   Bool_t decode;
@@ -183,7 +185,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 88)
+  ClassDef(Toptions, 89)
 };
 
 ClassImp(Toptions)

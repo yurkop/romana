@@ -23,6 +23,7 @@ using namespace std;
 #ifndef CRSTXT
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
+extern HistFrame* HiFrm;
 extern ParParDlg *parpar;
 extern ChanParDlg *crspar;
 extern ChanParDlg *chanpar;
@@ -147,7 +148,9 @@ void *handle_evt(void* ptr)
     else {
       //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
     }
-
+    if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
+      HiFrm->DrawHist();      
+    }
     //cout << "Block: " << EvtFrm->BlockAllSignals(false) << endl;
 
     gSystem->Sleep(opt.tsleep);
@@ -1395,6 +1398,9 @@ int CRS::Do1Buf() {
     if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
       EvtFrm->DrawEvent2();      
     }
+    if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
+      HiFrm->DrawHist();      
+    }
     nbuffers++;
     myM->UpdateStatus();
     gSystem->ProcessEvents();
@@ -1851,7 +1857,8 @@ void CRS::Make_Events(int nvp) {
       // 	cout << "Event: " << nn << " " << rl->pulses.size() << " " << rl->T << endl;
       // }
       if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
-	FillHist(&(*rl));
+	FillHist_old(&(*rl));
+	HiFrm->FillHist(&(*rl));
 	++nevents2;
       }
       Levents.erase(rl);

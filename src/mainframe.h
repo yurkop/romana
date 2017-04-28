@@ -42,12 +42,17 @@ private:
   bool                   bRun;
   TGTab                *fTab;
 
-  TList* hlist;
+  Pixel_t fGreen;
+  Pixel_t fRed;
+  Pixel_t fCyan;
+  Pixel_t fBluevio;
 
-  TH1F* h_ampl[MAX_CH]; //amplitude - area of the peak
-  TH1F* h_height[MAX_CH]; //height of the peak
-  TH1F* h_time[MAX_CH]; // real time
-  TH1F* h_tof[MAX_CH]; // time of flight
+  //TList* hlist;
+
+  // TH1F* h_ampl[MAX_CH]; //amplitude - area of the peak
+  // TH1F* h_height[MAX_CH]; //height of the peak
+  // TH1F* h_time[MAX_CH]; // real time
+  // TH1F* h_tof[MAX_CH]; // time of flight
 
 public:
   MainFrame(const TGWindow *p,UInt_t w,UInt_t h);
@@ -56,7 +61,7 @@ public:
   TGStatusBar          *fBar1;
   TGStatusBar          *fBar2;
 
-  void Make_hist();
+  //void Make_hist();
 
   void DoStartStop();
   void DoOpen();
@@ -115,6 +120,7 @@ public:
 
   void exec3event(Int_t, Int_t, Int_t, TObject *);
 
+  //void FillHist(EventClass* evt);
   //NumDlg               *fNumD;
   //ParDlg               *fPar;
   //ChanDlg              *fChan;

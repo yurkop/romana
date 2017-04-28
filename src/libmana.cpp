@@ -1,4 +1,3 @@
-
 //#define LONGSTAMP 1
 
 #ifndef LINUX
@@ -55,10 +54,6 @@ HistFrame* HiFrm;
 ParParDlg *parpar;
 CrsParDlg *crspar;
 ChanParDlg *chanpar;
-
-ULong_t fGreen;
-ULong_t fRed;
-ULong_t fCyan;
 
 const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
@@ -1413,7 +1408,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //ULong_t fGreen;
   //ULong_t fRed;
   //ULong_t fCyan;
-  ULong_t fBluevio;
+  //ULong_t fBluevio;
 
   gClient->GetColorByName("green", fGreen);
   gClient->GetColorByName("red", fRed);
@@ -1772,8 +1767,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   */
 
 
-  hlist = new TList();
-  Make_hist();
+  //hlist = new TList();
+  //Make_hist();
 
   DoDraw2();
 
@@ -1804,7 +1799,7 @@ MainFrame::~MainFrame() {
   //delete fMain;
   gApplication->Terminate(0);
 }
-
+/*
 void MainFrame::Make_hist() {
 
   //char title[100];
@@ -1835,7 +1830,7 @@ void MainFrame::Make_hist() {
   }
 
 }
-
+*/
 void MainFrame::DoStartStop() {
 
   //cout << gROOT->FindObject("Start") << endl;
@@ -3425,6 +3420,25 @@ void MainFrame::exec3event(Int_t event, Int_t x, Int_t y, TObject *selected)
   //     event, x, y);
 }
 
+/*
+void MainFrame::FillHist(EventClass* evt) {
+  //cout << "fillhist" << endl;
+  double DT = opt.period*1e-9;
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    int ch = evt->pulses[i].Chan;
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+      double tt = evt->pulses[i].Tstamp64 + pk->Pos;
+      //cout << "FilHist: " << ch << " " << tt*DT << endl;
+      h_time[ch]->Fill(tt*DT);
+      h_ampl[ch]->Fill(pk->Area*opt.emult[ch]);
+      h_height[ch]->Fill(pk->Height);
+    }
+  }
+}
+*/
+
 void mkstart() {
 
   tpeaks=0;
@@ -3639,7 +3653,7 @@ void dumpevent()
 //
 //
 
-void FillHist(EventClass* evt) {
+void FillHist_old(EventClass* evt) {
   //cout << "fillhist" << endl;
   double DT = opt.period*1e-9;
 

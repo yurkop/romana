@@ -343,10 +343,10 @@ extern EventFrame* EvtFrm;
 //   trd->Run();
 // }
 
-void EventFrame::CloseWindow()
-{
-  delete this;
-}
+// void EventFrame::CloseWindow()
+// {
+//   delete this;
+// }
 
 // void EventFrame::DoReset() {
 //   myM->DoReset();
@@ -520,7 +520,7 @@ void EventFrame::DoPulseOff() {
 
 }
 
-void EventFrame::FillHist(int dr) {
+void EventFrame::FillHstack(int dr) {
   Float_t dat[40000];
   Float_t *pdat=0;
 
@@ -631,14 +631,14 @@ void EventFrame::DrawEvent2() {
 
   //printf("Draw22: %lld\n", d_event->T);
 
-  FillHist(0);
+  FillHstack(0);
 
   if (opt.b_deriv[0]) {
-    FillHist(1);
+    FillHstack(1);
     ndiv++;
   }    
   if (opt.b_deriv[1]) {
-    FillHist(2);
+    FillHstack(2);
     ndiv++;
   }
 

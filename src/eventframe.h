@@ -88,7 +88,7 @@ public:
    void Clear();
    //void Start();
    //void DoReset();
-   void FillHist(int dr);
+   void FillHstack(int dr);
    void DrawEvent2();
    void DrawPeaks(double y1,double y2);
    void DrawEvent();
@@ -108,7 +108,7 @@ public:
    void DoChkPeak();
    void DoPulseOff();
    //void DoDraw(int);
-   void CloseWindow();
+   //void CloseWindow();
 
   ClassDef(EventFrame, 0)
 };

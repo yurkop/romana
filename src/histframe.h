@@ -18,6 +18,7 @@
 //#include "TThread.h"
 #include <list>
 
+/*
 //-----------------------------------------------
 class MECanvas: public TRootEmbeddedCanvas {
  public:
@@ -32,42 +33,28 @@ class MECanvas: public TRootEmbeddedCanvas {
   Bool_t HandleDNDDrop(TDNDData *data);
 
 };
+*/
 
 //-----------------------------------------------
 class HistFrame: public TGCompositeFrame {
 
-protected:
-  //TGTransientFrame       *fMain;
-   TGVertical3DLine       *separator1;
-   TGHorizontalFrame      *fHor;
-   TGHorizontalFrame      *fHor2;
-
-   //TGTextButton           *freset;
-   TGTextButton           *f1buf;
-   TGTextButton           *fNbuf;
-   TGTextButton           *fOne;
-   TGTextButton           *fNev;
-   TGTextButton           *fmOne;
-   TGTextButton           *fmNev;
-   TGTextButton           *fFirst;
-   TGTextButton           *fLast;
-
-   TGDoubleHSlider        *fHslider;
-
-   TGLabel                *fLabel2;
-
-   TGCheckButton          *fDeriv[2];
-   TGCheckButton          *fPeak[10];
-   TGCheckButton          *fChn[MAX_CH];
-
-   TGStatusBar            *fStat1;
-   TGStatusBar            *fStat2;
-   
  public:
    TGCanvas               *fCanvas;
-   //TRootEmbeddedCanvas    *fEc;
-   MECanvas    *fEc;
+   TRootEmbeddedCanvas    *fEc;
+   //MECanvas    *fEc;
    TGListTree             *fListTree;    // list tree with histograms
+   TList* hlist;
+
+   static const int NR=4;
+   TGRadioButton *Rb[NR];
+
+   int xdiv;
+   int ydiv;
+   
+   TH1F* h_ampl[MAX_CH]; //amplitude - area of the peak
+   TH1F* h_height[MAX_CH]; //height of the peak
+   TH1F* h_time[MAX_CH]; // real time
+   TH1F* h_tof[MAX_CH]; // time of flight
 
  public:
 
@@ -95,37 +82,17 @@ public:
    HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
    virtual ~HistFrame();
 
-   //void StartThread();
+   void Make_hist();
+   void FillHist(EventClass* evt);
+   //void DoClick(TGListTreeItem* item,Int_t but);
+   void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
+   void DoCheck(TObject* obj, Bool_t check);
+   //void DoKey(TGListTreeItem* entry, UInt_t keysym);
+   void DoRadio();
+   void Update();
+   void DrawHist();
 
-   void DoClick(TGListTreeItem* item,Int_t but);
-   void DoKey(TGListTreeItem* entry, UInt_t keysym);
-   //void DoDblClick(TGListTreeItem* item,Int_t but);
-   void Clear();
-   //void Start();
-   //void DoReset();
-   void FillHist(int dr);
-   void DrawEvent2();
-   void DrawPeaks(double y1,double y2);
-   void DrawEvent();
-   void DoGraph(int ndiv, int deriv);
-   void ReDraw();
-   /* void DoNum(); */
-   /* void Do1buf(); */
-   /* void DoNbuf(); */
-   void Plus1();
-   void Minus1();
-   void PlusN();
-   void MinusN();
-   void First();
-   void Last();
-   void DoSlider();
-   void DoChkDeriv();
-   void DoChkPeak();
-   void DoPulseOff();
-   //void DoDraw(int);
-   void CloseWindow();
-
-  ClassDef(HistFrame, 0)
+   ClassDef(HistFrame, 0)
 };
 
 
