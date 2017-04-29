@@ -41,6 +41,8 @@
 #include <TGResourcePool.h>
 #include <TGDockableFrame.h>
 
+#include <TDataMember.h>
+
 #include "libcrs.h"
 
 const double MB = 1024*1024;
@@ -192,6 +194,95 @@ Coptions cpar;
 Toptions opt;
 int *opt_id[MXNUM];
 
+//-------------------------------------
+Int_t ClassToBuf(const char* name, char* var, char* buf) {
+  //copies all data members to a buffer, returns size of the buffer
+  //buffer should exist and have sufficient size to allocate all data
+
+  TList* lst = TClass::GetClass(name)->GetListOfDataMembers();
+  if (!lst) {
+    cout <<"Class " << name << " doesn't exist" << endl;
+    return 0;
+  }
+
+  Short_t sz=0;
+  Short_t len=0;
+  TIter nextd(lst);
+  TDataMember *dm;
+  while ((dm = (TDataMember *) nextd())) {
+    if (dm->GetDataType()) {
+      len = strlen(dm->GetName())+1;
+      memcpy(buf+sz,&len,sizeof(len));
+      sz+=sizeof(len);
+      memcpy(buf+sz,dm->GetName(),len);
+      sz+=len;
+      len=1;
+      for (int i=0;i<dm->GetArrayDim();i++) {
+	len*=dm->GetMaxIndex(i)*dm->GetUnitSize();
+      }
+      memcpy(buf+sz,&len,sizeof(len));
+      sz+=sizeof(len);
+      memcpy(buf+sz,var+dm->GetOffset(),len);
+      sz+=len;
+
+    }
+  }
+
+  return sz;
+
+}
+
+//------------------------------------
+
+void BufToClass(const char* name, char* var, char* buf, int size) {
+  //copies all data members from a buffer, size - size of the buffer
+  //buffer should exist. Only data members with matching names are copied
+
+  TList* lst = TClass::GetClass(name)->GetListOfDataMembers();
+  if (!lst) {
+    cout <<"Class " << name << " doesn't exist" << endl;
+    return;
+  }
+
+  Int_t sz=0;
+  UShort_t len=0;
+  UShort_t len2=0;
+  //TIter nextd(lst);
+  TDataMember *dm;
+  char memname[100];
+  const UShort_t mx=5000;
+  char data[mx];
+  while (sz<size) {
+    memcpy(&len,buf+sz,sizeof(len));
+    sz+=sizeof(len);
+    if (len==0 || len>=mx || sz>=size) break;
+    memcpy(memname,buf+sz,len);
+    sz+=len;
+    if (sz>=size) break;
+    memcpy(&len,buf+sz,sizeof(len));
+    sz+=sizeof(len);
+    if (len==0 || len>=mx || sz>=size) break;
+    memcpy(data,buf+sz,len);
+    sz+=len;
+    if (sz>=size) break;
+
+    dm = (TDataMember*) lst->FindObject(memname);
+    if (dm) {
+      len2=1;
+      for (int i=0;i<dm->GetArrayDim();i++) {
+	len2*=dm->GetMaxIndex(i)*dm->GetUnitSize();
+      }
+      //cout << dm->GetName() << " " << len << " " << len2 << endl;
+      memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
+    }
+    else {
+      cout << "dm not found: " << dm << " " << memname << endl;
+    }
+
+  }
+
+}
+//---------------------------------
 
 void out_of_memory(void)
 {
@@ -319,6 +410,52 @@ void change_gz_file2(char* name1, char* name2) {
 
 int main(int argc, char **argv)
 {
+
+  TList* lst = TClass::GetClass("Coptions")->GetListOfDataMembers();
+  //lst->ls();
+
+  char buf[100000];
+
+  Coptions* par1 = new Coptions();
+  Coptions* par2 = new Coptions();
+  Toptions* opt1 = new Toptions();
+  Toptions* opt2 = new Toptions();
+
+  par2->adcGain[11]=7;
+  opt2->channels[11]=255;
+
+  cout << "-------------" << endl;
+  cout << memcmp(par1,par2,sizeof(*par1)) << " " << sizeof(*par1) << endl;
+  cout << ClassToBuf("Coptions",(char*) par1, buf) << endl;
+  BufToClass("Coptions",(char*) par2, buf, sizeof(buf));
+  cout << memcmp(par1,par2,sizeof(*par1)) << " " << sizeof(*par1) << endl;
+  cout << "-------------" << endl;
+
+  exit(1);
+
+  TIter nextd(lst);
+  TDataMember *dm;
+  while ((dm = (TDataMember *) nextd())) {
+    if (dm->GetDataType()) {
+      cout << dm->GetName() << " " << dm->GetOffset() << " " 
+	   << strlen(dm->GetName()) << " " 
+	   << dm->GetDataType()->Size() << " " 
+	   << dm->GetDataType()->Size()
+	   << endl;
+      //dm->Dump();
+      //dm->Inspect();
+    }
+  }
+
+  dm = (TDataMember*) lst->FindObject("acdc");
+  void* pp = &cpar;
+  pp+=dm->GetOffset();
+  cout << pp << " " << dm->GetArrayDim() << " " << dm->GetMaxIndex(1) << endl;
+
+  cout << &cpar << " " << &cpar.acdc << " " << endl;
+
+  exit(1);
+  
 
   //cpar.ver=TClass::GetClass("Coptions")->GetClassVersion();
 

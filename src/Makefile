@@ -54,6 +54,12 @@ r2a: utils/root2ascii.cxx
 r2a2: utils/root2ascii2.cxx
 	g++ $(CXXFLAGS) $(CPPFLAGS) -o r2a2.x utils/root2ascii2.cxx $(LDFLAGS)
 
+$(OBJ_D)/headerdict.cpp: utils/LinkDef.h
+	rootcint -f $(OBJ_D)/headerdict.cpp -c -p utils/gz_header.h utils/LinkDef.h
+
+gz_header: utils/gz_header.cpp $(OBJ_D)/headerdict.cpp
+	g++ $(CXXFLAGS) $(CPPFLAGS) -o gz_header.x utils/gz_header.cpp $(OBJ_D)/headerdict.cpp $(LDFLAGS)
+
 clean:
 	rm -f $(OBJ_D)/* $(SRC_D)/*~
 

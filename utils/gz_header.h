@@ -1,17 +1,13 @@
-#ifndef toptions_H
-#define toptions_H 1
+#ifndef gzheader_H
+#define gzheader_H 1
 
-#include "common.h"
-
-#include <TObject.h>
-#include <TROOT.h>
-#include <TCutG.h>
-//#include <TDatime.h>
+#include "../src/common.h"
 #include <TTimeStamp.h>
+#include <TCutG.h>
 
 class Coptions: public TObject {
  public:
-  Coptions();
+  Coptions() {};
   virtual ~Coptions() {};
 
   //Version_t ver;
@@ -27,28 +23,42 @@ class Coptions: public TObject {
   Int_t adcGain[MAX_CH+ADDCH]; // G = 0..12
   Bool_t acdc[MAX_CH+ADDCH]; // AC-1; DC-0
   Bool_t inv[MAX_CH+ADDCH]; //0 - no inversion; 1 - inversion (individual)
-  // 0 - only triggered channel is written; 
-  // 1 - both channels are written with any trigger
   Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
   Bool_t forcewr; //only for crs2
-  //ChDef chtype[MAX_CH+ADDCH]; //channel type
+  // 0 - only triggered channel is written; 
+  // 1 - both channels are written with any trigger
   //----------------------------------------------
 
  public:
-  void InitPar(Int_t module);
-  void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
+  void InitPar(Int_t module) {};
+  void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max) {};
 
   ClassDef(Coptions, 2)
 };
 
-//------------------------------------
-
 class Toptions: public TObject {
  public:
-  Toptions();
+  Toptions() {};
   virtual ~Toptions() {};
 
-  /*
+  //----------------------------------------------
+  // Important common parameters
+
+  //TDatime F_start,F_stop; //start and stop of the acquisition (?)
+  TTimeStamp F_start; //start and of the acquisition / start event in a file
+  Float_t T_acq; //duration of the acquisition / file (in seconds)
+
+  Int_t Tstart,Tstop;
+  Int_t tsleep;
+  Int_t buf_size; //in kB
+
+  Int_t event_buf; //length of event buffer
+  //analysis starts only after filling first event_buf
+  Int_t event_lag; //maximal lag of event analysis in mks
+  // if current pulse has tstamp smaller than last event's T
+  // by this value, the pulse is inserted into event_list
+  // without  (if zero - calculate automatically)
+
   //----------------------------------------------
   // parameters of the crs32 or crs2 module
 
@@ -65,11 +75,9 @@ class Toptions: public TObject {
   // 0 - only triggered channel is written; 
   // 1 - both channels are written with any trigger
   Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
+  //----------------------------------------------
 
   ChDef chtype[MAX_CH+ADDCH]; //channel type
-
-  //----------------------------------------------
-  */
   
   Bool_t Start[MAX_CH+ADDCH]; //
   //UInt_t ch_flag[MAX_CH+ADDCH];
@@ -94,28 +102,8 @@ class Toptions: public TObject {
   Int_t lcolor[MAX_L];
   char chname[MAX_CH+1][16]; //+all
 
-  //----------------------------------------------
-  // Important common parameters
-
-  //TDatime F_start,F_stop; //start and stop of the acquisition (?)
-  TTimeStamp F_start; //start and of the acquisition / start event in a file
-  Float_t T_acq; //duration of the acquisition / file (in seconds)
-
-  Int_t Tstart,Tstop;
-  Int_t tsleep;
-  Int_t buf_size; //in kB
-
-  Int_t event_buf; //length of event buffer
-  //analysis starts only after filling first event_buf
-  Int_t event_lag; //maximal lag of event analysis in mks
-  // if current pulse has tstamp smaller than last event's T
-  // by this value, the pulse is inserted into event_list
-  // without  (if zero - calculate automatically)
-
   //Bool_t chinv[MAX_CH+1];
 
-  Int_t sel_hdiv; //number of divisions in histframe
-  
   Bool_t raw_write;
   Bool_t dec_write;
   Bool_t decode;
@@ -181,14 +169,7 @@ class Toptions: public TObject {
   Int_t period; //period of digitizing in ns
 
  public:
-  //void InitPar(Int_t module);
 
-  //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
-
-
-  ClassDef(Toptions, 89)
+  ClassDef(Toptions, 86)
 };
-
-ClassImp(Toptions)
-
 #endif
