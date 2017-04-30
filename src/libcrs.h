@@ -116,10 +116,10 @@ RQ_OBJECT("CRS")
   void Command2(byte cmd, byte ch, byte type, int par);
   //void SendParametr(const char* name, int len_out); //send one parameter
   int DoStartStop(); // start-stop acquisition
-  void Reset(); //reset BPulses
+  void DoReset(); //reset BPulses
   void DoFopen(char* oname);
-  void ReadPar_gz(gzFile ff);
-  void SavePar_gz(gzFile ff);
+  void ReadParGz(gzFile ff, int p1, int p2);
+  void SaveParGz(gzFile ff);
 
   //void DoFAna();
   void FAnalyze();

@@ -557,7 +557,7 @@ int main(int argc, char **argv)
 
     //readinit(pname);
     gzFile ff = gzopen(pname,"rb");
-    crs->ReadPar_gz(ff);
+    crs->ReadParGz(ff,1,1);
     gzclose(ff);
 
     //opt.num_events=0;
@@ -933,8 +933,8 @@ void clear_hist() {
 void greset() { //global reset
   //int i,j;
 
-  new_hist();
-  set_hist_attr();
+  //YK new_hist();
+  //YK set_hist_attr();
 
   //buf=buf2+BOFFSET;
   //signed_buf=(short*) buf;
@@ -1639,12 +1639,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   parname = (char*)"romana.par";
 
-  //readinit(parname);
-  gzFile ff = gzopen(parname,"rb");
-  crs->ReadPar_gz(ff);
-  gzclose(ff);
-
-
   fTab = new TGTab(hframe1, 300, 300);
   //TGLayoutHints *fL5 = new TGLayoutHints(kLHintsTop | kLHintsExpandX |
   //                                        kLHintsExpandY, 2, 2, 5, 1);
@@ -1706,7 +1700,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 					     2,2,2,2));
   ntab++;
 
-
   if (!crs->module) {
     //TGTabElement *tabdaq = fTab->GetTabTab("DAQ");
     //tabdaq->SetEnabled(false);
@@ -1746,11 +1739,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
   hfr1->AddFrame(fNb, lay2);
 
-
-
-
-
   parpar->Update();
+
+
+  //readinit(parname);
+  gzFile ff = gzopen(parname,"rb");
+  crs->ReadParGz(ff,1,1);
+  gzclose(ff);
 
   /*
 
@@ -2118,7 +2113,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
     if (nn==kFDOpen) {
       //readinit(pname);
       gzFile ff = gzopen(pname,"rb");
-      crs->ReadPar_gz(ff);
+      crs->ReadParGz(ff,1,1);
       gzclose(ff);
 
 
@@ -2140,7 +2135,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 #endif
       gzFile ff = gzopen(pname,"wb");
       if (ff) {
-	crs->SavePar_gz(ff);
+	crs->SaveParGz(ff);
 	gzclose(ff);
       }
       else {
@@ -2221,16 +2216,21 @@ void MainFrame::DoReset() {
   return;
   */
   
+  if (HiFrm)
+    cout << "DoReset_main: " << HiFrm->h_time[1]->GetName() << endl;
+
   if (crs->b_acq) return;
 
   greset();
 
-  crs->Reset();
+  crs->DoReset();
+  HiFrm->Update();
+
   //Buffer->NewFile();
 
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
   UpdateStatus();
-  DoDraw();
+  //DoDraw();
 
 }
 
@@ -3219,7 +3219,7 @@ void MainFrame::DoExit() {
 #endif
   gzFile ff = gzopen(parname,"wb");
   if (ff) {
-    crs->SavePar_gz(ff);
+    crs->SaveParGz(ff);
     gzclose(ff);
   }
   else {
@@ -3365,6 +3365,10 @@ void MainFrame::DoTab(Int_t num) {
   else if (name.EqualTo("Channels",TString::kIgnoreCase)) {
     cout << "DoTab3: " << name << endl;
     chanpar->Update();
+  }
+  else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
+    cout << "DoTab5: " << name << endl;
+    HiFrm->ReDraw();
   }
 }
 

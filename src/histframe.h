@@ -84,13 +84,13 @@ public:
 
    void Make_hist();
    void FillHist(EventClass* evt);
-   //void DoClick(TGListTreeItem* item,Int_t but);
-   void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
+   //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
    void DoCheck(TObject* obj, Bool_t check);
    //void DoKey(TGListTreeItem* entry, UInt_t keysym);
    void DoRadio();
    void Update();
    void DrawHist();
+   void ReDraw();
 
    ClassDef(HistFrame, 0)
 };

@@ -607,7 +607,7 @@ void EventFrame::DrawEvent2() {
   TCanvas *cv=fCanvas->GetCanvas();
   cv->Clear();
 
-  //printf("Draw0:\n");
+  printf("DrawEvent0:\n");
 
   //Emut->Lock();
   if (Levents->empty()) {

@@ -149,7 +149,8 @@ void *handle_evt(void* ptr)
       //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
     }
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
-      HiFrm->DrawHist();      
+      //HiFrm->DrawHist();      
+      HiFrm->ReDraw();      
     }
     //cout << "Block: " << EvtFrm->BlockAllSignals(false) << endl;
 
@@ -297,7 +298,7 @@ CRS::CRS() {
   Fbuf=NULL;
 
   strcpy(Fname," ");
-  Reset();
+  DoReset();
 
   module=0;
 
@@ -1031,7 +1032,7 @@ int CRS::DoStartStop() {
   //int len=2; //input/output length must be 2, not 1
 
   if (!b_acq) { //start
-    Reset();
+    DoReset();
 
     //EvtFrm->Levents = &Levents;
     EvtFrm->Levents = &EvtFrm->Tevents;
@@ -1074,7 +1075,7 @@ int CRS::DoStartStop() {
 
     	f_raw = gzopen(opt.fname_raw,"wb");
 	if (f_raw) {
-	  SavePar_gz(f_raw);
+	  SaveParGz(f_raw);
 	  gzclose(f_raw);
 	}
 	else {
@@ -1151,7 +1152,10 @@ int CRS::DoStartStop() {
 }
 
 
-void CRS::Reset() {
+void CRS::DoReset() {
+
+  if (HiFrm)
+    cout << "DoReset1: " << HiFrm->h_time[1]->GetName() << endl;
 
   opt.T_acq=0;
 
@@ -1181,20 +1185,11 @@ void CRS::Reset() {
   //MAX_LAG=opt.event_buf/2;
 
   DoFopen(NULL);
+
   //gzrewind(f_raw);
-  
-  /*
-  if (f_raw) {
-    gzclose(f_raw);
-    cout << "reset file: " << Fname << endl;
-    f_raw = gzopen(Fname,"rb");
-    if (!f_raw) {
-      Fmode=0;
-      cout << "Can't open file: " << Fname << endl;
-      f_raw=0;
-    }
-  }
-  */
+
+  if (HiFrm)
+    cout << "DoReset2: " << HiFrm->h_time[1]->GetName() << endl;
 
 }
 
@@ -1256,7 +1251,10 @@ void CRS::DoFopen(char* oname) {
       return;
     }
 
-    ReadPar_gz(f_raw);
+    if (oname) 
+      ReadParGz(f_raw,1,1);
+    else
+      ReadParGz(f_raw,1,0);
 
   }
 
@@ -1266,8 +1264,9 @@ void CRS::DoFopen(char* oname) {
 
   if (Fbuf) delete[] Fbuf;
   Fbuf = new UChar_t[opt.buf_size*1024];
-
   EvtFrm->Levents = &Levents;
+
+  parpar->Update();
 
   //cout << f_raw << endl;
 
@@ -1285,17 +1284,22 @@ void CRS::DoFopen(char* oname) {
 //   }
 // }
 
-void CRS::ReadPar_gz(gzFile ff) {
+void CRS::ReadParGz(gzFile ff, int p1, int p2) {
 
   UShort_t sz;
   gzread(ff,&sz,sizeof(sz));
 
+  //cout << "readpar_gz1: " << sz << endl;
+
   char buf[100000];
   gzread(ff,buf,sz);
 
-  BufToClass("Coptions",(char*) &cpar, buf, sz);
-  BufToClass("Toptions",(char*) &opt, buf, sz);
+  if (p1) 
+    BufToClass("Coptions",(char*) &cpar, buf, sz);
+  if (p2)
+    BufToClass("Toptions",(char*) &opt, buf, sz);
 
+  //cout << "readpar_gz2: " << sz << endl;
   //opt.raw_write=false;
   parpar->Update();
   crspar->Update();
@@ -1305,15 +1309,19 @@ void CRS::ReadPar_gz(gzFile ff) {
   //Fbuf = new UChar_t[opt.buf_size*1024];
   //EvtFrm->Levents = &Levents;
 
+  //cout << "readpar_gz3" << endl;
 }
 
-void CRS::SavePar_gz(gzFile ff) {
+void CRS::SaveParGz(gzFile ff) {
 
   char buf[100000];
-  UShort_t sz=0;
-  memcpy(buf,&sz,sizeof(sz));
+  UShort_t sz=sizeof(sz);
   sz+=ClassToBuf("Coptions",(char*) &cpar, buf+sz);
   sz+=ClassToBuf("Toptions",(char*) &opt, buf+sz);
+
+  memcpy(buf,&sz,sizeof(sz));
+
+  //cout << "SavePar_gz: " << sz << endl;
 
   gzwrite(ff,buf,sz);
 
@@ -1359,7 +1367,8 @@ int CRS::Do1Buf() {
       EvtFrm->DrawEvent2();      
     }
     if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
-      HiFrm->DrawHist();      
+      //HiFrm->DrawHist();      
+      HiFrm->ReDraw();      
     }
     nbuffers++;
     myM->UpdateStatus();
@@ -1804,7 +1813,7 @@ void CRS::Make_Events(int nvp) {
 
   //Analyse events and clean (part of) the event list
   if ((int) Levents.size()>opt.ev_max) {
-    //cout << "Size1: " << Levents.size() << " " << opt.ev_max-opt.ev_min << endl;
+    cout << "Size1: " << Levents.size() << " " << opt.ev_max-opt.ev_min << endl;
     //Int_t nn=0;
     std::list<EventClass>::iterator rl;
     std::list<EventClass>::iterator next;
@@ -1817,16 +1826,19 @@ void CRS::Make_Events(int nvp) {
       // 	cout << "Event: " << nn << " " << rl->pulses.size() << " " << rl->T << endl;
       // }
       if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
-	FillHist_old(&(*rl));
+	cout << "FillH1: " << Levents.size() << endl;
+	//FillHist_old(&(*rl));
+	//cout << "FillH2: " << Levents.size() << endl;
 	HiFrm->FillHist(&(*rl));
 	++nevents2;
+	cout << "FillH3: " << Levents.size() << endl;
       }
       Levents.erase(rl);
       //++nn;
-      //cout << "makeev: " << Levents.size() << endl;
+      cout << "makeev: " << Levents.size() << endl;
       if ((int)Levents.size()<=opt.ev_min) break;
     }
-    //cout << "Make_Events Size2: " << Levents.size() << endl;
+    cout << "Make_Events Size2: " << Levents.size() << endl;
   }
 
 }

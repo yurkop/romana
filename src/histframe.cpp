@@ -60,6 +60,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   const char* tRad[NR]={"1x1","2x2","3x2","4x2"};
 
+  hlist=new TList();
+
   //cout << "HistFrame: " << gDNDManager << endl;
 
   ntab=nt;
@@ -158,7 +160,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   int sel = abs(opt.sel_hdiv)%NR;
   Rb[sel]->Clicked();
 
-  hlist=new TList();
   //Update();
 }
 
@@ -220,7 +221,7 @@ void HistFrame::Make_hist() {
 }
 
 void HistFrame::FillHist(EventClass* evt) {
-  //cout << "fillhist" << endl;
+  //cout << "fillhist1: " << evt->pulses.size() << endl;
   double DT = opt.period*1e-9;
 
   for (UInt_t i=0;i<evt->pulses.size();i++) {
@@ -228,7 +229,8 @@ void HistFrame::FillHist(EventClass* evt) {
     for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
       peak_type* pk = &evt->pulses[i].Peaks[j];
       double tt = evt->pulses[i].Tstamp64 + pk->Pos;
-      //cout << "FilHist: " << ch << " " << tt*DT << endl;
+      cout << "FilHist2: " << ch << " " << tt*DT << endl;
+      cout << "FilHist3: " << h_time[ch]->GetName() << " " << tt*DT << endl;
       h_time[ch]->Fill(tt*DT);
       h_ampl[ch]->Fill(pk->Area*opt.emult[ch]);
       h_height[ch]->Fill(pk->Height);
@@ -251,6 +253,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 }
 */
 
+/*
 void HistFrame::DoClick(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, Int_t y)
 {
   cout << "DoClick2: " << entry << " " << btn << " " << mask << " "
@@ -266,6 +269,7 @@ void HistFrame::DoClick(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, 
   }
   
 }
+*/
 
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
@@ -283,7 +287,7 @@ void HistFrame::DoRadio()
   Int_t id = btn->WidgetId()-1;
   //int prev = (id+NR-1)%NR;
 
-  cout << "doradio: " << id << endl;
+  //cout << "doradio: " << id << endl;
 
   for (int i=0;i<NR;i++) {
     if (i==id)
@@ -312,52 +316,10 @@ void HistFrame::DoRadio()
     break;
   }
 
-  fEc->GetCanvas()->Clear();
-  fEc->GetCanvas()->Divide(xdiv,ydiv);
-  
-  /*
-  int j;
+  //cout << "doradio2: " << id << endl;
+  Update();
+  //cout << "doradio3: " << id << endl;
 
-  int ii=id/MAX_R;
-  int k=id%MAX_R;
-
-  Pixel_t bkg=fLabel[0]->GetBackground();
-
-  if (ii>=0 && ii<MAX_CH) {
-    for (j=ii*MAX_R;j<ii*MAX_R+MAX_R;j++) {
-      if (j!=id) {
-	fR[j]->SetState(kButtonUp);
-	fR[j]->ChangeBackground(bkg);
-      }
-    }
-    //YK opt.channels[i]=(ChannelDef) k;
-    if (k!=MAX_R-1) {
-      fR[id]->ChangeBackground(fColor[ii]->GetColor());
-      //fR[id]->ChangeBackground(gROOT->GetColor(opt.color[i])->GetPixel());
-    }
-  }
-  else if (ii==MAX_CH) {
-    for (int i=0;i<=MAX_CH;i++) {
-      for (j=i*MAX_R;j<i*MAX_R+MAX_R;j++) {
-	if (j%MAX_R!=k) {
-	  fR[j]->SetState(kButtonUp);
-	  fR[j]->ChangeBackground(bkg);
-	}
-	else {
-	  fR[j]->SetState(kButtonDown);
-	  if (j%MAX_R!=MAX_R-1) {
-	    fR[j]->ChangeBackground(fColor[i]->GetColor());
-	    //fR[j]->ChangeBackground(gROOT->GetColor(opt.color[i])->GetPixel());
-	  }
-	}
-      }
-      //YK opt.channels[i]=(ChannelDef) k;
-    }
-  }
-  else{
-    printf("DoRadio: wrong id: %d\n",id);
-  }
-  */
 }
 
 void HistFrame::Update()
@@ -366,20 +328,18 @@ void HistFrame::Update()
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     //cout << "Dir: " << idir->GetText() << " : " << idir->GetUserData() << endl;
-    if (idir->IsChecked()) {
-      if (idir->GetUserData()) {
-	//TH1* hh = (TH1*) idir->GetUserData();
-	hlist->Add((TObject*)idir->GetUserData());
+    if (idir->IsChecked() && idir->GetUserData()) {
+      //TH1* hh = (TH1*) idir->GetUserData();
+      hlist->Add((TObject*)idir->GetUserData());
+    }
+    TGListTreeItem *item = idir->GetFirstChild();
+    while (item) {
+      if (item->IsChecked() && item->GetUserData()) {
+	//TH1* hh = (TH1*) item->GetUserData();
+	hlist->Add((TObject*)item->GetUserData());
       }
-      TGListTreeItem *item = idir->GetFirstChild();
-      while (item) {
-	if (item->IsChecked() && item->GetUserData()) {
-	  //TH1* hh = (TH1*) item->GetUserData();
-	  hlist->Add((TObject*)item->GetUserData());
-	}
-	//cout << item->GetText() << " : " << item->GetUserData() << endl;
-	item = item->GetNextSibling();
-      }
+      //cout << item->GetText() << " : " << item->GetUserData() << endl;
+      item = item->GetNextSibling();
     }
     idir = idir->GetNextSibling();
   }
@@ -395,16 +355,22 @@ void HistFrame::Update()
     //cout << "Checked: " << hh->GetName() << endl;
   }
   */
-  
+
+  DrawHist();
+
 }
 
 void HistFrame::DrawHist()
 {
+
+  fEc->GetCanvas()->Clear();
+  fEc->GetCanvas()->Divide(xdiv,ydiv);
+
   int nn=1;
   TIter next(hlist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
-    cout << "DrawHist: " << fEc->GetCanvas()->GetPad(nn) << endl;
+    //cout << "DrawHist: " << fEc->GetCanvas()->GetPad(nn) << endl;
     if (!fEc->GetCanvas()->GetPad(nn)) break;
     fEc->GetCanvas()->cd(nn);
     TH1 *hh = (TH1*) obj;
@@ -413,4 +379,13 @@ void HistFrame::DrawHist()
     //cout << "Checked: " << hh->GetName() << endl;
   }
   fEc->GetCanvas()->Update();
+}
+
+void HistFrame::ReDraw()
+{
+
+  //cout << "ReDraw: " << fEc->GetCanvas() << endl;
+
+  fEc->GetCanvas()->Update();
+  fEc->GetCanvas()->Draw();
 }
