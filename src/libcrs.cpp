@@ -1025,8 +1025,6 @@ void CRS::AllParameters32_old()
 
 
 
-
-
 int CRS::DoStartStop() {
   int r;
   //int transferred = 0;
@@ -1072,27 +1070,11 @@ int CRS::DoStartStop() {
       struct stat buffer;
       if (stat (opt.fname_raw, &buffer)) {
     	cout << "stat: " << stat (opt.fname_raw, &buffer) << endl;
-	UShort_t mod[8];
-	//UShort_t mod[2];
+	UShort_t mod=module;
 
-	memset(mod,0,sizeof(mod));
-	mod[0]=module;
-	mod[1]=sizeof(cpar);
-	mod[2]=TClass::GetClass("Coptions")->GetClassVersion();
-	mod[3]=sizeof(opt);
-	mod[4]=TClass::GetClass("Toptions")->GetClassVersion();
-
-	//mod[0]=module;
-	//mod[1]=sizeof(opt);
     	f_raw = gzopen(opt.fname_raw,"wb");
-	if (crs->f_raw) {
-	  //Int_t size = sizeof(opt);
-	  //opt.F_start.Print();
-	  Version_t ver = TClass::GetClass("Toptions")->GetClassVersion();
-	  gzwrite(f_raw,mod,sizeof(mod));
-	  gzwrite(f_raw,&cpar,sizeof(cpar));
-	  gzwrite(f_raw,&opt,sizeof(opt));
-
+	if (f_raw) {
+	  SavePar_gz(f_raw);
 	  gzclose(f_raw);
 	}
 	else {
@@ -1167,10 +1149,6 @@ int CRS::DoStartStop() {
   return 0;
 
 }
-
-
-
-
 
 
 void CRS::Reset() {
@@ -1259,94 +1237,38 @@ void CRS::DoFopen(char* oname) {
     Fmode=1;
   }
   else {
-    UShort_t mod[8];
-    gzread(f_raw,mod,sizeof(mod));
+    UShort_t mod;
+    gzread(f_raw,&mod,sizeof(mod));
 
-    if (mod[0]==2) {
+    if (mod==2) {
       Fmode=2;
-      cout << "CRS2 File: " << Fname << " " << mod[1] << endl;
+      cout << "CRS2 File: " << Fname << " " << mod << endl;
     }
-    else if (mod[0]==32) {
+    else if (mod==32) {
       Fmode=32;
-      cout << "CRS32 File: " << Fname << " " << mod[1] << endl;
+      cout << "CRS32 File: " << Fname << " " << mod << endl;
     }
     else {
       Fmode=0;
       cout << "Unknown file type: " << Fname << " " << Fmode << endl;
       gzclose(f_raw);
       f_raw=0;
+      return;
     }
 
-    char *cbuf = new char[mod[1]];
-    char *tbuf = new char[mod[3]];
-    gzread(f_raw,cbuf,mod[1]);
-    gzread(f_raw,tbuf,mod[3]);
-    
-    if (oname) { //read parameters if the file is newly open
-      if (mod[1]==sizeof(Coptions) &&
-	  mod[2] == TClass::GetClass("Coptions")->GetClassVersion()) {
-	cout << "reading cpar... " << mod[1] << " " << mod[2] << endl;
-	memcpy(&cpar,cbuf,sizeof(cpar));
-	// cout << "cpar: " << &cpar << " " 
-	//      << &cpar.smooth << " "
-	//      << &cpar.chtype << " "
-	//      << endl;
-      }
-      else {
-	cout << "cpar is unchanged: " << mod[1] << " " << mod[2] << " "
-	     << sizeof(Coptions) << " "
-	     << TClass::GetClass("Coptions")->GetClassVersion() <<endl;
-      }
-      if (mod[3]==sizeof(Toptions) &&
-	  mod[4] == TClass::GetClass("Toptions")->GetClassVersion()) {
-	cout << "reading opt... " << mod[3] << " " << mod[4] << endl;
-	memcpy(&opt,tbuf,sizeof(opt));
-      }
-      else {
-	cout << "opt is unchanged: " << mod[3] << " " << mod[4] << " "
-	     << sizeof(Toptions) << " "
-	     << TClass::GetClass("Toptions")->GetClassVersion() <<endl;
-      }
-    }
-
-    delete[] cbuf;
-    delete[] tbuf;
-
-    /*
-    if (Fmode) {
-      if (mod[1] == sizeof(opt)) {
-	gzread(f_raw,&opt,sizeof(opt));
-	cout << "Options are read from the file: " << Fname << endl;
-      }
-      else {
-	char* obuf = new char[mod[1]];
-	gzread(f_raw,obuf,mod[1]);
-	cout << "Options are obslete: " << mod[1] << " " << sizeof(opt) 
-	     << " " << Fname << endl;
-
-	//Do something with old options
-
-	delete[] obuf;
-      }
-    }
-    */
+    ReadPar_gz(f_raw);
 
   }
+
+  opt.raw_write=false;
 
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
 
-  if (Fmode) {
-    opt.raw_write=false;
-    parpar->Update();
-    crspar->Update();
-    chanpar->Update();
+  if (Fbuf) delete[] Fbuf;
+  Fbuf = new UChar_t[opt.buf_size*1024];
 
-    if (Fbuf) delete[] Fbuf;
-    Fbuf = new UChar_t[opt.buf_size*1024];
+  EvtFrm->Levents = &Levents;
 
-    EvtFrm->Levents = &Levents;
-
-  }
   //cout << f_raw << endl;
 
   //cout << "smooth: " << cpar.smooth[0] << endl;
@@ -1362,6 +1284,40 @@ void CRS::DoFopen(char* oname) {
 //     b_fana=false;
 //   }
 // }
+
+void CRS::ReadPar_gz(gzFile ff) {
+
+  UShort_t sz;
+  gzread(ff,&sz,sizeof(sz));
+
+  char buf[100000];
+  gzread(ff,buf,sz);
+
+  BufToClass("Coptions",(char*) &cpar, buf, sz);
+  BufToClass("Toptions",(char*) &opt, buf, sz);
+
+  //opt.raw_write=false;
+  parpar->Update();
+  crspar->Update();
+  chanpar->Update();
+
+  //if (Fbuf) delete[] Fbuf;
+  //Fbuf = new UChar_t[opt.buf_size*1024];
+  //EvtFrm->Levents = &Levents;
+
+}
+
+void CRS::SavePar_gz(gzFile ff) {
+
+  char buf[100000];
+  UShort_t sz=0;
+  memcpy(buf,&sz,sizeof(sz));
+  sz+=ClassToBuf("Coptions",(char*) &cpar, buf+sz);
+  sz+=ClassToBuf("Toptions",(char*) &opt, buf+sz);
+
+  gzwrite(ff,buf,sz);
+
+}
 
 void CRS::FAnalyze() {
 

@@ -118,6 +118,9 @@ RQ_OBJECT("CRS")
   int DoStartStop(); // start-stop acquisition
   void Reset(); //reset BPulses
   void DoFopen(char* oname);
+  void ReadPar_gz(gzFile ff);
+  void SavePar_gz(gzFile ff);
+
   //void DoFAna();
   void FAnalyze();
   int Do1Buf();

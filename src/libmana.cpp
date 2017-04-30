@@ -195,7 +195,7 @@ Toptions opt;
 int *opt_id[MXNUM];
 
 //-------------------------------------
-Int_t ClassToBuf(const char* name, char* var, char* buf) {
+UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer
   //buffer should exist and have sufficient size to allocate all data
 
@@ -205,8 +205,23 @@ Int_t ClassToBuf(const char* name, char* var, char* buf) {
     return 0;
   }
 
-  Short_t sz=0;
+  Int_t sz=0;
   Short_t len=0;
+
+  char cname[100];
+  strcpy(cname,"class");
+  len = strlen(cname)+1;
+  memcpy(buf+sz,&len,sizeof(len));
+  sz+=sizeof(len);
+  memcpy(buf+sz,cname,len);
+  sz+=len;
+
+  len = strlen(name)+1;
+  memcpy(buf+sz,&len,sizeof(len));
+  sz+=sizeof(len);
+  memcpy(buf+sz,name,len);
+  sz+=len;
+
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
@@ -250,6 +265,7 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
   //TIter nextd(lst);
   TDataMember *dm;
   char memname[100];
+  char clname[100];
   const UShort_t mx=5000;
   char data[mx];
   while (sz<size) {
@@ -266,8 +282,13 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
     sz+=len;
     if (sz>=size) break;
 
+    if (strcmp(memname,"class")==0) {
+      strcpy(clname,data);
+      continue;
+    }
+
     dm = (TDataMember*) lst->FindObject(memname);
-    if (dm) {
+    if (dm && strcmp(clname,name)==0) {
       len2=1;
       for (int i=0;i<dm->GetArrayDim();i++) {
 	len2*=dm->GetMaxIndex(i)*dm->GetUnitSize();
@@ -276,13 +297,14 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
     else {
-      cout << "dm not found: " << dm << " " << memname << endl;
+      cout << "member not found: " << dm << " " << memname << " " 
+	   << clname << " " << name << endl;
     }
 
   }
 
 }
-//---------------------------------
+//--------------------------------
 
 void out_of_memory(void)
 {
@@ -296,6 +318,7 @@ void ctrl_c_handler(int s){
   //exit(1); 
 }
 
+/*
 void change_gz_file(char* name1, char* name2) {
 
   //exit(-1);
@@ -335,7 +358,7 @@ void change_gz_file(char* name1, char* name2) {
   exit(-1);
 
 }
-/*
+//----------------------------
 void change_gz_file2(char* name1, char* name2) {
 
   gzFile f1 = gzopen(name1,"rb");
@@ -411,6 +434,7 @@ void change_gz_file2(char* name1, char* name2) {
 int main(int argc, char **argv)
 {
 
+  /*
   TList* lst = TClass::GetClass("Coptions")->GetListOfDataMembers();
   //lst->ls();
 
@@ -456,6 +480,7 @@ int main(int argc, char **argv)
 
   exit(1);
   
+  */
 
   //cpar.ver=TClass::GetClass("Coptions")->GetClassVersion();
 
@@ -530,7 +555,10 @@ int main(int argc, char **argv)
   }
   else if (batch) {
 
-    readinit(pname);
+    //readinit(pname);
+    gzFile ff = gzopen(pname,"rb");
+    crs->ReadPar_gz(ff);
+    gzclose(ff);
 
     //opt.num_events=0;
     allevents();
@@ -1006,13 +1034,8 @@ void filltree() {
 
 }
 
-void readinit(const char* pname)
+void readpar_root(const char* pname)
 {
-
-  //FILE* finit;
-  //int i;
-  //char ss[7];
-
   TFile *f2 = new TFile(pname,"READ");
 
   cpar.Read("Coptions");
@@ -1022,55 +1045,25 @@ void readinit(const char* pname)
 
   f2->Close();
   delete f2;
-
-
 }
 
-void saveinit(const char* pname)
+void savepar_root(const char* pname)
 {
 
-  //FILE* finit;
-  //int i;
-  //char ss[7];
-
-
-  //char ttt[100];
-  //getcwd(ttt,100);
-  //cout << ttt << endl;
-  
 #ifdef LINUX
   if (chdir(startdir)) {}
 #else
   _chdir(startdir);
 #endif
 
-  cout << "saveinit1" << endl;
   TFile *f2 = new TFile(pname,"RECREATE");
-  cout << "saveinit2" << endl;
 
   cpar.Write();
-  cout << "saveinit3" << endl;
   opt.Write();
-  cout << "saveinit4" << endl;
-
-  //TNamed2 *tn = new TNamed2("Name1","Title2");
-  //tn->Dump();
-  //tn->Write();
-  //delete tn;
 
   f2->Close();
   delete f2;
 
-  /*
-    char fname[255];
-    strcpy(fname,pname);
-    strcat(fname,".gz");
-
-    cout << "gzwrite: " << fname << endl;
-    gzFile gF = gzopen(fname,"wb");
-    gzwrite(gF,&opt,sizeof(opt));
-    gzclose(gF);
-  */
 }
 
 void fill_sEvent(int i)
@@ -1646,7 +1639,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   parname = (char*)"romana.par";
 
-  readinit(parname);
+  //readinit(parname);
+  gzFile ff = gzopen(parname,"rb");
+  crs->ReadPar_gz(ff);
+  gzclose(ff);
 
 
   fTab = new TGTab(hframe1, 300, 300);
@@ -2120,13 +2116,10 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
     printf("TGFile: %s\n",pname);
 
     if (nn==kFDOpen) {
-      readinit(pname);
-
-
-      crspar->Update();
-      chanpar->Update();
-      parpar->Update();
-
+      //readinit(pname);
+      gzFile ff = gzopen(pname,"rb");
+      crs->ReadPar_gz(ff);
+      gzclose(ff);
 
 
       //delete fPar;
@@ -2139,7 +2132,20 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
       //}
     }
     else {
-      saveinit(pname);
+      //saveinit(pname);
+#ifdef LINUX
+      if (chdir(startdir)) {}
+#else
+      _chdir(startdir);
+#endif
+      gzFile ff = gzopen(pname,"wb");
+      if (ff) {
+	crs->SavePar_gz(ff);
+	gzclose(ff);
+      }
+      else {
+	cout << "Can't open file: " << pname << endl;
+      }
     }
     //newfile();
   }
@@ -2172,7 +2178,7 @@ void MainFrame::DoReadRoot() {
     strcpy(rootname,fi.fFilename);
     printf("xxxx TGFile: %s\n",rootname);
 
-    readinit(rootname);
+    readpar_root(rootname);
     //reset();
     new_hist();
     readroot(rootname);
@@ -3205,7 +3211,20 @@ void MainFrame::DoExit() {
 
   cout << "DoExit" << endl;
 
-  saveinit(parname);
+  //saveinit(parname);
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
+  gzFile ff = gzopen(parname,"wb");
+  if (ff) {
+    crs->SavePar_gz(ff);
+    gzclose(ff);
+  }
+  else {
+    cout << "Can't open file: " << parname << endl;
+  }
 
   printf("%lld bytes\n",recd*2);
   printf("%d events\n",nevent);

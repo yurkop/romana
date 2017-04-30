@@ -18,7 +18,7 @@ Toptions opt;
 
 
 //-------------------------------------
-Int_t ClassToBuf(const char* name, char* var, char* buf) {
+UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer
   //buffer should exist and have sufficient size to allocate all data
 
@@ -28,7 +28,7 @@ Int_t ClassToBuf(const char* name, char* var, char* buf) {
     return 0;
   }
 
-  Short_t sz=0;
+  Int_t sz=0;
   Short_t len=0;
 
   char cname[100];
@@ -134,10 +134,11 @@ void change_gz_file2(char* name1, char* name2) {
   gzFile f1 = gzopen(name1,"rb");
   gzFile f2 = gzopen(name2,"wb");
 
-  char buf[1000000];
+  char buf[100000];
   Version_t ver;
   UShort_t mod2[2];
-  UShort_t mod[8];
+  UShort_t mod[2];
+  UShort_t sz=0;
 
   cout << name1 << " " << name2 << " " << f1 << " " << f2 << endl;
 
@@ -166,39 +167,18 @@ void change_gz_file2(char* name1, char* name2) {
   cout << "ver: " << ver << " " << opt.durWr[0] << endl;
   cout << "ver2: " << ver << " " << cpar.durWr[0] << endl;
 
-  
+  sz=0;
+  sz+=ClassToBuf("Coptions",(char*) &cpar, buf+sz);
+  sz+=ClassToBuf("Toptions",(char*) &opt, buf+sz);
 
 
   memset(mod,0,sizeof(mod));
   mod[0]=mod2[0];
-  mod[1]=sizeof(cpar);
-  mod[2]=TClass::GetClass("Coptions")->GetClassVersion();
-  mod[3]=sizeof(opt);
-  mod[4]=TClass::GetClass("Toptions")->GetClassVersion();
-
-  char buf[100000];
-
-  Coptions* par1 = new Coptions();
-  Coptions* par2 = new Coptions();
-  Toptions* opt1 = new Toptions();
-  Toptions* opt2 = new Toptions();
-
-  par2->adcGain[11]=7;
-  //opt2->channels[11]=255;
-
-  cout << "-------------" << endl;
-  cout << memcmp(par1,par2,sizeof(*par1)) << " " << sizeof(*par1) << endl;
-  cout << ClassToBuf("Coptions",(char*) par1, buf) << endl;
-  BufToClass("Coptions",(char*) par2, buf, sizeof(buf));
-
-
-
+  mod[1]=sz;
 
   gzwrite(f2,mod,sizeof(mod));
-  gzwrite(f2,&cpar,sizeof(cpar));
-  gzwrite(f2,&opt,sizeof(opt));
+  gzwrite(f2,buf,sz);
 
-  
   int res=1;
   do {
     res = gzread(f1,buf,sizeof(buf));

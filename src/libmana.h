@@ -16,6 +16,10 @@ using namespace std;
 
 #include <TH1.h>
 
+UShort_t ClassToBuf(const char* name, char* var, char* buf);
+void BufToClass(const char* name, char* var, char* buf, int size);
+
+
 void SplitFilename(string str, char *folder, char *name);
 void SplitFilename(string str, char *folder, char *name, char* ext);
 void new_hist();
@@ -25,8 +29,10 @@ void readroot(char *name);
 void clear_hist();
 void greset();
 //int newfile();
-void readinit(const char* fname);
-void saveinit(const char* fname);
+void readpar_root(const char* fname);
+void savepar_root(const char* fname);
+//void readpar_gz(const char* fname);
+//void savepar_gz(const char* fname);
 void smooth(int n, int i);
 void fill_nim(int ch);
 void nim_peak(int ch, int j);
