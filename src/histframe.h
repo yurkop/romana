@@ -88,6 +88,7 @@ public:
    void DoCheck(TObject* obj, Bool_t check);
    //void DoKey(TGListTreeItem* entry, UInt_t keysym);
    void DoRadio();
+   void DoReset();
    void Update();
    void DrawHist();
    void ReDraw();

@@ -107,7 +107,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   fCanvas = new TGCanvas(fHor1, 150, 100);
   fHor1->AddFrame(fCanvas, fLay7);
+
   fListTree = new TGListTree(fCanvas, kHorizontalFrame);
+  fListTree->SetCheckMode(TGListTree::kRecursive);
+  fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
 
   //fListTree->Associate(this);
   //fEc->SetDNDTarget(kTRUE);
@@ -134,9 +137,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
 
   
-  fListTree->SetCheckMode(TGListTree::kRecursive);
-  fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
-
   //void Clicked(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, Int_t y)
 
 
@@ -173,7 +173,6 @@ void HistFrame::Make_hist() {
 
   //char title[100];
   char nam[100];
-
 
   const TGPicture *pic = gClient->GetPicture("h1_t.xpm");
   TGListTreeItem *iroot=0;
@@ -221,7 +220,6 @@ void HistFrame::Make_hist() {
 }
 
 void HistFrame::FillHist(EventClass* evt) {
-  //cout << "fillhist1: " << evt->pulses.size() << endl;
   double DT = opt.period*1e-9;
 
   for (UInt_t i=0;i<evt->pulses.size();i++) {
@@ -229,8 +227,6 @@ void HistFrame::FillHist(EventClass* evt) {
     for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
       peak_type* pk = &evt->pulses[i].Peaks[j];
       double tt = evt->pulses[i].Tstamp64 + pk->Pos;
-      cout << "FilHist2: " << ch << " " << tt*DT << endl;
-      cout << "FilHist3: " << h_time[ch]->GetName() << " " << tt*DT << endl;
       h_time[ch]->Fill(tt*DT);
       h_ampl[ch]->Fill(pk->Area*opt.emult[ch]);
       h_height[ch]->Fill(pk->Height);
@@ -322,23 +318,31 @@ void HistFrame::DoRadio()
 
 }
 
+void HistFrame::DoReset()
+{
+
+  delete fListTree;
+  
+  delete_hist();
+  Make_hist();
+  Update();
+
+}
+
 void HistFrame::Update()
 {
+
   hlist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
-    //cout << "Dir: " << idir->GetText() << " : " << idir->GetUserData() << endl;
     if (idir->IsChecked() && idir->GetUserData()) {
-      //TH1* hh = (TH1*) idir->GetUserData();
       hlist->Add((TObject*)idir->GetUserData());
     }
     TGListTreeItem *item = idir->GetFirstChild();
     while (item) {
       if (item->IsChecked() && item->GetUserData()) {
-	//TH1* hh = (TH1*) item->GetUserData();
 	hlist->Add((TObject*)item->GetUserData());
       }
-      //cout << item->GetText() << " : " << item->GetUserData() << endl;
       item = item->GetNextSibling();
     }
     idir = idir->GetNextSibling();
@@ -386,6 +390,6 @@ void HistFrame::ReDraw()
 
   //cout << "ReDraw: " << fEc->GetCanvas() << endl;
 
-  fEc->GetCanvas()->Update();
   fEc->GetCanvas()->Draw();
+  fEc->GetCanvas()->Update();
 }

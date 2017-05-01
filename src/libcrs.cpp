@@ -1813,7 +1813,6 @@ void CRS::Make_Events(int nvp) {
 
   //Analyse events and clean (part of) the event list
   if ((int) Levents.size()>opt.ev_max) {
-    cout << "Size1: " << Levents.size() << " " << opt.ev_max-opt.ev_min << endl;
     //Int_t nn=0;
     std::list<EventClass>::iterator rl;
     std::list<EventClass>::iterator next;
@@ -1822,23 +1821,15 @@ void CRS::Make_Events(int nvp) {
 	 rl!=Levents.end(); rl=next) {
       next = rl;
       ++next;
-      // if (rl->pulses.size()!=2) {
-      // 	cout << "Event: " << nn << " " << rl->pulses.size() << " " << rl->T << endl;
-      // }
       if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
-	cout << "FillH1: " << Levents.size() << endl;
 	//FillHist_old(&(*rl));
-	//cout << "FillH2: " << Levents.size() << endl;
 	HiFrm->FillHist(&(*rl));
 	++nevents2;
-	cout << "FillH3: " << Levents.size() << endl;
       }
       Levents.erase(rl);
       //++nn;
-      cout << "makeev: " << Levents.size() << endl;
       if ((int)Levents.size()<=opt.ev_min) break;
     }
-    cout << "Make_Events Size2: " << Levents.size() << endl;
   }
 
 }

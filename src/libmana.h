@@ -69,6 +69,7 @@ void dumpevent();
 void mkstart();
 void mktof();
 void peaktime(int ch, double* dat, int method, int twin);
+void delete_hist();
 
 void FillHist_old(EventClass* evt);
 

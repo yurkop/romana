@@ -2175,7 +2175,7 @@ void MainFrame::DoReadRoot() {
 
     readpar_root(rootname);
     //reset();
-    new_hist();
+    //new_hist();
     readroot(rootname);
 
     nevent=opt.Nevt;
@@ -2224,7 +2224,8 @@ void MainFrame::DoReset() {
   greset();
 
   crs->DoReset();
-  HiFrm->Update();
+  HiFrm->DoReset();
+  //HiFrm->Update();
 
   //Buffer->NewFile();
 
