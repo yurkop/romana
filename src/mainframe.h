@@ -71,19 +71,6 @@ public:
   void DoReset();
   void DoClear();
   void InitCanvas(int);
-  void DoDraw2();
-  void DoDraw();
-  void DrawSubPad(int);
-  void Draw_Energy(int);
-  void Draw_Time(int);
-  void Draw_TOF(int);
-  void Draw_SI();
-  void Draw_SI_MAX();
-  void Draw_NAI(int);
-  void Draw_TNAI(int);
-  //#ifdef ROMASH
-  void Draw_MTOF(int);
-  //#endif
   //void DoCheckGcut();
   void DoCheckOsc();
   void DoCheckLeg();

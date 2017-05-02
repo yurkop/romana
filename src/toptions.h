@@ -115,6 +115,7 @@ class Toptions: public TObject {
   //Bool_t chinv[MAX_CH+1];
 
   Int_t sel_hdiv; //number of divisions in histframe
+  Int_t icheck; //first histogram to plot among checked
   
   Bool_t raw_write;
   Bool_t dec_write;
@@ -133,14 +134,22 @@ class Toptions: public TObject {
 
   Int_t seltab;
 
-  Float_t long_max,long_bins;
+  Float_t time_max,time_bins;
   Float_t tof_max,tof_bins;
-  Float_t etof_max,etof_bins;
-  Float_t tdc_max,tdc_bins;
   Float_t mtof_max,mtof_bins;
-  Float_t sum_max,sum_bins;
-  Float_t rms_max,rms_bins;
+  Float_t amp_max,amp_bins;
+  Float_t hei_max,hei_bins;
 
+  /*
+  Bool_t time_chk[MAX_CH];
+  Bool_t tof_chk[MAX_CH];
+  Bool_t mtof_chk[MAX_CH];
+  Bool_t amp_chk[MAX_CH];
+  Bool_t hei_chk[MAX_CH];
+  */
+
+
+  
   Int_t starts_thr1,starts_thr2;
   Float_t beam1,beam2;
   //Float_t wgam1,wgam2;
@@ -186,7 +195,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 89)
+  ClassDef(Toptions, 90)
 };
 
 ClassImp(Toptions)

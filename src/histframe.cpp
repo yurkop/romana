@@ -37,6 +37,7 @@ TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 TGLayoutHints* fLay2 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
 TGLayoutHints* fLay3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,10,10,0,0);
 TGLayoutHints* fLay4 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,0,0,0,0);
+TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsTop,5,5,0,0);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsTop,10,10,0,2);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
 //TGLayoutHints* fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
@@ -58,7 +59,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
 
-  const char* tRad[NR]={"1x1","2x2","3x2","4x2"};
+  const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4"};
 
   hlist=new TList();
 
@@ -66,7 +67,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   ntab=nt;
 
-  char ss[100];
+  //char ss[100];
 
   //Frames.....
 
@@ -108,15 +109,27 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fCanvas = new TGCanvas(fHor1, 150, 100);
   fHor1->AddFrame(fCanvas, fLay7);
 
+
+  //fListTree=NULL;
+  //if (fListTree) delete fListTree;
+
   fListTree = new TGListTree(fCanvas, kHorizontalFrame);
   fListTree->SetCheckMode(TGListTree::kRecursive);
   fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
+  fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
+  		     "DoClick(TGListTreeItem*,Int_t)");
+  //fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","TGListTree",fListTree,
+  //		     "DoubleClicked(TGListTreeItem*,Int_t)");
+
+
+
 
   //fListTree->Associate(this);
   //fEc->SetDNDTarget(kTRUE);
 
 
   Make_hist();
+  Reset_hist();
 
   /*
   TGListTreeItem *idir = fListTree->GetFirstItem();
@@ -131,9 +144,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   }
   */
 
-
-  //fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
-  //		     "DoClick(TGListTreeItem*,Int_t)");
 
 
   
@@ -158,7 +168,26 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   }
 
   int sel = abs(opt.sel_hdiv)%NR;
+  SelectDiv(sel);
   Rb[sel]->Clicked();
+
+  TGTextButton* but;
+
+  but = new TGTextButton(fHor2," < ",1);
+  but->Connect("Clicked()", "HistFrame", this, "DoButton()");
+  fHor2->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor2," > ",2);
+  but->Connect("Clicked()", "HistFrame", this, "DoButton()");
+  fHor2->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor2," << ",3);
+  but->Connect("Clicked()", "HistFrame", this, "DoButton()");
+  fHor2->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor2," >> ",4);
+  but->Connect("Clicked()", "HistFrame", this, "DoButton()");
+  fHor2->AddFrame(but, fLay5);
 
   //Update();
 }
@@ -177,45 +206,62 @@ void HistFrame::Make_hist() {
   const TGPicture *pic = gClient->GetPicture("h1_t.xpm");
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir;
-  TGListTreeItem *item;
+  //TGListTreeItem *item;
 
   //iroot = fListTree->AddItem(0, "All",0,0,true);
 
   idir = fListTree->AddItem(iroot, "Amplitude",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(nam,"ampl_%02d",i);
-    h_ampl[i]=new TH1F(nam,nam,opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-    item = fListTree->AddItem(idir, nam, h_ampl[i], pic, pic,true);
-    item->CheckItem(false);
+    h_ampl[i]=new TH1F(nam,nam,opt.amp_max*opt.amp_bins,0.,opt.amp_max);
+    //h_ampl[i]->GetXaxis()->SetNdivisions(505);
+    fListTree->AddItem(idir, nam, h_ampl[i], pic, pic,true);
+    //item->CheckItem(false);
   }
-  idir->CheckItem(false);
+  //idir->CheckItem(false);
   
   idir = fListTree->AddItem(iroot, "Height",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(nam,"height_%02d",i);
-    h_height[i]=new TH1F(nam,nam,opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-    item = fListTree->AddItem(idir, nam, h_height[i], pic, pic,true);
-    item->CheckItem(false);
+    h_height[i]=new TH1F(nam,nam,opt.hei_max*opt.hei_bins,0.,opt.hei_max);
+    //h_height[i]->GetXaxis()->SetNdivisions(505);
+    fListTree->AddItem(idir, nam, h_height[i], pic, pic,true);
+    //item->CheckItem(false);
   }
-  idir->CheckItem(false);
+  //idir->CheckItem(false);
   
   idir = fListTree->AddItem(iroot, "Time",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(nam,"time_%02d",i);
-    h_time[i]=new TH1F(nam,nam,opt.long_max*opt.long_bins,0.,opt.long_max);
-    item = fListTree->AddItem(idir, nam, h_time[i], pic, pic,true);
-    item->CheckItem(false);
+    h_time[i]=new TH1F(nam,nam,opt.time_max*opt.time_bins,0.,opt.time_max);
+    //h_time[i]->GetXaxis()->SetNdivisions(505);
+    fListTree->AddItem(idir, nam, h_time[i], pic, pic,true);
+    //item->CheckItem(false);
   }
-  idir->CheckItem(false);
+  //idir->CheckItem(false);
   
   idir = fListTree->AddItem(iroot, "TOF",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(nam,"tof_%02d",i);
     h_tof[i]=new TH1F(nam,nam,opt.tof_max*opt.tof_bins,0.,opt.tof_max);
-    item = fListTree->AddItem(idir, nam, h_tof[i], pic, pic,true);
-    item->CheckItem(false);
+    //h_tof[i]->GetXaxis()->SetNdivisions(505);
+    fListTree->AddItem(idir, nam, h_tof[i], pic, pic,true);
+    //item->CheckItem(false);
   }
-  idir->CheckItem(false);
+  //idir->CheckItem(false);
+
+}
+
+void HistFrame::Reset_hist() {
+
+  /*
+  for (int i=0;i<MAX_CH;i++) {
+    h_ampl[i]->   SetBins(opt.sum_max*opt.sum_bins,0.,opt.sum_max);
+    h_height[i]-> SetBins(opt.sum_max*opt.sum_bins,0.,opt.sum_max);
+    h_time[i]->   SetBins(opt.long_max*opt.long_bins,0.,opt.long_max);
+    h_tof[i]->    SetBins(opt.tof_max*opt.tof_bins,0.,opt.tof_max);
+  }
+  */
 
 }
 
@@ -234,10 +280,11 @@ void HistFrame::FillHist(EventClass* evt) {
   }
 }
 
-/*
 void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 {
-  cout << "DoClick: " << item << " " << but << endl;
+  //cout << "DoClick: " << item << " " << but << endl;
+  //fListTree->DoubleClicked(item,but);
+
   if (but==1) {
     if (item->IsOpen()) {
       fListTree->CloseItem(item);
@@ -246,8 +293,8 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       fListTree->OpenItem(item);
     }
   }
+
 }
-*/
 
 /*
 void HistFrame::DoClick(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, Int_t y)
@@ -277,12 +324,49 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
 //  cout << "key: " << entry << " " << keysym << endl;
 //}
 
+void HistFrame::SelectDiv(int nn)
+{
+  switch (nn) {
+  case 0:
+    ndiv=1;
+    xdiv=1;
+    ydiv=1;
+    break;
+  case 1:
+    ndiv=4;
+    xdiv=2;
+    ydiv=2;
+    break;
+  case 2:
+    ndiv=6;
+    xdiv=3;
+    ydiv=2;
+    break;
+  case 3:
+    ndiv=8;
+    xdiv=4;
+    ydiv=2;
+    break;
+  case 4:
+    ndiv=16;
+    xdiv=4;
+    ydiv=4;
+    break;
+  case 5:
+    ndiv=32;
+    xdiv=8;
+    ydiv=4;
+    break;
+  }
+
+}
+
 void HistFrame::DoRadio()
 {
   TGButton *btn = (TGButton *) gTQSender;
   Int_t id = btn->WidgetId()-1;
-  //int prev = (id+NR-1)%NR;
 
+  //int prev = (id+NR-1)%NR;
   //cout << "doradio: " << id << endl;
 
   for (int i=0;i<NR;i++) {
@@ -293,22 +377,31 @@ void HistFrame::DoRadio()
   }
 
   opt.sel_hdiv=id;
+  Update();
+
+  //SelectDiv(id);
+
+}
+
+void HistFrame::DoButton()
+{
+  TGButton *btn = (TGButton *) gTQSender;
+  Int_t id = btn->WidgetId()-1;
+
+  //cout << "dobutton: " << id << endl;
+
   switch (id) {
   case 0:
-    xdiv=1;
-    ydiv=1;
+    opt.icheck--;
     break;
   case 1:
-    xdiv=2;
-    ydiv=2;
+    opt.icheck++;
     break;
   case 2:
-    xdiv=3;
-    ydiv=2;
+    opt.icheck-=ndiv;
     break;
   case 3:
-    xdiv=4;
-    ydiv=2;
+    opt.icheck+=ndiv;
     break;
   }
 
@@ -321,7 +414,20 @@ void HistFrame::DoRadio()
 void HistFrame::DoReset()
 {
 
-  delete fListTree;
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  while (idir) {
+    TGListTreeItem *item = idir->GetFirstChild();
+    while (item) {
+      fListTree->DeleteItem(item);
+      item = item->GetNextSibling();
+    }
+    //if (idir->GetUserData()) {
+      fListTree->DeleteItem(idir);
+      //}
+    idir = idir->GetNextSibling();
+  }
+
+  //delete fListTree;
   
   delete_hist();
   Make_hist();
@@ -331,6 +437,9 @@ void HistFrame::DoReset()
 
 void HistFrame::Update()
 {
+
+  int sel = abs(opt.sel_hdiv)%NR;
+  SelectDiv(sel);
 
   hlist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
@@ -351,6 +460,11 @@ void HistFrame::Update()
   //fListTree->GetChecked(hlist);
   cout << "hlist: " << hlist->GetSize() << endl;
 
+  if (opt.icheck > hlist->GetSize()-ndiv)
+    opt.icheck=hlist->GetSize()-ndiv;
+  if (opt.icheck < 0)
+    opt.icheck=0;
+
   /*
   TIter next(hlist);
   TObject* obj;
@@ -360,6 +474,8 @@ void HistFrame::Update()
   }
   */
 
+
+  cout <<"Update1: " << endl;
   DrawHist();
 
 }
@@ -371,16 +487,18 @@ void HistFrame::DrawHist()
   fEc->GetCanvas()->Divide(xdiv,ydiv);
 
   int nn=1;
+  int ii=0;
   TIter next(hlist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
-    //cout << "DrawHist: " << fEc->GetCanvas()->GetPad(nn) << endl;
-    if (!fEc->GetCanvas()->GetPad(nn)) break;
-    fEc->GetCanvas()->cd(nn);
-    TH1 *hh = (TH1*) obj;
-    hh->Draw();
-    nn++;
-    //cout << "Checked: " << hh->GetName() << endl;
+    if (ii>=opt.icheck) {
+      if (!fEc->GetCanvas()->GetPad(nn)) break;
+      fEc->GetCanvas()->cd(nn);
+      TH1 *hh = (TH1*) obj;
+      hh->Draw();
+      nn++;
+    }
+    ii++;
   }
   fEc->GetCanvas()->Update();
 }

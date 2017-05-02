@@ -38,7 +38,7 @@ const char* tlab2[nchpar]={"Ch","Type","St","sS","Bkg1","Bkg2","Peak1","Peak2","
 const char* tip2[nchpar]={
   "Channel number",
   "Channel type",
-  "Start channel\nif there are many start channels in the event, the earliest is used",
+  "Start channel - used for making TOF/MTOF start\nif there are many start channels in the event, the earliest is used",
   "Software smoothing",
   "Background start, relative to peak Pos (negative)",
   "Background end, relative to peak Pos (negative)",
@@ -736,27 +736,33 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
    // 2 column, n rows
    //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
 
-  tip1= "Initial bins per second for long_tdc";
-  tip2= "Initial length of long_tdc (in seconds)";
-  label="Long TDC";
-  AddLine3(frame,ww,&opt.long_bins,&opt.long_max,tip1,tip2,label,k_r0);
+  tip1= "Initial bins per second for Time";
+  tip2= "Initial length of Time (in seconds)";
+  label="Time";
+  AddLine3(frame,ww,&opt.time_bins,&opt.time_max,tip1,tip2,label,k_r0);
   
 
-  tip1= "Bins per second for tdc";
-  tip2= "Length of tdc (in seconds)";
-  label="TDC";
-  AddLine3(frame,ww,&opt.tdc_bins,&opt.tdc_max,tip1,tip2,label,k_r0);
+  tip1= "Bins per second for TOF";
+  tip2= "Length of TOF (in nanoseconds)";
+  label="TOF";
+  AddLine3(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
 
   tip1= "Bins per mks for M_TOF";
-  tip2= "Length of MTof (in mks)";
+  tip2= "Length of MTOF (in mks)";
   label="M_TOF";
   AddLine3(frame,ww,&opt.mtof_bins,&opt.mtof_max,tip1,tip2,label,k_r0);
 
-  tip1= "Bins per channel/MeV for Energy";
-  tip2= "Length of Energy (in channels/MeV)";
-  label="Energy";
-  AddLine3(frame,ww,&opt.sum_bins,&opt.sum_max,tip1,tip2,label,k_r0);
+  tip1= "Bins per channel/MeV for Amlitude";
+  tip2= "Length of Amplitude (in channels/MeV)";
+  label="Amplitude";
+  AddLine3(frame,ww,&opt.amp_bins,&opt.amp_max,tip1,tip2,label,k_r0);
 
+  tip1= "Bins per channel/MeV for Height";
+  tip2= "Length of Height (in channels/MeV)";
+  label="Height";
+  AddLine3(frame,ww,&opt.hei_bins,&opt.hei_max,tip1,tip2,label,k_r0);
+
+  /*
   tip1= "Bins per channel for Width";
   tip2= "Length of Width (in channels)";
   label="Width";
@@ -766,6 +772,7 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   tip2= "Length of TOF (in nanoseconds)";
   label="TOF";
   AddLine3(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
+  */
 
 }
 

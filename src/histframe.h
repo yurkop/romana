@@ -45,9 +45,10 @@ class HistFrame: public TGCompositeFrame {
    TGListTree             *fListTree;    // list tree with histograms
    TList* hlist;
 
-   static const int NR=4;
+   static const int NR=6;
    TGRadioButton *Rb[NR];
 
+   int ndiv;
    int xdiv;
    int ydiv;
    
@@ -64,7 +65,6 @@ class HistFrame: public TGCompositeFrame {
    std::list<EventClass> Tevents;
    std::list<EventClass> *Levents;
    //EventClass *d_event; //current event to draw
-   int ndiv;
    int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
    //int NGr;
    TGraph Gr[3][MAX_CH];
@@ -83,11 +83,15 @@ public:
    virtual ~HistFrame();
 
    void Make_hist();
+   void Reset_hist();
    void FillHist(EventClass* evt);
+   void DoClick(TGListTreeItem* item,Int_t but);
    //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
    void DoCheck(TObject* obj, Bool_t check);
    //void DoKey(TGListTreeItem* entry, UInt_t keysym);
+   void SelectDiv(int nn);
    void DoRadio();
+   void DoButton();
    void DoReset();
    void Update();
    void DrawHist();

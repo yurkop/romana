@@ -297,8 +297,8 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
     else {
-      cout << "member not found: " << dm << " " << memname << " " 
-	   << clname << " " << name << endl;
+      //cout << "member not found: " << dm << " " << memname << " " 
+      //   << clname << " " << name << endl;
     }
 
   }
@@ -586,6 +586,7 @@ int main(int argc, char **argv)
 
   TApplication theApp("App",&argc,argv);
   example();
+  HiFrm->Update();
   //EvtFrm->StartThread();
   //gClient->GetColorByName("yellow", yellow);
   theApp.Run();
@@ -650,146 +651,6 @@ void delete_hist() {
   cout << "Deleted: " << nn << " histograms" << endl;
 }
 
-void new_hist() {
-
-  delete_hist();
-
-  //int i,j;
-
-  char title[100];
-  char nam[100];
-
-  sprintf(nam,"width_energy");
-  hsumrms=new TH2F(nam,nam,opt.rms_max*opt.rms_bins,0.,opt.rms_max,
-		   opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-
- 
-  for (int j=0;j<4;j++) {
-    sprintf(nam,"deltat_%d",j);
-    hdeltat[j]=new TH1F(nam,nam,1000,0.,1000.);
-    hdeltat[j]->GetXaxis()->SetNdivisions(505);
-  }
-
-  for (int j=0;j<MAX_P;j++) {
-    sprintf(nam,"energy_%s",ng_name[j]);
-    sprintf(title,"%s",ng_name[j]);
-    hsum_ng[j]=new TH1F(nam,title,opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-
-    sprintf(nam,"time_%s",ng_name[j]);
-    htdc_ng[j]=new TH1F(nam,title,opt.tdc_max*opt.tdc_bins,0.,opt.tdc_max);
-
-    sprintf(nam,"long_time_%s",ng_name[j]);
-    htdc_a_ng[j]=new TH1F(nam,title,opt.long_max*opt.long_bins,0.,opt.long_max);
-    htdc_a_ng[j]->SetBit(TH1::kCanRebin);
-
-    sprintf(nam,"width_%s",ng_name[j]);
-    hrms_ng[j]=new TH1F(nam,title,opt.rms_max*opt.rms_bins,0.,opt.rms_max);
-  }
-
-  sprintf(nam,"width");
-  hrms=new TH1F(nam,nam,opt.rms_max*opt.rms_bins,0.,opt.rms_max);
-
-  for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"energy_%s",opt.chname[i]);
-    sprintf(title,"%s",opt.chname[i]);
-    hsum[i]=new TH1F(nam,title,opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-
-    sprintf(nam,"max_%s",opt.chname[i]);
-    sprintf(title,"%s",opt.chname[i]);
-    hmax[i]=new TH1F(nam,title,30000,8000.,38000.);
-
-    sprintf(nam,"time_%s",opt.chname[i]);
-    htdc[i]=new TH1F(nam,title,opt.tdc_max*opt.tdc_bins,0.,opt.tdc_max);
-
-    sprintf(nam,"long_time_%s",opt.chname[i]);
-    htdc_a[i]=new TH1F(nam,title,opt.long_max*opt.long_bins,0.,opt.long_max);
-    htdc_a[i]->SetBit(TH1::kCanRebin);
-
-    sprintf(nam,"frame_time_%s",opt.chname[i]);
-    sprintf(title,"frames_%s",opt.chname[i]);
-    htdc_frame[i]=new TH1F(nam,title,opt.long_max*opt.long_bins,0.,opt.long_max);
-    htdc_frame[i]->SetBit(TH1::kCanRebin);
-
-    sprintf(nam,"tof_%s",opt.chname[i]);
-    sprintf(title,"tof_%s",opt.chname[i]);
-    htof[i]=new TH1F(nam,title,opt.tof_max*opt.tof_bins,0.,opt.tof_max);
-
-    sprintf(nam,"tof_g_%s",opt.chname[i]);
-    sprintf(title,"tof_gamma_%s",opt.chname[i]);
-    htof_g[i]=new TH1F(nam,title,opt.tof_max*opt.tof_bins,0.,opt.tof_max);
-
-    sprintf(nam,"tof_n_%s",opt.chname[i]);
-    sprintf(title,"tof_neutrons_%s",opt.chname[i]);
-    htof_n[i]=new TH1F(nam,title,opt.tof_max*opt.tof_bins,0.,opt.tof_max);
-
-  }
-
-  //#ifdef ROMASH
-  for (int i=0;i<24;i++) {
-    sprintf(nam,"tof_m_%s",opt.chname[i]);
-    sprintf(title,"tof_m_%s",opt.chname[i]);
-    h_mtof[i]=new TH1F(nam,title,opt.mtof_max*opt.mtof_bins,0.,opt.mtof_max);
-  }
-  //#endif
-
-  hsync=new TH1F("hsync","hsync",20000,0.,20.);
-
-  //float xbins[3]={0,1,2};
-
-}
-
-void set_hist_attr() {
-
-  //int i,j;
-
-  for (int j=0;j<MAX_P;j++) {
-    //hsum_ng[j]->SetLineColor(opt.lcolor[j]);
-    hsum_ng[j]->GetXaxis()->SetNdivisions(505);
-
-    //htdc_ng[j]->SetLineColor(opt.lcolor[j]);
-    htdc_ng[j]->GetXaxis()->SetNdivisions(505);
-
-    //htdc_a_ng[j]->SetLineColor(opt.lcolor[j]);
-    htdc_a_ng[j]->GetXaxis()->SetNdivisions(505);
-    //htdc_a_ng[j]->GetXaxis()->SetTimeDisplay(1);
-
-    //hrms_ng[j]->SetLineColor(opt.lcolor[j]);
-  }
-
-  for (int i=0;i<MAX_CH;i++) {
-    //hsum[i]->SetLineColor(opt.color[i]);
-    hsum[i]->GetXaxis()->SetNdivisions(505);
-
-    //hmax[i]->SetLineColor(opt.color[i]);
-    hmax[i]->GetXaxis()->SetNdivisions(505);
-
-    //htdc[i]->SetLineColor(opt.color[i]);
-    htdc[i]->GetXaxis()->SetNdivisions(505);
-
-    //htdc_a[i]->SetLineColor(opt.color[i]);
-    htdc_a[i]->GetXaxis()->SetNdivisions(505);
-    htdc_a[i]->GetXaxis()->SetTicks("+-");
-    //htdc_a[i]->GetXaxis()->SetTimeDisplay(1);
-
-    //htdc_frame[i]->SetLineColor(opt.lcolor[5]);
-    htdc_frame[i]->GetXaxis()->SetNdivisions(505);
-    //htdc_frame[i]->GetXaxis()->SetTimeDisplay(1);
-
-    //htof[i]->SetLineColor(1);
-    htof[i]->GetXaxis()->SetNdivisions(505);
-    //htof_g[i]->SetLineColor(2);
-    htof_g[i]->GetXaxis()->SetNdivisions(505);
-    //htof_n[i]->SetLineColor(3);
-    htof_n[i]->GetXaxis()->SetNdivisions(505);
-  }
-
-  for (int i=0;i<24;i++) {
-    h_mtof[i]->GetXaxis()->SetNdivisions(505);
-    //h_mtof[i]->SetMinimum(0.1);
-  }
-
-}
-
 /*
   void set_time_offset() {
 
@@ -810,12 +671,7 @@ void saveroot(char *name) {
 
   TFile * tf = new TFile(name,"RECREATE");
 
-  //int nn=0;
   int col;
-
-  //hrms->Write();
-  //tf->Close();
-  //return;
 
   gROOT->cd();
 
@@ -1379,6 +1235,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   : TGMainFrame(p,w,h) {
   // Create a main frame
 
+
+  gStyle->SetOptStat(kFALSE);
+  gStyle->SetPalette(1,0);
+  gStyle->SetTitleFontSize(0.09);
+  gStyle->SetNdivisions(505);
+  
+
   /*
    fDNDTypeList = new Atom_t[3];
    fDNDTypeList[0] = gVirtualX->InternAtom("application/root", kFALSE);
@@ -1687,6 +1550,18 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   tab4->AddFrame(EvtFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
+
+  
+  
+  //readinit(parname);
+  gzFile ff = gzopen(parname,"rb");
+  crs->ReadParGz(ff,1,1);
+  gzclose(ff);
+
+
+
+
+  
   TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   HiFrm = new HistFrame(tab5, 800, 500,ntab);
@@ -1712,8 +1587,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     if (te) 
       te->SetEnabled(false);
   }
-
-  fTab->SetTab(opt.seltab);
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
   fGr2->AddFrame(hfr1, l_But);
@@ -1742,95 +1615,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   parpar->Update();
 
 
-  //readinit(parname);
-  gzFile ff = gzopen(parname,"rb");
-  crs->ReadParGz(ff,1,1);
-  gzclose(ff);
-
-  /*
-
-  // Create a horizontal frame widget with buttons
-  TGHorizontalFrame *hframe = new TGHorizontalFrame(this,10,10);
-
-  TGTextButton *hopen = new TGTextButton(vframe,"Open");
-  hopen->Connect("Clicked()","MainFrame",this,"DoOpen()");
-  vframe->AddFrame(hopen, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-
-  TGTextButton *hreset = new TGTextButton(hframe,"Reset");
-  hreset->Connect("Clicked()","MainFrame",this,"DoReset()");
-  hframe->AddFrame(hreset, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGTextButton *hclear = new TGTextButton(hframe,"Clear");
-  hclear->Connect("Clicked()","MainFrame",this,"DoClear()");
-  hframe->AddFrame(hclear, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGTextButton *one_buf = new TGTextButton(hframe,"1 buf");
-  one_buf->Connect("Clicked()","MainFrame",this,"Do1buf()");
-  hframe->AddFrame(one_buf, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  n_buffers = new TGNumberEntry(hframe, opt.num_buf, 9, 11,
-  TGNumberFormat::kNESInteger,   //style
-  TGNumberFormat::kNEANonNegative,   //input value filter
-  TGNumberFormat::kNELLimitMin, //specify limits
-  0.,0.);                         //limit values
-  n_buffers->Connect("ValueSet(Long_t)", "MainFrame", this, "DoSetNumBuf()");
-  (n_buffers->GetNumberEntry())->Connect("TextChanged(char*)", "MainFrame", this, "DoSetNumBuf()");
-  hframe->AddFrame(n_buffers, new TGLayoutHints(kLHintsLeft,3,3,2,2));
-
-  TGTextButton *n_buf = new TGTextButton(hframe,"N buf");
-  n_buf->Connect("Clicked()","MainFrame",this,"DoNbuf()");
-  hframe->AddFrame(n_buf, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGTextButton *all_ev = new TGTextButton(hframe,"All ev");
-  all_ev->Connect("Clicked()","MainFrame",this,"DoAllevents()");
-  hframe->AddFrame(all_ev, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGTextButton *chk_point = new TGTextButton(hframe,"Chk");
-  chk_point->Connect("Clicked()","MainFrame",this,"DoChkPoint()");
-  hframe->AddFrame(chk_point, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGTextButton *cut_g = new TGTextButton(hframe,"Cut_g");
-  cut_g->Connect("Clicked()","MainFrame",this,"DoGcut(=0)");
-  hframe->AddFrame(cut_g, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGTextButton *cut_n = new TGTextButton(hframe,"Cut_n");
-  cut_n->Connect("Clicked()","MainFrame",this,"DoGcut(=1)");
-  hframe->AddFrame(cut_n, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGTextButton *cut_t = new TGTextButton(hframe,"Cut_t");
-  cut_t->Connect("Clicked()","MainFrame",this,"DoGcut(=2)");
-  hframe->AddFrame(cut_t, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGCheckButton *fosc = new TGCheckButton(hframe, "Osc", 11);
-  fosc->SetState((EButtonState) opt.b_osc);
-  fosc->Connect("Clicked()","MainFrame",this,"DoCheckOsc()");
-  hframe->AddFrame(fosc, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGCheckButton *fleg = new TGCheckButton(hframe, "Leg", 12);
-  fleg->SetState((EButtonState) opt.b_leg);
-  fleg->Connect("Clicked()","MainFrame",this,"DoCheckLeg()");
-  hframe->AddFrame(fleg, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGCheckButton *flogy = new TGCheckButton(hframe, "LogY", 13);
-  flogy->SetState((EButtonState) opt.b_logy);
-  flogy->Connect("Clicked()","MainFrame",this,"DoCheckLogY()");
-  hframe->AddFrame(flogy, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGCheckButton *ftime = new TGCheckButton(hframe, "Time", 14);
-  ftime->SetState((EButtonState) opt.b_time);
-  ftime->Connect("Clicked()","MainFrame",this,"DoCheckTime()");
-  hframe->AddFrame(ftime, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGCheckButton *ftree = new TGCheckButton(hframe, "Tree", 15);
-  ftree->SetState((EButtonState) b_tree);
-  ftree->Connect("Clicked()","MainFrame",this,"DoCheckTree()");
-  hframe->AddFrame(ftree, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-
-  TGTextButton *exit = new TGTextButton(hframe,"Stop");
-  exit->Connect("Clicked()","MainFrame",this,"DoStop()");
-  hframe->AddFrame(exit, new TGLayoutHints(kLHintsNormal,3,3,2,2));
-  */
+  //HiFrm->Update();
+  fTab->SetTab(opt.seltab);
 
   //Int_t parts[] = {44, 16, 16, 14, 10};
   Int_t parts[] = {20,10,10,10,10,10,10,10,10};
@@ -1876,9 +1662,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   Move(-100,-100);
 
-  gStyle->SetOptStat(kFALSE);
-  gStyle->SetPalette(1,0);
-
   for (int j=0;j<8;j++) {
     fLeg[j] = new TLegend(0.70,0.80,0.99,0.99);
     //sprintf(txt,"dum%d",j);
@@ -1902,7 +1685,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //hlist = new TList();
   //Make_hist();
 
-  DoDraw2();
+  //DoDraw2();
 
 }
 
@@ -1931,38 +1714,7 @@ MainFrame::~MainFrame() {
   //delete fMain;
   gApplication->Terminate(0);
 }
-/*
-void MainFrame::Make_hist() {
 
-  //char title[100];
-  char nam[100];
-
-  for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"ampl_%02d",i);
-    h_ampl[i]=new TH1F(nam,nam,opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-    hlist->Add(h_ampl[i]);
-  }
-  
-  for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"height_%02d",i);
-    h_height[i]=new TH1F(nam,nam,opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-    hlist->Add(h_height[i]);
-  }
-  
-  for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"time_%02d",i);
-    h_time[i]=new TH1F(nam,nam,opt.long_max*opt.long_bins,0.,opt.long_max);
-    hlist->Add(h_time[i]);
-  }
-  
-  for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"tof_%02d",i);
-    h_tof[i]=new TH1F(nam,nam,opt.tof_max*opt.tof_bins,0.,opt.tof_max);
-    hlist->Add(h_tof[i]);
-  }
-
-}
-*/
 void MainFrame::DoStartStop() {
 
   //cout << gROOT->FindObject("Start") << endl;
@@ -2195,7 +1947,7 @@ void MainFrame::DoReadRoot() {
     //fChan->Map();
     //}
 
-    DoDraw();
+    //DoDraw();
 
   }
 
@@ -2241,29 +1993,8 @@ void MainFrame::DoClear() {
 
   clear_hist();
 
-  DoDraw();
+  //DoDraw();
 
-}
-
-void MainFrame::DoDraw2() {
-  /*
-    if (opt.b_osc) { 
-    if (fEv==NULL) {
-    //YKfEv = new EventFrame(gClient->GetRoot(), fMain, "Events");
-    }
-    else {
-    fEv->Clear();
-    }
-
-    fEv->First();
-    }
-    else { // !opt.b_osc
-    if (fEv != NULL) {
-    delete fEv;
-    fEv=NULL;
-    }
-    }
-  */
 }
 
 /*
@@ -2313,669 +2044,6 @@ void MainFrame::InitCanvas(int nn) {
 
 }
 
-void MainFrame::DrawSubPad(int i) {
-
-  //int j;
-  //TBox *b1,*b2,*b3;
-  //double x1,x2,y1,y2;
-  int jmax=0;
-  int ng=opt.psd_ch;
-
-  //UInt_t timeoff;
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-  fPad->cd(i);
-
-  switch (i) {
-
-  case 1:
-
-    jmax=getmax(hmax);
-    if (jmax<0) break;
-
-    fLeg[i-1]->Clear();
-    hmax[jmax]->Draw();
-    fLeg[i-1]->AddEntry(hmax[jmax],hmax[jmax]->GetTitle(),"l");
-
-    for (int j=0;j<MAX_CH;j++) {
-      if (hmax[j]->GetEntries()>0 && opt.channels[j]!=ch_off2 && 
-	  opt.color[j]!=0 && j!=jmax) {
-	hmax[j]->Draw("SAME");
-	fLeg[i-1]->AddEntry(hmax[j],hmax[j]->GetTitle(),"l");
-      }
-    }
-
-    if (opt.b_leg) fLeg[i-1]->Draw();
-
-    break;
-  case 2:
-
-    gPad->SetLogy(0);
-    fLeg[i-1]->Clear();
-
-    hsumrms->Draw("zcol");
-
-    //if (opt.b_gcut) {
-    for (int ii=0;ii<3;ii++) {
-      if (opt.gcut[ii]!=NULL) {	  
-	opt.gcut[ii]->Draw();
-	fLeg[i-1]->AddEntry(opt.gcut[ii],opt.gcut[ii]->GetName(),"l");
-      }
-    }
-    /*
-      }
-      else {
-      gPad->Update();
-      y2=gPad->PadtoY(gPad->GetUymax());
-      b1 = new TBox(opt.wgam1,0.,opt.wgam2,y2);
-      b1->SetFillStyle(0);
-      b1->SetFillColor(2);
-      b1->SetLineColor(2);
-      b1->Draw();
-
-      b2 = new TBox(opt.wneu1,0.,opt.wneu2,y2);
-      b2->SetFillStyle(0);
-      b2->SetFillColor(3);
-      b2->SetLineColor(3);
-      b2->Draw();
-
-      b3 = new TBox(opt.wtail1,0.,opt.wtail2,y2);
-      b3->SetFillStyle(0);
-      b3->SetFillColor(4);
-      b3->SetLineColor(4);
-      b3->Draw();
-
-      fLeg[i-1]->AddEntry(b1,"Gamma","l");
-      fLeg[i-1]->AddEntry(b2,"Neutrons","l");
-      fLeg[i-1]->AddEntry(b3,"Tail","l");
-      }
-    */
-
-    if (opt.b_leg) fLeg[i-1]->Draw();
-
-    break;
-  case 3:
-
-    jmax=getmax(htdc_a);
-
-    if (jmax<0) break;
-
-    fLeg[i-1]->Clear();
-    if (opt.b_time) {
-      htdc_a[jmax]->GetXaxis()->SetTimeDisplay(1);
-      //timeoff = opt.F_start.Convert(false);
-      //htdc_a[jmax]->GetXaxis()->SetTimeOffset(opt.F_start.Convert(true),"gmt");
-    }
-    else {
-      htdc_a[jmax]->GetXaxis()->SetTimeDisplay(0);
-    }
-    htdc_a[jmax]->Draw();
-    fLeg[i-1]->AddEntry(htdc_a[jmax],htdc_a[jmax]->GetTitle(),"l");
-
-    for (int j=0;j<MAX_CH;j++) {
-      if (htdc_a[j]->GetEntries()>0 && opt.channels[j]!=ch_off2 && 
-	  opt.color[j]!=0 && j!=jmax) {
-	htdc_a[j]->Draw("SAME");
-	fLeg[i-1]->AddEntry(htdc_a[j],htdc_a[j]->GetTitle(),"l");
-      }
-    }
-
-    for (int j=0;j<MAX_P;j++) {
-      if (htdc_a_ng[j]->GetEntries()>0 && opt.lcolor[j]!=0) {
-	htdc_a_ng[j]->Draw("SAME");
-	fLeg[i-1]->AddEntry(htdc_a_ng[j],htdc_a_ng[j]->GetTitle(),"l");
-      }
-    }
-
-    if (opt.b_leg) fLeg[i-1]->Draw();
-    break;
-
-  case 4:
-
-    hsum[ng]->Draw();
-    fLeg[i-1]->Clear();
-    fLeg[i-1]->AddEntry(hsum[ng],hsum[ng]->GetTitle(),"l");
-
-    for (int j=0;j<MAX_P;j++) {
-      if (hsum_ng[j]->GetEntries()>0 && opt.lcolor[j]!=0) {
-	hsum_ng[j]->Draw("SAME");
-	fLeg[i-1]->AddEntry(hsum_ng[j],hsum_ng[j]->GetTitle(),"l");
-      }
-    }
-
-    fitpeak(hsum[ng],1.6);
-
-    if (opt.b_leg) fLeg[i-1]->Draw();
-
-    break;
-  case 5:
-
-    fLeg[i-1]->Clear();
-
-    hrms->Draw();
-
-    fLeg[i-1]->AddEntry(hrms,hrms->GetTitle(),"l");
-
-    //fc_i->Update();
-
-    //if (opt.b_gcut) {
-    for (int j=0;j<MAX_P;j++) {
-      if (hrms_ng[j]->GetEntries()>0 && opt.lcolor[j]!=0) {
-	hrms_ng[j]->Draw("same");
-	fLeg[i-1]->AddEntry(hrms_ng[j],hrms_ng[j]->GetTitle(),"l");
-      }
-    }
-    /*
-      }
-      else {//if (!opt.b_gcut) {
-      gPad->Update();
-      y2=gPad->PadtoY(gPad->GetUymax());
-
-      b1 = new TBox(opt.wgam1,0.,opt.wgam2,y2);
-      b1->SetFillStyle(0);
-      b1->SetFillColor(2);
-      b1->SetLineColor(2);
-      b1->Draw();
-
-      b2 = new TBox(opt.wneu1,0.,opt.wneu2,y2);
-      b2->SetFillStyle(0);
-      b2->SetFillColor(3);
-      b2->SetLineColor(3);
-      b2->Draw();
-
-      b3 = new TBox(opt.wtail1,0.,opt.wtail2,y2);
-      b3->SetFillStyle(0);
-      b3->SetFillColor(4);
-      b3->SetLineColor(4);
-      b3->Draw();
-
-      fLeg[i-1]->AddEntry(b1,"Gamma","f");
-      fLeg[i-1]->AddEntry(b2,"Neutrons","f");
-      fLeg[i-1]->AddEntry(b3,"Tail","f");
-      }
-    */
-    //}
-
-    if (opt.b_leg) fLeg[i-1]->Draw();
-
-    //fc_i->Update();
-    break;
-  case 6:
-
-    jmax=getmax(htdc);
-    if (jmax<0) break;
-
-    fLeg[i-1]->Clear();
-    htdc[jmax]->Draw();
-    fLeg[i-1]->AddEntry(htdc[jmax],htdc[jmax]->GetTitle(),"l");
-
-    for (int j=0;j<MAX_CH;j++) {
-      if (htdc[j]->GetEntries()>0 && opt.channels[j]!=ch_off2 && 
-	  opt.color[j]!=0 && j!=jmax) {
-	htdc[j]->Draw("SAME");
-	fLeg[i-1]->AddEntry(htdc[j],htdc[j]->GetTitle(),"l");
-      }
-    }
-
-    for (int j=0;j<MAX_P;j++) {
-      if (htdc_ng[j]->GetEntries()>0 && opt.lcolor[j]!=0) {
-	htdc_ng[j]->Draw("SAME");
-	fLeg[i-1]->AddEntry(htdc_ng[j],htdc_ng[j]->GetTitle(),"l");
-      }
-    }
-
-    if (opt.b_leg) fLeg[i-1]->Draw();
-    break;
-
-  default:
-    ;
-  }
-
-}
-
-void MainFrame::Draw_SI() {
-
-  //TLine *l1;
-  //TBox *b1,*b2,*b3;
-  //double y2;
-  //double max0,max2;
-  //TLegend *leg;
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  InitCanvas(8);
-
-  cout << "SI" << endl;
-
-  for (int i=1;i<=8;i++) {
-    fPad->cd(i);
-    gPad->SetFillColor(kWhite);
-    hsum[i]->Draw();
-  }
-
-}
-
-void MainFrame::Draw_SI_MAX() {
-
-  //TLine *l1;
-  //TBox *b1,*b2,*b3;
-  //double y2;
-  //double max0,max2;
-  //TLegend *leg;
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  InitCanvas(8);
-
-  cout << "SI" << endl;
-
-  for (int i=1;i<=8;i++) {
-    fPad->cd(i);
-    gPad->SetFillColor(kWhite);
-    hmax[i]->Draw();
-  }
-
-}
-
-void MainFrame::Draw_Energy(int nn) {
-
-  //TLine *l1;
-  //TBox *b1,*b2,*b3;
-  //double y2;
-  //double max0,max2;
-  TLegend *leg[24];
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  InitCanvas(8);
-
-  for (int i=0;i<8;i++) {
-    fPad->cd(i+1);
-    gPad->SetFillColor(kWhite);
-    hsum[nn+i]->Draw();
-
-    double wid=opt.sum_bins*5;
-    hsum[nn+i]->ShowPeaks(wid, "", 0.2);
-
-    TList *functions = hsum[nn+i]->GetListOfFunctions();
-    TPolyMarker *pm = (TPolyMarker*)functions->FindObject("TPolyMarker");
-
-    if (pm) {
-      leg[i]= new TLegend(0.70,0.80,0.99,0.99);
-      int np=pm->GetN();
-      double *xp=pm->GetX();
-      char ss[100];
-      for (int j=0;j<np;j++) {
-	sprintf(ss,"%0.2f",*(xp+j));
-	leg[i]->AddEntry(pm,ss,"p");
-	//cout << "Marker: " << *(xp+j) << endl;
-      }
-      leg[i]->Draw();
-    }
-  }
-
-}
-
-void MainFrame::Draw_Time(int nn) {
-
-  //TLine *l1;
-  //TBox *b1,*b2,*b3;
-  //double y2;
-  //double max0,max2;
-  //TLegend *leg;
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  //double tlim=tstamp64/1e8+1;
-
-  InitCanvas(8);
-
-  for (int i=0;i<8;i++) {
-    fPad->cd(i+1);
-
-    /*
-      htdc_a[nn+i]->GetXaxis()->SetRangeUser(0.,tlim);
-      htdc_frame[nn+i]->GetXaxis()->SetRangeUser(0.,tlim);
-    */
-
-    if (htdc_a[nn+i]->Integral() > htdc_frame[nn+i]->Integral()) {
-      htdc_a[nn+i]->Draw();
-      if (opt.lcolor[5]!=0) {
-	htdc_frame[nn+i]->Draw("same");
-      }
-    }
-    else {
-      if (opt.lcolor[5]!=0) {
-	htdc_frame[nn+i]->Draw();
-	htdc_a[nn+i]->Draw("same");
-      }
-      else {
-	htdc_a[nn+i]->Draw();
-      }
-    }
-
-
-    //htdc_frame[nn+i]->Print("base");
-    //cout << htdc_frame[nn+i]->GetBinLowEdge(1) << endl;
-
-    fLeg[i]->Clear();
-    fLeg[i]->AddEntry(htdc_a[nn+i],htdc_a[nn+i]->GetTitle(),"l");
-    fLeg[i]->AddEntry(htdc_frame[nn+i],htdc_frame[nn+i]->GetTitle(),"l");
-
-    if (opt.b_leg) fLeg[i]->Draw();
-
-  }
-
-}
-
-void MainFrame::Draw_TOF(int nn) {
-
-  //TLine *l1;
-  //TBox *b1,*b2,*b3;
-  //double y2;
-  //double max0,max2;
-  //TLegend *leg[24];
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  InitCanvas(8);
-
-  for (int i=0;i<8;i++) {
-    fPad->cd(i+1);
-    gPad->SetFillColor(kWhite);
-    htof[nn+i]->Draw();
-    htof_g[nn+i]->Draw("same");
-    htof_n[nn+i]->Draw("same");
-
-    fLeg[i]->Clear();
-    fLeg[i]->AddEntry(htof[nn+i],htof[nn+i]->GetTitle(),"l");
-    fLeg[i]->AddEntry(htof_g[nn+i],htof_g[nn+i]->GetTitle(),"l");
-    fLeg[i]->AddEntry(htof_n[nn+i],htof_n[nn+i]->GetTitle(),"l");
-
-    if (opt.b_leg) fLeg[i]->Draw();
-
-  }
-}
-
-void MainFrame::Draw_NAI(int nn) {
-
-  //TLine *l1;
-  //TBox *b1,*b2,*b3;
-  //double y2;
-
-  //double max0,max2;
-
-  TLegend *leg[24];
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  InitCanvas(6);
-
-  for (int i=1;i<=6;i++) {
-    fPad->cd(i);
-    gPad->SetFillColor(kWhite);
-    hsum[nn+i-1]->Draw();
-
-    double wid=opt.sum_bins*5;
-    hsum[nn+i-1]->ShowPeaks(wid, "", 0.2);
-
-    TList *functions = hsum[nn+i-1]->GetListOfFunctions();
-    TPolyMarker *pm = (TPolyMarker*)functions->FindObject("TPolyMarker");
-
-    if (pm) {
-      leg[i-1]= new TLegend(0.70,0.80,0.99,0.99);
-      int np=pm->GetN();
-      double *xp=pm->GetX();
-      char ss[100];
-      for (int j=0;j<np;j++) {
-	sprintf(ss,"%0.2f",*(xp+j));
-	leg[i-1]->AddEntry(pm,ss,"p");
-	//cout << "Marker: " << *(xp+j) << endl;
-      }
-      leg[i-1]->Draw();
-    }
-
-    /*
-      hsum[nn+i-1]->ShowPeaks(5, "", 0.5);
-
-      leg[i-1]= new TLegend(0.70,0.80,0.99,0.99);
-      TList *functions = hsum[nn+i-1]->GetListOfFunctions();
-      TPolyMarker *pm = (TPolyMarker*)functions->FindObject("TPolyMarker");
-
-      int np=pm->GetN();
-      double *xp=pm->GetX();
-      char ss[100];
-      for (int j=0;j<np;j++) {
-      sprintf(ss,"%0.1f",*(xp+j));
-      leg[i-1]->AddEntry(pm,ss,"p");
-      //cout << "Marker: " << *(xp+j) << endl;
-      }
-
-      leg[i-1]->Draw();
-    */
-  }
-
-}
-
-void MainFrame::Draw_TNAI(int nn) {
-
-  //TLine *l1;
-  //TBox *b1,*b2,*b3;
-  //double y2;
-
-  //double max0,max2;
-
-  //TLegend *leg;
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  //double tlim=tstamp64/1e8+1;
-
-  InitCanvas(6);
-
-  for (int i=0;i<6;i++) {
-    fPad->cd(i+1);
-
-    /*
-      htdc_a[nn+i]->GetXaxis()->SetRangeUser(0.,tlim);
-      htdc_frame[nn+i]->GetXaxis()->SetRangeUser(0.,tlim);
-    */
-
-    if (htdc_a[nn+i]->Integral() > htdc_frame[nn+i]->Integral()) {
-      htdc_a[nn+i]->Draw();
-      if (opt.lcolor[5]!=0) {
-	htdc_frame[nn+i]->Draw("same");
-      }
-    }
-    else {
-      if (opt.lcolor[5]!=0) {
-	htdc_frame[nn+i]->Draw();
-	htdc_a[nn+i]->Draw("same");
-      }
-      else {
-	htdc_a[nn+i]->Draw();
-      }
-    }
-
-
-    //htdc_frame[nn+i]->Print("base");
-    //cout << htdc_frame[nn+i]->GetBinLowEdge(1) << endl;
-
-    fLeg[i]->Clear();
-    fLeg[i]->AddEntry(htdc_a[nn+i],htdc_a[nn+i]->GetTitle(),"l");
-    fLeg[i]->AddEntry(htdc_frame[nn+i],htdc_frame[nn+i]->GetTitle(),"l");
-
-    if (opt.b_leg) fLeg[i]->Draw();
-
-  }
-
-}
-
-//#ifdef ROMASH
-void MainFrame::Draw_MTOF(int nn) {
-
-  //cout << "MTOF" << endl;
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  //double tlim=tstamp64/1e8+1;
-
-  InitCanvas(6);
-
-  for (int i=0;i<6;i++) {
-    fPad->cd(i+1);
-    h_mtof[nn+i]->Draw();
-  }
-
-}
-//#endif
-
-void MainFrame::DoDraw() {
-  char ss[180];
-
-  //UInt_t time = opt.F_start.Convert(false);
-  UInt_t time = opt.F_start.GetSec();
-  
-  //cout << "Time: " << time << endl;
-  gStyle->SetTimeOffset(time);
-
-  char folder[100],rname[100];
-  SplitFilename(string(rootname), folder, rname);
-
-  sprintf(ss,"%s %s Event: %d %s",pr_name,fname,nevent,rname);
-  SetWindowName(ss);
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  switch (opt.draw_opt) {
-  case M_DEMON:
-    //cout << "aaa" << endl;
-    //fPad->Clear();
-    InitCanvas(6);
-    //cout << "bbb" << endl;
-    DrawSubPad(1);
-    DrawSubPad(2);
-    DrawSubPad(3);
-    DrawSubPad(4);
-    DrawSubPad(5);
-    DrawSubPad(6);
-    break;
-  case M_E0_7:
-    Draw_Energy(0);
-    break;
-  case M_E8_15:
-    Draw_Energy(8);
-    break;
-  case M_E16_23:
-    Draw_Energy(16);
-    break;
-  case M_E24_31:
-    Draw_Energy(24);
-    break;
-
-  case M_T0_7:
-    Draw_Time(0);
-    break;
-  case M_T8_15:
-    Draw_Time(8);
-    break;
-  case M_T16_23:
-    Draw_Time(16);
-    break;
-  case M_T24_31:
-    Draw_Time(24);
-    break;
-
-  case M_TOF0_7:
-    Draw_TOF(0);
-    break;
-  case M_TOF8_15:
-    Draw_TOF(8);
-    break;
-  case M_TOF16_23:
-    Draw_TOF(16);
-    break;
-  case M_TOF24_31:
-    Draw_TOF(24);
-    break;
-
-    /*
-      case M_SI:
-      Draw_SI();
-      break;
-      case M_SIMAX:
-      Draw_SI_MAX();
-      break;
-      case M_1_6:
-      Draw_NAI(0);
-      break;
-      case M_7_12:
-      Draw_NAI(6);
-      break;
-      case M_13_18:
-      Draw_NAI(12);
-      break;
-      case M_19_24:
-      Draw_NAI(18);
-      break;
-      case M_25_30:
-      Draw_NAI(24);
-      break;
-      case M_27_32:
-      Draw_NAI(26);
-      break;
-      case M_T1_6:
-      Draw_TNAI(0);
-      break;
-      case M_T7_12:
-      Draw_TNAI(6);
-      break;
-      case M_T13_18:
-      Draw_TNAI(12);
-      break;
-      case M_T19_24:
-      Draw_TNAI(18);
-      break;
-      case M_T25_30:
-      Draw_TNAI(24);
-      break;
-      case M_T27_32:
-      Draw_TNAI(26);
-      break;
-    */
-
-    //#ifdef ROMASH
-  case M_TOF0_5:
-    Draw_MTOF(0);
-    break;
-  case M_TOF6_11:
-    Draw_MTOF(6);
-    break;
-  case M_TOF12_17:
-    Draw_MTOF(12);
-    break;
-  case M_TOF18_23:
-    Draw_MTOF(18);
-    break;
-    //#endif
-  default:
-    opt.draw_opt=M_DEMON;
-    InitCanvas(6);
-    DrawSubPad(1);
-    DrawSubPad(2);
-    DrawSubPad(3);
-    DrawSubPad(4);
-    DrawSubPad(5);
-    DrawSubPad(6);
-  }
-
-  fPad->Update();
-  //fEcanvas->Update();
-
-  DoDraw2();
-
-}
-
 /*
   void MainFrame::DoCheckGcut() {
   //printf("CheckDraw\n");
@@ -2987,7 +2055,7 @@ void MainFrame::DoDraw() {
 void MainFrame::DoCheckOsc() {
   //printf("CheckDraw\n");
   opt.b_osc = ! opt.b_osc;
-  DoDraw2();
+  //DoDraw2();
 
   //malloc_stats();
 
@@ -2996,7 +2064,7 @@ void MainFrame::DoCheckOsc() {
 void MainFrame::DoCheckLeg() {
   //printf("CheckDraw\n");
   opt.b_leg = ! opt.b_leg;
-  DoDraw();
+  //DoDraw();
 }
 
 void MainFrame::DoCheckLogY() {
@@ -3016,12 +2084,12 @@ void MainFrame::DoCheckLogY() {
     }
   }
 
-  DoDraw();
+  //DoDraw();
 }
 
 void MainFrame::DoCheckTime() {
   opt.b_time = ! opt.b_time;
-  DoDraw();
+  //DoDraw();
 }
 
 void MainFrame::DoCheckTree() {
@@ -3102,7 +2170,7 @@ void MainFrame::DoAllevents() {
 
   UpdateStatus();
 
-  DoDraw();
+  //DoDraw();
   bRun=false;
 }
 
@@ -3121,7 +2189,7 @@ void MainFrame::DoFindBeam() {
 
   UpdateStatus();
 
-  DoDraw();
+  //DoDraw();
   bRun=false;
 }
 
@@ -3139,7 +2207,7 @@ void MainFrame::DoChkPoint() {
   }
   */
   UpdateStatus();
-  DoDraw();
+  //DoDraw();
   bRun=false;
 }
 
@@ -3203,7 +2271,7 @@ void MainFrame::DoSetNumBuf() {
 
 void MainFrame::DoStop() {
   bRun=false;
-  DoDraw();
+  //DoDraw();
 }
 void MainFrame::DoExit() {
   //int i;
@@ -3545,7 +2613,7 @@ void MainFrame::HandleMenu(MENU_COM menu_id)
   case M_TOF18_23:
     //#endif
     opt.draw_opt=menu_id;
-    DoDraw();
+    //DoDraw();
     break;
 
   case M_SYNC:
