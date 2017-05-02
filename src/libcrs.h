@@ -74,8 +74,6 @@ RQ_OBJECT("CRS")
   double mb_rate;
   double ev_rate;
 
-  int debug; // for printing debug messages
-
   bool b_acq; // true - acquisition running
   bool b_fana; // true - file analysis running
   bool b_stop; // true if acquisition or analysis has stopped
@@ -103,6 +101,7 @@ RQ_OBJECT("CRS")
 
   //--------functions---------
 
+  void Dummy_trd();
   int Detect_device();
   void DoExit();
   int SetPar();

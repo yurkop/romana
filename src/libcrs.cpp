@@ -27,6 +27,8 @@ extern HistFrame* HiFrm;
 extern ParParDlg *parpar;
 extern ChanParDlg *crspar;
 extern ChanParDlg *chanpar;
+extern int debug; // for printing debug messages
+
 #endif
 
 const double MB = 1024*1024;
@@ -39,6 +41,7 @@ cyusb_handle *cy_handle;
 TThread* trd_crs;
 TThread* trd_stat;
 TThread* trd_evt;
+TThread* trd_dum;
 
 int event_thread_run;//=1;
 
@@ -119,6 +122,7 @@ void Select_Event() {
 
 void *handle_evt(void* ptr)
 {
+
   //static int nn;
 
   //TEllipse * el1 = new TEllipse(0.25,0.25,.10,.20);
@@ -152,13 +156,24 @@ void *handle_evt(void* ptr)
       //HiFrm->DrawHist();      
       HiFrm->ReDraw();      
     }
-    //cout << "Block: " << EvtFrm->BlockAllSignals(false) << endl;
+
+    //HiFrm->Update();      
+    //cout << "Block: " << endl;
 
     gSystem->Sleep(opt.tsleep);
 
   }
 
   return 0;
+
+}
+
+void *handle_dum(void* ptr)
+{
+
+  //gSystem->Sleep(1000);
+  HiFrm->Update();      
+  //cout << "Dum: " << endl;
 
 }
 
@@ -309,7 +324,6 @@ CRS::CRS() {
   // b_acq=false;
   // b_fana=false;
   // bstart=true;
-  debug=0;
 
   chanPresent=32;
 
@@ -320,6 +334,14 @@ CRS::CRS() {
     transfer[i] =NULL;
     buftr[i]=NULL;
   }
+
+  trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
+  trd_stat->Run();
+
+  trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
+  trd_evt->Run();
+
+  cout << "threads created... " << endl;
 
 }
 
@@ -338,6 +360,11 @@ CRS::~CRS() {
   DoExit();
   cout << "~CRS()" << endl;
 
+}
+
+void CRS::Dummy_trd() {
+  trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);
+  trd_dum->Run();
 }
 
 int CRS::Detect_device() {
@@ -409,13 +436,13 @@ int CRS::Detect_device() {
   trd_crs = new TThread("trd_crs", handle_events_func, (void*) 0);
   trd_crs->Run();
 
-  trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
-  trd_stat->Run();
+  // trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
+  // trd_stat->Run();
 
-  trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
-  trd_evt->Run();
+  // trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
+  // trd_evt->Run();
 
-  cout << "threads created... " << endl;
+  cout << "CRS thread created... " << endl;
 
   //memset(buf_out,'\0',64);
   //memset(buf_in,'\0',64);

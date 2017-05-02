@@ -476,7 +476,11 @@ void HistFrame::Update()
 
 
   cout <<"Update1: " << endl;
+
+  //gStyle->Dump();
+
   DrawHist();
+
 
 }
 
@@ -495,6 +499,7 @@ void HistFrame::DrawHist()
       if (!fEc->GetCanvas()->GetPad(nn)) break;
       fEc->GetCanvas()->cd(nn);
       TH1 *hh = (TH1*) obj;
+      //cout << "hhh: " << hh->GetTitleSize() << endl;
       hh->Draw();
       nn++;
     }

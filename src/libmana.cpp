@@ -192,6 +192,8 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
+int debug=0; // for printing debug messages
+
 int *opt_id[MXNUM];
 
 //-------------------------------------
@@ -222,6 +224,9 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   memcpy(buf+sz,name,len);
   sz+=len;
 
+  if (debug)
+    cout << "Save class: " << name << endl;
+
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
@@ -231,15 +236,16 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
       sz+=sizeof(len);
       memcpy(buf+sz,dm->GetName(),len);
       sz+=len;
-      len=1;
+      len=dm->GetUnitSize();
       for (int i=0;i<dm->GetArrayDim();i++) {
-	len*=dm->GetMaxIndex(i)*dm->GetUnitSize();
+	len*=dm->GetMaxIndex(i);
       }
       memcpy(buf+sz,&len,sizeof(len));
       sz+=sizeof(len);
       memcpy(buf+sz,var+dm->GetOffset(),len);
       sz+=len;
-
+      if (debug)
+	cout << dm->GetName() << " " << len << endl;
     }
   }
 
@@ -252,6 +258,8 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
 void BufToClass(const char* name, char* var, char* buf, int size) {
   //copies all data members from a buffer, size - size of the buffer
   //buffer should exist. Only data members with matching names are copied
+
+  //cout <<"BufToClass::" << endl;
 
   TList* lst = TClass::GetClass(name)->GetListOfDataMembers();
   if (!lst) {
@@ -284,16 +292,19 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
 
     if (strcmp(memname,"class")==0) {
       strcpy(clname,data);
+      if (debug)
+	cout << "Read class: " << clname << endl;
       continue;
     }
 
     dm = (TDataMember*) lst->FindObject(memname);
     if (dm && strcmp(clname,name)==0) {
-      len2=1;
+      len2=dm->GetUnitSize();
       for (int i=0;i<dm->GetArrayDim();i++) {
-	len2*=dm->GetMaxIndex(i)*dm->GetUnitSize();
+	len2*=dm->GetMaxIndex(i);
       }
-      //cout << dm->GetName() << " " << len << " " << len2 << endl;
+      if (debug)
+	cout << dm->GetName() << " " << len << " " << len2 << endl;
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
     else {
@@ -586,7 +597,8 @@ int main(int argc, char **argv)
 
   TApplication theApp("App",&argc,argv);
   example();
-  HiFrm->Update();
+  //HiFrm->Update();
+  crs->Dummy_trd();
   //EvtFrm->StartThread();
   //gClient->GetColorByName("yellow", yellow);
   theApp.Run();
@@ -1553,12 +1565,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   
   
-  //readinit(parname);
-  gzFile ff = gzopen(parname,"rb");
-  crs->ReadParGz(ff,1,1);
-  gzclose(ff);
-
-
 
 
   
@@ -1615,6 +1621,19 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   parpar->Update();
 
 
+
+
+  //readinit(parname);
+  gzFile ff = gzopen(parname,"rb");
+  //cout << "ReadParGz(ff,1,1);" << endl;
+  crs->ReadParGz(ff,1,1);
+  gzclose(ff);
+
+  //HiFrm->Update();
+  //HiFrm->Update();
+
+
+  
   //HiFrm->Update();
   fTab->SetTab(opt.seltab);
 
@@ -2842,6 +2861,7 @@ void example() {
   // Popup the GUI...
   myM=0;
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
+  //HiFrm->Update();
   //myM->Move(-100,-100);
 }
 
