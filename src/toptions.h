@@ -129,8 +129,8 @@ class Toptions: public TObject {
   Int_t tgate; // coincidence window for events (in ns??)
   //Int_t tgate2; // coincidence window for histograms (in ns??)
 
-  Int_t mult1; // minimal multiplicity
-  Int_t mult2; // maximal multiplicity
+  UInt_t mult1; // minimal multiplicity
+  UInt_t mult2; // maximal multiplicity
 
   Int_t seltab;
 
@@ -195,7 +195,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 90)
+  ClassDef(Toptions, 91)
 };
 
 ClassImp(Toptions)

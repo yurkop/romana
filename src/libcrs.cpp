@@ -175,6 +175,8 @@ void *handle_dum(void* ptr)
   HiFrm->Update();      
   //cout << "Dum: " << endl;
 
+  return NULL;
+
 }
 
 // void *make_events_func(void *ctx)
@@ -591,9 +593,10 @@ void CRS::Submit_all() {
 
 void CRS::Cancel_all() {
   for (int i=0;i<MAXTRANS;i++) {
-    int res;
+    //int res;
     if (transfer[i]) {
-      res = libusb_cancel_transfer(transfer[i]);
+      //res = 
+      libusb_cancel_transfer(transfer[i]);
       //cout << i << " Cancel: " << res << endl;
     }
   }
@@ -606,7 +609,8 @@ int CRS::Init_Transfer() {
   //Cancel_all();
 
   //cout << "---Init_Transfer2---" << endl;
-  int r=cyusb_reset_device(cy_handle);
+  //int r=
+  cyusb_reset_device(cy_handle);
   //cout << "cyusb_reset: " << r << endl;
 
   for (int i=0;i<MAXTRANS;i++) {
@@ -1098,7 +1102,7 @@ int CRS::DoStartStop() {
       struct stat buffer;
       if (stat (opt.fname_raw, &buffer)) {
     	cout << "stat: " << stat (opt.fname_raw, &buffer) << endl;
-	UShort_t mod=module;
+	//UShort_t mod=module;
 
     	f_raw = gzopen(opt.fname_raw,"wb");
 	if (f_raw) {
@@ -1463,7 +1467,8 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   while (idx1<length) {
     //frmt = (buffer[6] & 0xF0);
     frmt = buffer[idx1+6];
-    int cnt = frmt & 0x0F;
+    //YKYKYK!!!! do something with cnt - ???
+    //int cnt = frmt & 0x0F;
     frmt = (frmt & 0xF0)>>4;
     data = buf8[idx8] & 0xFFFFFFFFFFFF;
     unsigned char ch = buffer[idx1+7];
