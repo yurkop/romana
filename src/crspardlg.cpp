@@ -673,23 +673,23 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Analysis start (in sec)";
   tip2= "Analysis stop (in sec)";
   label="Time limits";
-  AddLine3(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_int);
+  AddLine2(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_int);
 
   tip1= "Delay between drawing events (in msec)";
   tip2= "";
   label="DrawEvent delay";
-  AddLine3(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000);
+  AddLine2(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000);
 
   tip1= "Size of the USB buffer in kilobytes";
   tip2= "";
   label="USB buffer size";
-  AddLine3(fF6,ww,NULL,&opt.buf_size,tip1,tip2,label,k_int,1,2048,
+  AddLine2(fF6,ww,NULL,&opt.buf_size,tip1,tip2,label,k_int,1,2048,
 	   (char*) "DoNum_SetBuf()");
 
   tip1= "Minimal size of the event list";
   tip2= "Maximal size of the event list";
   label="Event_list size";
-  AddLine3(fF6,ww,&opt.ev_min,&opt.ev_max,tip1,tip2,label,k_int);
+  AddLine2(fF6,ww,&opt.ev_min,&opt.ev_max,tip1,tip2,label,k_int);
 
 
   fF6->Resize();
@@ -710,12 +710,12 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   tip1= "Coincidence window for making events";
   tip2= "Period of digitizer";
   label="Coincidence, period (ns)";
-  AddLine3(fF6,ww,&opt.tgate,&opt.period,tip1,tip2,label,k_int);
+  AddLine2(fF6,ww,&opt.tgate,&opt.period,tip1,tip2,label,k_int);
 
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";
   label="Multiplicity (min, max)";
-  AddLine3(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH);
+  AddLine2(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH);
 
   fF6->Resize();
 
@@ -736,48 +736,42 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
    // 2 column, n rows
    //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
 
-  tip1= "Initial bins per second for Time";
-  tip2= "Initial length of Time (in seconds)";
+  tip1= "Total qcuisition time";
   label="Time";
-  AddLine3(frame,ww,&opt.time_bins,&opt.time_max,tip1,tip2,label,k_r0);
-  
+  AddLine3(frame,&opt.time_bins,&opt.time_min,&opt.time_max,tip1,label);
 
-  tip1= "Bins per second for TOF";
-  tip2= "Length of TOF (in nanoseconds)";
+  tip1= "Time of flight (relative to the starts - see Channels->St)";
   label="TOF";
-  AddLine3(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
+  AddLine3(frame,&opt.tof_bins,&opt.tof_min,&opt.tof_max,tip1,label);
 
-  tip1= "Bins per mks for M_TOF";
-  tip2= "Length of MTOF (in mks)";
+  tip1= "Time of flight with multiplicity";
   label="M_TOF";
-  AddLine3(frame,ww,&opt.mtof_bins,&opt.mtof_max,tip1,tip2,label,k_r0);
+  AddLine3(frame,&opt.mtof_bins,&opt.mtof_min,&opt.mtof_max,tip1,label);
 
-  tip1= "Bins per channel/MeV for Amlitude";
-  tip2= "Length of Amplitude (in channels/MeV)";
+  tip1= "Amplitude or energy, calibrated (see Channels->EM for calibration)";
   label="Amplitude";
-  AddLine3(frame,ww,&opt.amp_bins,&opt.amp_max,tip1,tip2,label,k_r0);
+  AddLine3(frame,&opt.amp_bins,&opt.amp_min,&opt.amp_max,tip1,label);
 
-  tip1= "Bins per channel/MeV for Height";
-  tip2= "Length of Height (in channels/MeV)";
+  tip1= "Pulse height (in channels)";
   label="Height";
-  AddLine3(frame,ww,&opt.hei_bins,&opt.hei_max,tip1,tip2,label,k_r0);
+  AddLine3(frame,&opt.hei_bins,&opt.hei_min,&opt.hei_max,tip1,label);
 
   /*
   tip1= "Bins per channel for Width";
   tip2= "Length of Width (in channels)";
   label="Width";
-  AddLine3(frame,ww,&opt.rms_bins,&opt.rms_max,tip1,tip2,label,k_r0);
+  AddLine2(frame,ww,&opt.rms_bins,&opt.rms_max,tip1,tip2,label,k_r0);
 
   tip1= "Bins per nanosecond for TOF";
   tip2= "Length of TOF (in nanoseconds)";
   label="TOF";
-  AddLine3(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
+  AddLine2(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
   */
 
 }
 
 /*
-void ParParDlg::AddLine3(TGCompositeFrame* frame, int width, void *x1, void *x2, 
+void ParParDlg::AddLine2(TGCompositeFrame* frame, int width, void *x1, void *x2, 
 		      const char* tip1, const char* tip2, const char* label,
 		      TGNumberFormat::EStyle style, 
 			 //TGNumberFormat::EAttribute attr, 
@@ -827,7 +821,7 @@ void ParParDlg::AddLine3(TGCompositeFrame* frame, int width, void *x1, void *x2,
 }
 */
 
-void ParParDlg::AddLine3(TGGroupFrame* frame, int width, void *x1, void *x2, 
+void ParParDlg::AddLine2(TGGroupFrame* frame, int width, void *x1, void *x2, 
 		      const char* tip1, const char* tip2, const char* label,
 		      TGNumberFormat::EStyle style, 
 			 //TGNumberFormat::EAttribute attr, 
@@ -899,6 +893,71 @@ void ParParDlg::AddLine3(TGGroupFrame* frame, int width, void *x1, void *x2,
 
   TGLabel* fLabel = new TGLabel(hfr1, label);
   hfr1->AddFrame(fLabel,fL7);
+
+}
+
+void ParParDlg::AddLine3(TGGroupFrame* frame, Float_t *x1,
+			 Float_t *x2, Float_t *x3, 
+			 const char* tip, const char* label)
+{
+  double ww=70;
+  
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
+  //double zz;
+  int id;
+
+  TGNumberFormat::ELimit nolim = TGNumberFormat::kNELNoLimits;
+  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
+
+  //nbins
+  id = Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   lim,0,1000);
+  DoMap(fNum1->GetNumberEntry(),x1,p_fnum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of Bins");
+  fNum1->SetWidth(ww);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				     "DoNum()");
+  hfr1->AddFrame(fNum1,fL8);
+
+  //xlow
+  id = Plist.size()+1;
+  TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   nolim);
+  DoMap(fNum2->GetNumberEntry(),x2,p_fnum,0);
+  fNum2->GetNumberEntry()->SetToolTipText("Low edge");
+  fNum2->SetWidth(ww);
+  fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				     "DoNum()");
+  hfr1->AddFrame(fNum2,fL8);
+
+  //xup
+  id = Plist.size()+1;
+  TGNumberEntry* fNum3 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   nolim);
+  DoMap(fNum3->GetNumberEntry(),x3,p_fnum,0);
+  fNum3->GetNumberEntry()->SetToolTipText("Upper edge");
+  fNum3->SetWidth(ww);
+  fNum3->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				     "DoNum()");
+  hfr1->AddFrame(fNum3,fL8);
+
+
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  //fLabel->SetWidth();
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText(tip);
+  fLabel->SetAlignment(kTextCenterY);
+
+  //TGLabel* fLabel = new TGLabel(hfr1, label);
+  //fLabel->SetToolTipText(tip);
+  hfr1->AddFrame(fLabel,fL8);
 
 }
 
@@ -996,13 +1055,13 @@ void ChanParDlg::Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h) {
   AddHeader();
 
   for (int i=0;i<chanPresent;i++) {
-    AddLine2(i,fcont1);
+    AddLine1(i,fcont1);
   }
 
-  AddLine2(MAX_CH,fcont2);
+  AddLine1(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
-    AddLine2(MAX_CH+i,fcont2);
+    AddLine1(MAX_CH+i,fcont2);
   }
 
 
@@ -1026,7 +1085,7 @@ void ChanParDlg::AddHeader() {
 
 }
 
-void ChanParDlg::AddLine2(int i, TGCompositeFrame* fcont1) {
+void ChanParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
   char txt[255];
   int kk=0;
   int all=0;
@@ -1239,14 +1298,14 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
   */
 
   for (int i=0;i<chanPresent;i++) {
-    AddLine1(i,fcont1);
+    AddLine0(i,fcont1);
     //cout << "crs: addLine1: " << Plist.size() << endl; 
   }
 
-  AddLine1(MAX_CH,fcont2);
+  AddLine0(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
-    AddLine1(MAX_CH+i,fcont2);
+    AddLine0(MAX_CH+i,fcont2);
     //cout << "crs2: addLine1: " << Plist.size() << endl; 
   }
 
@@ -1284,7 +1343,7 @@ void CrsParDlg::AddHeader() {
 
 }
 
-void CrsParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
+void CrsParDlg::AddLine0(int i, TGCompositeFrame* fcont1) {
   char txt[255];
   int kk=0;
   int all=0;

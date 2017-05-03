@@ -213,8 +213,8 @@ void HistFrame::Make_hist() {
   idir = fListTree->AddItem(iroot, "Amplitude",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(nam,"ampl_%02d",i);
-    h_ampl[i]=new TH1F(nam,nam,opt.amp_max*opt.amp_bins,0.,opt.amp_max);
-    //h_ampl[i]->GetXaxis()->SetNdivisions(505);
+    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+    h_ampl[i]=new TH1F(nam,nam,nn,opt.amp_min,opt.amp_max);
     fListTree->AddItem(idir, nam, h_ampl[i], pic, pic,true);
     //item->CheckItem(false);
   }
@@ -223,8 +223,8 @@ void HistFrame::Make_hist() {
   idir = fListTree->AddItem(iroot, "Height",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(nam,"height_%02d",i);
-    h_height[i]=new TH1F(nam,nam,opt.hei_max*opt.hei_bins,0.,opt.hei_max);
-    //h_height[i]->GetXaxis()->SetNdivisions(505);
+    int nn=opt.hei_bins*(opt.hei_max-opt.hei_min);
+    h_height[i]=new TH1F(nam,nam,nn,opt.hei_min,opt.hei_max);
     fListTree->AddItem(idir, nam, h_height[i], pic, pic,true);
     //item->CheckItem(false);
   }
@@ -233,8 +233,8 @@ void HistFrame::Make_hist() {
   idir = fListTree->AddItem(iroot, "Time",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(nam,"time_%02d",i);
-    h_time[i]=new TH1F(nam,nam,opt.time_max*opt.time_bins,0.,opt.time_max);
-    //h_time[i]->GetXaxis()->SetNdivisions(505);
+    int nn=opt.time_bins*(opt.time_max-opt.time_min);
+    h_time[i]=new TH1F(nam,nam,nn,opt.time_min,opt.time_max);
     fListTree->AddItem(idir, nam, h_time[i], pic, pic,true);
     //item->CheckItem(false);
   }
@@ -243,8 +243,8 @@ void HistFrame::Make_hist() {
   idir = fListTree->AddItem(iroot, "TOF",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(nam,"tof_%02d",i);
-    h_tof[i]=new TH1F(nam,nam,opt.tof_max*opt.tof_bins,0.,opt.tof_max);
-    //h_tof[i]->GetXaxis()->SetNdivisions(505);
+    int nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
+    h_tof[i]=new TH1F(nam,nam,nn,opt.tof_min,opt.tof_max);
     fListTree->AddItem(idir, nam, h_tof[i], pic, pic,true);
     //item->CheckItem(false);
   }

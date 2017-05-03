@@ -124,11 +124,17 @@ Toptions::Toptions() {
   seltab=0;
 
 
-  time_max=time_bins=10;
-  tof_max=tof_bins=10;
-  mtof_max=mtof_bins=10;
-  amp_max=amp_bins=10;
-  hei_max=hei_bins=10;
+  time_max=time_bins=1;
+  tof_max=tof_bins=1;
+  mtof_max=mtof_bins=1;
+  amp_max=amp_bins=1;
+  hei_max=hei_bins=1;
+
+  time_min=0;
+  tof_min=0;
+  mtof_min=0;
+  amp_min=0;
+  hei_min=0;
 
 
 

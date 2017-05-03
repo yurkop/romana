@@ -134,11 +134,17 @@ class Toptions: public TObject {
 
   Int_t seltab;
 
-  Float_t time_max,time_bins;
-  Float_t tof_max,tof_bins;
-  Float_t mtof_max,mtof_bins;
-  Float_t amp_max,amp_bins;
-  Float_t hei_max,hei_bins;
+  Float_t time_min,time_max;
+  Float_t tof_min,tof_max;
+  Float_t mtof_min,mtof_max;
+  Float_t amp_min,amp_max;
+  Float_t hei_min,hei_max;
+
+  Float_t time_bins;
+  Float_t tof_bins;
+  Float_t mtof_bins;
+  Float_t amp_bins;
+  Float_t hei_bins;
 
   /*
   Bool_t time_chk[MAX_CH];
@@ -149,7 +155,7 @@ class Toptions: public TObject {
   */
 
 
-  
+
   Int_t starts_thr1,starts_thr2;
   Float_t beam1,beam2;
   //Float_t wgam1,wgam2;
@@ -195,7 +201,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 91)
+  ClassDef(Toptions, 92)
 };
 
 ClassImp(Toptions)
