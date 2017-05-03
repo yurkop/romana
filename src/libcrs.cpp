@@ -1100,12 +1100,13 @@ int CRS::DoStartStop() {
     opt.F_start.Set();
     if (opt.raw_write) {
       struct stat buffer;
+      cout << "stat: " << stat (opt.fname_raw, &buffer) << endl;
       if (stat (opt.fname_raw, &buffer)) {
-    	cout << "stat: " << stat (opt.fname_raw, &buffer) << endl;
 	//UShort_t mod=module;
 
     	f_raw = gzopen(opt.fname_raw,"wb");
 	if (f_raw) {
+	  cout << "Writing options... : " << opt.fname_raw << endl;
 	  SaveParGz(f_raw);
 	  gzclose(f_raw);
 	}
