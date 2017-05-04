@@ -62,8 +62,9 @@ protected:
    int ntab; //tab number where eventframe is placed
    int ievent; //current event to be drawn
    std::list<EventClass>::iterator d_event;
-   std::list<EventClass> Tevents;
-   std::list<EventClass> *Levents;
+   std::list<EventClass> Tevents; //local event list, consist of one element
+   // used for online monitoring
+   std::list<EventClass> *Levents; //points either to Tevents or to crs->Levents
    //EventClass *d_event; //current event to draw
    int ndiv;
    int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv

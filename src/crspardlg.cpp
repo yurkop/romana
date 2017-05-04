@@ -259,20 +259,20 @@ void ParDlg::DoChkWrite() {
   //return;
 
   pmap pp;
-  pp = Plist[id];
-  TGTextButton *but = (TGTextButton*) pp.field;
   pp = Plist[id+1];
+  TGTextButton *but = (TGTextButton*) pp.field;
+  pp = Plist[id+2];
   TGTextEntry *te2 = (TGTextEntry*) pp.field;
 
   Bool_t state = (Bool_t) te->GetState();      
 
   if (state) {
-    te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
     but->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
+    te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
   }
   else {
-    te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
     but->ChangeBackground(gROOT->GetColor(18)->GetPixel());
+    te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
   }
 
   //te2->SetEnabled(state);
@@ -507,16 +507,16 @@ void ParDlg::UpdateField(int nn) {
       te->SetState((EButtonState) bb);
       TString str = TString(te->GetName());
       if (str.Contains("write",TString::kIgnoreCase)) {
-	TGTextButton *but = (TGTextButton*) (pp+1)->field;
-	TGTextEntry *te2 = (TGTextEntry*) (pp+2)->field;	
+	TGTextButton *but = (TGTextButton*) (pp+2)->field;
+	TGTextEntry *te2 = (TGTextEntry*) (pp+3)->field;	
 
 	if (bb) {
-	  te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
 	  but->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
+	  te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
 	}
 	else {
-	  te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
 	  but->ChangeBackground(gROOT->GetColor(18)->GetPixel());
+	  te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
 	}
 	//te2->SetEnabled(bb);
 	//but->SetEnabled(bb);
@@ -597,7 +597,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   //opt.chk_raw=true;
   //opt.chk_dec=false;
-  AddWrite("Write raw data",&opt.raw_write,opt.fname_raw);
+  AddWrite("Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
 
   int id;
   char txt[99];
@@ -612,7 +612,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
-  AddWrite("Write decoded data",&opt.dec_write,opt.fname_dec);
+  AddWrite("Write decoded data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
 
   hor = new TGSplitFrame(fcont1,10,10);
   fcont1->AddFrame(hor,fLexp);
@@ -626,7 +626,8 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 }
 
-void ParParDlg::AddWrite(const char* txt, Bool_t* opt_chk, char* opt_fname) {
+void ParParDlg::AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
+			 char* opt_fname) {
   int id;
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fcont1,10,10);
@@ -639,6 +640,20 @@ void ParParDlg::AddWrite(const char* txt, Bool_t* opt_chk, char* opt_fname) {
   DoMap(fchk,opt_chk,p_chk,0);
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+
+  id = Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(hframe1, *compr, 2, id, k_int, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   TGNumberFormat::kNELLimitMinMax,
+					   0,9);
+  hframe1->AddFrame(fNum1,fL3);
+  DoMap(fNum1->GetNumberEntry(),compr,p_inum,0);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoNum()");
+
+  TGLabel* fLabel = new TGLabel(hframe1, "compr.level");
+  hframe1->AddFrame(fLabel,fL3);
+
 
   id = Plist.size()+1;
   TGTextButton *fbut = new TGTextButton(hframe1,"Select...",id);
@@ -723,7 +738,7 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
 
 void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   
-  int ww=70;
+  //int ww=70;
   
   //TGLabel* fLabel = new TGLabel(frame, "---  Histograms  ---");
   //frame->AddFrame(fLabel, fL5);

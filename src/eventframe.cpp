@@ -544,9 +544,12 @@ void EventFrame::FillHstack(int dr) {
     int dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
 
     if (d_event->pulses.size()>1) {
+      int nh=0;
+      if (hst[dr]->GetHists())
+	nh=hst[dr]->GetHists()->GetSize();
       cout << "Dt: " << i << " " << (int) pulse->Chan << " "
 	   << pulse->Tstamp64 << " " << d_event->T << " " << dt
-	   << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists()
+	   << " " << d_event->pulses.size() << " " << nh
 	   << endl;
     }
 

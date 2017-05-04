@@ -915,6 +915,7 @@ void readpar_root(const char* pname)
   delete f2;
 }
 
+/*
 void savepar_root(const char* pname)
 {
 
@@ -933,6 +934,7 @@ void savepar_root(const char* pname)
   delete f2;
 
 }
+*/
 
 void fill_sEvent(int i)
 {
@@ -1514,6 +1516,18 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   parname = (char*)"romana.par";
 
+
+  //readinit(parname);
+  //cout << "1 ReadParGz(ff,1,1);" << endl;
+  gzFile ff = gzopen(parname,"rb");
+  crs->ReadParGz(ff,1,1);
+  //cout << "2 ReadParGz(ff,1,1);" << endl;
+  gzclose(ff);
+
+
+
+
+
   fTab = new TGTab(hframe1, 300, 300);
   //TGLayoutHints *fL5 = new TGLayoutHints(kLHintsTop | kLHintsExpandX |
   //                                        kLHintsExpandY, 2, 2, 5, 1);
@@ -1563,11 +1577,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   ntab++;
 
 
-  
-  
-
-
-  
   TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   HiFrm = new HistFrame(tab5, 800, 500,ntab);
@@ -1620,16 +1629,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   parpar->Update();
 
-
-
-
-  //readinit(parname);
-  gzFile ff = gzopen(parname,"rb");
-  //cout << "ReadParGz(ff,1,1);" << endl;
-  crs->ReadParGz(ff,1,1);
-  gzclose(ff);
-
-  //HiFrm->Update();
+  //HiFrm->DoReset();
   //HiFrm->Update();
 
 
@@ -1780,7 +1780,7 @@ void MainFrame::DoOpen() {
     //printf("Open file: %s (dir: %s)\n", fi.fFilename, fi.fIniDir);
     //dir = fi.fIniDir;
 
-    crs->DoFopen(fi.fFilename);
+    crs->DoFopen(fi.fFilename,1);//1 - read toptions
 
     /*
     strcpy(fname,fi.fFilename);
@@ -1803,12 +1803,12 @@ void MainFrame::DoOpen() {
 
 void MainFrame::DoAna() {
 
-  if (!crs->f_raw) {
+  if (!crs->f_read) {
     cout << "File not open" << endl;
     return;
   }
 
-  cout << "DoAna" << endl;
+  //cout << "DoAna" << endl;
 
   if (crs->b_fana) {
     fAna->ChangeBackground(fGreen);
@@ -1887,6 +1887,9 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
       crs->ReadParGz(ff,1,1);
       gzclose(ff);
 
+      parpar->Update();
+      crspar->Update();
+      chanpar->Update();
 
       //delete fPar;
       //fPar = new MParDlg(gClient->GetRoot(), fMain, "Parameters");
@@ -1948,6 +1951,11 @@ void MainFrame::DoReadRoot() {
     //reset();
     //new_hist();
     readroot(rootname);
+
+    parpar->Update();
+    crspar->Update();
+    chanpar->Update();
+    HiFrm->Update();
 
     nevent=opt.Nevt;
     tof=opt.Tof;

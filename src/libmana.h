@@ -30,7 +30,7 @@ void clear_hist();
 void greset();
 //int newfile();
 void readpar_root(const char* fname);
-void savepar_root(const char* fname);
+//void savepar_root(const char* fname);
 //void readpar_gz(const char* fname);
 //void savepar_gz(const char* fname);
 void smooth(int n, int i);

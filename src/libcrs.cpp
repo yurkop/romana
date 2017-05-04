@@ -234,7 +234,9 @@ static void cback(libusb_transfer *transfer) {
     }
     if (opt.raw_write) {
       //cout << "raw_start: " << *(int*) transfer->user_data << endl;
-      crs->f_raw = gzopen(opt.fname_raw,"ab");
+      //crs->f_raw = gzopen(opt.fname_raw,"wb0");
+      crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
+      //cout << "raw_opt: " << crs->raw_opt << endl;
       if (crs->f_raw) {
 	int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
 	gzclose(crs->f_raw);
@@ -311,7 +313,12 @@ CRS::CRS() {
     cond[i]=new TCondition(0);
 
   f_raw=0;
+  f_read=0;
   f_dec=0;
+
+  strcpy(raw_opt,"ab");
+  strcpy(dec_opt,"ab");
+
   Fbuf=NULL;
 
   strcpy(Fname," ");
@@ -1062,6 +1069,11 @@ int CRS::DoStartStop() {
   //int transferred = 0;
   //int len=2; //input/output length must be 2, not 1
 
+  if (f_read) {
+    gzclose(f_read);
+    f_read=0;
+  }
+  
   if (!b_acq) { //start
     DoReset();
 
@@ -1099,12 +1111,13 @@ int CRS::DoStartStop() {
 
     opt.F_start.Set();
     if (opt.raw_write) {
+      sprintf(raw_opt,"wb%d",opt.raw_compr);
       struct stat buffer;
       cout << "stat: " << stat (opt.fname_raw, &buffer) << endl;
-      if (stat (opt.fname_raw, &buffer)) {
+      //if (stat (opt.fname_raw, &buffer)) {
 	//UShort_t mod=module;
 
-    	f_raw = gzopen(opt.fname_raw,"wb");
+    	f_raw = gzopen(opt.fname_raw,raw_opt);
 	if (f_raw) {
 	  cout << "Writing options... : " << opt.fname_raw << endl;
 	  SaveParGz(f_raw);
@@ -1113,7 +1126,8 @@ int CRS::DoStartStop() {
 	else {
 	  cout << "Can't open file: " << opt.fname_raw << endl;
 	}
-      }
+	//}
+      sprintf(raw_opt,"ab%d",opt.raw_compr);
     }   
 
     //nvp=0;
@@ -1143,6 +1157,8 @@ int CRS::DoStartStop() {
     gSystem->Sleep(300);
     Cancel_all();
     b_stop=true;
+    Select_Event();
+    //EvtFrm->Levents = &Levents;
   }
 
   /*
@@ -1186,8 +1202,8 @@ int CRS::DoStartStop() {
 
 void CRS::DoReset() {
 
-  if (HiFrm)
-    cout << "DoReset1: " << HiFrm->h_time[1]->GetName() << endl;
+  //  if (HiFrm)
+  //  cout << "DoReset1: " << HiFrm->h_time[1]->GetName() << endl;
 
   opt.T_acq=0;
 
@@ -1216,20 +1232,23 @@ void CRS::DoReset() {
 
   //MAX_LAG=opt.event_buf/2;
 
-  DoFopen(NULL);
+  if (f_read)
+    DoFopen(NULL,0);
 
   //gzrewind(f_raw);
 
-  if (HiFrm)
-    cout << "DoReset2: " << HiFrm->h_time[1]->GetName() << endl;
+  //if (HiFrm)
+  //  cout << "DoReset2: " << HiFrm->h_time[1]->GetName() << endl;
 
 }
 
-void CRS::DoFopen(char* oname) {
+void CRS::DoFopen(char* oname, int popt) {
   int tp=0; //1 - adcm raw; 0 - crs2/32
 
   if (oname)
     strcpy(Fname,oname);
+
+  cout << "DoFopen: " << Fname << endl;
 
   if (TString(Fname).EqualTo(" ",TString::kIgnoreCase)) {
     return;
@@ -1246,17 +1265,17 @@ void CRS::DoFopen(char* oname) {
   }
   else {
     cout << "Unknown file type (extension): " << Fname << endl;
-    if (f_raw) gzclose(f_raw);
-    f_raw=0;
+    if (f_read) gzclose(f_read);
+    f_read=0;
   }
 
   //cout << ext << endl;
-  if (f_raw) gzclose(f_raw);
-  f_raw = gzopen(Fname,"rb");
-  if (!f_raw) {
+  if (f_read) gzclose(f_read);
+  f_read = gzopen(Fname,"rb");
+  if (!f_read) {
     Fmode=0;
     cout << "Can't open file: " << Fname << endl;
-    f_raw=0;
+    f_read=0;
   }
 
   if (tp) { //adcm raw
@@ -1264,29 +1283,12 @@ void CRS::DoFopen(char* oname) {
     Fmode=1;
   }
   else {
-    UShort_t mod;
-    gzread(f_raw,&mod,sizeof(mod));
 
-    if (mod==2) {
-      Fmode=2;
-      cout << "CRS2 File: " << Fname << " " << mod << endl;
-    }
-    else if (mod==32) {
-      Fmode=32;
-      cout << "CRS32 File: " << Fname << " " << mod << endl;
-    }
-    else {
-      Fmode=0;
-      cout << "Unknown file type: " << Fname << " " << Fmode << endl;
-      gzclose(f_raw);
-      f_raw=0;
+    if (ReadParGz(f_read,1,popt)) {
+      gzclose(f_read);
+      f_read=0;
       return;
     }
-
-    if (oname) 
-      ReadParGz(f_raw,1,1);
-    else
-      ReadParGz(f_raw,1,0);
 
   }
 
@@ -1299,11 +1301,15 @@ void CRS::DoFopen(char* oname) {
   EvtFrm->Levents = &Levents;
 
   parpar->Update();
+  crspar->Update();
+  chanpar->Update();
+
+  //parpar->Update();
 
   //cout << f_raw << endl;
 
   //cout << "smooth: " << cpar.smooth[0] << endl;
-    
+  //cout << "DoFopen: " << f_read << endl;
 }
 
 // void CRS::DoFAna() {
@@ -1316,9 +1322,31 @@ void CRS::DoFopen(char* oname) {
 //   }
 // }
 
-void CRS::ReadParGz(gzFile ff, int p1, int p2) {
+int CRS::ReadParGz(gzFile ff, int p1, int p2) {
 
   UShort_t sz;
+
+
+
+  UShort_t mod;
+  gzread(ff,&mod,sizeof(mod));
+
+  if (mod==2) {
+    Fmode=2;
+    cout << "CRS2 File: " << Fname << " " << mod << endl;
+  }
+  else if (mod==32) {
+    Fmode=32;
+    cout << "CRS32 File: " << Fname << " " << mod << endl;
+  }
+  else {
+    Fmode=0;
+    cout << "Unknown file type: " << Fname << " " << Fmode << endl;
+    return 1;
+  }
+
+
+
   gzread(ff,&sz,sizeof(sz));
 
   //cout << "readpar_gz1: " << sz << endl;
@@ -1333,15 +1361,13 @@ void CRS::ReadParGz(gzFile ff, int p1, int p2) {
 
   //cout << "readpar_gz2: " << sz << endl;
   //opt.raw_write=false;
-  parpar->Update();
-  crspar->Update();
-  chanpar->Update();
 
   //if (Fbuf) delete[] Fbuf;
   //Fbuf = new UChar_t[opt.buf_size*1024];
   //EvtFrm->Levents = &Levents;
 
   //cout << "readpar_gz3" << endl;
+  return 0;
 }
 
 void CRS::SaveParGz(gzFile ff) {
@@ -1355,13 +1381,16 @@ void CRS::SaveParGz(gzFile ff) {
 
   //cout << "SavePar_gz: " << sz << endl;
 
+  gzwrite(ff,&Fmode,sizeof(Fmode));
   gzwrite(ff,buf,sz);
 
 }
 
 void CRS::FAnalyze() {
 
-  if (!f_raw) {
+  //cout << "FAnalyze: " << f_read << endl;
+    
+  if (!f_read) {
     cout << "File not open" << endl;
     return;
   }
@@ -1380,7 +1409,7 @@ void CRS::FAnalyze() {
 
 int CRS::Do1Buf() {
 
-  int res=gzread(f_raw,Fbuf,opt.buf_size*1024);
+  int res=gzread(f_read,Fbuf,opt.buf_size*1024);
   cout << "gzread: " << Fmode << " " << nbuffers << " " << res << endl;
   if (res>0) {
     crs->totalbytes+=res;

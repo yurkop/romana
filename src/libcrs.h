@@ -40,8 +40,11 @@ RQ_OBJECT("CRS")
   //--------variables---------
 
   gzFile f_raw;
+  gzFile f_read;
   gzFile f_dec;
 
+  char raw_opt[5];
+  char dec_opt[5];
   Short_t Fmode; //1 - adcm raw; 2- crs2; 32 - crs32
   char Fname[255];
   UChar_t* Fbuf;
@@ -116,8 +119,8 @@ RQ_OBJECT("CRS")
   //void SendParametr(const char* name, int len_out); //send one parameter
   int DoStartStop(); // start-stop acquisition
   void DoReset(); //reset BPulses
-  void DoFopen(char* oname);
-  void ReadParGz(gzFile ff, int p1, int p2);
+  void DoFopen(char* oname, int popt);
+  int ReadParGz(gzFile ff, int p1, int p2);
   void SaveParGz(gzFile ff);
 
   //void DoFAna();

@@ -119,6 +119,9 @@ class Toptions: public TObject {
   
   Bool_t raw_write;
   Bool_t dec_write;
+  Int_t raw_compr; //raw data compr level
+  Int_t dec_compr; //decoded data compr level
+
   Bool_t decode;
   char fname_raw[255];
   char fname_dec[255];
