@@ -1157,6 +1157,7 @@ int CRS::DoStartStop() {
     gSystem->Sleep(300);
     Cancel_all();
     b_stop=true;
+    EvtFrm->Levents = &Levents;
     Select_Event();
     //EvtFrm->Levents = &Levents;
   }
