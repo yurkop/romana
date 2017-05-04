@@ -238,7 +238,9 @@ static void cback(libusb_transfer *transfer) {
       crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
       //cout << "raw_opt: " << crs->raw_opt << endl;
       if (crs->f_raw) {
+	//cout << "cback tell: " << gztell(crs->f_raw) << endl;
 	int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
+	//cout << "cback offset: " << gzoffset(crs->f_raw) << endl;
 	gzclose(crs->f_raw);
 	crs->writtenbytes+=res;
       }
@@ -1117,7 +1119,9 @@ int CRS::DoStartStop() {
       //if (stat (opt.fname_raw, &buffer)) {
 	//UShort_t mod=module;
 
-    	f_raw = gzopen(opt.fname_raw,raw_opt);
+
+
+        f_raw = gzopen(opt.fname_raw,raw_opt);
 	if (f_raw) {
 	  cout << "Writing options... : " << opt.fname_raw << endl;
 	  SaveParGz(f_raw);
@@ -1126,6 +1130,9 @@ int CRS::DoStartStop() {
 	else {
 	  cout << "Can't open file: " << opt.fname_raw << endl;
 	}
+
+
+
 	//}
       sprintf(raw_opt,"ab%d",opt.raw_compr);
     }   
@@ -1323,7 +1330,7 @@ void CRS::DoFopen(char* oname, int popt) {
 //   }
 // }
 
-int CRS::ReadParGz(gzFile ff, int p1, int p2) {
+int CRS::ReadParGz(gzFile &ff, int p1, int p2) {
 
   UShort_t sz;
 
@@ -1360,7 +1367,7 @@ int CRS::ReadParGz(gzFile ff, int p1, int p2) {
   if (p2)
     BufToClass("Toptions",(char*) &opt, buf, sz);
 
-  //cout << "readpar_gz2: " << sz << endl;
+  cout << "ReadParGz: " << sz << endl;
   //opt.raw_write=false;
 
   //if (Fbuf) delete[] Fbuf;
@@ -1371,7 +1378,7 @@ int CRS::ReadParGz(gzFile ff, int p1, int p2) {
   return 0;
 }
 
-void CRS::SaveParGz(gzFile ff) {
+void CRS::SaveParGz(gzFile &ff) {
 
   char buf[100000];
   UShort_t sz=sizeof(sz);
@@ -1380,10 +1387,10 @@ void CRS::SaveParGz(gzFile ff) {
 
   memcpy(buf,&sz,sizeof(sz));
 
-  //cout << "SavePar_gz: " << sz << endl;
-
   gzwrite(ff,&Fmode,sizeof(Fmode));
   gzwrite(ff,buf,sz);
+
+  cout << "SavePar_gz: " << sz << endl;
 
 }
 
