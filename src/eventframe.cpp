@@ -8,10 +8,56 @@
 #include <TLine.h>
 //#include <TROOT.h>
 
-
 #include <TRandom.h>
 
 TLine ln1;
+
+Float_t RGB[MAX_CH][3] = {
+  {0,0,0},//0
+  {1,0,0},
+  {0,1,0},
+  {0,0,1},
+  {0,1,1},
+  {1,0,1}, //5
+  {0.63,0.67,0.02},
+  {0.71,0.11,0.52},
+  {0.51,0.95,0.46},
+  {0.16,0.71,0.77},
+  {0.77,0.96,0.16},//10
+  {0.68,0.61,0.98},
+  {0.15,0.45,0.74},
+  {0.03,0.62,0.07},
+  {0.47,0.37,0.50},
+  {0.72,0.34,0.04},//15
+  {0.51,0.54,0.59},
+  {0.52,0.78,0.11},
+  {0.01,0.86,0.66},
+  {0.78,0.69,0.14},
+  {0.91,0.65,0.90},//20
+  {0.16,0.30,0.29},
+  {0.41,0.69,0.03},
+  {0.77,0.22,0.80},
+  {0.40,0.37,0.98},
+  {0.56,0.06,0.34},//25
+  {0.89,0.64,0.79},
+  {0.24,0.99,0.28},
+  {0.84,0.89,0.10},
+  {0.12,0.25,0.18},
+  {0.97,0.85,0.74},//30
+  {0.55,0.29,0.20}
+
+
+  
+};
+
+Int_t chcol[MAX_CH];
+//                     1                        11 
+// = {1,2,3,4,6,7,8,9,406,426,596,606,636,796,816,856,
+//    //17                    23
+//    906,415,511,623,742,805,392,259,835,901,
+//    //27
+//    259,491,635,819,785,513
+//};
 
 extern Coptions cpar;
 extern Toptions opt;
@@ -44,6 +90,40 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kHorizontalFrame)
 {
 
+  // ULong_t fcol;
+  // int nn=0;
+  // for (int i=0;i<255;i+=80)
+  //   for (int j=0;j<255;j+=80)
+  //     for (int k=0;k<255;k+=80) {
+  // 	if (nn>=MAX_CH)
+  // 	  break;
+  // 	fcol=TColor::RGB2Pixel(i,j,k);
+  // 	chcol[nn]=TColor::GetColor(fcol);
+  // 	cout << "chcol: " << nn << " " << chcol[nn] << " " << fcol << endl;
+  // 	nn++;
+  //     }
+
+  // chcol[0]=TColor::GetColor(TColor::RGB2Pixel(0,0,0));
+  // chcol[1]=TColor::GetColor(TColor::RGB2Pixel(255,0,0));
+  // chcol[2]=TColor::GetColor(TColor::RGB2Pixel(0,255,0));
+  // chcol[3]=TColor::GetColor(TColor::RGB2Pixel(0,0,255));
+  // chcol[4]=TColor::GetColor(TColor::RGB2Pixel(255,0,255));
+  // chcol[5]=TColor::GetColor(TColor::RGB2Pixel(0,255,255));
+
+  /*
+  gRandom->SetSeed(0);
+  for (int i=1;i<MAX_CH;i++) {
+    RGB[i][0]=gRandom->Rndm();
+    RGB[i][1]=gRandom->Rndm();
+    RGB[i][2]=gRandom->Rndm();
+    printf("%2d {%0.2f,%0.2f,%0.2f},\n",i,RGB[i][0],RGB[i][1],RGB[i][2]);
+  }
+  */  
+
+  for (int i=0;i<MAX_CH;i++) {
+    chcol[i]=TColor::GetColor(TColor::RGB2Pixel(RGB[i][0],RGB[i][1],RGB[i][2]));
+  }
+
   Levents = &Tevents;
   d_event = Levents->begin();
   cout << "d_event: " << &(*d_event) << endl;
@@ -71,6 +151,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fLay4 = new TGLayoutHints(kLHintsLeft,2,2,2,2);
   fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
   fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
+  fLay7 = new TGLayoutHints(kLHintsCenterX,0,0,0,0);
 
   //Frames.....
 
@@ -78,7 +159,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGVerticalFrame        *fVer_d; //contains deriv etc
   TGVerticalFrame        *fVer_ch; //contains fHor_ch
   TGHorizontalFrame      *fHor_ch; //contains fVer[..]
-  TGVerticalFrame        *fVer[(MAX_CH-1)/16+1];
+  //TGVerticalFrame        *fVer[(MAX_CH-1)/16+1];
+  TGVerticalFrame        *fVer1;
 
   TGHorizontalFrame      *fHor_but; //contains buttons
   TGVerticalFrame        *fVer_st; //status etc //contains fHor_st + statusbar
@@ -175,6 +257,10 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fNev->Connect("Clicked()","EventFrame",this,"PlusN()");
   fHor_but->AddFrame(fNev, fLay4);
 
+  // TGTextButton* fClr = new TGTextButton(fHor_but,"colors...");
+  // fClr->Connect("Clicked()","EventFrame",this,"DoColor()");
+  // fHor_but->AddFrame(fClr, fLay4);
+
   int id;
   id = parpar->Plist.size()+1;
   TGNumberEntry* fNum2 = new TGNumberEntry(fHor_but, 0, 0, id,
@@ -243,29 +329,61 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fChn[i] = NULL;
   }
 
-  int nx=(MAX_CH-1)/16+1;
-  int k;
-  for (int i=0;i<nx;i++) {
-    fVer[i] = new TGVerticalFrame(fHor_ch, 10, 10);
-    fHor_ch->AddFrame(fVer[i], fLay1);
+  fVer1 = new TGVerticalFrame(fHor_ch, 10, 10);
+  fHor_ch->AddFrame(fVer1, fLay1);
 
-    for (int j=0;j<16;j++) {
-      k=i*16+j;
+  int nclmn=2;
+  int ny=(MAX_CH+1)/nclmn;
+
+  for (int i=0;i<ny;i++) {
+    TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer1, 10, 10);
+    fVer1->AddFrame(fHor1, fLay6);
+
+    for (int j=0;j<nclmn;j++) {
+      int k=j*ny+i;
+
       if (k<MAX_CH) {
 	sprintf(ss,"%d",k);
-	fChn[k] = new TGCheckButton(fVer[i], ss, k);
-	int col=gROOT->GetColor(opt.color[k])->GetPixel();
-	int fcol=0xffffff-col;
-	//printf("Color: %d %x %x\n",i,col,fcol);
+
+	TGLabel* flab = new TGLabel(fHor1, ss);
+	flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
+	flab->SetWidth(16);
+	fHor1->AddFrame(flab, fLay6);
+
+	fChn[k] = new TGCheckButton(fHor1, " ", k);
+	fHor1->AddFrame(fChn[k], fLay6);
+	fChn[k]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
+
+	int col=gROOT->GetColor(chcol[k])->GetPixel();
+	//col=1;
+	int fcol=0;
+	if (k==0 || k==3 || k==21 || k==25 || k==29)
+	  fcol=0xffffff;
+	
+	printf("Color: %d %d %x %x\n",k,chcol[k],col,fcol);
+
+	flab->SetBackgroundColor(col);
+	flab->SetForegroundColor(fcol);
 
 	fChn[k]->SetBackgroundColor(col);
-	fChn[k]->SetForegroundColor(fcol);
-	fChn[k]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
-	fChn[k]->SetState(kButtonDisabled);
-	fVer[i]->AddFrame(fChn[k], fLay6);
-      }
-    }
-  }
+	//fChn[k]->SetForegroundColor(col);
+	fChn[k]->SetState(kButtonDown);
+
+      } //if
+    } //for j
+  } //for i
+
+  TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer1, 10, 10);
+  fVer1->AddFrame(fHor1, fLay7);
+
+  fChn[MAX_CH] = new TGCheckButton(fHor1, "all", MAX_CH);
+  fHor1->AddFrame(fChn[MAX_CH], fLay6);
+  fChn[MAX_CH]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
+  fChn[MAX_CH]->SetState(kButtonDown);
+  //TGLabel* flab = new TGLabel(fHor1, "all");
+  //flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
+  //flab->SetWidth(16);
+  //fHor1->AddFrame(flab, fLay6);
 
 
   fStat1=new TGStatusBar(fVer_st,10,10);
@@ -393,6 +511,12 @@ void EventFrame::DoNbuf() {
 
 }
 
+*/
+
+/*
+void EventFrame::DoColor() {
+  TGColorDialog* tg = new TGColorDialog();
+}
 */
 
 void EventFrame::First() {

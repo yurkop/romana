@@ -43,6 +43,8 @@
 
 #include <TDataMember.h>
 
+//#include <TGColorDialog.h>
+
 #include "libcrs.h"
 
 const double MB = 1024*1024;
@@ -1584,11 +1586,11 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   ntab++;
 
 
-  TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
-  fEcanvas = new TRootEmbeddedCanvas("Pad",tab6,600,400);
-  tab6->AddFrame(fEcanvas, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,
-					     2,2,2,2));
-  ntab++;
+  //TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
+  //TGColorPick* tg = new TGColorPick(tab6);
+  //tab6->AddFrame(tg, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,
+  //					     2,2,2,2));
+  //ntab++;
 
   if (!crs->module) {
     //TGTabElement *tabdaq = fTab->GetTabTab("DAQ");

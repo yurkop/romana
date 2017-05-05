@@ -171,9 +171,9 @@ void *handle_evt(void* ptr)
 void *handle_dum(void* ptr)
 {
 
-  //gSystem->Sleep(1000);
+  gSystem->Sleep(300);
   HiFrm->Update();      
-  //cout << "Dum: " << endl;
+  ////cout << "Dum: " << endl;
 
   return NULL;
 

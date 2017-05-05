@@ -139,10 +139,10 @@ void ParDlg::DoNum() {
 
   pmap pp = Plist[id-1];
 
-  cout << "DoNum: ";
-  cout << *(Int_t*) pp.data << " ";
-  cout << pp.data << " " << opt.bkg1[0] << " ";
-  cout << (Int_t) pp.all << endl;
+  // cout << "DoNum: ";
+  // cout << *(Int_t*) pp.data << " ";
+  // cout << pp.data << " " << opt.bkg1[0] << " ";
+  // cout << (Int_t) pp.all << endl;
 
   SetNum(pp,te->GetNumber());
 
@@ -303,8 +303,8 @@ void ParDlg::DoOpen() {
   if (fi.fFilename != NULL) {
     pmap pp = Plist[id];
 
-    cout << "DoOpen: " << id << " " << fi.fFilename << endl;
-    cout << "DoOpen: " << fi.fIniDir << endl;
+    //cout << "DoOpen: " << id << " " << fi.fFilename << endl;
+    //cout << "DoOpen: " << fi.fIniDir << endl;
      
     SetTxt(pp,fi.fFilename);
 
@@ -337,12 +337,11 @@ void ParDlg::DoCombo() {
 
   int nline = id/nfld;
 
-  cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
-       << " " << nfld
-       << " " << sel << " " << (chanPresent+sel)*nfld
-       << endl;
-
-  cout << this << " " << crspar << " " << chanpar << endl;
+  // cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
+  //      << " " << nfld
+  //      << " " << sel << " " << (chanPresent+sel)*nfld
+  //      << endl;
+  // cout << this << " " << crspar << " " << chanpar << endl;
 
   SetCombo(pp,sel);
 

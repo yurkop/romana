@@ -42,7 +42,8 @@ protected:
 
    TGCheckButton          *fDeriv[2];
    TGCheckButton          *fPeak[10];
-   TGCheckButton          *fChn[MAX_CH];
+   TGCheckButton          *fChn[MAX_CH+1];
+   //TGRadioButton          *fChn[MAX_CH+1];
 
    TGStatusBar            *fStat1;
    TGStatusBar            *fStat2;
@@ -53,6 +54,7 @@ protected:
    TGLayoutHints          *fLay4;
    TGLayoutHints          *fLay5;
    TGLayoutHints          *fLay6;
+   TGLayoutHints          *fLay7;
 
  public:
    TRootEmbeddedCanvas    *fCanvas;
@@ -98,6 +100,7 @@ public:
    /* void DoNum(); */
    /* void Do1buf(); */
    /* void DoNbuf(); */
+   //void DoColor();
    void Plus1();
    void Minus1();
    void PlusN();
