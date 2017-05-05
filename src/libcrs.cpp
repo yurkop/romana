@@ -1334,8 +1334,6 @@ int CRS::ReadParGz(gzFile &ff, int p1, int p2) {
 
   UShort_t sz;
 
-
-
   UShort_t mod;
   gzread(ff,&mod,sizeof(mod));
 
@@ -1352,8 +1350,6 @@ int CRS::ReadParGz(gzFile &ff, int p1, int p2) {
     cout << "Unknown file type: " << Fname << " " << Fmode << endl;
     return 1;
   }
-
-
 
   gzread(ff,&sz,sizeof(sz));
 
@@ -1381,13 +1377,13 @@ int CRS::ReadParGz(gzFile &ff, int p1, int p2) {
 void CRS::SaveParGz(gzFile &ff) {
 
   char buf[100000];
-  UShort_t sz=sizeof(sz);
+  UShort_t sz=0;
+
   sz+=ClassToBuf("Coptions",(char*) &cpar, buf+sz);
   sz+=ClassToBuf("Toptions",(char*) &opt, buf+sz);
 
-  memcpy(buf,&sz,sizeof(sz));
-
   gzwrite(ff,&Fmode,sizeof(Fmode));
+  gzwrite(ff,&sz,sizeof(sz));
   gzwrite(ff,buf,sz);
 
   cout << "SavePar_gz: " << sz << endl;

@@ -6,6 +6,7 @@
 #include <TText.h>
 #include <TStyle.h>
 #include <TLine.h>
+#include <TSpectrum.h>
 //#include <TROOT.h>
 
 
@@ -187,6 +188,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   but = new TGTextButton(fHor2," >> ",4);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
+  fHor2->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor2,"Peaks",4);
+  but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
   fHor2->AddFrame(but, fLay5);
 
   //Update();
@@ -408,6 +413,57 @@ void HistFrame::DoButton()
   //cout << "doradio2: " << id << endl;
   Update();
   //cout << "doradio3: " << id << endl;
+
+}
+
+void HistFrame::DoPeaks()
+{
+
+  TSpectrum spec;
+  
+  int nn=1;
+  int ii=0;
+  TIter next(hlist);
+  TObject* obj;
+  while ( (obj=(TObject*)next()) ) {
+    if (ii>=opt.icheck) {
+      if (!fEc->GetCanvas()->GetPad(nn)) break;
+      fEc->GetCanvas()->cd(nn);
+      TH1 *hh = (TH1*) obj;
+      //cout << "hhh: " << hh->GetTitleSize() << endl;
+      //hh->Draw();
+      int npk = spec.Search(hh,2,"",0.5);
+      Float_t* peaks = spec.GetPositionX();
+      for (int j=0;j<npk;j++) {
+	int bin = hh->FindFixBin(peaks[j]);
+	int k;
+	for (k=bin;k>0;k--) {
+	  if (hh->GetBinContent(k)<spec.GetPositionY()[j]*0.5)
+	    break;
+	}
+	//cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
+	//     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
+	double sig = (bin-k)*2.0/2.35;
+
+	int width=(bin-k)*5;
+
+	TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
+	//cout << f1->GetNpar() << endl;
+	f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
+
+	//f1->Print();
+	const char* fitopt="+";
+	if (j==0) fitopt="";
+
+	//TF1* fitf=new TF1("fitf","gaus",0,10);
+	hh->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
+	//f1->Draw("same");
+      }
+      nn++;
+    }
+    ii++;
+  }
+  fEc->GetCanvas()->Update();
 
 }
 

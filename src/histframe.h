@@ -92,6 +92,7 @@ public:
    void SelectDiv(int nn);
    void DoRadio();
    void DoButton();
+   void DoPeaks();
    void DoReset();
    void Update();
    void DrawHist();

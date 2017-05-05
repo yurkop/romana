@@ -21,6 +21,7 @@ ifdef ROOTSYS
 #  CPPFLAGS += -I$(shell $(ROOTSYS)/bin/root-config --incdir)
   CPPFLAGS += $(shell  $(ROOTSYS)/bin/root-config --cflags)
   LDFLAGS   += $(shell  $(ROOTSYS)/bin/root-config --glibs) # -lXMLIO
+  LDFLAGS   += -lSpectrum
 endif
 
 all: $(OBJ_D) $(PROG).x
