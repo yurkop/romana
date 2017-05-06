@@ -171,7 +171,7 @@ void *handle_evt(void* ptr)
 void *handle_dum(void* ptr)
 {
 
-  gSystem->Sleep(300);
+  //gSystem->Sleep(1900);
   HiFrm->Update();      
   ////cout << "Dum: " << endl;
 
@@ -348,7 +348,6 @@ CRS::CRS() {
 
   trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
   trd_stat->Run();
-
   trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
   trd_evt->Run();
 
@@ -1795,10 +1794,14 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   pls->FindPeaks();
   pls->PeakAna();
 
+  cout << "Pls: " << nevents << " " << pls->Tstamp64 << endl;
+
   std::list<EventClass>::reverse_iterator rl;
   int nn=0;
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
     Long64_t dt = (pls->Tstamp64 - rl->T)*opt.period;
+    cout << "Insert: " << nevents << " " << dt << " " << rl->T 
+	 << " " << opt.tgate << endl;
     if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
       Levents.insert(rl.base(),EventClass());

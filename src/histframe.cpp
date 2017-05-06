@@ -497,6 +497,8 @@ void HistFrame::Update()
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
 
+  //if (hlist
+
   hlist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
@@ -537,6 +539,7 @@ void HistFrame::Update()
 
   DrawHist();
 
+  cout <<"Update2: " << endl;
 
 }
 

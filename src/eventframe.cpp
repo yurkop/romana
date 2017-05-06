@@ -45,8 +45,6 @@ Float_t RGB[MAX_CH][3] = {
   {0.12,0.25,0.18},
   {0.97,0.85,0.74},//30
   {0.55,0.29,0.20}
-
-
   
 };
 
@@ -58,6 +56,9 @@ Int_t chcol[MAX_CH];
 //    //27
 //    259,491,635,819,785,513
 //};
+
+const char* mgr_name[3] = {"pulse","1deriv","2deriv"};
+const char* mgr_title[3] = {"pulse","1 deriv","2 deriv"};
 
 extern Coptions cpar;
 extern Toptions opt;
@@ -360,12 +361,12 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 	if (k==0 || k==3 || k==21 || k==25 || k==29)
 	  fcol=0xffffff;
 	
-	printf("Color: %d %d %x %x\n",k,chcol[k],col,fcol);
+	//printf("Color: %d %d %x %x\n",k,chcol[k],col,fcol);
 
 	flab->SetBackgroundColor(col);
 	flab->SetForegroundColor(fcol);
 
-	fChn[k]->SetBackgroundColor(col);
+	//fChn[k]->SetBackgroundColor(col);
 	//fChn[k]->SetForegroundColor(col);
 	fChn[k]->SetState(kButtonDown);
 
@@ -399,28 +400,38 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   for (int i=0;i<MAX_CH;i++) {
     for (int j=0;j<3;j++) {
-      hh[j][i]=0;
+      histo[j][i]=0;
       sprintf(ss,"ch_%02d_%d",i,j);
-      hh[j][i]=new TH1F(ss,ss,10,0.,10.);
-      //hh[j][i]->SetLineColor(i+1);
-      hh[j][i]->SetDirectory(0);
+      histo[j][i]=new TH1F(ss,ss,10,0.,10.);
+      //histo[j][i]->SetLineColor(i+1);
+      histo[j][i]->SetDirectory(0);
     }
   }  
-
-  /*
-    for (int i=0;i<MAX_CH;i++) {
-    for (int j=0;j<3;j++) {
-    sprintf(ss,"gr_%d_%d",i,j);
-    Gr[j][i]=TGraph(ss,ss,10,0.,10.);
-    hh[j][i]->SetLineColor(i+1);
-    }
-    }  
-  */
 
   for (int j=0;j<3;j++) {
     sprintf(ss,"hst_%d",j);
     hst[j]=new THStack(ss,"");
   }
+
+  for (int i=0;i<MAX_CH;i++) {
+    for (int j=0;j<3;j++) {
+      sprintf(ss,"gr_%d_%d",i,j);
+      Gr[j][i]=new TGraph(10);
+      Gr[j][i]->SetLineColor(chcol[i]);
+      Gr[j][i]->SetMarkerColor(chcol[i]);
+      Gr[j][i]->SetMarkerStyle(20);
+      Gr[j][i]->SetMarkerSize(0.5);
+    }
+  }  
+
+  for (int j=0;j<3;j++) {
+    sprintf(ss,"hst_%d",j);
+    hst[j]=new THStack(ss,"");
+  }
+
+  mgr[0]=new TMultiGraph();
+  mgr[1]=new TMultiGraph();
+  mgr[2]=new TMultiGraph();
 
   //for (int j=0;j<3;j++) {
   ////sprintf(ss,"mgr_%d",j);
@@ -636,27 +647,104 @@ void EventFrame::DoChkPeak() {
 
 void EventFrame::DoPulseOff() {
 
-  //TGButton *btn = (TGButton *) gTQSender;
-  //Int_t id = btn->WidgetId();
-  //cout << "DoPulseOff: " << id << " " << fChn[id]->IsOn() << endl;
+  TGButton *btn = (TGButton *) gTQSender;
+  Int_t id = btn->WidgetId();
+  cout << "DoPulseOff: " << id << " " << fChn[id]->IsOn() << endl;
 
   ReDraw();
 
 }
 
-void EventFrame::FillHstack(int dr) {
+void EventFrame::FillGraph(int dr) {
+  //Float_t dat[40000];
+  //Float_t *pdat=0;
+
+  for (UInt_t i=0;i<d_event->pulses.size();i++) {
+    PulseClass *pulse = &d_event->pulses.at(i);
+    UInt_t ch= pulse->Chan;
+
+    Gr[dr][ch]->Set(pulse->sData.size());
+
+    int dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
+
+    // if (d_event->pulses.size()>1) {
+    //   int nh=0;
+    //   if (hst[dr]->GetHists())
+    // 	nh=hst[dr]->GetHists()->GetSize();
+    //   cout << "Dt: " << i << " " << (int) pulse->Chan << " "
+    // 	   << pulse->Tstamp64 << " " << d_event->T << " " << dt
+    // 	   << " " << d_event->pulses.size() << " " << nh
+    // 	   << endl;
+    // }
+
+    //Double_t *xx = Gr[dr][ch]->GetX();
+    //Double_t *yy = Gr[dr][ch]->GetY();
+
+    if (dr==0) { //main pulse
+      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+	Gr[dr][ch]->GetX()[j]=j+dt;
+	Gr[dr][ch]->GetY()[j]=pulse->sData[j];
+	//xx[j]=dt+j;
+	//yy[j]=pulse->sData[j];
+	// cout << "GR: " << dt << " " << Gr[dr][ch]->GetN() << " "
+	//      << ch << " " << dt+j << " "
+	//      << pulse->sData[j] << " " 
+	//      << Gr[dr][ch]->GetX()[j] << " " 
+	//      << Gr[dr][ch]->GetY()[j] << endl; 
+	  
+      }
+    }
+    else if (dr==1) { //1st derivaive
+
+      Int_t kk=cpar.kderiv[ch];
+      if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
+
+      //dat = new Float_t[pulse->sData.size()];
+      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+	Gr[dr][ch]->GetX()[j]=j+dt;
+	if (j<kk)
+	  Gr[dr][ch]->GetY()[j]=pulse->sData[j]-pulse->sData[0];
+	//dat[j]=0;
+	else
+	  Gr[dr][ch]->GetY()[j]=pulse->sData[j]-pulse->sData[j-kk];
+      }
+    }
+    else if (dr==2) { //2nd derivative
+      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+	Gr[dr][ch]->GetX()[j]=j+dt;
+	if (j<2)
+	  Gr[dr][ch]->GetY()[j]=0;
+	//dat[j]=0;
+	else
+	  Gr[dr][ch]->GetY()[j]=
+	    pulse->sData[j]-2*pulse->sData[j-1]+pulse->sData[j-2];
+      }
+    }
+  } 
+}
+
+void EventFrame::FillMgr(int dr) {
+
+  if (mgr[dr]->GetListOfGraphs())
+    mgr[dr]->GetListOfGraphs()->Clear();
+
+  delete mgr[dr];
+  mgr[dr]=new TMultiGraph(mgr_name[dr],mgr_title[dr]);
+  for (UInt_t i=0;i<d_event->pulses.size();i++) {
+    UInt_t ch= d_event->pulses.at(i).Chan;
+    if (fChn[ch]->IsOn()) {
+      mgr[dr]->Add(Gr[dr][ch]);
+    }
+  } 
+
+}
+
+void EventFrame::FillHist(int dr) {
   Float_t dat[40000];
   Float_t *pdat=0;
 
-  TText txt;
-  
   //const char* hs_name[3] = {"hst0","hst1","hst2"};
   
-  if (hst[dr]) {
-    delete hst[dr];
-  }
-  hst[dr]=new THStack("hst0","");
-
   //BADhst[dr]->Clear();
   //if (!dr)
   //hst[dr]->SetTitle(ss);
@@ -667,20 +755,20 @@ void EventFrame::FillHstack(int dr) {
 
     int dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
 
-    if (d_event->pulses.size()>1) {
-      int nh=0;
-      if (hst[dr]->GetHists())
-	nh=hst[dr]->GetHists()->GetSize();
-      cout << "Dt: " << i << " " << (int) pulse->Chan << " "
-	   << pulse->Tstamp64 << " " << d_event->T << " " << dt
-	   << " " << d_event->pulses.size() << " " << nh
-	   << endl;
-    }
+    // if (d_event->pulses.size()>1) {
+    //   int nh=0;
+    //   if (hst[dr]->GetHists())
+    // 	nh=hst[dr]->GetHists()->GetSize();
+    //   cout << "Dt: " << i << " " << (int) pulse->Chan << " "
+    // 	   << pulse->Tstamp64 << " " << d_event->T << " " << dt
+    // 	   << " " << d_event->pulses.size() << " " << nh
+    // 	   << endl;
+    // }
 
-    if (dr==0) {
+    if (dr==0) { //main pulse
       pdat=&pulse->sData[0];
     }
-    else if (dr==1) {
+    else if (dr==1) { //1st derivaive
 
       UInt_t kk=cpar.kderiv[ch];
       if (kk<1 || kk>=pulse->sData.size()) kk=1;
@@ -695,7 +783,7 @@ void EventFrame::FillHstack(int dr) {
       }
       pdat=dat;
     }
-    else if (dr==2) {
+    else if (dr==2) { //2nd derivative
       //dat = new Float_t[pulse->sData.size()];
       dat[0]=0;
       dat[1]=0;
@@ -705,24 +793,41 @@ void EventFrame::FillHstack(int dr) {
       pdat=dat;
     }
 
-    if (hh[dr][ch]) hh[dr][ch]->Delete();
-    hh[dr][ch] = new TH1F(hname[dr][pulse->Chan],"",
+    if (histo[dr][ch]) histo[dr][ch]->Delete();
+    histo[dr][ch] = new TH1F(hname[dr][pulse->Chan],"",
     			pulse->sData.size(),dt,dt+pulse->sData.size());
-    hh[dr][ch]->SetDirectory(0);
-    //TAxis* X = hh[dr][ch]->GetXaxis();
-    hh[dr][ch]->SetLineColor(ch+1);
+    histo[dr][ch]->SetDirectory(0);
+    //TAxis* X = histo[dr][ch]->GetXaxis();
+    histo[dr][ch]->SetLineColor(chcol[ch]);
     //X->Set(pulse->sData.size(),dt,dt+pulse->sData.size());
-    //hh[dr][ch]->Rebuild();
+    //histo[dr][ch]->Rebuild();
 
 
-    //hh[dr][ch]->Set(pulse->sData.size(),pdat);
+    //histo[dr][ch]->Set(pulse->sData.size(),pdat);
 
     for (UInt_t j=0;j<pulse->sData.size();j++) {
-      hh[dr][ch]->SetBinContent(j+1,pdat[j]);
+      histo[dr][ch]->SetBinContent(j+1,pdat[j]);
     }
 
-    hst[dr]->Add(hh[dr][ch]);
-    //TH1F* hi = (TH1F*) hh[dr][ch]->Clone();
+    //hst[dr]->Add(histo[dr][ch]);
+    //TH1F* hi = (TH1F*) histo[dr][ch]->Clone();
+    //hst[dr]->Add(hi);
+
+    //if (dr) delete[] dat;
+  } 
+}
+
+void EventFrame::FillHstack(int dr) {
+
+  if (hst[dr]) {
+    delete hst[dr];
+  }
+  hst[dr]=new THStack("hst0","");
+
+  for (UInt_t i=0;i<d_event->pulses.size();i++) {
+
+    //hst[dr]->Add(histo[dr][ch]);
+    //TH1F* hi = (TH1F*) histo[dr][ch]->Clone();
     //hst[dr]->Add(hi);
 
     //if (dr) delete[] dat;
@@ -760,26 +865,44 @@ void EventFrame::DrawEvent2() {
 
   //printf("Draw22: %lld\n", d_event->T);
 
-  FillHstack(0);
+  // FillHstack(0);
+  // if (opt.b_deriv[0]) {
+  //   FillHstack(1);
+  //   ndiv++;
+  // }    
+  // if (opt.b_deriv[1]) {
+  //   FillHstack(2);
+  //   ndiv++;
+  // }
 
+  cout << "mgr1: " << mgr[0]->GetListOfGraphs() << endl;
+
+  FillGraph(0);
+  FillMgr(0);
   if (opt.b_deriv[0]) {
-    FillHstack(1);
+    FillGraph(1);
+    FillMgr(1);
     ndiv++;
   }    
   if (opt.b_deriv[1]) {
-    FillHstack(2);
+    FillGraph(2);
+    FillMgr(2);
     ndiv++;
   }
 
-
   //cout << "hst: " << hst[0]->GetNhists() << endl;
+  cout << "mgr: " << mgr[0]->GetHistogram() << endl;
+  TGraph* gr = (TGraph*) mgr[0]->GetListOfGraphs()->First();
+  cout << gr->GetN() << " " << gr->GetX()[0] << " " << gr->GetX()[1] << endl;
+  
 
   cv->Divide(1,ndiv);
   for (int j=0;j<ndiv;j++) {
     cv->cd(j+1);
-    hst[j]->Draw("nostack");
-    DrawPeaks(hst[j]->GetMinimum("nostack"),
-	      hst[j]->GetMaximum("nostack")*1.05);
+    mgr[j]->Draw("alp");
+    //hst[j]->Draw("nostack");
+    //DrawPeaks(hst[j]->GetMinimum("nostack"),
+    //      hst[j]->GetMaximum("nostack")*1.05);
   }
 
   //cv->cd(1);

@@ -599,8 +599,10 @@ int main(int argc, char **argv)
 
   TApplication theApp("App",&argc,argv);
   example();
-  //HiFrm->Update();
-  crs->Dummy_trd();
+
+  //gSystem->Sleep(100);
+  //crs->Dummy_trd();
+
   //EvtFrm->StartThread();
   //gClient->GetColorByName("yellow", yellow);
   theApp.Run();
@@ -1707,6 +1709,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //Make_hist();
 
   //DoDraw2();
+  crs->Dummy_trd();
 
 }
 
