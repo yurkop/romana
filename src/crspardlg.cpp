@@ -46,9 +46,9 @@ const char* tip2[nchpar]={
   "Peak end, relative to peak Pos (usually positive)",
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nall peaks within this window are marked as pileup",
-  "Timing mode: 0 - first derivative (T2); 1 - second derivative (Pos)",
-  "Timing window start (usually negative, if 99 - use T1)",
-  "Timing window end (usually positive, if 99 - use T2)",
+  "Timing mode (in 1st derivative):\n0 - maximum (Pos);\n1 - left minimum (T1);\n2 - right minimum",
+  "Timing window start, included (usually negative, if 99 - use T1)",
+  "Timing window end, excluded (usually positive, if 99 - use T2)",
   "Energy multiplier",
   "Low energy limit",
   "High energy limit"
@@ -1182,7 +1182,7 @@ void ChanParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
   AddNum2(i,kk++,all,hframe1,&opt.peak2[i],-999,16500,p_inum);
   AddNum2(i,kk++,all,hframe1,&cpar.deadTime[i],0,9999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.pile[i],0,9999,p_inum);
-  AddNum2(i,kk++,all,hframe1,&opt.timing[i],0,1,p_inum);
+  AddNum2(i,kk++,all,hframe1,&opt.timing[i],0,2,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.twin1[i],-99,99,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.twin2[i],-99,99,p_inum);
 

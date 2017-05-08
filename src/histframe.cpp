@@ -540,6 +540,7 @@ void HistFrame::Update()
   DrawHist();
 
   cout <<"Update2: " << endl;
+  //exit(1);
 
 }
 

@@ -10,6 +10,8 @@ OBJ := $(addprefix $(OBJ_D)/,$(notdir $(SRC:.cpp=.o)))
 
 LFS=$(shell getconf LFS_CFLAGS)
 
+#CPPFLAGS += -g
+
 CPPFLAGS += $(LFS) -MD -MP -D LINUX=1 -I. #-I$(LIB_D)
 CXXFLAGS += -O3 -Wall
 LDFLAGS += -lz -l cyusb -l usb-1.0

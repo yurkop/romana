@@ -346,6 +346,8 @@ CRS::CRS() {
     buftr[i]=NULL;
   }
 
+  cout << "creating threads... " << endl;
+
   trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
   trd_stat->Run();
   trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
@@ -1078,6 +1080,10 @@ int CRS::DoStartStop() {
   if (!b_acq) { //start
     DoReset();
 
+    parpar->Update();
+    crspar->Update();
+    chanpar->Update();
+
     //EvtFrm->Levents = &Levents;
     EvtFrm->Levents = &EvtFrm->Tevents;
 
@@ -1242,6 +1248,10 @@ void CRS::DoReset() {
   if (f_read)
     DoFopen(NULL,0);
 
+  // parpar->Update();
+  // crspar->Update();
+  // chanpar->Update();
+
   //gzrewind(f_raw);
 
   //if (HiFrm)
@@ -1250,6 +1260,7 @@ void CRS::DoReset() {
 }
 
 void CRS::DoFopen(char* oname, int popt) {
+  //popt: 1 - read opt from file; 0 - don't read opt from file
   int tp=0; //1 - adcm raw; 0 - crs2/32
 
   if (oname)
@@ -1290,7 +1301,6 @@ void CRS::DoFopen(char* oname, int popt) {
     Fmode=1;
   }
   else {
-
     if (ReadParGz(f_read,1,popt)) {
       gzclose(f_read);
       f_read=0;
@@ -1305,18 +1315,21 @@ void CRS::DoFopen(char* oname, int popt) {
 
   if (Fbuf) delete[] Fbuf;
   Fbuf = new UChar_t[opt.buf_size*1024];
-  EvtFrm->Levents = &Levents;
 
-  parpar->Update();
-  crspar->Update();
-  chanpar->Update();
+
+
+  //EvtFrm->Levents = &Levents;
+
+  // parpar->Update();
+  // crspar->Update();
+  // chanpar->Update();
 
   //parpar->Update();
 
   //cout << f_raw << endl;
 
   //cout << "smooth: " << cpar.smooth[0] << endl;
-  //cout << "DoFopen: " << f_read << endl;
+  cout << "DoFopen2: " << f_read << endl;
 }
 
 // void CRS::DoFAna() {
@@ -1473,7 +1486,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   //unsigned char* buf1 = (unsigned char*) buf8;
   //int nbuf = *(int*) transfer->user_data;
 
-  std::vector<PulseClass> *vv = Vpulses+nvp;
+  std::vector<PulseClass> *vv = Vpulses+nvp; //vv - current vector of pulses
   vv->clear();
 
   int nvp2=nvp-1;
@@ -1585,6 +1598,10 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     idx1=idx8*8;
   }
 
+  for (UInt_t i=0;i<vv->size();i++) {
+    cout << "Decode32: " << i << " " << vv->at(i).Tstamp64 << " "
+	 << (int) vv->at(i).ptype << endl;
+  }
 
   Make_Events(nvp);
   
@@ -1794,14 +1811,14 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   pls->FindPeaks();
   pls->PeakAna();
 
-  cout << "Pls: " << nevents << " " << pls->Tstamp64 << endl;
+  //cout << "Pls: " << nevents << " " << pls->Tstamp64 << endl;
 
   std::list<EventClass>::reverse_iterator rl;
   int nn=0;
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
     Long64_t dt = (pls->Tstamp64 - rl->T)*opt.period;
-    cout << "Insert: " << nevents << " " << dt << " " << rl->T 
-	 << " " << opt.tgate << endl;
+    //cout << "Insert: " << nevents << " " << dt << " " << rl->T 
+    //	 << " " << opt.tgate << endl;
     if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
       Levents.insert(rl.base(),EventClass());
@@ -1846,8 +1863,12 @@ void CRS::Make_Events(int nvp) {
 
   //first insert last pulse from the previous buffer
   std::vector<PulseClass> *vv = Vpulses+nvp2;
-  if (!vv->empty() && vv->back().ptype&P_NOSTOP) {
-    //cout << "Make_events: " << (int) pls->ptype << " " << pls->Tstamp64 << endl;
+
+  if (!vv->empty())
+  cout << "Make_events back: " << (int) vv->back().ptype << " " 
+       << vv->back().Tstamp64 << endl;
+
+  if (!vv->empty() && !(vv->back().ptype&P_NOSTOP)) {
     //vv->back().FindPeaks();
     //vv->back().PeakAna();
     Event_Insert_Pulse(&vv->back());

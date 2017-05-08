@@ -38,20 +38,21 @@ void PulseClass::FindPeaks() {
   peak_type *p_prev=0;
 
   bool in_peak=false;
-  Float_t D,pD=0;
+  Float_t D,pD=0;//deriv, prev.dreiv
   //int peakpos[DSIZE];
   Float_t jmax=0;
-  int pp0=0;
+  int pp0=0; //temporary T1
 
   //D[0]=0;
   for (UInt_t j=kk;j<sData.size();j++) {
     D=sData[j]-sData[j-kk];
     if (!in_peak) {
-      if (D>0 && pD<=0) pp0=j; 
+      if (D>0 && pD<=0) pp0=j;
       if (D >= cpar.threshold[Chan]) {
 	Peaks.push_back(peak_type());
 	pk = &Peaks.back();
 	pk->T1=pp0;
+	//pk->T2=0;
 	in_peak=true;
 	//printf("in_peak: %d %d %f %f\n",Chan,j,D[j],thresh);
 	//continue;
@@ -91,7 +92,7 @@ void PulseClass::FindPeaks() {
 
   if (in_peak) { //end of the pulse -> peak has no end
     pk->T2=sData.size();
-    pk->Type|=P_B22;
+    //pk->Type|=P_B22;
   }
   
   // Peaks = new peak_type[Npeaks];
@@ -161,30 +162,37 @@ void PulseClass::PeakAna() {
     Float_t sum=0;
     pk->Time=0;
     int tt; //reference window (timing mode)
-    int t3; //start window for timing
-    int t4; //end window for timing
+    //int t3; //start window for timing
+    //int t4; //end window for timing
 
-    if (opt.timing[Chan]) 
-      tt=pk->Pos; //1->reference is Pos (zero crossing of 2nd drv)
-    else
-      tt=pk->T2; //0->reference is T2 (zero crossing of 1st drv)
+    if (opt.timing[Chan]==0) 
+      tt=pk->Pos; //0->reference is Pos (maximum in 1st deriv)
+    else if (opt.timing[Chan]==1)
+      tt=pk->T1; //1->reference is T1 (Left zero crossing of 1st drv)
+    else //if (opt.timing[Chan]==2)
+      tt=pk->T2; //2->reference is T2 (Right zero crossing of 1st drv)
 
     if (opt.twin1[Chan] == 99)
-      t3=pk->T1;
+      pk->T3=pk->T1;
     else
-      t3=tt+opt.twin1[Chan];
+      pk->T3=tt+opt.twin1[Chan];
 
     if (opt.twin2[Chan] == 99)
-      t4=pk->T2;
+      pk->T4=pk->T2;
     else
-      t4=tt+opt.twin2[Chan];
+      pk->T4=tt+opt.twin2[Chan];
 
     UInt_t kk=cpar.kderiv[Chan];
     if (kk<1 || kk>=sData.size()) kk=1;
 
-    if (t3<(int)kk) {t3=kk; pk->Type|=P_B111;}
+    if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
+    if (pk->T3>sz) {pk->T3=sz; pk->Type|=P_B11;}
+    if (pk->T4<(int)kk) {pk->T4=kk; pk->Type|=P_B22;}
+    if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B22;}
 
-    for (int j=t3;j<=t4;j++) {
+    //if (t4>(int)kk) {t3=kk; pk->Type|=P_B111;}
+
+    for (int j=pk->T3;j<pk->T4;j++) {
       Float_t dif=sData[j]-sData[j-kk];
       pk->Time+=dif*j;
       sum+=dif;
@@ -193,6 +201,7 @@ void PulseClass::PeakAna() {
     if (sum>1e-5)
       pk->Time/=sum;
 
+    //pk->Time+=cpar.preWr[Chan];
     //cout << "TTT: " << t3 << " " << t4 << " " << pk->Time << " " << pk->T2
     // << " " << kk << endl;
 
@@ -202,22 +211,34 @@ void PulseClass::PeakAna() {
 
 EventClass::EventClass() {
   T=0;
-  T0=0;
+  T0=99999;
 }
 
 void EventClass::Pulse_Ana_Add(PulseClass *newpulse) {
   pulses.push_back(*newpulse);
 
-  if (T==0 || newpulse->Tstamp64 < T) {
+  if (T==0) { //this is the first pulse in event
     T=newpulse->Tstamp64;
   }
+  else if (newpulse->Tstamp64 < T) { //event exists -> correct T and T0
+    if (T0<99998)
+      T0+= T - newpulse->Tstamp64;
+    T=newpulse->Tstamp64;
+  }
+
   if (opt.Start[newpulse->Chan]) {
-    for (UInt_t i=0;i<newpulse->Peaks.size();i++) {
-      peak_type *pk = &newpulse->Peaks[i];
-      //cout << "Peak: " << pk->Time << " " << pk->Pos << endl;
-      if (T0<0.1 || pk->Time<T0) {
-	T0=pk->Time;
+    if (newpulse->Peaks.size()) {
+      Float_t dt = newpulse->Tstamp64 - T;
+
+      peak_type *pk = &newpulse->Peaks.front();
+      Float_t T2 = pk->Time - cpar.preWr[newpulse->Chan] + dt;
+
+      if (T2<T0) {
+	T0=T2;
       }
+      cout << "Peak: " << (int) newpulse->Chan << " " << pk->Time << " " 
+	   << pk->Pos << " " << T0 << " " << T2 << " " << dt << " "
+	   << T << endl;
     }
   }
 }

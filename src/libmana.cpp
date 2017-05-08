@@ -521,6 +521,10 @@ int main(int argc, char **argv)
   cout << "sizeof(opt): " << sizeof(opt) << endl;
   
 
+  crs = new CRS();
+  crs->Detect_device();
+
+
 #ifdef LINUX
   if (getcwd(startdir,100)) {}
 #else
@@ -547,10 +551,15 @@ int main(int argc, char **argv)
     //    cout << "argnn: " << argnn << " " << argc << endl;
 
     if (argnn<argc) {
+      crs->DoFopen(argv[argnn],1);
+      /*
+      strcpy(crs->Fname,argv[argnn]);
+      
       strcpy(fname,argv[argnn]);
       printf("%s\n",fname);
       strcat(maintitle," ");
       strcat(maintitle,fname);
+      */
       argnn++;
     }
 
@@ -1257,7 +1266,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gStyle->SetOptStat(kFALSE);
   gStyle->SetPalette(1,0);
   gStyle->SetTitleFontSize(0.09);
-  gStyle->SetNdivisions(505);
+  gStyle->SetTitleSize(0.06,"xyz");
+  gStyle->SetTitleOffset(0.7,"x"); 
+  gStyle->SetLabelSize(0.06,"xyz");
+  gStyle->SetNdivisions(505,"xyz");
   
 
   /*
@@ -1506,8 +1518,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //exit(-1);
 
-  crs = new CRS();
-  crs->Detect_device();
+  //crs = new CRS();
+  //crs->Detect_device();
+
+
   //opt.threshold[0]=50;
   //opt.threshold[1]=50;
 
@@ -1787,6 +1801,10 @@ void MainFrame::DoOpen() {
 
     crs->DoFopen(fi.fFilename,1);//1 - read toptions
 
+    parpar->Update();
+    crspar->Update();
+    chanpar->Update();
+
     /*
     strcpy(fname,fi.fFilename);
     printf("TGFile: %s\n",fname);
@@ -2009,6 +2027,11 @@ void MainFrame::DoReset() {
 
   crs->DoReset();
   HiFrm->DoReset();
+
+  parpar->Update();
+  crspar->Update();
+  chanpar->Update();
+
   //HiFrm->Update();
 
   //Buffer->NewFile();
@@ -2466,6 +2489,10 @@ void MainFrame::DoTab(Int_t num) {
   else if (name.EqualTo("Channels",TString::kIgnoreCase)) {
     cout << "DoTab3: " << name << endl;
     chanpar->Update();
+  }
+  else if (name.EqualTo("Events",TString::kIgnoreCase)) {
+    cout << "DoTab4: " << name << endl;
+    EvtFrm->DrawEvent2();
   }
   else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
     cout << "DoTab5: " << name << endl;

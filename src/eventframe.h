@@ -69,13 +69,13 @@ protected:
    std::list<EventClass> *Levents; //points either to Tevents or to crs->Levents
    //EventClass *d_event; //current event to draw
    int ndiv;
-   int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
+   //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
    //int NGr;
    TGraph *Gr[3][MAX_CH];
-   TH1F *histo[3][MAX_CH];
-   double gx1,gx2,gy1[3],gy2[3];
-   TH2F fPaint[3];
-   THStack* hst[3];
+   //TH1F *histo[3][MAX_CH];
+   //double gx1,gx2,gy1[3],gy2[3];
+   //TH2F fPaint[3];
+   //THStack* hst[3];
    TMultiGraph* mgr[3];
 
    //bool bprint;
@@ -93,11 +93,11 @@ public:
    //void DoReset();
    void FillGraph(int dr);
    void FillMgr(int dr);
-   void FillHist(int dr);
-   void FillHstack(int dr);
+   //void FillHist(int dr);
+   //void FillHstack(int dr);
    void DrawEvent2();
    void DrawPeaks(double y1,double y2);
-   void DrawEvent();
+   //void DrawEvent();
    void DoGraph(int ndiv, int deriv);
    void ReDraw();
    /* void DoNum(); */

@@ -19,11 +19,11 @@ enum PeakDef {
 
 const UShort_t P_PILE1=1<<0; //fisrt puleup pulse
 const UShort_t P_PILE2=1<<1; //subsequent puleup pulse
-const UShort_t P_B1=1<<2; //bad left side (preceeds opt.peak1)
-const UShort_t P_B2=1<<3; //bad right side (exceeds opt.peak2)
-//const UShort_t P_B11=1<<4; //bad left side is ignored
-const UShort_t P_B22=1<<5; //bad right side (no right zero-crossing T1)
-const UShort_t P_B111=1<<6; //bad left size in timing
+const UShort_t P_B1=1<<2; //bad left side (opt.peak1 is out of range)
+const UShort_t P_B2=1<<3; //bad right side (opt.peak2 is out of range)
+const UShort_t P_B11=1<<4; //bad left side in timing (T3 is out of range)
+const UShort_t P_B22=1<<5; //bad right side in timing (T4 is out of range)
+//const UShort_t P_B111=1<<6; //bad left size in timing
 
 
 
@@ -43,7 +43,12 @@ class peak_type {
   Short_t Pos; //position relative to pulse start (in samples)
   Short_t T1; //left zero crossing of deriv
   Short_t T2; //right zero crossing of deriv
-  
+  Short_t T3; //left timing window
+  Short_t T4; //right timing window
+
+  //Pos,T1,T2 - relative to pulse start, in samples
+  //Time - relative to discriminator (+preWr), in samples
+
   UShort_t Type; //peak type
   //Char_t ch;
  public:
@@ -102,10 +107,10 @@ class EventClass { //event of pulses
 
  public:
   Long64_t Nevt;
-  Long64_t T; //Timestamp
-  Float_t T0; //time of the earliest *START* peak
+  Long64_t T; //Timestamp of the earliest pulse (threshold crossig)
+  Float_t T0; //time of the earliest *START* peak, relative to T
   std::vector <PulseClass> pulses;
-  
+
  public:
   EventClass();
   virtual ~EventClass() {};
