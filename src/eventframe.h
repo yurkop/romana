@@ -40,8 +40,8 @@ protected:
 
    TGLabel                *fLabel2;
 
-   TGCheckButton          *fDeriv[2];
-   TGCheckButton          *fPeak[10];
+   TGCheckButton          *fDeriv[3];
+   TGCheckButton          *fPeak[16];
    TGCheckButton          *fChn[MAX_CH+1];
    //TGRadioButton          *fChn[MAX_CH+1];
 

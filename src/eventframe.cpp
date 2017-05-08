@@ -282,38 +282,46 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   opt.b_deriv[0]=true;
 
-  fDeriv[0] = new TGCheckButton(fVer_d, "'", 1);
-  fDeriv[1] = new TGCheckButton(fVer_d, "\"", 2);
-  fDeriv[0]->SetState((EButtonState) opt.b_deriv[1]);
-  fDeriv[1]->SetState((EButtonState) opt.b_deriv[2]);
-  fDeriv[0]->Connect("Clicked()","EventFrame",this,"DoChkDeriv()");
-  fDeriv[1]->Connect("Clicked()","EventFrame",this,"DoChkDeriv()");
-  fVer_d->AddFrame(fDeriv[0], fLay4);
-  fVer_d->AddFrame(fDeriv[1], fLay4);
-  fDeriv[0]->SetToolTipText("Show 1st derivative");
-  fDeriv[1]->SetToolTipText("Show 2nd derivative");
+  fDeriv[0] = new TGCheckButton(fVer_d, "Pulse", 0);
+  fDeriv[1] = new TGCheckButton(fVer_d, " ' ", 1);
+  fDeriv[2] = new TGCheckButton(fVer_d, " ' ' ", 2);
+  for (int i=0;i<3;i++) {
+    fDeriv[i]->SetState((EButtonState) opt.b_deriv[i]);
+    fDeriv[i]->Connect("Clicked()","EventFrame",this,"DoChkDeriv()");
+    fVer_d->AddFrame(fDeriv[i], fLay4);
+  }
+  //fVer_d->AddFrame(fDeriv[1], fLay4);
+  fDeriv[0]->SetToolTipText("Show pulse");
+  fDeriv[1]->SetToolTipText("Show 1st derivative");
+  fDeriv[2]->SetToolTipText("Show 2nd derivative");
 
-  fPeak[0] = new TGCheckButton(fVer_d, "peaks", 0);
+  fPeak[0] = new TGCheckButton(fVer_d, "Peaks", 0);
   fPeak[1] = new TGCheckButton(fVer_d, "Pos", 1);
-  fPeak[2] = new TGCheckButton(fVer_d, "Time\'", 2);
-  fPeak[3] = new TGCheckButton(fVer_d, "Time\"", 3);
-  fPeak[4] = new TGCheckButton(fVer_d, "left", 4);
-  fPeak[5] = new TGCheckButton(fVer_d, "right", 5);
-  fPeak[6] = new TGCheckButton(fVer_d, "Bleft", 6);
-  fPeak[7] = new TGCheckButton(fVer_d, "Bright", 7);
-  fPeak[8] = new TGCheckButton(fVer_d, "thresh", 8);
+  fPeak[2] = new TGCheckButton(fVer_d, "Time", 2);
+  //fPeak[3] = new TGCheckButton(fVer_d, "Time\"", 3);
+  fPeak[3] = new TGCheckButton(fVer_d, "Left", 3);
+  fPeak[4] = new TGCheckButton(fVer_d, "Right", 4);
+  fPeak[5] = new TGCheckButton(fVer_d, "BLeft", 5);
+  fPeak[6] = new TGCheckButton(fVer_d, "BRight", 6);
+  fPeak[7] = new TGCheckButton(fVer_d, "TLeft", 7);
+  fPeak[8] = new TGCheckButton(fVer_d, "TRight", 8);
+  fPeak[9] = new TGCheckButton(fVer_d, "TStart", 9);
+  fPeak[10] = new TGCheckButton(fVer_d, "Thresh", 10);
 
   fPeak[0]->SetToolTipText("Show peaks");
-  fPeak[1]->SetToolTipText("Peak Position");
+  fPeak[1]->SetToolTipText("Peak Position (maximum in 1st derivative)");
   fPeak[2]->SetToolTipText("Exact time from 1st derivative");
-  fPeak[3]->SetToolTipText("Exact time from 2nd derivative");
-  fPeak[4]->SetToolTipText("Left border of the peak integration");
-  fPeak[5]->SetToolTipText("Right border of the peak integration");
-  fPeak[6]->SetToolTipText("Left border of the background integration");
-  fPeak[7]->SetToolTipText("Right border of the background integration");
-  fPeak[8]->SetToolTipText("Threshold (only in 1st derivative)");
+  //fPeak[3]->SetToolTipText("Exact time from 2nd derivative");
+  fPeak[3]->SetToolTipText("Left border of the peak integration");
+  fPeak[4]->SetToolTipText("Right border of the peak integration");
+  fPeak[5]->SetToolTipText("Left border of the background integration");
+  fPeak[6]->SetToolTipText("Right border of the background integration");
+  fPeak[7]->SetToolTipText("Left border of the time integration");
+  fPeak[8]->SetToolTipText("Right border of the time integration");
+  fPeak[9]->SetToolTipText("Time start marker");
+  fPeak[10]->SetToolTipText("Threshold (only in 1st derivative)");
 
-  for (int i=0;i<9;i++) {
+  for (int i=0;i<11;i++) {
     fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
     fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
     fVer_d->AddFrame(fPeak[i], fLay4);
@@ -323,7 +331,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fVer_ch = new TGVerticalFrame(fHor_st, 10, 10);
   fHor_st->AddFrame(fVer_ch, fLay4);
 
-  fLabel2 = new TGLabel(fVer_ch, "Channels");
+  fLabel2 = new TGLabel(fVer_ch, "  Channels");
   fVer_ch->AddFrame(fLabel2, fLay4);
 
   fHor_ch = new TGHorizontalFrame(fVer_ch, 10, 10);
@@ -612,16 +620,15 @@ void EventFrame::DoChkPeak() {
   btn->SetState((EButtonState) opt.b_peak[id]);
 
   if (id==0) {
-    if (opt.b_peak[id]) {
-      for (int i=1;i<9;i++) {
-	fPeak[i]->SetState(kButtonEngaged);
-	fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
-      }
+    for (int i=1;i<11;i++) {
+      opt.b_peak[i] = opt.b_peak[id];
+      fPeak[i]->SetState((EButtonState) opt.b_peak[id]);
     }
-    else {
-      for (int i=1;i<9;i++) {
-	fPeak[i]->SetState(kButtonDisabled);
-      }
+  }
+  else {
+    if (opt.b_peak[id]) {
+      opt.b_peak[0] = true;
+      fPeak[0]->SetState((EButtonState) 1);      
     }
   }
 

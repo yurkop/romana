@@ -192,7 +192,7 @@ class Toptions: public TObject {
   Int_t LongStamp;
 
   Bool_t b_deriv[3];
-  Bool_t b_peak[10];
+  Bool_t b_peak[16];
 
   Int_t rBSIZE; //size of the read buffer
   Int_t EBufsize; //size of the event buffer
@@ -204,7 +204,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 93)
+  ClassDef(Toptions, 94)
 };
 
 ClassImp(Toptions)
