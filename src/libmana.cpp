@@ -1266,9 +1266,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gStyle->SetOptStat(kFALSE);
   gStyle->SetPalette(1,0);
   gStyle->SetTitleFontSize(0.09);
-  gStyle->SetTitleSize(0.06,"xyz");
-  gStyle->SetTitleOffset(0.7,"x"); 
-  gStyle->SetLabelSize(0.06,"xyz");
+  gStyle->SetTitleSize(0.05,"xyz");
+  gStyle->SetTitleOffset(0.8,"x"); 
+  gStyle->SetLabelSize(0.05,"xyz");
   gStyle->SetNdivisions(505,"xyz");
   
 

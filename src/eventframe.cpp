@@ -58,8 +58,8 @@ Int_t chcol[MAX_CH];
 //};
 
 const char* mgr_name[3] = {"pulse","1deriv","2deriv"};
-const char* mgr_title[3] = {"pulse;Time(ns)","1 deriv;Time(ns)",
-			    "2 deriv;Time(ns)"};
+const char* mgr_title[3] = {"pulse;samples","1 deriv;samples",
+			    "2 deriv;samples"};
 
 extern Coptions cpar;
 extern Toptions opt;
@@ -83,7 +83,7 @@ TText txt;
 //TMutex *Emut;
 
 void doXline(TLine* ln, Float_t xx, Float_t y1, Float_t y2, int col, int type) {
-  xx*=opt.period;
+  //xx*=opt.period;
   ln->SetLineColor(col);
   ln->SetLineStyle(type);
   ln->DrawLine(xx,y1,xx,y2);
@@ -135,6 +135,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //Emut = new TMutex();
 
   for (int i=0;i<3;i++) {
+    fHist[i] = new TH1F();
     for (int j=0;j<MAX_CH;j++) {
       sprintf(hname[i][j],"ch_%02d_%01d",j,i);
     }
@@ -156,10 +157,12 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
   fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
   fLay7 = new TGLayoutHints(kLHintsCenterX,0,0,0,0);
+  fLay8 = new TGLayoutHints(kLHintsExpandX,0,0,0,0);
+  fLay9 = new TGLayoutHints(kLHintsExpandY,0,0,0,0);
 
   //Frames.....
 
-  TGVerticalFrame        *fVer0; //contains canvas, fHor1
+  TGVerticalFrame        *fVer0; //contains canvas, Hslider, fHor1
   TGVerticalFrame        *fVer_d; //contains deriv etc
   TGVerticalFrame        *fVer_ch; //contains fHor_ch
   TGHorizontalFrame      *fHor_ch; //contains fVer[..]
@@ -188,15 +191,24 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fVer_d = new TGVerticalFrame(fHor_st, 10, 10);
   fHor_st->AddFrame(fVer_d, fLay4);
 
-  fCanvas = new TRootEmbeddedCanvas("Events",fVer0,w,h);
-  fVer0->AddFrame(fCanvas, fLay1);
+  TGHorizontalFrame* fHor2 = new TGHorizontalFrame(fVer0, 10, 10);
+  fVer0->AddFrame(fHor2, fLay1);
 
-  fHslider = new TGDoubleHSlider(fVer0, 300, kDoubleScaleBoth);
+  fCanvas = new TRootEmbeddedCanvas("Events",fHor2,w,h);
+  fHor2->AddFrame(fCanvas, fLay1);
+
+  fHslider = new TGDoubleHSlider(fVer0, 10, kDoubleScaleBoth,0);
   fHslider->SetRange(0,1);
   fHslider->SetPosition(0,1);
-  fVer0->AddFrame(fHslider, fLay3);
-
+  fVer0->AddFrame(fHslider, fLay8);
   fHslider->Connect("PositionChanged()", "EventFrame", 
+		    this, "DoSlider()");
+
+  fVslider = new TGDoubleVSlider(fHor2, 10, kDoubleScaleBoth,1);
+  fVslider->SetRange(0,1);
+  fVslider->SetPosition(0,1);
+  fHor2->AddFrame(fVslider, fLay9);
+  fVslider->Connect("PositionChanged()", "EventFrame", 
 		    this, "DoSlider()");
 
   fHor_but = new TGHorizontalFrame(fVer0, 10, 10);
@@ -331,7 +343,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fVer_ch = new TGVerticalFrame(fHor_st, 10, 10);
   fHor_st->AddFrame(fVer_ch, fLay4);
 
-  fLabel2 = new TGLabel(fVer_ch, "  Channels");
+  TGLabel* fLabel2 = new TGLabel(fVer_ch, "  Channels");
   fVer_ch->AddFrame(fLabel2, fLay4);
 
   fHor_ch = new TGHorizontalFrame(fVer_ch, 10, 10);
@@ -421,9 +433,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     }
   }  
 
-  mgr[0]=new TMultiGraph();
-  mgr[1]=new TMultiGraph();
-  mgr[2]=new TMultiGraph();
+  //mgr[0]=new TMultiGraph();
+  //mgr[1]=new TMultiGraph();
+  //mgr[2]=new TMultiGraph();
 
   //for (int j=0;j<3;j++) {
   ////sprintf(ss,"mgr_%d",j);
@@ -574,23 +586,24 @@ void EventFrame::Clear()
   fCanvas->GetCanvas()->Clear();
 }
 
+
 void EventFrame::DoSlider() {
 
   /*
-    float x1,x2;
-    fHslider->GetPosition(x1,x2);
+  TGDoubleSlider *btn = (TGDoubleSlider *) gTQSender;
+  Int_t id = btn->WidgetId();
 
-    printf("DosLider: %f %f\n",x1,x2);
+  float x1,x2;
+  btn->GetPosition(x1,x2);
 
-    float dx=gx2-gx1;
-    float dx1=dx*x1;
-    float dx2=dx*x2;
+  cout << id << endl;
+  printf("DosLider: %f %f\n",x1,x2);
 
-    for (int n=0;n<ndiv;n++) {
-    fPaint[n].GetXaxis()->SetRangeUser(gx1+dx1,gx1+dx2);
-    }
+  //float dx=gx2-gx1;
+  //float dx1=dx*x1;
+  //float dx2=dx*x2;
+
   */
-
   //printf("DosLider: %d\n",nEvents);
   ReDraw();
 
@@ -677,10 +690,21 @@ void EventFrame::FillGraph(int dr) {
     //Double_t *xx = Gr[dr][ch]->GetX();
     //Double_t *yy = Gr[dr][ch]->GetY();
 
+    gx1[ch]=(dt-1);//*opt.period;
+    gx2[ch]=(pulse->sData.size()+dt);//*opt.period;
+    gy1[dr][ch]=1e99;
+    gy2[dr][ch]=-1e99;
+
     if (dr==0) { //main pulse
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][ch]->GetX()[j]=(j+dt)*opt.period;
+	Gr[dr][ch]->GetX()[j]=(j+dt);//*opt.period;
 	Gr[dr][ch]->GetY()[j]=pulse->sData[j];
+
+	if (Gr[dr][ch]->GetY()[j]<gy1[dr][ch])
+	  gy1[dr][ch]=Gr[dr][ch]->GetY()[j];
+	if (Gr[dr][ch]->GetY()[j]>gy2[dr][ch])
+	  gy2[dr][ch]=Gr[dr][ch]->GetY()[j];
+
 	//xx[j]=dt+j;
 	//yy[j]=pulse->sData[j];
 	// cout << "GR: " << dt << " " << Gr[dr][ch]->GetN() << " "
@@ -698,41 +722,71 @@ void EventFrame::FillGraph(int dr) {
 
       //dat = new Float_t[pulse->sData.size()];
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][ch]->GetX()[j]=(j+dt)*opt.period;
+	Gr[dr][ch]->GetX()[j]=(j+dt);//*opt.period;
 	if (j<kk)
 	  Gr[dr][ch]->GetY()[j]=pulse->sData[j]-pulse->sData[0];
 	//dat[j]=0;
 	else
 	  Gr[dr][ch]->GetY()[j]=pulse->sData[j]-pulse->sData[j-kk];
+
+	if (Gr[dr][ch]->GetY()[j]<gy1[dr][ch])
+	  gy1[dr][ch]=Gr[dr][ch]->GetY()[j];
+	if (Gr[dr][ch]->GetY()[j]>gy2[dr][ch])
+	  gy2[dr][ch]=Gr[dr][ch]->GetY()[j];
+
       }
     }
     else if (dr==2) { //2nd derivative
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][ch]->GetX()[j]=(j+dt)*opt.period;
+	Gr[dr][ch]->GetX()[j]=(j+dt);//*opt.period;
 	if (j<2)
 	  Gr[dr][ch]->GetY()[j]=0;
 	//dat[j]=0;
 	else
 	  Gr[dr][ch]->GetY()[j]=
 	    pulse->sData[j]-2*pulse->sData[j-1]+pulse->sData[j-2];
+
+	if (Gr[dr][ch]->GetY()[j]<gy1[dr][ch])
+	  gy1[dr][ch]=Gr[dr][ch]->GetY()[j];
+	if (Gr[dr][ch]->GetY()[j]>gy2[dr][ch])
+	  gy2[dr][ch]=Gr[dr][ch]->GetY()[j];
+
       }
     }
   } 
 }
 
-void EventFrame::FillMgr(int dr) {
+void EventFrame::SetRanges(int dr) {
 
-  if (mgr[dr]->GetListOfGraphs())
-    mgr[dr]->GetListOfGraphs()->Clear();
+  //if (mgr[dr]->GetListOfGraphs())
+  //  mgr[dr]->GetListOfGraphs()->Clear();
 
-  delete mgr[dr];
-  mgr[dr]=new TMultiGraph(mgr_name[dr],mgr_title[dr]);
+  //delete mgr[dr];
+  //mgr[dr]=new TMultiGraph(mgr_name[dr],mgr_title[dr]);
+
+  mx1=1e99;
+  mx2=-1e99;
+  my1[dr]=1e99;
+  my2[dr]=-1e99;
+
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     UInt_t ch= d_event->pulses.at(i).Chan;
     if (fChn[ch]->IsOn()) {
-      mgr[dr]->Add(Gr[dr][ch]);
+      if (gx1[ch]<mx1) mx1=gx1[ch];
+      if (gx2[ch]>mx2) mx2=gx2[ch];
+      if (gy1[dr][ch]<my1[dr]) my1[dr]=gy1[dr][ch];
+      if (gy2[dr][ch]>my2[dr]) my2[dr]=gy2[dr][ch];
+
+      //cout << "Graph1: " << dr << " " << mx1 << " " << mx2 << " " 
+      //   << my1[dr] << " " << my2[dr] << endl;
+
+      //mgr[dr]->Add(Gr[dr][ch]);
     }
   } 
+
+  double dy=my2[dr]-my1[dr];
+  my1[dr]-=dy*0.05;
+  my2[dr]+=dy*0.05;
 
 }
 
@@ -777,7 +831,7 @@ void EventFrame::DrawEvent2() {
   //   ndiv++;
   // }
 
-  cout << "mgr1: " << mgr[0]->GetListOfGraphs() << " " << opt.b_deriv[0] << endl;
+  //cout << "mgr1: " << mgr[0]->GetListOfGraphs() << " " << opt.b_deriv[0] << endl;
 
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
@@ -1091,16 +1145,66 @@ void EventFrame::ReDraw() {
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
       fCanvas->GetCanvas()->cd(nn++);
-      FillMgr(i);
-      mgr[i]->Draw("alp");
-      cout << "mgr3: " << i << " " << nn << " " << fPeak[0]->IsOn() << " "
-         << mgr[i]->GetHistogram()<< endl;
+
+      SetRanges(i);
+
+      if (mx1>1e98) {
+	gPad->Clear();
+	continue;
+      }
+
+
+      double dx=mx2-mx1;
+      double dy=my2[i]-my1[i];
+
+      Float_t h1,h2;
+
+      fHslider->GetPosition(h1,h2);
+      double x1=mx1+dx*h1;
+      double x2=mx2-dx*(1-h2);
+      fVslider->GetPosition(h1,h2);
+      double y1=my1[i]+dy*(1-h2);
+      double y2=my2[i]-dy*h1;
+
+      printf("DosLider: %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f\n",
+	     h1,h2,y1,y2,mx1,mx2,dx);
+
+      delete fHist[i];
+      fHist[i] = new TH1F(mgr_name[i],mgr_title[i],int(dx),x1,x2);
+      fHist[i]->SetMinimum(y1);
+      fHist[i]->SetMaximum(y2);
+      fHist[i]->Draw("axis");
+
+      for (UInt_t j=0;j<d_event->pulses.size();j++) {
+	UInt_t ch= d_event->pulses.at(j).Chan;
+	if (fChn[ch]->IsOn()) {
+	  Gr[i][ch]->Draw("lp");
+	}
+      }
+
+      if (fPeak[0]->IsOn()) {
+	DrawPeaks(y1,y2);
+      }
+      //cout << "MinMax: " << mgr[i]->GetXaxis()->GetXmin() << " " 
+      //     << mgr[i]->GetXaxis()->GetXmax() << endl;
+
+      // TH1* mh = mgr[i]->GetHistogram();
+      // if (mh) {
+      // 	cout << "MinMax: " << mh->GetXaxis()->GetXmin() << " " 
+      // 	     << mh->GetXaxis()->GetXmax() << endl;
+      // }
+
+      //mgr[i]->Draw("alp");
+
+      // cout << "mgr3: " << i << " " << nn << " " << fPeak[0]->IsOn() << " "
+      //    << mgr[i]->GetHistogram()<< endl;
+
       //   << mgr[i]->GetHistogram()->GetMaximum() << endl;
 
-      if (mgr[i]->GetHistogram() && fPeak[0]->IsOn()) {
-	DrawPeaks(mgr[i]->GetHistogram()->GetMinimum(),
-	      mgr[i]->GetHistogram()->GetMaximum());
-      }
+      // if (mgr[i]->GetHistogram() && fPeak[0]->IsOn()) {
+      // 	DrawPeaks(mgr[i]->GetHistogram()->GetMinimum(),
+      // 	      mgr[i]->GetHistogram()->GetMaximum());
+      // }
     }
   }
 

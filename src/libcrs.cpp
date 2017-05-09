@@ -1598,10 +1598,10 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     idx1=idx8*8;
   }
 
-  for (UInt_t i=0;i<vv->size();i++) {
-    cout << "Decode32: " << i << " " << vv->at(i).Tstamp64 << " "
-	 << (int) vv->at(i).ptype << endl;
-  }
+  // for (UInt_t i=0;i<vv->size();i++) {
+  //   cout << "Decode32: " << i << " " << vv->at(i).Tstamp64 << " "
+  // 	 << (int) vv->at(i).ptype << endl;
+  // }
 
   Make_Events(nvp);
   

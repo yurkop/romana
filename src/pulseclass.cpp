@@ -1,9 +1,11 @@
 #include "common.h"
 #include "toptions.h"
+#include "libcrs.h"
 #include <iostream>
 
 extern Coptions cpar;
 extern Toptions opt;
+extern CRS* crs;
 
 using namespace std;
 
@@ -23,7 +25,7 @@ void PulseClass::FindPeaks() {
   // always K-th derivative (D) is used
   // T1 - D>0, D(-1)<=0 (left zero-crossing of D)
   // T2 - D<=0, d(-1)>0 (right zero-crossing of D)
-  // Pos - Maximum between P0 and P1
+  // Pos - Maximum between T1 and T2
   /*
   // peak is the first maximum in deriv, above the threshold
   // if deadtime=0 - next peak is searched only after deriv crosses zero
@@ -38,30 +40,34 @@ void PulseClass::FindPeaks() {
   peak_type *p_prev=0;
 
   bool in_peak=false;
-  Float_t D,pD=0;//deriv, prev.dreiv
+  //Float_t D,pD=0;//deriv, prev.dreiv
+  Float_t* D = new Float_t[sData.size()]();
   //int peakpos[DSIZE];
   Float_t jmax=0;
-  int pp0=0; //temporary T1
+  //int pp0=0; //temporary T1
 
   //D[0]=0;
-  for (UInt_t j=kk;j<sData.size();j++) {
-    D=sData[j]-sData[j-kk];
+  UInt_t j;
+  for (j=kk;j<sData.size();j++) {
+    D[j]=sData[j]-sData[j-kk];
     if (!in_peak) {
-      if (D>0 && pD<=0) pp0=j;
-      if (D >= cpar.threshold[Chan]) {
+      if (D[j] >= cpar.threshold[Chan]) {
+	in_peak=true;
 	Peaks.push_back(peak_type());
 	pk = &Peaks.back();
-	pk->T1=pp0;
-	//pk->T2=0;
-	in_peak=true;
-	//printf("in_peak: %d %d %f %f\n",Chan,j,D[j],thresh);
-	//continue;
+	pk->T1=0;
+	for (int n=j;n>0;n--) {
+	  if (D[n]>0 && D[n-1]<=0) pk->T1=n;
+	}
+	jmax=D[j];
+	pk->Pos=j;
       }
     }
     else { //in_peak
-      if (D>jmax) {//maximum of D -> peak position
-	jmax=D;
+      if (D[j]>jmax) {//maximum of D -> peak position
+	jmax=D[j];
 	pk->Pos=j;
+	//printf("in_peak: %lld %d %d %d %0.1f %0.1f\n",crs->nevents,Chan,j,kk,D[j],jmax);
 	// peakpos[Npeaks]=jmax=j-1;
 	// Npeaks++;
 	// if (deadtime) {
@@ -70,7 +76,7 @@ void PulseClass::FindPeaks() {
 	//   continue;
 	// }
       }
-      else if (D<0) { //zero crossing -> end of the peak
+      else if (D[j]<0) { //zero crossing -> end of the peak
 	in_peak=false;
 	pk->T2=j-1;
 	//cout << "T2: " << sData[pk->T2]-sData[pk->T2-kk] << endl;
@@ -87,7 +93,7 @@ void PulseClass::FindPeaks() {
 	}
       }
     }
-    pD=D;
+    //pD=D;
   }
 
   if (in_peak) { //end of the pulse -> peak has no end
@@ -95,12 +101,19 @@ void PulseClass::FindPeaks() {
     //pk->Type|=P_B22;
   }
   
+  //for (UInt_t i=0;i<Peaks.size();i++) {
+  //cout << "FindPeaks: " << crs->nevents << " " << i << " " 
+  //	 << Peaks.at(i).Pos << endl;
+  //}
+
   // Peaks = new peak_type[Npeaks];
   // for (int i=0;i<Npeaks;i++) {
   //   Peaks[i].Pos = peakpos[i];
   // }
 
   //printf("FindPeaks: %d\n",Npeaks);
+
+  delete[] D;
 
 }
 
@@ -236,9 +249,9 @@ void EventClass::Pulse_Ana_Add(PulseClass *newpulse) {
       if (T2<T0) {
 	T0=T2;
       }
-      cout << "Peak: " << (int) newpulse->Chan << " " << pk->Time << " " 
-	   << pk->Pos << " " << T0 << " " << T2 << " " << dt << " "
-	   << T << endl;
+      // cout << "Peak: " << (int) newpulse->Chan << " " << pk->Time << " " 
+      // 	   << pk->Pos << " " << T0 << " " << T2 << " " << dt << " "
+      // 	   << T << endl;
     }
   }
 }

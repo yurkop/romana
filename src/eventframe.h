@@ -37,8 +37,9 @@ protected:
    TGTextButton           *fLast;
 
    TGDoubleHSlider        *fHslider;
+   TGDoubleVSlider        *fVslider;
 
-   TGLabel                *fLabel2;
+   //TGLabel                *fLabel2;
 
    TGCheckButton          *fDeriv[3];
    TGCheckButton          *fPeak[16];
@@ -55,6 +56,8 @@ protected:
    TGLayoutHints          *fLay5;
    TGLayoutHints          *fLay6;
    TGLayoutHints          *fLay7;
+   TGLayoutHints          *fLay8;
+   TGLayoutHints          *fLay9;
 
  public:
    TRootEmbeddedCanvas    *fCanvas;
@@ -71,12 +74,15 @@ protected:
    int ndiv;
    //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
    //int NGr;
+   TH1F* fHist[3];
    TGraph *Gr[3][MAX_CH];
+   double gx1[MAX_CH],gx2[MAX_CH],gy1[3][MAX_CH],gy2[3][MAX_CH];
+   double mx1,mx2,my1[3],my2[3];
    //TH1F *histo[3][MAX_CH];
    //double gx1,gx2,gy1[3],gy2[3];
    //TH2F fPaint[3];
    //THStack* hst[3];
-   TMultiGraph* mgr[3];
+   //TMultiGraph* mgr[3];
 
    //bool bprint;
 
@@ -92,7 +98,7 @@ public:
    //void Start();
    //void DoReset();
    void FillGraph(int dr);
-   void FillMgr(int dr);
+   void SetRanges(int dr);
    //void FillHist(int dr);
    //void FillHstack(int dr);
    void DrawEvent2();

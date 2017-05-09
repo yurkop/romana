@@ -40,3 +40,5 @@ opt1, opt2 - with fixed and non-fixed structures
 implement dock/undock - see e.g. tutorials/eve
 
 make different buf sizes for usb and readfile (now it's the same)
+
+PulseClass::FindPeaks() -> check pileup part...
