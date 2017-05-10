@@ -123,41 +123,41 @@ void PulseClass::PeakAna() {
 
   for (UInt_t i=0;i<Peaks.size();i++) {
     peak_type *pk = &Peaks[i];
-    int b1=pk->Pos+opt.bkg1[Chan];
-    int b2=pk->Pos+opt.bkg2[Chan];
-    int p1=pk->Pos+opt.peak1[Chan];
-    int p2=pk->Pos+opt.peak2[Chan];
+    pk->B1=pk->Pos+opt.bkg1[Chan];
+    pk->B2=pk->Pos+opt.bkg2[Chan];
+    pk->P1=pk->Pos+opt.peak1[Chan];
+    pk->P2=pk->Pos+opt.peak2[Chan];
 
     int sz=sData.size()-1;
     
-    if (b1<0) b1=0;
-    if (b2<0) b2=0;
-    if (p1<0) {p1=0; pk->Type|=P_B1;}
-    if (p2<0) {p2=0; pk->Type|=P_B2;}
+    if (pk->B1<0) pk->B1=0;
+    if (pk->B2<0) pk->B2=0;
+    if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
+    if (pk->P2<0) {pk->P2=0; pk->Type|=P_B2;}
 
-    if (b1>sz) b1=sz;
-    if (b2>sz) b2=sz;
-    if (p1>sz) {p1=sz; pk->Type|=P_B1;}
-    if (p2>sz) {p2=sz; pk->Type|=P_B2;}
+    if (pk->B1>sz) pk->B1=sz;
+    if (pk->B2>sz) pk->B2=sz;
+    if (pk->P1>sz) {pk->P1=sz; pk->Type|=P_B1;}
+    if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
 
     Float_t bkg=0;
     int nbkg=0;
     //background
-    for (int j=b1;j<=b2;j++) {
+    for (int j=pk->B1;j<=pk->B2;j++) {
       bkg+=sData[j];
       nbkg++;
     }
     if (nbkg)
       bkg/=nbkg;
     else {
-      cout << "zero background!!!" << nbkg << " " << b1 << " " << b2 << endl;
+      cout << "zero background!!!" << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
     }
 
     int nn=0;
     //peak Area & Height
     pk->Area=0;
     pk->Height=0;
-    for (int j=p1;j<=p2;j++) {
+    for (int j=pk->P1;j<=pk->P2;j++) {
       pk->Area+=sData[j];
       if (sData[j]>pk->Height) pk->Height = sData[j];
       nn++;

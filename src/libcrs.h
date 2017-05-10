@@ -100,7 +100,8 @@ RQ_OBJECT("CRS")
   int cnt_prev[MAX_CH]; //previous cnt (may be used for counter consistency)
   int nsmp; //temporary Nsamp
 
-  ULong64_t istamp64; //temporary tstamp64
+  //ULong64_t istamp64; //temporary tstamp64
+  Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
 
   //--------functions---------
 

@@ -6,11 +6,13 @@
 #include <TText.h>
 #include <TStyle.h>
 #include <TLine.h>
+#include <TMarker.h>
 //#include <TROOT.h>
 
 #include <TRandom.h>
 
-TLine ln1;
+TLine ln;
+TMarker mk;
 
 Float_t RGB[MAX_CH][3] = {
   {0,0,0},//0
@@ -82,11 +84,18 @@ TText txt;
 
 //TMutex *Emut;
 
-void doXline(TLine* ln, Float_t xx, Float_t y1, Float_t y2, int col, int type) {
+void doXline(Float_t xx, Float_t y1, Float_t y2, int col, int type) {
   //xx*=opt.period;
-  ln->SetLineColor(col);
-  ln->SetLineStyle(type);
-  ln->DrawLine(xx,y1,xx,y2);
+  ln.SetLineColor(col);
+  ln.SetLineStyle(type);
+  ln.DrawLine(xx,y1,xx,y2);
+}
+
+void doYline(Float_t yy, Float_t x1, Float_t x2, int col, int type) {
+  //xx*=opt.period;
+  ln.SetLineColor(col);
+  ln.SetLineStyle(type);
+  ln.DrawLine(x1,yy,x2,yy);
 }
 
 EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
@@ -127,6 +136,10 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     chcol[i]=TColor::GetColor(TColor::RGB2Pixel(RGB[i][0],RGB[i][1],RGB[i][2]));
   }
 
+
+  mk.SetMarkerStyle(3);
+  mk.SetMarkerColor(2);
+
   //Levents = &Tevents;
   Levents = &crs->Levents;
   d_event = Levents->begin();
@@ -136,6 +149,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   for (int i=0;i<3;i++) {
     fHist[i] = new TH1F();
+    fHist[i]->SetDirectory(0);
     for (int j=0;j<MAX_CH;j++) {
       sprintf(hname[i][j],"ch_%02d_%01d",j,i);
     }
@@ -311,29 +325,43 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[1] = new TGCheckButton(fVer_d, "Pos", 1);
   fPeak[2] = new TGCheckButton(fVer_d, "Time", 2);
   //fPeak[3] = new TGCheckButton(fVer_d, "Time\"", 3);
-  fPeak[3] = new TGCheckButton(fVer_d, "Left", 3);
-  fPeak[4] = new TGCheckButton(fVer_d, "Right", 4);
-  fPeak[5] = new TGCheckButton(fVer_d, "BLeft", 5);
-  fPeak[6] = new TGCheckButton(fVer_d, "BRight", 6);
-  fPeak[7] = new TGCheckButton(fVer_d, "TLeft", 7);
-  fPeak[8] = new TGCheckButton(fVer_d, "TRight", 8);
-  fPeak[9] = new TGCheckButton(fVer_d, "TStart", 9);
-  fPeak[10] = new TGCheckButton(fVer_d, "Thresh", 10);
+  fPeak[3] = new TGCheckButton(fVer_d, "Wpeak", 3);
+  fPeak[4] = new TGCheckButton(fVer_d, "WBkgr", 4);
+  fPeak[5] = new TGCheckButton(fVer_d, "WTime", 5);
+  //fPeak[6] = new TGCheckButton(fVer_d, "BRight", 6);
+  //fPeak[7] = new TGCheckButton(fVer_d, "TLeft", 7);
+  //fPeak[8] = new TGCheckButton(fVer_d, "TRight", 8);
+  fPeak[6] = new TGCheckButton(fVer_d, "*TStart", 6);
+  fPeak[7] = new TGCheckButton(fVer_d, "Thresh", 7);
 
+  //int cc;
+  //cc=gROOT->GetColor(2)->GetPixel();
+  fPeak[1]->SetForegroundColor(gROOT->GetColor(2)->GetPixel());
+  fPeak[2]->SetForegroundColor(gROOT->GetColor(3)->GetPixel());
+  fPeak[3]->SetForegroundColor(gROOT->GetColor(4)->GetPixel());
+  fPeak[4]->SetForegroundColor(gROOT->GetColor(6)->GetPixel());
+  //fPeak[5]->SetForegroundColor(gROOT->GetColor(1)->GetPixel());
+  fPeak[6]->SetForegroundColor(gROOT->GetColor(2)->GetPixel());
+  //fPeak[7]->SetForegroundColor(gROOT->GetColor(3)->GetPixel());
+
+  
   fPeak[0]->SetToolTipText("Show peaks");
   fPeak[1]->SetToolTipText("Peak Position (maximum in 1st derivative)");
   fPeak[2]->SetToolTipText("Exact time from 1st derivative");
   //fPeak[3]->SetToolTipText("Exact time from 2nd derivative");
-  fPeak[3]->SetToolTipText("Left border of the peak integration");
-  fPeak[4]->SetToolTipText("Right border of the peak integration");
-  fPeak[5]->SetToolTipText("Left border of the background integration");
-  fPeak[6]->SetToolTipText("Right border of the background integration");
-  fPeak[7]->SetToolTipText("Left border of the time integration");
-  fPeak[8]->SetToolTipText("Right border of the time integration");
-  fPeak[9]->SetToolTipText("Time start marker");
-  fPeak[10]->SetToolTipText("Threshold (only in 1st derivative)");
+  fPeak[3]->SetToolTipText("Window for peak integration (left lower than right)");
+  fPeak[4]->SetToolTipText("Window for background integration (left lower than right)");
+  fPeak[5]->SetToolTipText("Window for time integration (left lower than right),\nplotted only in 1st derivative");
+  // fPeak[3]->SetToolTipText("Left border of the peak integration");
+  // fPeak[4]->SetToolTipText("Right border of the peak integration");
+  // fPeak[5]->SetToolTipText("Left border of the background integration");
+  // fPeak[6]->SetToolTipText("Right border of the background integration");
+  // fPeak[7]->SetToolTipText("Left border of the time integration");
+  // fPeak[8]->SetToolTipText("Right border of the time integration");
+  fPeak[6]->SetToolTipText("Time start marker");
+  fPeak[7]->SetToolTipText("Threshold, plotted only in 1st derivative)");
 
-  for (int i=0;i<11;i++) {
+  for (int i=0;i<8;i++) {
     fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
     fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
     fVer_d->AddFrame(fPeak[i], fLay4);
@@ -633,7 +661,7 @@ void EventFrame::DoChkPeak() {
   btn->SetState((EButtonState) opt.b_peak[id]);
 
   if (id==0) {
-    for (int i=1;i<11;i++) {
+    for (int i=1;i<8;i++) {
       opt.b_peak[i] = opt.b_peak[id];
       fPeak[i]->SetState((EButtonState) opt.b_peak[id]);
     }
@@ -848,21 +876,6 @@ void EventFrame::DrawEvent2() {
   cv->Divide(1,ndiv);
 
   ReDraw();
-  // int nn=1;
-  // for (int i=0;i<3;i++) {
-  //   if (opt.b_deriv[i]) {
-  //     cout << "mgr3: " << i << " " << nn << " " << mgr[i] << endl;
-  //     cv->cd(nn++);
-  //     mgr[i]->Draw("alp");
-  //     //DrawPeaks(hst[j]->GetMinimum("nostack"),
-  //     //      hst[j]->GetMaximum("nostack")*1.05);
-  //   }
-  // }
-
-  //cv->cd(1);
-  //char ss[99];
-  //sprintf(ss,"Event %lld",d_event->T);
-  //txt.DrawTextNDC(0.3,0.92,ss);
 
   char ss[99];
   sprintf(ss,"Evt: %lld",d_event->Nevt);//std::distance(Levents->begin(),d_event));
@@ -878,7 +891,7 @@ void EventFrame::DrawEvent2() {
 
 } //DrawEvent2
 
-void EventFrame::DrawPeaks(double y1,double y2) {
+void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 
   //gPad->Update();
   //double ux1=gPad->GetUxmin();
@@ -886,30 +899,42 @@ void EventFrame::DrawPeaks(double y1,double y2) {
   //double uy1=gPad->GetUymin();
   //double uy2=gPad->GetUymax();
 
-  for (UInt_t i=0;i<d_event->pulses.size();i++) {
-    PulseClass *pulse = &d_event->pulses.at(i);
-    UInt_t ch= pulse->Chan;
-    if (fChn[ch]->IsOn()) {
-      double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
+  //for (UInt_t i=0;i<d_event->pulses.size();i++) {
+  //PulseClass *pulse = &d_event->pulses.at(i);
+
+  double dy=y2-y1;
+  if (dr>0) y1=0;
+  
+  UInt_t ch= pulse->Chan;
+  if (fChn[ch]->IsOn()) {
+    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
       //int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
       //cout << "Dt: " << i << " " << d_event->T << " " << dt
       // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
       //UInt_t ch= pulse->Chan;
-      for (UInt_t j=0;j<pulse->Peaks.size();j++) {
-	peak_type *pk = &pulse->Peaks[j];
-	doXline(&ln1,pk->Pos+dt,y1,y2,2,1);
-	doXline(&ln1,pk->T1+dt,y1,y2,3,2);
-	doXline(&ln1,pk->T2+dt,y1,y2,4,3);
-	cout <<"DrawPeaksT2: " << pk->T2+dt << " " << dt << " " 
-	     << pulse->Tstamp64 << " " << d_event->T << endl;
+    for (UInt_t j=0;j<pulse->Peaks.size();j++) {
+      peak_type *pk = &pulse->Peaks[j];
+      if (fPeak[1]->IsOn()) // Pos
+	doXline(pk->Pos+dt,y1,y2-dy*0.3,2,1);
+      if (fPeak[2]->IsOn()) // Time
+	doXline(pk->Time+dt,y2-dy*0.2,y2,3,1);
+      if (dr==0 && fPeak[3]->IsOn()) { // Wpeak
+	doXline(pk->P1+dt,y1,y2-dy*0.2,4,2);
+	doXline(pk->P2+dt,y1,y2-dy*0.1,4,2);
       }
+      if (dr==0 && fPeak[4]->IsOn()) { // WBkgr
+	doXline(pk->B1+dt,y1,y2-dy*0.2,6,3);
+	doXline(pk->B2+dt,y1,y2-dy*0.1,6,3);
+      }
+      if (dr==1 && fPeak[5]->IsOn()) { //WTime
+	doXline(pk->T3+dt,y1,y2-dy*0.2,1,2);
+	doXline(pk->T4+dt,y1,y2-dy*0.1,1,2);
+      }
+      cout <<"DrawPeaksT2: " << pk->Time+dt << " " << dt << " " 
+	   << pulse->Tstamp64 << " " << d_event->T << endl;
     }
   }
-  cout <<"DrawPeaks: " << d_event->T0 << endl;
-  if (d_event->T0<99998) {
-    doXline(&ln1,d_event->T0,y1,y2,5,1);
-  }
-
+    //}
 }
 
 //void EventFrame::DrawEvent() {
@@ -1169,22 +1194,38 @@ void EventFrame::ReDraw() {
       printf("DosLider: %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f\n",
 	     h1,h2,y1,y2,mx1,mx2,dx);
 
+      cout << "Redraw5: " << i << fHist[i] << endl;
       delete fHist[i];
+      cout << "Redraw6: " << i << fHist[i] << endl;
       fHist[i] = new TH1F(mgr_name[i],mgr_title[i],int(dx),x1,x2);
+      fHist[i]->SetDirectory(0);
       fHist[i]->SetMinimum(y1);
       fHist[i]->SetMaximum(y2);
       fHist[i]->Draw("axis");
 
+      cout << "Redraw7: " << i << fHist[i] << endl;
+
+      doYline(0,x1,x2,4,2);
+      cout <<"DrawPeaks: " << d_event->T0 << endl;
+      if (fPeak[6]->IsOn()) { //T0
+	mk.DrawMarker(d_event->T0,y2-dy*0.1);
+	//doXline(d_event->T0,y1,y2,5,1);
+      }
+
       for (UInt_t j=0;j<d_event->pulses.size();j++) {
-	UInt_t ch= d_event->pulses.at(j).Chan;
-	if (fChn[ch]->IsOn()) {
-	  Gr[i][ch]->Draw("lp");
+	PulseClass *pulse = &d_event->pulses.at(j);
+	//UInt_t ch= d_event->pulses.at(j).Chan;
+	if (fChn[pulse->Chan]->IsOn()) {
+	  //cout << "Gr: " << i << " " << j << " " << int(pulse->Chan) << " "
+	  //   << Gr[i][pulse->Chan]->GetLineColor() << endl;
+	  Gr[i][pulse->Chan]->Draw("lp");
+	  DrawPeaks(i,pulse,y1,y2);
+	  if (i==1 && fPeak[7]->IsOn()) //threshold
+	    doYline(cpar.threshold[pulse->Chan],gx1[pulse->Chan],
+		    gx2[pulse->Chan],chcol[pulse->Chan],2);
 	}
       }
 
-      if (fPeak[0]->IsOn()) {
-	DrawPeaks(y1,y2);
-      }
       //cout << "MinMax: " << mgr[i]->GetXaxis()->GetXmin() << " " 
       //     << mgr[i]->GetXaxis()->GetXmax() << endl;
 

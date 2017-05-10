@@ -41,6 +41,10 @@ class peak_type {
   Float_t Time; //exact time relative to pulse start (from 1st deriv)
   //Float_t Time2; //exact time (from 2nd deriv)
   Short_t Pos; //position relative to pulse start (in samples)
+  Short_t B1; //left background window
+  Short_t B2; //right background window
+  Short_t P1; //left peak window
+  Short_t P2; //right peak window
   Short_t T1; //left zero crossing of deriv
   Short_t T2; //right zero crossing of deriv
   Short_t T3; //left timing window

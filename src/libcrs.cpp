@@ -1220,6 +1220,7 @@ void CRS::DoReset() {
 
   opt.T_acq=0;
 
+  Tstart64=0;
   //cout << "crs::reset: " << endl;
   //cout << "crs::reset: " << (int) CRS::b_fana << endl;
   //exit(1);

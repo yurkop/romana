@@ -102,7 +102,7 @@ public:
    //void FillHist(int dr);
    //void FillHstack(int dr);
    void DrawEvent2();
-   void DrawPeaks(double y1,double y2);
+   void DrawPeaks(int dr, PulseClass* pulse, double y1,double y2);
    //void DrawEvent();
    void DoGraph(int ndiv, int deriv);
    void ReDraw();

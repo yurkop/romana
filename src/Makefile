@@ -10,7 +10,9 @@ OBJ := $(addprefix $(OBJ_D)/,$(notdir $(SRC:.cpp=.o)))
 
 LFS=$(shell getconf LFS_CFLAGS)
 
-#CPPFLAGS += -g
+ifdef DEBUG
+  CPPFLAGS += -g
+endif
 
 CPPFLAGS += $(LFS) -MD -MP -D LINUX=1 -I. #-I$(LIB_D)
 CXXFLAGS += -O3 -Wall

@@ -15,6 +15,7 @@
 //TLine ln1;
 
 extern Toptions opt;
+extern Coptions cpar;
 extern MyMainFrame *myM;
 //extern BufClass* Buffer;
 
@@ -277,10 +278,20 @@ void HistFrame::FillHist(EventClass* evt) {
     int ch = evt->pulses[i].Chan;
     for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
       peak_type* pk = &evt->pulses[i].Peaks[j];
-      double tt = evt->pulses[i].Tstamp64 + pk->Pos;
-      h_time[ch]->Fill(tt*DT);
+
       h_ampl[ch]->Fill(pk->Area*opt.emult[ch]);
       h_height[ch]->Fill(pk->Height);
+
+      double tt = evt->pulses[i].Tstamp64 + crs->Tstart64;
+      tt += pk->Pos;
+      h_time[ch]->Fill(tt*DT);
+
+      double dt = evt->pulses[i].Tstamp64 - evt->T;
+      tt = pk->Time - cpar.preWr[ch] - evt->T0 + dt;
+      cout << "TOF: " << crs->nevents << " " << i << " "
+	   << ch << " " << pk->Time << " " << evt->T0 << " "
+	   << dt << " " << tt << endl;
+      h_tof[ch]->Fill(tt*opt.period);
     }
   }
 }
