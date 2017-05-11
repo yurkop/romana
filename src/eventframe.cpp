@@ -7,6 +7,7 @@
 #include <TStyle.h>
 #include <TLine.h>
 #include <TMarker.h>
+#include <TMutex.h>
 //#include <TROOT.h>
 
 #include <TRandom.h>
@@ -51,6 +52,8 @@ Float_t RGB[MAX_CH][3] = {
 };
 
 Int_t chcol[MAX_CH];
+Int_t gcol[MAX_CH];
+Int_t fcol[MAX_CH];
 //                     1                        11 
 // = {1,2,3,4,6,7,8,9,406,426,596,606,636,796,816,856,
 //    //17                    23
@@ -82,7 +85,8 @@ char hname[3][MAX_CH+1][20]; //+all
  
 TText txt;
 
-//TMutex *Emut;
+TMutex Emut;
+TMutex Emut2;
 
 void doXline(Float_t xx, Float_t y1, Float_t y2, int col, int type) {
   //xx*=opt.period;
@@ -134,6 +138,10 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   for (int i=0;i<MAX_CH;i++) {
     chcol[i]=TColor::GetColor(TColor::RGB2Pixel(RGB[i][0],RGB[i][1],RGB[i][2]));
+    gcol[i]=gROOT->GetColor(chcol[i])->GetPixel();
+    fcol[i]=0;
+    if (i==0 || i==3 || i==21 || i==25 || i==29)
+       fcol[i]=0xffffff;
   }
 
 
@@ -146,6 +154,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   cout << "d_event: " << &(*d_event) << endl;
   //d_event = new EventClass();
   //Emut = new TMutex();
+  //Emut2 = new TMutex();
 
   for (int i=0;i<3;i++) {
     fHist[i] = new TH1F();
@@ -397,28 +406,31 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
       if (k<MAX_CH) {
 	sprintf(ss,"%d",k);
 
-	TGLabel* flab = new TGLabel(fHor1, ss);
-	flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
-	flab->SetWidth(16);
-	fHor1->AddFrame(flab, fLay6);
+	//TGLabel* flab = new TGLabel(fHor1, ss);
+	//flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
+	//flab->SetWidth(16);
+	//fHor1->AddFrame(flab, fLay6);
 
-	fChn[k] = new TGCheckButton(fHor1, " ", k);
+	fChn[k] = new TGCheckButton(fHor1, ss, k);
+	fChn[k]->ChangeOptions(fChn[k]->GetOptions()|kFixedWidth);
+	fChn[k]->SetWidth(36);
 	fHor1->AddFrame(fChn[k], fLay6);
 	fChn[k]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
 
-	int col=gROOT->GetColor(chcol[k])->GetPixel();
-	//col=1;
-	int fcol=0;
-	if (k==0 || k==3 || k==21 || k==25 || k==29)
-	  fcol=0xffffff;
+	// int col=gROOT->GetColor(chcol[k])->GetPixel();
+	// int fcol=0;
+	// if (k==0 || k==3 || k==21 || k==25 || k==29)
+	//   fcol=0xffffff;
 	
 	//printf("Color: %d %d %x %x\n",k,chcol[k],col,fcol);
 
-	flab->SetBackgroundColor(col);
-	flab->SetForegroundColor(fcol);
+	//flab->SetBackgroundColor(col);
+	//flab->SetForegroundColor(fcol);
+	//fChn[k]->SetForegroundColor(fcol);
 
 	//fChn[k]->SetBackgroundColor(col);
 	//fChn[k]->SetForegroundColor(col);
+	//cout << "bkg: " << fChn[k]->GetBackground() << endl;
 	fChn[k]->SetState(kButtonDown);
 
       } //if
@@ -480,6 +492,7 @@ EventFrame::~EventFrame()
 
   //cout << "~Emut" << endl;
   //delete Emut;
+  //delete Emut2;
   //gSystem->Sleep(100);
 
   //if (trd) {
@@ -563,50 +576,62 @@ void EventFrame::DoColor() {
 */
 
 void EventFrame::First() {
-  d_event = Levents->begin();
-  DrawEvent2();
+  if (!crs->b_acq) {
+    d_event = Levents->begin();
+    DrawEvent2();
+  }
 }
 
 void EventFrame::Last() {
-  d_event = --Levents->end();
-  DrawEvent2();
+  if (!crs->b_acq) {
+    d_event = --Levents->end();
+    DrawEvent2();
+  }
 }
 
 void EventFrame::Plus1() {
-  ++d_event;
-  if (d_event==Levents->end()) {
-    --d_event;
-  }
-  DrawEvent2();
-}
-
-void EventFrame::Minus1() {
-  if (d_event!=Levents->begin())
-    --d_event;
-  DrawEvent2();
-}
-
-void EventFrame::PlusN() {
-  for (int i=0;i<opt.num_events;i++) {
+  if (!crs->b_acq) {
     ++d_event;
     if (d_event==Levents->end()) {
       --d_event;
-      break;
     }
+    DrawEvent2();
   }
-  DrawEvent2();
+}
+
+void EventFrame::Minus1() {
+  if (!crs->b_acq) {
+    if (d_event!=Levents->begin())
+      --d_event;
+    DrawEvent2();
+  }
+}
+
+void EventFrame::PlusN() {
+  if (!crs->b_acq) {
+    for (int i=0;i<opt.num_events;i++) {
+      ++d_event;
+      if (d_event==Levents->end()) {
+	--d_event;
+	break;
+      }
+    }
+    DrawEvent2();
+  }
 }
 
 void EventFrame::MinusN() {
-  for (int i=0;i<opt.num_events;i++) {
-    if (d_event!=Levents->begin()) {
-      --d_event;
+  if (!crs->b_acq) {
+    for (int i=0;i<opt.num_events;i++) {
+      if (d_event!=Levents->begin()) {
+	--d_event;
+      }
+      else {
+	break;
+      }
     }
-    else {
-      break;
-    }
+    DrawEvent2();
   }
-  DrawEvent2();
 }
 
 void EventFrame::Clear()
@@ -633,7 +658,8 @@ void EventFrame::DoSlider() {
 
   */
   //printf("DosLider: %d\n",nEvents);
-  ReDraw();
+  if (!crs->b_acq)
+    ReDraw();
 
 }
 
@@ -647,7 +673,9 @@ void EventFrame::DoChkDeriv() {
   opt.b_deriv[id] = !opt.b_deriv[id];
   btn->SetState((EButtonState) opt.b_deriv[id]);
 
-  DrawEvent2();
+  if (!crs->b_acq) {
+    DrawEvent2();
+  }
 
 }
 
@@ -673,7 +701,8 @@ void EventFrame::DoChkPeak() {
     }
   }
 
-  ReDraw();
+  if (!crs->b_acq)
+    ReDraw();
 
 }
 
@@ -689,7 +718,8 @@ void EventFrame::DoPulseOff() {
   }
   //cout << "DoPulseOff: " << id << " " << fChn[id]->IsOn() << endl;
 
-  ReDraw();
+  if (!crs->b_acq)
+    ReDraw();
 
 }
 
@@ -820,6 +850,8 @@ void EventFrame::SetRanges(int dr) {
 
 void EventFrame::DrawEvent2() {
 
+  Emut2.Lock();
+
   TCanvas *cv=fCanvas->GetCanvas();
   cv->Clear();
 
@@ -827,13 +859,12 @@ void EventFrame::DrawEvent2() {
   //if (Levents) nnn=Levents->size();
   //printf("DrawEvent0: %p %d %p %d\n",Levents,nnn,crs->Levents,crs->Levents.size());
 
-  //Emut->Lock();
-  if (Levents->empty()) {
-    //Emut->UnLock();
-    txt.DrawTextNDC(0.2,0.7,"Empty event");
-    cv->Update();
-    return;
-  }
+  // if (Levents->empty()) {
+  //   txt.DrawTextNDC(0.2,0.7,"Empty event");
+  //   cv->Update();
+  //   Emut2.UnLock();
+  //   return;
+  // }
 
   //printf("Draw1:\n");
 
@@ -843,9 +874,37 @@ void EventFrame::DrawEvent2() {
     //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
     cv->Update();
-    //Emut->UnLock();
+    Emut2.UnLock();
     return;
   }
+
+
+  ULong64_t mask=0;
+  ULong64_t one=1;
+  
+  for (UInt_t i=0;i<d_event->pulses.size();i++) {
+    UInt_t ch= d_event->pulses.at(i).Chan;
+    mask|=one<<ch;
+  }
+
+  //printf("mask: %llx\n",mask);
+  
+  for (int i=0;i<MAX_CH;i++) {
+    if (mask&(one<<i)) {
+      fChn[i]->SetBackgroundColor(gcol[i]);
+      fChn[i]->SetForegroundColor(fcol[i]);
+    }
+    else {
+      fChn[i]->SetBackgroundColor(15263976);
+      fChn[i]->SetForegroundColor(0);
+    }
+  }
+
+  // for (UInt_t i=0;i<d_event->pulses.size();i++) {
+  //   UInt_t ch= d_event->pulses.at(i).Chan;
+  //   fChn[ch]->SetBackgroundColor(gcol[ch]);
+  //   fChn[ch]->SetForegroundColor(fcol[ch]);
+  // }
 
   //printf("Draw22: %lld\n", d_event->T);
 
@@ -887,7 +946,7 @@ void EventFrame::DrawEvent2() {
   
   cv->Update();
 
-  //Emut->UnLock();
+  Emut2.UnLock();
 
 } //DrawEvent2
 
@@ -1164,6 +1223,7 @@ void EventFrame::DoGraph(int ndiv, int dd) {
 
 void EventFrame::ReDraw() {
 
+  Emut.Lock();
   //cv->Update();
   
   int nn=1;
@@ -1173,11 +1233,14 @@ void EventFrame::ReDraw() {
 
       SetRanges(i);
 
+      //cout << "Redr1: " << i << endl;
       if (mx1>1e98) {
 	gPad->Clear();
 	continue;
       }
 
+
+      //cout << "Redr2: " << i << endl;
 
       double dx=mx2-mx1;
       double dy=my2[i]-my1[i];
@@ -1194,16 +1257,16 @@ void EventFrame::ReDraw() {
       printf("DosLider: %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f\n",
 	     h1,h2,y1,y2,mx1,mx2,dx);
 
-      cout << "Redraw5: " << i << fHist[i] << endl;
+      //cout << "Redraw5: " << i << fHist[i] << endl;
       delete fHist[i];
-      cout << "Redraw6: " << i << fHist[i] << endl;
+      //cout << "Redraw6: " << i << fHist[i] << endl;
       fHist[i] = new TH1F(mgr_name[i],mgr_title[i],int(dx),x1,x2);
       fHist[i]->SetDirectory(0);
       fHist[i]->SetMinimum(y1);
       fHist[i]->SetMaximum(y2);
       fHist[i]->Draw("axis");
 
-      cout << "Redraw7: " << i << fHist[i] << endl;
+      //cout << "Redraw7: " << i << fHist[i] << endl;
 
       doYline(0,x1,x2,4,2);
       cout <<"DrawPeaks: " << d_event->T0 << endl;
@@ -1249,5 +1312,10 @@ void EventFrame::ReDraw() {
     }
   }
 
+  cout << "rdr77: " << endl;
   fCanvas->GetCanvas()->Update();
+
+  cout << "rdr78: " << endl;
+  Emut.UnLock();
+
 }

@@ -7,6 +7,7 @@
 #include <TStyle.h>
 #include <TLine.h>
 #include <TSpectrum.h>
+#include <TMutex.h>
 //#include <TROOT.h>
 
 
@@ -33,7 +34,7 @@ extern HistFrame* EvtFrm;
 
 //TText txt;
 
-//TMutex *Emut;
+TMutex Hmut;
 
 TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 TGLayoutHints* fLay2 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
@@ -63,8 +64,13 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4"};
 
+  xdiv=1;
+  ydiv=1;
+
   hlist=new TList();
 
+  //Hmut = new TMutex();
+  
   //cout << "HistFrame: " << gDNDManager << endl;
 
   ntab=nt;
@@ -207,7 +213,8 @@ HistFrame::~HistFrame()
 void HistFrame::Make_hist() {
 
   //char title[100];
-  char nam[100];
+  char name[100];
+  char title[100];
 
   const TGPicture *pic = gClient->GetPicture("h1_t.xpm");
   TGListTreeItem *iroot=0;
@@ -218,40 +225,44 @@ void HistFrame::Make_hist() {
 
   idir = fListTree->AddItem(iroot, "Amplitude",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"ampl_%02d",i);
+    sprintf(name,"ampl_%02d",i);
+    sprintf(title,"ampl_%02d;Channel;Counts",i);
     int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_ampl[i]=new TH1F(nam,nam,nn,opt.amp_min,opt.amp_max);
-    fListTree->AddItem(idir, nam, h_ampl[i], pic, pic,true);
+    h_ampl[i]=new TH1F(name,title,nn,opt.amp_min,opt.amp_max);
+    fListTree->AddItem(idir, name, h_ampl[i], pic, pic,true);
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
   
   idir = fListTree->AddItem(iroot, "Height",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"height_%02d",i);
+    sprintf(name,"height_%02d",i);
+    sprintf(title,"height_%02d;Channel;Counts",i);
     int nn=opt.hei_bins*(opt.hei_max-opt.hei_min);
-    h_height[i]=new TH1F(nam,nam,nn,opt.hei_min,opt.hei_max);
-    fListTree->AddItem(idir, nam, h_height[i], pic, pic,true);
+    h_height[i]=new TH1F(name,title,nn,opt.hei_min,opt.hei_max);
+    fListTree->AddItem(idir, name, h_height[i], pic, pic,true);
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
   
   idir = fListTree->AddItem(iroot, "Time",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"time_%02d",i);
+    sprintf(name,"time_%02d",i);
+    sprintf(title,"time_%02d;T(sec);Counts",i);
     int nn=opt.time_bins*(opt.time_max-opt.time_min);
-    h_time[i]=new TH1F(nam,nam,nn,opt.time_min,opt.time_max);
-    fListTree->AddItem(idir, nam, h_time[i], pic, pic,true);
+    h_time[i]=new TH1F(name,title,nn,opt.time_min,opt.time_max);
+    fListTree->AddItem(idir, name, h_time[i], pic, pic,true);
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
   
   idir = fListTree->AddItem(iroot, "TOF",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(nam,"tof_%02d",i);
+    sprintf(name,"tof_%02d",i);
+    sprintf(title,"tof_%02d;t(ns);Counts",i);
     int nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
-    h_tof[i]=new TH1F(nam,nam,nn,opt.tof_min,opt.tof_max);
-    fListTree->AddItem(idir, nam, h_tof[i], pic, pic,true);
+    h_tof[i]=new TH1F(name,title,nn,opt.tof_min,opt.tof_max);
+    fListTree->AddItem(idir, name, h_tof[i], pic, pic,true);
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
@@ -288,9 +299,9 @@ void HistFrame::FillHist(EventClass* evt) {
 
       double dt = evt->pulses[i].Tstamp64 - evt->T;
       tt = pk->Time - cpar.preWr[ch] - evt->T0 + dt;
-      cout << "TOF: " << crs->nevents << " " << i << " "
-	   << ch << " " << pk->Time << " " << evt->T0 << " "
-	   << dt << " " << tt << endl;
+      // cout << "TOF: " << crs->nevents << " " << i << " "
+      // 	   << ch << " " << pk->Time << " " << evt->T0 << " "
+      // 	   << dt << " " << tt << endl;
       h_tof[ch]->Fill(tt*opt.period);
     }
   }
@@ -505,6 +516,7 @@ void HistFrame::DoReset()
 void HistFrame::Update()
 {
 
+  Hmut.Lock();
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
 
@@ -527,7 +539,7 @@ void HistFrame::Update()
   }
 
   //fListTree->GetChecked(hlist);
-  cout << "hlist: " << hlist->GetSize() << endl;
+  //cout << "hlist: " << hlist->GetSize() << endl;
 
   if (opt.icheck > hlist->GetSize()-ndiv)
     opt.icheck=hlist->GetSize()-ndiv;
@@ -553,20 +565,26 @@ void HistFrame::Update()
   cout <<"Update2: " << endl;
   //exit(1);
 
+  Hmut.UnLock();
 }
 
 void HistFrame::DrawHist()
 {
 
+  //cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
   fEc->GetCanvas()->Clear();
+  //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << endl;
+  //fEc->GetCanvas()->Update();
   fEc->GetCanvas()->Divide(xdiv,ydiv);
-
+  //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
+  //cout <<"dr2: " << hlist << endl;
   int nn=1;
   int ii=0;
   TIter next(hlist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     if (ii>=opt.icheck) {
+      //cout <<"ddd: " << nn << " " << ii << " " << fEc->GetCanvas()->GetPad(nn) << endl;
       if (!fEc->GetCanvas()->GetPad(nn)) break;
       fEc->GetCanvas()->cd(nn);
       TH1 *hh = (TH1*) obj;
@@ -576,6 +594,8 @@ void HistFrame::DrawHist()
     }
     ii++;
   }
+  //return;
+  //cout <<"dr3:" << endl;
   fEc->GetCanvas()->Update();
 }
 

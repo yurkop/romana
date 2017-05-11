@@ -14,7 +14,7 @@
 //TSemaphore sem;
 #include "TThread.h"
 
-TMutex Mut;
+TMutex Emut3;
 TMutex stat_mut;
 TCondition* cond[CRS::MAXTRANS];
 
@@ -134,20 +134,25 @@ void *handle_evt(void* ptr)
     //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << " " <<
     //EvtFrm->ntab << endl; 
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-      //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << endl; 
+      cout << "trd2: " << myM->fTab->GetCurrent() << endl; 
 
       //std::list<EventClass>::reverse_iterator evt;
 
+      Emut3.Lock();
+      cout << "trd3: " << myM->fTab->GetCurrent() << endl; 
       Select_Event();
+      cout << "trd4: " << myM->fTab->GetCurrent() << endl; 
       EvtFrm->Tevents.clear();
       EvtFrm->Tevents.push_back(*EvtFrm->d_event);
       EvtFrm->d_event=EvtFrm->Tevents.begin();
 
+      cout << "trd5: " << myM->fTab->GetCurrent() << endl; 
       EvtFrm->DrawEvent2();
-      //Emut.UnLock();
+      Emut3.UnLock();
 
       //Emut.UnLock();
 
+      cout << "trd9: " << endl;
     }
     else {
       //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
@@ -1865,9 +1870,9 @@ void CRS::Make_Events(int nvp) {
   //first insert last pulse from the previous buffer
   std::vector<PulseClass> *vv = Vpulses+nvp2;
 
-  if (!vv->empty())
-  cout << "Make_events back: " << (int) vv->back().ptype << " " 
-       << vv->back().Tstamp64 << endl;
+  // if (!vv->empty())
+  //   cout << "Make_events back: " << (int) vv->back().ptype << " " 
+  // 	 << vv->back().Tstamp64 << endl;
 
   if (!vv->empty() && !(vv->back().ptype&P_NOSTOP)) {
     //vv->back().FindPeaks();

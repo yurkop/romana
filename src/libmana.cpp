@@ -1265,11 +1265,15 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   gStyle->SetOptStat(kFALSE);
   gStyle->SetPalette(1,0);
-  gStyle->SetTitleFontSize(0.09);
+  gStyle->SetTitleFontSize(0.07);
   gStyle->SetTitleSize(0.05,"xyz");
   gStyle->SetTitleOffset(0.8,"x"); 
   gStyle->SetLabelSize(0.05,"xyz");
   gStyle->SetNdivisions(505,"xyz");
+  gStyle->SetPadLeftMargin(0.15);
+  gStyle->SetPadRightMargin(0.05);
+  //gStyle->SetPadBottomMargin(0.15);
+  //gStyle->SetPadTopMargin(0.05);
   
 
   /*
@@ -1723,7 +1727,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //Make_hist();
 
   //DoDraw2();
-  crs->Dummy_trd();
+  //crs->Dummy_trd();
 
 }
 
@@ -2492,11 +2496,14 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
     cout << "DoTab4: " << name << endl;
-    EvtFrm->DrawEvent2();
+    if (!crs->b_acq)
+      EvtFrm->DrawEvent2();
   }
   else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
     cout << "DoTab5: " << name << endl;
-    HiFrm->ReDraw();
+    if (!crs->b_acq)
+      HiFrm->Update();
+    //HiFrm->ReDraw();
   }
 }
 
