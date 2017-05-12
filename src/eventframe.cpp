@@ -989,8 +989,8 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 	doXline(pk->T3+dt,y1,y2-dy*0.2,1,2);
 	doXline(pk->T4+dt,y1,y2-dy*0.1,1,2);
       }
-      cout <<"DrawPeaksT2: " << pk->Time+dt << " " << dt << " " 
-	   << pulse->Tstamp64 << " " << d_event->T << endl;
+      //cout <<"DrawPeaksT2: " << pk->Time+dt << " " << dt << " " 
+      //   << pulse->Tstamp64 << " " << d_event->T << endl;
     }
   }
     //}
@@ -1254,8 +1254,8 @@ void EventFrame::ReDraw() {
       double y1=my1[i]+dy*(1-h2);
       double y2=my2[i]-dy*h1;
 
-      printf("DosLider: %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f\n",
-	     h1,h2,y1,y2,mx1,mx2,dx);
+      //printf("DosLider: %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f\n",
+      //     h1,h2,y1,y2,mx1,mx2,dx);
 
       //cout << "Redraw5: " << i << fHist[i] << endl;
       delete fHist[i];
@@ -1269,7 +1269,7 @@ void EventFrame::ReDraw() {
       //cout << "Redraw7: " << i << fHist[i] << endl;
 
       doYline(0,x1,x2,4,2);
-      cout <<"DrawPeaks: " << d_event->T0 << endl;
+      //cout <<"DrawPeaks: " << d_event->T0 << endl;
       if (fPeak[6]->IsOn()) { //T0
 	mk.DrawMarker(d_event->T0,y2-dy*0.1);
 	//doXline(d_event->T0,y1,y2,5,1);
@@ -1312,10 +1312,10 @@ void EventFrame::ReDraw() {
     }
   }
 
-  cout << "rdr77: " << endl;
+  //cout << "rdr77: " << endl;
   fCanvas->GetCanvas()->Update();
 
-  cout << "rdr78: " << endl;
+  //cout << "rdr78: " << endl;
   Emut.UnLock();
 
 }

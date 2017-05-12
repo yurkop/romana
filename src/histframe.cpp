@@ -344,7 +344,8 @@ void HistFrame::DoClick(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, 
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
   cout << "DoCheck: " << obj << " " << check << endl;
-  Update();
+  if (!crs->b_acq)
+    Update();
 }
 
 //void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym) {
@@ -404,7 +405,8 @@ void HistFrame::DoRadio()
   }
 
   opt.sel_hdiv=id;
-  Update();
+  if (!crs->b_acq)
+    Update();
 
   //SelectDiv(id);
 
@@ -433,7 +435,8 @@ void HistFrame::DoButton()
   }
 
   //cout << "doradio2: " << id << endl;
-  Update();
+  if (!crs->b_acq)
+    Update();
   //cout << "doradio3: " << id << endl;
 
 }
@@ -491,6 +494,8 @@ void HistFrame::DoPeaks()
 
 void HistFrame::DoReset()
 {
+
+  if (crs->b_acq) return;
 
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
@@ -556,13 +561,13 @@ void HistFrame::Update()
   */
 
 
-  cout <<"Update1: " << endl;
+  //cout <<"Update1: " << endl;
 
   //gStyle->Dump();
 
   DrawHist();
 
-  cout <<"Update2: " << endl;
+  //cout <<"Update2: " << endl;
   //exit(1);
 
   Hmut.UnLock();
