@@ -927,6 +927,9 @@ void EventFrame::DrawEvent2() {
     }
   }
 
+  //Emut2.UnLock();
+  //return;
+
   //cout << "hst: " << hst[0]->GetNhists() << endl;
   //cout << "mgr: " << mgr[0]->GetHistogram() << endl;
   //TGraph* gr = (TGraph*) mgr[0]->GetListOfGraphs()->First();

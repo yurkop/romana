@@ -1,3 +1,4 @@
+# make DEBUG=1 to compile with debug option
 SRC_D = src
 OBJ_D = obj
 
