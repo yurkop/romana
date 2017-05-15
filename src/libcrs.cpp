@@ -139,6 +139,7 @@ void *handle_evt(void* ptr)
 
       //std::list<EventClass>::reverse_iterator evt;
 
+      EvtFrm->BlockAllSignals(true);
       Emut3.Lock();
       //cout << "trd3: " << myM->fTab->GetCurrent() << endl; 
       Select_Event();
@@ -150,6 +151,7 @@ void *handle_evt(void* ptr)
       //cout << "trd5: " << myM->fTab->GetCurrent() << endl; 
       EvtFrm->DrawEvent2();
       Emut3.UnLock();
+      EvtFrm->BlockAllSignals(false);
 
       //Emut.UnLock();
 
@@ -159,14 +161,15 @@ void *handle_evt(void* ptr)
     //else {
       //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
     //}
-    /*
+
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
       //HiFrm->DrawHist();      
-      //HiFrm->BlockAllSignals(true);
+      HiFrm->BlockAllSignals(true);
+      //HiFrm->Update();
       HiFrm->ReDraw();
-      //HiFrm->BlockAllSignals(false);
+      HiFrm->BlockAllSignals(false);
     }
-    */
+
     //HiFrm->Update();      
     //cout << "Block: " << endl;
 

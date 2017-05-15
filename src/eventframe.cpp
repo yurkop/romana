@@ -855,16 +855,17 @@ void EventFrame::DrawEvent2() {
   TCanvas *cv=fCanvas->GetCanvas();
   cv->Clear();
 
+  //cv->Update();
   //int nnn=0;
   //if (Levents) nnn=Levents->size();
   //printf("DrawEvent0: %p %d %p %d\n",Levents,nnn,crs->Levents,crs->Levents.size());
 
-  // if (Levents->empty()) {
-  //   txt.DrawTextNDC(0.2,0.7,"Empty event");
-  //   cv->Update();
-  //   Emut2.UnLock();
-  //   return;
-  // }
+  if (Levents->empty()) {
+    txt.DrawTextNDC(0.2,0.7,"Empty event");
+    cv->Update();
+    Emut2.UnLock();
+    return;
+  }
 
   //printf("Draw1:\n");
 

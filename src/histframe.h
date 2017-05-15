@@ -48,6 +48,10 @@ class HistFrame: public TGCompositeFrame {
    static const int NR=6;
    TGRadioButton *Rb[NR];
 
+   int ntab; //tab number where eventframe is placed
+
+   Bool_t changed;
+   
    int ndiv;
    int xdiv;
    int ydiv;
@@ -59,19 +63,18 @@ class HistFrame: public TGCompositeFrame {
 
  public:
 
-   int ntab; //tab number where eventframe is placed
-   int ievent; //current event to be drawn
-   std::list<EventClass>::iterator d_event;
-   std::list<EventClass> Tevents;
-   std::list<EventClass> *Levents;
+   //int ievent; //current event to be drawn
+   //std::list<EventClass>::iterator d_event;
+   //std::list<EventClass> Tevents;
+   //std::list<EventClass> *Levents;
    //EventClass *d_event; //current event to draw
-   int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
+   //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
    //int NGr;
-   TGraph Gr[3][MAX_CH];
-   TH1F *hh[3][MAX_CH];
-   double gx1,gx2,gy1[3],gy2[3];
-   TH2F fPaint[3];
-   THStack* hst[3];
+   //TGraph Gr[3][MAX_CH];
+   //TH1F *hh[3][MAX_CH];
+   //double gx1,gx2,gy1[3],gy2[3];
+   //TH2F fPaint[3];
+   //THStack* hst[3];
    //TMultiGraph* mgr[3];
 
    //bool bprint;

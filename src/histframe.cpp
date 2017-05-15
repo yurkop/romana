@@ -66,6 +66,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   xdiv=1;
   ydiv=1;
+  ndiv=1;
 
   hlist=new TList();
 
@@ -75,6 +76,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   ntab=nt;
 
+  changed=false;
   //char ss[100];
 
   //Frames.....
@@ -346,6 +348,8 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
   cout << "DoCheck: " << obj << " " << check << endl;
   if (!crs->b_acq)
     Update();
+  else
+    changed=true;
 }
 
 //void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym) {
@@ -385,6 +389,10 @@ void HistFrame::SelectDiv(int nn)
     xdiv=8;
     ydiv=4;
     break;
+  default:
+    ndiv=1;
+    xdiv=1;
+    ydiv=1;
   }
 
 }
@@ -407,6 +415,8 @@ void HistFrame::DoRadio()
   opt.sel_hdiv=id;
   if (!crs->b_acq)
     Update();
+  else
+    changed=true;
 
   //SelectDiv(id);
 
@@ -437,6 +447,8 @@ void HistFrame::DoButton()
   //cout << "doradio2: " << id << endl;
   if (!crs->b_acq)
     Update();
+  else
+    changed=true;
   //cout << "doradio3: " << id << endl;
 
 }
@@ -565,7 +577,9 @@ void HistFrame::Update()
 
   //gStyle->Dump();
 
+  cout << "update14" << endl;
   DrawHist();
+  cout << "update15" << endl;
 
   //cout <<"Update2: " << endl;
   //exit(1);
@@ -577,38 +591,74 @@ void HistFrame::DrawHist()
 {
 
   //cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
-  fEc->GetCanvas()->Clear();
-  //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << endl;
-  //fEc->GetCanvas()->Update();
-  fEc->GetCanvas()->Divide(xdiv,ydiv);
+  TCanvas *cv=fEc->GetCanvas();
+  cv->Clear();
+  //fEc->GetCanvas()->Clear();
+  //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
+  //cout <<"dr2a: " << fEc << " " << fEc->GetCanvas() << endl;
+  cv->Divide(xdiv,ydiv);
+  //cv->Update();
   //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
   //cout <<"dr2: " << hlist << endl;
+  //return;
   int nn=1;
   int ii=0;
   TIter next(hlist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     if (ii>=opt.icheck) {
-      //cout <<"ddd: " << nn << " " << ii << " " << fEc->GetCanvas()->GetPad(nn) << endl;
-      if (!fEc->GetCanvas()->GetPad(nn)) break;
-      fEc->GetCanvas()->cd(nn);
+      //cout <<"ddd: " << nn << " " << ndiv << " " << ii << " " << fEc->GetCanvas()->GetPad(nn) << endl;
+      //if (!fEc->GetCanvas()->GetPad(nn)) break;
+      cv->cd(nn);
       TH1 *hh = (TH1*) obj;
       //cout << "hhh: " << hh->GetTitleSize() << endl;
       hh->Draw();
       nn++;
+      if (nn>ndiv)
+	break;
     }
     ii++;
+    //break;
   }
   //return;
   //cout <<"dr3:" << endl;
-  fEc->GetCanvas()->Update();
+  cv->Update();
 }
 
+/*
+void HistFrame::DrawHist()
+{
+
+  TCanvas *cv=fEc->GetCanvas();
+  cv->Clear();
+  cv->Divide(xdiv,ydiv);
+  //cv->Update();
+  //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
+  //cout <<"dr2: " << hlist << endl;
+  //return;
+
+  for (int i=0;i<ndiv;i++) {
+    cv->cd(i+1);
+    //h_ampl[i]->Draw();
+  }
+  //return;
+  //cout <<"dr3:" << endl;
+  cv->Update();
+}
+*/
 void HistFrame::ReDraw()
 {
 
   //cout << "ReDraw: " << fEc->GetCanvas() << endl;
 
-  fEc->GetCanvas()->Draw();
-  fEc->GetCanvas()->Update();
+  if (changed) {
+    //fEc->GetCanvas()->Draw();
+    //fEc->GetCanvas()->Update();
+    Update();
+    changed=false;
+  }
+  else {
+    fEc->GetCanvas()->Draw();
+    fEc->GetCanvas()->Update();
+  }
 }
