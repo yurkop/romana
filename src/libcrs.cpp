@@ -245,16 +245,12 @@ void *Ana_Events(void* ptr) {
       //if ((int)Levents.size()<=opt.ev_min) break;
     }
     //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.size() << endl;
-    //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.size() << endl;
-    //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.size() << endl;
 
     crs->Levents.erase(crs->Levents.begin(),crs->m_event);
     crs->m_flag=true;
 
     //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
-    //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
-    cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
-    gSystem->Sleep(20);
+    //gSystem->Sleep(200);
     ana_mut.UnLock();
     return 0;
     
@@ -1496,6 +1492,9 @@ void CRS::FAnalyze() {
     //Do1Buf();
     //if (!b_fana) break;
   }
+
+  m_event=Levents.end();
+  trd_ana->Run();
 
   b_stop=true;
 
