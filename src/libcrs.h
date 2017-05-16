@@ -90,21 +90,21 @@ RQ_OBJECT("CRS")
 
   //vars for decoding...
   //for crs32...
-  ULong64_t *buf8; //buffer for 8-byte words
-  unsigned char *buf1; //buffer for 1-byte words
-  int r_buf8; //length of the buffer (in 8-byte words)
-  int idx8; // current index in the buffer (in 8-byte words) 
-  int idx1; // current index in the buffer (in 1-byte words)
+  //ULong64_t *buf8; //buffer for 8-byte words
+  //unsigned char *buf1; //buffer for 1-byte words
+  //int r_buf8; //length of the buffer (in 8-byte words)
+  //int idx8; // current index in the buffer (in 8-byte words) 
+  //int idx1; // current index in the buffer (in 1-byte words)
 
   //for crs2...
-  unsigned short* buf2; //buffer for 2-byte words
-  int r_buf2; //length of the buffer (in 2-byte words)
-  int idx2; // current index in the buffer (in 2-byte words)
+  //unsigned short* buf2; //buffer for 2-byte words
+  //int r_buf2; //length of the buffer (in 2-byte words)
+  //int idx2; // current index in the buffer (in 2-byte words)
   
-  int frmt; //data format (byte 6)
-  int cnt[MAX_CH]; // last 4 bits of the counter
-  int cnt_prev[MAX_CH]; //previous cnt (may be used for counter consistency)
-  int nsmp; //temporary Nsamp
+  //int frmt; //data format (byte 6)
+  //int cnt[MAX_CH]; // last 4 bits of the counter
+  //int cnt_prev[MAX_CH]; //previous cnt (may be used for counter consistency)
+  //int nsmp; //temporary Nsamp
 
   //ULong64_t istamp64; //temporary tstamp64
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
@@ -141,6 +141,9 @@ RQ_OBJECT("CRS")
 
   void AllParameters2(); // load all parameters
   void Decode2(UChar_t* buffer, int length);
+
+  int Searchsync(int id0);
+  void Decode_adcm(UChar_t* buffer, int length);
 
   //void PrintPulse(int udata, bool pdata=false);
 

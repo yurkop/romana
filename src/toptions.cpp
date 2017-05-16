@@ -229,7 +229,8 @@ Toptions::Toptions() {
   EBufsize=100;
   period=5;
 
-  buf_size=1024;
+  usb_size=1024;
+  rbuf_size=1024;
   tsleep=500;
   event_buf=1000;
   event_lag=10;

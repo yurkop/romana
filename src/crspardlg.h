@@ -125,7 +125,8 @@ class ParParDlg: public ParDlg {
 		const char* tip1, const char* tip2, const char* label,
 		TGNumberFormat::EStyle style, 
 		//TGNumberFormat::EAttribute attr, 
-		double min=0, double max=0, char* connect=NULL);
+		double min1=0, double max1=0,
+		double min2=0, double max2=0, char* connect=NULL);
   void AddLine3(TGGroupFrame* frame, Float_t *x1,
 			 Float_t *x2, Float_t *x3, 
 			 const char* tip, const char* label);

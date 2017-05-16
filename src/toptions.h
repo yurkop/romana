@@ -103,7 +103,8 @@ class Toptions: public TObject {
 
   Int_t Tstart,Tstop;
   Int_t tsleep;
-  Int_t buf_size; //in kB
+  Int_t usb_size; //in kB
+  Int_t rbuf_size; //in kB
 
   Int_t event_buf; //length of event buffer
   //analysis starts only after filling first event_buf

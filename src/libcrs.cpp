@@ -401,7 +401,7 @@ CRS::CRS() {
   chanPresent=32;
 
   ntrans=MAXTRANS;
-  //opt.buf_size=1024*1024;
+  //opt.usb_size=1024*1024;
 
   for (int i=0;i<MAXTRANS;i++) {
     transfer[i] =NULL;
@@ -693,8 +693,8 @@ int CRS::Init_Transfer() {
     //if (buftr[i]) {
     //delete[] buftr[i];
     //}
-    buftr[i] = new unsigned char[opt.buf_size*1024];
-    memset(buftr[i],0,sizeof(unsigned char)*opt.buf_size*1024);
+    buftr[i] = new unsigned char[opt.usb_size*1024];
+    memset(buftr[i],0,sizeof(unsigned char)*opt.usb_size*1024);
   }
 
   //cout << "---Init_Transfer 3---" << endl;
@@ -706,7 +706,7 @@ int CRS::Init_Transfer() {
     int* ntr = new int;
     (*ntr) = i;
 
-    libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], opt.buf_size*1024, cback, ntr, 0);
+    libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], opt.usb_size*1024, cback, ntr, 0);
 
     /*
     int res;
@@ -1181,7 +1181,7 @@ int CRS::DoStartStop() {
     //nbuffers=0;
 
     //Nsamp=0;
-    nsmp=0;
+    //nsmp=0;
 
     opt.F_start.Set();
     if (opt.raw_write) {
@@ -1388,7 +1388,7 @@ void CRS::DoFopen(char* oname, int popt) {
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
 
   if (Fbuf) delete[] Fbuf;
-  Fbuf = new UChar_t[opt.buf_size*1024];
+  Fbuf = new UChar_t[opt.rbuf_size*1024];
 
 
 
@@ -1453,7 +1453,7 @@ int CRS::ReadParGz(gzFile &ff, int p1, int p2) {
   //opt.raw_write=false;
 
   //if (Fbuf) delete[] Fbuf;
-  //Fbuf = new UChar_t[opt.buf_size*1024];
+  //Fbuf = new UChar_t[opt.usb_size*1024];
   //EvtFrm->Levents = &Levents;
 
   //cout << "readpar_gz3" << endl;
@@ -1485,7 +1485,7 @@ void CRS::FAnalyze() {
     return;
   }
 
-  //Fbuf = new UChar_t[opt.buf_size*1024];
+  //Fbuf = new UChar_t[opt.usb_size*1024];
 
   b_stop=false;
   while (Do1Buf() && b_fana) {
@@ -1502,7 +1502,7 @@ void CRS::FAnalyze() {
 
 int CRS::Do1Buf() {
 
-  int res=gzread(f_read,Fbuf,opt.buf_size*1024);
+  int res=gzread(f_read,Fbuf,opt.rbuf_size*1024);
   cout << "gzread: " << Fmode << " " << nbuffers << " " << res << endl;
   if (res>0) {
     crs->totalbytes+=res;
@@ -1682,6 +1682,130 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 
   Make_Events(nvp);
   
+}
+
+//-------------------------------------
+
+int CRS::Searchsync(int id0) {
+
+  /*
+  bool bbb;
+  int id0=idx;
+
+  do {
+    idx+=2;
+    //cout << "searchsync: " << idx << endl;
+    if (idx>=r_buf) {
+      idx-=r_buf;
+      if (readbuf()) {
+	return 0;
+      }
+    }
+    bbb = buf[idx+1] == 0x2a50 && (buf[idx]==0x100 || buf[idx]==0x102);
+  } while (!bbb);
+
+  //cout << "searchsync idx: " << idx-id0 << endl;
+  return idx-id0;
+  */
+}
+
+void CRS::Decode_adcm(UChar_t *buffer, int length) {
+
+  PulseClass *ipp;
+
+  unsigned short* buf2 = (unsigned short*) buffer;
+  //int nbuf = *(int*) transfer->user_data;
+
+  std::vector<PulseClass> *vv = Vpulses+nvp;
+  vv->clear();
+
+  int nvp2=nvp-1;
+  if (nvp2<0) nvp2=ntrans-1;
+
+  if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
+    vv->push_back(PulseClass());
+    npulses++;
+    ipp = &vv->back();
+    ipp->Chan = ((*buf2) & 0x8000)>>15;
+    ipp->ptype|=P_NOSTART; // first pulse is by default incomplete
+    //it will be reset if idx8==0 in the while loop
+  }
+  else {
+    ipp=&(Vpulses+nvp2)->back();
+    // ipp points to the last pulse of the previous buffer
+  }
+
+  unsigned short frmt;
+  int idx2=0;
+  int len = length/2;
+
+  while (idx2<len) {
+
+    unsigned short uword = buf2[idx2];
+    frmt = (uword & 0x7000)>>12;
+    short data = uword & 0xFFF;
+    unsigned char ch = (uword & 0x8000)>>15;
+
+    if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
+      cout << "2: Bad channel: " << (int) ch
+	   << " " << (int) ipp->Chan << endl;
+      ipp->ptype|=P_BADCH;
+
+      idx2++;
+      continue;
+    }
+
+    if (frmt==0) {
+      //make new pulse only if this is not the first record.
+      //For the first record new pulse is already created at the beginning
+      if (idx2) {
+	ipp->ptype&=~P_NOSTOP; //pulse has stop
+	vv->push_back(PulseClass());
+	npulses++;
+	ipp = &vv->back();
+      }
+      else { //idx2==0 -> pulse has start
+	ipp->ptype&=~P_NOSTART; // reset ptype, as this is a good pulse
+      }
+      ipp->Chan = ch;
+      ipp->Tstamp64=data;
+
+    }
+    else if (frmt<4) {
+      Long64_t t64 = data;
+      ipp->Tstamp64+= (t64 << (frmt*12));
+    }
+    else if (frmt==4) {
+      ipp->Counter=data;
+    }
+    else if (frmt==5) {
+      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+	// cout << "2: Nsamp error: " << ipp->sData.size()
+	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << idx2
+	//      << endl;
+	ipp->ptype|=P_BADSZ;
+      }
+      //else {
+      ipp->sData.push_back((data<<21)>>21);
+      //}
+    }
+
+    idx2++;
+  }
+
+  //return;
+  //cond[nbuf]->Signal();
+
+  //cout << "decode2a: " << idx2 << endl;
+
+  //Fill_Tail(nvp);
+  Make_Events(nvp);
+
+  //nvp++;
+  //if (nvp>=ntrans) nvp=0;
+  //nvp = (nvp+1)%ntrans;
+
 }
 
 //-------------------------------------

@@ -689,16 +689,16 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   label="Time limits";
   AddLine2(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_int);
 
-  tip1= "Delay between drawing events (in msec)";
-  tip2= "";
+  tip1= "";
+  tip2= "Delay between drawing events (in msec)";
   label="DrawEvent delay";
-  AddLine2(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000);
+  AddLine2(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000,100,10000);
 
   tip1= "Size of the USB buffer in kilobytes";
-  tip2= "";
+  tip2= "Size of the READ buffer in kilobytes";
   label="USB buffer size";
-  AddLine2(fF6,ww,NULL,&opt.buf_size,tip1,tip2,label,k_int,1,2048,
-	   (char*) "DoNum_SetBuf()");
+  AddLine2(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,1,2048,
+	   1,1000000,(char*) "DoNum_SetBuf()");
 
   tip1= "Minimal size of the event list";
   tip2= "Maximal size of the event list";
@@ -729,7 +729,8 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";
   label="Multiplicity (min, max)";
-  AddLine2(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH);
+  AddLine2(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH,
+	   1,MAX_CH);
 
   fF6->Resize();
 
@@ -839,7 +840,8 @@ void ParParDlg::AddLine2(TGGroupFrame* frame, int width, void *x1, void *x2,
 		      const char* tip1, const char* tip2, const char* label,
 		      TGNumberFormat::EStyle style, 
 			 //TGNumberFormat::EAttribute attr, 
-			 double min, double max, char* connect)
+			 double min1, double max1,
+			 double min2, double max2, char* connect)
 {
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
@@ -860,8 +862,10 @@ void ParParDlg::AddLine2(TGGroupFrame* frame, int width, void *x1, void *x2,
     pdef=p_fnum;
   }
 
-  TGNumberFormat::ELimit limits = TGNumberFormat::kNELNoLimits;
-  if (max!=0) {
+  TGNumberFormat::ELimit limits;
+
+  limits = TGNumberFormat::kNELNoLimits;
+  if (max1!=0) {
     limits = TGNumberFormat::kNELLimitMinMax;
   }
 
@@ -869,7 +873,7 @@ void ParParDlg::AddLine2(TGGroupFrame* frame, int width, void *x1, void *x2,
     id = Plist.size()+1;
     TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, style, 
 					     TGNumberFormat::kNEAAnyNumber,
-					     limits,min,max);
+					     limits,min1,max1);
     DoMap(fNum1->GetNumberEntry(),x1,pdef,0);
     fNum1->GetNumberEntry()->SetToolTipText(tip1);
     fNum1->SetWidth(width);
@@ -885,11 +889,16 @@ void ParParDlg::AddLine2(TGGroupFrame* frame, int width, void *x1, void *x2,
     hfr1->AddFrame(fskip,fL7);
   }
   
+  limits = TGNumberFormat::kNELNoLimits;
+  if (max2!=0) {
+    limits = TGNumberFormat::kNELLimitMinMax;
+  }
+
   if (x2!=NULL) {
     id = Plist.size()+1;
     TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, style, 
 					     TGNumberFormat::kNEAAnyNumber,
-					     limits,min,max);
+					     limits,min2,max2);
     DoMap(fNum2->GetNumberEntry(),x2,pdef,0);
     fNum2->GetNumberEntry()->SetToolTipText(tip2);
     fNum2->SetWidth(width);
