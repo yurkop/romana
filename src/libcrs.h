@@ -52,6 +52,12 @@ RQ_OBJECT("CRS")
   Short_t nvp; //Vpulses "ring" counter
   std::vector<PulseClass> Vpulses[MAXTRANS];
   std::list<EventClass> Levents;
+  std::list<EventClass>::iterator m_event2; //temporary m_event
+  std::list<EventClass>::iterator m_event;
+  //m_event points to the first element after cleaning the list
+
+  Bool_t m_flag; //flag used for cleaning the event list
+
   //Short_t MAX_LAG; // maximal e_lag, equals to half of the event_buf
   Short_t e_lag; //event analysis lag - see also opt.event_lag
 
@@ -142,6 +148,7 @@ RQ_OBJECT("CRS")
   //void SigEvent() { Emit("SigEvent()"); } //*SIGNAL*
   void Event_Insert_Pulse(PulseClass* pulse);
   void Make_Events(int nbuf);
+  //void *Ana_Events(void* ptr);
 
   ClassDef(CRS, 0)
 };

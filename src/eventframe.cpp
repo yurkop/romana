@@ -867,8 +867,6 @@ void EventFrame::DrawEvent2() {
     return;
   }
 
-  //printf("Draw1:\n");
-
   ndiv=0;
 
   if (d_event->pulses.empty()) {
@@ -939,6 +937,11 @@ void EventFrame::DrawEvent2() {
   cv->Divide(1,ndiv);
 
   ReDraw();
+
+  //cout << "Draw1: " << endl;
+  //cout << "Draw2: " << d_event->T << endl;
+  //Emut2.UnLock();
+  //return;
 
   char ss[99];
   sprintf(ss,"Evt: %lld",d_event->Nevt);//std::distance(Levents->begin(),d_event));
@@ -1230,14 +1233,24 @@ void EventFrame::ReDraw() {
   Emut.Lock();
   //cv->Update();
   
+  //cout << "Redr0: " << endl;
+
   int nn=1;
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
+
+      //TCanvas *cv=fCanvas->GetCanvas();
+      //cout << "Redr0: " << cv << endl;
+      //Emut.UnLock();
+      //return;
+
       fCanvas->GetCanvas()->cd(nn++);
+
+      //cout << "Redr1: " << i << endl;
 
       SetRanges(i);
 
-      //cout << "Redr1: " << i << endl;
+
       if (mx1>1e98) {
 	gPad->Clear();
 	continue;

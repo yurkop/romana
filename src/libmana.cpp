@@ -194,7 +194,7 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
-int debug=0; // for printing debug messages
+int debug=1; // for printing debug messages
 
 int *opt_id[MXNUM];
 

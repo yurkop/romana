@@ -16,6 +16,8 @@
 
 TMutex Emut3;
 TMutex stat_mut;
+TMutex ana_mut;
+
 TCondition* cond[CRS::MAXTRANS];
 
 using namespace std;
@@ -42,6 +44,7 @@ TThread* trd_crs;
 TThread* trd_stat;
 TThread* trd_evt;
 TThread* trd_dum;
+TThread* trd_ana;
 
 int event_thread_run;//=1;
 
@@ -114,7 +117,7 @@ void *handle_stat(void *ctx)
 void Select_Event() {
   UInt_t nn=0;
   for (EvtFrm->d_event=--crs->Levents.end();
-       EvtFrm->d_event!=--crs->Levents.begin() && nn<=2 ;--EvtFrm->d_event) {
+       EvtFrm->d_event!=crs->m_event && nn<4 ;--EvtFrm->d_event) {
     nn++;
     //if (nn>2) break;
   }
@@ -150,6 +153,7 @@ void *handle_evt(void* ptr)
 
       //cout << "trd5: " << myM->fTab->GetCurrent() << endl; 
       EvtFrm->DrawEvent2();
+      //cout << "trd6: " << myM->fTab->GetCurrent() << endl; 
       Emut3.UnLock();
       EvtFrm->BlockAllSignals(false);
 
@@ -219,6 +223,43 @@ void *ballast(void* xxx) {
 
 }
 
+void *Ana_Events(void* ptr) {
+    //Int_t nn=0;
+    ana_mut.Lock();
+
+    std::list<EventClass>::iterator rl;
+    std::list<EventClass>::iterator next;
+
+    for (rl=crs->Levents.begin(); 
+	 rl!=crs->m_event; rl=next) {
+      next = rl;
+      ++next;
+      //cout << "Ana7: " << rl->T << " " << m_event->T << endl;
+      if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
+	//FillHist_old(&(*rl));
+	HiFrm->FillHist(&(*rl));
+	++crs->nevents2;
+      }
+      //Levents.erase(rl);
+      //++nn;
+      //if ((int)Levents.size()<=opt.ev_min) break;
+    }
+    //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.size() << endl;
+    //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.size() << endl;
+    //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.size() << endl;
+
+    crs->Levents.erase(crs->Levents.begin(),crs->m_event);
+    crs->m_flag=true;
+
+    //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
+    //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
+    cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
+    gSystem->Sleep(20);
+    ana_mut.UnLock();
+    return 0;
+    
+}
+
 /*
   void *decode2(void* xxx) {
   libusb_transfer* transfer = (libusb_transfer*) xxx;
@@ -286,7 +327,6 @@ CRS::CRS() {
 
   //cout << TClass::GetClass("Toptions")->GetClassVersion() << endl;
   //exit(1);
-
   /*
     std::list<int> mylist;
     std::list<int>::iterator it;
@@ -305,12 +345,12 @@ CRS::CRS() {
     --rit;
     std::cout << *rit << endl;
     
-    mylist.insert(mylist.begin(),21);
+    mylist.insert(mylist.begin(),0);
     //mylist.clear();
     //mylist.insert(mylist.begin(),21);
     std::cout << *rit << " " << mylist.back() << " " << *mylist.begin() << endl;
-    std::cout << "mylist contains:";
 
+    std::cout << "mylist contains:";
     for (it=mylist.begin(); it!=mylist.end(); ++it)
       std::cout << ' ' << *it;
     std::cout << '\n';
@@ -320,9 +360,22 @@ CRS::CRS() {
     }
     std::cout << '\n';
 
+    rit=++mylist.rbegin();
+    mylist.insert(rit.base(),29);
+
+    std::cout << "mylist contains:";
+    for (it=mylist.begin(); it!=mylist.end(); ++it)
+      std::cout << ' ' << *it;
+    std::cout << '\n';
+
+    it=--mylist.end();
+
+    advance(it,-8);
+    cout << *mylist.rbegin() << " " << *(--mylist.rend()) << " "
+	 << *rit << " " << *rit.base() << " " << *it << endl;
+    
     exit(1);
   */
-
 
   for (int i=0;i<MAXTRANS;i++)
     cond[i]=new TCondition(0);
@@ -365,7 +418,11 @@ CRS::CRS() {
   trd_stat->Run();
   trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
   trd_evt->Run();
+  trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);
 
+  //mTh= new TThread("memberfunction",
+  //(void(*)(void *))&Thread0,(void*) this);
+ 
   cout << "threads created... " << endl;
 
 }
@@ -1098,6 +1155,7 @@ int CRS::DoStartStop() {
     chanpar->Update();
 
     //EvtFrm->Levents = &Levents;
+    EvtFrm->Clear();
     EvtFrm->Levents = &EvtFrm->Tevents;
 
     //if (module==32) {
@@ -1182,6 +1240,7 @@ int CRS::DoStartStop() {
     gSystem->Sleep(300);
     Cancel_all();
     b_stop=true;
+    EvtFrm->Clear();
     EvtFrm->Levents = &Levents;
     Select_Event();
     //EvtFrm->Levents = &Levents;
@@ -1247,6 +1306,9 @@ void CRS::DoReset() {
 
   nvp=0;
   Levents.clear();
+  m_event=Levents.begin();
+  m_event2=m_event;
+  m_flag=true;
   nevents=0;
   nevents2=0;
 
@@ -1827,12 +1889,24 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   pls->FindPeaks();
   pls->PeakAna();
 
-  //cout << "Pls: " << nevents << " " << pls->Tstamp64 << endl;
+  //cout << "Pls: " << nevents << " " << &*(--Levents.rend()) << " " << &*m_event << endl;
+  //exit(1);
+
+  int nn=0;
 
   std::list<EventClass>::reverse_iterator rl;
-  int nn=0;
+  //for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
+  std::list<EventClass>::reverse_iterator r_event=
+    std::list<EventClass>::reverse_iterator(m_event);
+  //cout << "Insert7: " << &*(--Levents.rend()) << " " << m_event->T << " "
+  //     << std::list<EventClass>::reverse_iterator(++it)->T << endl;
+
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
-    Long64_t dt = (pls->Tstamp64 - rl->T)*opt.period;
+    //for (rl=Levents.rbegin(); rl!=++r_event; ++rl) {
+
+  //std::list<EventClass>::iterator rl;
+  //for (rl=Levents.end(); rl!=m_event; --rl) {
+    Long64_t dt = (pls->Tstamp64 - rl->T);//*opt.period;
     //cout << "Insert: " << nevents << " " << dt << " " << rl->T 
     //	 << " " << opt.tgate << endl;
     if (dt > opt.tgate) {
@@ -1841,15 +1915,15 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
       rl->Nevt=nevents;
       nevents++;
       rl->Pulse_Ana_Add(pls);
-      if (debug && nn>10)
-	cout << "nn: " << nn << " " << Levents.size() << " " << opt.ev_max << endl;
+      //if (debug && nn>10)
+      //cout << "nn1: " << nn << " " << Levents.size() << " " << opt.ev_max << endl;
       return;
     }
     else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
       // coincidence event
       rl->Pulse_Ana_Add(pls);
-      if (debug && nn>10)
-	cout << "nn: " << nn << endl;
+      //if (debug && nn>20)
+      //cout << "nn2: " << nn << endl;
       return;
     }
     nn++;
@@ -1858,10 +1932,10 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   }
 
   
-  if (debug && nn>10)
-    cout << "nn: " << nn << endl;
+  //if (debug && nn>20)
+  //cout << "nn3: " << nn << endl;
   if (debug)
-    cout << "beginning" << endl;
+    cout << "beginning: " << nn << endl;
   //add new event at the beginning of the eventlist
   Levents.insert(Levents.begin(),EventClass());
   rl->Nevt=nevents;
@@ -1906,36 +1980,36 @@ void CRS::Make_Events(int nvp) {
 
   //YK don't understand why this is needed...
   //-----------
-  std::list<EventClass>::reverse_iterator evt;
-  UInt_t nn=0;
-  for (evt=crs->Levents.rbegin();evt!=crs->Levents.rend();evt++) {
-    nn++;
-    if (nn>2) break;
-  }
-  //cout << "Make_Events: " << evt->T << endl;
+  // std::list<EventClass>::reverse_iterator evt;
+  // UInt_t nn=0;
+  // for (evt=crs->Levents.rbegin();evt!=crs->Levents.rend();evt++) {
+  //   nn++;
+  //   if (nn>2) break;
+  // }
+
+  //cout << "Make_Events: " << evt->T << " " << Levents.size() << endl;
   //PEvent();
   //-----------
 
-
   //Analyse events and clean (part of) the event list
-  if ((int) Levents.size()>opt.ev_max) {
-    //Int_t nn=0;
-    std::list<EventClass>::iterator rl;
-    std::list<EventClass>::iterator next;
+  if (m_flag && (int) Levents.size()>opt.ev_min) {
+    m_event2=--Levents.end();
+    m_flag=false;
+    //cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
+  }
+  if (!m_flag && (int) Levents.size()>opt.ev_max) {
+    m_event=m_event2;
+    //cout << "Ana_Events1: " << nevents2 << " " << Levents.size() << endl;
 
-    for (rl=Levents.begin(); 
-	 rl!=Levents.end(); rl=next) {
-      next = rl;
-      ++next;
-      if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
-	//FillHist_old(&(*rl));
-	HiFrm->FillHist(&(*rl));
-	++nevents2;
-      }
-      Levents.erase(rl);
-      //++nn;
-      if ((int)Levents.size()<=opt.ev_min) break;
-    }
+
+    trd_ana->Run();
+    //Ana_Events(0);
+
+
+    //cout << "Ana_Events2: " << nevents2 << " " << Levents.size() << " "
+    // << Levents.begin()->T << endl;
   }
 
+
 }
+
