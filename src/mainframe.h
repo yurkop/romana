@@ -63,6 +63,7 @@ public:
 
   //void Make_hist();
 
+  void SetTitle(char* fname);
   void DoStartStop();
   void DoOpen();
   void DoAna();

@@ -130,8 +130,8 @@ class Toptions: public TObject {
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list
 
-  Int_t tgate; // coincidence window for events (in ns??)
-  //Int_t tgate2; // coincidence window for histograms (in ns??)
+  Int_t tgate; // coincidence window for events (in samples)
+  //Int_t tgate2; // coincidence window for histograms (in ...)
 
   UInt_t mult1; // minimal multiplicity
   UInt_t mult2; // maximal multiplicity

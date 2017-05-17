@@ -44,3 +44,5 @@ make different buf sizes for usb and readfile (now it's the same)
 PulseClass::FindPeaks() -> check pileup part...
 
 clean libmana->greset()
+
+use blosc for compression

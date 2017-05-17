@@ -181,6 +181,7 @@ void ParDlg::DoNum_SetBuf() {
 
   pmap pp = Plist[id-1];
 
+  //cout << "DoNum_SetBuf: " << te->GetNumMax() << endl;
   //cout << "DoNum: ";
   //cout << *(Int_t*) pp.data << " ";
   //cout << pp.data << " " << opt.bkg1[0] << " ";
@@ -188,10 +189,16 @@ void ParDlg::DoNum_SetBuf() {
 
   SetNum(pp,te->GetNumber());
 
-  if (crs->module && !crs->b_acq) {
-    crs->Free_Transfer();
-    gSystem->Sleep(50);
-    crs->Init_Transfer();
+  if (te->GetNumMax() < 3000) { //this is USB buffer
+    if (crs->module && !crs->b_acq) {
+      crs->Free_Transfer();
+      gSystem->Sleep(50);
+      crs->Init_Transfer();
+    }
+  }
+  else { //this is READ buffer
+    if (crs->Fbuf) delete[] crs->Fbuf;
+    crs->Fbuf = new UChar_t[opt.rbuf_size*1024];
   }
 
 }
@@ -694,14 +701,14 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   label="DrawEvent delay";
   AddLine2(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000,100,10000);
 
-  tip1= "Size of the USB buffer in kilobytes";
-  tip2= "Size of the READ buffer in kilobytes";
-  label="USB buffer size";
+  tip1= "Size of the USB buffer in kilobytes (1024 is OK)";
+  tip2= "Size of the READ buffer in kilobytes (as large as possible for faster speed)";
+  label="USB/READ buffer size";
   AddLine2(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,1,2048,
 	   1,1000000,(char*) "DoNum_SetBuf()");
 
-  tip1= "Minimal size of the event list";
-  tip2= "Maximal size of the event list";
+  tip1= "Minimal size of the event list:\nduring analysis event list size doesn't go below this value";
+  tip2= "Maximal size of the event list:\nafter reaching this size event list is cleaned down to minimal value";
   label="Event_list size";
   AddLine2(fF6,ww,&opt.ev_min,&opt.ev_max,tip1,tip2,label,k_int);
 
@@ -721,9 +728,9 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   // 2 column, n rows
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
 
-  tip1= "Coincidence window for making events";
-  tip2= "Period of digitizer";
-  label="Coincidence, period (ns)";
+  tip1= "Coincidence window for making events (in samples)";
+  tip2= "Period of digitizer (in ns)";
+  label="Coincidence (smp), period (ns)";
   AddLine2(fF6,ww,&opt.tgate,&opt.period,tip1,tip2,label,k_int);
 
   tip1= "Minimal multiplicity";

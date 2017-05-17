@@ -1319,6 +1319,7 @@ void CRS::DoReset() {
 
   //MAX_LAG=opt.event_buf/2;
 
+  idx=0;
   if (f_read)
     DoFopen(NULL,0);
 
@@ -1375,12 +1376,11 @@ void CRS::DoFopen(char* oname, int popt) {
     Fmode=1;
   }
   else {
-    if (ReadParGz(f_read,1,popt)) {
+    if (ReadParGz(f_read,Fname,1,1,popt)) {
       gzclose(f_read);
       f_read=0;
       return;
     }
-
   }
 
   opt.raw_write=false;
@@ -1390,7 +1390,9 @@ void CRS::DoFopen(char* oname, int popt) {
   if (Fbuf) delete[] Fbuf;
   Fbuf = new UChar_t[opt.rbuf_size*1024];
 
-
+  //if (Fmode==1) {//adcm raw file
+  //Searchsync();
+  //}
 
   //EvtFrm->Levents = &Levents;
 
@@ -1403,7 +1405,9 @@ void CRS::DoFopen(char* oname, int popt) {
   //cout << f_raw << endl;
 
   //cout << "smooth: " << cpar.smooth[0] << endl;
-  cout << "DoFopen2: " << f_read << endl;
+  cout << "DoFopen2: " << f_read << " " << Fmode << endl;
+  if (myM)
+    myM->SetTitle(Fname);
 }
 
 // void CRS::DoFAna() {
@@ -1416,25 +1420,29 @@ void CRS::DoFopen(char* oname, int popt) {
 //   }
 // }
 
-int CRS::ReadParGz(gzFile &ff, int p1, int p2) {
-
+int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
+  //m1 - read Fmode (1/0); p1 - read cpar (1/0); p2 - read opt (1/0)
   UShort_t sz;
 
   UShort_t mod;
   gzread(ff,&mod,sizeof(mod));
 
-  if (mod==2) {
-    Fmode=2;
-    cout << "CRS2 File: " << Fname << " " << mod << endl;
-  }
-  else if (mod==32) {
-    Fmode=32;
-    cout << "CRS32 File: " << Fname << " " << mod << endl;
-  }
-  else {
-    Fmode=0;
-    cout << "Unknown file type: " << Fname << " " << Fmode << endl;
-    return 1;
+  cout << "Initial Fmode: " << Fmode << endl;
+
+  if (m1) {
+    if (mod==2) {
+      Fmode=2;
+      cout << "CRS2 File: " << Fname << " " << mod << endl;
+    }
+    else if (mod==32) {
+      Fmode=32;
+      cout << "CRS32 File: " << Fname << " " << mod << endl;
+    }
+    else {
+      Fmode=0;
+      cout << "Unknown file type: " << Fname << " " << Fmode << endl;
+      return 1;
+    }
   }
 
   gzread(ff,&sz,sizeof(sz));
@@ -1449,7 +1457,7 @@ int CRS::ReadParGz(gzFile &ff, int p1, int p2) {
   if (p2)
     BufToClass("Toptions",(char*) &opt, buf, sz);
 
-  cout << "ReadParGz: " << sz << endl;
+  cout << "ReadParGz: " << sz << " " << pname << endl;
   //opt.raw_write=false;
 
   //if (Fbuf) delete[] Fbuf;
@@ -1468,7 +1476,7 @@ void CRS::SaveParGz(gzFile &ff) {
   sz+=ClassToBuf("Coptions",(char*) &cpar, buf+sz);
   sz+=ClassToBuf("Toptions",(char*) &opt, buf+sz);
 
-  gzwrite(ff,&Fmode,sizeof(Fmode));
+  gzwrite(ff,&module,sizeof(module));
   gzwrite(ff,&sz,sizeof(sz));
   gzwrite(ff,buf,sz);
 
@@ -1512,6 +1520,9 @@ int CRS::Do1Buf() {
     }
     else if (Fmode==32) {
       Decode32(Fbuf,res);
+    }
+    else if (Fmode==1) {
+      Decode_adcm((UShort_t*)Fbuf,res);
     }
 
     //gSystem->Sleep(500);
@@ -1684,132 +1695,6 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   
 }
 
-//-------------------------------------
-
-int CRS::Searchsync(int id0) {
-
-  /*
-  bool bbb;
-  int id0=idx;
-
-  do {
-    idx+=2;
-    //cout << "searchsync: " << idx << endl;
-    if (idx>=r_buf) {
-      idx-=r_buf;
-      if (readbuf()) {
-	return 0;
-      }
-    }
-    bbb = buf[idx+1] == 0x2a50 && (buf[idx]==0x100 || buf[idx]==0x102);
-  } while (!bbb);
-
-  //cout << "searchsync idx: " << idx-id0 << endl;
-  return idx-id0;
-  */
-}
-
-void CRS::Decode_adcm(UChar_t *buffer, int length) {
-
-  PulseClass *ipp;
-
-  unsigned short* buf2 = (unsigned short*) buffer;
-  //int nbuf = *(int*) transfer->user_data;
-
-  std::vector<PulseClass> *vv = Vpulses+nvp;
-  vv->clear();
-
-  int nvp2=nvp-1;
-  if (nvp2<0) nvp2=ntrans-1;
-
-  if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
-    vv->push_back(PulseClass());
-    npulses++;
-    ipp = &vv->back();
-    ipp->Chan = ((*buf2) & 0x8000)>>15;
-    ipp->ptype|=P_NOSTART; // first pulse is by default incomplete
-    //it will be reset if idx8==0 in the while loop
-  }
-  else {
-    ipp=&(Vpulses+nvp2)->back();
-    // ipp points to the last pulse of the previous buffer
-  }
-
-  unsigned short frmt;
-  int idx2=0;
-  int len = length/2;
-
-  while (idx2<len) {
-
-    unsigned short uword = buf2[idx2];
-    frmt = (uword & 0x7000)>>12;
-    short data = uword & 0xFFF;
-    unsigned char ch = (uword & 0x8000)>>15;
-
-    if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
-      cout << "2: Bad channel: " << (int) ch
-	   << " " << (int) ipp->Chan << endl;
-      ipp->ptype|=P_BADCH;
-
-      idx2++;
-      continue;
-    }
-
-    if (frmt==0) {
-      //make new pulse only if this is not the first record.
-      //For the first record new pulse is already created at the beginning
-      if (idx2) {
-	ipp->ptype&=~P_NOSTOP; //pulse has stop
-	vv->push_back(PulseClass());
-	npulses++;
-	ipp = &vv->back();
-      }
-      else { //idx2==0 -> pulse has start
-	ipp->ptype&=~P_NOSTART; // reset ptype, as this is a good pulse
-      }
-      ipp->Chan = ch;
-      ipp->Tstamp64=data;
-
-    }
-    else if (frmt<4) {
-      Long64_t t64 = data;
-      ipp->Tstamp64+= (t64 << (frmt*12));
-    }
-    else if (frmt==4) {
-      ipp->Counter=data;
-    }
-    else if (frmt==5) {
-      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
-	// cout << "2: Nsamp error: " << ipp->sData.size()
-	//      << " " << (int) ch << " " << (int) ipp->Chan
-	//      << " " << idx2
-	//      << endl;
-	ipp->ptype|=P_BADSZ;
-      }
-      //else {
-      ipp->sData.push_back((data<<21)>>21);
-      //}
-    }
-
-    idx2++;
-  }
-
-  //return;
-  //cond[nbuf]->Signal();
-
-  //cout << "decode2a: " << idx2 << endl;
-
-  //Fill_Tail(nvp);
-  Make_Events(nvp);
-
-  //nvp++;
-  //if (nvp>=ntrans) nvp=0;
-  //nvp = (nvp+1)%ntrans;
-
-}
-
-//-------------------------------------
-
 /*
 void CRS::AllParameters2()
 {
@@ -1977,6 +1862,140 @@ void CRS::AllParameters2()
 }
 
 //-------------------------------
+
+int CRS::Searchsync(int length) {
+  /*
+  bool bbb;
+  //int id0=idx;
+
+  do {
+    idx+=2;
+    //cout << "searchsync: " << idx << endl;
+    if (idx>=r_buf) {
+      idx-=r_buf;
+      if (readbuf()) {
+	return 0;
+      }
+    }
+    bbb = buf[idx+1] == 0x2a50 && (buf[idx]==0x100 || buf[idx]==0x102);
+  } while (!bbb);
+
+  //cout << "searchsync idx: " << idx-id0 << endl;
+  return idx-id0;
+  */
+}
+
+//-------------------------------------
+
+void CRS::Decode_adcm(UShort_t *buf2, int length) {
+  //it is assumed that at the beginning of this procedure idx points
+  //to the valid data (correct sync word and type)
+  
+  PulseClass *ipp;
+
+  std::vector<PulseClass> *vv = Vpulses+nvp;
+  vv->clear();
+
+  int nvp2=nvp-1;
+  if (nvp2<0) nvp2=ntrans-1;
+
+  UShort_t syncw=buf2[idx+1];
+  UShort_t ftype=buf2[idx];
+
+  while (!(buf2[idx+1] == 0x2a50 && buf2[idx]==0x100)) {
+    idx+=2;
+  }
+
+  cout << "Decode_adcm: " << idx << " " << buf2[idx+1]<<" "<<buf2[idx]<<endl;
+  return;
+
+  if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
+    vv->push_back(PulseClass());
+    npulses++;
+    ipp = &vv->back();
+    ipp->Chan = ((*buf2) & 0x8000)>>15;
+    ipp->ptype|=P_NOSTART; // first pulse is by default incomplete
+    //it will be reset if idx8==0 in the while loop
+  }
+  else {
+    //ipp=&(Vpulses+nvp2)->back();
+    // ipp points to the last pulse of the previous buffer
+  }
+
+  unsigned short frmt;
+  int idx2=0;
+  int len = length/2;
+
+  while (idx2<len) {
+
+    unsigned short uword = buf2[idx2];
+    frmt = (uword & 0x7000)>>12;
+    short data = uword & 0xFFF;
+    unsigned char ch = (uword & 0x8000)>>15;
+
+    if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
+      cout << "2: Bad channel: " << (int) ch
+	   << " " << (int) ipp->Chan << endl;
+      ipp->ptype|=P_BADCH;
+
+      idx2++;
+      continue;
+    }
+
+    if (frmt==0) {
+      //make new pulse only if this is not the first record.
+      //For the first record new pulse is already created at the beginning
+      if (idx2) {
+	ipp->ptype&=~P_NOSTOP; //pulse has stop
+	vv->push_back(PulseClass());
+	npulses++;
+	ipp = &vv->back();
+      }
+      else { //idx2==0 -> pulse has start
+	ipp->ptype&=~P_NOSTART; // reset ptype, as this is a good pulse
+      }
+      ipp->Chan = ch;
+      ipp->Tstamp64=data;
+
+    }
+    else if (frmt<4) {
+      Long64_t t64 = data;
+      ipp->Tstamp64+= (t64 << (frmt*12));
+    }
+    else if (frmt==4) {
+      ipp->Counter=data;
+    }
+    else if (frmt==5) {
+      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+	// cout << "2: Nsamp error: " << ipp->sData.size()
+	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << idx2
+	//      << endl;
+	ipp->ptype|=P_BADSZ;
+      }
+      //else {
+      ipp->sData.push_back((data<<21)>>21);
+      //}
+    }
+
+    idx2++;
+  }
+
+  //return;
+  //cond[nbuf]->Signal();
+
+  //cout << "decode2a: " << idx2 << endl;
+
+  //Fill_Tail(nvp);
+  Make_Events(nvp);
+
+  //nvp++;
+  //if (nvp>=ntrans) nvp=0;
+  //nvp = (nvp+1)%ntrans;
+
+}
+
+//-------------------------------------
 
 /*
 void CRS::PrintPulse(int udata, bool pdata) {

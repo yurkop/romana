@@ -226,7 +226,7 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   memcpy(buf+sz,name,len);
   sz+=len;
 
-  if (debug)
+  if (debug&0x2)
     cout << "Save class: " << name << endl;
 
   TIter nextd(lst);
@@ -246,7 +246,7 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
       sz+=sizeof(len);
       memcpy(buf+sz,var+dm->GetOffset(),len);
       sz+=len;
-      if (debug)
+      if (debug&0x2)
 	cout << dm->GetName() << " " << len << endl;
     }
   }
@@ -294,7 +294,7 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
 
     if (strcmp(memname,"class")==0) {
       strcpy(clname,data);
-      if (debug)
+      if (debug&0x2)
 	cout << "Read class: " << clname << endl;
       continue;
     }
@@ -305,7 +305,7 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
       for (int i=0;i<dm->GetArrayDim();i++) {
 	len2*=dm->GetMaxIndex(i);
       }
-      if (debug)
+      if (debug&0x2)
 	cout << dm->GetName() << " " << len << " " << len2 << endl;
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
@@ -552,13 +552,15 @@ int main(int argc, char **argv)
 
     if (argnn<argc) {
       crs->DoFopen(argv[argnn],1);
+
+      //strcat(maintitle," ");
+      //strcat(maintitle,argv[argnn]);
+
       /*
       strcpy(crs->Fname,argv[argnn]);
       
       strcpy(fname,argv[argnn]);
       printf("%s\n",fname);
-      strcat(maintitle," ");
-      strcat(maintitle,fname);
       */
       argnn++;
     }
@@ -578,9 +580,11 @@ int main(int argc, char **argv)
   else if (batch) {
 
     //readinit(pname);
-    gzFile ff = gzopen(pname,"rb");
-    crs->ReadParGz(ff,1,1);
-    gzclose(ff);
+    //YK - ????
+    //gzFile ff = gzopen(pname,"rb");
+    //crs->ReadParGz(ff,1,1);
+    //gzclose(ff);
+    //YK - ????
 
     //opt.num_events=0;
     allevents();
@@ -1542,7 +1546,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //readinit(parname);
   //cout << "1 ReadParGz(ff,1,1);" << endl;
   gzFile ff = gzopen(parname,"rb");
-  crs->ReadParGz(ff,1,1);
+  crs->ReadParGz(ff,parname,0,1,1);
   //cout << "2 ReadParGz(ff,1,1);" << endl;
   gzclose(ff);
 
@@ -1690,8 +1694,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   UpdateStatus();
 
   // Set a name to the main frame
-  SetWindowName(maintitle);
+  //SetWindowName(maintitle);
 
+  SetTitle(crs->Fname);
   //SetWMSizeHints(800,600,10000,10000,1,1);
 
   // Map all subwindows of main frame
@@ -1755,6 +1760,13 @@ MainFrame::~MainFrame() {
   //DoExit();
   //delete fMain;
   gApplication->Terminate(0);
+}
+
+void MainFrame::SetTitle(char* fname) {
+  strcpy(maintitle,pr_name);
+  strcat(maintitle," ");
+  strcat(maintitle,fname);
+  SetWindowName(maintitle);
 }
 
 void MainFrame::DoStartStop() {
@@ -1911,7 +1923,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
     if (nn==kFDOpen) {
       //readinit(pname);
       gzFile ff = gzopen(pname,"rb");
-      crs->ReadParGz(ff,1,1);
+      crs->ReadParGz(ff,pname,0,1,1);
       gzclose(ff);
 
       parpar->Update();

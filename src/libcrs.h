@@ -61,7 +61,7 @@ RQ_OBJECT("CRS")
   //Short_t MAX_LAG; // maximal e_lag, equals to half of the event_buf
   Short_t e_lag; //event analysis lag - see also opt.event_lag
 
-  Int_t module; //2 - crs2; 32 - crs32
+  Short_t module; //2 - crs2; 32 - crs32
 
   int ntrans; //number of "simultaneous" transfers
 
@@ -89,6 +89,9 @@ RQ_OBJECT("CRS")
 
 
   //vars for decoding...
+
+  int idx; //index for Decode_adcm
+
   //for crs32...
   //ULong64_t *buf8; //buffer for 8-byte words
   //unsigned char *buf1; //buffer for 1-byte words
@@ -127,7 +130,7 @@ RQ_OBJECT("CRS")
   int DoStartStop(); // start-stop acquisition
   void DoReset(); //reset BPulses
   void DoFopen(char* oname, int popt);
-  int ReadParGz(gzFile &ff, int p1, int p2);
+  int ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2);
   void SaveParGz(gzFile &ff);
 
   //void DoFAna();
@@ -142,8 +145,8 @@ RQ_OBJECT("CRS")
   void AllParameters2(); // load all parameters
   void Decode2(UChar_t* buffer, int length);
 
-  int Searchsync(int id0);
-  void Decode_adcm(UChar_t* buffer, int length);
+  int Searchsync(int length);
+  void Decode_adcm(UShort_t* buf2, int length);
 
   //void PrintPulse(int udata, bool pdata=false);
 
