@@ -1320,6 +1320,7 @@ void CRS::DoReset() {
   //MAX_LAG=opt.event_buf/2;
 
   idx=0;
+  idnext=0;
   if (f_read)
     DoFopen(NULL,0);
 
@@ -1390,9 +1391,15 @@ void CRS::DoFopen(char* oname, int popt) {
   if (Fbuf) delete[] Fbuf;
   Fbuf = new UChar_t[opt.rbuf_size*1024];
 
-  //if (Fmode==1) {//adcm raw file
-  //Searchsync();
-  //}
+  // if (Fmode==1) {//adcm raw file
+  //   if (Searchsync()) {
+  //     cout<<Fname<<": Sync word in ADCM RAW file not found. File is closed."
+  // 	  <<endl;
+  //     gzclose(f_read);
+  //     f_read=0;
+  //     Fmode=0;
+  //   }
+  // }
 
   //EvtFrm->Levents = &Levents;
 
@@ -1522,7 +1529,7 @@ int CRS::Do1Buf() {
       Decode32(Fbuf,res);
     }
     else if (Fmode==1) {
-      Decode_adcm((UShort_t*)Fbuf,res);
+      Decode_adcm((UInt_t*)Fbuf,res/sizeof(UInt_t));
     }
 
     //gSystem->Sleep(500);
@@ -1575,6 +1582,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   //int nbuf = *(int*) transfer->user_data;
 
   std::vector<PulseClass> *vv = Vpulses+nvp; //vv - current vector of pulses
+  //Vpulses+nvp2 - vector of pulses from previous buffer
   vv->clear();
 
   int nvp2=nvp-1;
@@ -1769,7 +1777,8 @@ void CRS::AllParameters2()
   unsigned short* buf2 = (unsigned short*) buffer;
   //int nbuf = *(int*) transfer->user_data;
 
-  std::vector<PulseClass> *vv = Vpulses+nvp;
+  std::vector<PulseClass> *vv = Vpulses+nvp; //current vector of pulses
+  //Vpulses+nvp2 - vector of pulses from previous buffer
   vv->clear();
 
   int nvp2=nvp-1;
@@ -1863,8 +1872,16 @@ void CRS::AllParameters2()
 
 //-------------------------------
 
-int CRS::Searchsync(int length) {
-  /*
+/*
+int CRS::Searchsync() {
+  //returns 0 if syncw is found
+
+  UInt_t* buf4 = (UInt_t*) Fbuf;
+
+  do {
+    int res=gzread(f_read,Fbuf,opt.rbuf_size*1024);
+  } while(res>0)
+
   bool bbb;
   //int id0=idx;
 
@@ -1882,31 +1899,122 @@ int CRS::Searchsync(int length) {
 
   //cout << "searchsync idx: " << idx-id0 << endl;
   return idx-id0;
-  */
+
 }
+*/
 
 //-------------------------------------
 
-void CRS::Decode_adcm(UShort_t *buf2, int length) {
+void CRS::Decode_adcm(UInt_t* buf4, int length) {
   //it is assumed that at the beginning of this procedure idx points
   //to the valid data (correct sync word and type)
-  
+
+  int len=0;
+
+  UShort_t header; //data header
+  UShort_t nbits; //ADC bits
+  UShort_t nw; //samples per word = 2
+  UShort_t lflag; //last fragment flag
+  UShort_t nsamp0; // number of samples in the fragment
+  //UShort_t nsamp; // number of samples recorded in the channel
+  UShort_t nch; // channel number
+  UShort_t id; // block id (=0,1,2)
+
+  UShort_t* buf2 = (UShort_t*) buf4;
+
+  /*
+  //while (buf4[idx] != 0x01002a50) {
+  for (idx=0;idx<length;idx++)
+    if (buf4[idx] == 0x2a500100) {
+      len = buf2[idx*2+3];
+      idnext=idx+len;
+      break;
+    }
+
+  cout << "Decode_adcm4: " << idx << " " << len << " " << hex 
+       << buf4[idx]<< " " << buf4[idnext] << endl;
+  return;
+  */
+
   PulseClass *ipp;
 
-  std::vector<PulseClass> *vv = Vpulses+nvp;
+  std::vector<PulseClass> *vv = Vpulses+nvp; //current vector of pulses
+  //Vpulses+nvp2 - vector of pulses from previous buffer
   vv->clear();
 
   int nvp2=nvp-1;
   if (nvp2<0) nvp2=ntrans-1;
 
-  UShort_t syncw=buf2[idx+1];
-  UShort_t ftype=buf2[idx];
+  //UShort_t syncw=buf2[idx+1];
+  //UShort_t ftype=buf2[idx];
+
+  if (buf4[idnext] == 0x2a500100) {
+    //correct syncw -> continue previous pulse
+    //...
+  }
+  if (buf4[idnext] != 0x2a500100) {
+    //no correct syncw -> search for the next one; do not fill previous pulse
+    cout << "Bad idnext: " << idnext << " " << hex << buf4[idnext] << endl;
+    for (idx=0;idx<length;idx++)
+      if (buf4[idx] == 0x2a500100) {
+	len = buf2[idx*2+3];
+	idnext=idx+len;
+	if (len>511)
+	  cout << "Bad length: " << idnext << " " << len << endl;
+	else {
+       	  break;
+	}
+      }
+  }
+
+  cout << "idx found: " << idx << " " << idnext << " " 
+       << hex << buf4[idx] << " " << buf4[idnext] << endl;
+  //return;
+
+  //now idnext points to the next syncw (which may be larger than length)
+  while (idnext < length) {
+    //at this point idx points to a valid syncw
+    header = buf4[idx+3];
+
+    id=bits(header,26,31);
+    if (id==1) {
+      cout << "adcm: id==1" << endl;
+    }
+    else {
+      nbits=bits(header,0,3);
+      nw=bits(header,4,5);
+      lflag=bits(header,6,6);
+      nsamp0=bits(header,7,17)*2;
+      nch=bits(header,18,25);
+    }
+
+    printf("Header ID: %x %d %d %d %d %d %d\n",header,nbits,nw,lflag,nsamp0,nch,id);
+
+    idx=idnext;
+    len = buf2[idx*2+3];
+    idnext=idx+len;
+
+  //AnaMLinkFrame();
+  }
+
+  return;
+
+  idx=0;
 
   while (!(buf2[idx+1] == 0x2a50 && buf2[idx]==0x100)) {
     idx+=2;
   }
+  cout << "Decode_adcm2: " << idx << " " << hex << buf2[idx+1]<<" "<<buf2[idx]
+       << " " << buf4[idx/2] <<endl;
 
-  cout << "Decode_adcm: " << idx << " " << buf2[idx+1]<<" "<<buf2[idx]<<endl;
+  //return;
+
+  idx=0;    
+  //while (buf4[idx] != 0x01002a50) {
+  while (buf4[idx] != 0x2a500100) {
+    idx++;
+  }
+  cout << "Decode_adcm4: " << idx << " " << buf4[idx]<<endl;
   return;
 
   if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
@@ -1924,9 +2032,9 @@ void CRS::Decode_adcm(UShort_t *buf2, int length) {
 
   unsigned short frmt;
   int idx2=0;
-  int len = length/2;
+  int len3 = length/2;
 
-  while (idx2<len) {
+  while (idx2<len3) {
 
     unsigned short uword = buf2[idx2];
     frmt = (uword & 0x7000)>>12;

@@ -91,6 +91,7 @@ RQ_OBJECT("CRS")
   //vars for decoding...
 
   int idx; //index for Decode_adcm
+  int idnext; //next expected idx pointing to new syncw
 
   //for crs32...
   //ULong64_t *buf8; //buffer for 8-byte words
@@ -145,8 +146,8 @@ RQ_OBJECT("CRS")
   void AllParameters2(); // load all parameters
   void Decode2(UChar_t* buffer, int length);
 
-  int Searchsync(int length);
-  void Decode_adcm(UShort_t* buf2, int length);
+  //int Searchsync(int length);
+  void Decode_adcm(UInt_t* buf4, int length);
 
   //void PrintPulse(int udata, bool pdata=false);
 
