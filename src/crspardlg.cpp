@@ -33,7 +33,7 @@ const char* tip[ncrspar]={
   "Trigger threshold"};
 
 const int nchpar=16;
-const int tlen2[nchpar]={26,60,26,25,35,35,42,42,35,35,20,35,35,35,42,42};
+const int tlen2[nchpar]={26,60,26,25,40,40,42,42,35,35,20,35,35,35,42,42};
 const char* tlab2[nchpar]={"Ch","Type","St","sS","Bkg1","Bkg2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
 const char* tip2[nchpar]={
   "Channel number",

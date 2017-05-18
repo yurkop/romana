@@ -1522,11 +1522,11 @@ int CRS::Do1Buf() {
   if (res>0) {
     crs->totalbytes+=res;
 
-    if (Fmode==2) {
-      Decode2(Fbuf,res);
-    }
-    else if (Fmode==32) {
+    if (Fmode==32) {
       Decode32(Fbuf,res);
+    }
+    else if (Fmode==2) {
+      Decode2(Fbuf,res);
     }
     else if (Fmode==1) {
       Decode_adcm((UInt_t*)Fbuf,res/sizeof(UInt_t));
@@ -1954,7 +1954,7 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
   }
   if (buf4[idnext] != 0x2a500100) {
     //no correct syncw -> search for the next one; do not fill previous pulse
-    cout << "Bad idnext: " << idnext << " " << hex << buf4[idnext] << endl;
+    cout << "Bad idnext: " << idnext << " " << hex << buf4[idnext] << dec << endl;
     for (idx=0;idx<length;idx++)
       if (buf4[idx] == 0x2a500100) {
 	len = buf2[idx*2+3];
@@ -1968,30 +1968,44 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
   }
 
   cout << "idx found: " << idx << " " << idnext << " " 
-       << hex << buf4[idx] << " " << buf4[idnext] << endl;
+       << hex << buf4[idx] << " " << buf4[idnext] << dec << endl;
   //return;
 
   //now idnext points to the next syncw (which may be larger than length)
   while (idnext < length) {
-    //at this point idx points to a valid syncw
+    //at this point idx points to a valid syncw and idnext is also withing FBuf
     header = buf4[idx+3];
+    len = buf2[idx*2+3];
 
     id=bits(header,26,31);
     if (id==1) {
-      cout << "adcm: id==1" << endl;
+      cout << "adcm: id==1: " << id << " " << npulses << endl;
     }
     else {
-      nbits=bits(header,0,3);
-      nw=bits(header,4,5);
+      vv->push_back(PulseClass());
+      npulses++;
+      ipp = &vv->back();
+      ipp->Chan=bits(header,18,25);
+
+      //nbits=bits(header,0,3);
+      //nw=bits(header,4,5);
       lflag=bits(header,6,6);
-      nsamp0=bits(header,7,17)*2;
-      nch=bits(header,18,25);
+      nsamp0=bits(header,7,17);
+      //nch=bits(header,18,25);
+
+      //cnst=(buf[idx+len2-3]<<16)+buf[idx+len2-4];
+      //tst=(buf[idx+len2-5]<<16)+buf[idx+len2-6];
+
+      Long64_t cnst = buf4[idx+len-2];
+      Long64_t tst = buf4[idx+len-3];
+
+      cout << "Header: " << header << " " << ipp->Chan << " " << lflag << " "
+	   << nsamp0 << " " << cnst << " " << tst << endl;
+      //printf("Header ID: %x %d %d %d %d %d %d\n",header,nbits,nw,lflag,nsamp0,nch,id);
+
     }
 
-    printf("Header ID: %x %d %d %d %d %d %d\n",header,nbits,nw,lflag,nsamp0,nch,id);
-
     idx=idnext;
-    len = buf2[idx*2+3];
     idnext=idx+len;
 
   //AnaMLinkFrame();
@@ -2005,7 +2019,7 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
     idx+=2;
   }
   cout << "Decode_adcm2: " << idx << " " << hex << buf2[idx+1]<<" "<<buf2[idx]
-       << " " << buf4[idx/2] <<endl;
+       << " " << buf4[idx/2] << dec << endl;
 
   //return;
 
