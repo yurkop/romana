@@ -1192,7 +1192,7 @@ void ChanParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
 
 
   AddNum2(i,kk++,all,hframe1,&opt.nsmoo[i],0,99,p_inum);
-  AddNum2(i,kk++,all,hframe1,&opt.bkg1[i],-999,999,p_inum);
+  AddNum2(i,kk++,all,hframe1,&opt.bkg1[i],-4999,999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.bkg2[i],-999,999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.peak1[i],-999,16500,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.peak2[i],-999,16500,p_inum);
