@@ -1308,6 +1308,10 @@ void CRS::DoReset() {
   nevents=0;
   nevents2=0;
 
+  for (int i=0;i<MAXTRANS;i++) {
+    Vpulses[i].clear();
+  }
+
   npulses=0;
   nbuffers=0;
 
@@ -2012,7 +2016,7 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
   }
 
   return;
-
+  //--------------------------------------------------
   idx=0;
 
   while (!(buf2[idx+1] == 0x2a50 && buf2[idx]==0x100)) {
@@ -2023,7 +2027,7 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
 
   //return;
 
-  idx=0;    
+  idx=0;
   //while (buf4[idx] != 0x01002a50) {
   while (buf4[idx] != 0x2a500100) {
     idx++;
