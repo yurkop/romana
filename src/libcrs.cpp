@@ -1395,6 +1395,9 @@ void CRS::DoFopen(char* oname, int popt) {
   if (Fbuf) delete[] Fbuf;
   Fbuf = new UChar_t[opt.rbuf_size*1024];
 
+  rbuf4 = (UInt_t*) Fbuf;
+  rbuf2 = (UShort_t*) Fbuf;
+
   // if (Fmode==1) {//adcm raw file
   //   if (Searchsync()) {
   //     cout<<Fname<<": Sync word in ADCM RAW file not found. File is closed."
@@ -1533,7 +1536,7 @@ int CRS::Do1Buf() {
       Decode2(Fbuf,res);
     }
     else if (Fmode==1) {
-      Decode_adcm((UInt_t*)Fbuf,res/sizeof(UInt_t));
+      Decode_adcm(res/sizeof(UInt_t));
     }
 
     //gSystem->Sleep(500);
@@ -1876,42 +1879,42 @@ void CRS::AllParameters2()
 
 //-------------------------------
 
-/*
-int CRS::Searchsync() {
-  //returns 0 if syncw is found
+int CRS::Searchsync(int length) {
+  //returns 0 if syncw is not found; otherwise len (length of the m-link frame)
 
-  UInt_t* buf4 = (UInt_t*) Fbuf;
+  int len;
 
-  do {
-    int res=gzread(f_read,Fbuf,opt.rbuf_size*1024);
-  } while(res>0)
-
-  bool bbb;
-  //int id0=idx;
-
-  do {
-    idx+=2;
-    //cout << "searchsync: " << idx << endl;
-    if (idx>=r_buf) {
-      idx-=r_buf;
-      if (readbuf()) {
-	return 0;
+  for (;idx<length;idx++)
+    if (rbuf4[idx] == 0x2a500100) {
+      len = rbuf2[idx*2+3];
+      idnext=idx+len;
+      if (len>511)
+	cout << "Bad length: " << idnext << " " << len << endl;
+      else {
+	return len;
       }
     }
-    bbb = buf[idx+1] == 0x2a50 && (buf[idx]==0x100 || buf[idx]==0x102);
-  } while (!bbb);
 
-  //cout << "searchsync idx: " << idx-id0 << endl;
-  return idx-id0;
-
+  return 0;
 }
-*/
 
 //-------------------------------------
 
-void CRS::Decode_adcm(UInt_t* buf4, int length) {
+void CRS::Decode_adcm(int length) {
   //it is assumed that at the beginning of this procedure idx points
   //to the valid data (correct sync word and type)
+
+  //idx+0 - syncw+frame type
+  //idx+1 - len + frame counter
+  //idx+2 - rubbish
+  //idx+3 - header
+  //idx+4 - event counter
+  //idx+5 .. idx+5+nsamp-1 - data
+  //idx+len-3 - tst
+  //idx+len-2 - cnst
+  //idx+len-1 - crc32
+
+  // nsamp+8=len
 
   int len=0;
 
@@ -1919,26 +1922,10 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
   UShort_t nbits; //ADC bits
   UShort_t nw; //samples per word = 2
   UShort_t lflag; //last fragment flag
-  UShort_t nsamp0; // number of samples in the fragment
+  UShort_t nsamp; // number of samples in the fragment
   //UShort_t nsamp; // number of samples recorded in the channel
   UShort_t nch; // channel number
   UShort_t id; // block id (=0,1,2)
-
-  UShort_t* buf2 = (UShort_t*) buf4;
-
-  /*
-  //while (buf4[idx] != 0x01002a50) {
-  for (idx=0;idx<length;idx++)
-    if (buf4[idx] == 0x2a500100) {
-      len = buf2[idx*2+3];
-      idnext=idx+len;
-      break;
-    }
-
-  cout << "Decode_adcm4: " << idx << " " << len << " " << hex 
-       << buf4[idx]<< " " << buf4[idnext] << endl;
-  return;
-  */
 
   PulseClass *ipp;
 
@@ -1949,19 +1936,24 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
   int nvp2=nvp-1;
   if (nvp2<0) nvp2=ntrans-1;
 
-  //UShort_t syncw=buf2[idx+1];
-  //UShort_t ftype=buf2[idx];
+  //UShort_t syncw=rbuf2[idx+1];
+  //UShort_t ftype=rbuf2[idx];
 
-  if (buf4[idnext] == 0x2a500100) {
-    //correct syncw -> continue previous pulse
-    //...
+  if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
+    //-> search for the syncw
+    idx=0;
+    len = Searchsync(length);
+    if (!len){
+      cout << "sync word not found" << endl;
+      return;
+    }
   }
-  if (buf4[idnext] != 0x2a500100) {
-    //no correct syncw -> search for the next one; do not fill previous pulse
-    cout << "Bad idnext: " << idnext << " " << hex << buf4[idnext] << dec << endl;
+  else {
+    cout << "YK (not done yet...)" << endl;
+    // what's below should be rewritten...
     for (idx=0;idx<length;idx++)
-      if (buf4[idx] == 0x2a500100) {
-	len = buf2[idx*2+3];
+      if (rbuf4[idx] == 0x2a500100) {
+	len = rbuf2[idx*2+3];
 	idnext=idx+len;
 	if (len>511)
 	  cout << "Bad length: " << idnext << " " << len << endl;
@@ -1972,20 +1964,44 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
   }
 
   cout << "idx found: " << idx << " " << idnext << " " 
-       << hex << buf4[idx] << " " << buf4[idnext] << dec << endl;
+       << hex << rbuf4[idx] << " " << rbuf4[idnext] << dec << endl;
   //return;
 
   //now idnext points to the next syncw (which may be larger than length)
-  while (idnext < length) {
-    //at this point idx points to a valid syncw and idnext is also withing FBuf
-    header = buf4[idx+3];
-    len = buf2[idx*2+3];
+  while (idnext+1 < length) {//next len (~rbuf[idnext+1]) should be inside buf
 
+    if (idnext>=length)
+    //at this point idx points to a valid syncw and idnext is also withing FBuf
+    //len = rbuf2[idx*2+3];
+
+    header = rbuf4[idx+3];
     id=bits(header,26,31);
     if (id==1) {
-      cout << "adcm: id==1: " << id << " " << npulses << endl;
+      cout << "adcm: id==1. What a luck, counters!: " << id << " " << npulses << endl;
     }
     else {
+      lflag=bits(header,6,6);
+      nsamp=bits(header,7,17);
+      if (nsamp+8!=len) {
+	cout << "wrong length: " << idx << " " << nsamp << " " << len << endl;
+	idx=idnext;
+
+	if (rbuf4[idx] != 0x2a500100) {
+	  cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
+	  len = Searchsync(length); //idnext is also defined in searchsync
+	  if (!len){
+	    cout << "sync word not found (YK: do something here...)" << endl;
+	    return; //YK: or break??
+	  }
+	}
+	else {
+	  len = rbuf2[idx*2+3];
+	  idnext=idx+len;
+	}
+
+	continue;
+      }
+
       vv->push_back(PulseClass());
       npulses++;
       ipp = &vv->back();
@@ -1993,132 +2009,61 @@ void CRS::Decode_adcm(UInt_t* buf4, int length) {
 
       //nbits=bits(header,0,3);
       //nw=bits(header,4,5);
-      lflag=bits(header,6,6);
-      nsamp0=bits(header,7,17);
       //nch=bits(header,18,25);
 
       //cnst=(buf[idx+len2-3]<<16)+buf[idx+len2-4];
       //tst=(buf[idx+len2-5]<<16)+buf[idx+len2-6];
 
-      Long64_t cnst = buf4[idx+len-2];
-      Long64_t tst = buf4[idx+len-3];
+      Long64_t cnst = rbuf4[idx+len-2];
+      Long64_t tst = rbuf4[idx+len-3];
+      Long64_t crc32 = rbuf4[idx+len-1];
 
-      cout << "Header: " << header << " " << ipp->Chan << " " << lflag << " "
-	   << nsamp0 << " " << cnst << " " << tst << endl;
-      //printf("Header ID: %x %d %d %d %d %d %d\n",header,nbits,nw,lflag,nsamp0,nch,id);
+      cout << "Header: " << idx << " " << header << " "
+	   << (int) ipp->Chan << " " << lflag << " "
+	   << nsamp << " " << len << " " << hex << cnst << " " << tst << " "
+	   << crc32 << dec << endl;
+
+      cout << "Header2: " << idx << " " << hex << rbuf4[idx] << " "
+	   << rbuf4[idx+3] << " " << rbuf4[idx+5] << " "
+	   << "65:" << rbuf4[idx+65] << " " << rbuf4[idx+66] << " "
+	   << rbuf4[idx+67] << " " << rbuf4[idx+68]
+	   << dec << endl;
+
+      /*
+      for (int i=0;i<nsamp;i+=2) {
+	Event[mult][nn++]=buf[idx+i+11];
+	Event[mult][nn++]=buf[idx+i+10];
+	//printf("%d %d\n",i,Event[mult][i]);
+	//printf("%d %d\n",i+1,Event[mult][i+1]);
+      }
+      */
 
     }
 
     idx=idnext;
-    idnext=idx+len;
+    //cout << "idnext: " << idx << " " << idnext << endl;
+    //AnaMLinkFrame();
 
-  //AnaMLinkFrame();
-  }
 
-  return;
-  //--------------------------------------------------
-  idx=0;
-
-  while (!(buf2[idx+1] == 0x2a50 && buf2[idx]==0x100)) {
-    idx+=2;
-  }
-  cout << "Decode_adcm2: " << idx << " " << hex << buf2[idx+1]<<" "<<buf2[idx]
-       << " " << buf4[idx/2] << dec << endl;
-
-  //return;
-
-  idx=0;
-  //while (buf4[idx] != 0x01002a50) {
-  while (buf4[idx] != 0x2a500100) {
-    idx++;
-  }
-  cout << "Decode_adcm4: " << idx << " " << buf4[idx]<<endl;
-  return;
-
-  if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
-    vv->push_back(PulseClass());
-    npulses++;
-    ipp = &vv->back();
-    ipp->Chan = ((*buf2) & 0x8000)>>15;
-    ipp->ptype|=P_NOSTART; // first pulse is by default incomplete
-    //it will be reset if idx8==0 in the while loop
-  }
-  else {
-    //ipp=&(Vpulses+nvp2)->back();
-    // ipp points to the last pulse of the previous buffer
-  }
-
-  unsigned short frmt;
-  int idx2=0;
-  int len3 = length/2;
-
-  while (idx2<len3) {
-
-    unsigned short uword = buf2[idx2];
-    frmt = (uword & 0x7000)>>12;
-    short data = uword & 0xFFF;
-    unsigned char ch = (uword & 0x8000)>>15;
-
-    if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
-      cout << "2: Bad channel: " << (int) ch
-	   << " " << (int) ipp->Chan << endl;
-      ipp->ptype|=P_BADCH;
-
-      idx2++;
-      continue;
-    }
-
-    if (frmt==0) {
-      //make new pulse only if this is not the first record.
-      //For the first record new pulse is already created at the beginning
-      if (idx2) {
-	ipp->ptype&=~P_NOSTOP; //pulse has stop
-	vv->push_back(PulseClass());
-	npulses++;
-	ipp = &vv->back();
+    if (rbuf4[idx] != 0x2a500100) {
+      cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
+      len = Searchsync(length); //idnext is also defined in searchsync
+      if (!len){
+	cout << "sync word not found (YK: do something here...)" << endl;
+	return; //YK: or break??
       }
-      else { //idx2==0 -> pulse has start
-	ipp->ptype&=~P_NOSTART; // reset ptype, as this is a good pulse
-      }
-      ipp->Chan = ch;
-      ipp->Tstamp64=data;
-
     }
-    else if (frmt<4) {
-      Long64_t t64 = data;
-      ipp->Tstamp64+= (t64 << (frmt*12));
-    }
-    else if (frmt==4) {
-      ipp->Counter=data;
-    }
-    else if (frmt==5) {
-      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
-	// cout << "2: Nsamp error: " << ipp->sData.size()
-	//      << " " << (int) ch << " " << (int) ipp->Chan
-	//      << " " << idx2
-	//      << endl;
-	ipp->ptype|=P_BADSZ;
-      }
-      //else {
-      ipp->sData.push_back((data<<21)>>21);
-      //}
+    else {
+      len = rbuf2[idx*2+3];
+      idnext=idx+len;
     }
 
-    idx2++;
+
   }
 
-  //return;
-  //cond[nbuf]->Signal();
+  cout << "idnext: " << idx << " " << idnext << " " << length << endl;
 
-  //cout << "decode2a: " << idx2 << endl;
-
-  //Fill_Tail(nvp);
-  Make_Events(nvp);
-
-  //nvp++;
-  //if (nvp>=ntrans) nvp=0;
-  //nvp = (nvp+1)%ntrans;
-
+  
 }
 
 //-------------------------------------
