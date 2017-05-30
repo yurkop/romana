@@ -524,6 +524,13 @@ int main(int argc, char **argv)
   crs = new CRS();
   crs->Detect_device();
 
+  parname = (char*)"romana.par";
+  //readinit(parname);
+  //cout << "1 ReadParGz(ff,1,1);" << endl;
+  gzFile ff = gzopen(parname,"rb");
+  crs->ReadParGz(ff,parname,0,1,1);
+  //cout << "2 ReadParGz(ff,1,1);" << endl;
+  gzclose(ff);
 
 #ifdef LINUX
   if (getcwd(startdir,100)) {}
@@ -1540,16 +1547,15 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // else if (crs->module==32) parname=(char*)"crs32.par";
   // else parname=(char*)"romana.par";
 
+  /*
   parname = (char*)"romana.par";
-
-
   //readinit(parname);
   //cout << "1 ReadParGz(ff,1,1);" << endl;
   gzFile ff = gzopen(parname,"rb");
   crs->ReadParGz(ff,parname,0,1,1);
   //cout << "2 ReadParGz(ff,1,1);" << endl;
   gzclose(ff);
-
+  */
 
 
 

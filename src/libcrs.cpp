@@ -1390,6 +1390,10 @@ void CRS::DoFopen(char* oname, int popt) {
   if (tp) { //adcm raw
     cout << "ADCM RAW File: " << Fname << endl;
     Fmode=1;
+
+    for (int i=0;i<MAX_CH+ADDCH;i++) {
+      cpar.preWr[i]=0;
+    }
   }
   else {
     if (ReadParGz(f_read,Fname,1,1,popt)) {
@@ -2061,7 +2065,7 @@ void CRS::Decode_adcm() {
 
   Make_Events(nvp);
   cout << "idnext: " << idx << " " << idnext << " " << BufLength << endl;
-  
+
 } //Decode_adcm
 
 //-------------------------------------
@@ -2167,7 +2171,7 @@ void CRS::Make_Events(int nvp) {
 
   std::vector<PulseClass>::iterator pls;
 
-  Print_Pulses(nvp);
+  //Print_Pulses(nvp);
 
   int nvp2=nvp-1;
   if (nvp2<0) nvp2=ntrans-1;
@@ -2181,7 +2185,7 @@ void CRS::Make_Events(int nvp) {
 
   if (!vv->empty() && !(vv->back().ptype&P_NOSTOP)) {
     Event_Insert_Pulse(&vv->back());
-    Print_Events();
+    //Print_Events();
   }
 
   //cout << "here1" << endl;
@@ -2194,7 +2198,7 @@ void CRS::Make_Events(int nvp) {
   for (pls=vv->begin(); pls != --vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {
       Event_Insert_Pulse(&(*pls));
-      Print_Events();
+      //Print_Events();
     }
   }
 

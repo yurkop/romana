@@ -1087,8 +1087,8 @@ void EventFrame::ReDraw() {
 	PulseClass *pulse = &d_event->pulses.at(j);
 	//UInt_t ch= d_event->pulses.at(j).Chan;
 	if (fChn[pulse->Chan]->IsOn()) {
-	  cout << "Gr: " << i << " " << j << " " << int(pulse->Chan) << " "
-	       << Gr[i][j]->GetLineColor() << " " << Gr[i][j]->GetN() << endl;
+	  //cout << "Gr: " << i << " " << j << " " << int(pulse->Chan) << " "
+	  //     << Gr[i][j]->GetLineColor() << " " << Gr[i][j]->GetN() << endl;
 	  Gr[i][j]->Draw("lp");
 	  //Gr[i][pulse->Chan]->Draw("lp");
 	  DrawPeaks(i,pulse,y1,y2);
