@@ -119,8 +119,11 @@ void Select_Event() {
   for (EvtFrm->d_event=--crs->Levents.end();
        EvtFrm->d_event!=crs->m_event && nn<4 ;--EvtFrm->d_event) {
     nn++;
+    //cout << "Select: " << EvtFrm->d_event->T << " " << crs->m_event->T << endl;
     //if (nn>2) break;
   }
+  //cout << "Select2: " << EvtFrm->d_event->T << " " << crs->m_event->T << " "
+  //     << crs->Levents.begin()->T << endl;
 }
 
 void *handle_evt(void* ptr)
@@ -351,11 +354,6 @@ CRS::CRS() {
       std::cout << ' ' << *it;
     std::cout << '\n';
 
-    for (it=--mylist.end(); it!=--mylist.begin(); --it) {
-      std::cout << ' ' << *(it);
-    }
-    std::cout << '\n';
-
     rit=++mylist.rbegin();
     mylist.insert(rit.base(),29);
 
@@ -370,8 +368,15 @@ CRS::CRS() {
     cout << *mylist.rbegin() << " " << *(--mylist.rend()) << " "
 	 << *rit << " " << *rit.base() << " " << *it << endl;
     
+    for (it=--mylist.end(); it!=mylist.begin(); --it) {
+      std::cout << ' ' << *(it);
+    }
+    std::cout << '\n';
+
+    std::cout << "end: " << *(it) << endl;
+
     exit(1);
-  */
+*/
 
   for (int i=0;i<MAXTRANS;i++)
     cond[i]=new TCondition(0);
@@ -1152,7 +1157,7 @@ int CRS::DoStartStop() {
 
     //EvtFrm->Levents = &Levents;
     EvtFrm->Clear();
-    EvtFrm->Levents = &EvtFrm->Tevents;
+    EvtFrm->Pevents = &EvtFrm->Tevents;
 
     //if (module==32) {
     //Command32(7,0,0,0); //reset usb command
@@ -1237,7 +1242,7 @@ int CRS::DoStartStop() {
     Cancel_all();
     b_stop=true;
     EvtFrm->Clear();
-    EvtFrm->Levents = &Levents;
+    EvtFrm->Pevents = &Levents;
     Select_Event();
     //EvtFrm->Levents = &Levents;
   }
@@ -1302,7 +1307,7 @@ void CRS::DoReset() {
 
   nvp=0;
   Levents.clear();
-  m_event=Levents.begin();
+  m_event=Levents.end();
   m_event2=m_event;
   m_flag=true;
   nevents=0;
@@ -1325,6 +1330,7 @@ void CRS::DoReset() {
 
   idx=0;
   idnext=0;
+  lastfl=1;
   if (f_read)
     DoFopen(NULL,0);
 
@@ -1342,6 +1348,11 @@ void CRS::DoReset() {
 void CRS::DoFopen(char* oname, int popt) {
   //popt: 1 - read opt from file; 0 - don't read opt from file
   int tp=0; //1 - adcm raw; 0 - crs2/32
+
+
+  //cout << "Select77: " << crs->m_event->T << " "
+  //     << crs->Levents.begin()->T << endl;
+  //Print_Events();
 
   if (oname)
     strcpy(Fname,oname);
@@ -1524,19 +1535,20 @@ void CRS::FAnalyze() {
 
 int CRS::Do1Buf() {
 
-  int res=gzread(f_read,Fbuf,opt.rbuf_size*1024);
-  cout << "gzread: " << Fmode << " " << nbuffers << " " << res << endl;
-  if (res>0) {
-    crs->totalbytes+=res;
+  BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
+  cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
+  if (BufLength>0) {
+    crs->totalbytes+=BufLength;
 
     if (Fmode==32) {
-      Decode32(Fbuf,res);
+      Decode32(Fbuf,BufLength);
     }
     else if (Fmode==2) {
-      Decode2(Fbuf,res);
+      Decode2(Fbuf,BufLength);
     }
     else if (Fmode==1) {
-      Decode_adcm(res/sizeof(UInt_t));
+      BufLength/=sizeof(UInt_t);
+      Decode_adcm();
     }
 
     //gSystem->Sleep(500);
@@ -1879,19 +1891,18 @@ void CRS::AllParameters2()
 
 //-------------------------------
 
-int CRS::Searchsync(int length) {
+int CRS::Searchsync() {
   //returns 0 if syncw is not found; otherwise len (length of the m-link frame)
 
-  int len;
-
-  for (;idx<length;idx++)
+  for (;idx<BufLength;idx++)
     if (rbuf4[idx] == 0x2a500100) {
-      len = rbuf2[idx*2+3];
-      idnext=idx+len;
-      if (len>511)
-	cout << "Bad length: " << idnext << " " << len << endl;
+      rLen = rbuf2[idx*2+3];
+      idnext=idx+rLen;
+      if (rLen>511)
+	cout << "Bad BufLength: " << idx << " " << idnext << " "
+	     << rLen << endl;
       else {
-	return len;
+	return rLen;
       }
     }
 
@@ -1900,30 +1911,27 @@ int CRS::Searchsync(int length) {
 
 //-------------------------------------
 
-void CRS::Decode_adcm(int length) {
+void CRS::Decode_adcm() {
   //it is assumed that at the beginning of this procedure idx points
   //to the valid data (correct sync word and type)
 
   //idx+0 - syncw+frame type
-  //idx+1 - len + frame counter
+  //idx+1 - rLen + frame counter
   //idx+2 - rubbish
   //idx+3 - header
   //idx+4 - event counter
   //idx+5 .. idx+5+nsamp-1 - data
-  //idx+len-3 - tst
-  //idx+len-2 - cnst
-  //idx+len-1 - crc32
+  //idx+rLen-3 - tst
+  //idx+rLen-2 - cnst
+  //idx+rLen-1 - crc32
 
-  // nsamp+8=len
+  // nsamp+8=rLen
 
-  int len=0;
-
-  UShort_t header; //data header
+  UInt_t header; //data header
   UShort_t nbits; //ADC bits
   UShort_t nw; //samples per word = 2
   UShort_t lflag; //last fragment flag
   UShort_t nsamp; // number of samples in the fragment
-  //UShort_t nsamp; // number of samples recorded in the channel
   UShort_t nch; // channel number
   UShort_t id; // block id (=0,1,2)
 
@@ -1942,37 +1950,34 @@ void CRS::Decode_adcm(int length) {
   if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
     //-> search for the syncw
     idx=0;
-    len = Searchsync(length);
-    if (!len){
-      cout << "sync word not found" << endl;
+    if (!Searchsync()){
+      cout << "sync word not found1" << endl;
       return;
     }
   }
   else {
     cout << "YK (not done yet...)" << endl;
     // what's below should be rewritten...
-    for (idx=0;idx<length;idx++)
+    for (idx=0;idx<BufLength;idx++)
       if (rbuf4[idx] == 0x2a500100) {
-	len = rbuf2[idx*2+3];
-	idnext=idx+len;
-	if (len>511)
-	  cout << "Bad length: " << idnext << " " << len << endl;
+	rLen = rbuf2[idx*2+3];
+	idnext=idx+rLen;
+	if (rLen>511)
+	  cout << "Bad BufLength: " << idnext << " " << rLen << endl;
 	else {
        	  break;
 	}
       }
   }
 
-  cout << "idx found: " << idx << " " << idnext << " " 
-       << hex << rbuf4[idx] << " " << rbuf4[idnext] << dec << endl;
-  //return;
+  //cout << "idx found: " << idx << " " << idnext << " " 
+  //     << hex << rbuf4[idx] << " " << rbuf4[idnext] << dec << endl;
 
-  //now idnext points to the next syncw (which may be larger than length)
-  while (idnext+1 < length) {//next len (~rbuf[idnext+1]) should be inside buf
+  //now idnext points to the next syncw (which may be larger than BufLength)
+  while (idnext+1 < BufLength) {
+    //next rLen (~rbuf[idnext+1]) should be inside buf
 
-    if (idnext>=length)
     //at this point idx points to a valid syncw and idnext is also withing FBuf
-    //len = rbuf2[idx*2+3];
 
     header = rbuf4[idx+3];
     id=bits(header,26,31);
@@ -1982,89 +1987,82 @@ void CRS::Decode_adcm(int length) {
     else {
       lflag=bits(header,6,6);
       nsamp=bits(header,7,17);
-      if (nsamp+8!=len) {
-	cout << "wrong length: " << idx << " " << nsamp << " " << len << endl;
-	idx=idnext;
-
-	if (rbuf4[idx] != 0x2a500100) {
-	  cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
-	  len = Searchsync(length); //idnext is also defined in searchsync
-	  if (!len){
-	    cout << "sync word not found (YK: do something here...)" << endl;
-	    return; //YK: or break??
-	  }
-	}
-	else {
-	  len = rbuf2[idx*2+3];
-	  idnext=idx+len;
-	}
-
-	continue;
+      if (nsamp+8!=rLen) {
+	cout << "wrong BufLength: " << idx << " " << nsamp << " " << rLen << endl;
+	//idx=idnext;
+	goto next;
       }
-
-      vv->push_back(PulseClass());
-      npulses++;
+      if (lastfl) {
+	vv->push_back(PulseClass());
+	npulses++;
+      }
       ipp = &vv->back();
       ipp->Chan=bits(header,18,25);
+      lastfl=lflag;
 
       //nbits=bits(header,0,3);
       //nw=bits(header,4,5);
-      //nch=bits(header,18,25);
+      ipp->Tstamp64 = rbuf4[idx+rLen-2];
+      ipp->Tstamp64 <<= 32;
+      //ipp->Tstamp64 += rbuf4[idx+rLen-3];
+      ipp->Tstamp64 = rbuf4[idx+rLen-3];
 
-      //cnst=(buf[idx+len2-3]<<16)+buf[idx+len2-4];
-      //tst=(buf[idx+len2-5]<<16)+buf[idx+len2-6];
+      if (lflag)
+	ipp->ptype&=~P_NOSTOP; //pulse has stop
 
-      Long64_t cnst = rbuf4[idx+len-2];
-      Long64_t tst = rbuf4[idx+len-3];
-      Long64_t crc32 = rbuf4[idx+len-1];
+      //Long64_t crc32 = rbuf4[idx+rLen-1];
 
+      /*
       cout << "Header: " << idx << " " << header << " "
 	   << (int) ipp->Chan << " " << lflag << " "
-	   << nsamp << " " << len << " " << hex << cnst << " " << tst << " "
-	   << crc32 << dec << endl;
+	   << nsamp << " " << rLen << " " << hex << header
+	   << dec << " " << ipp->Tstamp64
+	   << dec << endl;
 
       cout << "Header2: " << idx << " " << hex << rbuf4[idx] << " "
 	   << rbuf4[idx+3] << " " << rbuf4[idx+5] << " "
 	   << "65:" << rbuf4[idx+65] << " " << rbuf4[idx+66] << " "
 	   << rbuf4[idx+67] << " " << rbuf4[idx+68]
 	   << dec << endl;
-
-      /*
-      for (int i=0;i<nsamp;i+=2) {
-	Event[mult][nn++]=buf[idx+i+11];
-	Event[mult][nn++]=buf[idx+i+10];
-	//printf("%d %d\n",i,Event[mult][i]);
-	//printf("%d %d\n",i+1,Event[mult][i+1]);
-      }
       */
+      
+      for (int i=0;i<nsamp*2;i+=2) {
+	ipp->sData.push_back(rbuf2[idx*2+i+11]);
+	ipp->sData.push_back(rbuf2[idx*2+i+10]);
+	//cout << i << " " << rbuf2[idx*2+i+11] << endl;
+	//cout << i << " " << rbuf2[idx*2+i+10] << endl;
+      }
 
+      // cout << "sData: " << ipp->Tstamp64 << endl;
+      // for (UInt_t i=0;i<ipp->sData.size();i++) {
+      // 	cout << i << " " << ipp->sData.at(i) << endl;
+      // }
+      
     }
 
-    idx=idnext;
     //cout << "idnext: " << idx << " " << idnext << endl;
     //AnaMLinkFrame();
 
-
+  next:
+    idx=idnext;
     if (rbuf4[idx] != 0x2a500100) {
       cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
-      len = Searchsync(length); //idnext is also defined in searchsync
-      if (!len){
+      if (!Searchsync()){
 	cout << "sync word not found (YK: do something here...)" << endl;
-	return; //YK: or break??
+	break;
       }
     }
     else {
-      len = rbuf2[idx*2+3];
-      idnext=idx+len;
+      rLen = rbuf2[idx*2+3];
+      idnext=idx+rLen;
     }
-
 
   }
 
-  cout << "idnext: " << idx << " " << idnext << " " << length << endl;
-
+  Make_Events(nvp);
+  cout << "idnext: " << idx << " " << idnext << " " << BufLength << endl;
   
-}
+} //Decode_adcm
 
 //-------------------------------------
 
@@ -2084,6 +2082,30 @@ void CRS::PrintPulse(int udata, bool pdata) {
 }
 */
 
+void CRS::Print_Pulses(int nvp) {
+  std::vector<PulseClass> *vv = Vpulses+nvp;
+
+  cout << "Pulses: " << npulses;
+  for (UInt_t i=0;i<vv->size();i++) {
+    cout << " " << (int)vv->at(i).Chan << "," << vv->at(i).Tstamp64;
+  }
+  cout << endl;
+
+}
+
+void CRS::Print_Events() {
+  int nn=0;
+  cout << "Print_Events: " << Levents.begin()->T << " " << m_event->T << endl;
+  for (std::list<EventClass>::iterator it=Levents.begin();
+       it!=Levents.end();++it) {
+    cout << nn++ << " " << it->T << " :>>";
+    for (UInt_t i=0;i<it->pulses.size();i++) {
+      cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64;
+    }
+    cout << endl;
+  }
+}
+
 void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   //if (nbuffers < 1) {
@@ -2102,41 +2124,23 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   pls->FindPeaks();
   pls->PeakAna();
 
-  //cout << "Pls: " << nevents << " " << &*(--Levents.rend()) << " " << &*m_event << endl;
-  //exit(1);
-
   int nn=0;
 
   std::list<EventClass>::reverse_iterator rl;
-  //for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
-  std::list<EventClass>::reverse_iterator r_event=
-    std::list<EventClass>::reverse_iterator(m_event);
-  //cout << "Insert7: " << &*(--Levents.rend()) << " " << m_event->T << " "
-  //     << std::list<EventClass>::reverse_iterator(++it)->T << endl;
 
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
-    //for (rl=Levents.rbegin(); rl!=++r_event; ++rl) {
-
-  //std::list<EventClass>::iterator rl;
-  //for (rl=Levents.end(); rl!=m_event; --rl) {
     Long64_t dt = (pls->Tstamp64 - rl->T);//*opt.period;
-    //cout << "Insert: " << nevents << " " << dt << " " << rl->T 
-    //	 << " " << opt.tgate << endl;
     if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
       Levents.insert(rl.base(),EventClass());
       rl->Nevt=nevents;
       nevents++;
       rl->Pulse_Ana_Add(pls);
-      //if (debug && nn>10)
-      //cout << "nn1: " << nn << " " << Levents.size() << " " << opt.ev_max << endl;
       return;
     }
     else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
       // coincidence event
       rl->Pulse_Ana_Add(pls);
-      //if (debug && nn>20)
-      //cout << "nn2: " << nn << endl;
       return;
     }
     nn++;
@@ -2145,12 +2149,14 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   }
 
   
-  //if (debug && nn>20)
-  //cout << "nn3: " << nn << endl;
-  if (debug)
-    cout << "beginning: " << nn << endl;
   //add new event at the beginning of the eventlist
   Levents.insert(Levents.begin(),EventClass());
+  if (m_event==Levents.end()) {
+    m_event=Levents.begin();
+    //m_event2=m_event;
+  }
+  if (debug && !Levents.empty())
+    cout << "beginning: " << nn << endl;
   rl->Nevt=nevents;
   nevents++;
   Levents.begin()->Pulse_Ana_Add(pls);
@@ -2160,6 +2166,8 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 void CRS::Make_Events(int nvp) {
 
   std::vector<PulseClass>::iterator pls;
+
+  Print_Pulses(nvp);
 
   int nvp2=nvp-1;
   if (nvp2<0) nvp2=ntrans-1;
@@ -2172,22 +2180,21 @@ void CRS::Make_Events(int nvp) {
   // 	 << vv->back().Tstamp64 << endl;
 
   if (!vv->empty() && !(vv->back().ptype&P_NOSTOP)) {
-    //vv->back().FindPeaks();
-    //vv->back().PeakAna();
     Event_Insert_Pulse(&vv->back());
+    Print_Events();
   }
 
   //cout << "here1" << endl;
   //now insert all pulses from the current buffer, except last one
   vv = Vpulses+nvp;
 
-  if (vv->size()<=1) return; //if vv contains 0 or 1 event, don't analyze it 
+  if (vv->size()<=1)
+    return; //if vv contains 0 or 1 event, don't analyze it 
 
   for (pls=vv->begin(); pls != --vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {
-      //pls->FindPeaks();
-      //pls->PeakAna();
       Event_Insert_Pulse(&(*pls));
+      Print_Events();
     }
   }
 

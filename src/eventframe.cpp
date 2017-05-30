@@ -148,9 +148,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   mk.SetMarkerStyle(3);
   mk.SetMarkerColor(2);
 
-  //Levents = &Tevents;
-  Levents = &crs->Levents;
-  d_event = Levents->begin();
+  //Pevents = &Tevents;
+  Pevents = &crs->Levents;
+  d_event = Pevents->begin();
   cout << "d_event: " << &(*d_event) << endl;
   //d_event = new EventClass();
   //Emut = new TMutex();
@@ -380,7 +380,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fVer_ch = new TGVerticalFrame(fHor_st, 10, 10);
   fHor_st->AddFrame(fVer_ch, fLay4);
 
-  TGLabel* fLabel2 = new TGLabel(fVer_ch, "  Channels");
+  TGLabel* fLabel2 = new TGLabel(fVer_ch, "  Channels        ");
   fVer_ch->AddFrame(fLabel2, fLay4);
 
   fHor_ch = new TGHorizontalFrame(fVer_ch, 10, 10);
@@ -454,6 +454,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fStat2=new TGStatusBar(fVer_st,10,10);
   fVer_st->AddFrame(fStat1,fLay3);
   fVer_st->AddFrame(fStat2,fLay3);
+  fStat1->Draw3DCorner(kFALSE);
+  fStat2->Draw3DCorner(kFALSE);
 
 
   //trd=0;
@@ -577,14 +579,14 @@ void EventFrame::DoColor() {
 
 void EventFrame::First() {
   if (!crs->b_acq) {
-    d_event = Levents->begin();
+    d_event = Pevents->begin();
     DrawEvent2();
   }
 }
 
 void EventFrame::Last() {
   if (!crs->b_acq) {
-    d_event = --Levents->end();
+    d_event = --Pevents->end();
     DrawEvent2();
   }
 }
@@ -592,7 +594,7 @@ void EventFrame::Last() {
 void EventFrame::Plus1() {
   if (!crs->b_acq) {
     ++d_event;
-    if (d_event==Levents->end()) {
+    if (d_event==Pevents->end()) {
       --d_event;
     }
     DrawEvent2();
@@ -601,7 +603,7 @@ void EventFrame::Plus1() {
 
 void EventFrame::Minus1() {
   if (!crs->b_acq) {
-    if (d_event!=Levents->begin())
+    if (d_event!=Pevents->begin())
       --d_event;
     DrawEvent2();
   }
@@ -611,7 +613,7 @@ void EventFrame::PlusN() {
   if (!crs->b_acq) {
     for (int i=0;i<opt.num_events;i++) {
       ++d_event;
-      if (d_event==Levents->end()) {
+      if (d_event==Pevents->end()) {
 	--d_event;
 	break;
       }
@@ -623,7 +625,7 @@ void EventFrame::PlusN() {
 void EventFrame::MinusN() {
   if (!crs->b_acq) {
     for (int i=0;i<opt.num_events;i++) {
-      if (d_event!=Levents->begin()) {
+      if (d_event!=Pevents->begin()) {
 	--d_event;
       }
       else {
@@ -727,13 +729,15 @@ void EventFrame::FillGraph(int dr) {
   //Float_t dat[40000];
   //Float_t *pdat=0;
 
+  UInt_t ch[MAX_CH];
+
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     PulseClass *pulse = &d_event->pulses.at(i);
-    UInt_t ch= pulse->Chan;
+    ch[i]= pulse->Chan;
 
-    Gr[dr][ch]->Set(pulse->sData.size());
+    Gr[dr][i]->Set(pulse->sData.size());
 
-    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
+    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch[i]];
 
     // if (d_event->pulses.size()>1) {
     //   int nh=0;
@@ -748,66 +752,66 @@ void EventFrame::FillGraph(int dr) {
     //Double_t *xx = Gr[dr][ch]->GetX();
     //Double_t *yy = Gr[dr][ch]->GetY();
 
-    gx1[ch]=(dt-1);//*opt.period;
-    gx2[ch]=(pulse->sData.size()+dt);//*opt.period;
-    gy1[dr][ch]=1e99;
-    gy2[dr][ch]=-1e99;
+    gx1[i]=(dt-1);//*opt.period;
+    gx2[i]=(pulse->sData.size()+dt);//*opt.period;
+    gy1[dr][i]=1e99;
+    gy2[dr][i]=-1e99;
 
     if (dr==0) { //main pulse
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][ch]->GetX()[j]=(j+dt);//*opt.period;
-	Gr[dr][ch]->GetY()[j]=pulse->sData[j];
+	Gr[dr][i]->GetX()[j]=(j+dt);//*opt.period;
+	Gr[dr][i]->GetY()[j]=pulse->sData[j];
 
-	if (Gr[dr][ch]->GetY()[j]<gy1[dr][ch])
-	  gy1[dr][ch]=Gr[dr][ch]->GetY()[j];
-	if (Gr[dr][ch]->GetY()[j]>gy2[dr][ch])
-	  gy2[dr][ch]=Gr[dr][ch]->GetY()[j];
+	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
+	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
+	if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
+	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
 
 	//xx[j]=dt+j;
 	//yy[j]=pulse->sData[j];
-	// cout << "GR: " << dt << " " << Gr[dr][ch]->GetN() << " "
-	//      << ch << " " << dt+j << " "
+	// cout << "GR: " << dt << " " << Gr[dr][ch[i]]->GetN() << " "
+	//      << ch[i] << " " << dt+j << " "
 	//      << pulse->sData[j] << " " 
-	//      << Gr[dr][ch]->GetX()[j] << " " 
-	//      << Gr[dr][ch]->GetY()[j] << endl; 
+	//      << Gr[dr][ch[i]]->GetX()[j] << " " 
+	//      << Gr[dr][ch[i]]->GetY()[j] << endl; 
 	  
       }
     }
     else if (dr==1) { //1st derivaive
 
-      Int_t kk=cpar.kderiv[ch];
+      Int_t kk=cpar.kderiv[ch[i]];
       if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
 
       //dat = new Float_t[pulse->sData.size()];
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][ch]->GetX()[j]=(j+dt);//*opt.period;
+	Gr[dr][i]->GetX()[j]=(j+dt);//*opt.period;
 	if (j<kk)
-	  Gr[dr][ch]->GetY()[j]=pulse->sData[j]-pulse->sData[0];
+	  Gr[dr][i]->GetY()[j]=pulse->sData[j]-pulse->sData[0];
 	//dat[j]=0;
 	else
-	  Gr[dr][ch]->GetY()[j]=pulse->sData[j]-pulse->sData[j-kk];
+	  Gr[dr][i]->GetY()[j]=pulse->sData[j]-pulse->sData[j-kk];
 
-	if (Gr[dr][ch]->GetY()[j]<gy1[dr][ch])
-	  gy1[dr][ch]=Gr[dr][ch]->GetY()[j];
-	if (Gr[dr][ch]->GetY()[j]>gy2[dr][ch])
-	  gy2[dr][ch]=Gr[dr][ch]->GetY()[j];
+	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
+	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
+	if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
+	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
 
       }
     }
     else if (dr==2) { //2nd derivative
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][ch]->GetX()[j]=(j+dt);//*opt.period;
+	Gr[dr][i]->GetX()[j]=(j+dt);//*opt.period;
 	if (j<2)
-	  Gr[dr][ch]->GetY()[j]=0;
+	  Gr[dr][i]->GetY()[j]=0;
 	//dat[j]=0;
 	else
-	  Gr[dr][ch]->GetY()[j]=
+	  Gr[dr][i]->GetY()[j]=
 	    pulse->sData[j]-2*pulse->sData[j-1]+pulse->sData[j-2];
 
-	if (Gr[dr][ch]->GetY()[j]<gy1[dr][ch])
-	  gy1[dr][ch]=Gr[dr][ch]->GetY()[j];
-	if (Gr[dr][ch]->GetY()[j]>gy2[dr][ch])
-	  gy2[dr][ch]=Gr[dr][ch]->GetY()[j];
+	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
+	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
+	if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
+	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
 
       }
     }
@@ -830,10 +834,10 @@ void EventFrame::SetRanges(int dr) {
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     UInt_t ch= d_event->pulses.at(i).Chan;
     if (fChn[ch]->IsOn()) {
-      if (gx1[ch]<mx1) mx1=gx1[ch];
-      if (gx2[ch]>mx2) mx2=gx2[ch];
-      if (gy1[dr][ch]<my1[dr]) my1[dr]=gy1[dr][ch];
-      if (gy2[dr][ch]>my2[dr]) my2[dr]=gy2[dr][ch];
+      if (gx1[i]<mx1) mx1=gx1[i];
+      if (gx2[i]>mx2) mx2=gx2[i];
+      if (gy1[dr][i]<my1[dr]) my1[dr]=gy1[dr][i];
+      if (gy2[dr][i]>my2[dr]) my2[dr]=gy2[dr][i];
 
       //cout << "Graph1: " << dr << " " << mx1 << " " << mx2 << " " 
       //   << my1[dr] << " " << my2[dr] << endl;
@@ -855,18 +859,21 @@ void EventFrame::DrawEvent2() {
   TCanvas *cv=fCanvas->GetCanvas();
   cv->Clear();
 
+  //cout << "draw1:" << endl;
+
   //cv->Update();
   //int nnn=0;
-  //if (Levents) nnn=Levents->size();
-  //printf("DrawEvent0: %p %d %p %d\n",Levents,nnn,crs->Levents,crs->Levents.size());
+  //if (Pevents) nnn=Pevents->size();
+  //printf("DrawEvent0: %p %d %p %d\n",Pevents,nnn,crs->Pevents,crs->Pevents.size());
 
-  if (Levents->empty()) {
+  if (Pevents->empty()) {
     txt.DrawTextNDC(0.2,0.7,"Empty event");
     cv->Update();
     Emut2.UnLock();
     return;
   }
 
+  //cout << "draw1a:" << endl;
   ndiv=0;
 
   if (d_event->pulses.empty()) {
@@ -877,7 +884,7 @@ void EventFrame::DrawEvent2() {
     return;
   }
 
-
+  //cout << "draw1b: " << d_event->pulses.size() << endl;
   ULong64_t mask=0;
   ULong64_t one=1;
   
@@ -917,7 +924,7 @@ void EventFrame::DrawEvent2() {
   //   ndiv++;
   // }
 
-  //cout << "mgr1: " << mgr[0]->GetListOfGraphs() << " " << opt.b_deriv[0] << endl;
+  //cout << "draw2:" << endl;
 
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
@@ -925,6 +932,8 @@ void EventFrame::DrawEvent2() {
       ndiv++;
     }
   }
+
+  //cout << "draw3:" << endl;
 
   //Emut2.UnLock();
   //return;
@@ -944,7 +953,7 @@ void EventFrame::DrawEvent2() {
   //return;
 
   char ss[99];
-  sprintf(ss,"Evt: %lld",d_event->Nevt);//std::distance(Levents->begin(),d_event));
+  sprintf(ss,"Evt: %lld",d_event->Nevt);//std::distance(Pevents->begin(),d_event));
   fStat1->SetText(ss);
 
   sprintf(ss,"Tstamp: %lld",d_event->T);
@@ -1007,224 +1016,6 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 //} //DrawEvent
 
 void EventFrame::DoGraph(int ndiv, int dd) {
-
-  /*
-    fPaint[dd].Draw("AXIS");
-
-    for (int i=0;i<NGr;i++) {
-    Gr[dd][i].Draw("LP");
-    }
-  */
-
-
-  /*
-    for (int i=0;i<NGr;i++) {
-    if (i==0) {
-    Gr[dd][i].Draw("ALP");
-    }
-    else {
-    Gr[dd][i].Draw("LP");
-    }
-    }
-  */
-
-  /*
-
-    double ygr[DSIZE];
-    char ss[6];
-
-    TLine *lpk[DSIZE];
-    TLine *l1[DSIZE];
-    //TLine *l0[DSIZE];
-    TLine *l2[DSIZE];
-    double x1,x2,y1,y2;
-    double thresh;
-
-    int p1,p2;
-
-    //double min=9999999;
-
-    char label[100];
-
-    //int flag;
-
-    int opt_ch = opt.channels[nch];
-
-    if (opt_ch==ch_off2) {
-    printf("ch_off2: %d\n",nch);
-    return;
-    }
-
-    y1=0.8-1*0.02;
-
-    TLegend *leg = new TLegend(0.75,y1,0.99,0.99);
-
-    //tp->cd(i);
-    //printf("evlength: %d\n",evlength);
-    TGraph *gr1;
-
-    if (opt_ch==ch_nim) {
-    thresh=opt.nim_thresh;
-    if (!deriv) {
-    for (int j=0;j<evlength;j++) {
-    ygr[j]=Event[j]-Event[0];
-    //ygr[j]=Event[i][j]-BKGR;
-    }
-    }
-    else {
-    for (int j=1;j<evlength;j++) {
-    ygr[j]=Event[j]-Event[j-1];
-    }
-    ygr[0]=0;
-    }
-    }
-    else {
-    if (opt_ch==ch_gam)
-    thresh=opt.gam_thresh;
-    if (opt_ch==ch_ng)
-    thresh=opt.ng_thresh;
-
-    if (!deriv) {
-    for (int j=0;j<evlength;j++) {
-    ygr[j]=sEvent[j]-sEvent[0];
-    //ygr[j]=sEvent[i][j]-BKGR;
-    }
-    }
-    else {
-    for (int j=1;j<evlength;j++) {
-    ygr[j]=sEvent[j]-sEvent[j-1];
-    }
-    ygr[0]=0;
-    }
-    }
-
-    gr1 = new TGraph (evlength, xgr, ygr);
-    //printf("gr1\n");
-
-    gr1->SetLineColor(1);
-    gr1->SetMarkerStyle(20);
-    gr1->SetMarkerSize(0.5);
-    //gr1->SetFillColor(0);
-    //gr1->SetLineWidth(3);
-    sprintf(ss,"%d",nch);
-    gr1->SetTitle(ss);
-    gr1->Draw("ALP");
-
-    //leg->AddEntry(gr1,"Event","l");
-    //printf("leg1\n");
-
-    gPad->Update();
-    y1=gPad->GetUymin();
-    y2=gPad->GetUymax();
-
-    if (deriv) {
-    x1=gPad->GetUxmin();
-    x2=gPad->GetUxmax();
-
-    TLine* lthr=new TLine(x1,thresh,x2,thresh);
-    lthr->SetLineColor(3);
-    lthr->Draw();
-
-    TLine* l0=new TLine(x1,0,x2,0);
-    l0->SetLineColor(2);
-    l0->Draw();
-
-    }
-
-    for (int j=nPk-1;j>=0;j--) {
-
-    int pp=Peaks[j].time - tstamp64;
-    if (pp<0) {
-    break;
-    }
-
-    if (nch!=Peaks[j].ch) continue;
-
-    int jj=nPk-j;
-
-    //printf("zzzz: %d %d\n",j,pp);
-    lpk[jj] = new TLine(pp,y1,pp,y2);
-    
-    if (opt_ch==ch_nim) {
-    lpk[jj]->SetLineColor(6);
-    strcpy(label,"NIM signal");
-    }
-    else if (opt_ch==ch_ng || opt_ch==ch_gam) {
-
-    if (opt_ch==ch_ng) {
-    p1=pp+opt.ng_border1;
-    p2=pp+opt.ng_border2;
-    }
-    else if (opt_ch==ch_gam) {
-    p1=pp+opt.gam_border1;
-    p2=pp+opt.gam_border2;
-    }
-    l1[jj] = new TLine(p1,y1,p1,y2);
-    l2[jj] = new TLine(p2,y1,p2,y2);
-    l1[jj]->SetLineStyle(2);
-    l2[jj]->SetLineStyle(4);
-
-    //flag=Peaks[j].flag;
-
-    switch (Peaks[j].flag) {
-    case f_pileup:
-    lpk[jj]->SetLineColor(7);
-    sprintf(label,"T pile-up: %d",pp);
-    break;
-    case f_badleft:
-    lpk[jj]->SetLineColor(41);
-    sprintf(label,"Bad left: %d",pp);
-    break;
-    case f_badright:
-    lpk[jj]->SetLineColor(41);
-    sprintf(label,"Bad right: %d",pp);
-    break;
-    case f_nim:
-    lpk[jj]->SetLineColor(6);
-    sprintf(label,"NIM signal: %d",pp);
-    break;
-    case f_romash:
-    lpk[jj]->SetLineColor(2);
-    sprintf(label,"rom: %d %0.2f",pp,Peaks[j].A);
-    break;
-    case f_demon:
-    lpk[jj]->SetLineColor(2);
-    sprintf(label,"dem: %d %0.2f %0.2f",pp,Peaks[j].A,Peaks[j].W);
-    break;
-    case f_gamma:
-    lpk[jj]->SetLineColor(2);
-    sprintf(label,"g: %d %0.2f %0.2f",pp,Peaks[j].A,Peaks[j].W);
-    break;
-    case f_neu:
-    lpk[jj]->SetLineColor(3);
-    sprintf(label,"n: %d %0.2f %0.2f",pp,Peaks[j].A,Peaks[j].W);
-    break;
-    case f_tail:
-    lpk[jj]->SetLineColor(4);
-    sprintf(label,"t: %d %0.2f %0.2f",pp,Peaks[j].A,Peaks[j].W);
-    break;
-    default:
-    lpk[jj]->SetLineColor(8);
-    sprintf(label,"unknown: %d %d %0.2f %0.2f",pp,Peaks[j].flag,
-    Peaks[j].A,Peaks[j].W);
-    break;
-    }
-
-    l1[jj]->Draw();
-    //l0[j]->Draw();
-    l2[jj]->Draw();
-
-    } // else if opt_ch...
-
-    lpk[jj]->Draw();
-
-    leg->AddEntry(lpk[jj],label,"l");
-
-    } // for j
-
-    if (opt.b_leg && !deriv) leg->Draw();
-
-  */
 
 } //DoGraph
 
@@ -1296,9 +1087,10 @@ void EventFrame::ReDraw() {
 	PulseClass *pulse = &d_event->pulses.at(j);
 	//UInt_t ch= d_event->pulses.at(j).Chan;
 	if (fChn[pulse->Chan]->IsOn()) {
-	  //cout << "Gr: " << i << " " << j << " " << int(pulse->Chan) << " "
-	  //   << Gr[i][pulse->Chan]->GetLineColor() << endl;
-	  Gr[i][pulse->Chan]->Draw("lp");
+	  cout << "Gr: " << i << " " << j << " " << int(pulse->Chan) << " "
+	       << Gr[i][j]->GetLineColor() << " " << Gr[i][j]->GetN() << endl;
+	  Gr[i][j]->Draw("lp");
+	  //Gr[i][pulse->Chan]->Draw("lp");
 	  DrawPeaks(i,pulse,y1,y2);
 	  if (i==1 && fPeak[7]->IsOn()) //threshold
 	    doYline(cpar.threshold[pulse->Chan],gx1[pulse->Chan],

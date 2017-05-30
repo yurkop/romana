@@ -51,7 +51,7 @@ RQ_OBJECT("CRS")
 
   Short_t nvp; //Vpulses "ring" counter
   std::vector<PulseClass> Vpulses[MAXTRANS];
-  std::list<EventClass> Levents;
+  std::list<EventClass> Levents; //list of events
   std::list<EventClass>::iterator m_event2; //temporary m_event
   std::list<EventClass>::iterator m_event;
   //m_event points to the first element after cleaning the list
@@ -90,7 +90,10 @@ RQ_OBJECT("CRS")
 
   //vars for decoding...
 
+  //for adcm
   int idx; //index for Decode_adcm (in 32bit words, rbuf4)
+  int rLen; // length of one m-link frame
+  int BufLength; //length of the read buffer
   int idnext; //next expected idx pointing to new syncw
   int lastfl; //transient last fragment flag
   UInt_t* rbuf4; //only for decode_adcm
@@ -149,8 +152,8 @@ RQ_OBJECT("CRS")
   void AllParameters2(); // load all parameters
   void Decode2(UChar_t* buffer, int length);
 
-  int Searchsync(int length);
-  void Decode_adcm(int length);
+  int Searchsync();
+  void Decode_adcm();
 
   //void PrintPulse(int udata, bool pdata=false);
 
@@ -160,6 +163,8 @@ RQ_OBJECT("CRS")
   void Make_Events(int nbuf);
   //void *Ana_Events(void* ptr);
 
+  void Print_Pulses(int nvp);
+  void Print_Events();
   ClassDef(CRS, 0)
 };
 

@@ -69,7 +69,7 @@ protected:
    std::list<EventClass>::iterator d_event;
    std::list<EventClass> Tevents; //local event list, consist of one element
    // used for online monitoring
-   std::list<EventClass> *Levents; //points either to Tevents or to crs->Levents
+   std::list<EventClass> *Pevents; //points either to Tevents or to crs->Levents
    //EventClass *d_event; //current event to draw
    int ndiv;
    //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
