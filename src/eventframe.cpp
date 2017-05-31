@@ -100,6 +100,7 @@ void doYline(Float_t yy, Float_t x1, Float_t x2, int col, int type) {
   ln.SetLineColor(col);
   ln.SetLineStyle(type);
   ln.DrawLine(x1,yy,x2,yy);
+  //cout << "doyline: " << x1 << " " << x2 << " " << yy << " " << col << endl;
 }
 
 EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
@@ -469,7 +470,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
       Gr[j][i]=new TGraph(10);
       //Gr[j][i]->SetNameTitle(ss,";Time(ns);");
       Gr[j][i]->SetLineColor(chcol[i]);
-      Gr[j][i]->SetMarkerColor(chcol[i]);
+      //Gr[j][i]->SetMarkerColor(chcol[i]);
+      Gr[j][i]->SetMarkerColor(1);
       Gr[j][i]->SetMarkerStyle(20);
       Gr[j][i]->SetMarkerSize(0.5);
     }
@@ -736,6 +738,8 @@ void EventFrame::FillGraph(int dr) {
     ch[i]= pulse->Chan;
 
     Gr[dr][i]->Set(pulse->sData.size());
+    Gr[dr][i]->SetLineColor(chcol[ch[i]]);
+    Gr[dr][i]->SetMarkerColor(chcol[ch[i]]);
 
     double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch[i]];
 
@@ -1093,8 +1097,8 @@ void EventFrame::ReDraw() {
 	  //Gr[i][pulse->Chan]->Draw("lp");
 	  DrawPeaks(i,pulse,y1,y2);
 	  if (i==1 && fPeak[7]->IsOn()) //threshold
-	    doYline(cpar.threshold[pulse->Chan],gx1[pulse->Chan],
-		    gx2[pulse->Chan],chcol[pulse->Chan],2);
+	    doYline(cpar.threshold[pulse->Chan],gx1[j],
+		    gx2[j],chcol[pulse->Chan],2);
 	}
       }
 
