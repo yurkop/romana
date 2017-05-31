@@ -249,8 +249,10 @@ void *Ana_Events(void* ptr) {
     }
     //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.size() << endl;
 
-    crs->Levents.erase(crs->Levents.begin(),crs->m_event);
-    crs->m_flag=true;
+    if (crs->m_flag!=2)
+      crs->Levents.erase(crs->Levents.begin(),crs->m_event);
+
+    crs->m_flag=0;
 
     //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
     //gSystem->Sleep(200);
@@ -389,6 +391,7 @@ CRS::CRS() {
   strcpy(dec_opt,"ab");
 
   Fbuf=NULL;
+  Fbuf2=NULL;
 
   strcpy(Fname," ");
   DoReset();
@@ -1309,7 +1312,7 @@ void CRS::DoReset() {
   Levents.clear();
   m_event=Levents.end();
   m_event2=m_event;
-  m_flag=true;
+  m_flag=0;
   nevents=0;
   nevents2=0;
 
@@ -1348,7 +1351,8 @@ void CRS::DoReset() {
 void CRS::DoFopen(char* oname, int popt) {
   //popt: 1 - read opt from file; 0 - don't read opt from file
   int tp=0; //1 - adcm raw; 0 - crs2/32
-
+  int bsize;
+  int boffset;
 
   //cout << "Select77: " << crs->m_event->T << " "
   //     << crs->Levents.begin()->T << endl;
@@ -1390,25 +1394,30 @@ void CRS::DoFopen(char* oname, int popt) {
   if (tp) { //adcm raw
     cout << "ADCM RAW File: " << Fname << endl;
     Fmode=1;
-
     for (int i=0;i<MAX_CH+ADDCH;i++) {
       cpar.preWr[i]=0;
     }
+    bsize=opt.rbuf_size*1024+4096;
+    boffset=4096;
   }
-  else {
+  else { //crs32 or crs2
     if (ReadParGz(f_read,Fname,1,1,popt)) {
       gzclose(f_read);
       f_read=0;
       return;
     }
+    bsize=opt.rbuf_size*1024;
+    boffset=0;
   }
 
   opt.raw_write=false;
 
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
 
-  if (Fbuf) delete[] Fbuf;
-  Fbuf = new UChar_t[opt.rbuf_size*1024];
+  if (Fbuf2) delete[] Fbuf2;
+  Fbuf2 = new UChar_t[bsize];
+  Fbuf = Fbuf2+boffset;
+  memset(Fbuf2,0,boffset);
 
   rbuf4 = (UInt_t*) Fbuf;
   rbuf2 = (UShort_t*) Fbuf;
@@ -1531,6 +1540,7 @@ void CRS::FAnalyze() {
   }
 
   m_event=Levents.end();
+  m_flag=2;
   trd_ana->Run();
 
   b_stop=true;
@@ -1951,6 +1961,8 @@ void CRS::Decode_adcm() {
   //UShort_t syncw=rbuf2[idx+1];
   //UShort_t ftype=rbuf2[idx];
 
+  //cout << "idx1: " << idx << " " << hex << rbuf4[idx] << dec << endl;
+  
   if ((Vpulses+nvp2)->empty()) { //this is start of the acqisition
     //-> search for the syncw
     idx=0;
@@ -1959,6 +1971,7 @@ void CRS::Decode_adcm() {
       return;
     }
   }
+  /*
   else {
     cout << "YK (not done yet...)" << endl;
     // what's below should be rewritten...
@@ -1973,15 +1986,33 @@ void CRS::Decode_adcm() {
 	}
       }
   }
-
+  */
   //cout << "idx found: " << idx << " " << idnext << " " 
   //     << hex << rbuf4[idx] << " " << rbuf4[idnext] << dec << endl;
 
+  // cout << "idx2: " << idx << " " << hex << rbuf4[idx-1] << " "
+  //      << rbuf4[idx] << " " << rbuf4[idx+1]
+  //      << dec << endl;
+
   //now idnext points to the next syncw (which may be larger than BufLength)
-  while (idnext+1 < BufLength) {
-    //next rLen (~rbuf[idnext+1]) should be inside buf
+  while (idx+1 < BufLength) {
+    //rLen (~rbuf[idx+1]) should be inside buf
 
     //at this point idx points to a valid syncw and idnext is also withing FBuf
+
+    if (rbuf4[idx] != 0x2a500100) {
+      cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
+      if (!Searchsync()){
+	cout << "sync word not found (YK: do something here...)" << endl;
+	break;
+      }
+    }
+    else {
+      rLen = rbuf2[idx*2+3];
+      idnext=idx+rLen;
+    }
+    if (idnext>BufLength)
+      break;
 
     header = rbuf4[idx+3];
     id=bits(header,26,31);
@@ -2049,6 +2080,9 @@ void CRS::Decode_adcm() {
 
   next:
     idx=idnext;
+
+
+    /*
     if (rbuf4[idx] != 0x2a500100) {
       cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
       if (!Searchsync()){
@@ -2060,11 +2094,24 @@ void CRS::Decode_adcm() {
       rLen = rbuf2[idx*2+3];
       idnext=idx+rLen;
     }
+    */
 
   }
 
   Make_Events(nvp);
-  cout << "idnext: " << idx << " " << idnext << " " << BufLength << endl;
+
+  int sz=(BufLength-idx);
+  if (sz>1024) {
+    cout << "Bad adcm file. Frame size too large: " << sz << " " << idx << endl;
+    exit(-1);
+  }
+  memcpy(rbuf4-sz,rbuf4+idx,sz*sizeof(UInt_t));
+  int idx2=idx;
+  idx=-sz;
+
+  // cout << "idnext: " << idx2 << " " << idx << " " << idnext << " "
+  //      << BufLength << " " << hex << rbuf4[idx2] << " " << rbuf4[idx]
+  //      << dec << endl;
 
 } //Decode_adcm
 
@@ -2160,7 +2207,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     //m_event2=m_event;
   }
   if (debug && !Levents.empty())
-    cout << "beginning: " << nn << endl;
+    cout << "beginning: " << nn << " " << Levents.size() << endl;
   rl->Nevt=nevents;
   nevents++;
   Levents.begin()->Pulse_Ana_Add(pls);
@@ -2216,12 +2263,12 @@ void CRS::Make_Events(int nvp) {
   //-----------
 
   //Analyse events and clean (part of) the event list
-  if (m_flag && (int) Levents.size()>opt.ev_min) {
+  if (!m_flag && (int) Levents.size()>opt.ev_min) {
     m_event2=--Levents.end();
-    m_flag=false;
+    m_flag=1;
     //cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
   }
-  if (!m_flag && (int) Levents.size()>opt.ev_max) {
+  if (m_flag && (int) Levents.size()>opt.ev_max) {
     m_event=m_event2;
     //cout << "Ana_Events1: " << nevents2 << " " << Levents.size() << endl;
 
