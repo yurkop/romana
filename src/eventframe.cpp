@@ -860,6 +860,7 @@ void EventFrame::SetRanges(int dr) {
 
 void EventFrame::DrawEvent2() {
 
+  //return;
   Emut2.Lock();
 
   TCanvas *cv=fCanvas->GetCanvas();

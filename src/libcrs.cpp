@@ -151,7 +151,10 @@ void *handle_evt(void* ptr)
       Select_Event();
       //cout << "trd4: " << myM->fTab->GetCurrent() << endl; 
       EvtFrm->Tevents.clear();
+      //cout << "trd4a: " << myM->fTab->GetCurrent() << " " 
+      //   << EvtFrm->d_event->T << endl; 
       EvtFrm->Tevents.push_back(*EvtFrm->d_event);
+      //cout << "trd4b: " << myM->fTab->GetCurrent() << endl; 
       EvtFrm->d_event=EvtFrm->Tevents.begin();
 
       //cout << "trd5: " << myM->fTab->GetCurrent() << endl; 
