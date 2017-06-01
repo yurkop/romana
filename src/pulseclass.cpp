@@ -3,7 +3,7 @@
 #include "libcrs.h"
 #include <iostream>
 
-extern Coptions cpar;
+//extern Coptions cpar;
 extern Toptions opt;
 extern CRS* crs;
 
@@ -33,7 +33,7 @@ void PulseClass::FindPeaks() {
   // N=deadtime samples from the previous peak
   */
   
-  UInt_t kk=cpar.kderiv[Chan];
+  UInt_t kk=opt.kdrv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
   peak_type *pk=0;
@@ -51,7 +51,7 @@ void PulseClass::FindPeaks() {
   for (j=kk;j<sData.size();j++) {
     D[j]=sData[j]-sData[j-kk];
     if (!in_peak) {
-      if (D[j] >= cpar.threshold[Chan]) {
+      if (D[j] >= opt.thresh[Chan]) {
 	in_peak=true;
 	Peaks.push_back(peak_type());
 	pk = &Peaks.back();
@@ -84,7 +84,7 @@ void PulseClass::FindPeaks() {
 	jmax=0;
 	if (Peaks.size()>1) { //this is at least second peak
 	  p_prev = pk-1;
-	  if (pk->Pos - p_prev->Pos < cpar.deadTime[Chan])
+	  if (pk->Pos - p_prev->Pos < opt.deadT[Chan])
 	    Peaks.pop_back();
 	  else if (pk->Pos - p_prev->Pos < opt.pile[Chan]) {
 	    p_prev->Type|=P_PILE1;
@@ -195,7 +195,7 @@ void PulseClass::PeakAna() {
     else
       pk->T4=tt+opt.twin2[Chan];
 
-    UInt_t kk=cpar.kderiv[Chan];
+    UInt_t kk=opt.kdrv[Chan];
     if (kk<1 || kk>=sData.size()) kk=1;
 
     if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
@@ -244,7 +244,9 @@ void EventClass::Pulse_Ana_Add(PulseClass *newpulse) {
       Float_t dt = newpulse->Tstamp64 - T;
 
       peak_type *pk = &newpulse->Peaks.front();
-      Float_t T2 = pk->Time - cpar.preWr[newpulse->Chan] + dt;
+      Float_t T2 = pk->Time - crs->Pre[newpulse->Chan] + dt;
+      //Float_t T2 = pk->Time - cpar.preWr[newpulse->Chan] + dt;
+      //Float_t T2 = pk->Time + dt;
 
       if (T2<T0) {
 	T0=T2;

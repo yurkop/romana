@@ -39,6 +39,9 @@ RQ_OBJECT("CRS")
   static const Int_t MAXEV=1000; //maximal number of events in Levents
   //--------variables---------
 
+  Int_t Pre[MAX_CH+ADDCH]; // pre-length for the analysys
+  //Pre = opt.preWr for crs2/32; Pre=0 for adcm
+  
   gzFile f_raw;
   gzFile f_read;
   gzFile f_dec;

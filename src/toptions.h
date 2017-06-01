@@ -74,10 +74,13 @@ class Toptions: public TObject {
   Bool_t Start[MAX_CH+ADDCH]; //
   //UInt_t ch_flag[MAX_CH+ADDCH];
   Int_t nsmoo[MAX_CH+ADDCH]; //software smoothing 0..100
+  Int_t kdrv[MAX_CH+ADDCH]; //K=0 - trigger on the signal; k!=0 - on derivative
+  Int_t thresh[MAX_CH+ADDCH];
   Int_t bkg1[MAX_CH+ADDCH];
   Int_t bkg2[MAX_CH+ADDCH];
   Int_t peak1[MAX_CH+ADDCH];
   Int_t peak2[MAX_CH+ADDCH];
+  Int_t deadT[MAX_CH+ADDCH];
   Int_t pile[MAX_CH+ADDCH];
   //Int_t pile2[MAX_CH+ADDCH];
   Int_t timing[MAX_CH+ADDCH];
@@ -205,7 +208,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 94)
+  ClassDef(Toptions, 95)
 };
 
 ClassImp(Toptions)

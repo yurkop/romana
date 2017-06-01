@@ -380,8 +380,12 @@ CRS::CRS() {
     exit(1);
 */
 
+  memset(Pre,0,sizeof(Pre));
+
   for (int i=0;i<MAXTRANS;i++)
     cond[i]=new TCondition(0);
+
+  Fmode=0;
 
   f_raw=0;
   f_read=0;
@@ -391,8 +395,13 @@ CRS::CRS() {
   strcpy(dec_opt,"ab");
 
   Fbuf=NULL;
-  Fbuf2=NULL;
+  Fbuf2=0;
 
+  // if (Fbuf2)
+  //   cout << "Fbuf2: " << Fbuf2 << endl;
+  // else
+  //   cout << "Fbuf3: " << Fbuf2 << endl;
+  
   strcpy(Fname," ");
   DoReset();
 
@@ -1063,84 +1072,6 @@ void CRS::AllParameters2()
 
 }
 
-
-/*
-void CRS::AllParameters32_old()
-{
-
-  memset(buf_out,'\0',64);
-
-  buf_out[0] = 2;                 // команда "Управление"
-  for (int chan = 0; chan < chanPresent; chan++)
-    {
-      buf_out[1] = (byte)chan;     // номер канала
-
-      buf_out[2] = 0;         // тип параметра - связь по переменному/постоянному току
-      if (cpar.acdc[chan] == false) buf_out[5] = 0;
-      else buf_out[5] = 1;
-      SendParametr("coupling",6);
-
-      buf_out[2] = 1;         // тип параметра - инверсия
-      if (cpar.inv[chan] == false) buf_out[5] = 0;
-      else buf_out[5] = 1;
-      SendParametr("inversion",6);
-
-      buf_out[2] = 2;         // тип параметра - сглаживание
-      buf_out[5] = (byte)cpar.smooth[chan];
-      SendParametr("smoothing",6);
-                        
-      buf_out[2] = 3;         // тип параметра - мертвое время дискриминатора
-      buf_out[4] = (byte)(cpar.deadTime[chan] >> 8);
-      buf_out[5] = (byte)cpar.deadTime[chan];
-      SendParametr("dead time",6);
-
-      buf_out[2] = 4;         // тип параметра - предзапись
-      buf_out[4] = (byte)(cpar.preWr[chan] >> 8);
-      buf_out[5] = (byte)cpar.preWr[chan];
-      SendParametr("pre-record length",6);
-
-      buf_out[2] = 5;         // тип параметра - длительность записи
-      buf_out[4] = (byte)(cpar.durWr[chan] >> 8);
-      buf_out[5] = (byte)cpar.durWr[chan];
-      SendParametr("record length",6);
-
-      if (cpar.enabl[chan]) {
-	buf_out[2] = 6;         // тип параметра - производная
-	buf_out[4] = (byte)(cpar.kderiv[chan] >> 8);
-	buf_out[5] = (byte)cpar.kderiv[chan];
-	SendParametr("derivative",6);
-
-	buf_out[2] = 7;         // тип параметра - порог
-	buf_out[4] = (byte)(cpar.threshold[chan] >> 8);
-	buf_out[5] = (byte)cpar.threshold[chan];
-	SendParametr("threshold",6);
-      }
-      else {
-	buf_out[2] = 6;         // тип параметра - производная
-	buf_out[4] = 0;
-	buf_out[5] = 0;
-	SendParametr("derivative",6);
-
-	int tmp,max;
-	cpar.GetPar("thresh",crs->module,chan,tmp,tmp,max);
-	cout << "Off: " << chan << " " << max << endl;
-	
-	buf_out[2] = 7;         // тип параметра - порог
-	buf_out[4] = (byte) (max >> 8);
-	buf_out[5] = (byte) max;
-	SendParametr("threshold",6);
-      }
-
-      buf_out[2] = 8;         // тип параметра - дополнительное усиление
-      buf_out[5] = (byte)cpar.adcGain[chan];
-      SendParametr("gain",6);
-    }
-
-}
-*/
-
-
-
 int CRS::DoStartStop() {
   int r;
   //int transferred = 0;
@@ -1320,6 +1251,10 @@ void CRS::DoReset() {
     Vpulses[i].clear();
   }
 
+  if (Fmode!=1) {
+    memcpy(&Pre,&cpar.preWr,sizeof(Pre));
+  }
+
   npulses=0;
   nbuffers=0;
 
@@ -1394,11 +1329,14 @@ void CRS::DoFopen(char* oname, int popt) {
   if (tp) { //adcm raw
     cout << "ADCM RAW File: " << Fname << endl;
     Fmode=1;
-    for (int i=0;i<MAX_CH+ADDCH;i++) {
-      cpar.preWr[i]=0;
-    }
+
+    memset(Pre,0,sizeof(Pre));
+    // for (int i=0;i<MAX_CH+ADDCH;i++) {
+    //   cpar.preWr[i]=0;
+    // }
     bsize=opt.rbuf_size*1024+4096;
     boffset=4096;
+    opt.period=10;
   }
   else { //crs32 or crs2
     if (ReadParGz(f_read,Fname,1,1,popt)) {
@@ -1408,11 +1346,14 @@ void CRS::DoFopen(char* oname, int popt) {
     }
     bsize=opt.rbuf_size*1024;
     boffset=0;
+    opt.period=5;
   }
 
   opt.raw_write=false;
 
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
+
+  //cout << "Fopen2: " << (void*) Fbuf2 << " " << bsize << endl;
 
   if (Fbuf2) delete[] Fbuf2;
   Fbuf2 = new UChar_t[bsize];
@@ -1501,6 +1442,10 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   //if (Fbuf) delete[] Fbuf;
   //Fbuf = new UChar_t[opt.usb_size*1024];
   //EvtFrm->Levents = &Levents;
+
+  if (Fmode!=1) {
+    memcpy(&Pre,&cpar.preWr,sizeof(Pre));
+  }
 
   //cout << "readpar_gz3" << endl;
   return 0;
@@ -1682,7 +1627,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 	ipp->ptype&=~P_NOSTART;
       }
       ipp->Chan=ch;
-      ipp->Tstamp64=data;
+      ipp->Tstamp64=data;// - cpar.preWr[ch];
 
     }
     else if (frmt==1) {
@@ -1736,74 +1681,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   
 }
 
-/*
-void CRS::AllParameters2()
-{
-  memset(buf_out,'\0',64);
-
-  buf_out[0] = 2;                 // команда "Управление"
-  for (int chan = 0; chan < chanPresent; chan++)
-    {
-      buf_out[1] = (byte)chan;     // номер канала
-
-      buf_out[2] = 0;         // Gain
-      buf_out[3] = (byte)cpar.adcGain[chan];
-      SendParametr("gain",5);
-
-      buf_out[2] = 1;         // тип параметра - инверсия
-      if (cpar.inv[chan] == false) buf_out[3] = 0;
-      else buf_out[3] = 1;
-      SendParametr("inversion",5);
-
-      buf_out[2] = 2;         // тип параметра - сглаживание
-      buf_out[3] = (byte)cpar.smooth[chan];
-      SendParametr("smoothing",5);
-                        
-      if (cpar.enabl[chan]) {
-	buf_out[2] = 3;         // тип параметра - производная
-	buf_out[4] = (byte)(cpar.kderiv[chan] >> 8);
-	buf_out[3] = (byte)cpar.kderiv[chan];
-	SendParametr("derivative",5);
-
-	buf_out[2] = 4;         // тип параметра - порог
-	buf_out[4] = (byte)(cpar.threshold[chan] >> 8);
-	buf_out[3] = (byte)cpar.threshold[chan];
-	SendParametr("threshold",5);
-      }
-      else {
-	buf_out[2] = 3;         // тип параметра - производная
-	buf_out[4] = 0;
-	buf_out[3] = 0;
-	SendParametr("derivative",5);
-
-	int tmp,max;
-	cpar.GetPar("thresh",crs->module,chan,tmp,tmp,max);
-	cout << "Off: " << chan << " " << max << endl;
-
-	buf_out[2] = 4;         // тип параметра - порог
-	buf_out[4] = (byte)(max >> 8);
-	buf_out[3] = (byte)max;
-	SendParametr("threshold",5);
-      }
-
-      buf_out[2] = 5;         // тип параметра - предзапись
-      buf_out[4] = (byte)(cpar.preWr[chan] >> 8);
-      buf_out[3] = (byte)cpar.preWr[chan];
-      SendParametr("pre-record length",5);
-
-      buf_out[2] = 6;         // тип параметра - длительность записи
-      buf_out[4] = (byte)(cpar.durWr[chan] >> 8);
-      buf_out[3] = (byte)cpar.durWr[chan];
-      SendParametr("record length",5);
-
-      buf_out[2] = 7;         // тип параметра - принудительная запись
-      buf_out[3] = (byte)cpar.forcewr;
-      SendParametr("gain",5);
-    }
-}
-*/
-
- void CRS::Decode2(UChar_t* buffer, int length) {
+void CRS::Decode2(UChar_t* buffer, int length) {
 
   PulseClass *ipp;
 
@@ -1863,7 +1741,7 @@ void CRS::AllParameters2()
 	ipp->ptype&=~P_NOSTART; // reset ptype, as this is a good pulse
       }
       ipp->Chan = ch;
-      ipp->Tstamp64=data;
+      ipp->Tstamp64=data;// - cpar.preWr[ch];
 
     }
     else if (frmt<4) {
@@ -1942,11 +1820,11 @@ void CRS::Decode_adcm() {
   // nsamp+8=rLen
 
   UInt_t header; //data header
-  UShort_t nbits; //ADC bits
-  UShort_t nw; //samples per word = 2
+  //UShort_t nbits; //ADC bits
+  //UShort_t nw; //samples per word = 2
   UShort_t lflag; //last fragment flag
   UShort_t nsamp; // number of samples in the fragment
-  UShort_t nch; // channel number
+  //UShort_t nch; // channel number
   UShort_t id; // block id (=0,1,2)
 
   PulseClass *ipp;
@@ -2060,10 +1938,13 @@ void CRS::Decode_adcm() {
 	   << rbuf4[idx+67] << " " << rbuf4[idx+68]
 	   << dec << endl;
       */
-      
+      static Float_t baseline=0;
+      if (ipp->sData.empty() && nsamp) {
+	baseline = rbuf2[idx*2+11];
+      }
       for (int i=0;i<nsamp*2;i+=2) {
-	ipp->sData.push_back(rbuf2[idx*2+i+11]);
-	ipp->sData.push_back(rbuf2[idx*2+i+10]);
+	ipp->sData.push_back(rbuf2[idx*2+i+11]-baseline);
+	ipp->sData.push_back(rbuf2[idx*2+i+10]-baseline);
 	//cout << i << " " << rbuf2[idx*2+i+11] << endl;
 	//cout << i << " " << rbuf2[idx*2+i+10] << endl;
       }
@@ -2106,7 +1987,7 @@ void CRS::Decode_adcm() {
     exit(-1);
   }
   memcpy(rbuf4-sz,rbuf4+idx,sz*sizeof(UInt_t));
-  int idx2=idx;
+  //int idx2=idx;
   idx=-sz;
 
   // cout << "idnext: " << idx2 << " " << idx << " " << idnext << " "
@@ -2180,7 +2061,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   std::list<EventClass>::reverse_iterator rl;
 
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
-    Long64_t dt = (pls->Tstamp64 - rl->T);//*opt.period;
+    Long64_t dt = (pls->Tstamp64 - rl->T);
     if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
       Levents.insert(rl.base(),EventClass());

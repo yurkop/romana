@@ -28,18 +28,20 @@ const char* tip[ncrspar]={
   "Dead time - no new trigger on the current channel within dead time from the old trigger",
   "Number of samples before the trigger",
   "Total length of the pulse in samples",
-  "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-n)",
   "Additional Gain",
+  "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold"};
 
-const int nchpar=16;
-const int tlen2[nchpar]={26,60,26,25,40,40,42,42,35,35,20,35,35,35,42,42};
-const char* tlab2[nchpar]={"Ch","Type","St","sS","Bkg1","Bkg2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
+const int nchpar=18;
+const int tlen2[nchpar]={26,60,26,25,32,40,40,40,42,42,35,35,20,35,35,35,42,42};
+const char* tlab2[nchpar]={"Ch","Type","St","sS","Drv","Thr","Bkg1","Bkg2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
 const char* tip2[nchpar]={
   "Channel number",
   "Channel type",
   "Start channel - used for making TOF/MTOF start\nif there are many start channels in the event, the earliest is used",
   "Software smoothing",
+  "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-Drv)",
+  "Trigger threshold",
   "Background start, relative to peak Pos (negative)",
   "Background end, relative to peak Pos (negative)",
   "Peak start, relative to peak Pos (usually negative)",
@@ -197,8 +199,16 @@ void ParDlg::DoNum_SetBuf() {
     }
   }
   else { //this is READ buffer
-    if (crs->Fbuf) delete[] crs->Fbuf;
-    crs->Fbuf = new UChar_t[opt.rbuf_size*1024];
+    int bsize=opt.rbuf_size*1024;
+    int boffset=0;
+    if (crs->Fmode==1) {
+      bsize+=4096;
+      boffset+=4096;
+    }
+    if (crs->Fbuf2) delete[] crs->Fbuf2;
+    crs->Fbuf2 = new UChar_t[bsize];
+    crs->Fbuf = crs->Fbuf2+boffset;
+    memset(crs->Fbuf2,0,boffset);
   }
 
 }
@@ -1192,11 +1202,13 @@ void ChanParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
 
 
   AddNum2(i,kk++,all,hframe1,&opt.nsmoo[i],0,99,p_inum);
+  AddNum2(i,kk++,all,hframe1,&opt.kdrv[i],0,999,p_inum);
+  AddNum2(i,kk++,all,hframe1,&opt.thresh[i],0,9999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.bkg1[i],-4999,999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.bkg2[i],-999,999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.peak1[i],-999,16500,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.peak2[i],-999,16500,p_inum);
-  AddNum2(i,kk++,all,hframe1,&cpar.deadTime[i],0,9999,p_inum);
+  AddNum2(i,kk++,all,hframe1,&opt.deadT[i],0,9999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.pile[i],0,9999,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.timing[i],0,2,p_inum);
   AddNum2(i,kk++,all,hframe1,&opt.twin1[i],-99,99,p_inum);

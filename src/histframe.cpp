@@ -16,7 +16,7 @@
 //TLine ln1;
 
 extern Toptions opt;
-extern Coptions cpar;
+//extern Coptions cpar;
 extern MyMainFrame *myM;
 //extern BufClass* Buffer;
 
@@ -300,7 +300,8 @@ void HistFrame::FillHist(EventClass* evt) {
       h_time[ch]->Fill(tt*DT);
 
       double dt = evt->pulses[i].Tstamp64 - evt->T;
-      tt = pk->Time - cpar.preWr[ch] - evt->T0 + dt;
+      //tt = pk->Time - cpar.preWr[ch] - evt->T0 + dt;
+      tt = pk->Time - crs->Pre[ch] - evt->T0 + dt;
       // cout << "TOF: " << crs->nevents << " " << i << " "
       // 	   << ch << " " << pk->Time << " " << evt->T0 << " "
       // 	   << dt << " " << tt << endl;

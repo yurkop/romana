@@ -505,7 +505,7 @@ int main(int argc, char **argv)
 
 
   char s_name[200], dir[100], name[100], ext[100];
-  char* pname = (char*) parname;
+  //char* pname = (char*) parname;
 
   bool batch=false;
 
@@ -525,11 +525,8 @@ int main(int argc, char **argv)
   crs->Detect_device();
 
   parname = (char*)"romana.par";
-  //readinit(parname);
-  //cout << "1 ReadParGz(ff,1,1);" << endl;
   gzFile ff = gzopen(parname,"rb");
   crs->ReadParGz(ff,parname,0,1,1);
-  //cout << "2 ReadParGz(ff,1,1);" << endl;
   gzclose(ff);
 
 #ifdef LINUX
@@ -558,7 +555,7 @@ int main(int argc, char **argv)
     //    cout << "argnn: " << argnn << " " << argc << endl;
 
     if (argnn<argc) {
-      crs->DoFopen(argv[argnn],1);
+      crs->DoFopen(argv[argnn],0);
 
       //strcat(maintitle," ");
       //strcat(maintitle,argv[argnn]);
@@ -573,7 +570,11 @@ int main(int argc, char **argv)
     }
 
     if (argnn<argc) {
-      pname=argv[argnn];
+      //parname = argv[argnn];
+      gzFile ff = gzopen(argv[argnn],"rb");
+      crs->ReadParGz(ff,argv[argnn],0,1,1);
+      gzclose(ff);
+      //pname=argv[argnn];
     }
 
   }

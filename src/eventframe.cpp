@@ -66,7 +66,7 @@ const char* mgr_name[3] = {"pulse","1deriv","2deriv"};
 const char* mgr_title[3] = {"pulse;samples","1 deriv;samples",
 			    "2 deriv;samples"};
 
-extern Coptions cpar;
+//extern Coptions cpar;
 extern Toptions opt;
 extern MyMainFrame *myM;
 //extern BufClass* Buffer;
@@ -741,7 +741,9 @@ void EventFrame::FillGraph(int dr) {
     Gr[dr][i]->SetLineColor(chcol[ch[i]]);
     Gr[dr][i]->SetMarkerColor(chcol[ch[i]]);
 
-    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch[i]];
+    double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch[i]];
+    //double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch[i]];
+    //double dt=pulse->Tstamp64 - d_event->T;
 
     // if (d_event->pulses.size()>1) {
     //   int nh=0;
@@ -783,7 +785,7 @@ void EventFrame::FillGraph(int dr) {
     }
     else if (dr==1) { //1st derivaive
 
-      Int_t kk=cpar.kderiv[ch[i]];
+      Int_t kk=opt.kdrv[ch[i]];
       if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
 
       //dat = new Float_t[pulse->sData.size()];
@@ -986,11 +988,15 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
-    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
-      //int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
-      //cout << "Dt: " << i << " " << d_event->T << " " << dt
-      // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
-      //UInt_t ch= pulse->Chan;
+    double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch];
+    //double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
+    //double dt=pulse->Tstamp64 - d_event->T;
+
+    //int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
+    //cout << "Dt: " << i << " " << d_event->T << " " << dt
+    // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
+    //UInt_t ch= pulse->Chan;
+
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];
       if (fPeak[1]->IsOn()) // Pos
@@ -1097,7 +1103,7 @@ void EventFrame::ReDraw() {
 	  //Gr[i][pulse->Chan]->Draw("lp");
 	  DrawPeaks(i,pulse,y1,y2);
 	  if (i==1 && fPeak[7]->IsOn()) //threshold
-	    doYline(cpar.threshold[pulse->Chan],gx1[j],
+	    doYline(opt.thresh[pulse->Chan],gx1[j],
 		    gx2[j],chcol[pulse->Chan],2);
 	}
       }
