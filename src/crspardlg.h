@@ -32,6 +32,7 @@ enum P_Def {
 struct pmap {
   TGWidget* field; //address of the input widget
   void* data; //address of the parameter
+  void* data2; //address of the second (parallel) parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
   char all; //1 - all parameters, >1 - channel type
   byte cmd; //for Command_crs
@@ -156,10 +157,11 @@ void Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h);
 void AddHeader();
 void AddLine1(int i, TGCompositeFrame* fcont1);
 void AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
-	       const char* name, void* apar);
+	     const char* name, void* apar, void* apar2);
 void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       void* apar, double min, double max, P_Def ptype);
-void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan);
+ void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan,
+	    void* d2=0);
 void DoNum();
 void DoChk();
 

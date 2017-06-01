@@ -113,6 +113,7 @@ void ParDlg::DoMap(TGWidget* f, void* d, P_Def t, int all) {
   pmap pp;
   pp.field = (TGWidget*) f;
   pp.data = d;
+  //pp.data2= d2;
   pp.type = t;
   pp.all=all;
   //cout << "DoMap1: " << f << " " << d << " " << t << endl;
@@ -123,10 +124,12 @@ void ParDlg::DoMap(TGWidget* f, void* d, P_Def t, int all) {
 void ParDlg::SetNum(pmap pp, Double_t num) {
   if (pp.type==p_fnum) {
     *(Float_t*) pp.data = num;
+    if (pp.data2) *(Float_t*) pp.data2 = num;
     //cout << "setpar1: " << *(Float_t*) pp.data << endl;
   }
   else if (pp.type==p_inum) {
     *(Int_t*) pp.data = num;
+    if (pp.data2) *(Int_t*) pp.data2 = num;
     //cout << "setpar2: " << *(Int_t*) pp.data << endl;
   }
   else {
@@ -145,6 +148,8 @@ void ParDlg::DoNum() {
   // cout << *(Int_t*) pp.data << " ";
   // cout << pp.data << " " << opt.bkg1[0] << " ";
   // cout << (Int_t) pp.all << endl;
+
+  //cout << "Donum: " << te->GetName() << endl;
 
   SetNum(pp,te->GetNumber());
 
@@ -1220,7 +1225,7 @@ void ChanParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
 }
 
 void ChanParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
-		       const char* name, void* apar) {  //const char* name) {
+			 const char* name, void* apar, void* apar2=0) {  //const char* name) {
 
   int par, min, max;
 
@@ -1232,8 +1237,9 @@ void ChanParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
 			   TGNumberFormat::kNEAAnyNumber,
 			   TGNumberFormat::kNELLimitMinMax,min,max);
 
-  DoMap(fNum,apar,p_inum, all,kk-1,i);
+  DoMap(fNum,apar,p_inum, all,kk-1,i,apar2);
   
+  //fNum->SetName(name);
   fNum->SetWidth(tlen[kk]);
 
   fNum->Connect("TextChanged(char*)", "ChanParDlg", this, "DoNum()");
@@ -1270,10 +1276,11 @@ void ChanParDlg::AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 }
 
 void ChanParDlg::DoMap(TGWidget *f, void *d, P_Def t, int all,
-		      byte cmd, byte chan) {
+		       byte cmd, byte chan, void* d2) {
   ParDlg::DoMap(f,d,t,all);
   Plist.back().cmd=cmd;
   Plist.back().chan=chan;
+  Plist.back().data2= d2;
 }
 
 void ChanParDlg::DoNum() {
@@ -1283,6 +1290,8 @@ void ChanParDlg::DoNum() {
   Int_t id = te->WidgetId();
 
   pmap pp = Plist[id-1];
+
+  cout << "ch_donum: " << pp.data2 << endl;
 
   if (pp.cmd && crs->b_acq) {
     crs->Command2(4,0,0,0);
@@ -1479,8 +1488,8 @@ void CrsParDlg::AddLine0(int i, TGCompositeFrame* fcont1) {
     AddNum1(i,kk++,1,hframe1,"gain"  ,&cpar.adcGain[i]);
   else
     AddNum1(i,kk++,all,hframe1,"gain"  ,&cpar.adcGain[i]);
-  AddNum1(i,kk++,all,hframe1,"deriv" ,&cpar.kderiv[i]);
-  AddNum1(i,kk++,all,hframe1,"thresh",&cpar.threshold[i]);
+  AddNum1(i,kk++,all,hframe1,"deriv" ,&cpar.kderiv[i],&opt.kdrv[i]);
+  AddNum1(i,kk++,all,hframe1,"thresh",&cpar.threshold[i],&opt.thresh[i]);
 
   if (i<MAX_CH) {
     fStat[i] = new TGLabel(hframe1, "");

@@ -257,6 +257,8 @@ void *Ana_Events(void* ptr) {
 
     crs->m_flag=0;
 
+    cout << "ev_max3: " << crs->nevents2 << " " << crs->Levents.size() << " "
+	 << crs->Levents.begin()->T << endl;
     //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
     //gSystem->Sleep(200);
     ana_mut.UnLock();
@@ -2150,19 +2152,19 @@ void CRS::Make_Events(int nvp) {
   if (!m_flag && (int) Levents.size()>opt.ev_min) {
     m_event2=--Levents.end();
     m_flag=1;
-    //cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
+    cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
   }
   if (m_flag && (int) Levents.size()>opt.ev_max) {
     m_event=m_event2;
-    //cout << "Ana_Events1: " << nevents2 << " " << Levents.size() << endl;
+    cout << "ev_max1: " << nevents2 << " " << Levents.size() << endl;
 
 
     trd_ana->Run();
     //Ana_Events(0);
 
 
-    //cout << "Ana_Events2: " << nevents2 << " " << Levents.size() << " "
-    // << Levents.begin()->T << endl;
+    cout << "ev_max2: " << nevents2 << " " << Levents.size() << " "
+	 << Levents.begin()->T << endl;
   }
 
 
