@@ -109,11 +109,11 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 }
 
-void ParDlg::DoMap(TGWidget* f, void* d, P_Def t, int all) {
+void ParDlg::DoMap(TGWidget* f, void* d, P_Def t, int all, void* d2) {
   pmap pp;
   pp.field = (TGWidget*) f;
   pp.data = d;
-  //pp.data2= d2;
+  pp.data2= d2;
   pp.type = t;
   pp.all=all;
   //cout << "DoMap1: " << f << " " << d << " " << t << endl;
@@ -122,6 +122,7 @@ void ParDlg::DoMap(TGWidget* f, void* d, P_Def t, int all) {
 }
 
 void ParDlg::SetNum(pmap pp, Double_t num) {
+  //cout << "setnum: " << pp.data2 << endl;
   if (pp.type==p_fnum) {
     *(Float_t*) pp.data = num;
     if (pp.data2) *(Float_t*) pp.data2 = num;
@@ -150,7 +151,8 @@ void ParDlg::DoNum() {
   // cout << (Int_t) pp.all << endl;
 
   //cout << "Donum: " << te->GetName() << endl;
-
+  //return;
+  
   SetNum(pp,te->GetNumber());
 
   if (pp.all>0) {
@@ -177,6 +179,7 @@ void ParDlg::DoNum() {
     // }
   }
 
+  //cout << "Donum2: " << te->GetName() << endl;
   //cout << "long_bins: " << opt.long_bins << endl;
   
 }
@@ -193,6 +196,11 @@ void ParDlg::DoNum_SetBuf() {
   //cout << *(Int_t*) pp.data << " ";
   //cout << pp.data << " " << opt.bkg1[0] << " ";
   //cout << (Int_t) pp.all << endl;
+
+  if (te->GetNumber() > te->GetNumMax()) {
+    cout << "value out of range" << endl;
+    return;
+  }
 
   SetNum(pp,te->GetNumber());
 
@@ -746,7 +754,7 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   tip1= "Coincidence window for making events (in samples)";
   tip2= "Period of digitizer (in ns)";
   label="Coincidence (smp), period (ns)";
-  AddLine2(fF6,ww,&opt.tgate,&opt.period,tip1,tip2,label,k_int);
+  AddLine2(fF6,ww,&opt.tgate,&opt.period,tip1,tip2,label,k_int,0,1000,5,10);
 
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";

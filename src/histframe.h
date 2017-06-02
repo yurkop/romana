@@ -44,6 +44,7 @@ class HistFrame: public TGCompositeFrame {
    //MECanvas    *fEc;
    TGListTree             *fListTree;    // list tree with histograms
    TList* hlist;
+   std::list<TH1*> hlist2;   
 
    static const int NR=6;
    TGRadioButton *Rb[NR];
@@ -86,7 +87,8 @@ public:
    virtual ~HistFrame();
 
    void Make_hist();
-   void Reset_hist();
+   void NewBins();
+   //void Reset_hist();
    void FillHist(EventClass* evt);
    void DoClick(TGListTreeItem* item,Int_t but);
    //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
@@ -95,8 +97,11 @@ public:
    void SelectDiv(int nn);
    void DoRadio();
    void DoButton();
+   void DoPeaks2();
    void DoPeaks();
    void DoReset();
+   void Update2();
+   void DrawHist2();
    void Update();
    void DrawHist();
    void ReDraw();

@@ -114,7 +114,7 @@ void *handle_stat(void *ctx)
   return NULL;
 }
 
-void Select_Event() {
+int Select_Event() {
   UInt_t nn=0;
   for (EvtFrm->d_event=--crs->Levents.end();
        EvtFrm->d_event!=crs->m_event && nn<4 ;--EvtFrm->d_event) {
@@ -122,6 +122,7 @@ void Select_Event() {
     //cout << "Select: " << EvtFrm->d_event->T << " " << crs->m_event->T << endl;
     //if (nn>2) break;
   }
+  return nn;
   //cout << "Select2: " << EvtFrm->d_event->T << " " << crs->m_event->T << " "
   //     << crs->Levents.begin()->T << endl;
 }
@@ -129,49 +130,28 @@ void Select_Event() {
 void *handle_evt(void* ptr)
 {
 
-  //static int nn;
-
-  //TEllipse * el1 = new TEllipse(0.25,0.25,.10,.20);
-  //el1->SetFillColor(6);
-  //el1->SetFillStyle(3008);
 
   while (event_thread_run) {
-    //nn++;
-    //cout << "trd2: " << nn << " " << myM->fTab->GetCurrent() << " " <<
-    //EvtFrm->ntab << endl; 
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-      //EvtFrm->BlockAllSignals(true);
-      //cout << "trd2: " << myM->fTab->GetCurrent() << endl; 
-
-      //std::list<EventClass>::reverse_iterator evt;
-
       EvtFrm->BlockAllSignals(true);
       Emut3.Lock();
-      //cout << "trd3: " << myM->fTab->GetCurrent() << endl; 
-      Select_Event();
-      //cout << "trd4: " << myM->fTab->GetCurrent() << endl; 
+      int res = Select_Event();
       EvtFrm->Tevents.clear();
       //cout << "trd4a: " << myM->fTab->GetCurrent() << " " 
-      //   << EvtFrm->d_event->T << endl; 
-      EvtFrm->Tevents.push_back(*EvtFrm->d_event);
-      //cout << "trd4b: " << myM->fTab->GetCurrent() << endl; 
-      EvtFrm->d_event=EvtFrm->Tevents.begin();
-
-      //cout << "trd5: " << myM->fTab->GetCurrent() << endl; 
-      EvtFrm->DrawEvent2();
-      //cout << "trd6: " << myM->fTab->GetCurrent() << endl; 
+      //   << EvtFrm->d_event->T << " " << res << endl; 
+      if (res) {
+	EvtFrm->Tevents.push_back(*EvtFrm->d_event);
+	EvtFrm->d_event=EvtFrm->Tevents.begin();
+	EvtFrm->DrawEvent2();
+      }
       Emut3.UnLock();
       EvtFrm->BlockAllSignals(false);
-
-      //Emut.UnLock();
-
-      //cout << "trd9: " << endl;
-      //EvtFrm->BlockAllSignals(false);
     }
     //else {
       //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
     //}
 
+    /*
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
       //HiFrm->DrawHist();      
       HiFrm->BlockAllSignals(true);
@@ -179,10 +159,8 @@ void *handle_evt(void* ptr)
       HiFrm->ReDraw();
       HiFrm->BlockAllSignals(false);
     }
-
-    //HiFrm->Update();      
-    //cout << "Block: " << endl;
-
+    */
+    
     gSystem->Sleep(opt.tsleep);
 
   }
@@ -233,6 +211,9 @@ void *Ana_Events(void* ptr) {
     //Int_t nn=0;
     ana_mut.Lock();
 
+    static TTimeStamp t1;
+    static TTimeStamp t2;
+
     std::list<EventClass>::iterator rl;
     std::list<EventClass>::iterator next;
 
@@ -257,10 +238,27 @@ void *Ana_Events(void* ptr) {
 
     crs->m_flag=0;
 
-    cout << "ev_max3: " << crs->nevents2 << " " << crs->Levents.size() << " "
-	 << crs->Levents.begin()->T << endl;
+    //cout << "ev_max3: " << crs->nevents2 << " " << crs->Levents.size() << " "
+    // << crs->Levents.begin()->T << endl;
     //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
     //gSystem->Sleep(200);
+
+    t2.Set();
+    double tt = t2.GetSec()-t1.GetSec()+
+      (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
+    //cout << "tt: " << tt << endl;
+
+    if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab
+	&& tt*1000>opt.tsleep) {
+      HiFrm->BlockAllSignals(true);
+      //HiFrm->Update();
+      HiFrm->ReDraw();
+      HiFrm->BlockAllSignals(false);
+
+      t1=t2;
+      //HiFrm->ReDraw();
+    }
+
     ana_mut.UnLock();
     return 0;
     
@@ -276,7 +274,7 @@ void *Ana_Events(void* ptr) {
 
 static void cback(libusb_transfer *transfer) {
 
-  static TTimeStamp t1;
+  //static TTimeStamp t1;
 
   TTimeStamp t2;
   //t2.Set();
@@ -2152,19 +2150,19 @@ void CRS::Make_Events(int nvp) {
   if (!m_flag && (int) Levents.size()>opt.ev_min) {
     m_event2=--Levents.end();
     m_flag=1;
-    cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
+    //cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
   }
   if (m_flag && (int) Levents.size()>opt.ev_max) {
     m_event=m_event2;
-    cout << "ev_max1: " << nevents2 << " " << Levents.size() << endl;
+    //cout << "ev_max1: " << nevents2 << " " << Levents.size() << endl;
 
 
     trd_ana->Run();
     //Ana_Events(0);
 
 
-    cout << "ev_max2: " << nevents2 << " " << Levents.size() << " "
-	 << Levents.begin()->T << endl;
+    //cout << "ev_max2: " << nevents2 << " " << Levents.size() << " "
+    // << Levents.begin()->T << endl;
   }
 
 

@@ -65,7 +65,7 @@ class ParDlg: public TGCompositeFrame {
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ParDlg() {};
 
-  void DoMap(TGWidget *f, void *d, P_Def t, int all);
+  void DoMap(TGWidget *f, void *d, P_Def t, int all, void *d2=0);
 
   void SetNum(pmap pp, Double_t num);
   void SetChk(pmap pp, Bool_t num);
