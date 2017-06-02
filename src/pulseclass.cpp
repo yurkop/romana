@@ -57,7 +57,10 @@ void PulseClass::FindPeaks() {
 	pk = &Peaks.back();
 	pk->T1=0;
 	for (int n=j;n>0;n--) {
-	  if (D[n]>0 && D[n-1]<=0) pk->T1=n;
+	  if (D[n]>0 && D[n-1]<=0) {
+	    pk->T1=n;
+	    break;
+	  }
 	}
 	jmax=D[j];
 	pk->Pos=j;

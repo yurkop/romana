@@ -97,11 +97,11 @@ public:
    void SelectDiv(int nn);
    void DoRadio();
    void DoButton();
-   void DoPeaks2();
+   //void DoPeaks2();
    void DoPeaks();
    void DoReset();
-   void Update2();
-   void DrawHist2();
+   //void Update2();
+   //void DrawHist2();
    void Update();
    void DrawHist();
    void ReDraw();

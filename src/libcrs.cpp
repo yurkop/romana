@@ -246,7 +246,7 @@ void *Ana_Events(void* ptr) {
     t2.Set();
     double tt = t2.GetSec()-t1.GetSec()+
       (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
-    //cout << "tt: " << tt << endl;
+    cout << "tt: " << tt << " " << HiFrm->fEc->GetCanvas()->IsModified() << endl;
 
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab
 	&& tt*1000>opt.tsleep) {

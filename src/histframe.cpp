@@ -111,7 +111,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   // fHor3->AddFrame(rb4, fLay5);
 
   fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
-  fEc->GetCanvas()->SetEditable(false);
+  //fEc->GetCanvas()->SetEditable(false);
   //fEc = new MECanvas("Hcanvas", fHor1, 10, 10);
   fHor1->AddFrame(fEc, fLay1);
 
@@ -483,6 +483,7 @@ void HistFrame::DoButton()
 
 }
 
+/*
 void HistFrame::DoPeaks2()
 {
 
@@ -534,6 +535,7 @@ void HistFrame::DoPeaks2()
   fEc->GetCanvas()->SetEditable(false);
 
 }
+*/
 
 void HistFrame::DoPeaks()
 {
@@ -582,9 +584,9 @@ void HistFrame::DoPeaks()
     }
     ii++;
   }
-  fEc->GetCanvas()->SetEditable(true);
+  //fEc->GetCanvas()->SetEditable(true);
   fEc->GetCanvas()->Update();
-  fEc->GetCanvas()->SetEditable(false);
+  //fEc->GetCanvas()->SetEditable(false);
 
 }
 
@@ -596,9 +598,9 @@ void HistFrame::DoReset()
   if (crs->b_acq) return;
 
   TCanvas *cv=fEc->GetCanvas();
-  cv->SetEditable(true);
+  //cv->SetEditable(true);
   cv->Clear();
-  cv->SetEditable(false);
+  //cv->SetEditable(false);
 
   cout << "hst::DoReset: " << endl;
   //cv->ls();
@@ -632,6 +634,7 @@ void HistFrame::DoReset()
 
 }
 
+/*
 void HistFrame::Update2()
 {
 
@@ -669,25 +672,6 @@ void HistFrame::Update2()
   if (opt.icheck < 0)
     opt.icheck=0;
 
-  /*
-  TIter next(hlist);
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    TH1 *hh = (TH1*) obj;
-    //cout << "Checked: " << hh->GetName() << endl;
-  }
-  */
-
-  /* ballast
-  TString* ss[1000000];
-  for (int i=0;i<1000000;i++) {
-    ss[i] = new TString("asdasdasdf");
-  }
-  for (int i=0;i<1000000;i++) {
-    delete ss[i];
-  }
-  */
-  
   //cout <<"Update1: " << endl;
 
   //gStyle->Dump();
@@ -746,7 +730,7 @@ void HistFrame::DrawHist2()
   cv->Update();
   cv->SetEditable(false);  
 }
-
+*/
 void HistFrame::Update()
 {
 
@@ -817,13 +801,13 @@ void HistFrame::DrawHist()
 
   //cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
   TCanvas *cv=fEc->GetCanvas();
-  cv->SetEditable(true);
+  //cv->SetEditable(true);
   cv->Clear();
   //fEc->GetCanvas()->Clear();
   //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
   //cout <<"dr2a: " << fEc << " " << fEc->GetCanvas() << endl;
   cv->Divide(xdiv,ydiv);
-  cv->SetEditable(false);  
+  //cv->SetEditable(false);  
   //cv->Update();
   //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
   //cout <<"dr2: " << hlist << endl;
@@ -836,12 +820,12 @@ void HistFrame::DrawHist()
     if (ii>=opt.icheck) {
       //cout <<"ddd: " << nn << " " << ndiv << " " << ii << " " << fEc->GetCanvas()->GetPad(nn) << endl;
       //if (!fEc->GetCanvas()->GetPad(nn)) break;
-      cv->SetEditable(true);  
+      //cv->SetEditable(true);  
       cv->cd(nn);
       TH1 *hh = (TH1*) obj;
       //cout << "hhh: " << hh->GetTitleSize() << endl;
       hh->Draw();
-      cv->SetEditable(false);  
+      //cv->SetEditable(false);  
       nn++;
       if (nn>ndiv)
 	break;
@@ -851,9 +835,9 @@ void HistFrame::DrawHist()
   }
   //return;
   //cout <<"dr3:" << endl;
-  cv->SetEditable(true);  
+  //cv->SetEditable(true);  
   cv->Update();
-  cv->SetEditable(false);  
+  //cv->SetEditable(false);  
 }
 
 /*
