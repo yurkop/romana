@@ -9,6 +9,7 @@
 #include "romana.h"
 #include <malloc.h>
 #include <TClass.h>
+#include <TCanvas.h>
 
 //#include <TSemaphore.h>
 //TSemaphore sem;

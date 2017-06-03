@@ -451,12 +451,35 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fHor1->AddFrame(flab, fLay6);
 
 
-  fStat1=new TGStatusBar(fVer_st,10,10);
-  fStat2=new TGStatusBar(fVer_st,10,10);
-  fVer_st->AddFrame(fStat1,fLay3);
-  fVer_st->AddFrame(fStat2,fLay3);
-  fStat1->Draw3DCorner(kFALSE);
-  fStat2->Draw3DCorner(kFALSE);
+  TGHorizontalFrame* fHor[nstat];
+  TGTextEntry* st_lab[nstat];
+
+  const char* st_nam[nstat]={"Evt:","Mul:","Tst:"};
+  const char* st_tip[nstat]={"Event number","Multiplicity","Time stamp"};
+
+  for (int i=0;i<nstat;i++) {
+    fHor[i] = new TGHorizontalFrame(fVer_st, 10, 10);
+    st_lab[i]= new TGTextEntry(fHor[i], st_nam[i]);
+    fStat[i]=new TGStatusBar(fHor[i],10,10);
+    fStat[i]->Draw3DCorner(kFALSE);
+
+    st_lab[i]->SetState(false);
+    //st_lab[i]->ChangeOptions(st_lab[i]->GetOptions()|kFixedWidth);
+    st_lab[i]->ChangeOptions(kFixedWidth);
+    st_lab[i]->SetWidth(24);
+    st_lab[i]->SetToolTipText(st_tip[i]);
+    //fStat[i]->SetToolTipText(st_tip[i]);
+
+    fVer_st->AddFrame(fHor[i],fLay8);
+    fHor[i]->AddFrame(st_lab[i],fLay9);
+    fHor[i]->AddFrame(fStat[i],fLay3);
+  }
+
+  // fStat[1]=new TGStatusBar(fVer_st,10,10);
+  // fVer_st->AddFrame(fStat[0],fLay3);
+  // fVer_st->AddFrame(fStat[1],fLay3);
+  // fStat[0]->Draw3DCorner(kFALSE);
+  // fStat[1]->Draw3DCorner(kFALSE);
 
 
   //trd=0;
@@ -960,11 +983,15 @@ void EventFrame::DrawEvent2() {
   //return;
 
   char ss[99];
-  sprintf(ss,"Evt: %lld",d_event->Nevt);//std::distance(Pevents->begin(),d_event));
-  fStat1->SetText(ss);
 
-  sprintf(ss,"Tstamp: %lld",d_event->T);
-  fStat2->SetText(ss);
+  sprintf(ss,"%lld",d_event->Nevt);
+  fStat[0]->SetText(ss);
+
+  sprintf(ss,"%ld",d_event->pulses.size());
+  fStat[1]->SetText(ss);
+
+  sprintf(ss,"%lld",d_event->T);
+  fStat[2]->SetText(ss);
   
   
   cv->Update();

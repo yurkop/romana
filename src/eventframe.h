@@ -46,8 +46,9 @@ protected:
    TGCheckButton          *fChn[MAX_CH+1];
    //TGRadioButton          *fChn[MAX_CH+1];
 
-   TGStatusBar            *fStat1;
-   TGStatusBar            *fStat2;
+   static const int nstat=3;
+   TGStatusBar            *fStat[nstat];
+   //TGStatusBar            *fStat2;
    
    TGLayoutHints          *fLay1;
    TGLayoutHints          *fLay2;
