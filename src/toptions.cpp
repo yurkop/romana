@@ -117,6 +117,7 @@ Toptions::Toptions() {
   ev_max=10000;
 
   tgate=500;
+  tveto=10;
   //tgate2=100;
   mult1=1;
   mult2=32;
@@ -227,7 +228,7 @@ Toptions::Toptions() {
 
   rBSIZE=131072; //1024*128
   EBufsize=100;
-  period=5;
+  //period=5;
 
   usb_size=1024;
   rbuf_size=1000000;

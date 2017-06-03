@@ -390,6 +390,7 @@ CRS::CRS() {
     cond[i]=new TCondition(0);
 
   Fmode=0;
+  period=5;
 
   f_raw=0;
   f_read=0;
@@ -1105,7 +1106,7 @@ int CRS::DoStartStop() {
     cout << "cyusb_reset: " << r << endl;
 
     Submit_all();
-    opt.period=5; //5ns for CRS module
+    period=5; //5ns for CRS module
 
     if (SetPar()) {
       return 3;
@@ -1340,7 +1341,7 @@ void CRS::DoFopen(char* oname, int popt) {
     // }
     bsize=opt.rbuf_size*1024+4096;
     boffset=4096;
-    opt.period=10;
+    period=10;
   }
   else { //crs32 or crs2
     if (ReadParGz(f_read,Fname,1,1,popt)) {
@@ -1350,7 +1351,7 @@ void CRS::DoFopen(char* oname, int popt) {
     }
     bsize=opt.rbuf_size*1024;
     boffset=0;
-    opt.period=5;
+    period=5;
   }
 
   opt.raw_write=false;
@@ -2084,7 +2085,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     }
   }
 
-  
+
   //add new event at the beginning of the eventlist
   Levents.insert(Levents.begin(),EventClass());
   if (m_event==Levents.end()) {

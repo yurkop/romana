@@ -2738,25 +2738,6 @@ void MainFrame::exec3event(Int_t event, Int_t x, Int_t y, TObject *selected)
   //     event, x, y);
 }
 
-/*
-void MainFrame::FillHist(EventClass* evt) {
-  //cout << "fillhist" << endl;
-  double DT = opt.period*1e-9;
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    int ch = evt->pulses[i].Chan;
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      peak_type* pk = &evt->pulses[i].Peaks[j];
-      double tt = evt->pulses[i].Tstamp64 + pk->Pos;
-      //cout << "FilHist: " << ch << " " << tt*DT << endl;
-      h_time[ch]->Fill(tt*DT);
-      h_ampl[ch]->Fill(pk->Area*opt.emult[ch]);
-      h_height[ch]->Fill(pk->Height);
-    }
-  }
-}
-*/
-
 void mkstart() {
 
   tpeaks=0;
@@ -2971,24 +2952,6 @@ void dumpevent()
 //
 //
 //
-
-void FillHist_old(EventClass* evt) {
-  //cout << "fillhist" << endl;
-  double DT = opt.period*1e-9;
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    int ch = evt->pulses[i].Chan;
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      peak_type* pk = &evt->pulses[i].Peaks[j];
-      double tt = evt->pulses[i].Tstamp64 + pk->Pos;
-      //cout << "FilHist: " << ch << " " << tt*DT << endl;
-      htdc_a[ch]->Fill(tt*DT);
-      hsum[ch]->Fill(pk->Area*opt.emult[ch]);
-      hmax[ch]->Fill(pk->Height);
-    }
-  }
-}
-
 
 struct MyClass {
   MyClass() {std::cout <<"MyClass constructed\n";}

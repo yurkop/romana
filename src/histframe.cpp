@@ -314,7 +314,7 @@ void HistFrame::Reset_hist() {
 */
 
 void HistFrame::FillHist(EventClass* evt) {
-  double DT = opt.period*1e-9;
+  double DT = crs->period*1e-9;
 
   for (UInt_t i=0;i<evt->pulses.size();i++) {
     int ch = evt->pulses[i].Chan;
@@ -334,7 +334,7 @@ void HistFrame::FillHist(EventClass* evt) {
       // cout << "TOF: " << crs->nevents << " " << i << " "
       // 	   << ch << " " << pk->Time << " " << evt->T0 << " "
       // 	   << dt << " " << tt << endl;
-      h_tof[ch]->Fill(tt*opt.period);
+      h_tof[ch]->Fill(tt*crs->period);
     }
   }
 }

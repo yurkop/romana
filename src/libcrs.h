@@ -70,6 +70,7 @@ RQ_OBJECT("CRS")
   Short_t e_lag; //event analysis lag - see also opt.event_lag
 
   Short_t module; //2 - crs2; 32 - crs32
+  Int_t period;
 
   int ntrans; //number of "simultaneous" transfers
 

@@ -230,31 +230,41 @@ EventClass::EventClass() {
   T0=99999;
 }
 
-void EventClass::Pulse_Ana_Add(PulseClass *newpulse) {
-  pulses.push_back(*newpulse);
+void EventClass::Pulse_Ana_Add(PulseClass *pls) {
+
+  for (UInt_t i=0;i<pulses.size();i++) {
+    if (pls->Chan == pulses[i].Chan &&
+	TMath::Abs(pls->Tstamp64-pulses[i].Tstamp64) < opt.tveto) {
+      return;
+    }
+  }
+
+
+  pulses.push_back(*pls);
 
   if (T==0) { //this is the first pulse in event
-    T=newpulse->Tstamp64;
+    T=pls->Tstamp64;
   }
-  else if (newpulse->Tstamp64 < T) { //event exists -> correct T and T0
+  else if (pls->Tstamp64 < T) { //event exists & new pulse is earlier
+    // -> correct T and T0
     if (T0<99998)
-      T0+= T - newpulse->Tstamp64;
-    T=newpulse->Tstamp64;
+      T0+= T - pls->Tstamp64;
+    T=pls->Tstamp64;
   }
 
-  if (opt.Start[newpulse->Chan]) {
-    if (newpulse->Peaks.size()) {
-      Float_t dt = newpulse->Tstamp64 - T;
+  if (opt.Start[pls->Chan]) {
+    if (pls->Peaks.size()) {
+      Float_t dt = pls->Tstamp64 - T;
 
-      peak_type *pk = &newpulse->Peaks.front();
-      Float_t T2 = pk->Time - crs->Pre[newpulse->Chan] + dt;
-      //Float_t T2 = pk->Time - cpar.preWr[newpulse->Chan] + dt;
+      peak_type *pk = &pls->Peaks.front();
+      Float_t T2 = pk->Time - crs->Pre[pls->Chan] + dt;
+      //Float_t T2 = pk->Time - cpar.preWr[pls->Chan] + dt;
       //Float_t T2 = pk->Time + dt;
 
       if (T2<T0) {
 	T0=T2;
       }
-      // cout << "Peak: " << (int) newpulse->Chan << " " << pk->Time << " " 
+      // cout << "Peak: " << (int) pls->Chan << " " << pk->Time << " " 
       // 	   << pk->Pos << " " << T0 << " " << T2 << " " << dt << " "
       // 	   << T << endl;
     }

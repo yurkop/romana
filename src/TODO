@@ -46,3 +46,6 @@ PulseClass::FindPeaks() -> check pileup part...
 clean libmana->greset()
 
 use blosc for compression
+
+Event_Insert_Pulse: //add new event at the beginning of the eventlist:
+-> should use m_event instead of Levents.begin() (??)

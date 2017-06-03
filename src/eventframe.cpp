@@ -89,14 +89,12 @@ TMutex Emut;
 TMutex Emut2;
 
 void doXline(Float_t xx, Float_t y1, Float_t y2, int col, int type) {
-  //xx*=opt.period;
   ln.SetLineColor(col);
   ln.SetLineStyle(type);
   ln.DrawLine(xx,y1,xx,y2);
 }
 
 void doYline(Float_t yy, Float_t x1, Float_t x2, int col, int type) {
-  //xx*=opt.period;
   ln.SetLineColor(col);
   ln.SetLineStyle(type);
   ln.DrawLine(x1,yy,x2,yy);
@@ -781,14 +779,14 @@ void EventFrame::FillGraph(int dr) {
     //Double_t *xx = Gr[dr][ch]->GetX();
     //Double_t *yy = Gr[dr][ch]->GetY();
 
-    gx1[i]=(dt-1);//*opt.period;
-    gx2[i]=(pulse->sData.size()+dt);//*opt.period;
+    gx1[i]=(dt-1);
+    gx2[i]=(pulse->sData.size()+dt);
     gy1[dr][i]=1e99;
     gy2[dr][i]=-1e99;
 
     if (dr==0) { //main pulse
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][i]->GetX()[j]=(j+dt);//*opt.period;
+	Gr[dr][i]->GetX()[j]=(j+dt);
 	Gr[dr][i]->GetY()[j]=pulse->sData[j];
 
 	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
@@ -813,7 +811,7 @@ void EventFrame::FillGraph(int dr) {
 
       //dat = new Float_t[pulse->sData.size()];
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][i]->GetX()[j]=(j+dt);//*opt.period;
+	Gr[dr][i]->GetX()[j]=(j+dt);
 	if (j<kk)
 	  Gr[dr][i]->GetY()[j]=pulse->sData[j]-pulse->sData[0];
 	//dat[j]=0;
@@ -829,7 +827,7 @@ void EventFrame::FillGraph(int dr) {
     }
     else if (dr==2) { //2nd derivative
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][i]->GetX()[j]=(j+dt);//*opt.period;
+	Gr[dr][i]->GetX()[j]=(j+dt);
 	if (j<2)
 	  Gr[dr][i]->GetY()[j]=0;
 	//dat[j]=0;

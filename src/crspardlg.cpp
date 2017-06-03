@@ -752,9 +752,9 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
 
   tip1= "Coincidence window for making events (in samples)";
-  tip2= "Period of digitizer (in ns)";
-  label="Coincidence (smp), period (ns)";
-  AddLine2(fF6,ww,&opt.tgate,&opt.period,tip1,tip2,label,k_int,0,1000,5,10);
+  tip2= "Veto window for pulses from the same channel";
+  label="Coincidence (smp), veto (smp)";
+  AddLine2(fF6,ww,&opt.tgate,&opt.tveto,tip1,tip2,label,k_int,0,1000,5,10);
 
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";

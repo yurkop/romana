@@ -134,6 +134,7 @@ class Toptions: public TObject {
   Int_t ev_max; //maximal length of events list
 
   Int_t tgate; // coincidence window for events (in samples)
+  Int_t tveto; // veto window for pulses from the same channel
   //Int_t tgate2; // coincidence window for histograms (in ...)
 
   UInt_t mult1; // minimal multiplicity
@@ -200,7 +201,7 @@ class Toptions: public TObject {
 
   Int_t rBSIZE; //size of the read buffer
   Int_t EBufsize; //size of the event buffer
-  Int_t period; //period of digitizing in ns
+  //Int_t period; //period of digitizing in ns
 
  public:
   //void InitPar(Int_t module);
@@ -208,7 +209,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 95)
+  ClassDef(Toptions, 96)
 };
 
 ClassImp(Toptions)
