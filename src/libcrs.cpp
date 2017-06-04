@@ -49,6 +49,8 @@ TThread* trd_ana;
 
 int event_thread_run;//=1;
 
+UInt_t list_min=100;
+
 volatile char astat[CRS::MAXTRANS];
 
 CRS* crs;
@@ -1252,6 +1254,11 @@ void CRS::DoReset() {
   nevents=0;
   nevents2=0;
 
+  if (opt.ev_max<=opt.ev_min) {
+    opt.ev_max=opt.ev_min*2;
+  }
+  list_min=opt.ev_max-opt.ev_min;
+
   for (int i=0;i<MAXTRANS;i++) {
     Vpulses[i].clear();
   }
@@ -1297,6 +1304,11 @@ void CRS::DoFopen(char* oname, int popt) {
   //cout << "Select77: " << crs->m_event->T << " "
   //     << crs->Levents.begin()->T << endl;
   //Print_Events();
+
+  if (opt.ev_max<=opt.ev_min) {
+    opt.ev_max=opt.ev_min*2;
+  }
+  list_min=opt.ev_max-opt.ev_min;
 
   if (oname)
     strcpy(Fname,oname);
@@ -2065,6 +2077,10 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   std::list<EventClass>::reverse_iterator rl;
 
+  cout << "m_event: " << &*m_event << " " << &*Levents.end() 
+       << " " << &*Levents.rend() << " " <<  &*(--Levents.rend())
+       << endl;
+
   for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
     Long64_t dt = (pls->Tstamp64 - rl->T);
     if (dt > opt.tgate) {
@@ -2132,6 +2148,10 @@ void CRS::Make_Events(int nvp) {
     if (!(pls->ptype&P_NOSTOP)) {
       Event_Insert_Pulse(&(*pls));
       //Print_Events();
+      if (!m_flag && Levents.size()>list_min) {
+	m_event2=--Levents.end();
+	m_flag=1;
+      }
     }
   }
 
@@ -2149,19 +2169,19 @@ void CRS::Make_Events(int nvp) {
   //-----------
 
   //Analyse events and clean (part of) the event list
+  /*
   if (!m_flag && (int) Levents.size()>opt.ev_min) {
     m_event2=--Levents.end();
     m_flag=1;
     //cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
   }
-  if (m_flag && (int) Levents.size()>opt.ev_max) {
+  */
+  if (Levents.size()>UInt_t(opt.ev_max)) {
     m_event=m_event2;
     //cout << "ev_max1: " << nevents2 << " " << Levents.size() << endl;
 
-
     trd_ana->Run();
     //Ana_Events(0);
-
 
     //cout << "ev_max2: " << nevents2 << " " << Levents.size() << " "
     // << Levents.begin()->T << endl;

@@ -49,3 +49,5 @@ use blosc for compression
 
 Event_Insert_Pulse: //add new event at the beginning of the eventlist:
 -> should use m_event instead of Levents.begin() (??)
+
+analyze rest of events after acq stop (s_flag=2, trd_ana->Run...)
