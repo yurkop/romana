@@ -22,6 +22,9 @@ typedef unsigned char byte;
 //typedef unsigned long long ULong64_t;
 //typedef long long Long64_t;
 
+typedef std::list<EventClass>::iterator event_iter;
+typedef std::list<EventClass>::reverse_iterator event_reviter;
+
 //using namespace std;
 
 //---------------------------
@@ -136,8 +139,8 @@ RQ_OBJECT("CRS")
   int SetPar();
   int Init_Transfer();
   void Free_Transfer();
-  void Submit_all();
-  void Cancel_all();
+  void Submit_all(int ntr);
+  void Cancel_all(int ntr);
   //int Command_old(int len_out, int len_in); //send and receive command
   void Command_crs(byte cmd, byte chan, int par);
   void Command32(byte cmd, byte ch, byte type, int par);

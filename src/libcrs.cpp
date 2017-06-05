@@ -214,16 +214,18 @@ void *Ana_Events(void* ptr) {
     //Int_t nn=0;
     ana_mut.Lock();
 
+    //cout << "Ana_Events: " << endl;
+
     static TTimeStamp t1;
     static TTimeStamp t2;
 
     std::list<EventClass>::iterator rl;
-    std::list<EventClass>::iterator next;
+    //std::list<EventClass>::iterator next;
 
     for (rl=crs->Levents.begin(); 
-	 rl!=crs->m_event; rl=next) {
-      next = rl;
-      ++next;
+	 rl!=crs->m_event; ++rl) {
+      //next = rl;
+      //++next;
       //cout << "Ana7: " << rl->T << " " << m_event->T << endl;
       if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
 	//FillHist_old(&(*rl));
@@ -246,10 +248,11 @@ void *Ana_Events(void* ptr) {
     //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
     //gSystem->Sleep(200);
 
+
     t2.Set();
     double tt = t2.GetSec()-t1.GetSec()+
       (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
-    cout << "tt: " << tt << " " << HiFrm->fEc->GetCanvas()->IsModified() << endl;
+    //cout << "tt: " << tt << " " << HiFrm->fEc->GetCanvas()->IsModified() << endl;
 
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab
 	&& tt*1000>opt.tsleep) {
@@ -261,6 +264,7 @@ void *Ana_Events(void* ptr) {
       t1=t2;
       //HiFrm->ReDraw();
     }
+
 
     ana_mut.UnLock();
     return 0;
@@ -383,8 +387,43 @@ CRS::CRS() {
 
     std::cout << "end: " << *(it) << endl;
 
+
+
+    std::list<int> Levents;
+    std::list<int>::iterator rl;
+    //std::list<int>::reverse_iterator rit;
+
+    // set some initial values:
+    for (int i=0; i<=10; i+=2) Levents.push_back(i); // 1 2 3 4 5
+
+    std::cout << "Levents contains:" << endl;
+
+    for (rl=Levents.begin(); rl!=Levents.end(); ++rl)
+      std::cout << ' ' << *rl;
+    std::cout << '\n';
+
+
+    int kk=7;
+
+    for (rl=--Levents.end();rl!=Levents.begin();--rl) {
+      
+      if (*rl < kk) {
+	//add new event at the current position of the eventlist
+	Levents.insert(++rl,kk);
+	cout << "i: " << *rl << endl;
+	break;
+      }
+      cout << " : " << *rl << endl;
+    }
+    
+
+    for (rl=Levents.begin(); rl!=Levents.end(); ++rl)
+      std::cout << ' ' << *rl;
+    std::cout << '\n';
+    
+
     exit(1);
-*/
+  */
 
   memset(Pre,0,sizeof(Pre));
 
@@ -588,11 +627,11 @@ int CRS::Detect_device() {
   /*
   Init_Transfer();
   gSystem->Sleep(50);
-  Cancel_all();
+  Cancel_all(MAXTRANS);
   gSystem->Sleep(50);
   r=cyusb_reset_device(cy_handle);
   cout << "cyusb_reset: " << r << endl;
-  Submit_all();
+  Submit_all(MAXTRANS);
   gSystem->Sleep(50);
   */
 
@@ -600,7 +639,7 @@ int CRS::Detect_device() {
     return 8;
   };
 
-  //Submit_all();
+  //Submit_all(MAXTRANS);
 
   return 0;
 
@@ -647,7 +686,7 @@ int CRS::SetPar() {
 
 void CRS::Free_Transfer() {
 
-  Cancel_all();
+  Cancel_all(MAXTRANS);
   gSystem->Sleep(50);
 
   //cout << "---Free_Transfer---" << endl;
@@ -673,12 +712,12 @@ void CRS::Free_Transfer() {
 
 }
 
-void CRS::Submit_all() {
+void CRS::Submit_all(int ntr) {
   ntrans=0;
-  for (int i=0;i<MAXTRANS;i++) {
+  for (int i=0;i<ntr;i++) {
     int res;
     res = libusb_submit_transfer(transfer[i]);
-    //cout << i << " Submit: " << res << endl;
+    cout << i << " Submit: " << res << endl;
     if (res) {
       cout << "Submit_Transfer error: " << res << " " << *(int*) transfer[i]->user_data << endl;
       cout << libusb_error_name(res) << endl;
@@ -691,8 +730,8 @@ void CRS::Submit_all() {
   }
 }
 
-void CRS::Cancel_all() {
-  for (int i=0;i<MAXTRANS;i++) {
+void CRS::Cancel_all(int ntr) {
+  for (int i=0;i<ntr;i++) {
     //int res;
     if (transfer[i]) {
       //res = 
@@ -706,7 +745,7 @@ int CRS::Init_Transfer() {
 
   //cout << "---Init_Transfer---" << endl;
 
-  //Cancel_all();
+  //Cancel_all(MAXTRANS);
 
   //cout << "---Init_Transfer2---" << endl;
   //int r=
@@ -748,7 +787,7 @@ int CRS::Init_Transfer() {
 
   }
 
-  Submit_all();
+  Submit_all(MAXTRANS);
 
   /*
   for (int i=0;i<ntrans;i++) {
@@ -770,10 +809,10 @@ int CRS::Init_Transfer() {
     }
     return 2;
   }
-  gSystem->Sleep(50);
+  gSystem->Sleep(250);
 
-  Cancel_all();
-  gSystem->Sleep(50);
+  Cancel_all(MAXTRANS);
+  gSystem->Sleep(250);
 
   return 0;
 
@@ -1107,7 +1146,7 @@ int CRS::DoStartStop() {
     r=cyusb_reset_device(cy_handle);
     cout << "cyusb_reset: " << r << endl;
 
-    Submit_all();
+    Submit_all(ntrans);
     period=5; //5ns for CRS module
 
     if (SetPar()) {
@@ -1180,7 +1219,7 @@ int CRS::DoStartStop() {
     Command2(4,0,0,0);
 
     gSystem->Sleep(300);
-    Cancel_all();
+    Cancel_all(ntrans);
     b_stop=true;
     EvtFrm->Clear();
     EvtFrm->Pevents = &Levents;
@@ -1512,7 +1551,7 @@ void CRS::FAnalyze() {
 int CRS::Do1Buf() {
 
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
-  cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
+  //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
   if (BufLength>0) {
     crs->totalbytes+=BufLength;
 
@@ -1535,7 +1574,7 @@ int CRS::Do1Buf() {
     }
     if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
       //HiFrm->DrawHist();      
-      HiFrm->ReDraw();      
+      HiFrm->ReDraw();
     }
     nbuffers++;
     myM->UpdateStatus();
@@ -1695,7 +1734,15 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   // }
 
   Make_Events(nvp);
-  
+
+
+  // if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
+  //   //HiFrm->DrawHist();      
+  //   HiFrm->ReDraw();
+  // }
+
+
+
 }
 
 void CRS::Decode2(UChar_t* buffer, int length) {
@@ -2073,19 +2120,80 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   pls->FindPeaks();
   pls->PeakAna();
 
-  int nn=0;
+  Long64_t dt;
+  
+  //int nn=0;
 
-  std::list<EventClass>::reverse_iterator rl;
 
-  cout << "m_event: " << &*m_event << " " << &*Levents.end() 
-       << " " << &*Levents.rend() << " " <<  &*(--Levents.rend())
-       << endl;
+  // cout << "m_event: " << Levents.size() << " " << &*m_event
+  //      << " " << &*std::list<EventClass>::reverse_iterator(m_event)
+  //      << " " << &*Levents.begin() << " " << &*Levents.end() 
+  //      << " " << &*Levents.rbegin() << " " << &*Levents.rend() 
+  //   //<< " " << &*(--Levents.end())
+  //      << endl;
 
-  for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
-    Long64_t dt = (pls->Tstamp64 - rl->T);
+  // cout << "m_event3: " << Levents.size() << " " << m_event->T
+  //      << " " << (&*std::list<EventClass>::reverse_iterator(m_event))->T
+  //      << " " << Levents.begin()->T << " " << Levents.end()->T 
+  //      << " " << Levents.rbegin()->T << " " << Levents.rend()->T
+  //   //<< " " << &*(--Levents.end())
+  //      << endl;
+
+  // if (Levents.size()==6) {
+  //   m_event=--Levents.end();
+  //   Levents.erase(Levents.begin(),m_event);
+  //   //Levents.insert(m_event,EventClass());
+  // }
+  
+
+
+  event_iter it;
+  event_reviter rl;
+  event_reviter r_event =
+    event_reviter(m_event);
+
+  for (rl=Levents.rbegin(); rl!=r_event; ++rl) {
+    dt = (pls->Tstamp64 - rl->T);
     if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
-      Levents.insert(rl.base(),EventClass());
+      it=Levents.insert(rl.base(),EventClass());
+      it->Nevt=nevents;
+      nevents++;
+      it->Pulse_Ana_Add(pls);
+      return;
+    }
+    else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
+      // coincidence event
+      rl->Pulse_Ana_Add(pls);
+      return;
+    }
+    // nn++;
+    // if (nn>=opt.event_lag) {
+    // }
+  }
+
+
+
+
+
+  /*
+  std::list<EventClass>::iterator rl;
+  std::list<EventClass>::iterator r_event = m_event;
+
+  cout << "m_event: " << Levents.size() << " " << &*m_event
+       << " " << &*r_event << " " << &*(--r_event)
+       << " " << &*Levents.begin() << " " << &*Levents.end() 
+       << " " << &*(--Levents.end())
+       << endl;
+
+  //for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
+  for (rl=--Levents.end();rl!=--r_event;--rl) {
+
+    dt = (pls->Tstamp64 - rl->T);
+    if (dt > opt.tgate) {
+      //add new event at the current position of the eventlist
+      Levents.insert(++rl,EventClass());
+      --rl;
       rl->Nevt=nevents;
       nevents++;
       rl->Pulse_Ana_Add(pls);
@@ -2096,23 +2204,38 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
       rl->Pulse_Ana_Add(pls);
       return;
     }
-    nn++;
-    if (nn>=opt.event_lag) {
+    else {
+      cout << "loop: " << Levents.size() << " " << &*rl << endl;
     }
+    // nn++;
+    // if (nn>=opt.event_lag) {
+    // }
   }
+  */
 
 
-  //add new event at the beginning of the eventlist
-  Levents.insert(Levents.begin(),EventClass());
-  if (m_event==Levents.end()) {
+
+  if (Levents.empty() || Levents.size()<100) {
+    //at the very beginning set m_event to the beginning of Levents
+    it=Levents.insert(Levents.begin(),EventClass());
     m_event=Levents.begin();
-    //m_event2=m_event;
+    //rl = event_reviter(m_event);
+    //cout << "LLL: " << m_event->T << " " << rl->T << endl;
+    return;
   }
-  if (debug && !Levents.empty())
-    cout << "beginning: " << nn << " " << Levents.size() << endl;
-  rl->Nevt=nevents;
+  else {
+    //this is rogue event; it's inserted before m_event and
+    //(probably) not included in any coincidences
+    it=Levents.insert(m_event,EventClass());
+    //rl = event_reviter(m_event);
+    //--rl;
+    if (debug)
+      cout << "beginning: " << dt << " " << Levents.size() << endl;
+  }
+
+  it->Nevt=nevents;
+  it->Pulse_Ana_Add(pls);
   nevents++;
-  Levents.begin()->Pulse_Ana_Add(pls);
 
 }
 
