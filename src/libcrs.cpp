@@ -154,15 +154,15 @@ void *handle_evt(void* ptr)
       //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
     //}
 
-    /*
+
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
       //HiFrm->DrawHist();      
-      HiFrm->BlockAllSignals(true);
+      //HiFrm->BlockAllSignals(true);
       //HiFrm->Update();
       HiFrm->ReDraw();
-      HiFrm->BlockAllSignals(false);
+      //HiFrm->BlockAllSignals(false);
     }
-    */
+
     
     gSystem->Sleep(opt.tsleep);
 
@@ -216,9 +216,6 @@ void *Ana_Events(void* ptr) {
 
     //cout << "Ana_Events: " << endl;
 
-    static TTimeStamp t1;
-    static TTimeStamp t2;
-
     std::list<EventClass>::iterator rl;
     //std::list<EventClass>::iterator next;
 
@@ -249,6 +246,9 @@ void *Ana_Events(void* ptr) {
     //gSystem->Sleep(200);
 
 
+    /*
+    static TTimeStamp t1;
+    static TTimeStamp t2;
     t2.Set();
     double tt = t2.GetSec()-t1.GetSec()+
       (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
@@ -264,7 +264,7 @@ void *Ana_Events(void* ptr) {
       t1=t2;
       //HiFrm->ReDraw();
     }
-
+    */
 
     ana_mut.UnLock();
     return 0;
@@ -719,7 +719,7 @@ void CRS::Submit_all(int ntr) {
   for (int i=0;i<ntr;i++) {
     int res;
     res = libusb_submit_transfer(transfer[i]);
-    cout << i << " Submit: " << res << endl;
+    //cout << i << " Submit: " << res << endl;
     if (res) {
       cout << "Submit_Transfer error: " << res << " " << *(int*) transfer[i]->user_data << endl;
       cout << libusb_error_name(res) << endl;
@@ -1744,12 +1744,21 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 
   Make_Events(nvp);
 
+  /*
+  static TTimeStamp t1;
+  static TTimeStamp t2;
+  t2.Set();
+  double tt = t2.GetSec()-t1.GetSec()+
+    (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
 
-  // if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
-  //   //HiFrm->DrawHist();      
-  //   HiFrm->ReDraw();
-  // }
-
+  if (myM && myM->fTab->GetCurrent()==HiFrm->ntab
+      && tt*1000>opt.tsleep) {
+    //HiFrm->DrawHist();      
+    HiFrm->ReDraw();
+    gSystem->ProcessEvents();
+    t1=t2;
+  }
+  */
 
 
 }
