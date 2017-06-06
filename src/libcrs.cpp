@@ -425,6 +425,7 @@ CRS::CRS() {
     exit(1);
   */
 
+  MAXTRANS2=MAXTRANS;
   memset(Pre,0,sizeof(Pre));
 
   for (int i=0;i<MAXTRANS;i++)
@@ -691,8 +692,9 @@ void CRS::Free_Transfer() {
 
   //cout << "---Free_Transfer---" << endl;
 
-  for (int i=0;i<ntrans;i++) {
-    //cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
+  //for (int i=0;i<ntrans;i++) {
+  for (int i=0;i<MAXTRANS;i++) {
+    cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
     //int res = libusb_cancel_transfer(transfer[i]);
     libusb_free_transfer(transfer[i]);
 
@@ -787,7 +789,14 @@ int CRS::Init_Transfer() {
 
   }
 
-  Submit_all(MAXTRANS);
+  if (opt.usb_size>1024) {
+    MAXTRANS2=MAXTRANS-1;
+  }
+  else {
+    MAXTRANS2=MAXTRANS;
+  }
+
+  Submit_all(MAXTRANS2);
 
   /*
   for (int i=0;i<ntrans;i++) {
@@ -798,8 +807,8 @@ int CRS::Init_Transfer() {
   */
   cout << "Number of transfers: " << ntrans << endl;
 
-  if (ntrans!=MAXTRANS) {
-    for (int i=ntrans;i<MAXTRANS;i++) {
+  if (ntrans!=MAXTRANS2) {
+    for (int i=ntrans;i<MAXTRANS2;i++) {
       //cout << "free: " << i << endl;
       //libusb_free_transfer(transfer[i]);
       cout << "delete: " << i << endl;
