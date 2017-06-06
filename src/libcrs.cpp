@@ -214,7 +214,13 @@ void *Ana_Events(void* ptr) {
     //Int_t nn=0;
     ana_mut.Lock();
 
-    //cout << "Ana_Events: " << endl;
+    //int *pp = (int*) ptr;
+    //cout << "Ana_Events: " << ptr << endl;
+
+    if (ptr || crs->m_flag==2) {
+      crs->m_flag=2;
+      crs->m_event=crs->Levents.end();
+    }
 
     std::list<EventClass>::iterator rl;
     //std::list<EventClass>::iterator next;
@@ -233,7 +239,8 @@ void *Ana_Events(void* ptr) {
       //++nn;
       //if ((int)Levents.size()<=opt.ev_min) break;
     }
-    //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.size() << endl;
+    //cout << "Ana1: " << crs->nevents2 << " " << crs->Levents.begin()->Nevt
+    // << " " << (--rl)->Nevt << endl;
 
     if (crs->m_flag!=2)
       crs->Levents.erase(crs->Levents.begin(),crs->m_event);
@@ -1225,9 +1232,13 @@ int CRS::DoStartStop() {
     //if (opt.raw_write) {
     //gzclose(f_raw);
     //}
+    //m_flag=2;
     Command2(4,0,0,0);
 
     gSystem->Sleep(300);
+
+    //trd_ana->Run(&m_flag);
+
     Cancel_all(ntrans);
     b_stop=true;
     EvtFrm->Clear();
@@ -1549,9 +1560,13 @@ void CRS::FAnalyze() {
     //if (!b_fana) break;
   }
 
-  m_event=Levents.end();
-  m_flag=2;
-  trd_ana->Run();
+  cout << "Fana: " << BufLength << " " << gzeof(f_read) << endl;
+
+  if (gzeof(f_read) && m_event!=Levents.end()) {
+    //m_event=Levents.end();
+    //m_flag=2;
+    trd_ana->Run(&m_flag);
+  }
 
   b_stop=true;
 
@@ -1564,15 +1579,17 @@ int CRS::Do1Buf() {
   if (BufLength>0) {
     crs->totalbytes+=BufLength;
 
-    if (Fmode==32) {
-      Decode32(Fbuf,BufLength);
-    }
-    else if (Fmode==2) {
-      Decode2(Fbuf,BufLength);
-    }
-    else if (Fmode==1) {
-      BufLength/=sizeof(UInt_t);
-      Decode_adcm();
+    if (opt.decode) {
+      if (Fmode==32) {
+	Decode32(Fbuf,BufLength);
+      }
+      else if (Fmode==2) {
+	Decode2(Fbuf,BufLength);
+      }
+      else if (Fmode==1) {
+	BufLength/=sizeof(UInt_t);
+	Decode_adcm();
+      }
     }
 
     //gSystem->Sleep(500);
@@ -1742,7 +1759,8 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   // 	 << (int) vv->at(i).ptype << endl;
   // }
 
-  Make_Events(nvp);
+  if (opt.analyze)
+    Make_Events(nvp);
 
   /*
   static TTimeStamp t1;
@@ -1855,7 +1873,8 @@ void CRS::Decode2(UChar_t* buffer, int length) {
   //cout << "decode2a: " << idx2 << endl;
 
   //Fill_Tail(nvp);
-  Make_Events(nvp);
+  if (opt.analyze)
+    Make_Events(nvp);
 
   //nvp++;
   //if (nvp>=ntrans) nvp=0;
@@ -2061,7 +2080,8 @@ void CRS::Decode_adcm() {
 
   }
 
-  Make_Events(nvp);
+  if (opt.analyze)
+    Make_Events(nvp);
 
   int sz=(BufLength-idx);
   if (sz>1024) {
@@ -2317,6 +2337,10 @@ void CRS::Make_Events(int nvp) {
     //cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
   }
   */
+
+
+
+  /*
   if (Levents.size()>UInt_t(opt.ev_max)) {
     m_event=m_event2;
     //cout << "ev_max1: " << nevents2 << " " << Levents.size() << endl;
@@ -2327,7 +2351,7 @@ void CRS::Make_Events(int nvp) {
     //cout << "ev_max2: " << nevents2 << " " << Levents.size() << " "
     // << Levents.begin()->T << endl;
   }
-
+  */
 
 }
 

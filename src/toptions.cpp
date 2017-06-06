@@ -158,6 +158,9 @@ Toptions::Toptions() {
 
   //b_gcut=false;
 
+  decode=true;
+  analyze=true;
+
   b_osc=false;
   b_leg=false;
   //for (int jj=0;jj<6;jj++) {

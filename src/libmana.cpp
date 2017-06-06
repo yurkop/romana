@@ -1854,7 +1854,7 @@ void MainFrame::DoAna() {
     return;
   }
 
-  //cout << "DoAna" << endl;
+  cout << "DoAna" << endl;
 
   if (crs->b_fana) {
     fAna->ChangeBackground(fGreen);

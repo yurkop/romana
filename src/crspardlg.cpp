@@ -628,16 +628,27 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //opt.chk_dec=false;
   AddWrite("Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
 
+  TGCheckButton *fchk;
   int id;
   char txt[99];
-  sprintf(txt,"Decode");
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fcont1,10,10);
   fcont1->AddFrame(hframe1,fL1);
+
   id = Plist.size()+1;
-  TGCheckButton *fchk = new TGCheckButton(hframe1, txt, id);
+  sprintf(txt,"Decode");
+  fchk = new TGCheckButton(hframe1, txt, id);
   fchk->SetName(txt);
   hframe1->AddFrame(fchk,fL3);
   DoMap(fchk,&opt.decode,p_chk,0);
+  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+
+  id = Plist.size()+1;
+  sprintf(txt,"Analyze");
+  fchk = new TGCheckButton(hframe1, txt, id);
+  fchk->SetName(txt);
+  hframe1->AddFrame(fchk,fL3);
+  DoMap(fchk,&opt.analyze,p_chk,0);
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 

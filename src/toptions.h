@@ -127,6 +127,7 @@ class Toptions: public TObject {
   Int_t dec_compr; //decoded data compr level
 
   Bool_t decode;
+  Bool_t analyze;
   char fname_raw[255];
   char fname_dec[255];
 
@@ -209,7 +210,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 96)
+  ClassDef(Toptions, 97)
 };
 
 ClassImp(Toptions)
