@@ -215,7 +215,7 @@ void *Ana_Events(void* ptr) {
     ana_mut.Lock();
 
     //int *pp = (int*) ptr;
-    //cout << "Ana_Events: " << ptr << endl;
+    cout << "Ana_Events: " << ptr << " " << crs->m_event->Nevt << endl;
 
     if (ptr || crs->m_flag==2) {
       crs->m_flag=2;
@@ -1367,7 +1367,6 @@ void CRS::DoFopen(char* oname, int popt) {
   if (opt.ev_max<=opt.ev_min) {
     opt.ev_max=opt.ev_min*2;
   }
-  list_min=opt.ev_max-opt.ev_min;
 
   if (oname)
     strcpy(Fname,oname);
@@ -1424,6 +1423,8 @@ void CRS::DoFopen(char* oname, int popt) {
     boffset=0;
     period=5;
   }
+
+  list_min=opt.ev_max-opt.ev_min;
 
   opt.raw_write=false;
 
@@ -1523,6 +1524,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
+  list_min=opt.ev_max-opt.ev_min;
   //cout << "readpar_gz3" << endl;
   return 0;
 }
@@ -2305,6 +2307,9 @@ void CRS::Make_Events(int nvp) {
   if (vv->size()<=1)
     return; //if vv contains 0 or 1 event, don't analyze it 
 
+  //cout << "m_flag: " << m_flag << " " << (!m_flag && Levents.size()>list_min)
+  //     << " " << Levents.size() << " " << list_min << endl;
+
   for (pls=vv->begin(); pls != --vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {
       Event_Insert_Pulse(&(*pls));
@@ -2312,6 +2317,7 @@ void CRS::Make_Events(int nvp) {
       if (!m_flag && Levents.size()>list_min) {
 	m_event2=--Levents.end();
 	m_flag=1;
+	cout << "m_event2: " << m_event2->Nevt << endl;
       }
     }
   }
@@ -2340,9 +2346,9 @@ void CRS::Make_Events(int nvp) {
 
 
 
-  /*
   if (Levents.size()>UInt_t(opt.ev_max)) {
     m_event=m_event2;
+    cout << "m_event: " << m_event->Nevt << endl;
     //cout << "ev_max1: " << nevents2 << " " << Levents.size() << endl;
 
     trd_ana->Run();
@@ -2351,7 +2357,6 @@ void CRS::Make_Events(int nvp) {
     //cout << "ev_max2: " << nevents2 << " " << Levents.size() << " "
     // << Levents.begin()->T << endl;
   }
-  */
 
 }
 
