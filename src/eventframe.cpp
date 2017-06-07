@@ -147,10 +147,10 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   mk.SetMarkerStyle(3);
   mk.SetMarkerColor(2);
 
-  //Pevents = &Tevents;
-  Pevents = &crs->Levents.back();
+  Pevents = &Tevents;
+  //Pevents = &crs->Levents.back();
   d_event = Pevents->begin();
-  cout << "d_event: " << &(*d_event) << endl;
+  //cout << "d_event: " << &(*d_event) << endl;
   //d_event = new EventClass();
   //Emut = new TMutex();
   //Emut2 = new TMutex();

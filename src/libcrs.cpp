@@ -17,7 +17,7 @@
 
 TMutex Emut3;
 TMutex stat_mut;
-TMutex ana_mut;
+//TMutex ana_mut;
 
 TCondition* cond[CRS::MAXTRANS];
 
@@ -43,7 +43,7 @@ cyusb_handle *cy_handle;
 //pthread_t tid1;
 TThread* trd_crs;
 TThread* trd_stat;
-TThread* trd_evt;
+//TThread* trd_evt;
 TThread* trd_dum;
 TThread* trd_ana;
 
@@ -117,22 +117,28 @@ void *handle_stat(void *ctx)
   return NULL;
 }
 
-int Select_Event() {
-  UInt_t nn=0;
-  for (EvtFrm->d_event=--crs->Levents.back().end();
-       EvtFrm->d_event!=crs->Levents.back().begin() && nn<4 ;--EvtFrm->d_event) {
-    nn++;
-    //cout << "Select: " << EvtFrm->d_event->T << " " << crs->m_event->T << endl;
-    //if (nn>2) break;
-  }
-  return nn;
-  //cout << "Select2: " << EvtFrm->d_event->T << " " << crs->m_event->T << " "
-  //     << crs->Levents.begin()->T << endl;
-}
+void Select_Event() {
 
+  if (crs->Levents.empty())
+    return;
+
+  if (crs->b_acq) { //acquisition is running
+    EvtFrm->Pevents=&EvtFrm->Tevents;
+    if (!crs->Levents.back().empty()) {
+      EvtFrm->Tevents.clear();
+      EvtFrm->Tevents.push_back(crs->Levents.back().front());
+    }
+  }
+  else { //acq is not running -> file analysis or stop
+    EvtFrm->Pevents=&crs->Levents.back();    
+  }
+
+  EvtFrm->d_event=EvtFrm->Pevents->begin();
+
+}
+/*
 void *handle_evt(void* ptr)
 {
-
 
   while (event_thread_run) {
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
@@ -154,7 +160,6 @@ void *handle_evt(void* ptr)
       //cout << "trd1: " << nn << " " << myM->fTab->GetCurrent() << endl;
     //}
 
-
     if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
       //HiFrm->DrawHist();      
       //HiFrm->BlockAllSignals(true);
@@ -171,7 +176,7 @@ void *handle_evt(void* ptr)
   return 0;
 
 }
-
+*/
 void *handle_dum(void* ptr)
 {
 
@@ -212,56 +217,59 @@ void *ballast(void* xxx) {
 
 void *Ana_Events(void* ptr) {
   //Int_t nn=0;
-  ana_mut.Lock();
-
-  //int *pp = (int*) ptr;
-  cout << "Ana_Events: " << ptr << endl;
-
-  if (crs->Levents.size()>10) {
-    //Levents.pop_front();
-    crs->Levents.erase(crs->Levents.begin());
-  }
-
-  ana_mut.UnLock();
-  return 0;
-
-  // if (ptr || crs->m_flag==2) {
-  //   crs->m_flag=2;
-  //   crs->m_event=crs->Levents.end();
-  // }
+  //ana_mut.Lock();
 
   std::list<event_list>::iterator Lit;
   std::list<EventClass>::iterator rl;
   //std::list<EventClass>::iterator next;
 
-  int nn=0;
-  // for (Lit2=crs->Levents.begin();Lit2!=crs->Levents.end() && nn<opt.ev_min;
-  // 	 ++Lit2) {
-  //   ++nn;
-  // }
+  //int *pp = (int*) ptr;
 
-  for (Lit=crs->Levents.begin();
-       Lit!=crs->Levents.end() && nn<opt.ev_min;++Lit) {
-    // for (rl=Lit->begin(); rl!=Lit->end(); ++rl) {
-    // 	if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
-    // 	  HiFrm->FillHist(&(*rl));
-    // 	  ++crs->nevents2;
-    // 	}
-    // }
-    ++nn;
+  while (event_thread_run) {
+
+    if (crs->Levents.size()>UInt_t(opt.ev_max)) {
+      cout << "Ana_Events: " << ptr << endl;
+
+      // if (crs->Levents.size()>10) {
+      //   //Levents.pop_front();
+      //   crs->Levents.erase(crs->Levents.begin());
+      // }
+
+      int nn=0;
+      // for (Lit2=crs->Levents.begin();Lit2!=crs->Levents.end() && nn<opt.ev_min;
+      // 	 ++Lit2) {
+      //   ++nn;
+      // }
+
+      for (Lit=crs->Levents.begin();
+	   Lit!=crs->Levents.end() && nn<opt.ev_min;++Lit) {
+	for (rl=Lit->begin(); rl!=Lit->end(); ++rl) {
+	  if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
+	    HiFrm->FillHist(&(*rl));
+	    ++crs->nevents2;
+	  }
+	}
+	++nn;
+      }
+      //cout << "Ana1: " << nn << " " << crs->Levents.size() << endl;
+      crs->Levents.erase(crs->Levents.begin(),Lit);
+    }
+    else {
+      gSystem->Sleep(1000);
+      //cout << EvtFrm << endl;
+      if (EvtFrm) {
+	EvtFrm->DrawEvent2();
+      }
+    }
   }
 
-  cout << "Ana1: " << nn << " " << crs->Levents.size() << endl;
-
-  crs->Levents.erase(crs->Levents.begin(),Lit);
-
-  cout << "Ana2: " << nn << " " << crs->Levents.size() << endl;
+  //cout << "Ana2: " << nn << " " << crs->Levents.size() << endl;
   // << " " << (--rl)->Nevt << endl;
 
   //YKYK if (crs->m_flag!=2)
   //YKYK   crs->Levents.erase(crs->Levents.begin(),crs->m_event);
 
-  crs->m_flag=0;
+  //crs->m_flag=0;
 
   //cout << "ev_max3: " << crs->nevents2 << " " << crs->Levents.size() << " "
   // << crs->Levents.begin()->T << endl;
@@ -289,7 +297,7 @@ void *Ana_Events(void* ptr) {
     }
   */
 
-  ana_mut.UnLock();
+  //ana_mut.UnLock();
   return 0;
     
 }
@@ -499,9 +507,10 @@ CRS::CRS() {
 
   trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
   trd_stat->Run();
-  trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
-  trd_evt->Run();
+  //trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
+  //trd_evt->Run();
   trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);
+  trd_ana->Run();
 
   //mTh= new TThread("memberfunction",
   //(void(*)(void *))&Thread0,(void*) this);
@@ -681,8 +690,11 @@ void CRS::DoExit()
   if (trd_stat) {
     trd_stat->Delete();
   }
-  if (trd_evt) {
-    trd_evt->Delete();
+  //if (trd_evt) {
+  //trd_evt->Delete();
+  //}
+  if (trd_ana) {
+    trd_ana->Delete();
   }
   //pthread_join(tid1,NULL);
   //gzclose(fp);
@@ -1259,7 +1271,7 @@ int CRS::DoStartStop() {
     b_stop=true;
     EvtFrm->Clear();
     EvtFrm->Pevents = &Levents.back();
-    Select_Event();
+    //Select_Event();
     //EvtFrm->Levents = &Levents;
   }
 
@@ -1615,7 +1627,7 @@ int CRS::Do1Buf() {
 
     //gSystem->Sleep(500);
 
-    Select_Event();
+    //Select_Event();
     if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
       EvtFrm->DrawEvent2();      
     }
@@ -2380,15 +2392,19 @@ void CRS::Make_Events() {
 
 
   cout << "Make_events: " << Levents.size() << endl;
-  if (Levents.size()>UInt_t(opt.ev_max)) {
-    trd_ana->Run();
-    //Ana_Events(0);
-  }
+
+  // if (Levents.size()>UInt_t(opt.ev_max)) {
+  //   trd_ana->Run();
+  //   //Ana_Events(0);
+  // }
 
   // if (Levents.size()>10) {
   //   //Levents.pop_front();
   //   Levents.erase(Levents.begin());
   // }
+
+  Select_Event();
+
 
 }
 

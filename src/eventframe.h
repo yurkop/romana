@@ -68,7 +68,7 @@ protected:
    int ntab; //tab number where eventframe is placed
    int ievent; //current event to be drawn
    std::list<EventClass>::iterator d_event;
-   std::list<EventClass> Tevents; //local event list, consist of one element
+   std::list<EventClass> Tevents; //local event list, consists of one element
    // used for online monitoring
    std::list<EventClass> *Pevents; //points either to Tevents or to crs->Levents
    //EventClass *d_event; //current event to draw
