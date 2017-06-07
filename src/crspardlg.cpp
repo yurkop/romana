@@ -744,7 +744,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Minimal size of the event list:\nduring analysis event list size doesn't go below this value";
   tip2= "Maximal size of the event list:\nafter reaching this size event list is cleaned down to minimal value";
   label="Event_list size";
-  AddLine2(fF6,ww,&opt.ev_min,&opt.ev_max,tip1,tip2,label,k_int,100,10000,100,10000);
+  AddLine2(fF6,ww,&opt.ev_min,&opt.ev_max,tip1,tip2,label,k_int,1,1000,1,1000);
 
   fF6->Resize();
 

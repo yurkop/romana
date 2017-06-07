@@ -22,8 +22,15 @@ typedef unsigned char byte;
 //typedef unsigned long long ULong64_t;
 //typedef long long Long64_t;
 
+typedef std::vector<PulseClass> pulse_vect;
+typedef std::list<EventClass> event_list;
+
+typedef std::list<pulse_vect>::iterator list_pulse_iter;
+typedef std::list<pulse_vect>::reverse_iterator list_pulse_reviter;
+
 typedef std::list<EventClass>::iterator event_iter;
 typedef std::list<EventClass>::reverse_iterator event_reviter;
+
 
 //using namespace std;
 
@@ -57,11 +64,15 @@ RQ_OBJECT("CRS")
   UChar_t* Fbuf;
   UChar_t* Fbuf2;
 
-  Short_t nvp; //Vpulses "ring" counter
-  std::vector<PulseClass> Vpulses[MAXTRANS];
-  std::list<EventClass> Levents; //list of events
-  std::list<EventClass>::iterator m_event2; //temporary m_event
-  std::list<EventClass>::iterator m_event;
+  //Short_t nvp; //Vpulses "ring" counter
+  //pulse_vect Vpulses[MAXTRANS];
+  std::list<pulse_vect> Vpulses;
+
+  std::list<event_list> Levents; //list of events
+  //std::list<EventClass> Levents; //list of events
+
+  //std::list<EventClass>::iterator m_event2; //temporary m_event
+  //std::list<EventClass>::iterator m_event;
   //m_event points to the first element after cleaning the list
 
   Int_t m_flag; //flag used for cleaning the event list
@@ -173,10 +184,10 @@ RQ_OBJECT("CRS")
   //void PEvent() { if (b_pevent) Emit("PEvent()"); } //*SIGNAL*
   //void SigEvent() { Emit("SigEvent()"); } //*SIGNAL*
   void Event_Insert_Pulse(PulseClass* pulse);
-  void Make_Events(int nbuf);
+  void Make_Events();
   //void *Ana_Events(void* ptr);
 
-  void Print_Pulses(int nvp);
+  void Print_Pulses();
   void Print_Events();
   ClassDef(CRS, 0)
 };

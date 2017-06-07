@@ -148,7 +148,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   mk.SetMarkerColor(2);
 
   //Pevents = &Tevents;
-  Pevents = &crs->Levents;
+  Pevents = &crs->Levents.back();
   d_event = Pevents->begin();
   cout << "d_event: " << &(*d_event) << endl;
   //d_event = new EventClass();
