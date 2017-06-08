@@ -574,6 +574,7 @@ int main(int argc, char **argv)
       gzFile ff = gzopen(argv[argnn],"rb");
       crs->ReadParGz(ff,argv[argnn],0,1,1);
       gzclose(ff);
+      crs->DoReset();
       //pname=argv[argnn];
     }
 
@@ -1279,9 +1280,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gStyle->SetPalette(1,0);
   gStyle->SetTitleFontSize(0.07);
   gStyle->SetTitleSize(0.05,"xyz");
-  gStyle->SetTitleOffset(0.8,"x"); 
+  gStyle->SetTitleOffset(0.95,"xy"); 
   gStyle->SetLabelSize(0.05,"xyz");
-  gStyle->SetNdivisions(505,"xyz");
+  gStyle->SetNdivisions(606,"xyz");
   gStyle->SetPadLeftMargin(0.15);
   gStyle->SetPadRightMargin(0.05);
   //gStyle->SetPadBottomMargin(0.15);
@@ -2180,6 +2181,7 @@ void MainFrame::UpdateStatus() {
   char txt[100];
   //TGString ss;
 
+  //cout << "Updatestatus1: " << endl;
   //double rate = 0;
   //if (opt.T_acq>0.01) rate = crs->totalbytes/MB/opt.T_acq;
 
@@ -2205,6 +2207,7 @@ void MainFrame::UpdateStatus() {
   fBar1->SetText(TGString::Format("%0.2f",crs->mb_rate),7);
   fBar1->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),8);
 
+  //cout << "Updatestatus2: " << endl;
   /*
   sprintf(txt,"Evt: %d",nevent);
 

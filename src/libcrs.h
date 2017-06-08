@@ -25,6 +25,9 @@ typedef unsigned char byte;
 typedef std::vector<PulseClass> pulse_vect;
 typedef std::list<EventClass> event_list;
 
+typedef std::list<event_list>::iterator event_list_iter;
+typedef std::list<event_list>::reverse_iterator event_list_reviter;
+
 typedef std::list<pulse_vect>::iterator list_pulse_iter;
 typedef std::list<pulse_vect>::reverse_iterator list_pulse_reviter;
 
@@ -111,6 +114,7 @@ RQ_OBJECT("CRS")
   bool b_fana; // true - file analysis running
   bool b_stop; // true if acquisition or analysis has stopped
 
+  Long64_t T_last;
 
   //vars for decoding...
 

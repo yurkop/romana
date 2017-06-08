@@ -16,7 +16,7 @@ PulseClass::PulseClass() {
   Analyzed=false;
   Tstamp64=0;
   Control=0;
-  tdif=99;
+  //tdif=99;
   //sData=NULL;
   //Peaks=NULL;
 }

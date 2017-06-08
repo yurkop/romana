@@ -15,6 +15,20 @@
 
 //TLine ln1;
 
+/*
+int Ch_Gamma_X[8]={ 1, 2, 3, 4, 5, 6, 7, 8};
+int Ch_Gamma_Y[8]={16,15,14,13,12,11,10, 9};
+int Ch_Alpha_X[8]={25,29,26,30,27,31,28,32};
+int Ch_Alpha_Y[8]={24,20,23,19,22,18,21,17};
+*/
+
+int prof_ch[32] = {
+  0, 1, 2, 3, 4, 5, 6, 7,
+  7, 6, 5, 4, 3, 2, 1, 0,
+  7, 5, 3, 1, 6, 4, 2, 0,
+  0, 2, 4, 6, 1, 3, 5, 7
+};
+
 extern Toptions opt;
 //extern Coptions cpar;
 extern MyMainFrame *myM;
@@ -62,7 +76,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
 
-  const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4"};
+  const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4","8x8"};
 
   xdiv=1;
   ydiv=1;
@@ -227,6 +241,9 @@ void HistFrame::Make_hist() {
   TGListTreeItem *idir;
   //TGListTreeItem *item;
 
+  //gStyle->SetNdivisions(606,"xyz");
+  
+
   //iroot = fListTree->AddItem(0, "All",0,0,true);
 
   idir = fListTree->AddItem(iroot, "Amplitude",0,0,true);
@@ -274,6 +291,24 @@ void HistFrame::Make_hist() {
   }
   //idir->CheckItem(false);
 
+  idir = fListTree->AddItem(iroot, "Profile strip",0,0,true);
+  for (int i=0; i<64; i++){
+    sprintf(name,"Profile_strip%02d",i);
+    sprintf(title,"Profile_strip%02d;X_strip;Y_strip",i);
+    h2_prof_strip[i] = new TH2F(name,title,8,0,8,8,0,8);
+    //h2_prof_strip[i]->GetXaxis()->CenterTitle();
+    //h2_prof_strip[i]->GetYaxis()->CenterTitle();
+    fListTree->AddItem(idir, name, h2_prof_strip[i], pic, pic,true);
+  }
+
+  idir = fListTree->AddItem(iroot, "Profile real",0,0,true);
+  for (int i=0; i<64; i++){
+    sprintf(name,"profile_real%02d",i);
+    sprintf(title,"Profile_real%02d;X (mm);Y (mm)",i);
+    h2_prof_real[i] = new TH2F(name,title,8,0,120,8,0,120); 
+    fListTree->AddItem(idir, name, h2_prof_real[i], pic, pic,true);
+  }
+
 }
 
 void HistFrame::NewBins() {
@@ -296,6 +331,11 @@ void HistFrame::NewBins() {
     nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
     h_tof[i]->SetBins(nn,opt.tof_min,opt.tof_max);
     h_tof[i]->Reset();
+  }
+
+  for (int i=0; i<64; i++) {
+    h2_prof_strip[i]->Reset();
+    h2_prof_real[i]->Reset();
   }
 
 }
@@ -337,6 +377,33 @@ void HistFrame::FillHist(EventClass* evt) {
       h_tof[ch]->Fill(tt*crs->period);
     }
   }
+
+  int ax=0,ay=0,px=0,py=0;
+  if (evt->pulses.size()==4) {
+    for (UInt_t i=0;i<evt->pulses.size();i++) {
+      int ch = evt->pulses[i].Chan;
+      if (ch<8) { //prof_x
+	px=prof_ch[ch];
+      }
+      else if (ch<16) { //prof y
+	py=prof_ch[ch];
+      }
+      else if (ch<24) { //alpha y
+	ay=prof_ch[ch];
+      }
+      else { //alpha x
+	ax=prof_ch[ch];
+      }
+    }
+
+    int ch_alpha = ax + ay*8;
+
+    //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
+
+    h2_prof_strip[ch_alpha]->Fill(px,py);
+    h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
+  }
+
 }
 
 void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
@@ -418,6 +485,11 @@ void HistFrame::SelectDiv(int nn)
     ndiv=32;
     xdiv=8;
     ydiv=4;
+    break;
+  case 6:
+    ndiv=64;
+    xdiv=8;
+    ydiv=8;
     break;
   default:
     ndiv=1;
@@ -824,7 +896,12 @@ void HistFrame::DrawHist()
       cv->cd(nn);
       TH1 *hh = (TH1*) obj;
       //cout << "hhh: " << hh->GetTitleSize() << endl;
-      hh->Draw();
+      if (hh->GetDimension()==2) {
+	hh->Draw("col");
+      }
+      else {
+	hh->Draw();
+      }
       //cv->SetEditable(false);  
       nn++;
       if (nn>ndiv)

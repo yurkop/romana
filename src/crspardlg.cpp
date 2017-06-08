@@ -218,10 +218,13 @@ void ParDlg::DoNum_SetBuf() {
       bsize+=4096;
       boffset+=4096;
     }
+    crs->DoReset();
+    /*
     if (crs->Fbuf2) delete[] crs->Fbuf2;
     crs->Fbuf2 = new UChar_t[bsize];
     crs->Fbuf = crs->Fbuf2+boffset;
     memset(crs->Fbuf2,0,boffset);
+    */
   }
 
 }

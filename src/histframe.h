@@ -46,7 +46,7 @@ class HistFrame: public TGCompositeFrame {
    TList* hlist;
    std::list<TH1*> hlist2;   
 
-   static const int NR=6;
+   static const int NR=7;
    TGRadioButton *Rb[NR];
 
    int ntab; //tab number where eventframe is placed
@@ -61,6 +61,10 @@ class HistFrame: public TGCompositeFrame {
    TH1F* h_height[MAX_CH]; //height of the peak
    TH1F* h_time[MAX_CH]; // real time
    TH1F* h_tof[MAX_CH]; // time of flight
+
+   TH2F* h2_prof_strip[64];
+   TH2F* h2_prof_real[64];
+
 
  public:
 

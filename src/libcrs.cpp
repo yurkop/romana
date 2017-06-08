@@ -228,37 +228,46 @@ void *Ana_Events(void* ptr) {
   while (event_thread_run) {
 
     if (crs->Levents.size()>UInt_t(opt.ev_max)) {
-      cout << "Ana_Events: " << ptr << endl;
+    //if (false) {
+      //cout << "Ana_Events: " << ptr << " " << crs->Levents.size() << endl;
 
       // if (crs->Levents.size()>10) {
       //   //Levents.pop_front();
       //   crs->Levents.erase(crs->Levents.begin());
       // }
 
-      int nn=0;
+      if (opt.ev_max<=opt.ev_min)
+	opt.ev_max=opt.ev_min+5;
+      int nn=crs->Levents.size()-opt.ev_min;
       // for (Lit2=crs->Levents.begin();Lit2!=crs->Levents.end() && nn<opt.ev_min;
       // 	 ++Lit2) {
       //   ++nn;
       // }
 
       for (Lit=crs->Levents.begin();
-	   Lit!=crs->Levents.end() && nn<opt.ev_min;++Lit) {
+	   Lit!=crs->Levents.end() && nn>0;++Lit) {
 	for (rl=Lit->begin(); rl!=Lit->end(); ++rl) {
 	  if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
 	    HiFrm->FillHist(&(*rl));
 	    ++crs->nevents2;
 	  }
 	}
-	++nn;
+	--nn;
       }
       //cout << "Ana1: " << nn << " " << crs->Levents.size() << endl;
       crs->Levents.erase(crs->Levents.begin(),Lit);
+      //cout << "Ana2: " << nn << " " << crs->Levents.size() << endl;
     }
     else {
-      gSystem->Sleep(1000);
+      gSystem->Sleep(opt.tsleep);
       //cout << EvtFrm << endl;
-      if (EvtFrm) {
-	EvtFrm->DrawEvent2();
+      if (crs->b_acq && myM && EvtFrm && HiFrm) {
+	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
+	  EvtFrm->DrawEvent2();
+	}
+	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
+	  HiFrm->ReDraw();
+	}
       }
     }
   }
@@ -1324,6 +1333,7 @@ void CRS::DoReset() {
   opt.T_acq=0;
 
   Tstart64=0;
+  T_last=0;
   //cout << "crs::reset: " << endl;
   //cout << "crs::reset: " << (int) CRS::b_fana << endl;
   //exit(1);
@@ -1459,15 +1469,19 @@ void CRS::DoFopen(char* oname, int popt) {
 
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
 
-  //cout << "Fopen2: " << (void*) Fbuf2 << " " << bsize << endl;
+  cout << "Fopen2: " << (void*) Fbuf2 << " " << bsize << " " << boffset << endl;
 
-  if (Fbuf2) delete[] Fbuf2;
+  if (Fbuf2) {
+    delete[] Fbuf2;
+  }
+  cout << "Fopen3: " << (void*) Fbuf2 << " " << bsize << endl;
   Fbuf2 = new UChar_t[bsize];
   Fbuf = Fbuf2+boffset;
   memset(Fbuf2,0,boffset);
 
   rbuf4 = (UInt_t*) Fbuf;
   rbuf2 = (UShort_t*) Fbuf;
+
 
   // if (Fmode==1) {//adcm raw file
   //   if (Searchsync()) {
@@ -2055,8 +2069,8 @@ void CRS::Decode_adcm() {
       //nw=bits(header,4,5);
       ipp->Tstamp64 = rbuf4[idx+rLen-2];
       ipp->Tstamp64 <<= 32;
-      //ipp->Tstamp64 += rbuf4[idx+rLen-3];
-      ipp->Tstamp64 = rbuf4[idx+rLen-3];
+      ipp->Tstamp64 += rbuf4[idx+rLen-3];
+      //ipp->Tstamp64 = rbuf4[idx+rLen-3];
 
       if (lflag)
 	ipp->ptype&=~P_NOSTOP; //pulse has stop
@@ -2180,6 +2194,12 @@ void CRS::Print_Events() {
 
 void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
+  //const Long64_t ev1=36090;
+  //const Long64_t ev2=37010;
+
+  const Long64_t ev1=1;
+  const Long64_t ev2=0;
+
   //if (nbuffers < 1) {
   //pls->PrintPulse();
   //}
@@ -2196,7 +2216,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   pls->FindPeaks();
   pls->PeakAna();
 
-  Long64_t dt;
+  //static Long64_t last=0;
   
   //int nn=0;
 
@@ -2222,31 +2242,83 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   // }
   
 
+  // if (nevents>ev1 && nevents<ev2) {
+  //   cout << "pls: " << nevents << " " << (int) pls->Chan << " " << pls->Counter
+  // 	 << " " << pls->Tstamp64 << endl;
+  // }
 
   event_iter it;
   event_reviter rl;
+  event_list_reviter Rit;
+
+  Long64_t dt=pls->Tstamp64-T_last;
+  T_last=pls->Tstamp64;
+  
+  if (dt>opt.tgate) {
+    it=Levents.back().insert(Levents.back().end(),EventClass());
+    it->Nevt=nevents;
+    nevents++;
+    it->Pulse_Ana_Add(pls);
+    // if (nevents>ev1 && nevents<ev2) {
+      // cout << "NewEv2: " << nevents << " " << (int) pls->Chan << " "
+      // 	   << pls->Tstamp64 << " " << dt
+      // 	   << " " << it->pulses.size() << " " << Levents.size() << endl;
+    // }
+    return;
+  }
+
   //event_reviter r_event =
   //  event_reviter(m_event);
 
-  for (rl=Levents.back().rbegin(); rl!=Levents.back().rend(); ++rl) {
-    dt = (pls->Tstamp64 - rl->T);
-    if (dt > opt.tgate) {
-      //add new event at the current position of the eventlist
-      it=Levents.back().insert(rl.base(),EventClass());
-      it->Nevt=nevents;
-      nevents++;
-      it->Pulse_Ana_Add(pls);
-      return;
-    }
-    else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
-      // coincidence event
-      rl->Pulse_Ana_Add(pls);
-      return;
-    }
-    // nn++;
-    // if (nn>=opt.event_lag) {
+  int nn=0;
+  //int n1=0;
+  //int n2=0;
+
+  for (Rit=Levents.rbegin(); Rit!=Levents.rend(); ++Rit) {
+    // if (Rit->empty()) {
+    //   cout << "Empty: " << nevents << " " << Levents.size() << endl;
     // }
+    for (rl=Rit->rbegin(); rl!=Rit->rend(); ++rl) {
+      dt = (pls->Tstamp64 - rl->T);
+      if (dt > opt.tgate) {
+	//add new event at the current position of the eventlist
+	it=Rit->insert(rl.base(),EventClass());
+	it->Nevt=nevents;
+	nevents++;
+	it->Pulse_Ana_Add(pls);
+	// if (nevents>ev1 && nevents<ev2) {
+	//   cout << "NewEv: " << nevents << " " << (int) pls->Chan << " "
+	//        << pls->Tstamp64 << " " << rl->T << " " << dt
+	//        << " " << rl->pulses.size() << endl;
+	// }
+	return;
+      }
+      else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
+	// coincidence event
+	rl->Pulse_Ana_Add(pls);
+	// if (nevents>ev1 && nevents<ev2) {
+	//   cout << "OldEv: " << nevents << " " << (int) pls->Chan << " "
+	//        << pls->Tstamp64 << " " << rl->T << " " << dt
+	//        << " " << rl->pulses.size() << endl;
+	// }
+	return;
+      }
+      //nn++;
+      //n2++;
+      //if (nn>100) break;
+    }
+    ++nn;
+    if (nn>=opt.ev_min) break;
   }
+
+  if (debug)
+    cout << "beginning: " << nevents << " " << pls->Tstamp64 << " " << dt
+	 << " " << Levents.size() << " " << nn << endl;
+
+  it=Levents.back().insert(Levents.back().end(),EventClass());
+  it->Nevt=nevents;
+  it->Pulse_Ana_Add(pls);
+  nevents++;
 
 
 
@@ -2309,12 +2381,6 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
       cout << "beginning: " << dt << " " << Levents.size() << endl;
   }
   */
-
-  it=Levents.back().insert(Levents.back().begin(),EventClass());
-
-  it->Nevt=nevents;
-  it->Pulse_Ana_Add(pls);
-  nevents++;
 
 }
 
@@ -2391,7 +2457,7 @@ void CRS::Make_Events() {
   */
 
 
-  cout << "Make_events: " << Levents.size() << endl;
+  //cout << "Make_events: " << Levents.size() << endl;
 
   // if (Levents.size()>UInt_t(opt.ev_max)) {
   //   trd_ana->Run();

@@ -85,7 +85,7 @@ class PulseClass {
   //int Npeaks; // number of peaks found in the pulse
   //peak_type *Peaks;
 
-  int tdif; //difference in tstamp from the event tstamp
+  //int tdif; //difference in tstamp from the event tstamp
 
   UChar_t Chan; //channel number
   UChar_t Control; //Control word
