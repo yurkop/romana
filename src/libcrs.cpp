@@ -1815,6 +1815,9 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   if (opt.analyze)
     Make_Events();
 
+  if (Vpulses.size()>2)
+    Vpulses.pop_front();
+
   //cout << "Decode32 4: " << Vpulses.size() << endl;
   /*
   static TTimeStamp t1;
@@ -1928,6 +1931,9 @@ void CRS::Decode2(UChar_t* buffer, int length) {
   //Fill_Tail(nvp);
   if (opt.analyze)
     Make_Events();
+
+  if (Vpulses.size()>2)
+    Vpulses.pop_front();
 
   //nvp++;
   //if (nvp>=ntrans) nvp=0;
@@ -2134,6 +2140,9 @@ void CRS::Decode_adcm() {
   if (opt.analyze)
     Make_Events();
 
+  if (Vpulses.size()>2)
+    Vpulses.pop_front();
+
   int sz=(BufLength-idx);
   if (sz>1024) {
     cout << "Bad adcm file. Frame size too large: " << sz << " " << idx << endl;
@@ -2197,8 +2206,8 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   //const Long64_t ev1=36090;
   //const Long64_t ev2=37010;
 
-  const Long64_t ev1=1;
-  const Long64_t ev2=0;
+  //const Long64_t ev1=1;
+  //const Long64_t ev2=0;
 
   //if (nbuffers < 1) {
   //pls->PrintPulse();
@@ -2403,7 +2412,7 @@ void CRS::Make_Events() {
   if (vv2!=Vpulses.rend()) {
     if (!(vv2->back().ptype&P_NOSTOP))
       Event_Insert_Pulse(&vv2->back());
-    Vpulses.pop_front();
+    //Vpulses.pop_front();
     //Print_Events();
   }
 
