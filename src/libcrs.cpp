@@ -323,10 +323,15 @@ static void cback(libusb_transfer *transfer) {
 
   //static TTimeStamp t1;
 
+  //cout << "cback: " << endl;
+  //return;
+
   TTimeStamp t2;
   //t2.Set();
 
   crs->npulses_buf=0;
+
+  if (crs->b_acq) {
 
   if (transfer->actual_length) {
     if (opt.decode) {
@@ -359,7 +364,6 @@ static void cback(libusb_transfer *transfer) {
 
   }
 
-  if (crs->b_acq) {
     libusb_submit_transfer(transfer);
 
     stat_mut.Lock();
@@ -631,6 +635,8 @@ int CRS::Detect_device() {
   //memset(buf_in,'\0',64);
 
   //buf_out[0] = 1; //get card info
+  Command2(4,0,0,0);
+
   Command32(1,0,0,0);
 
   /*
@@ -682,6 +688,8 @@ int CRS::Detect_device() {
   };
 
   //Submit_all(MAXTRANS);
+
+  Command2(4,0,0,0);
 
   return 0;
 
