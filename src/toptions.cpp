@@ -113,8 +113,8 @@ Toptions::Toptions() {
     //enabl[i]=true;
   }
 
-  ev_min=5000;
-  ev_max=10000;
+  ev_min=5;
+  ev_max=10;
 
   tgate=500;
   tveto=10;

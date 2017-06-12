@@ -36,6 +36,8 @@ extern int debug; // for printing debug messages
 
 const double MB = 1024*1024;
 
+//Int_t ev_max;
+
 //bool bstart=true;
 //bool btest=false;
 
@@ -49,7 +51,7 @@ TThread* trd_ana;
 
 int event_thread_run;//=1;
 
-UInt_t list_min=100;
+//UInt_t list_min=100;
 
 volatile char astat[CRS::MAXTRANS];
 
@@ -223,9 +225,26 @@ void *Ana_Events(void* ptr) {
   std::list<EventClass>::iterator rl;
   //std::list<EventClass>::iterator next;
 
+  MemInfo_t info;
+  gSystem->GetMemInfo(&info);
+  Int_t memmax=info.fMemTotal*0.05*1024;
+
   //int *pp = (int*) ptr;
 
   while (event_thread_run) {
+
+    cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
+	 << " " << opt.ev_max*opt.rbuf_size << " Mb"
+	 << " " << memmax << " " << info.fMemTotal
+	 << " " << opt.ev_min << " " << opt.ev_max << endl;
+    if (opt.ev_max*TMath::Max(opt.rbuf_size,opt.usb_size) > memmax) {
+      opt.ev_max=memmax/TMath::Max(opt.rbuf_size,opt.usb_size);
+      opt.ev_min=opt.ev_max/2;
+    }
+    if (opt.ev_min>=opt.ev_max) {
+      opt.ev_min=opt.ev_max/2;
+    }
+    //opt.ev_max=opt.ev_min+5;
 
     if (crs->Levents.size()>UInt_t(opt.ev_max)) {
     //if (false) {
@@ -236,8 +255,6 @@ void *Ana_Events(void* ptr) {
       //   crs->Levents.erase(crs->Levents.begin());
       // }
 
-      if (opt.ev_max<=opt.ev_min)
-	opt.ev_max=opt.ev_min+5;
       int nn=crs->Levents.size()-opt.ev_min;
       // for (Lit2=crs->Levents.begin();Lit2!=crs->Levents.end() && nn<opt.ev_min;
       // 	 ++Lit2) {
@@ -261,14 +278,18 @@ void *Ana_Events(void* ptr) {
     else {
       gSystem->Sleep(opt.tsleep);
       //cout << EvtFrm << endl;
-      if (crs->b_acq && myM && EvtFrm && HiFrm) {
+      //if (crs->b_acq && myM && EvtFrm && HiFrm) {
+
+      if (myM && EvtFrm && HiFrm) {
 	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
+	  cout << "EvtFrm->DrawEvent2()" << endl;
 	  EvtFrm->DrawEvent2();
 	}
 	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
 	  HiFrm->ReDraw();
 	}
       }
+
     }
   }
 
@@ -468,6 +489,8 @@ CRS::CRS() {
 
     exit(1);
   */
+
+  //ev_max=2*opt.ev_min;
 
   MAXTRANS2=MAXTRANS;
   memset(Pre,0,sizeof(Pre));
@@ -1359,10 +1382,10 @@ void CRS::DoReset() {
   nevents=0;
   nevents2=0;
 
-  if (opt.ev_max<=opt.ev_min) {
-    opt.ev_max=opt.ev_min*2;
-  }
-  list_min=opt.ev_max-opt.ev_min;
+  // if (opt.ev_max<=opt.ev_min) {
+  //   opt.ev_max=opt.ev_min*2;
+  // }
+  // list_min=opt.ev_max-opt.ev_min;
 
   // for (int i=0;i<MAXTRANS;i++) {
   //   Vpulses[i].clear();
@@ -1411,9 +1434,9 @@ void CRS::DoFopen(char* oname, int popt) {
   //     << crs->Levents.begin()->T << endl;
   //Print_Events();
 
-  if (opt.ev_max<=opt.ev_min) {
-    opt.ev_max=opt.ev_min*2;
-  }
+  // if (opt.ev_max<=opt.ev_min) {
+  //   opt.ev_max=opt.ev_min*2;
+  // }
 
   if (oname)
     strcpy(Fname,oname);
@@ -1471,7 +1494,7 @@ void CRS::DoFopen(char* oname, int popt) {
     period=5;
   }
 
-  list_min=opt.ev_max-opt.ev_min;
+  //list_min=opt.ev_max-opt.ev_min;
 
   opt.raw_write=false;
 
@@ -1575,7 +1598,9 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
-  list_min=opt.ev_max-opt.ev_min;
+  //ev_max=2*opt.ev_min;
+
+  //list_min=opt.ev_max-opt.ev_min;
   //cout << "readpar_gz3" << endl;
   return 0;
 }
@@ -1650,13 +1675,15 @@ int CRS::Do1Buf() {
     //gSystem->Sleep(500);
 
     //Select_Event();
-    if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-      EvtFrm->DrawEvent2();      
-    }
-    if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
-      //HiFrm->DrawHist();      
-      HiFrm->ReDraw();
-    }
+
+    // if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
+    //   EvtFrm->DrawEvent2();      
+    // }
+    // if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
+    //   //HiFrm->DrawHist();      
+    //   HiFrm->ReDraw();
+    // }
+
     nbuffers++;
     myM->UpdateStatus();
     gSystem->ProcessEvents();

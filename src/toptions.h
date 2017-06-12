@@ -210,7 +210,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 97)
+  ClassDef(Toptions, 98)
 };
 
 ClassImp(Toptions)

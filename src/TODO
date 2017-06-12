@@ -51,3 +51,7 @@ Event_Insert_Pulse: //add new event at the beginning of the eventlist:
 -> should use m_event instead of Levents.begin() (??)
 
 analyze rest of events after acq stop (s_flag=2, trd_ana->Run...)
+
+initialize raw_write, dec_write to false, also after opening par file
+
+avoid overwriting raw/dec files

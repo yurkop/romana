@@ -742,7 +742,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip2= "Size of the READ buffer in kilobytes (as large as possible for faster speed)";
   label="USB/READ buffer size";
   AddLine2(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,1,2048,
-	   1,1000000,(char*) "DoNum_SetBuf()");
+	   1,20000,(char*) "DoNum_SetBuf()");
 
   tip1= "Minimal size of the event list:\nduring analysis event list size doesn't go below this value";
   tip2= "Maximal size of the event list:\nafter reaching this size event list is cleaned down to minimal value";
