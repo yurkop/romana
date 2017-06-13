@@ -126,54 +126,10 @@ void PulseClass::PeakAna() {
 
   for (UInt_t i=0;i<Peaks.size();i++) {
     peak_type *pk = &Peaks[i];
-    pk->B1=pk->Pos+opt.bkg1[Chan];
-    pk->B2=pk->Pos+opt.bkg2[Chan];
-    pk->P1=pk->Pos+opt.peak1[Chan];
-    pk->P2=pk->Pos+opt.peak2[Chan];
 
     int sz=sData.size()-1;
     
-    if (pk->B1<0) pk->B1=0;
-    if (pk->B2<0) pk->B2=0;
-    if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
-    if (pk->P2<0) {pk->P2=0; pk->Type|=P_B2;}
-
-    if (pk->B1>sz) pk->B1=sz;
-    if (pk->B2>sz) pk->B2=sz;
-    if (pk->P1>sz) {pk->P1=sz; pk->Type|=P_B1;}
-    if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
-
-    Float_t bkg=0;
-    int nbkg=0;
-    //background
-    for (int j=pk->B1;j<=pk->B2;j++) {
-      bkg+=sData[j];
-      nbkg++;
-    }
-    if (nbkg)
-      bkg/=nbkg;
-    else {
-      cout << "zero background!!!" << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
-    }
-
-    int nn=0;
-    //peak Area & Height
-    pk->Area=0;
-    pk->Height=0;
-    for (int j=pk->P1;j<=pk->P2;j++) {
-      pk->Area+=sData[j];
-      if (sData[j]>pk->Height) pk->Height = sData[j];
-      nn++;
-    }
-    if (nn) {
-      pk->Area/=nn;
-    }
-    else {
-      cout << "zero Area!!!" << endl;
-    }
-    pk->Area-=bkg;
-
-    //peak time
+    //peak time & position
     //int nt=0;
     Float_t sum=0;
     pk->Time=0;
@@ -220,6 +176,54 @@ void PulseClass::PeakAna() {
     //pk->Time+=cpar.preWr[Chan];
     //cout << "TTT: " << t3 << " " << t4 << " " << pk->Time << " " << pk->T2
     // << " " << kk << endl;
+
+
+
+
+    pk->B1=pk->Pos+opt.bkg1[Chan];
+    pk->B2=pk->Pos+opt.bkg2[Chan];
+    pk->P1=pk->Pos+opt.peak1[Chan];
+    pk->P2=pk->Pos+opt.peak2[Chan];
+
+    if (pk->B1<0) pk->B1=0;
+    if (pk->B2<0) pk->B2=0;
+    if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
+    if (pk->P2<0) {pk->P2=0; pk->Type|=P_B2;}
+
+    if (pk->B1>sz) pk->B1=sz;
+    if (pk->B2>sz) pk->B2=sz;
+    if (pk->P1>sz) {pk->P1=sz; pk->Type|=P_B1;}
+    if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
+
+    Float_t bkg=0;
+    int nbkg=0;
+    //background
+    for (int j=pk->B1;j<=pk->B2;j++) {
+      bkg+=sData[j];
+      nbkg++;
+    }
+    if (nbkg)
+      bkg/=nbkg;
+    else {
+      cout << "zero background!!!" << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+    }
+
+    int nn=0;
+    //peak Area & Height
+    pk->Area=0;
+    pk->Height=0;
+    for (int j=pk->P1;j<=pk->P2;j++) {
+      pk->Area+=sData[j];
+      if (sData[j]>pk->Height) pk->Height = sData[j];
+      nn++;
+    }
+    if (nn) {
+      pk->Area/=nn;
+    }
+    else {
+      cout << "zero Area!!!" << endl;
+    }
+    pk->Area-=bkg;
 
   }
 

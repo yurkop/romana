@@ -233,10 +233,11 @@ void *Ana_Events(void* ptr) {
 
   while (event_thread_run) {
 
-    cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
-	 << " " << opt.ev_max*opt.rbuf_size << " Mb"
-	 << " " << memmax << " " << info.fMemTotal
-	 << " " << opt.ev_min << " " << opt.ev_max << endl;
+    // cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
+    // 	 << " " << opt.ev_max*opt.rbuf_size << " Mb"
+    // 	 << " " << memmax << " " << info.fMemTotal
+    // 	 << " " << opt.ev_min << " " << opt.ev_max << endl;
+
     if (opt.ev_max*TMath::Max(opt.rbuf_size,opt.usb_size) > memmax) {
       opt.ev_max=memmax/TMath::Max(opt.rbuf_size,opt.usb_size);
       opt.ev_min=opt.ev_max/2;
@@ -278,11 +279,11 @@ void *Ana_Events(void* ptr) {
     else {
       gSystem->Sleep(opt.tsleep);
       //cout << EvtFrm << endl;
-      //if (crs->b_acq && myM && EvtFrm && HiFrm) {
-
-      if (myM && EvtFrm && HiFrm) {
+      
+      if (crs->b_acq && myM && EvtFrm && HiFrm) {
+      //if (myM && EvtFrm && HiFrm) {
 	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
-	  cout << "EvtFrm->DrawEvent2()" << endl;
+	  //cout << "EvtFrm->DrawEvent2()" << endl;
 	  EvtFrm->DrawEvent2();
 	}
 	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
@@ -1676,13 +1677,14 @@ int CRS::Do1Buf() {
 
     //Select_Event();
 
-    // if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-    //   EvtFrm->DrawEvent2();      
-    // }
-    // if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
-    //   //HiFrm->DrawHist();      
-    //   HiFrm->ReDraw();
-    // }
+    if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
+      EvtFrm->DrawEvent2();      
+    }
+
+    if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
+      //HiFrm->DrawHist();      
+      HiFrm->ReDraw();
+    }
 
     nbuffers++;
     myM->UpdateStatus();

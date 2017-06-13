@@ -881,14 +881,14 @@ void EventFrame::SetRanges(int dr) {
 
 void EventFrame::DrawEvent2() {
 
-  cout << "draw0:" << endl;
+  //cout << "draw0:" << endl;
   //return;
   Emut2.Lock();
 
   TCanvas *cv=fCanvas->GetCanvas();
   cv->Clear();
 
-  cout << "draw1:" << endl;
+  //cout << "draw1:" << endl;
 
   //cv->Update();
   //int nnn=0;
@@ -898,7 +898,7 @@ void EventFrame::DrawEvent2() {
   if (Pevents->empty()) {
     txt.DrawTextNDC(0.2,0.7,"Empty event");
     cv->Update();
-    cout << "draw1a:" << endl;
+    //cout << "draw1a:" << endl;
     Emut2.UnLock();
     return;
   }
