@@ -177,7 +177,7 @@ void PulseClass::PeakAna() {
     //cout << "TTT: " << t3 << " " << t4 << " " << pk->Time << " " << pk->T2
     // << " " << kk << endl;
 
-
+    pk->Pos = pk->Time+0.5;
 
 
     pk->B1=pk->Pos+opt.bkg1[Chan];
