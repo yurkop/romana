@@ -113,7 +113,8 @@ void *handle_stat(void *ctx)
     t1=opt.T_acq;
     bytes1=bytes2;
 
-    myM->UpdateStatus();
+    if (myM)
+      myM->UpdateStatus();
     //cout << "handle_stat: " << dt << " " << crs->mb_rate << endl;
   }
   return NULL;
