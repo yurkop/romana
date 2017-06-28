@@ -16,7 +16,7 @@ extern ChanParDlg *chanpar;
 
 const int ncrspar=12;
 
-const int tlen[ncrspar]={26,60,24,25,24,21,45,40,40,21,36,37};
+const int tlen[ncrspar]={26,60,24,25,24,21,45,40,40,25,36,37};
 const char* tlab[ncrspar]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Drv","Thr"};
 const char* tip[ncrspar]={
   "Channel number",
