@@ -13,10 +13,12 @@ LFS=$(shell getconf LFS_CFLAGS)
 
 ifdef DEBUG
   CPPFLAGS += -g
+  CXXFLAGS += -O1 -Wall
+else
+  CXXFLAGS += -O3 -Wall
 endif
 
 CPPFLAGS += $(LFS) -MD -MP -D LINUX=1 -I. #-I$(LIB_D)
-CXXFLAGS += -O3 -Wall
 LDFLAGS += -lz -l cyusb -l usb-1.0
 #SVNVER=\"$(shell svnversion)\"
 

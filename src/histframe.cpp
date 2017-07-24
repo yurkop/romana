@@ -847,13 +847,15 @@ void HistFrame::Update()
   }
   */
 
-  TString* ss[1000000];
-  for (int i=0;i<1000000;i++) {
-    ss[i] = new TString("asdasdasdf");
-  }
-  for (int i=0;i<1000000;i++) {
-    delete ss[i];
-  }
+
+  // TString* ss[1000000];
+  // for (int i=0;i<1000000;i++) {
+  //   ss[i] = new TString("asdasdasdf");
+  // }
+  // for (int i=0;i<1000000;i++) {
+  //   delete ss[i];
+  // }
+
   //cout <<"Update1: " << endl;
 
   //gStyle->Dump();

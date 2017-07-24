@@ -281,8 +281,8 @@ void *Ana_Events(void* ptr) {
       gSystem->Sleep(opt.tsleep);
       //cout << EvtFrm << endl;
       
-      if (crs->b_acq && myM && EvtFrm && HiFrm) {
-      //if (myM && EvtFrm && HiFrm) {
+      //if (crs->b_acq && myM && EvtFrm && HiFrm) {
+      if (myM && EvtFrm && HiFrm) {
 	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
 	  //cout << "EvtFrm->DrawEvent2()" << endl;
 	  EvtFrm->DrawEvent2();
@@ -494,6 +494,8 @@ CRS::CRS() {
 
   //ev_max=2*opt.ev_min;
 
+  //b_acq=false;
+
   MAXTRANS2=MAXTRANS;
   memset(Pre,0,sizeof(Pre));
 
@@ -527,7 +529,6 @@ CRS::CRS() {
 
   event_thread_run=1;
 
-  // b_acq=false;
   // b_fana=false;
   // bstart=true;
 
@@ -1361,7 +1362,7 @@ void CRS::DoReset() {
   //  if (HiFrm)
   //  cout << "DoReset1: " << HiFrm->h_time[1]->GetName() << endl;
 
-  if (b_acq) return;
+  //if (b_acq) return;
     
   opt.T_acq=0;
 
@@ -1678,6 +1679,7 @@ int CRS::Do1Buf() {
 
     //Select_Event();
 
+    /*
     if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
       EvtFrm->DrawEvent2();      
     }
@@ -1686,7 +1688,7 @@ int CRS::Do1Buf() {
       //HiFrm->DrawHist();      
       HiFrm->ReDraw();
     }
-
+    */
     nbuffers++;
     myM->UpdateStatus();
     gSystem->ProcessEvents();
