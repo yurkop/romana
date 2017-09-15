@@ -627,6 +627,7 @@ void HistFrame::DoPeaks()
       //hh->Draw();
       int npk = spec.Search(hh,2,"",0.5);
       Float_t* peaks = spec.GetPositionX();
+      //Double_t* peaks = spec.GetPositionX();
       for (int j=0;j<npk;j++) {
 	int bin = hh->FindFixBin(peaks[j]);
 	int k;
