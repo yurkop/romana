@@ -881,7 +881,7 @@ void EventFrame::SetRanges(int dr) {
 
 void EventFrame::DrawEvent2() {
 
-  //cout << "draw0:" << endl;
+  cout << "draw0:" << endl;
   //return;
   Emut2.Lock();
 
