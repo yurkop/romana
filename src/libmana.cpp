@@ -2518,13 +2518,13 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
     cout << "DoTab4: " << name << endl;
-    if (!crs->b_acq)
-      EvtFrm->DrawEvent2();
+    //if (!crs->b_acq)
+    //EvtFrm->DrawEvent2();
   }
   else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
     cout << "DoTab5: " << name << endl;
-    if (!crs->b_acq)
-      HiFrm->Update();
+    //if (!crs->b_acq)
+    //HiFrm->Update();
     //HiFrm->ReDraw();
   }
 }

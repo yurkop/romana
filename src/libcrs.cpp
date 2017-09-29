@@ -1626,7 +1626,7 @@ void CRS::SaveParGz(gzFile &ff) {
 
 void CRS::FAnalyze() {
 
-  //cout << "FAnalyze: " << f_read << endl;
+  cout << "FAnalyze: " << f_read << endl;
     
   if (!f_read) {
     cout << "File not open" << endl;

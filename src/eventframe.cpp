@@ -86,7 +86,7 @@ char hname[3][MAX_CH+1][20]; //+all
 TText txt;
 
 TMutex Emut;
-TMutex Emut2;
+//TMutex Emut2;
 
 void doXline(Float_t xx, Float_t y1, Float_t y2, int col, int type) {
   ln.SetLineColor(col);
@@ -881,9 +881,9 @@ void EventFrame::SetRanges(int dr) {
 
 void EventFrame::DrawEvent2() {
 
-  cout << "draw0:" << endl;
+  //cout << "draw0:" << endl;
   //return;
-  Emut2.Lock();
+  //Emut2.Lock();
 
   TCanvas *cv=fCanvas->GetCanvas();
   cv->Clear();
@@ -899,7 +899,7 @@ void EventFrame::DrawEvent2() {
     txt.DrawTextNDC(0.2,0.7,"Empty event");
     cv->Update();
     //cout << "draw1a:" << endl;
-    Emut2.UnLock();
+    //Emut2.UnLock();
     return;
   }
 
@@ -910,7 +910,7 @@ void EventFrame::DrawEvent2() {
     //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
     cv->Update();
-    Emut2.UnLock();
+    //Emut2.UnLock();
     return;
   }
 
@@ -996,7 +996,7 @@ void EventFrame::DrawEvent2() {
   
   cv->Update();
 
-  Emut2.UnLock();
+  //Emut2.UnLock();
 
 } //DrawEvent2
 
