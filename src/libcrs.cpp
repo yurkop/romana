@@ -285,7 +285,8 @@ void *Ana_Events(void* ptr) {
       if (myM && EvtFrm && HiFrm) {
 	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
 	  //cout << "EvtFrm->DrawEvent2()" << endl;
-	  EvtFrm->DrawEvent2();
+	  //EvtFrm->DrawEvent2();
+	  EvtFrm->ReDraw();
 	}
 	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
 	  HiFrm->ReDraw();

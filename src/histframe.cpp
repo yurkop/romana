@@ -965,16 +965,12 @@ void HistFrame::ReDraw()
     //fEc->GetCanvas()->Draw();
 
 
-
-
-
     for (int i=0;i<ndiv;i++) {
       cv->cd(i+1);
       //gPad->Draw();
       gPad->Modified(1);
       //gPad->Update();
     }
-
 
 
     //cout << "unchanged3" << endl;

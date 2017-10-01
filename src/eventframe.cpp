@@ -684,7 +684,7 @@ void EventFrame::DoSlider() {
   */
   //printf("DosLider: %d\n",nEvents);
   if (!crs->b_acq)
-    ReDraw();
+    ReDraw_old();
 
 }
 
@@ -727,7 +727,7 @@ void EventFrame::DoChkPeak() {
   }
 
   if (!crs->b_acq)
-    ReDraw();
+    ReDraw_old();
 
 }
 
@@ -744,7 +744,7 @@ void EventFrame::DoPulseOff() {
   //cout << "DoPulseOff: " << id << " " << fChn[id]->IsOn() << endl;
 
   if (!crs->b_acq)
-    ReDraw();
+    ReDraw_old();
 
 }
 
@@ -975,7 +975,7 @@ void EventFrame::DrawEvent2() {
   
   cv->Divide(1,ndiv);
 
-  ReDraw();
+  ReDraw_old();
 
   //cout << "Draw1: " << endl;
   cout << "Draw2: " << d_event->T << endl;
@@ -1057,7 +1057,7 @@ void EventFrame::DoGraph(int ndiv, int dd) {
 
 } //DoGraph
 
-void EventFrame::ReDraw() {
+void EventFrame::ReDraw_old() {
 
   Emut.Lock();
   //cv->Update();
@@ -1164,5 +1164,36 @@ void EventFrame::ReDraw() {
 
   //cout << "rdr78: " << endl;
   Emut.UnLock();
+
+}
+
+void EventFrame::ReDraw()
+{
+
+  //cout << "ReDraw: " << fEc->GetCanvas() << endl;
+
+  TCanvas *cv=fCanvas->GetCanvas();
+  int nn=1;
+
+  // if (changed) {
+  //   //fEc->GetCanvas()->Draw();
+  //   //fEc->GetCanvas()->Update();
+  //   //cout << "changed" << endl;
+  //   Update();
+  //   changed=false;
+  // }
+  // else {
+
+  for (int i=0;i<3;i++) {
+    if (opt.b_deriv[i]) {
+      cv->cd(nn++);
+      //gPad->Draw();
+      gPad->Modified(1);
+      //gPad->Update();
+    }
+
+    // fEc->GetCanvas()->Update();
+
+  }
 
 }
