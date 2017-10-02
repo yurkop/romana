@@ -113,15 +113,29 @@ void *handle_stat(void *ctx)
     t1=opt.T_acq;
     bytes1=bytes2;
 
-    if (myM)
+    if (myM /*&& !crs->b_stop*/) {
       myM->UpdateStatus();
+
+      if (EvtFrm && HiFrm) {
+	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
+	  //cout << "EvtFrm->DrawEvent2()" << endl;
+	  //EvtFrm->DrawEvent2();
+	  EvtFrm->ReDraw();
+	}
+	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
+	  HiFrm->ReDraw();
+	}
+      }
+    }
     //cout << "handle_stat: " << dt << " " << crs->mb_rate << endl;
   }
   return NULL;
 }
 
 void Select_Event() {
-
+  //called at the end of each decode_* subroutine
+  // selects an event for displaying in "Events" tab (most probably -???)
+  
   if (crs->Levents.empty())
     return;
 
@@ -180,16 +194,16 @@ void *handle_evt(void* ptr)
 
 }
 */
+
+/*
 void *handle_dum(void* ptr)
 {
-
   //gSystem->Sleep(1900);
   HiFrm->Update();      
   ////cout << "Dum: " << endl;
-
   return NULL;
-
 }
+*/
 
 // void *make_events_func(void *ctx)
 // {
@@ -200,6 +214,7 @@ void *handle_dum(void* ptr)
 //   return NULL;
 // }
 
+/*
 void *ballast(void* xxx) {
 
   libusb_transfer* transfer = (libusb_transfer*) xxx;
@@ -217,6 +232,7 @@ void *ballast(void* xxx) {
   return NULL;
 
 }
+*/
 
 void *Ana_Events(void* ptr) {
   //Int_t nn=0;
@@ -277,6 +293,7 @@ void *Ana_Events(void* ptr) {
       crs->Levents.erase(crs->Levents.begin(),Lit);
       //cout << "Ana2: " << nn << " " << crs->Levents.size() << endl;
     }
+    /*
     else {
       gSystem->Sleep(opt.tsleep);
       //cout << EvtFrm << endl;
@@ -293,8 +310,9 @@ void *Ana_Events(void* ptr) {
 	}
       }
 
-    }
-  }
+    } //else
+    */
+  } //while event_thread_run
 
   //cout << "Ana2: " << nn << " " << crs->Levents.size() << endl;
   // << " " << (--rl)->Nevt << endl;
@@ -576,10 +594,10 @@ CRS::~CRS() {
 
 }
 
-void CRS::Dummy_trd() {
-  trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);
-  trd_dum->Run();
-}
+// void CRS::Dummy_trd() {
+//   trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);
+//   trd_dum->Run();
+// }
 
 int CRS::Detect_device() {
 
@@ -1375,7 +1393,7 @@ void CRS::DoReset() {
 
   b_acq=false;
   b_fana=false;
-  b_stop=false;
+  b_stop=true;
   //bstart=true;
 
   //nvp=0;
@@ -1661,7 +1679,9 @@ int CRS::Do1Buf() {
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
   //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
   if (BufLength>0) {
+    stat_mut.Lock();
     crs->totalbytes+=BufLength;
+    stat_mut.UnLock();
 
     if (opt.decode) {
       if (Fmode==32) {
@@ -1691,7 +1711,7 @@ int CRS::Do1Buf() {
     }
     */
     nbuffers++;
-    myM->UpdateStatus();
+    //myM->UpdateStatus();
     gSystem->ProcessEvents();
 
     //nvp = (nvp+1)%ntrans;

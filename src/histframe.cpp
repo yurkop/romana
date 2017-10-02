@@ -48,7 +48,7 @@ extern HistFrame* EvtFrm;
 
 //TText txt;
 
-TMutex Hmut;
+//TMutex Hmut;
 
 TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 TGLayoutHints* fLay2 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
@@ -807,7 +807,7 @@ void HistFrame::DrawHist2()
 void HistFrame::Update()
 {
 
-  Hmut.Lock();
+  //Hmut.Lock();
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
 
@@ -868,23 +868,23 @@ void HistFrame::Update()
   //cout <<"Update2: " << endl;
   //exit(1);
 
-  Hmut.UnLock();
+  //Hmut.UnLock();
 }
 
 void HistFrame::DrawHist()
 {
 
-  //cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
+  cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
   TCanvas *cv=fEc->GetCanvas();
   //cv->SetEditable(true);
   cv->Clear();
   //fEc->GetCanvas()->Clear();
-  //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
+  cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
   //cout <<"dr2a: " << fEc << " " << fEc->GetCanvas() << endl;
   cv->Divide(xdiv,ydiv);
   //cv->SetEditable(false);  
   //cv->Update();
-  //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
+  cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
   //cout <<"dr2: " << hlist << endl;
   //return;
   int nn=1;
@@ -914,7 +914,7 @@ void HistFrame::DrawHist()
     //break;
   }
   //return;
-  //cout <<"dr3:" << endl;
+  cout <<"dr3:" << endl;
   //cv->SetEditable(true);  
   cv->Update();
   //cv->SetEditable(false);  
@@ -944,14 +944,14 @@ void HistFrame::DrawHist()
 void HistFrame::ReDraw()
 {
 
-  //cout << "ReDraw: " << fEc->GetCanvas() << endl;
+  cout << "ReDraw: " << fEc->GetCanvas() << endl;
 
   TCanvas *cv=fEc->GetCanvas();
 
   if (changed) {
     //fEc->GetCanvas()->Draw();
     //fEc->GetCanvas()->Update();
-    //cout << "changed" << endl;
+    cout << "changed" << endl;
     Update();
     changed=false;
   }

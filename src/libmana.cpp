@@ -1699,8 +1699,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
   //UpdateStatus();
 
-  UpdateStatus();
-
   // Set a name to the main frame
   //SetWindowName(maintitle);
 
@@ -2008,7 +2006,7 @@ void MainFrame::DoReadRoot() {
     tof=opt.Tof;
 
     //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
-    UpdateStatus();
+    //UpdateStatus();
 
     //if (fPar!=NULL) {
     //delete fPar;
@@ -2061,7 +2059,7 @@ void MainFrame::DoReset() {
   //Buffer->NewFile();
 
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
-  UpdateStatus();
+  //UpdateStatus();
   //DoDraw();
 
 }
@@ -2249,7 +2247,7 @@ void MainFrame::DoAllevents() {
   
 
 
-  UpdateStatus();
+  //UpdateStatus();
 
   //DoDraw();
   bRun=false;
@@ -2268,7 +2266,7 @@ void MainFrame::DoFindBeam() {
   }
   */
 
-  UpdateStatus();
+  //UpdateStatus();
 
   //DoDraw();
   bRun=false;
@@ -2287,7 +2285,7 @@ void MainFrame::DoChkPoint() {
     return;
   }
   */
-  UpdateStatus();
+  //UpdateStatus();
   //DoDraw();
   bRun=false;
 }
@@ -2523,6 +2521,7 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
     cout << "DoTab5: " << name << endl;
+    HiFrm->changed=true;
     //if (!crs->b_acq)
     //HiFrm->Update();
     //HiFrm->ReDraw();
