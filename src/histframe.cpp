@@ -76,6 +76,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
 
+  cout << "--- HistFrame::HistFrame" << endl;
+
   const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4","8x8"};
 
   xdiv=1;
@@ -125,7 +127,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   // fHor3->AddFrame(rb4, fLay5);
 
   fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
-  //fEc->GetCanvas()->SetEditable(false);
+  //fEc->GetCanvas()->SetEditable(true);
   //fEc = new MECanvas("Hcanvas", fHor1, 10, 10);
   fHor1->AddFrame(fEc, fLay1);
 
@@ -221,7 +223,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
   fHor2->AddFrame(but, fLay5);
 
-  //Update();
+  fEc->GetCanvas()->Draw();
+  cout << "---- Draw gPad: " << gPad << endl;
+  Update();
+  
 }
 
 HistFrame::~HistFrame()
@@ -555,59 +560,57 @@ void HistFrame::DoButton()
 
 }
 
-/*
-void HistFrame::DoPeaks2()
-{
+// void HistFrame::DoPeaks2()
+// {
 
-  TSpectrum spec;
+//   TSpectrum spec;
   
-  int nn=1;
-  int ii=0;
-  for (std::list<TH1*>::iterator hh=hlist2.begin();
-       hh!=hlist2.end();++hh) {
-    if (ii>=opt.icheck) {
-      if (!fEc->GetCanvas()->GetPad(nn)) break;
-      fEc->GetCanvas()->cd(nn);
-      //TH1 *hh = (TH1*) obj;
-      //cout << "hhh: " << hh->GetTitleSize() << endl;
-      //hh->Draw();
-      int npk = spec.Search((*hh),2,"",0.5);
-      Float_t* peaks = spec.GetPositionX();
-      for (int j=0;j<npk;j++) {
-	int bin = (*hh)->FindFixBin(peaks[j]);
-	int k;
-	for (k=bin;k>0;k--) {
-	  if ((*hh)->GetBinContent(k)<spec.GetPositionY()[j]*0.5)
-	    break;
-	}
-	//cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
-	//     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
-	double sig = (bin-k)*2.0/2.35;
+//   int nn=1;
+//   int ii=0;
+//   for (std::list<TH1*>::iterator hh=hlist2.begin();
+//        hh!=hlist2.end();++hh) {
+//     if (ii>=opt.icheck) {
+//       if (!fEc->GetCanvas()->GetPad(nn)) break;
+//       fEc->GetCanvas()->cd(nn);
+//       //TH1 *hh = (TH1*) obj;
+//       //cout << "hhh: " << hh->GetTitleSize() << endl;
+//       //hh->Draw();
+//       int npk = spec.Search((*hh),2,"",0.5);
+//       Float_t* peaks = spec.GetPositionX();
+//       for (int j=0;j<npk;j++) {
+// 	int bin = (*hh)->FindFixBin(peaks[j]);
+// 	int k;
+// 	for (k=bin;k>0;k--) {
+// 	  if ((*hh)->GetBinContent(k)<spec.GetPositionY()[j]*0.5)
+// 	    break;
+// 	}
+// 	//cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
+// 	//     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
+// 	double sig = (bin-k)*2.0/2.35;
 
-	int width=(bin-k)*5;
+// 	int width=(bin-k)*5;
 
-	TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
-	//cout << f1->GetNpar() << endl;
-	f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
+// 	TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
+// 	//cout << f1->GetNpar() << endl;
+// 	f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
 
-	//f1->Print();
-	const char* fitopt="+";
-	if (j==0) fitopt="";
+// 	//f1->Print();
+// 	const char* fitopt="+";
+// 	if (j==0) fitopt="";
 
-	//TF1* fitf=new TF1("fitf","gaus",0,10);
-	(*hh)->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
-	//f1->Draw("same");
-      }
-      nn++;
-    }
-    ii++;
-  }
-  fEc->GetCanvas()->SetEditable(true);
-  fEc->GetCanvas()->Update();
-  fEc->GetCanvas()->SetEditable(false);
+// 	//TF1* fitf=new TF1("fitf","gaus",0,10);
+// 	(*hh)->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
+// 	//f1->Draw("same");
+//       }
+//       nn++;
+//     }
+//     ii++;
+//   }
+//   fEc->GetCanvas()->SetEditable(true);
+//   fEc->GetCanvas()->Update();
+//   fEc->GetCanvas()->SetEditable(false);
 
-}
-*/
+// }
 
 void HistFrame::DoPeaks()
 {
@@ -875,13 +878,24 @@ void HistFrame::DrawHist()
 {
 
   cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
+  //fEc->ClearViewPort();
   TCanvas *cv=fEc->GetCanvas();
   //cv->SetEditable(true);
+  //cv->Flush();
+  cv->SetEditable(true);
+  //cv->Update();
+  cv->Modified();
+  cout << "gPad:" << gPad << endl;
   cv->Clear();
   //fEc->GetCanvas()->Clear();
   cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
   //cout <<"dr2a: " << fEc << " " << fEc->GetCanvas() << endl;
+  cout << "gPad:" << gPad << endl;
+  gPad=0;
+  cout << "gPad7:" << gPad << endl;
+  //gSystem->Sleep(50);
   cv->Divide(xdiv,ydiv);
+
   //cv->SetEditable(false);  
   //cv->Update();
   cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;

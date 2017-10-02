@@ -1170,10 +1170,10 @@ void EventFrame::ReDraw_old() {
 void EventFrame::ReDraw()
 {
 
-  //cout << "ReDraw: " << fEc->GetCanvas() << endl;
-
   TCanvas *cv=fCanvas->GetCanvas();
   int nn=1;
+
+  cout << "evtfrm::ReDraw: " << cv << endl;
 
   // if (changed) {
   //   //fEc->GetCanvas()->Draw();
