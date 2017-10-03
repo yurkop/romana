@@ -155,10 +155,9 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fListTree->Associate(this);
   //fEc->SetDNDTarget(kTRUE);
 
-
   Make_hist();
   NewBins();
-
+  cout << "222" << endl;
 
   
   /*
@@ -197,9 +196,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fVer[i]->AddFrame(flab[i], fLay4);
   }
 
+  cout << "111" << endl;
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
-  Rb[sel]->Clicked();
+  //Rb[sel]->Clicked();
 
   TGTextButton* but;
 
@@ -225,7 +225,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   fEc->GetCanvas()->Draw();
   cout << "---- Draw gPad: " << gPad << endl;
-  Update();
+  //Rb[sel]->Clicked();
+  //Update();
   
 }
 
@@ -510,7 +511,7 @@ void HistFrame::DoRadio()
   Int_t id = btn->WidgetId()-1;
 
   //int prev = (id+NR-1)%NR;
-  //cout << "doradio: " << id << endl;
+  cout << "doradio: " << id << endl;
 
   for (int i=0;i<NR;i++) {
     if (i==id)
@@ -882,25 +883,28 @@ void HistFrame::DrawHist()
   TCanvas *cv=fEc->GetCanvas();
   //cv->SetEditable(true);
   //cv->Flush();
-  cv->SetEditable(true);
+  //cv->SetEditable(true);
   //cv->Update();
-  cv->Modified();
-  cout << "gPad:" << gPad << endl;
+  //cv->Modified();
+  //cout << "gPad:" << gPad << endl;
   cv->Clear();
   //fEc->GetCanvas()->Clear();
-  cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
+  //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
   //cout <<"dr2a: " << fEc << " " << fEc->GetCanvas() << endl;
-  cout << "gPad:" << gPad << endl;
-  gPad=0;
-  cout << "gPad7:" << gPad << endl;
+  //cout << "gPad:" << gPad << endl;
+  //gPad=0;
+  //cout << "gPad7:" << gPad << endl;
   //gSystem->Sleep(50);
   cv->Divide(xdiv,ydiv);
 
   //cv->SetEditable(false);  
   //cv->Update();
-  cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
+  //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
   //cout <<"dr2: " << hlist << endl;
   //return;
+
+
+
   int nn=1;
   int ii=0;
   TIter next(hlist);
@@ -912,7 +916,7 @@ void HistFrame::DrawHist()
       //cv->SetEditable(true);  
       cv->cd(nn);
       TH1 *hh = (TH1*) obj;
-      //cout << "hhh: " << hh->GetTitleSize() << endl;
+      //cout << "hhh: " << hh << " " << hh->GetTitle() << " " << hh->GetDimension() << " " << hh->Integral() << endl;
       if (hh->GetDimension()==2) {
 	hh->Draw("col");
       }
@@ -927,11 +931,16 @@ void HistFrame::DrawHist()
     ii++;
     //break;
   }
+
+
+
   //return;
   cout <<"dr3:" << endl;
   //cv->SetEditable(true);  
-  cv->Update();
+  //cv->Update();
+  cv->Modified(1);
   //cv->SetEditable(false);  
+  cout <<"dr4:" << endl;
 }
 
 /*
@@ -958,7 +967,7 @@ void HistFrame::DrawHist()
 void HistFrame::ReDraw()
 {
 
-  cout << "ReDraw: " << fEc->GetCanvas() << endl;
+  //cout << "ReDraw: " << fEc->GetCanvas() << endl;
 
   TCanvas *cv=fEc->GetCanvas();
 
@@ -988,8 +997,11 @@ void HistFrame::ReDraw()
 
 
     //cout << "unchanged3" << endl;
+    //fEc->GetCanvas()->Modified();
     fEc->GetCanvas()->Update();
     //cout << "unchanged4" << endl;
   }
+
+  cout << "end_of_redraw:" << endl;
 
 }
