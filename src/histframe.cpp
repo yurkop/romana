@@ -810,19 +810,26 @@ void HistFrame::DrawHist2()
 */
 void HistFrame::Update()
 {
+  cout << "hifrm::update 0: " << endl;
 
   //Hmut.Lock();
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
 
   //if (hlist
+  cout << "hifrm::update 1: " << hlist << " " << hlist->GetSize() << endl;
 
-  hlist->Clear();
+  hlist->Clear("nodelete");
+  //delete hlist;
+  //hlist=new TList();
+
+  cout << "hifrm::update 2: " << endl;
   TGListTreeItem *idir = fListTree->GetFirstItem();
+  cout << "hifrm::update 3: " << endl;
   while (idir) {
     if (idir->IsChecked() && idir->GetUserData()) {
       hlist->Add((TObject*)idir->GetUserData());
-      //cout << "upd1: " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete) << endl;
+      cout << "upd1: " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete) << endl;
     }
     TGListTreeItem *item = idir->GetFirstChild();
     while (item) {
@@ -833,10 +840,11 @@ void HistFrame::Update()
       item = item->GetNextSibling();
     }
     idir = idir->GetNextSibling();
+    cout << "idir: " << idir << endl;
   }
 
   //fListTree->GetChecked(hlist);
-  //cout << "hlist: " << hlist->GetSize() << endl;
+  cout << "hlist: " << hlist->GetSize() << endl;
 
   if (opt.icheck > hlist->GetSize()-ndiv)
     opt.icheck=hlist->GetSize()-ndiv;
@@ -865,9 +873,9 @@ void HistFrame::Update()
 
   //gStyle->Dump();
 
-  //cout << "update14" << endl;
+  cout << "update14" << endl;
   DrawHist();
-  //cout << "update15" << endl;
+  cout << "update15" << endl;
 
   //cout <<"Update2: " << endl;
   //exit(1);

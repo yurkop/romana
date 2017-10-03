@@ -44,7 +44,7 @@ class HistFrame: public TGCompositeFrame {
    //MECanvas    *fEc;
    TGListTree             *fListTree;    // list tree with histograms
    TList* hlist;
-   std::list<TH1*> hlist2;   
+   //std::list<TH1*> hlist2;   
 
    static const int NR=7;
    TGRadioButton *Rb[NR];

@@ -100,28 +100,29 @@ void *handle_stat(void *ctx)
 
     gSystem->Sleep(1234);
 
-    //cout << "handle_stat:" << endl;
-    stat_mut.Lock();
-    bytes2 = crs->totalbytes;
-    stat_mut.UnLock();
-    //t2.Set();
-    double dt = opt.T_acq - t1;
-    if (dt>0.1)
-      crs->mb_rate = (bytes2-bytes1)/MB/dt;
-    else
-      crs->mb_rate=0;
+    if (myM && !crs->b_stop) {
 
-    t1=opt.T_acq;
-    bytes1=bytes2;
+      //cout << "handle_stat:" << endl;
+      stat_mut.Lock();
+      bytes2 = crs->totalbytes;
+      stat_mut.UnLock();
+      //t2.Set();
+      double dt = opt.T_acq - t1;
+      if (dt>0.1)
+	crs->mb_rate = (bytes2-bytes1)/MB/dt;
+      else
+	crs->mb_rate=0;
 
-    if (myM /*&& !crs->b_stop*/) {
+      t1=opt.T_acq;
+      bytes1=bytes2;
+
       myM->UpdateStatus();
 
       if (EvtFrm && HiFrm) {
     	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
     	  //cout << "EvtFrm->DrawEvent2()" << endl;
-    	  //EvtFrm->DrawEvent2();
-    	  EvtFrm->ReDraw();
+    	  EvtFrm->DrawEvent2();
+    	  //EvtFrm->ReDraw();
     	}
     	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
     	  HiFrm->ReDraw();
