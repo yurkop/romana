@@ -878,7 +878,7 @@ void HistFrame::Update()
 void HistFrame::DrawHist()
 {
 
-  cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
+  //cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
   //fEc->ClearViewPort();
   TCanvas *cv=fEc->GetCanvas();
   //cv->SetEditable(true);
@@ -935,12 +935,12 @@ void HistFrame::DrawHist()
 
 
   //return;
-  cout <<"dr3:" << endl;
+  //cout <<"dr3:" << endl;
   //cv->SetEditable(true);  
   //cv->Update();
   cv->Modified(1);
   //cv->SetEditable(false);  
-  cout <<"dr4:" << endl;
+  //cout <<"dr4:" << endl;
 }
 
 /*
