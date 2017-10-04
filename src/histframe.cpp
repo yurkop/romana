@@ -304,6 +304,17 @@ void HistFrame::Make_hist() {
   }
   //idir->CheckItem(false);
 
+  idir = fListTree->AddItem(iroot, "MTOF",0,0,true);
+  for (int i=0;i<MAX_CH;i++) {
+    sprintf(name,"mtof_%02d",i);
+    sprintf(title,"mtof_%02d;t(ns);Counts",i);
+    int nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
+    h_mtof[i]=new TH1F(name,title,nn,opt.mtof_min,opt.mtof_max);
+    fListTree->AddItem(idir, name, h_mtof[i], pic, pic,true);
+    //item->CheckItem(false);
+  }
+  //idir->CheckItem(false);
+
   idir = fListTree->AddItem(iroot, "Profile strip",0,0,true);
   for (int i=0; i<64; i++){
     sprintf(name,"Profile_strip%02d",i);
@@ -344,6 +355,10 @@ void HistFrame::NewBins() {
     nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
     h_tof[i]->SetBins(nn,opt.tof_min,opt.tof_max);
     h_tof[i]->Reset();
+
+    nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
+    h_mtof[i]->SetBins(nn,opt.mtof_min,opt.mtof_max);
+    h_mtof[i]->Reset();
   }
 
   for (int i=0; i<1; i++) {
@@ -376,6 +391,7 @@ void HistFrame::Reset_hist() {
 void HistFrame::FillHist(EventClass* evt) {
   double DT = crs->period*1e-9;
   //int ch[MAX_CH];
+  double tt;
 
   for (UInt_t i=0;i<evt->pulses.size();i++) {
     int ch = evt->pulses[i].Chan;
@@ -385,7 +401,7 @@ void HistFrame::FillHist(EventClass* evt) {
       h_ampl[ch]->Fill(pk->Area*opt.emult[ch]);
       h_height[ch]->Fill(pk->Height);
 
-      double tt = evt->pulses[i].Tstamp64 + crs->Tstart64;
+      tt = evt->pulses[i].Tstamp64 + crs->Tstart64;
       tt += pk->Pos;
       h_time[ch]->Fill(tt*DT);
 
@@ -396,6 +412,15 @@ void HistFrame::FillHist(EventClass* evt) {
       // 	   << ch << " " << pk->Time << " " << evt->T0 << " "
       // 	   << dt << " " << tt << endl;
       h_tof[ch]->Fill(tt*crs->period);
+
+    }
+
+    if (crs->Tstart0>0) {
+      tt = evt->T - crs->Tstart0;
+      h_mtof[evt->pulses.size()]->Fill(tt*crs->period/1000);
+    }
+    if (ch==opt.start_ch) {
+      crs->Tstart0 = evt->T;
     }
   }
 

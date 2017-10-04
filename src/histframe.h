@@ -61,6 +61,7 @@ class HistFrame: public TGCompositeFrame {
    TH1F* h_height[MAX_CH]; //height of the peak
    TH1F* h_time[MAX_CH]; // real time
    TH1F* h_tof[MAX_CH]; // time of flight
+   TH1F* h_mtof[MAX_CH]; // time of flight
 
    TH2F* h_2d[1];
 

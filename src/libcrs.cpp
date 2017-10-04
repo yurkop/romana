@@ -1366,6 +1366,7 @@ void CRS::DoReset() {
   opt.T_acq=0;
 
   Tstart64=0;
+  Tstart0=0;
   T_last=0;
   //cout << "crs::reset: " << endl;
   //cout << "crs::reset: " << (int) CRS::b_fana << endl;

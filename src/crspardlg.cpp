@@ -38,7 +38,7 @@ const char* tlab2[nchpar]={"Ch","Type","St","sS","Drv","Thr","Bkg1","Bkg2","Peak
 const char* tip2[nchpar]={
   "Channel number",
   "Channel type",
-  "Start channel - used for making TOF/MTOF start\nif there are many start channels in the event, the earliest is used",
+  "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Software smoothing",
   "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
@@ -775,6 +775,12 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   AddLine2(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH,
 	   1,MAX_CH);
 
+  tip1= "";
+  tip2= "M_TOF start channel";
+  label="M_TOF start channel";
+  AddLine2(fF6,ww,NULL,&opt.start_ch,tip1,tip2,label,k_int,0,MAX_CH-1,
+	   0,MAX_CH-1);
+
   fF6->Resize();
 
 }
@@ -983,7 +989,7 @@ void ParParDlg::AddLine3(TGGroupFrame* frame, Float_t *x1,
 					   TGNumberFormat::kNEAAnyNumber,
 					   lim,0,1000);
   DoMap(fNum1->GetNumberEntry(),x1,p_fnum,0);
-  fNum1->GetNumberEntry()->SetToolTipText("Number of Bins");
+  fNum1->GetNumberEntry()->SetToolTipText("Number of Bins per channel");
   fNum1->SetWidth(ww);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				     "DoNum()");
