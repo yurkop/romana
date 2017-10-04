@@ -106,7 +106,6 @@ public:
    void DrawPeaks(int dr, PulseClass* pulse, double y1,double y2);
    //void DrawEvent();
    void DoGraph(int ndiv, int deriv);
-   void ReDraw_old();
    void ReDraw();
    /* void DoNum(); */
    /* void Do1buf(); */

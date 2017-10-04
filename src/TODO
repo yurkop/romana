@@ -55,5 +55,3 @@ analyze rest of events after acq stop (s_flag=2, trd_ana->Run...)
 initialize raw_write, dec_write to false, also after opening par file
 
 avoid overwriting raw/dec files
-
-move handle_events_func into trd_stat or another thread -> minimize number of threads

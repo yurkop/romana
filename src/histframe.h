@@ -44,7 +44,7 @@ class HistFrame: public TGCompositeFrame {
    //MECanvas    *fEc;
    TGListTree             *fListTree;    // list tree with histograms
    TList* hlist;
-   //std::list<TH1*> hlist2;   
+   std::list<TH1*> hlist2;   
 
    static const int NR=7;
    TGRadioButton *Rb[NR];
@@ -61,6 +61,8 @@ class HistFrame: public TGCompositeFrame {
    TH1F* h_height[MAX_CH]; //height of the peak
    TH1F* h_time[MAX_CH]; // real time
    TH1F* h_tof[MAX_CH]; // time of flight
+
+   TH2F* h_2d[1];
 
    TH2F* h2_prof_strip[64];
    TH2F* h2_prof_real[64];

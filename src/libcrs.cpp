@@ -100,44 +100,28 @@ void *handle_stat(void *ctx)
 
     gSystem->Sleep(1234);
 
-    if (myM && !crs->b_stop) {
+    stat_mut.Lock();
+    bytes2 = crs->totalbytes;
+    stat_mut.UnLock();
+    //t2.Set();
+    double dt = opt.T_acq - t1;
+    if (dt>0.1)
+      crs->mb_rate = (bytes2-bytes1)/MB/dt;
+    else
+      crs->mb_rate=0;
 
-      //cout << "handle_stat:" << endl;
-      stat_mut.Lock();
-      bytes2 = crs->totalbytes;
-      stat_mut.UnLock();
-      //t2.Set();
-      double dt = opt.T_acq - t1;
-      if (dt>0.1)
-	crs->mb_rate = (bytes2-bytes1)/MB/dt;
-      else
-	crs->mb_rate=0;
+    t1=opt.T_acq;
+    bytes1=bytes2;
 
-      t1=opt.T_acq;
-      bytes1=bytes2;
-
+    if (myM)
       myM->UpdateStatus();
-
-      if (EvtFrm && HiFrm) {
-    	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
-    	  //cout << "EvtFrm->DrawEvent2()" << endl;
-    	  EvtFrm->DrawEvent2();
-    	  //EvtFrm->ReDraw();
-    	}
-    	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
-    	  HiFrm->ReDraw();
-    	}
-      }
-    }
     //cout << "handle_stat: " << dt << " " << crs->mb_rate << endl;
   }
   return NULL;
 }
 
 void Select_Event() {
-  //called at the end of each decode_* subroutine
-  // selects an event for displaying in "Events" tab (most probably -???)
-  
+
   if (crs->Levents.empty())
     return;
 
@@ -196,16 +180,16 @@ void *handle_evt(void* ptr)
 
 }
 */
-
-/*
 void *handle_dum(void* ptr)
 {
+
   //gSystem->Sleep(1900);
   HiFrm->Update();      
   ////cout << "Dum: " << endl;
+
   return NULL;
+
 }
-*/
 
 // void *make_events_func(void *ctx)
 // {
@@ -216,7 +200,6 @@ void *handle_dum(void* ptr)
 //   return NULL;
 // }
 
-/*
 void *ballast(void* xxx) {
 
   libusb_transfer* transfer = (libusb_transfer*) xxx;
@@ -234,7 +217,6 @@ void *ballast(void* xxx) {
   return NULL;
 
 }
-*/
 
 void *Ana_Events(void* ptr) {
   //Int_t nn=0;
@@ -297,27 +279,21 @@ void *Ana_Events(void* ptr) {
     }
     else {
       gSystem->Sleep(opt.tsleep);
-    }
-    /*
-    else {
-      gSystem->Sleep(opt.tsleep);
       //cout << EvtFrm << endl;
       
-      //if (crs->b_acq && myM && EvtFrm && HiFrm) {
-      if (myM && EvtFrm && HiFrm) {
+      if (crs->b_acq && myM && EvtFrm && HiFrm) {
+      //if (myM && EvtFrm && HiFrm) {
 	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
 	  //cout << "EvtFrm->DrawEvent2()" << endl;
-	  //EvtFrm->DrawEvent2();
-	  EvtFrm->ReDraw();
+	  EvtFrm->DrawEvent2();
 	}
 	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
 	  HiFrm->ReDraw();
 	}
       }
 
-    } //else
-    */
-  } //while event_thread_run
+    }
+  }
 
   //cout << "Ana2: " << nn << " " << crs->Levents.size() << endl;
   // << " " << (--rl)->Nevt << endl;
@@ -518,8 +494,6 @@ CRS::CRS() {
 
   //ev_max=2*opt.ev_min;
 
-  //b_acq=false;
-
   MAXTRANS2=MAXTRANS;
   memset(Pre,0,sizeof(Pre));
 
@@ -553,6 +527,7 @@ CRS::CRS() {
 
   event_thread_run=1;
 
+  // b_acq=false;
   // b_fana=false;
   // bstart=true;
 
@@ -570,7 +545,6 @@ CRS::CRS() {
 
   trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
   trd_stat->Run();
-
   //trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
   //trd_evt->Run();
   trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);
@@ -600,10 +574,10 @@ CRS::~CRS() {
 
 }
 
-// void CRS::Dummy_trd() {
-//   trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);
-//   trd_dum->Run();
-// }
+void CRS::Dummy_trd() {
+  trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);
+  trd_dum->Run();
+}
 
 int CRS::Detect_device() {
 
@@ -1387,7 +1361,7 @@ void CRS::DoReset() {
   //  if (HiFrm)
   //  cout << "DoReset1: " << HiFrm->h_time[1]->GetName() << endl;
 
-  //if (b_acq) return;
+  if (b_acq) return;
     
   opt.T_acq=0;
 
@@ -1399,7 +1373,7 @@ void CRS::DoReset() {
 
   b_acq=false;
   b_fana=false;
-  b_stop=true;
+  b_stop=false;
   //bstart=true;
 
   //nvp=0;
@@ -1651,7 +1625,7 @@ void CRS::SaveParGz(gzFile &ff) {
 
 void CRS::FAnalyze() {
 
-  cout << "FAnalyze: " << f_read << endl;
+  //cout << "FAnalyze: " << f_read << endl;
     
   if (!f_read) {
     cout << "File not open" << endl;
@@ -1685,9 +1659,7 @@ int CRS::Do1Buf() {
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
   //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
   if (BufLength>0) {
-    stat_mut.Lock();
     crs->totalbytes+=BufLength;
-    stat_mut.UnLock();
 
     if (opt.decode) {
       if (Fmode==32) {
@@ -1706,7 +1678,6 @@ int CRS::Do1Buf() {
 
     //Select_Event();
 
-    /*
     if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
       EvtFrm->DrawEvent2();      
     }
@@ -1715,9 +1686,9 @@ int CRS::Do1Buf() {
       //HiFrm->DrawHist();      
       HiFrm->ReDraw();
     }
-    */
+
     nbuffers++;
-    //myM->UpdateStatus();
+    myM->UpdateStatus();
     gSystem->ProcessEvents();
 
     //nvp = (nvp+1)%ntrans;

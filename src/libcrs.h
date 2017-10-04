@@ -149,7 +149,7 @@ RQ_OBJECT("CRS")
 
   //--------functions---------
 
-  //void Dummy_trd();
+  void Dummy_trd();
   int Detect_device();
   void DoExit();
   int SetPar();

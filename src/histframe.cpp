@@ -48,7 +48,7 @@ extern HistFrame* EvtFrm;
 
 //TText txt;
 
-//TMutex Hmut;
+TMutex Hmut;
 
 TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 TGLayoutHints* fLay2 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
@@ -75,8 +75,6 @@ Bool_t MECanvas::HandleDNDDrop(TDNDData *data) {
 HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
-
-  cout << "--- HistFrame::HistFrame" << endl;
 
   const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4","8x8"};
 
@@ -127,7 +125,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   // fHor3->AddFrame(rb4, fLay5);
 
   fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
-  //fEc->GetCanvas()->SetEditable(true);
+  //fEc->GetCanvas()->SetEditable(false);
   //fEc = new MECanvas("Hcanvas", fHor1, 10, 10);
   fHor1->AddFrame(fEc, fLay1);
 
@@ -155,9 +153,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fListTree->Associate(this);
   //fEc->SetDNDTarget(kTRUE);
 
+
   Make_hist();
   NewBins();
-  cout << "222" << endl;
+
 
   
   /*
@@ -196,10 +195,9 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fVer[i]->AddFrame(flab[i], fLay4);
   }
 
-  cout << "111" << endl;
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
-  //Rb[sel]->Clicked();
+  Rb[sel]->Clicked();
 
   TGTextButton* but;
 
@@ -223,11 +221,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
   fHor2->AddFrame(but, fLay5);
 
-  fEc->GetCanvas()->Draw();
-  cout << "---- Draw gPad: " << gPad << endl;
-  //Rb[sel]->Clicked();
   //Update();
-  
 }
 
 HistFrame::~HistFrame()
@@ -263,7 +257,20 @@ void HistFrame::Make_hist() {
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
-  
+
+  idir = fListTree->AddItem(iroot, "2d",0,0,true);
+  for (int i=0;i<1;i++) {
+    sprintf(name,"h2d_%02d",i);
+    sprintf(title,"h2d_%02d;Channel;Counts",i);
+    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+    h_2d[i]=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
+		     nn,opt.amp_min,opt.amp_max);
+    fListTree->AddItem(idir, name, h_2d[i], pic, pic,true);
+    //cout << i << " " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete);
+    //item->CheckItem(false);
+  }
+  //idir->CheckItem(false);
+
   idir = fListTree->AddItem(iroot, "Height",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(name,"height_%02d",i);
@@ -274,7 +281,7 @@ void HistFrame::Make_hist() {
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
-  
+
   idir = fListTree->AddItem(iroot, "Time",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(name,"time_%02d",i);
@@ -339,6 +346,13 @@ void HistFrame::NewBins() {
     h_tof[i]->Reset();
   }
 
+  for (int i=0; i<1; i++) {
+    nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+    h_2d[i]->SetBins(nn,opt.amp_min,opt.amp_max,
+		     nn,opt.amp_min,opt.amp_max);
+    h_2d[i]->Reset();
+  }
+
   for (int i=0; i<64; i++) {
     h2_prof_strip[i]->Reset();
     h2_prof_real[i]->Reset();
@@ -361,6 +375,7 @@ void HistFrame::Reset_hist() {
 
 void HistFrame::FillHist(EventClass* evt) {
   double DT = crs->period*1e-9;
+  //int ch[MAX_CH];
 
   for (UInt_t i=0;i<evt->pulses.size();i++) {
     int ch = evt->pulses[i].Chan;
@@ -381,6 +396,30 @@ void HistFrame::FillHist(EventClass* evt) {
       // 	   << ch << " " << pk->Time << " " << evt->T0 << " "
       // 	   << dt << " " << tt << endl;
       h_tof[ch]->Fill(tt*crs->period);
+    }
+  }
+
+  if (evt->pulses.size()>=2) {
+    double amp[2];
+    int nn=0;
+    for (UInt_t i=0;i<evt->pulses.size();i++) {
+      int ch = evt->pulses[i].Chan;
+      for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+	peak_type* pk = &evt->pulses[i].Peaks[j];
+
+	if (ch==0 && j==0) {
+	  amp[0]=pk->Area*opt.emult[ch];
+	  nn++;
+	}
+	if (ch==1 && j==0) {
+	  amp[1]=pk->Area*opt.emult[ch];
+	  nn++;
+	}
+
+      }
+    }
+    if (nn==2) {
+      h_2d[0]->Fill(amp[0],amp[1]);
     }
   }
 
@@ -511,7 +550,7 @@ void HistFrame::DoRadio()
   Int_t id = btn->WidgetId()-1;
 
   //int prev = (id+NR-1)%NR;
-  cout << "doradio: " << id << endl;
+  //cout << "doradio: " << id << endl;
 
   for (int i=0;i<NR;i++) {
     if (i==id)
@@ -561,57 +600,59 @@ void HistFrame::DoButton()
 
 }
 
-// void HistFrame::DoPeaks2()
-// {
+/*
+void HistFrame::DoPeaks2()
+{
 
-//   TSpectrum spec;
+  TSpectrum spec;
   
-//   int nn=1;
-//   int ii=0;
-//   for (std::list<TH1*>::iterator hh=hlist2.begin();
-//        hh!=hlist2.end();++hh) {
-//     if (ii>=opt.icheck) {
-//       if (!fEc->GetCanvas()->GetPad(nn)) break;
-//       fEc->GetCanvas()->cd(nn);
-//       //TH1 *hh = (TH1*) obj;
-//       //cout << "hhh: " << hh->GetTitleSize() << endl;
-//       //hh->Draw();
-//       int npk = spec.Search((*hh),2,"",0.5);
-//       Float_t* peaks = spec.GetPositionX();
-//       for (int j=0;j<npk;j++) {
-// 	int bin = (*hh)->FindFixBin(peaks[j]);
-// 	int k;
-// 	for (k=bin;k>0;k--) {
-// 	  if ((*hh)->GetBinContent(k)<spec.GetPositionY()[j]*0.5)
-// 	    break;
-// 	}
-// 	//cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
-// 	//     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
-// 	double sig = (bin-k)*2.0/2.35;
+  int nn=1;
+  int ii=0;
+  for (std::list<TH1*>::iterator hh=hlist2.begin();
+       hh!=hlist2.end();++hh) {
+    if (ii>=opt.icheck) {
+      if (!fEc->GetCanvas()->GetPad(nn)) break;
+      fEc->GetCanvas()->cd(nn);
+      //TH1 *hh = (TH1*) obj;
+      //cout << "hhh: " << hh->GetTitleSize() << endl;
+      //hh->Draw();
+      int npk = spec.Search((*hh),2,"",0.5);
+      Float_t* peaks = spec.GetPositionX();
+      for (int j=0;j<npk;j++) {
+	int bin = (*hh)->FindFixBin(peaks[j]);
+	int k;
+	for (k=bin;k>0;k--) {
+	  if ((*hh)->GetBinContent(k)<spec.GetPositionY()[j]*0.5)
+	    break;
+	}
+	//cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
+	//     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
+	double sig = (bin-k)*2.0/2.35;
 
-// 	int width=(bin-k)*5;
+	int width=(bin-k)*5;
 
-// 	TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
-// 	//cout << f1->GetNpar() << endl;
-// 	f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
+	TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
+	//cout << f1->GetNpar() << endl;
+	f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
 
-// 	//f1->Print();
-// 	const char* fitopt="+";
-// 	if (j==0) fitopt="";
+	//f1->Print();
+	const char* fitopt="+";
+	if (j==0) fitopt="";
 
-// 	//TF1* fitf=new TF1("fitf","gaus",0,10);
-// 	(*hh)->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
-// 	//f1->Draw("same");
-//       }
-//       nn++;
-//     }
-//     ii++;
-//   }
-//   fEc->GetCanvas()->SetEditable(true);
-//   fEc->GetCanvas()->Update();
-//   fEc->GetCanvas()->SetEditable(false);
+	//TF1* fitf=new TF1("fitf","gaus",0,10);
+	(*hh)->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
+	//f1->Draw("same");
+      }
+      nn++;
+    }
+    ii++;
+  }
+  fEc->GetCanvas()->SetEditable(true);
+  fEc->GetCanvas()->Update();
+  fEc->GetCanvas()->SetEditable(false);
 
-// }
+}
+*/
 
 void HistFrame::DoPeaks()
 {
@@ -631,7 +672,6 @@ void HistFrame::DoPeaks()
       //hh->Draw();
       int npk = spec.Search(hh,2,"",0.5);
       Float_t* peaks = spec.GetPositionX();
-      //Double_t* peaks = spec.GetPositionX();
       for (int j=0;j<npk;j++) {
 	int bin = hh->FindFixBin(peaks[j]);
 	int k;
@@ -810,26 +850,19 @@ void HistFrame::DrawHist2()
 */
 void HistFrame::Update()
 {
-  cout << "hifrm::update 0: " << endl;
 
-  //Hmut.Lock();
+  Hmut.Lock();
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
 
   //if (hlist
-  cout << "hifrm::update 1: " << hlist << " " << hlist->GetSize() << endl;
 
-  hlist->Clear("nodelete");
-  //delete hlist;
-  //hlist=new TList();
-
-  cout << "hifrm::update 2: " << endl;
+  hlist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
-  cout << "hifrm::update 3: " << endl;
   while (idir) {
     if (idir->IsChecked() && idir->GetUserData()) {
       hlist->Add((TObject*)idir->GetUserData());
-      cout << "upd1: " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete) << endl;
+      //cout << "upd1: " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete) << endl;
     }
     TGListTreeItem *item = idir->GetFirstChild();
     while (item) {
@@ -840,11 +873,10 @@ void HistFrame::Update()
       item = item->GetNextSibling();
     }
     idir = idir->GetNextSibling();
-    cout << "idir: " << idir << endl;
   }
 
   //fListTree->GetChecked(hlist);
-  cout << "hlist: " << hlist->GetSize() << endl;
+  //cout << "hlist: " << hlist->GetSize() << endl;
 
   if (opt.icheck > hlist->GetSize()-ndiv)
     opt.icheck=hlist->GetSize()-ndiv;
@@ -860,59 +892,43 @@ void HistFrame::Update()
   }
   */
 
-
-  // TString* ss[1000000];
-  // for (int i=0;i<1000000;i++) {
-  //   ss[i] = new TString("asdasdasdf");
-  // }
-  // for (int i=0;i<1000000;i++) {
-  //   delete ss[i];
-  // }
-
+  TString* ss[1000000];
+  for (int i=0;i<1000000;i++) {
+    ss[i] = new TString("asdasdasdf");
+  }
+  for (int i=0;i<1000000;i++) {
+    delete ss[i];
+  }
   //cout <<"Update1: " << endl;
 
   //gStyle->Dump();
 
-  cout << "update14" << endl;
+  //cout << "update14" << endl;
   DrawHist();
-  cout << "update15" << endl;
+  //cout << "update15" << endl;
 
   //cout <<"Update2: " << endl;
   //exit(1);
 
-  //Hmut.UnLock();
+  Hmut.UnLock();
 }
 
 void HistFrame::DrawHist()
 {
 
   //cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
-  //fEc->ClearViewPort();
   TCanvas *cv=fEc->GetCanvas();
   //cv->SetEditable(true);
-  //cv->Flush();
-  //cv->SetEditable(true);
-  //cv->Update();
-  //cv->Modified();
-  //cout << "gPad:" << gPad << endl;
   cv->Clear();
   //fEc->GetCanvas()->Clear();
   //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
   //cout <<"dr2a: " << fEc << " " << fEc->GetCanvas() << endl;
-  //cout << "gPad:" << gPad << endl;
-  //gPad=0;
-  //cout << "gPad7:" << gPad << endl;
-  //gSystem->Sleep(50);
   cv->Divide(xdiv,ydiv);
-
   //cv->SetEditable(false);  
   //cv->Update();
   //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
   //cout <<"dr2: " << hlist << endl;
   //return;
-
-
-
   int nn=1;
   int ii=0;
   TIter next(hlist);
@@ -924,9 +940,9 @@ void HistFrame::DrawHist()
       //cv->SetEditable(true);  
       cv->cd(nn);
       TH1 *hh = (TH1*) obj;
-      //cout << "hhh: " << hh << " " << hh->GetTitle() << " " << hh->GetDimension() << " " << hh->Integral() << endl;
+      //cout << "hhh: " << hh->GetTitleSize() << endl;
       if (hh->GetDimension()==2) {
-	hh->Draw("col");
+	hh->Draw("zcol");
       }
       else {
 	hh->Draw();
@@ -939,16 +955,11 @@ void HistFrame::DrawHist()
     ii++;
     //break;
   }
-
-
-
   //return;
   //cout <<"dr3:" << endl;
   //cv->SetEditable(true);  
-  //cv->Update();
-  cv->Modified(1);
+  cv->Update();
   //cv->SetEditable(false);  
-  //cout <<"dr4:" << endl;
 }
 
 /*
@@ -982,7 +993,7 @@ void HistFrame::ReDraw()
   if (changed) {
     //fEc->GetCanvas()->Draw();
     //fEc->GetCanvas()->Update();
-    cout << "changed" << endl;
+    //cout << "changed" << endl;
     Update();
     changed=false;
   }
@@ -996,6 +1007,9 @@ void HistFrame::ReDraw()
     //fEc->GetCanvas()->Draw();
 
 
+
+
+
     for (int i=0;i<ndiv;i++) {
       cv->cd(i+1);
       //gPad->Draw();
@@ -1004,12 +1018,10 @@ void HistFrame::ReDraw()
     }
 
 
+
     //cout << "unchanged3" << endl;
-    //fEc->GetCanvas()->Modified();
     fEc->GetCanvas()->Update();
     //cout << "unchanged4" << endl;
   }
-
-  cout << "end_of_redraw:" << endl;
 
 }

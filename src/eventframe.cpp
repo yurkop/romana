@@ -86,7 +86,7 @@ char hname[3][MAX_CH+1][20]; //+all
 TText txt;
 
 TMutex Emut;
-//TMutex Emut2;
+TMutex Emut2;
 
 void doXline(Float_t xx, Float_t y1, Float_t y2, int col, int type) {
   ln.SetLineColor(col);
@@ -684,7 +684,7 @@ void EventFrame::DoSlider() {
   */
   //printf("DosLider: %d\n",nEvents);
   if (!crs->b_acq)
-    ReDraw_old();
+    ReDraw();
 
 }
 
@@ -727,7 +727,7 @@ void EventFrame::DoChkPeak() {
   }
 
   if (!crs->b_acq)
-    ReDraw_old();
+    ReDraw();
 
 }
 
@@ -744,7 +744,7 @@ void EventFrame::DoPulseOff() {
   //cout << "DoPulseOff: " << id << " " << fChn[id]->IsOn() << endl;
 
   if (!crs->b_acq)
-    ReDraw_old();
+    ReDraw();
 
 }
 
@@ -883,7 +883,7 @@ void EventFrame::DrawEvent2() {
 
   //cout << "draw0:" << endl;
   //return;
-  //Emut2.Lock();
+  Emut2.Lock();
 
   TCanvas *cv=fCanvas->GetCanvas();
   cv->Clear();
@@ -899,7 +899,7 @@ void EventFrame::DrawEvent2() {
     txt.DrawTextNDC(0.2,0.7,"Empty event");
     cv->Update();
     //cout << "draw1a:" << endl;
-    //Emut2.UnLock();
+    Emut2.UnLock();
     return;
   }
 
@@ -910,7 +910,7 @@ void EventFrame::DrawEvent2() {
     //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
     cv->Update();
-    //Emut2.UnLock();
+    Emut2.UnLock();
     return;
   }
 
@@ -975,7 +975,7 @@ void EventFrame::DrawEvent2() {
   
   cv->Divide(1,ndiv);
 
-  ReDraw_old();
+  ReDraw();
 
   //cout << "Draw1: " << endl;
   cout << "Draw2: " << d_event->T << endl;
@@ -996,7 +996,7 @@ void EventFrame::DrawEvent2() {
   
   cv->Update();
 
-  //Emut2.UnLock();
+  Emut2.UnLock();
 
 } //DrawEvent2
 
@@ -1057,7 +1057,7 @@ void EventFrame::DoGraph(int ndiv, int dd) {
 
 } //DoGraph
 
-void EventFrame::ReDraw_old() {
+void EventFrame::ReDraw() {
 
   Emut.Lock();
   //cv->Update();
@@ -1164,36 +1164,5 @@ void EventFrame::ReDraw_old() {
 
   //cout << "rdr78: " << endl;
   Emut.UnLock();
-
-}
-
-void EventFrame::ReDraw()
-{
-
-  TCanvas *cv=fCanvas->GetCanvas();
-  int nn=1;
-
-  cout << "evtfrm::ReDraw: " << cv << endl;
-
-  // if (changed) {
-  //   //fEc->GetCanvas()->Draw();
-  //   //fEc->GetCanvas()->Update();
-  //   //cout << "changed" << endl;
-  //   Update();
-  //   changed=false;
-  // }
-  // else {
-
-  for (int i=0;i<3;i++) {
-    if (opt.b_deriv[i]) {
-      cv->cd(nn++);
-      //gPad->Draw();
-      gPad->Modified(1);
-      //gPad->Update();
-    }
-
-    // fEc->GetCanvas()->Update();
-
-  }
 
 }
