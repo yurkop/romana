@@ -1379,6 +1379,11 @@ void CRS::DoReset() {
 
   //nvp=0;
   Levents.clear();
+  //cout << "EvtFrm: " << EvtFrm << endl;
+  if (EvtFrm) {
+    EvtFrm->DoReset();
+  }
+
   //m_event=Levents.end();
   //m_event2=m_event;
   m_flag=0;

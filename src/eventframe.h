@@ -97,7 +97,7 @@ public:
 
    void Clear();
    //void Start();
-   //void DoReset();
+   void DoReset();
    void FillGraph(int dr);
    void SetRanges(int dr);
    //void FillHist(int dr);

@@ -547,9 +547,10 @@ extern EventFrame* EvtFrm;
 //   delete this;
 // }
 
-// void EventFrame::DoReset() {
-//   myM->DoReset();
-// }
+void EventFrame::DoReset() {
+  Pevents = &Tevents;
+  d_event = Pevents->begin();
+}
 
 /*
 
@@ -888,7 +889,7 @@ void EventFrame::DrawEvent2() {
   TCanvas *cv=fCanvas->GetCanvas();
   cv->Clear();
 
-  //cout << "draw1:" << endl;
+  //cout << "draw1: " << Pevents << " " << &crs->Levents.back() << endl;
 
   //cv->Update();
   //int nnn=0;
@@ -978,7 +979,7 @@ void EventFrame::DrawEvent2() {
   ReDraw();
 
   //cout << "Draw1: " << endl;
-  cout << "Draw2: " << d_event->T << endl;
+  //cout << "Draw4: " << d_event->T << endl;
   //Emut2.UnLock();
   //return;
 
