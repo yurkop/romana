@@ -744,7 +744,7 @@ void HistFrame::DoReset()
   cv->Clear();
   //cv->SetEditable(false);
 
-  cout << "hst::DoReset: " << endl;
+  //cout << "hst::DoReset: " << endl;
   //cv->ls();
   
   NewBins();
@@ -768,7 +768,7 @@ void HistFrame::DoReset()
   delete_hist();
   Make_hist();
   */
-  cout << "update1" << endl;
+  //cout << "update1" << endl;
   Update();
 
   cv->Draw();

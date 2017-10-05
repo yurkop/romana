@@ -85,8 +85,8 @@ char hname[3][MAX_CH+1][20]; //+all
  
 TText txt;
 
-TMutex Emut;
-TMutex Emut2;
+//TMutex Emut;
+//TMutex Emut2;
 
 void doXline(Float_t xx, Float_t y1, Float_t y2, int col, int type) {
   ln.SetLineColor(col);
@@ -602,21 +602,21 @@ void EventFrame::DoColor() {
 */
 
 void EventFrame::First() {
-  if (!crs->b_acq) {
+  if (crs->b_stop) {
     d_event = Pevents->begin();
     DrawEvent2();
   }
 }
 
 void EventFrame::Last() {
-  if (!crs->b_acq) {
+  if (crs->b_stop) {
     d_event = --Pevents->end();
     DrawEvent2();
   }
 }
 
 void EventFrame::Plus1() {
-  if (!crs->b_acq) {
+  if (crs->b_stop) {
     ++d_event;
     if (d_event==Pevents->end()) {
       --d_event;
@@ -626,7 +626,7 @@ void EventFrame::Plus1() {
 }
 
 void EventFrame::Minus1() {
-  if (!crs->b_acq) {
+  if (crs->b_stop) {
     if (d_event!=Pevents->begin())
       --d_event;
     DrawEvent2();
@@ -634,7 +634,7 @@ void EventFrame::Minus1() {
 }
 
 void EventFrame::PlusN() {
-  if (!crs->b_acq) {
+  if (crs->b_stop) {
     for (int i=0;i<opt.num_events;i++) {
       ++d_event;
       if (d_event==Pevents->end()) {
@@ -647,7 +647,7 @@ void EventFrame::PlusN() {
 }
 
 void EventFrame::MinusN() {
-  if (!crs->b_acq) {
+  if (crs->b_stop) {
     for (int i=0;i<opt.num_events;i++) {
       if (d_event!=Pevents->begin()) {
 	--d_event;
@@ -660,10 +660,10 @@ void EventFrame::MinusN() {
   }
 }
 
-void EventFrame::Clear()
-{
-  fCanvas->GetCanvas()->Clear();
-}
+// void EventFrame::Clear()
+// {
+//   fCanvas->GetCanvas()->Clear();
+// }
 
 
 void EventFrame::DoSlider() {
@@ -684,8 +684,9 @@ void EventFrame::DoSlider() {
 
   */
   //printf("DosLider: %d\n",nEvents);
-  if (!crs->b_acq)
+  if (crs->b_stop) {
     ReDraw();
+  }
 
 }
 
@@ -699,7 +700,7 @@ void EventFrame::DoChkDeriv() {
   opt.b_deriv[id] = !opt.b_deriv[id];
   btn->SetState((EButtonState) opt.b_deriv[id]);
 
-  if (!crs->b_acq) {
+  if (crs->b_stop) {
     DrawEvent2();
   }
 
@@ -727,7 +728,7 @@ void EventFrame::DoChkPeak() {
     }
   }
 
-  if (!crs->b_acq)
+  if (crs->b_stop)
     ReDraw();
 
 }
@@ -744,7 +745,7 @@ void EventFrame::DoPulseOff() {
   }
   //cout << "DoPulseOff: " << id << " " << fChn[id]->IsOn() << endl;
 
-  if (!crs->b_acq)
+  if (crs->b_stop)
     ReDraw();
 
 }
@@ -884,11 +885,12 @@ void EventFrame::DrawEvent2() {
 
   //cout << "draw0:" << endl;
   //return;
-  Emut2.Lock();
+  //Emut2.Lock();
 
   TCanvas *cv=fCanvas->GetCanvas();
+  cv->SetEditable(true);
   cv->Clear();
-
+  
   //cout << "draw1: " << Pevents << " " << &crs->Levents.back() << endl;
 
   //cv->Update();
@@ -900,7 +902,7 @@ void EventFrame::DrawEvent2() {
     txt.DrawTextNDC(0.2,0.7,"Empty event");
     cv->Update();
     //cout << "draw1a:" << endl;
-    Emut2.UnLock();
+    //Emut2.UnLock();
     return;
   }
 
@@ -911,7 +913,7 @@ void EventFrame::DrawEvent2() {
     //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
     cv->Update();
-    Emut2.UnLock();
+    //Emut2.UnLock();
     return;
   }
 
@@ -997,7 +999,8 @@ void EventFrame::DrawEvent2() {
   
   cv->Update();
 
-  Emut2.UnLock();
+  cv->SetEditable(false);
+  //Emut2.UnLock();
 
 } //DrawEvent2
 
@@ -1060,7 +1063,7 @@ void EventFrame::DoGraph(int ndiv, int dd) {
 
 void EventFrame::ReDraw() {
 
-  Emut.Lock();
+  //Emut.Lock();
   //cv->Update();
   
   //cout << "Redr0: " << endl;
@@ -1164,6 +1167,6 @@ void EventFrame::ReDraw() {
   fCanvas->GetCanvas()->Update();
 
   //cout << "rdr78: " << endl;
-  Emut.UnLock();
+  //Emut.UnLock();
 
 }

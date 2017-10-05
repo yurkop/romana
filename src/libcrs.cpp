@@ -1361,7 +1361,7 @@ void CRS::DoReset() {
   //  if (HiFrm)
   //  cout << "DoReset1: " << HiFrm->h_time[1]->GetName() << endl;
 
-  if (b_acq) return;
+  if (!b_stop) return;
     
   opt.T_acq=0;
 
@@ -1646,7 +1646,7 @@ void CRS::FAnalyze() {
     //if (!b_fana) break;
   }
 
-  cout << "Fana: " << BufLength << " " << gzeof(f_read) << endl;
+  //cout << "Fana: " << BufLength << " " << gzeof(f_read) << endl;
 
   /* YKYKYK
   if (gzeof(f_read) && m_event!=Levents.end()) {
@@ -2305,8 +2305,10 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   event_list_reviter Rit;
 
   Long64_t dt=pls->Tstamp64-T_last;
-  T_last=pls->Tstamp64;
-  
+
+  //cout << "Insert: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
+  //<< T_last << " " << dt << " " << opt.tgate << endl;
+
   if (dt>opt.tgate) {
     it=Levents.back().insert(Levents.back().end(),EventClass());
     it->Nevt=nevents;
@@ -2317,6 +2319,9 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
       // 	   << pls->Tstamp64 << " " << dt
       // 	   << " " << it->pulses.size() << " " << Levents.size() << endl;
     // }
+
+    T_last=pls->Tstamp64;
+
     return;
   }
 

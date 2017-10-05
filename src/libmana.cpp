@@ -1855,7 +1855,7 @@ void MainFrame::DoAna() {
     return;
   }
 
-  cout << "DoAna" << endl;
+  //cout << "DoAna" << endl;
 
   if (crs->b_fana) {
     fAna->ChangeBackground(fGreen);
@@ -1869,6 +1869,8 @@ void MainFrame::DoAna() {
     crs->FAnalyze();
   }
 
+  //cout << "mainframe::doana: " << endl;
+  
   //crs->DoFAna();
 }
 
@@ -2042,10 +2044,10 @@ void MainFrame::DoReset() {
   return;
   */
   
-  if (HiFrm)
-    cout << "DoReset_main: " << HiFrm->h_time[1]->GetName() << endl;
+  // if (HiFrm)
+  //   cout << "DoReset_main: " << HiFrm->h_time[1]->GetName() << endl;
 
-  if (crs->b_acq) return;
+  if (!crs->b_stop) return;
 
   greset();
 

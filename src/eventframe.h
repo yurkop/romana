@@ -95,7 +95,7 @@ public:
 
    //void StartThread();
 
-   void Clear();
+   //void Clear();
    //void Start();
    void DoReset();
    void FillGraph(int dr);
