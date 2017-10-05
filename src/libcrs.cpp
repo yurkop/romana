@@ -507,6 +507,10 @@ CRS::CRS() {
   f_read=0;
   f_dec=0;
 
+  b_acq=false;
+  b_fana=false;
+  b_stop=true;
+
   strcpy(raw_opt,"ab");
   strcpy(dec_opt,"ab");
 
@@ -1358,8 +1362,7 @@ int CRS::DoStartStop() {
 
 void CRS::DoReset() {
 
-  //  if (HiFrm)
-  //  cout << "DoReset1: " << HiFrm->h_time[1]->GetName() << endl;
+  cout << "DoReset1: " << b_stop << endl;
 
   if (!b_stop) return;
     
@@ -1372,9 +1375,10 @@ void CRS::DoReset() {
   //cout << "crs::reset: " << (int) CRS::b_fana << endl;
   //exit(1);
 
-  b_acq=false;
-  b_fana=false;
-  b_stop=false;
+  //b_acq=false;
+  //b_fana=false;
+  //b_stop=true;
+
   //bstart=true;
 
   //nvp=0;
@@ -1418,6 +1422,8 @@ void CRS::DoReset() {
   idx=0;
   idnext=0;
   lastfl=1;
+
+  cout << "f_read: " << f_read << endl;
   if (f_read)
     DoFopen(NULL,0);
 
@@ -1631,7 +1637,7 @@ void CRS::SaveParGz(gzFile &ff) {
 
 void CRS::FAnalyze() {
 
-  //cout << "FAnalyze: " << f_read << endl;
+  cout << "FAnalyze: " << f_read << endl;
     
   if (!f_read) {
     cout << "File not open" << endl;
