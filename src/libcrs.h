@@ -49,7 +49,7 @@ RQ_OBJECT("CRS")
   //--------constants---------
   static const int MAXTRANS=8;
 
-  static const Int_t MAXEV=1000; //maximal number of events in Levents
+  //static const Int_t MAXEV=1000; //maximal number of events in Levents
   //--------variables---------
 
   int MAXTRANS2; //real maxtrans, depends on usb_size
@@ -150,7 +150,7 @@ RQ_OBJECT("CRS")
 
   //--------functions---------
 
-  void Dummy_trd();
+  //void Dummy_trd();
   int Detect_device();
   void DoExit();
   int SetPar();
@@ -173,6 +173,7 @@ RQ_OBJECT("CRS")
   void FAnalyze();
   int Do1Buf();
   void DoNBuf();
+  void Show();
 
   void AllParameters32(); // load all parameters
   //void AllParameters32_old(); // load all parameters

@@ -44,10 +44,10 @@ const double MB = 1024*1024;
 cyusb_handle *cy_handle;
 //pthread_t tid1;
 TThread* trd_crs;
-TThread* trd_stat;
+//TThread* trd_stat;
 //TThread* trd_evt;
-TThread* trd_dum;
-TThread* trd_ana;
+//TThread* trd_dum;
+//TThread* trd_ana;
 
 int event_thread_run;//=1;
 
@@ -87,6 +87,7 @@ void *handle_events_func(void *ctx)
   return NULL;
 }
 
+/*
 void *handle_stat(void *ctx)
 {
 
@@ -119,6 +120,7 @@ void *handle_stat(void *ctx)
   }
   return NULL;
 }
+*/
 
 void Select_Event() {
 
@@ -218,6 +220,7 @@ void *ballast(void* xxx) {
 
 }
 
+
 void *Ana_Events(void* ptr) {
   //Int_t nn=0;
   //ana_mut.Lock();
@@ -232,7 +235,8 @@ void *Ana_Events(void* ptr) {
 
   //int *pp = (int*) ptr;
 
-  while (event_thread_run) {
+  //while (event_thread_run) {
+  while (!crs->b_stop) {
 
     // cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
     // 	 << " " << opt.ev_max*opt.rbuf_size << " Mb"
@@ -281,16 +285,16 @@ void *Ana_Events(void* ptr) {
       gSystem->Sleep(opt.tsleep);
       //cout << EvtFrm << endl;
       
-      if (crs->b_acq && myM && EvtFrm && HiFrm) {
-      //if (myM && EvtFrm && HiFrm) {
-	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
-	  //cout << "EvtFrm->DrawEvent2()" << endl;
-	  EvtFrm->DrawEvent2();
-	}
-	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
-	  HiFrm->ReDraw();
-	}
-      }
+      // if (crs->b_acq && myM && EvtFrm && HiFrm) {
+      // //if (myM && EvtFrm && HiFrm) {
+      // 	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
+      // 	  //cout << "EvtFrm->DrawEvent2()" << endl;
+      // 	  EvtFrm->DrawEvent2();
+      // 	}
+      // 	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
+      // 	  HiFrm->ReDraw();
+      // 	}
+      // }
 
     }
   }
@@ -308,26 +312,6 @@ void *Ana_Events(void* ptr) {
   //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
   //gSystem->Sleep(200);
 
-
-  /*
-    static TTimeStamp t1;
-    static TTimeStamp t2;
-    t2.Set();
-    double tt = t2.GetSec()-t1.GetSec()+
-    (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
-    //cout << "tt: " << tt << " " << HiFrm->fEc->GetCanvas()->IsModified() << endl;
-
-    if (crs->b_acq && myM && myM->fTab->GetCurrent()==HiFrm->ntab
-    && tt*1000>opt.tsleep) {
-    HiFrm->BlockAllSignals(true);
-    //HiFrm->Update();
-    HiFrm->ReDraw();
-    HiFrm->BlockAllSignals(false);
-
-    t1=t2;
-    //HiFrm->ReDraw();
-    }
-  */
 
   //ana_mut.UnLock();
   return 0;
@@ -547,12 +531,12 @@ CRS::CRS() {
 
   cout << "creating threads... " << endl;
 
-  trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
-  trd_stat->Run();
+  //trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
+  //trd_stat->Run();
   //trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
   //trd_evt->Run();
-  trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);
-  trd_ana->Run();
+  //trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);
+  //trd_ana->Run();
 
   //mTh= new TThread("memberfunction",
   //(void(*)(void *))&Thread0,(void*) this);
@@ -578,10 +562,12 @@ CRS::~CRS() {
 
 }
 
+/*
 void CRS::Dummy_trd() {
   trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);
   trd_dum->Run();
 }
+*/
 
 int CRS::Detect_device() {
 
@@ -733,15 +719,15 @@ void CRS::DoExit()
   if (trd_crs) {
     trd_crs->Delete();
   }
-  if (trd_stat) {
-    trd_stat->Delete();
-  }
+  //if (trd_stat) {
+  //trd_stat->Delete();
+  //}
   //if (trd_evt) {
   //trd_evt->Delete();
   //}
-  if (trd_ana) {
-    trd_ana->Delete();
-  }
+  //if (trd_ana) {
+  //trd_ana->Delete();
+  //}
   //pthread_join(tid1,NULL);
   //gzclose(fp);
   //exit(-1);
@@ -1289,7 +1275,16 @@ int CRS::DoStartStop() {
     
     cout << "Acquisition started" << endl;
     //gettimeofday(&t_start,NULL);
+
+    TThread* trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);;
+    trd_ana->Run();
+
     Command2(3,0,0,0);
+
+    Show();
+    trd_ana->Join();
+    trd_ana->Delete();
+
   }
   else { //stop
     buf_out[0]=4;
@@ -1635,6 +1630,7 @@ void CRS::SaveParGz(gzFile &ff) {
 
 }
 
+/*
 void CRS::FAnalyze() {
 
   cout << "FAnalyze: " << f_read << endl;
@@ -1644,24 +1640,47 @@ void CRS::FAnalyze() {
     return;
   }
 
-  //Fbuf = new UChar_t[opt.usb_size*1024];
-
   b_stop=false;
   while (Do1Buf() && b_fana) {
-    //Do1Buf();
-    //if (!b_fana) break;
   }
 
-  //cout << "Fana: " << BufLength << " " << gzeof(f_read) << endl;
+  b_stop=true;
 
-  /* YKYKYK
-  if (gzeof(f_read) && m_event!=Levents.end()) {
-    //m_event=Levents.end();
-    //m_flag=2;
-    trd_ana->Run(&m_flag);
+}
+*/
+
+void *handle_fana(void *ctx)
+{
+
+  while (crs->Do1Buf() && crs->b_fana) {
   }
-  */
-  
+
+  return NULL;
+}
+
+void CRS::FAnalyze() {
+
+  cout << "FAnalyze: " << f_read << endl;
+    
+  if (!f_read) {
+    cout << "File not open" << endl;
+    return;
+  }
+
+  b_stop=false;
+
+  TThread* trd_fana = new TThread("trd_fana", handle_fana, (void*) 0);;
+  trd_fana->Run();
+  TThread* trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);;
+  trd_ana->Run();
+  Show();
+  trd_fana->Join();
+  trd_fana->Delete();
+  trd_ana->Join();
+  trd_ana->Delete();
+  //while (Do1Buf() && b_fana) {
+  //}
+
   b_stop=true;
 
 }
@@ -1690,6 +1709,7 @@ int CRS::Do1Buf() {
 
     //Select_Event();
 
+    /*
     if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
       EvtFrm->DrawEvent2();      
     }
@@ -1698,10 +1718,10 @@ int CRS::Do1Buf() {
       //HiFrm->DrawHist();      
       HiFrm->ReDraw();
     }
-
+    */
     nbuffers++;
-    myM->UpdateStatus();
-    gSystem->ProcessEvents();
+    //myM->UpdateStatus();
+    //gSystem->ProcessEvents();
 
     //nvp = (nvp+1)%ntrans;
 
@@ -1728,6 +1748,41 @@ void CRS::DoNBuf() {
 
   b_stop=true;
 
+}
+
+void CRS::Show() {
+
+  cout << "Show" << endl;
+  Long64_t t1=gSystem->Now();
+  Long64_t t2;
+  //= gSystem->Now();
+  MemInfo_t info;
+
+  while (!crs->b_stop) {
+    t2=gSystem->Now();
+    if (t2-t1>opt.tsleep) {
+      t1=t2;
+      gSystem->GetMemInfo(&info);
+      cout << "show... " << info.fMemTotal << " " << info.fMemFree
+	   << " " << info.fMemUsed << endl;
+
+      if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
+	EvtFrm->DrawEvent2();      
+      }
+
+      if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
+	//HiFrm->DrawHist();      
+	HiFrm->ReDraw();
+      }
+
+      myM->UpdateStatus();
+
+    }
+    gSystem->Sleep(10);   
+    gSystem->ProcessEvents();
+  }
+
+  cout << "Show end" << endl;
 }
 
 void CRS::Decode32(UChar_t *buffer, int length) {

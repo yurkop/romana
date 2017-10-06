@@ -91,6 +91,7 @@ public:
   void DoNbuf();
   void DoTab(Int_t num);
 
+  //void Show();
   //void MakeEvents();
 
   void EventInfo(Int_t, Int_t, Int_t, TObject*);
