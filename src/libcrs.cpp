@@ -1753,15 +1753,33 @@ void CRS::DoNBuf() {
 void CRS::Show() {
 
   cout << "Show" << endl;
-  Long64_t t1=gSystem->Now();
-  Long64_t t2;
+  static Long64_t bytes1=0;
+  static Long64_t bytes2;
+  static double t1;
+
+  Long64_t tm1=gSystem->Now();
+  Long64_t tm2;
   //= gSystem->Now();
   MemInfo_t info;
 
   while (!crs->b_stop) {
-    t2=gSystem->Now();
-    if (t2-t1>opt.tsleep) {
-      t1=t2;
+    tm2=gSystem->Now();
+    if (tm2-tm1>opt.tsleep) {
+      tm1=tm2;
+
+      stat_mut.Lock();
+      bytes2 = crs->totalbytes;
+      stat_mut.UnLock();
+
+      double dt = opt.T_acq - t1;
+      if (dt>0.1)
+	crs->mb_rate = (bytes2-bytes1)/MB/dt;
+      else
+	crs->mb_rate=0;
+
+      t1=opt.T_acq;
+      bytes1=bytes2;
+
       gSystem->GetMemInfo(&info);
       cout << "show... " << info.fMemTotal << " " << info.fMemFree
 	   << " " << info.fMemUsed << endl;
