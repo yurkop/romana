@@ -1,6 +1,7 @@
 #include <iostream>
 #include "toptions.h"
 #include <TClass.h>
+#include <TSystem.h>
 
 using namespace std;
 
@@ -239,6 +240,8 @@ Toptions::Toptions() {
   event_buf=1000;
   event_lag=10;
   //printf("opt: %f\n", *(double*) opt_id[9]);
+
+  F_start = gSystem->Now();
 
 }
 

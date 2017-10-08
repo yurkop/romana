@@ -2218,7 +2218,8 @@ void MainFrame::UpdateStatus() {
   //double rate = 0;
   //if (opt.T_acq>0.01) rate = crs->totalbytes/MB/opt.T_acq;
 
-  time_t tt = opt.F_start.GetSec();
+  //time_t tt = opt.F_start.GetSec();
+  time_t tt = (opt.F_start+788907600000)*0.001;
   struct tm *ptm = localtime(&tt);
   strftime(txt,sizeof(txt),"%F %T",ptm);
   

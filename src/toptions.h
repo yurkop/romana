@@ -101,7 +101,8 @@ class Toptions: public TObject {
   // Important common parameters
 
   //TDatime F_start,F_stop; //start and stop of the acquisition (?)
-  TTimeStamp F_start; //start and of the acquisition / start event in a file
+  //TTimeStamp F_start; //start and of the acquisition / start event in a file
+  Long64_t F_start; //start of the acuisition
   Float_t T_acq; //duration of the acquisition / file (in seconds)
 
   Int_t Tstart,Tstop;

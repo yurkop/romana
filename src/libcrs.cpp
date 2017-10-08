@@ -333,7 +333,7 @@ static void cback(libusb_transfer *transfer) {
   //cout << "cback: " << endl;
   //return;
 
-  TTimeStamp t2;
+  //TTimeStamp t2;
   //t2.Set();
 
   crs->npulses_buf=0;
@@ -375,8 +375,10 @@ static void cback(libusb_transfer *transfer) {
 
     stat_mut.Lock();
     crs->totalbytes+=transfer->actual_length;
-    opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
-      (t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
+    //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
+    //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
+    opt.T_acq = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
+
     stat_mut.UnLock();
   }
 
@@ -1244,7 +1246,7 @@ int CRS::DoStartStop() {
     //Nsamp=0;
     //nsmp=0;
 
-    opt.F_start.Set();
+    opt.F_start = gSystem->Now();
     if (opt.raw_write) {
       sprintf(raw_opt,"wb%d",opt.raw_compr);
       struct stat buffer;
