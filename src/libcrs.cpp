@@ -1783,8 +1783,8 @@ void CRS::Show() {
       bytes1=bytes2;
 
       gSystem->GetMemInfo(&info);
-      cout << "show... " << info.fMemTotal << " " << info.fMemFree
-	   << " " << info.fMemUsed << endl;
+      //cout << "show... " << info.fMemTotal << " " << info.fMemFree
+      //   << " " << info.fMemUsed << endl;
 
       if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
 	EvtFrm->DrawEvent2();      
