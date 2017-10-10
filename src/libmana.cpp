@@ -1906,9 +1906,11 @@ void MainFrame::DoAna() {
 
 void MainFrame::Do1buf() {
 
-  //cout << "Do1buf" << endl;
   if (crs->b_stop) {
+    cout << "Do1buf" << endl;
     crs->Do1Buf();
+    crs->b_stop=false;
+    crs->Show();
     crs->b_stop=true;
   }
 

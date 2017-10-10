@@ -1675,7 +1675,9 @@ void CRS::FAnalyze() {
   trd_fana->Run();
   TThread* trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);;
   trd_ana->Run();
-  Show();
+  while (!crs->b_stop) {
+    Show();
+  }
   trd_fana->Join();
   trd_fana->Delete();
   trd_ana->Join();
@@ -1690,7 +1692,7 @@ void CRS::FAnalyze() {
 int CRS::Do1Buf() {
 
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
-  //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
+  cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
   if (BufLength>0) {
     crs->totalbytes+=BufLength;
 
@@ -1752,6 +1754,7 @@ void CRS::DoNBuf() {
 
 }
 
+/*
 void CRS::Show() {
 
   cout << "Show" << endl;
@@ -1801,6 +1804,59 @@ void CRS::Show() {
     gSystem->Sleep(10);   
     gSystem->ProcessEvents();
   }
+
+  cout << "Show end" << endl;
+}
+*/
+void CRS::Show() {
+
+  cout << "Show" << endl;
+  static Long64_t bytes1=0;
+  static Long64_t bytes2;
+  static double t1;
+
+  static Long64_t tm1=0;//gSystem->Now();
+  static Long64_t tm2;
+  //= gSystem->Now();
+  MemInfo_t info;
+
+  //while (!crs->b_stop) {
+    tm2=gSystem->Now();
+    if (tm2-tm1>opt.tsleep) {
+      tm1=tm2;
+
+      stat_mut.Lock();
+      bytes2 = crs->totalbytes;
+      stat_mut.UnLock();
+
+      double dt = opt.T_acq - t1;
+      if (dt>0.1)
+	crs->mb_rate = (bytes2-bytes1)/MB/dt;
+      else
+	crs->mb_rate=0;
+
+      t1=opt.T_acq;
+      bytes1=bytes2;
+
+      gSystem->GetMemInfo(&info);
+      //cout << "show... " << info.fMemTotal << " " << info.fMemFree
+      //   << " " << info.fMemUsed << endl;
+
+      if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
+	EvtFrm->DrawEvent2();      
+      }
+
+      if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
+	//HiFrm->DrawHist();      
+	HiFrm->ReDraw();
+      }
+
+      myM->UpdateStatus();
+
+    }
+    gSystem->Sleep(10);   
+    gSystem->ProcessEvents();
+    //}
 
   cout << "Show end" << endl;
 }

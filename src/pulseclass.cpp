@@ -205,7 +205,7 @@ void PulseClass::PeakAna() {
     if (nbkg)
       bkg/=nbkg;
     else {
-      cout << "zero background!!!" << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+      cout << "zero background!!!: " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
     }
 
     int nn=0;
