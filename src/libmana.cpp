@@ -1896,6 +1896,7 @@ void MainFrame::DoAna() {
     crs->b_fana=true;
     crs->b_stop=false;
     crs->FAnalyze();
+    //DoAna();
     //Show();
   }
 
@@ -1907,30 +1908,44 @@ void MainFrame::DoAna() {
 void MainFrame::Do1buf() {
 
   if (crs->b_stop) {
-    cout << "Do1buf" << endl;
+    //cout << "Do1buf" << endl;
     crs->Do1Buf();
-    crs->b_stop=false;
+    //crs->b_stop=false;
     crs->Show();
-    crs->b_stop=true;
+    //crs->b_stop=true;
   }
 
 }
 
 void MainFrame::DoNbuf() {
 
-  cout << "DoNbuf" << endl;
+  //cout << "DoNbuf" << endl;
+
+  if (!crs->f_read) {
+    cout << "File not open" << endl;
+    return;
+  }
 
   if (crs->b_fana) {
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
     fNb->ChangeBackground(fGreen);
     crs->b_fana=false;
+    crs->b_stop=true;
   }
   else {
     fAna->ChangeBackground(fRed);
     fAna->SetText("Stop");
     fNb->ChangeBackground(fRed);
+    crs->b_fana=true;
+    crs->b_stop=false;
     crs->DoNBuf();
+    //DoNbuf();
+    fAna->ChangeBackground(fGreen);
+    fAna->SetText("Analyse");
+    fNb->ChangeBackground(fGreen);
+    crs->b_fana=false;
+    crs->b_stop=true;
   }
 
 }
