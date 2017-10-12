@@ -888,10 +888,11 @@ void EventFrame::DrawEvent2() {
   //Emut2.Lock();
 
   TCanvas *cv=fCanvas->GetCanvas();
-  cv->SetEditable(true);
+  //cv->SetEditable(true);
   cv->Clear();
   
   //cout << "draw1: " << Pevents << " " << &crs->Levents.back() << endl;
+  //cout << "draw111: " << Pevents->empty() << endl;
 
   //cv->Update();
   //int nnn=0;
@@ -907,8 +908,6 @@ void EventFrame::DrawEvent2() {
   }
 
   //cout << "draw1a:" << endl;
-  ndiv=0;
-
   if (d_event->pulses.empty()) {
     //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
@@ -959,6 +958,8 @@ void EventFrame::DrawEvent2() {
 
   //cout << "draw2:" << endl;
 
+  ndiv=0;
+
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
       FillGraph(i);
@@ -999,7 +1000,7 @@ void EventFrame::DrawEvent2() {
   
   cv->Update();
 
-  cv->SetEditable(false);
+  //cv->SetEditable(false);
   //Emut2.UnLock();
 
 } //DrawEvent2
@@ -1066,7 +1067,25 @@ void EventFrame::ReDraw() {
   //Emut.Lock();
   //cv->Update();
   
+  TCanvas *cv=fCanvas->GetCanvas();
   //cout << "Redr0: " << endl;
+
+  if (Pevents->empty()) {
+    txt.DrawTextNDC(0.2,0.7,"Empty event");
+    cv->Update();
+    //cout << "draw1a:" << endl;
+    //Emut2.UnLock();
+    return;
+  }
+
+  //cout << "draw1a:" << endl;
+  if (d_event->pulses.empty()) {
+    //TText tt;
+    txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
+    cv->Update();
+    //Emut2.UnLock();
+    return;
+  }
 
   int nn=1;
   for (int i=0;i<3;i++) {
@@ -1077,7 +1096,7 @@ void EventFrame::ReDraw() {
       //Emut.UnLock();
       //return;
 
-      fCanvas->GetCanvas()->cd(nn++);
+      cv->cd(nn++);
 
       //cout << "Redr1: " << i << endl;
 
@@ -1164,7 +1183,7 @@ void EventFrame::ReDraw() {
   }
 
   //cout << "rdr77: " << endl;
-  fCanvas->GetCanvas()->Update();
+  cv->Update();
 
   //cout << "rdr78: " << endl;
   //Emut.UnLock();

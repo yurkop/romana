@@ -1896,6 +1896,10 @@ void MainFrame::DoAna() {
     crs->b_fana=true;
     crs->b_stop=false;
     crs->FAnalyze();
+    fAna->ChangeBackground(fGreen);
+    fAna->SetText("Analyse");
+    crs->b_fana=false;
+    crs->b_stop=true;
     //DoAna();
     //Show();
   }
@@ -1912,6 +1916,7 @@ void MainFrame::Do1buf() {
     crs->Do1Buf();
     //crs->b_stop=false;
     crs->Show();
+    EvtFrm->fCanvas->GetCanvas()->SetEditable(true);
     //crs->b_stop=true;
   }
 
@@ -1934,18 +1939,22 @@ void MainFrame::DoNbuf() {
     crs->b_stop=true;
   }
   else {
+    //cout << "donbuf1" << endl;
     fAna->ChangeBackground(fRed);
     fAna->SetText("Stop");
     fNb->ChangeBackground(fRed);
     crs->b_fana=true;
     crs->b_stop=false;
     crs->DoNBuf();
+    //cout << "donbuf2" << endl;
     //DoNbuf();
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
     fNb->ChangeBackground(fGreen);
     crs->b_fana=false;
     crs->b_stop=true;
+    //cout << "donbuf3" << endl;
+    
   }
 
 }

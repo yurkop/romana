@@ -142,14 +142,15 @@ void *handle_buf(void *ctx)
 {
 
   int* nmax = (int*) ctx; 
-  cout << "handle_buf: " << *nmax << endl; 
+  //cout << "handle_buf: " << *nmax << endl; 
 
   int i=1;
   while (crs->Do1Buf() && crs->b_fana && i<*nmax) {
     i++;
-    cout << "buf: " << crs->nbuffers << " " << i << endl;
   }
 
+  //cout << "buf: " << crs->nbuffers << " " << i << endl;
+  crs->b_stop=true;
   return NULL;
 }
 
@@ -1206,10 +1207,13 @@ int CRS::DoStartStop() {
 
     //nvp=0;
     //Levents.clear();
-    
+
     cout << "Acquisition started" << endl;
     //gettimeofday(&t_start,NULL);
 
+    TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
+    cv->SetEditable(false);
+    
     TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
     trd_ana->Run();
 
@@ -1226,6 +1230,7 @@ int CRS::DoStartStop() {
 
     gSystem->Sleep(opt.tsleep);   
     Show();
+    cv->SetEditable(true);
   }
   else { //stop
     buf_out[0]=4;
@@ -1450,12 +1455,12 @@ void CRS::DoFopen(char* oname, int popt) {
 
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
 
-  cout << "Fopen2: " << (void*) Fbuf2 << " " << bsize << " " << boffset << endl;
+  //cout << "Fopen2: " << (void*) Fbuf2 << " " << bsize << " " << boffset << endl;
 
   if (Fbuf2) {
     delete[] Fbuf2;
   }
-  cout << "Fopen3: " << (void*) Fbuf2 << " " << bsize << endl;
+  //cout << "Fopen3: " << (void*) Fbuf2 << " " << bsize << endl;
   Fbuf2 = new UChar_t[bsize];
   Fbuf = Fbuf2+boffset;
   memset(Fbuf2,0,boffset);
@@ -1485,7 +1490,7 @@ void CRS::DoFopen(char* oname, int popt) {
   //cout << f_raw << endl;
 
   //cout << "smooth: " << cpar.smooth[0] << endl;
-  cout << "DoFopen2: " << f_read << " " << Fmode << endl;
+  //cout << "DoFopen2: " << f_read << " " << Fmode << endl;
   if (myM)
     myM->SetTitle(Fname);
 }
@@ -1557,16 +1562,18 @@ void CRS::SaveParGz(gzFile &ff) {
   gzwrite(ff,&sz,sizeof(sz));
   gzwrite(ff,buf,sz);
 
-  cout << "SavePar_gz: " << sz << endl;
+  //cout << "SavePar_gz: " << sz << endl;
 
 }
 
 void CRS::FAnalyze() {
 
-  cout << "FAnalyze: " << f_read << endl;
+  //cout << "FAnalyze: " << f_read << endl;
     
   static int nmax=BFMAX-1;
 
+  TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
+  cv->SetEditable(false);
   TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*) &nmax);;
   trd_fana->Run();
   TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
@@ -1584,6 +1591,7 @@ void CRS::FAnalyze() {
   gSystem->Sleep(opt.tsleep);   
   Show();
 
+  cv->SetEditable(true);
 }
 
 int CRS::Do1Buf() {
@@ -1639,9 +1647,12 @@ int CRS::Do1Buf() {
 
 void CRS::DoNBuf() {
 
-  cout << "FAnalyze: " << f_read << endl;
+  //cout << "FAnalyze: " << f_read << endl;
     
   //static int nmax=opt.num_buf;
+
+  TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
+  cv->SetEditable(false);
 
   TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*) &opt.num_buf);;
   trd_fana->Run();
@@ -1652,14 +1663,18 @@ void CRS::DoNBuf() {
     gSystem->Sleep(10);   
     gSystem->ProcessEvents();
   }
+  //cout << "aaa1" << endl;
   trd_fana->Join();
   trd_fana->Delete();
+  //cout << "aaa2" << endl;
   trd_ana->Join();
   trd_ana->Delete();
+  //cout << "aaa3" << endl;
 
   gSystem->Sleep(opt.tsleep);   
   Show();
 
+  cv->SetEditable(true);
 }
 /*
 void CRS::DoNBuf() {
@@ -1711,7 +1726,9 @@ void CRS::Show() {
       //   << " " << info.fMemUsed << endl;
 
       if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-	EvtFrm->DrawEvent2();      
+	EvtFrm->fCanvas->GetCanvas()->SetEditable(true);
+	EvtFrm->DrawEvent2();
+	EvtFrm->fCanvas->GetCanvas()->SetEditable(false);
       }
 
       if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
@@ -1915,12 +1932,15 @@ void CRS::Decode2(UChar_t* buffer, int length) {
   int idx2=0;
   int len = length/2;
 
+  //cout << "decode2: " << idx2 << endl;
   while (idx2<len) {
 
     unsigned short uword = buf2[idx2];
     frmt = (uword & 0x7000)>>12;
     short data = uword & 0xFFF;
     unsigned char ch = (uword & 0x8000)>>15;
+
+    cout << "decode2: " << idx2 << " " << frmt << " " << (int) ch << " " << data << " " << (int) ipp->Chan << endl;
 
     if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
       cout << "2: Bad channel: " << (int) ch
@@ -1956,16 +1976,21 @@ void CRS::Decode2(UChar_t* buffer, int length) {
     }
     else if (frmt==5) {
       if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
-	// cout << "2: Nsamp error: " << ipp->sData.size()
-	//      << " " << (int) ch << " " << (int) ipp->Chan
-	//      << " " << idx2
-	//      << endl;
+	cout << "2: Nsamp error: " << ipp->sData.size()
+	     << " " << (int) ch << " " << (int) ipp->Chan
+	     << " " << idx2
+	     << endl;
 	ipp->ptype|=P_BADSZ;
       }
       //else {
-      ipp->sData.push_back((data<<21)>>21);
+      cout << "decode2a: " << idx2 << " " << ipp << " " << ipp->sData.size() << endl;
+      ipp->sData.push_back(1.0);
+      //ipp->sData.push_back((data<<21)>>21);
+      cout << "decode2b: " << idx2 << endl;
       //}
     }
+
+    //cout << "decode2a: " << idx2 << endl;
 
     idx2++;
   }
