@@ -23,10 +23,10 @@ typedef unsigned char byte;
 //typedef long long Long64_t;
 
 typedef std::vector<PulseClass> pulse_vect;
-typedef std::list<EventClass> event_list;
+//typedef std::list<EventClass> event_list;
 
-typedef std::list<event_list>::iterator event_list_iter;
-typedef std::list<event_list>::reverse_iterator event_list_reviter;
+//typedef std::list<event_list>::iterator event_list_iter;
+//typedef std::list<event_list>::reverse_iterator event_list_reviter;
 
 typedef std::list<pulse_vect>::iterator list_pulse_iter;
 typedef std::list<pulse_vect>::reverse_iterator list_pulse_reviter;
@@ -72,21 +72,17 @@ RQ_OBJECT("CRS")
   // (contains current vector and previous vector)
   std::list<pulse_vect> Vpulses;
 
-  std::list<event_list> Levents; //list of events
-  //std::list<EventClass> Levents; //list of events
+  //std::list<event_list> Levents; //list of events
+  std::list<EventClass> Levents; //list of events
 
   //std::list<EventClass>::iterator m_event2; //temporary m_event
   //std::list<EventClass>::iterator m_event;
   //m_event points to the first element after cleaning the list
 
   Int_t m_flag; //flag used for cleaning the event list
-  // 0 - after cleaning list ot at the beginning
+  // 0 - after cleaning list or at the beginning
   // 1 - after setting min. marker -> list can be cleaned if > ev_max
   // 2 - list is analyzed, but not cleaned (at the end of file etc)
-
-
-  //Short_t MAX_LAG; // maximal e_lag, equals to half of the event_buf
-  Short_t e_lag; //event analysis lag - see also opt.event_lag
 
   Short_t module; //2 - crs2; 32 - crs32
   Int_t period;

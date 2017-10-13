@@ -96,9 +96,9 @@ void Select_Event() {
 
   if (crs->b_acq) { //acquisition is running
     EvtFrm->Pevents=&EvtFrm->Tevents;
-    if (!crs->Levents.back().empty()) {
+    if (!crs->Levents.empty()) {
       EvtFrm->Tevents.clear();
-      EvtFrm->Tevents.push_back(crs->Levents.back().front());
+      EvtFrm->Tevents.push_back(crs->Levents.front());
     }
   }
   else { //acq is not running -> file analysis or stop
