@@ -309,6 +309,11 @@ void PulseClass::Smooth(int nn) {
 }
 
 
-void PulseClass::PrintPulse() {
+void PulseClass::PrintPulse(int pdata) {
   printf("Pulse: %2d %2d %6ld %10lld %10lld\n",Chan,ptype,sData.size(),Counter,Tstamp64);
+  if (pdata) {
+    for (int i=0;i<(int)sData.size();i++) {
+      printf("-- %d %f\n",i,sData[i]);
+    }
+  }
 }

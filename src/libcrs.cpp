@@ -1750,19 +1750,15 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 
   ULong64_t* buf8 = (ULong64_t*) buffer;
 
-  //std::vector<PulseClass> *vv = Vpulses+nvp; //vv - current vector of pulses
   pulse_vect pvect;
   Vpulses.push_back(pvect);
-  list_pulse_reviter vv = Vpulses.rbegin();
-  list_pulse_reviter vv2 = vv;
+  list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
+  list_pulse_reviter vv2 = vv; //vv2 - vector of pulses from previous buffer
   ++vv2;
-
-  //vv2 - vector of pulses from previous buffer
 
   //cout << "Decode32 1: " << Vpulses.size() << " " << &*vv2
   //     << " " << &*Vpulses.rend() << endl;
 
-  //if (vv2->empty()) { //this is start of the acqisition
   if (vv2==Vpulses.rend()) { //this is start of the acqisition
     vv->push_back(PulseClass());
     npulses++;
@@ -1911,11 +1907,11 @@ void CRS::Decode2(UChar_t* buffer, int length) {
 
   pulse_vect pvect;
   Vpulses.push_back(pvect);
-  list_pulse_reviter vv = Vpulses.rbegin();
-  list_pulse_reviter vv2 = vv;
+  list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
+  list_pulse_reviter vv2 = vv; //vv2 - vector of pulses from previous buffer
   ++vv2;
 
-  if (vv2->empty()) { //this is start of the acqisition
+  if (vv2==Vpulses.rend()) { //this is start of the acqisition
     vv->push_back(PulseClass());
     npulses++;
     ipp = &vv->back();
@@ -1940,7 +1936,7 @@ void CRS::Decode2(UChar_t* buffer, int length) {
     short data = uword & 0xFFF;
     unsigned char ch = (uword & 0x8000)>>15;
 
-    cout << "decode2: " << idx2 << " " << frmt << " " << (int) ch << " " << data << " " << (int) ipp->Chan << endl;
+    //cout << "decode2: " << idx2 << " " << frmt << " " << (int) ch << " " << data << " " << (int) ipp->Chan << endl;
 
     if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
       cout << "2: Bad channel: " << (int) ch
@@ -1956,6 +1952,7 @@ void CRS::Decode2(UChar_t* buffer, int length) {
       //For the first record new pulse is already created at the beginning
       if (idx2) {
 	ipp->ptype&=~P_NOSTOP; //pulse has stop
+	//ipp->PrintPulse(1);
 	vv->push_back(PulseClass());
 	npulses++;
 	ipp = &vv->back();
@@ -1976,17 +1973,16 @@ void CRS::Decode2(UChar_t* buffer, int length) {
     }
     else if (frmt==5) {
       if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
-	cout << "2: Nsamp error: " << ipp->sData.size()
-	     << " " << (int) ch << " " << (int) ipp->Chan
-	     << " " << idx2
-	     << endl;
+	// cout << "2: Nsamp error: " << ipp->sData.size()
+	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << idx2
+	//      << endl;
 	ipp->ptype|=P_BADSZ;
       }
       //else {
-      cout << "decode2a: " << idx2 << " " << ipp << " " << ipp->sData.size() << endl;
-      ipp->sData.push_back(1.0);
-      //ipp->sData.push_back((data<<21)>>21);
-      cout << "decode2b: " << idx2 << endl;
+      //cout << "decode2a: " << idx2 << " " << ipp << " " << ipp->sData.size() << endl;
+      ipp->sData.push_back((data<<21)>>21);
+      //cout << "decode2b: " << idx2 << endl;
       //}
     }
 
@@ -2065,13 +2061,13 @@ void CRS::Decode_adcm() {
 
   pulse_vect pvect;
   Vpulses.push_back(pvect);
-  list_pulse_reviter vv = Vpulses.rbegin();
-  list_pulse_reviter vv2 = vv;
+  list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
+  list_pulse_reviter vv2 = vv; //vv2 - vector of pulses from previous buffer
   ++vv2;
 
   //cout << "idx1: " << idx << " " << hex << rbuf4[idx] << dec << endl;
   
-  if (vv2->empty()) { //this is start of the acqisition
+  if (vv2==Vpulses.rend()) { //this is start of the acqisition
     //-> search for the syncw
     idx=0;
     if (!Searchsync()){

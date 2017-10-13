@@ -811,6 +811,7 @@ void EventFrame::FillGraph(int dr) {
       Int_t kk=opt.kdrv[ch[i]];
       if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
 
+      //cout << "kk=" << kk << " " << ch[i] << " " << opt.kdrv[ch[i]] << endl;
       //dat = new Float_t[pulse->sData.size()];
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);

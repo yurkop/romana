@@ -102,7 +102,7 @@ class PulseClass {
   //void FindPeaks(Float_t thresh, int deadtime);
   void PeakAna();
   void Smooth(int n);
-  void PrintPulse();
+  void PrintPulse(int pdata=0);
 
   //ClassDef(PulseClass, 0)
 };

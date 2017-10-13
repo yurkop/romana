@@ -67,8 +67,9 @@ RQ_OBJECT("CRS")
   UChar_t* Fbuf;
   UChar_t* Fbuf2;
 
-  //Short_t nvp; //Vpulses "ring" counter
-  //pulse_vect Vpulses[MAXTRANS];
+  //Vpulses - list of vectors of pulses for Decode*
+  // size of Vpulses can not be larger than 2
+  // (contains current vector and previous vector)
   std::list<pulse_vect> Vpulses;
 
   std::list<event_list> Levents; //list of events
