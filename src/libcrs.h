@@ -76,7 +76,7 @@ RQ_OBJECT("CRS")
   std::list<EventClass> Levents; //list of events
 
   //std::list<EventClass>::iterator m_event2; //temporary m_event
-  //std::list<EventClass>::iterator m_event;
+  std::list<EventClass>::iterator m_event;
   //m_event points to the first element after cleaning the list
 
   Int_t m_flag; //flag used for cleaning the event list
@@ -188,6 +188,7 @@ RQ_OBJECT("CRS")
   //void SigEvent() { Emit("SigEvent()"); } //*SIGNAL*
   void Event_Insert_Pulse(PulseClass* pulse);
   void Make_Events();
+  void Select_Event(EventClass *evt);
   //void *Ana_Events(void* ptr);
 
   void Print_Pulses();

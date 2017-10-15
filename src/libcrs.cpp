@@ -89,26 +89,6 @@ void *handle_events_func(void *ctx)
   return NULL;
 }
 
-void Select_Event() {
-
-  if (crs->Levents.empty())
-    return;
-
-  if (crs->b_acq) { //acquisition is running
-    EvtFrm->Pevents=&EvtFrm->Tevents;
-    if (!crs->Levents.empty()) {
-      EvtFrm->Tevents.clear();
-      EvtFrm->Tevents.push_back(crs->Levents.front());
-    }
-  }
-  else { //acq is not running -> file analysis or stop
-    EvtFrm->Pevents=&crs->Levents.back();    
-  }
-
-  EvtFrm->d_event=EvtFrm->Pevents->begin();
-
-}
-
 void *handle_dum(void* ptr)
 {
 
@@ -155,12 +135,19 @@ void *handle_buf(void *ctx)
 }
 
 void *handle_ana(void* ptr) {
-  //Int_t nn=0;
+  // when the event list (Levents) becomes larger than ev_min,
+  // starts analysing the events (fillhist);
+  // when it becomes larger than ev_max, starts erasing the events
+
   //ana_mut.Lock();
 
-  std::list<event_list>::iterator Lit;
-  std::list<EventClass>::iterator rl;
-  //std::list<EventClass>::iterator next;
+  //std::list<event_list>::iterator Lit;
+  std::list<EventClass>::iterator it;
+
+  // start - first event which is NOT analyzed yet
+  std::list<EventClass>::iterator start = crs->Levents.begin();
+  // n_ana - number of events which are already analyzed, starting from "start"
+  int n_ana=0;
 
   MemInfo_t info;
   gSystem->GetMemInfo(&info);
@@ -176,59 +163,45 @@ void *handle_ana(void* ptr) {
     // 	 << " " << memmax << " " << info.fMemTotal
     // 	 << " " << opt.ev_min << " " << opt.ev_max << endl;
 
-    if (opt.ev_max*TMath::Max(opt.rbuf_size,opt.usb_size) > memmax) {
-      opt.ev_max=memmax/TMath::Max(opt.rbuf_size,opt.usb_size);
-      opt.ev_min=opt.ev_max/2;
-    }
+    // if (opt.ev_max*TMath::Max(opt.rbuf_size,opt.usb_size) > memmax) {
+    //   opt.ev_max=memmax/TMath::Max(opt.rbuf_size,opt.usb_size);
+    //   opt.ev_min=opt.ev_max/2;
+    // }
     if (opt.ev_min>=opt.ev_max) {
       opt.ev_min=opt.ev_max/2;
     }
     //opt.ev_max=opt.ev_min+5;
 
-    if (crs->Levents.size()>UInt_t(opt.ev_max)) {
+    int sz=crs->Levents.size();
+    if (sz-n_ana>opt.ev_min) {
     //if (false) {
       //cout << "handle_ana: " << ptr << " " << crs->Levents.size() << endl;
 
-      // if (crs->Levents.size()>10) {
-      //   //Levents.pop_front();
-      //   crs->Levents.erase(crs->Levents.begin());
-      // }
+      int nn = sz-n_ana-opt.ev_min;
 
-      int nn=crs->Levents.size()-opt.ev_min;
-      // for (Lit2=crs->Levents.begin();Lit2!=crs->Levents.end() && nn<opt.ev_min;
-      // 	 ++Lit2) {
-      //   ++nn;
-      // }
-
-      for (Lit=crs->Levents.begin();
-	   Lit!=crs->Levents.end() && nn>0;++Lit) {
-	for (rl=Lit->begin(); rl!=Lit->end(); ++rl) {
-	  if (rl->pulses.size()>=opt.mult1 && rl->pulses.size()<=opt.mult2) {
-	    HiFrm->FillHist(&(*rl));
-	    ++crs->nevents2;
-	  }
-	}
+      for (it=start; it!=crs->Levents.end() && nn>0; ++it) {
 	--nn;
       }
-      //cout << "Ana1: " << nn << " " << crs->Levents.size() << endl;
-      crs->Levents.erase(crs->Levents.begin(),Lit);
-      //cout << "Ana2: " << nn << " " << crs->Levents.size() << endl;
+      crs->m_event=it;
+
+      for (it=start; it!=crs->m_event; ++it) {
+	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
+	  HiFrm->FillHist(&(*it));
+	  ++crs->nevents2;
+	}
+      }
+      n_ana+=nn;
+      start=crs->m_event;
+
+      if (sz>opt.ev_max) {
+	for (it=crs->Levents.begin(); it!=crs->m_event; ++it) {
+	  crs->Levents.erase(it);
+	  --n_ana;
+	}
+      }
     }
     else {
-      gSystem->Sleep(opt.tsleep);
-      //cout << EvtFrm << endl;
-      
-      // if (crs->b_acq && myM && EvtFrm && HiFrm) {
-      // //if (myM && EvtFrm && HiFrm) {
-      // 	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
-      // 	  //cout << "EvtFrm->DrawEvent2()" << endl;
-      // 	  EvtFrm->DrawEvent2();
-      // 	}
-      // 	if (myM->fTab->GetCurrent()==HiFrm->ntab) {
-      // 	  HiFrm->ReDraw();
-      // 	}
-      // }
-
+      gSystem->Sleep(500);
     }
   }
 
@@ -1257,7 +1230,7 @@ int CRS::DoStartStop() {
     Cancel_all(ntrans);
     b_stop=true;
     EvtFrm->Clear();
-    EvtFrm->Pevents = &Levents.back();
+    EvtFrm->Pevents = &Levents;
     //Select_Event();
     //EvtFrm->Levents = &Levents;
   }
@@ -1329,7 +1302,7 @@ void CRS::DoReset() {
     EvtFrm->DoReset();
   }
 
-  //m_event=Levents.end();
+  m_event=Levents.end();
   //m_event2=m_event;
   m_flag=0;
   nevents=0;
@@ -2258,9 +2231,9 @@ void CRS::Print_Pulses() {
 
 void CRS::Print_Events() {
   int nn=0;
-  cout << "Print_Events: " << Levents.back().begin()->T << endl;
-  for (std::list<EventClass>::iterator it=Levents.back().begin();
-       it!=Levents.back().end();++it) {
+  cout << "Print_Events: " << Levents.begin()->T << endl;
+  for (std::list<EventClass>::iterator it=Levents.begin();
+       it!=Levents.end();++it) {
     cout << nn++ << " " << it->T << " :>>";
     for (UInt_t i=0;i<it->pulses.size();i++) {
       cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64;
@@ -2326,15 +2299,15 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   event_iter it;
   event_reviter rl;
-  event_list_reviter Rit;
+  //event_list_reviter Rit;
 
   Long64_t dt=pls->Tstamp64-T_last;
 
   //cout << "Insert: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
   //<< T_last << " " << dt << " " << opt.tgate << endl;
 
-  if (dt>opt.tgate) {
-    it=Levents.back().insert(Levents.back().end(),EventClass());
+  if (dt>opt.tgate) { //add event at the end of the list
+    it=Levents.insert(Levents.end(),EventClass());
     it->Nevt=nevents;
     nevents++;
     it->Pulse_Ana_Add(pls);
@@ -2356,48 +2329,41 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   //int n1=0;
   //int n2=0;
 
-  for (Rit=Levents.rbegin(); Rit!=Levents.rend(); ++Rit) {
-    // if (Rit->empty()) {
-    //   cout << "Empty: " << nevents << " " << Levents.size() << endl;
-    // }
-    for (rl=Rit->rbegin(); rl!=Rit->rend(); ++rl) {
-      dt = (pls->Tstamp64 - rl->T);
-      if (dt > opt.tgate) {
-	//add new event at the current position of the eventlist
-	it=Rit->insert(rl.base(),EventClass());
-	it->Nevt=nevents;
-	nevents++;
-	it->Pulse_Ana_Add(pls);
-	// if (nevents>ev1 && nevents<ev2) {
-	//   cout << "NewEv: " << nevents << " " << (int) pls->Chan << " "
-	//        << pls->Tstamp64 << " " << rl->T << " " << dt
-	//        << " " << rl->pulses.size() << endl;
-	// }
-	return;
-      }
-      else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
-	// coincidence event
-	rl->Pulse_Ana_Add(pls);
-	// if (nevents>ev1 && nevents<ev2) {
-	//   cout << "OldEv: " << nevents << " " << (int) pls->Chan << " "
-	//        << pls->Tstamp64 << " " << rl->T << " " << dt
-	//        << " " << rl->pulses.size() << endl;
-	// }
-	return;
-      }
-      //nn++;
-      //n2++;
-      //if (nn>100) break;
+  for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
+    dt = (pls->Tstamp64 - rl->T);
+    if (dt > opt.tgate) {
+      //add new event at the current position of the eventlist
+      it=Levents.insert(rl.base(),EventClass());
+      it->Nevt=nevents;
+      nevents++;
+      it->Pulse_Ana_Add(pls);
+      // if (nevents>ev1 && nevents<ev2) {
+      //   cout << "NewEv: " << nevents << " " << (int) pls->Chan << " "
+      //        << pls->Tstamp64 << " " << rl->T << " " << dt
+      //        << " " << rl->pulses.size() << endl;
+      // }
+      return;
     }
-    ++nn;
-    if (nn>=opt.ev_min) break;
+    else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
+      // coincidence event
+      rl->Pulse_Ana_Add(pls);
+      // if (nevents>ev1 && nevents<ev2) {
+      //   cout << "OldEv: " << nevents << " " << (int) pls->Chan << " "
+      //        << pls->Tstamp64 << " " << rl->T << " " << dt
+      //        << " " << rl->pulses.size() << endl;
+      // }
+      return;
+    }
+    //nn++;
+    //n2++;
+    //if (nn>100) break;
   }
 
   if (debug)
     cout << "beginning: " << nevents << " " << pls->Tstamp64 << " " << dt
 	 << " " << Levents.size() << " " << nn << endl;
 
-  it=Levents.back().insert(Levents.back().end(),EventClass());
+  it=Levents.insert(Levents.end(),EventClass());
   it->Nevt=nevents;
   it->Pulse_Ana_Add(pls);
   nevents++;
@@ -2470,9 +2436,17 @@ void CRS::Make_Events() {
 
   std::vector<PulseClass>::iterator pls;
 
-  event_list elist;
-  Levents.push_back(elist);
+  //event_list elist;
+  //Levents.push_back(elist);
   //Print_Pulses(nvp);
+
+  EventClass* firstevent;
+  if (Levents.empty()) {
+    firstevent=NULL;
+  }
+  else {
+    firstevent=&Levents.back();
+  }
 
   list_pulse_reviter vv = Vpulses.rbegin();
   list_pulse_reviter vv2 = vv;
@@ -2551,8 +2525,27 @@ void CRS::Make_Events() {
   //   Levents.erase(Levents.begin());
   // }
 
-  Select_Event();
+  Select_Event(firstevent);
 
 
 }
 
+void CRS::Select_Event(EventClass *evt) {
+
+  if (Levents.empty())
+    return;
+
+  if (b_acq) { //acquisition is running
+    if (evt) {
+      EvtFrm->Tevents.clear();
+      EvtFrm->Tevents.push_back(*evt);
+      EvtFrm->Pevents=&EvtFrm->Tevents;
+    }
+  }
+  else { //acq is not running -> file analysis or stop
+    EvtFrm->Pevents=&Levents;    
+  }
+
+  EvtFrm->d_event=EvtFrm->Pevents->begin();
+
+}
