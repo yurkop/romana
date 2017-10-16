@@ -145,8 +145,13 @@ void *handle_ana(void* ptr) {
   std::list<EventClass>::iterator it;
 
   // start - first event which is NOT analyzed yet
+  while (crs->Levents.empty() && !crs->b_stop) {
+    gSystem->Sleep(10);    
+  }
+
   std::list<EventClass>::iterator start = crs->Levents.begin();
-  // n_ana - number of events which are already analyzed, starting from "start"
+  // n_ana - number of events which are already analyzed, but not erased,
+  // starting from "start"
   int n_ana=0;
 
   MemInfo_t info;
@@ -156,6 +161,7 @@ void *handle_ana(void* ptr) {
   //int *pp = (int*) ptr;
 
   //while (event_thread_run) {
+  cout << "Ana1: " << n_ana << " " << crs->Levents.size() << endl;
   while (!crs->b_stop) {
 
     // cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
@@ -173,39 +179,45 @@ void *handle_ana(void* ptr) {
     //opt.ev_max=opt.ev_min+5;
 
     int sz=crs->Levents.size();
+    cout << "handle_ana0: " << sz << " " << n_ana << " " << opt.ev_min << endl;
     if (sz-n_ana>opt.ev_min) {
     //if (false) {
-      //cout << "handle_ana: " << ptr << " " << crs->Levents.size() << endl;
-
       int nn = sz-n_ana-opt.ev_min;
+
+      cout << "ana1: " << sz << " " << n_ana << " " << opt.ev_min << " " << nn << endl;
 
       for (it=start; it!=crs->Levents.end() && nn>0; ++it) {
 	--nn;
       }
       crs->m_event=it;
 
+      cout << "ana2: " << sz << " " << n_ana << " " << opt.ev_min << " " << nn << endl;
       for (it=start; it!=crs->m_event; ++it) {
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  HiFrm->FillHist(&(*it));
 	  ++crs->nevents2;
 	}
       }
+      cout << "ana3: " << sz << " " << n_ana << " " << opt.ev_min << " " << crs->m_event->T << endl;
       n_ana+=nn;
       start=crs->m_event;
 
       if (sz>opt.ev_max) {
-	for (it=crs->Levents.begin(); it!=crs->m_event; ++it) {
-	  crs->Levents.erase(it);
+	for (it=crs->Levents.begin(); it!=crs->m_event;) {
+	  it=crs->Levents.erase(it);
+	  //++it;
 	  --n_ana;
+	  cout << "aa: " << n_ana << " " << crs->Levents.size() << " " << it->T << endl;
 	}
       }
+      cout << "ana4: " << sz << " " << n_ana << " " << opt.ev_min << endl;
     }
     else {
-      gSystem->Sleep(500);
+      gSystem->Sleep(10);
     }
-  }
+  } //while (!crs->b_stop)
 
-  //cout << "Ana2: " << nn << " " << crs->Levents.size() << endl;
+  cout << "Ana2: " << n_ana << " " << crs->Levents.size() << endl;
   // << " " << (--rl)->Nevt << endl;
 
   //YKYK if (crs->m_flag!=2)
@@ -2513,7 +2525,7 @@ void CRS::Make_Events() {
   */
 
 
-  //cout << "Make_events: " << Levents.size() << endl;
+  cout << "Make_events: " << Levents.size() << endl;
 
   // if (Levents.size()>UInt_t(opt.ev_max)) {
   //   trd_ana->Run();
