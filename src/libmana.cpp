@@ -1887,12 +1887,13 @@ void MainFrame::DoAna() {
   if (crs->b_fana) {
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
+    gSystem->Sleep(100);
     crs->b_fana=false;
     crs->b_stop=true;
   }
   else {
     fAna->ChangeBackground(fRed);
-    fAna->SetText("Stop");
+    fAna->SetText("Pause");
     crs->b_fana=true;
     crs->b_stop=false;
     crs->FAnalyze();
@@ -1935,17 +1936,19 @@ void MainFrame::DoNbuf() {
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
     fNb->ChangeBackground(fGreen);
+    gSystem->Sleep(100);
     crs->b_fana=false;
     crs->b_stop=true;
   }
   else {
     //cout << "donbuf1" << endl;
     fAna->ChangeBackground(fRed);
-    fAna->SetText("Stop");
+    fAna->SetText("Pause");
     fNb->ChangeBackground(fRed);
     crs->b_fana=true;
     crs->b_stop=false;
     crs->DoNBuf();
+    gSystem->Sleep(1000);
     //cout << "donbuf2" << endl;
     //DoNbuf();
     fAna->ChangeBackground(fGreen);

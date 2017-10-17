@@ -77,7 +77,8 @@ RQ_OBJECT("CRS")
 
   //std::list<EventClass>::iterator m_event2; //temporary m_event
   std::list<EventClass>::iterator m_event;
-  //m_event points to the first element after cleaning the list
+  //m_event points to the first event, which is not yet analyzed
+  //it is safe to fill events starting from this element
 
   Int_t m_flag; //flag used for cleaning the event list
   // 0 - after cleaning list or at the beginning

@@ -100,6 +100,7 @@ void *handle_dum(void* ptr)
 
 }
 
+/*
 void *ballast(void* xxx) {
 
   libusb_transfer* transfer = (libusb_transfer*) xxx;
@@ -117,6 +118,7 @@ void *ballast(void* xxx) {
   return NULL;
 
 }
+*/
 
 void *handle_buf(void *ctx)
 {
@@ -153,6 +155,8 @@ void *handle_ana(void* ptr) {
   // n_ana - number of events which are already analyzed, but not erased,
   // starting from "start"
   int n_ana=0;
+  int nn; //number of events to analyze
+  //m_event - first event which is not analyzed
 
   MemInfo_t info;
   gSystem->GetMemInfo(&info);
@@ -179,19 +183,22 @@ void *handle_ana(void* ptr) {
     //opt.ev_max=opt.ev_min+5;
 
     int sz=crs->Levents.size();
+    nn = sz-n_ana-opt.ev_min;
+
     cout << "handle_ana0: " << sz << " " << n_ana << " " << opt.ev_min << endl;
-    if (sz-n_ana>opt.ev_min) {
+    if (nn>0) {
     //if (false) {
-      int nn = sz-n_ana-opt.ev_min;
 
       cout << "ana1: " << sz << " " << n_ana << " " << opt.ev_min << " " << nn << endl;
 
-      for (it=start; it!=crs->Levents.end() && nn>0; ++it) {
-	--nn;
+      int ii=0;
+      for (it=start; it!=crs->Levents.end() && ii<nn; ++it) {
+	++ii;
       }
       crs->m_event=it;
 
-      cout << "ana2: " << sz << " " << n_ana << " " << opt.ev_min << " " << nn << endl;
+      cout << "m_event: " << crs->m_event->T << endl;
+
       for (it=start; it!=crs->m_event; ++it) {
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  HiFrm->FillHist(&(*it));
@@ -207,10 +214,10 @@ void *handle_ana(void* ptr) {
 	  it=crs->Levents.erase(it);
 	  //++it;
 	  --n_ana;
-	  cout << "aa: " << n_ana << " " << crs->Levents.size() << " " << it->T << endl;
+	  //cout << "aa: " << n_ana << " " << crs->Levents.size() << " " << it->T << endl;
 	}
       }
-      cout << "ana4: " << sz << " " << n_ana << " " << opt.ev_min << endl;
+      cout << "ana4: " << sz << " " << n_ana << " " << crs->m_event->T << endl;
     }
     else {
       gSystem->Sleep(10);
@@ -1315,6 +1322,8 @@ void CRS::DoReset() {
   }
 
   m_event=Levents.end();
+  //cout << &*m_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
+  //exit(-1);
   //m_event2=m_event;
   m_flag=0;
   nevents=0;
