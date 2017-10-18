@@ -80,7 +80,7 @@ RQ_OBJECT("CRS")
   //m_event points to the first event, which is not yet analyzed
   //it is safe to fill events starting from this element
 
-  Int_t m_flag; //flag used for cleaning the event list
+  //Int_t m_flag; //flag used for cleaning the event list
   // 0 - after cleaning list or at the beginning
   // 1 - after setting min. marker -> list can be cleaned if > ev_max
   // 2 - list is analyzed, but not cleaned (at the end of file etc)
@@ -108,9 +108,13 @@ RQ_OBJECT("CRS")
   double mb_rate;
   double ev_rate;
 
-  bool b_acq; // true - acquisition running
-  bool b_fana; // true - file analysis running
-  bool b_stop; // true if acquisition or analysis has stopped
+  bool b_acq; // true - acquisition is running
+  bool b_fana; // true - file analysis is running
+  bool b_stop; // true if acquisition and analysis are stopped
+  Int_t b_run; // used for trd_ana
+  // b_run=0 - stop analysis immediately (pause)
+  // b_run=1 - analyze events normally
+  // b_run=2 - analyze all events, then stop 
 
   Long64_t T_last;
 
@@ -169,8 +173,8 @@ RQ_OBJECT("CRS")
 
   //void DoFAna();
   void FAnalyze();
-  int Do1Buf();
-  void DoNBuf();
+  int DoBuf();
+  void DoNBuf(int nb);
   void Show();
 
   void AllParameters32(); // load all parameters

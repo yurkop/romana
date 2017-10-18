@@ -553,49 +553,6 @@ void EventFrame::DoReset() {
 }
 
 /*
-
-void EventFrame::DoNum() {
-
-  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
-  Int_t id = te->WidgetId();
-
-  if (id==101) {
-    opt.num_buf=te->GetNumber();
-    cout << "num_buf: " << te->GetNumber() << endl;
-  }
-  
-
-}
-
-void EventFrame::Do1buf() {
-
-  crs->Do1Buf();
-
-}
-
-void EventFrame::DoNbuf() {
-
-  // if (!crs->f_raw) {
-  //   cout << "File not open" << endl;
-  //   return;
-  // }
-
-  //cout << "DoAna" << endl;
-
-  if (crs->b_fana) {
-    fNbuf->ChangeBackground(fGreen);
-  }
-  else {
-    fNbuf->ChangeBackground(fCyan);
-  }
-
-  crs->DoNBuf();
-
-}
-
-*/
-
-/*
 void EventFrame::DoColor() {
   TGColorDialog* tg = new TGColorDialog();
 }

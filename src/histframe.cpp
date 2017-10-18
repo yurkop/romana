@@ -513,7 +513,7 @@ void HistFrame::DoClick(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, 
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
   cout << "DoCheck: " << obj << " " << check << endl;
-  if (!crs->b_acq)
+  if (crs->b_stop)
     Update();
   else
     changed=true;
@@ -585,7 +585,7 @@ void HistFrame::DoRadio()
   }
 
   opt.sel_hdiv=id;
-  if (!crs->b_acq)
+  if (crs->b_stop)
     Update();
   else
     changed=true;
@@ -617,7 +617,7 @@ void HistFrame::DoButton()
   }
 
   //cout << "doradio2: " << id << endl;
-  if (!crs->b_acq)
+  if (crs->b_stop)
     Update();
   else
     changed=true;
@@ -737,7 +737,7 @@ void HistFrame::DoReset()
 
   //return;
   
-  if (crs->b_acq) return;
+  if (!crs->b_stop) return;
 
   TCanvas *cv=fEc->GetCanvas();
   //cv->SetEditable(true);

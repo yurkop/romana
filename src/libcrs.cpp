@@ -127,11 +127,20 @@ void *handle_buf(void *ctx)
   //cout << "handle_buf: " << *nmax << endl; 
 
   int i=1;
-  while (crs->Do1Buf() && crs->b_fana && i<*nmax) {
+  int res;
+  while ((res=crs->DoBuf()) && crs->b_fana && i<*nmax) {
     i++;
   }
 
-  //cout << "buf: " << crs->nbuffers << " " << i << endl;
+  if (!res) { //end of file reached -> analyze all events
+    crs->b_run=2;
+  }
+  else { //otherwise just stop the analysis
+    gSystem->Sleep(30);    
+    crs->b_run=0;
+  }
+
+  cout << "buf: " << crs->nbuffers << " " << i << " " << res << " " << crs->b_run << endl;
   crs->b_stop=true;
   return NULL;
 }
@@ -155,7 +164,9 @@ void *handle_ana(void* ptr) {
   // n_ana - number of events which are already analyzed, but not erased,
   // starting from "start"
   int n_ana=0;
-  int nn; //number of events to analyze
+  int sz; //event list size
+  int n1; //number of events to analyze
+  int n2; //number of events to erase
   //m_event - first event which is not analyzed
 
   MemInfo_t info;
@@ -166,7 +177,7 @@ void *handle_ana(void* ptr) {
 
   //while (event_thread_run) {
   cout << "Ana1: " << n_ana << " " << crs->Levents.size() << endl;
-  while (!crs->b_stop) {
+  while (crs->b_run) {
 
     // cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
     // 	 << " " << opt.ev_max*opt.rbuf_size << " Mb"
@@ -182,23 +193,31 @@ void *handle_ana(void* ptr) {
     }
     //opt.ev_max=opt.ev_min+5;
 
-    int sz=crs->Levents.size();
-    nn = sz-n_ana-opt.ev_min;
+    sz=crs->Levents.size();
+    if (crs->b_run==2) { //analyze all events, then stop
+      n1 = 99999999;
+      crs->b_run=0;
+    }
+    else { //analyze normally
+      n1 = sz-n_ana-opt.ev_min;
+    }
 
     cout << "handle_ana0: " << sz << " " << n_ana << " " << opt.ev_min << endl;
-    if (nn>0) {
+    if (n1>0) {
     //if (false) {
 
-      cout << "ana1: " << sz << " " << n_ana << " " << opt.ev_min << " " << nn << endl;
+      cout << "ana1: " << sz << " " << n_ana << " " << opt.ev_min << " " << n1 << endl;
 
+      // determine position of the last event which will be analysed (m_event)
       int ii=0;
-      for (it=start; it!=crs->Levents.end() && ii<nn; ++it) {
+      for (it=start; it!=crs->Levents.end() && ii<n1; ++it) {
 	++ii;
       }
       crs->m_event=it;
 
       cout << "m_event: " << crs->m_event->T << endl;
 
+      // analyze events up to m_event
       for (it=start; it!=crs->m_event; ++it) {
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  HiFrm->FillHist(&(*it));
@@ -206,12 +225,17 @@ void *handle_ana(void* ptr) {
 	}
       }
       cout << "ana3: " << sz << " " << n_ana << " " << opt.ev_min << " " << crs->m_event->T << endl;
-      n_ana+=nn;
+      n_ana+=n1;
+      // start now points to the first event which is not analyzed yet
       start=crs->m_event;
 
-      if (sz>opt.ev_max) {
-	for (it=crs->Levents.begin(); it!=crs->m_event;) {
+      // erase events if the list is too long
+      n2 = sz-opt.ev_max;
+      if (n2>0) {
+	int ii=0;
+	for (it=crs->Levents.begin(); it!=crs->m_event && ii<n2;) {
 	  it=crs->Levents.erase(it);
+	  ++ii;
 	  //++it;
 	  --n_ana;
 	  //cout << "aa: " << n_ana << " " << crs->Levents.size() << " " << it->T << endl;
@@ -227,18 +251,6 @@ void *handle_ana(void* ptr) {
   cout << "Ana2: " << n_ana << " " << crs->Levents.size() << endl;
   // << " " << (--rl)->Nevt << endl;
 
-  //YKYK if (crs->m_flag!=2)
-  //YKYK   crs->Levents.erase(crs->Levents.begin(),crs->m_event);
-
-  //crs->m_flag=0;
-
-  //cout << "ev_max3: " << crs->nevents2 << " " << crs->Levents.size() << " "
-  // << crs->Levents.begin()->T << endl;
-  //cout << "Ana2: " << crs->nevents2 << " " << crs->Levents.size() << endl;
-  //gSystem->Sleep(200);
-
-
-  //ana_mut.UnLock();
   return 0;
     
 }
@@ -265,36 +277,36 @@ static void cback(libusb_transfer *transfer) {
 
   if (crs->b_acq) {
 
-  if (transfer->actual_length) {
-    if (opt.decode) {
-      if (crs->module==2) {
-	crs->Decode2(transfer->buffer,transfer->actual_length);
+    if (transfer->actual_length) {
+      if (opt.decode) {
+	if (crs->module==2) {
+	  crs->Decode2(transfer->buffer,transfer->actual_length);
+	}
+	else if (crs->module==32) {
+	  crs->Decode32(transfer->buffer,transfer->actual_length);
+	}
       }
-      else if (crs->module==32) {
-	crs->Decode32(transfer->buffer,transfer->actual_length);
+      if (opt.raw_write) {
+	//cout << "raw_start: " << *(int*) transfer->user_data << endl;
+	//crs->f_raw = gzopen(opt.fname_raw,"wb0");
+	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
+	//cout << "raw_opt: " << crs->raw_opt << endl;
+	if (crs->f_raw) {
+	  //cout << "cback tell: " << gztell(crs->f_raw) << endl;
+	  int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
+	  //cout << "cback offset: " << gzoffset(crs->f_raw) << endl;
+	  gzclose(crs->f_raw);
+	  crs->writtenbytes+=res;
+	}
+	else {
+	  cout << "Can't open file: " << opt.fname_raw << endl;
+	}
+	//cout << "raw_stop: " << *(int*) transfer->user_data << endl;
       }
-    }
-    if (opt.raw_write) {
-      //cout << "raw_start: " << *(int*) transfer->user_data << endl;
-      //crs->f_raw = gzopen(opt.fname_raw,"wb0");
-      crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
-      //cout << "raw_opt: " << crs->raw_opt << endl;
-      if (crs->f_raw) {
-	//cout << "cback tell: " << gztell(crs->f_raw) << endl;
-	int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
-	//cout << "cback offset: " << gzoffset(crs->f_raw) << endl;
-	gzclose(crs->f_raw);
-	crs->writtenbytes+=res;
-      }
-      else {
-	cout << "Can't open file: " << opt.fname_raw << endl;
-      }
-      //cout << "raw_stop: " << *(int*) transfer->user_data << endl;
-    }
 
-    crs->nbuffers++;
+      crs->nbuffers++;
 
-  }
+    } //if (transfer->actual_length) {
 
     libusb_submit_transfer(transfer);
 
@@ -305,7 +317,7 @@ static void cback(libusb_transfer *transfer) {
     opt.T_acq = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
 
     stat_mut.UnLock();
-  }
+  } //if (crs->b_acq) {
 
   //crs->nvp = (crs->nvp+1)%crs->ntrans;
   
@@ -421,6 +433,7 @@ CRS::CRS() {
   b_acq=false;
   b_fana=false;
   b_stop=true;
+  b_run=0;
 
   strcpy(raw_opt,"ab");
   strcpy(dec_opt,"ab");
@@ -1205,7 +1218,8 @@ int CRS::DoStartStop() {
 
     TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
     cv->SetEditable(false);
-    
+
+    b_run=1;
     TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
     trd_ana->Run();
 
@@ -1248,6 +1262,7 @@ int CRS::DoStartStop() {
 
     Cancel_all(ntrans);
     b_stop=true;
+    b_run=2;
     EvtFrm->Clear();
     EvtFrm->Pevents = &Levents;
     //Select_Event();
@@ -1325,7 +1340,7 @@ void CRS::DoReset() {
   //cout << &*m_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
   //exit(-1);
   //m_event2=m_event;
-  m_flag=0;
+
   nevents=0;
   nevents2=0;
 
@@ -1570,6 +1585,7 @@ void CRS::FAnalyze() {
   cv->SetEditable(false);
   TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*) &nmax);;
   trd_fana->Run();
+  b_run=1;
   TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
   trd_ana->Run();
   while (!crs->b_stop) {
@@ -1579,6 +1595,7 @@ void CRS::FAnalyze() {
   }
   trd_fana->Join();
   trd_fana->Delete();
+
   trd_ana->Join();
   trd_ana->Delete();
 
@@ -1588,7 +1605,7 @@ void CRS::FAnalyze() {
   cv->SetEditable(true);
 }
 
-int CRS::Do1Buf() {
+int CRS::DoBuf() {
 
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
   //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
@@ -1639,7 +1656,7 @@ int CRS::Do1Buf() {
 
 }
 
-void CRS::DoNBuf() {
+void CRS::DoNBuf(int nb) {
 
   //cout << "FAnalyze: " << f_read << endl;
     
@@ -1648,8 +1665,9 @@ void CRS::DoNBuf() {
   TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
   cv->SetEditable(false);
 
-  TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*) &opt.num_buf);;
+  TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*)&nb);
   trd_fana->Run();
+  b_run=1;
   TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
   trd_ana->Run();
   while (!crs->b_stop) {
@@ -1665,7 +1683,8 @@ void CRS::DoNBuf() {
   trd_ana->Delete();
   //cout << "aaa3" << endl;
 
-  gSystem->Sleep(opt.tsleep);   
+  //gSystem->Sleep(opt.tsleep);   
+  gSystem->Sleep(10);   
   Show();
 
   cv->SetEditable(true);
@@ -1676,7 +1695,7 @@ void CRS::DoNBuf() {
   b_fana=true;
   b_stop=false;
   for (int i=0;i<opt.num_buf;i++) {
-    if (!(Do1Buf() && b_fana)) {
+    if (!(DoBuf() && b_fana)) {
       break;
     }
   }
@@ -2494,20 +2513,10 @@ void CRS::Make_Events() {
   if (vv->size()<=1)
     return; //if vv contains 0 or 1 event, don't analyze it 
 
-  //cout << "m_flag: " << m_flag << " " << (!m_flag && Levents.size()>list_min)
-  //     << " " << Levents.size() << " " << list_min << endl;
-
   for (pls=vv->begin(); pls != --vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {
       Event_Insert_Pulse(&(*pls));
       //Print_Events();
-      /*YKYK
-      if (!m_flag && Levents.size()>list_min) {
-	m_event2=--Levents.end();
-	m_flag=1;
-	cout << "m_event2: " << m_event2->Nevt << endl;
-      }
-      */
     }
   }
 
@@ -2523,15 +2532,6 @@ void CRS::Make_Events() {
   //cout << "Make_Events: " << evt->T << " " << Levents.size() << endl;
   //PEvent();
   //-----------
-
-  //Analyse events and clean (part of) the event list
-  /*
-  if (!m_flag && (int) Levents.size()>opt.ev_min) {
-    m_event2=--Levents.end();
-    m_flag=1;
-    //cout << "ev_min: " << Levents.size() << " " << m_event2->T << endl;
-  }
-  */
 
 
   cout << "Make_events: " << Levents.size() << endl;

@@ -1884,14 +1884,14 @@ void MainFrame::DoAna() {
     return;
   }
 
-  if (crs->b_fana) {
+  if (crs->b_fana) { //analysis is running -> stop it
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
     gSystem->Sleep(100);
     crs->b_fana=false;
     crs->b_stop=true;
   }
-  else {
+  else { //start analysis
     fAna->ChangeBackground(fRed);
     fAna->SetText("Pause");
     crs->b_fana=true;
@@ -1932,7 +1932,7 @@ void MainFrame::DoNbuf() {
     return;
   }
 
-  if (crs->b_fana) {
+  if (crs->b_fana) { //analysis is running -> stop it
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
     fNb->ChangeBackground(fGreen);
@@ -1940,15 +1940,15 @@ void MainFrame::DoNbuf() {
     crs->b_fana=false;
     crs->b_stop=true;
   }
-  else {
+  else { //start analysis of n buffers
     //cout << "donbuf1" << endl;
     fAna->ChangeBackground(fRed);
     fAna->SetText("Pause");
     fNb->ChangeBackground(fRed);
     crs->b_fana=true;
     crs->b_stop=false;
-    crs->DoNBuf();
-    gSystem->Sleep(1000);
+    crs->DoNBuf(opt.num_buf);
+    //gSystem->Sleep(1000);
     //cout << "donbuf2" << endl;
     //DoNbuf();
     fAna->ChangeBackground(fGreen);
