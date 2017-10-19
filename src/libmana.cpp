@@ -1910,6 +1910,7 @@ void MainFrame::DoAna() {
   //crs->DoFAna();
 }
 
+/*
 void MainFrame::Do1buf() {
 
   if (crs->b_stop) {
@@ -1921,6 +1922,24 @@ void MainFrame::Do1buf() {
     //crs->b_stop=true;
   }
 
+}
+*/
+
+void MainFrame::Do1buf() {
+
+  //cout << "DoNbuf" << endl;
+
+  if (!crs->f_read) {
+    cout << "File not open" << endl;
+    return;
+  }
+
+  crs->b_fana=true;
+  crs->b_stop=false;
+  crs->DoNBuf(1);
+  crs->b_fana=false;
+  crs->b_stop=true;
+    
 }
 
 void MainFrame::DoNbuf() {

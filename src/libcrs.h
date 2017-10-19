@@ -75,8 +75,12 @@ RQ_OBJECT("CRS")
   //std::list<event_list> Levents; //list of events
   std::list<EventClass> Levents; //list of events
 
-  //std::list<EventClass>::iterator m_event2; //temporary m_event
+  // n_ana - number of events which are already analyzed, but not erased,
+  // starting from "start"
+  int n_ana;
+
   std::list<EventClass>::iterator m_event;
+  std::list<EventClass>::reverse_iterator r_event;
   //m_event points to the first event, which is not yet analyzed
   //it is safe to fill events starting from this element
 
@@ -175,7 +179,7 @@ RQ_OBJECT("CRS")
   void FAnalyze();
   int DoBuf();
   void DoNBuf(int nb);
-  void Show();
+  void Show(bool force=false);
 
   void AllParameters32(); // load all parameters
   //void AllParameters32_old(); // load all parameters

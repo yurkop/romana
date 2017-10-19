@@ -161,9 +161,6 @@ void *handle_ana(void* ptr) {
   }
 
   std::list<EventClass>::iterator start = crs->Levents.begin();
-  // n_ana - number of events which are already analyzed, but not erased,
-  // starting from "start"
-  int n_ana=0;
   int sz; //event list size
   int n1; //number of events to analyze
   int n2; //number of events to erase
@@ -176,7 +173,7 @@ void *handle_ana(void* ptr) {
   //int *pp = (int*) ptr;
 
   //while (event_thread_run) {
-  cout << "Ana1: " << n_ana << " " << crs->Levents.size() << endl;
+  cout << "--------- Ana1: " << crs->n_ana << " " << crs->Levents.size() << endl;
   while (crs->b_run) {
 
     // cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
@@ -199,14 +196,14 @@ void *handle_ana(void* ptr) {
       crs->b_run=0;
     }
     else { //analyze normally
-      n1 = sz-n_ana-opt.ev_min;
+      n1 = sz-crs->n_ana-opt.ev_min;
     }
 
-    cout << "handle_ana0: " << sz << " " << n_ana << " " << opt.ev_min << endl;
+    cout << "handle_ana0: " << sz << " " << crs->n_ana << " " << n1 << endl;
     if (n1>0) {
     //if (false) {
 
-      cout << "ana1: " << sz << " " << n_ana << " " << opt.ev_min << " " << n1 << endl;
+      cout << "ana1: " << sz << " " << crs->n_ana << " " << n1 << endl;
 
       // determine position of the last event which will be analysed (m_event)
       int ii=0;
@@ -214,6 +211,8 @@ void *handle_ana(void* ptr) {
 	++ii;
       }
       crs->m_event=it;
+      crs->r_event=std::list<EventClass>::reverse_iterator(it);
+      crs->n_ana+=ii;
 
       cout << "m_event: " << crs->m_event->T << endl;
 
@@ -223,11 +222,19 @@ void *handle_ana(void* ptr) {
 	  HiFrm->FillHist(&(*it));
 	  ++crs->nevents2;
 	}
+	cout <<"aa: " << it->T << endl;
       }
-      cout << "ana3: " << sz << " " << n_ana << " " << opt.ev_min << " " << crs->m_event->T << endl;
-      n_ana+=n1;
+      cout << "ana3: " << sz << " " << crs->n_ana << " " << crs->m_event->T << endl;
       // start now points to the first event which is not analyzed yet
       start=crs->m_event;
+
+      std::list<EventClass>::reverse_iterator rl(crs->m_event);
+
+      for (rl=crs->Levents.rbegin(); rl!=crs->r_event; ++rl) {
+	//std::list<EventClass>::reverse_iterator rl1=rl;
+	//++rl1;
+	cout <<"rev: " << rl->T << endl;
+      }
 
       // erase events if the list is too long
       n2 = sz-opt.ev_max;
@@ -237,18 +244,19 @@ void *handle_ana(void* ptr) {
 	  it=crs->Levents.erase(it);
 	  ++ii;
 	  //++it;
-	  --n_ana;
+	  --crs->n_ana;
 	  //cout << "aa: " << n_ana << " " << crs->Levents.size() << " " << it->T << endl;
 	}
       }
-      cout << "ana4: " << sz << " " << n_ana << " " << crs->m_event->T << endl;
+      cout << "ana4: " << crs->n_ana << " " << crs->m_event->T << " "
+	   << start->T << " " << crs->nevents2 << endl;
     }
     else {
       gSystem->Sleep(10);
     }
   } //while (!crs->b_stop)
 
-  cout << "Ana2: " << n_ana << " " << crs->Levents.size() << endl;
+  cout << "Ana2: " << crs->n_ana << " " << crs->Levents.size() << endl;
   // << " " << (--rl)->Nevt << endl;
 
   return 0;
@@ -1234,8 +1242,9 @@ int CRS::DoStartStop() {
     trd_ana->Join();
     trd_ana->Delete();
 
-    gSystem->Sleep(opt.tsleep);   
-    Show();
+    //gSystem->Sleep(opt.tsleep);   
+    gSystem->Sleep(10);   
+    Show(true);
     cv->SetEditable(true);
   }
   else { //stop
@@ -1310,7 +1319,7 @@ int CRS::DoStartStop() {
 
 void CRS::DoReset() {
 
-  cout << "DoReset1: " << b_stop << endl;
+  //cout << "DoReset1: " << b_stop << endl;
 
   if (!b_stop) return;
     
@@ -1336,6 +1345,7 @@ void CRS::DoReset() {
     EvtFrm->DoReset();
   }
 
+  n_ana=0;
   m_event=Levents.end();
   //cout << &*m_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
   //exit(-1);
@@ -1373,7 +1383,7 @@ void CRS::DoReset() {
   idnext=0;
   lastfl=1;
 
-  cout << "f_read: " << f_read << endl;
+  //cout << "f_read: " << f_read << endl;
   if (f_read)
     DoFopen(NULL,0);
 
@@ -1599,8 +1609,9 @@ void CRS::FAnalyze() {
   trd_ana->Join();
   trd_ana->Delete();
 
-  gSystem->Sleep(opt.tsleep);   
-  Show();
+  //gSystem->Sleep(opt.tsleep);
+  gSystem->Sleep(10);
+  Show(true);
 
   cv->SetEditable(true);
 }
@@ -1685,7 +1696,7 @@ void CRS::DoNBuf(int nb) {
 
   //gSystem->Sleep(opt.tsleep);   
   gSystem->Sleep(10);   
-  Show();
+  Show(true);
 
   cv->SetEditable(true);
 }
@@ -1704,7 +1715,7 @@ void CRS::DoNBuf() {
 
 }
 */
-void CRS::Show() {
+void CRS::Show(bool force) {
 
   //cout << "Show" << endl;
   static Long64_t bytes1=0;
@@ -1718,7 +1729,7 @@ void CRS::Show() {
 
   //while (!crs->b_stop) {
     tm2=gSystem->Now();
-    if (tm2-tm1>opt.tsleep) {
+    if (tm2-tm1>opt.tsleep || force) {
       tm1=tm2;
 
       stat_mut.Lock();
