@@ -173,7 +173,7 @@ void *handle_ana(void* ptr) {
   //int *pp = (int*) ptr;
 
   //while (event_thread_run) {
-  cout << "--------- Ana1: " << crs->n_ana << " " << crs->Levents.size() << endl;
+  //cout << "--------- Ana1: " << crs->n_ana << " " << crs->Levents.size() << endl;
   while (crs->b_run) {
 
     // cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
@@ -199,11 +199,11 @@ void *handle_ana(void* ptr) {
       n1 = sz-crs->n_ana-opt.ev_min;
     }
 
-    cout << "handle_ana0: " << sz << " " << crs->n_ana << " " << n1 << endl;
+    //cout << "handle_ana0: " << sz << " " << crs->n_ana << " " << n1 << endl;
     if (n1>0) {
     //if (false) {
 
-      cout << "ana1: " << sz << " " << crs->n_ana << " " << n1 << endl;
+      //cout << "ana1: " << sz << " " << crs->n_ana << " " << n1 << endl;
 
       // determine position of the last event which will be analysed (m_event)
       int ii=0;
@@ -222,19 +222,20 @@ void *handle_ana(void* ptr) {
 	  HiFrm->FillHist(&(*it));
 	  ++crs->nevents2;
 	}
-	cout <<"aa: " << it->T << endl;
+	//cout <<"aa: " << it->T << endl;
       }
-      cout << "ana3: " << sz << " " << crs->n_ana << " " << crs->m_event->T << endl;
+      //cout << "ana3: " << sz << " " << crs->n_ana << " " << crs->m_event->T << endl;
       // start now points to the first event which is not analyzed yet
       start=crs->m_event;
 
+      /*
       std::list<EventClass>::reverse_iterator rl(crs->m_event);
-
       for (rl=crs->Levents.rbegin(); rl!=crs->r_event; ++rl) {
 	//std::list<EventClass>::reverse_iterator rl1=rl;
 	//++rl1;
 	cout <<"rev: " << rl->T << endl;
       }
+      */
 
       // erase events if the list is too long
       n2 = sz-opt.ev_max;
@@ -248,15 +249,15 @@ void *handle_ana(void* ptr) {
 	  //cout << "aa: " << n_ana << " " << crs->Levents.size() << " " << it->T << endl;
 	}
       }
-      cout << "ana4: " << crs->n_ana << " " << crs->m_event->T << " "
-	   << start->T << " " << crs->nevents2 << endl;
+      //cout << "ana4: " << crs->n_ana << " " << crs->m_event->T << " "
+      //<< start->T << " " << crs->nevents2 << endl;
     }
     else {
       gSystem->Sleep(10);
     }
   } //while (!crs->b_stop)
 
-  cout << "Ana2: " << crs->n_ana << " " << crs->Levents.size() << endl;
+  //cout << "Ana2: " << crs->n_ana << " " << crs->Levents.size() << endl;
   // << " " << (--rl)->Nevt << endl;
 
   return 0;
@@ -1347,7 +1348,10 @@ void CRS::DoReset() {
 
   n_ana=0;
   m_event=Levents.end();
-  //cout << &*m_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
+  r_event=Levents.rend();
+  r_event=std::list<EventClass>::reverse_iterator(m_event);
+
+  cout << "reset: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
   //exit(-1);
   //m_event2=m_event;
 
@@ -2357,8 +2361,14 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   //cout << "Insert: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
   //<< T_last << " " << dt << " " << opt.tgate << endl;
 
+  cout << "make_events4: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
+
   if (dt>opt.tgate) { //add event at the end of the list
     it=Levents.insert(Levents.end(),EventClass());
+
+    r_event=std::list<EventClass>::reverse_iterator(m_event);
+
+  cout << "make_events5: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
     it->Nevt=nevents;
     nevents++;
     it->Pulse_Ana_Add(pls);
@@ -2373,15 +2383,16 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     return;
   }
 
-  //event_reviter r_event =
-  //  event_reviter(m_event);
-
-  int nn=0;
+  //int nn=0;
   //int n1=0;
   //int n2=0;
 
-  for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
+  cout << "rl: " << &*Levents.rbegin() << " " << &*Levents.rend() << " " << &*r_event << endl;
+  //cout << "rl: " << Levents.rbegin()->T << " " << r_event->T << endl;
+  
+  for (rl=Levents.rbegin(); rl!=r_event; ++rl) {
     dt = (pls->Tstamp64 - rl->T);
+    cout << "tt: " << dt << " " << pls->Tstamp64 << " " << rl->T << endl;
     if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
       it=Levents.insert(rl.base(),EventClass());
@@ -2412,15 +2423,13 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   if (debug)
     cout << "beginning: " << nevents << " " << pls->Tstamp64 << " " << dt
-	 << " " << Levents.size() << " " << nn << endl;
+	 << " " << Levents.size() << endl;
 
+  // if the current event is too early, insert it at the end of the event list
   it=Levents.insert(Levents.end(),EventClass());
   it->Nevt=nevents;
   it->Pulse_Ana_Add(pls);
   nevents++;
-
-
-
 
 
   /*
@@ -2545,7 +2554,7 @@ void CRS::Make_Events() {
   //-----------
 
 
-  cout << "Make_events: " << Levents.size() << endl;
+  //cout << "Make_events: " << Levents.size() << endl;
 
   // if (Levents.size()>UInt_t(opt.ev_max)) {
   //   trd_ana->Run();
