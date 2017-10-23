@@ -80,7 +80,7 @@ RQ_OBJECT("CRS")
   int n_ana;
 
   std::list<EventClass>::iterator m_event;
-  std::list<EventClass>::reverse_iterator r_event;
+  //std::list<EventClass>::reverse_iterator r_event;
   //m_event points to the first event, which is not yet analyzed
   //it is safe to fill events starting from this element
 

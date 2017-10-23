@@ -211,7 +211,7 @@ void *handle_ana(void* ptr) {
 	++ii;
       }
       crs->m_event=it;
-      crs->r_event=std::list<EventClass>::reverse_iterator(it);
+      //crs->r_event=std::list<EventClass>::reverse_iterator(it);
       crs->n_ana+=ii;
 
       cout << "m_event: " << crs->m_event->T << endl;
@@ -1328,7 +1328,7 @@ void CRS::DoReset() {
 
   Tstart64=0;
   Tstart0=0;
-  T_last=0;
+  T_last=-99999999;
   //cout << "crs::reset: " << endl;
   //cout << "crs::reset: " << (int) CRS::b_fana << endl;
   //exit(1);
@@ -1348,10 +1348,10 @@ void CRS::DoReset() {
 
   n_ana=0;
   m_event=Levents.end();
-  r_event=Levents.rend();
-  r_event=std::list<EventClass>::reverse_iterator(m_event);
+  //r_event=Levents.rend();
+  //r_event=std::list<EventClass>::reverse_iterator(m_event);
 
-  cout << "reset: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
+  //cout << "reset: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
   //exit(-1);
   //m_event2=m_event;
 
@@ -2321,54 +2321,23 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   pls->FindPeaks();
   pls->PeakAna();
 
-  //static Long64_t last=0;
-  
-  //int nn=0;
-
-
-  // cout << "m_event: " << Levents.size() << " " << &*m_event
-  //      << " " << &*std::list<EventClass>::reverse_iterator(m_event)
-  //      << " " << &*Levents.begin() << " " << &*Levents.end() 
-  //      << " " << &*Levents.rbegin() << " " << &*Levents.rend() 
-  //   //<< " " << &*(--Levents.end())
-  //      << endl;
-
-  // cout << "m_event3: " << Levents.size() << " " << m_event->T
-  //      << " " << (&*std::list<EventClass>::reverse_iterator(m_event))->T
-  //      << " " << Levents.begin()->T << " " << Levents.end()->T 
-  //      << " " << Levents.rbegin()->T << " " << Levents.rend()->T
-  //   //<< " " << &*(--Levents.end())
-  //      << endl;
-
-  // if (Levents.size()==6) {
-  //   m_event=--Levents.end();
-  //   Levents.erase(Levents.begin(),m_event);
-  //   //Levents.insert(m_event,EventClass());
-  // }
-  
-
-  // if (nevents>ev1 && nevents<ev2) {
-  //   cout << "pls: " << nevents << " " << (int) pls->Chan << " " << pls->Counter
-  // 	 << " " << pls->Tstamp64 << endl;
-  // }
-
   event_iter it;
-  event_reviter rl;
+  //event_reviter rl;
   //event_list_reviter Rit;
 
   Long64_t dt=pls->Tstamp64-T_last;
 
+  //cout << "iiii: " << &*Levents.begin() << " " << &*Levents.end() << " " 
+  //     << &*(--Levents.end()) << " " << &*m_event << endl;
+
   //cout << "Insert: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
   //<< T_last << " " << dt << " " << opt.tgate << endl;
 
-  cout << "make_events4: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
+  //cout << "make_events4: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
 
   if (dt>opt.tgate) { //add event at the end of the list
     it=Levents.insert(Levents.end(),EventClass());
 
-    r_event=std::list<EventClass>::reverse_iterator(m_event);
-
-  cout << "make_events5: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
     it->Nevt=nevents;
     nevents++;
     it->Pulse_Ana_Add(pls);
@@ -2383,42 +2352,25 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     return;
   }
 
-  //int nn=0;
-  //int n1=0;
-  //int n2=0;
-
-  cout << "rl: " << &*Levents.rbegin() << " " << &*Levents.rend() << " " << &*r_event << endl;
-  //cout << "rl: " << Levents.rbegin()->T << " " << r_event->T << endl;
+  //cout << "rl1: " << Levents.size() << " " << (--Levents.end())->T << " " << m_event->T << endl;
   
-  for (rl=Levents.rbegin(); rl!=r_event; ++rl) {
-    dt = (pls->Tstamp64 - rl->T);
-    cout << "tt: " << dt << " " << pls->Tstamp64 << " " << rl->T << endl;
+  for (it=--Levents.end();it!=m_event;--it) {
+    //for (rl=Levents.rbegin(); rl!=r_event; ++rl) {
+    dt = (pls->Tstamp64 - it->T);
+    //cout << "tt: " << dt << " " << pls->Tstamp64 << " " << it->T << endl;
     if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
-      it=Levents.insert(rl.base(),EventClass());
+      it=Levents.insert(it,EventClass());
       it->Nevt=nevents;
       nevents++;
       it->Pulse_Ana_Add(pls);
-      // if (nevents>ev1 && nevents<ev2) {
-      //   cout << "NewEv: " << nevents << " " << (int) pls->Chan << " "
-      //        << pls->Tstamp64 << " " << rl->T << " " << dt
-      //        << " " << rl->pulses.size() << endl;
-      // }
       return;
     }
     else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
       // coincidence event
-      rl->Pulse_Ana_Add(pls);
-      // if (nevents>ev1 && nevents<ev2) {
-      //   cout << "OldEv: " << nevents << " " << (int) pls->Chan << " "
-      //        << pls->Tstamp64 << " " << rl->T << " " << dt
-      //        << " " << rl->pulses.size() << endl;
-      // }
+      it->Pulse_Ana_Add(pls);
       return;
     }
-    //nn++;
-    //n2++;
-    //if (nn>100) break;
   }
 
   if (debug)
@@ -2430,65 +2382,6 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   it->Nevt=nevents;
   it->Pulse_Ana_Add(pls);
   nevents++;
-
-
-  /*
-  std::list<EventClass>::iterator rl;
-  std::list<EventClass>::iterator r_event = m_event;
-
-  cout << "m_event: " << Levents.size() << " " << &*m_event
-       << " " << &*r_event << " " << &*(--r_event)
-       << " " << &*Levents.begin() << " " << &*Levents.end() 
-       << " " << &*(--Levents.end())
-       << endl;
-
-  //for (rl=Levents.rbegin(); rl!=Levents.rend(); ++rl) {
-  for (rl=--Levents.end();rl!=--r_event;--rl) {
-
-    dt = (pls->Tstamp64 - rl->T);
-    if (dt > opt.tgate) {
-      //add new event at the current position of the eventlist
-      Levents.insert(++rl,EventClass());
-      --rl;
-      rl->Nevt=nevents;
-      nevents++;
-      rl->Pulse_Ana_Add(pls);
-      return;
-    }
-    else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
-      // coincidence event
-      rl->Pulse_Ana_Add(pls);
-      return;
-    }
-    else {
-      cout << "loop: " << Levents.size() << " " << &*rl << endl;
-    }
-    // nn++;
-    // if (nn>=opt.event_lag) {
-    // }
-  }
-  */
-
-
-  /*
-  if (Levents.empty() || Levents.size()<100) {
-    //at the very beginning set m_event to the beginning of Levents
-    it=Levents.insert(Levents.begin(),EventClass());
-    m_event=Levents.begin();
-    //rl = event_reviter(m_event);
-    //cout << "LLL: " << m_event->T << " " << rl->T << endl;
-    return;
-  }
-  else {
-    //this is rogue event; it's inserted before m_event and
-    //(probably) not included in any coincidences
-    it=Levents.insert(m_event,EventClass());
-    //rl = event_reviter(m_event);
-    //--rl;
-    if (debug)
-      cout << "beginning: " << dt << " " << Levents.size() << endl;
-  }
-  */
 
 }
 
@@ -2587,6 +2480,8 @@ void CRS::Select_Event(EventClass *evt) {
     EvtFrm->Pevents=&Levents;    
   }
 
-  EvtFrm->d_event=EvtFrm->Pevents->begin();
+  //EvtFrm->d_event=EvtFrm->Pevents->begin();
+  EvtFrm->d_event=m_event;
+  cout << "Select: " << EvtFrm->d_event->T << endl;
 
 }
