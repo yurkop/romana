@@ -167,14 +167,26 @@ void *handle_ana(void* ptr) {
   //m_event - first event which is not analyzed
 
   MemInfo_t info;
-  gSystem->GetMemInfo(&info);
-  Int_t memmax=info.fMemTotal*0.05*1024;
+  bool unchecked=true;
+
+  //gSystem->GetMemInfo(&info);
+  //Int_t memmax=info.fMemTotal*0.05*1024;
 
   //int *pp = (int*) ptr;
 
   //while (event_thread_run) {
   //cout << "--------- Ana1: " << crs->n_ana << " " << crs->Levents.size() << endl;
   while (crs->b_run) {
+
+    sz=crs->Levents.size();
+
+    gSystem->GetMemInfo(&info);
+    if (unchecked && info.fMemFree<300) {
+      opt.ev_max = sz*0.005;
+      opt.ev_max*=100;
+      cout << "ev_max updated: " << opt.ev_max << endl;
+      unchecked=false;
+    }
 
     // cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
     // 	 << " " << opt.ev_max*opt.rbuf_size << " Mb"
@@ -185,12 +197,12 @@ void *handle_ana(void* ptr) {
     //   opt.ev_max=memmax/TMath::Max(opt.rbuf_size,opt.usb_size);
     //   opt.ev_min=opt.ev_max/2;
     // }
+
     if (opt.ev_min>=opt.ev_max) {
       opt.ev_min=opt.ev_max/2;
     }
     //opt.ev_max=opt.ev_min+5;
 
-    sz=crs->Levents.size();
     if (crs->b_run==2) { //analyze all events, then stop
       n1 = 99999999;
       crs->b_run=0;
@@ -216,7 +228,10 @@ void *handle_ana(void* ptr) {
       crs->n_ana+=ii;
 
       EvtFrm->Tevents.clear();
-      EvtFrm->Tevents.push_back(*crs->m_event);
+      //cout << "Push: " << crs->m_event->T << endl;
+      if (crs->m_event!=crs->Levents.end()) {
+	EvtFrm->Tevents.push_back(*crs->m_event);
+      }
       EvtFrm->d_event=EvtFrm->Pevents->begin();
 
       //cout << "m_event: " << crs->m_event->T << endl;
@@ -1256,6 +1271,12 @@ int CRS::DoStartStop() {
     trd_ana->Join();
     trd_ana->Delete();
 
+    //cout << "startstop1: " << endl;
+    EvtFrm->Clear();
+    EvtFrm->Pevents = &Levents;
+    EvtFrm->d_event=--EvtFrm->Pevents->end();
+    //cout << "startstop2: " << endl;
+
     //gSystem->Sleep(opt.tsleep);   
     gSystem->Sleep(10);   
     Show(true);
@@ -1272,12 +1293,11 @@ int CRS::DoStartStop() {
 
     //trd_ana->Run(&m_flag);
 
+    //cout << "Acquisition stopped2" << endl;
     Cancel_all(ntrans);
     b_stop=true;
     b_run=2;
-    EvtFrm->Clear();
-    EvtFrm->Pevents = &Levents;
-    EvtFrm->d_event=--EvtFrm->Pevents->end();
+    //cout << "Acquisition stopped3" << endl;
     //Select_Event();
     //EvtFrm->Levents = &Levents;
   }
@@ -1712,7 +1732,7 @@ void CRS::Show(bool force) {
   static Long64_t tm1=0;//gSystem->Now();
   static Long64_t tm2;
   //= gSystem->Now();
-  MemInfo_t info;
+  //MemInfo_t info;
 
   //while (!crs->b_stop) {
     tm2=gSystem->Now();
@@ -1732,19 +1752,27 @@ void CRS::Show(bool force) {
       t1=opt.T_acq;
       bytes1=bytes2;
 
-      gSystem->GetMemInfo(&info);
+      //gSystem->GetMemInfo(&info);
       //cout << "show... " << info.fMemTotal << " " << info.fMemFree
       //   << " " << info.fMemUsed << endl;
 
-      if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-	EvtFrm->fCanvas->GetCanvas()->SetEditable(true);
-	EvtFrm->DrawEvent2();
-	EvtFrm->fCanvas->GetCanvas()->SetEditable(false);
-      }
-
-      if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
-	//HiFrm->DrawHist();      
-	HiFrm->ReDraw();
+      if (myM) {
+	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
+	  EvtFrm->fCanvas->GetCanvas()->SetEditable(true);
+	  EvtFrm->DrawEvent2();
+	  EvtFrm->fCanvas->GetCanvas()->SetEditable(false);
+	}
+	else if (myM->fTab->GetCurrent()==HiFrm->ntab) {
+	  //HiFrm->DrawHist();      
+	  HiFrm->ReDraw();
+	}
+	else {
+	  TString name = TString(myM->fTab->GetCurrentTab()->GetString());
+	  if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
+	    //cout << "DoTab1a: " << name << endl;
+	    parpar->Update();
+	  }
+	}
       }
 
       myM->UpdateStatus();

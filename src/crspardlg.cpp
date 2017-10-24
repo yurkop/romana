@@ -744,10 +744,10 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   AddLine2(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,1,2048,
 	   1,20000,(char*) "DoNum_SetBuf()");
 
-  tip1= "Minimal size of the event list:\nduring analysis event list size doesn't go below this value";
-  tip2= "Maximal size of the event list:\nafter reaching this size event list is cleaned down to minimal value";
-  label="Event_list size";
-  AddLine2(fF6,ww,&opt.ev_min,&opt.ev_max,tip1,tip2,label,k_int,1,1000,1,1000);
+  tip1= "Maximal size of the event list:\nNumber events available for viewing in the Events Tab";
+  tip2= "Event lag:\nMaximal number of events which may come delayed from another channel";
+  label="Event_list size / Event lag";
+  AddLine2(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,1,1000000,1,1000000);
 
   fF6->Resize();
 
@@ -765,7 +765,7 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
 
   tip1= "Coincidence window for making events (in samples)";
-  tip2= "Veto window for pulses from the same channel";
+  tip2= "Veto window (in samples): \nsubsequent pulses from the same channel coming within this window are ignored";
   label="Coincidence (smp), veto (smp)";
   AddLine2(fF6,ww,&opt.tgate,&opt.tveto,tip1,tip2,label,k_int,0,1000,5,10);
 

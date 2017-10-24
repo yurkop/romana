@@ -858,6 +858,10 @@ void EventFrame::DrawEvent2() {
   //printf("DrawEvent0: %p %d %p %d\n",Pevents,nnn,crs->Pevents,crs->Pevents.size());
 
   if (Pevents->empty()) {
+    return;
+  }
+
+  if (Pevents->empty()) {
     txt.DrawTextNDC(0.2,0.7,"Empty event");
     cv->Update();
     //cout << "draw1a:" << endl;
