@@ -51,6 +51,7 @@ protected:
    TGStatusBar            *fStat2[4];
    //TGStatusBar            *fStat2;
    
+
    TGLayoutHints          *fLay1;
    TGLayoutHints          *fLay2;
    TGLayoutHints          *fLay3;
@@ -60,6 +61,8 @@ protected:
    TGLayoutHints          *fLay7;
    TGLayoutHints          *fLay8;
    TGLayoutHints          *fLay9;
+   TGLayoutHints          *fLay16;
+
 
  public:
    TRootEmbeddedCanvas    *fCanvas;

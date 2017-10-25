@@ -184,6 +184,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fLay8 = new TGLayoutHints(kLHintsExpandX,0,0,0,0);
   fLay9 = new TGLayoutHints(kLHintsExpandY,0,0,0,0);
 
+  fLay16 = new TGLayoutHints(kLHintsLeft,0,5,0,0);
+
   //Frames.....
 
   TGVerticalFrame        *fVer0; //contains canvas, Hslider, fHor1
@@ -412,11 +414,16 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 	//flab->SetWidth(16);
 	//fHor1->AddFrame(flab, fLay6);
 
-	fChn[k] = new TGCheckButton(fHor1, ss, k);
+	fChn[k] = new TGCheckButton(fHor1," ", k);
 	fChn[k]->ChangeOptions(fChn[k]->GetOptions()|kFixedWidth);
-	fChn[k]->SetWidth(36);
+	fChn[k]->SetWidth(24);
 	fHor1->AddFrame(fChn[k], fLay6);
 	fChn[k]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
+
+	TGLabel* flab = new TGLabel(fHor1, ss);
+	flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
+	flab->SetWidth(12);
+	fHor1->AddFrame(flab, fLay16);
 
 	// int col=gROOT->GetColor(chcol[k])->GetPixel();
 	// int fcol=0;
@@ -901,11 +908,13 @@ void EventFrame::DrawEvent2() {
 
   for (int i=0;i<MAX_CH;i++) {
     if (mask&(one<<i)) {
-      fChn[i]->SetBackgroundColor(gcol[i]);
+      //fChn[i]->SetBackgroundColor(gcol[i]);
+      fChn[i]->ChangeBackground(gcol[i]);
       //fChn[i]->SetForegroundColor(fcol[i]);
     }
     else {
-      fChn[i]->SetBackgroundColor(15263976);
+      //fChn[i]->SetBackgroundColor(15263976);
+      fChn[i]->ChangeBackground(15263976);
       //fChn[i]->SetForegroundColor(0);
     }
   }
