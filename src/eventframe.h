@@ -48,6 +48,7 @@ protected:
 
    static const int nstat=3;
    TGStatusBar            *fStat[nstat];
+   TGStatusBar            *fStat2[4];
    //TGStatusBar            *fStat2;
    
    TGLayoutHints          *fLay1;

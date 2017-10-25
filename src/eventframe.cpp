@@ -12,6 +12,8 @@
 
 #include <TRandom.h>
 
+Long64_t markt[10];
+
 TLine ln;
 TMarker mk;
 
@@ -473,6 +475,13 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fHor[i]->AddFrame(fStat[i],fLay3);
   }
 
+  TGLayoutHints *fLay10 = new TGLayoutHints(kLHintsExpandX,2,2,0,0);
+  for (int i=0;i<4;i++) {
+    fStat2[i]=new TGStatusBar(fVer_st,10,10);
+    fStat2[i]->Draw3DCorner(kFALSE);
+    fVer_st->AddFrame(fStat2[i],fLay10);
+  }
+
   // fStat[1]=new TGStatusBar(fVer_st,10,10);
   // fVer_st->AddFrame(fStat[0],fLay3);
   // fVer_st->AddFrame(fStat[1],fLay3);
@@ -860,7 +869,7 @@ void EventFrame::DrawEvent2() {
   if (Pevents->empty()) {
     return;
   }
-
+  /*
   if (Pevents->empty()) {
     txt.DrawTextNDC(0.2,0.7,"Empty event");
     cv->Update();
@@ -868,7 +877,7 @@ void EventFrame::DrawEvent2() {
     //Emut2.UnLock();
     return;
   }
-
+  */
   //cout << "draw1a:" << endl;
   if (d_event->pulses.empty()) {
     //TText tt;
@@ -887,38 +896,21 @@ void EventFrame::DrawEvent2() {
     mask|=one<<ch;
   }
 
-  //printf("mask: %llx\n",mask);
-  
+
+  markt[0]=gSystem->Now();
+
   for (int i=0;i<MAX_CH;i++) {
     if (mask&(one<<i)) {
       fChn[i]->SetBackgroundColor(gcol[i]);
-      fChn[i]->SetForegroundColor(fcol[i]);
+      //fChn[i]->SetForegroundColor(fcol[i]);
     }
     else {
       fChn[i]->SetBackgroundColor(15263976);
-      fChn[i]->SetForegroundColor(0);
+      //fChn[i]->SetForegroundColor(0);
     }
   }
 
-  // for (UInt_t i=0;i<d_event->pulses.size();i++) {
-  //   UInt_t ch= d_event->pulses.at(i).Chan;
-  //   fChn[ch]->SetBackgroundColor(gcol[ch]);
-  //   fChn[ch]->SetForegroundColor(fcol[ch]);
-  // }
-
-  //printf("Draw22: %lld\n", d_event->T);
-
-  // FillHstack(0);
-  // if (opt.b_deriv[0]) {
-  //   FillHstack(1);
-  //   ndiv++;
-  // }    
-  // if (opt.b_deriv[1]) {
-  //   FillHstack(2);
-  //   ndiv++;
-  // }
-
-  //cout << "draw2:" << endl;
+  markt[1]=gSystem->Now();
 
   ndiv=0;
 
@@ -929,25 +921,15 @@ void EventFrame::DrawEvent2() {
     }
   }
 
-  //cout << "draw3:" << endl;
+  markt[2]=gSystem->Now();
 
-  //Emut2.UnLock();
-  //return;
-
-  //cout << "hst: " << hst[0]->GetNhists() << endl;
-  //cout << "mgr: " << mgr[0]->GetHistogram() << endl;
-  //TGraph* gr = (TGraph*) mgr[0]->GetListOfGraphs()->First();
-  //cout << gr->GetN() << " " << gr->GetX()[0] << " " << gr->GetX()[1] << endl;
-  
   cv->Divide(1,ndiv);
+
+  markt[3]=gSystem->Now();
 
   ReDraw();
 
-  //cout << "Draw1: " << endl;
-  //cout << "Draw4: " << d_event->T << endl;
-  //Emut2.UnLock();
-  //return;
-
+  markt[4]=gSystem->Now();
   char ss[99];
 
   sprintf(ss,"%lld",d_event->Nevt);
@@ -958,8 +940,13 @@ void EventFrame::DrawEvent2() {
 
   sprintf(ss,"%lld",d_event->T);
   fStat[2]->SetText(ss);
-  
-  
+
+  for (int i=0;i<4;i++) {
+    sprintf(ss,"%d: %lld",i+1,markt[i+1]-markt[i]);
+    fStat2[i]->SetText(ss);
+  }
+
+
   cv->Update();
 
   //cv->SetEditable(false);
@@ -1029,9 +1016,13 @@ void EventFrame::ReDraw() {
   //Emut.Lock();
   //cv->Update();
   
+  if (Pevents->empty()) {
+    return;
+  }
+
   TCanvas *cv=fCanvas->GetCanvas();
   //cout << "Redr0: " << endl;
-
+  /*
   if (Pevents->empty()) {
     txt.DrawTextNDC(0.2,0.7,"Empty event");
     cv->Update();
@@ -1039,7 +1030,7 @@ void EventFrame::ReDraw() {
     //Emut2.UnLock();
     return;
   }
-
+  */
   //cout << "draw1a:" << endl;
   if (d_event->pulses.empty()) {
     //TText tt;
@@ -1053,25 +1044,14 @@ void EventFrame::ReDraw() {
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
 
-      //TCanvas *cv=fCanvas->GetCanvas();
-      //cout << "Redr0: " << cv << endl;
-      //Emut.UnLock();
-      //return;
-
       cv->cd(nn++);
 
-      //cout << "Redr1: " << i << endl;
-
       SetRanges(i);
-
 
       if (mx1>1e98) {
 	gPad->Clear();
 	continue;
       }
-
-
-      //cout << "Redr2: " << i << endl;
 
       double dx=mx2-mx1;
       double dy=my2[i]-my1[i];
@@ -1085,35 +1065,24 @@ void EventFrame::ReDraw() {
       double y1=my1[i]+dy*(1-h2);
       double y2=my2[i]-dy*h1;
 
-      //printf("DosLider: %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f %0.2f\n",
-      //     h1,h2,y1,y2,mx1,mx2,dx);
-
-      //cout << "Redraw5: " << i << fHist[i] << endl;
       delete fHist[i];
-      //cout << "Redraw6: " << i << fHist[i] << endl;
+
       fHist[i] = new TH1F(mgr_name[i],mgr_title[i],int(dx),x1,x2);
       fHist[i]->SetDirectory(0);
       fHist[i]->SetMinimum(y1);
       fHist[i]->SetMaximum(y2);
       fHist[i]->Draw("axis");
 
-      //cout << "Redraw7: " << i << fHist[i] << endl;
-
       doYline(0,x1,x2,4,2);
-      //cout <<"DrawPeaks: " << d_event->T0 << endl;
       if (fPeak[6]->IsOn()) { //T0
 	mk.DrawMarker(d_event->T0,y2-dy*0.1);
-	//doXline(d_event->T0,y1,y2,5,1);
       }
 
       for (UInt_t j=0;j<d_event->pulses.size();j++) {
 	PulseClass *pulse = &d_event->pulses.at(j);
 	//UInt_t ch= d_event->pulses.at(j).Chan;
 	if (fChn[pulse->Chan]->IsOn()) {
-	  //cout << "Gr: " << i << " " << j << " " << int(pulse->Chan) << " "
-	  //     << Gr[i][j]->GetLineColor() << " " << Gr[i][j]->GetN() << endl;
 	  Gr[i][j]->Draw("lp");
-	  //Gr[i][pulse->Chan]->Draw("lp");
 	  DrawPeaks(i,pulse,y1,y2);
 	  if (i==1 && fPeak[7]->IsOn()) //threshold
 	    doYline(opt.thresh[pulse->Chan],gx1[j],
@@ -1121,26 +1090,6 @@ void EventFrame::ReDraw() {
 	}
       }
 
-      //cout << "MinMax: " << mgr[i]->GetXaxis()->GetXmin() << " " 
-      //     << mgr[i]->GetXaxis()->GetXmax() << endl;
-
-      // TH1* mh = mgr[i]->GetHistogram();
-      // if (mh) {
-      // 	cout << "MinMax: " << mh->GetXaxis()->GetXmin() << " " 
-      // 	     << mh->GetXaxis()->GetXmax() << endl;
-      // }
-
-      //mgr[i]->Draw("alp");
-
-      // cout << "mgr3: " << i << " " << nn << " " << fPeak[0]->IsOn() << " "
-      //    << mgr[i]->GetHistogram()<< endl;
-
-      //   << mgr[i]->GetHistogram()->GetMaximum() << endl;
-
-      // if (mgr[i]->GetHistogram() && fPeak[0]->IsOn()) {
-      // 	DrawPeaks(mgr[i]->GetHistogram()->GetMinimum(),
-      // 	      mgr[i]->GetHistogram()->GetMaximum());
-      // }
     }
   }
 
