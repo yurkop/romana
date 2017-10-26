@@ -92,7 +92,7 @@ class PulseClass {
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
   //short *Data; //raw pulse data
 
-  bool Analyzed; //true if pulse is already analyzed
+  //bool Analyzed; //true if pulse is already analyzed
  public:
   PulseClass();// {};
   virtual ~PulseClass() {};
@@ -114,6 +114,7 @@ class EventClass { //event of pulses
   Long64_t T; //Timestamp of the earliest pulse (threshold crossig)
   Float_t T0; //time of the earliest *START* peak, relative to T
   std::vector <PulseClass> pulses;
+  bool Analyzed;
 
  public:
   EventClass();

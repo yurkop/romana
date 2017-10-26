@@ -77,7 +77,7 @@ RQ_OBJECT("CRS")
 
   // n_ana - number of events which are already analyzed, but not erased,
   // starting from "start"
-  int n_ana;
+  //int n_ana;
 
   std::list<EventClass>::iterator m_event;
   //std::list<EventClass>::reverse_iterator r_event;

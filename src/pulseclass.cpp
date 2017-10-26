@@ -13,7 +13,7 @@ PulseClass::PulseClass() {
   ptype=P_NOSTOP;
   //Nsamp=0;
   //Npeaks=0;
-  Analyzed=false;
+  //Analyzed=false;
   Tstamp64=0;
   Control=0;
   //tdif=99;
@@ -232,6 +232,7 @@ void PulseClass::PeakAna() {
 EventClass::EventClass() {
   T=0;
   T0=99999;
+  Analyzed=false;
 }
 
 void EventClass::Pulse_Ana_Add(PulseClass *pls) {

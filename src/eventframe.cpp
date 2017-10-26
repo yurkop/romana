@@ -461,8 +461,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGHorizontalFrame* fHor[nstat];
   TGTextEntry* st_lab[nstat];
 
-  const char* st_nam[nstat]={"Evt:","Mul:","Tst:"};
-  const char* st_tip[nstat]={"Event number","Multiplicity","Time stamp"};
+  const char* st_nam[nstat]={"E","T","M"};
+  const char* st_tip[nstat]={"Event number","Time stamp","Multiplicity"};
 
   for (int i=0;i<nstat;i++) {
     fHor[i] = new TGHorizontalFrame(fVer_st, 10, 10);
@@ -473,7 +473,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     st_lab[i]->SetState(false);
     //st_lab[i]->ChangeOptions(st_lab[i]->GetOptions()|kFixedWidth);
     st_lab[i]->ChangeOptions(kFixedWidth);
-    st_lab[i]->SetWidth(24);
+    st_lab[i]->SetWidth(16);
     st_lab[i]->SetToolTipText(st_tip[i]);
     //fStat[i]->SetToolTipText(st_tip[i]);
 
@@ -944,10 +944,10 @@ void EventFrame::DrawEvent2() {
   sprintf(ss,"%lld",d_event->Nevt);
   fStat[0]->SetText(ss);
 
-  sprintf(ss,"%ld",d_event->pulses.size());
+  sprintf(ss,"%lld",d_event->T);
   fStat[1]->SetText(ss);
 
-  sprintf(ss,"%lld",d_event->T);
+  sprintf(ss,"%ld",d_event->pulses.size());
   fStat[2]->SetText(ss);
 
   for (int i=0;i<4;i++) {

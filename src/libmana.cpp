@@ -2600,7 +2600,7 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
     cout << "DoTab4: " << name << endl;
-    if (!crs->b_acq)
+    if (crs->b_stop)
       EvtFrm->DrawEvent2();
   }
   else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {

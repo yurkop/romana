@@ -150,147 +150,150 @@ void *handle_ana(void* ptr) {
   // starts analysing the events (fillhist);
   // when it becomes larger than ev_max, starts erasing the events
 
-  //ana_mut.Lock();
-
-  //std::list<event_list>::iterator Lit;
   std::list<EventClass>::iterator it;
 
-  // start - first event which is NOT analyzed yet
+  //need this loop to have at least one event in Levents
   while (crs->Levents.empty() && !crs->b_stop) {
-    gSystem->Sleep(10);    
+    gSystem->Sleep(10);
   }
 
+  // start - first event which is NOT analyzed yet
   std::list<EventClass>::iterator start = crs->Levents.begin();
-  int sz; //event list size
-  int n1; //number of events to analyze
+  //int sz; //event list size
+  //int n1; //number of events to analyze
   int n2; //number of events to erase
   //m_event - first event which is not analyzed
+
+  int ii=0; //temporary variable
 
   MemInfo_t info;
   bool unchecked=true;
 
-  //gSystem->GetMemInfo(&info);
-  //Int_t memmax=info.fMemTotal*0.05*1024;
-
-  //int *pp = (int*) ptr;
-
-  //while (event_thread_run) {
-  //cout << "--------- Ana1: " << crs->n_ana << " " << crs->Levents.size() << endl;
   while (crs->b_run) {
 
-    sz=crs->Levents.size();
+    //gSystem->Sleep(100);
 
+    //get Levents.size at the beginning of the loop and use only it
+    //sz=crs->Levents.size();
+
+    //aviod exhausting all memory
     gSystem->GetMemInfo(&info);
     if (unchecked && info.fMemFree<300) {
-      opt.ev_max = sz*0.005;
+      opt.ev_max = crs->Levents.size()*0.005; //was sz*0.005;
       opt.ev_max*=100;
       cout << "ev_max updated: " << opt.ev_max << endl;
       unchecked=false;
     }
-
-    // cout << "ev_max: " << crs->Levents.size() << " " << opt.ev_max
-    // 	 << " " << opt.ev_max*opt.rbuf_size << " Mb"
-    // 	 << " " << memmax << " " << info.fMemTotal
-    // 	 << " " << opt.ev_min << " " << opt.ev_max << endl;
-
-    // if (opt.ev_max*TMath::Max(opt.rbuf_size,opt.usb_size) > memmax) {
-    //   opt.ev_max=memmax/TMath::Max(opt.rbuf_size,opt.usb_size);
-    //   opt.ev_min=opt.ev_max/2;
-    // }
 
     if (opt.ev_min>=opt.ev_max) {
       opt.ev_min=opt.ev_max/2;
     }
     //opt.ev_max=opt.ev_min+5;
 
+    // if (crs->b_run==2) { //analyze all events, then stop
+    //   n1 = 99999999;
+    //   crs->b_run=0;
+    // }
+    // else { //analyze normally
+    //   n1 = sz-crs->n_ana-opt.ev_min;
+    // }
+
     if (crs->b_run==2) { //analyze all events, then stop
-      n1 = 99999999;
+      crs->m_event=crs->Levents.end();
       crs->b_run=0;
     }
     else { //analyze normally
-      n1 = sz-crs->n_ana-opt.ev_min;
+      ii=0;
+      for (it=--crs->Levents.end(); it!=start && ii<opt.ev_min; --it) {
+	++ii;
+      }
+      crs->m_event=it;
     }
 
-    //cout << "handle_ana0: " << sz << " " << crs->n_ana << " " << n1 << endl;
-    if (n1>0) {
-    //if (false) {
+    //cout << "st: " << ii << " " << &*crs->m_event << " " << &*start << endl;
+    //cout << "start3: " << &*crs->m_event << " " << crs->m_event->Nevt << " " << crs->Levents.size() << " " << ii << " " << crs->b_run << endl;
 
-      //cout << "ana1: " << sz << " " << crs->n_ana << " " << n1 << endl;
+    
+    if (crs->m_event!=start) { //there are some events to analyze
 
+      //cout << "ana: " << endl;
       // determine position of the last event which will be analysed (m_event)
       // actually, m_event - first event which is NOT analyzed
-      int ii=0;
+
+
+      //crs->m_event=start;
+
+      /*
+      ii=0;
       for (it=start; it!=crs->Levents.end() && ii<n1; ++it) {
 	++ii;
       }
       crs->m_event=it;
-      //crs->r_event=std::list<EventClass>::reverse_iterator(it);
-      crs->n_ana+=ii;
+      */
 
+      //cout << "---------- start: " << crs->m_event->Nevt << " " << crs->m_event->T << " " << crs->Levents.size() << " " << crs->Levents.back().Nevt << " " << n1 << endl;
+      //std::advance(crs->m_event,n1);
+      //crs->n_ana+=n1;
+
+
+
+      /*
+      int ll = start->Nevt+n1-crs->m_event->Nevt;
+      if (ll) cout << "start2: " << ll << " " << start->Nevt << " " << n1 << " " << crs->m_event->Nevt << " " << crs->m_event->T << " " << crs->Levents.size() << " " << &*crs->m_event << " " << &*crs->Levents.end() << endl;
+      */
+
+
+      
+      // fill Tevents for EvtFrm::DrawEvent2
       EvtFrm->Tevents.clear();
-      //cout << "Push: " << crs->m_event->T << endl;
       if (crs->m_event!=crs->Levents.end()) {
-	EvtFrm->Tevents.push_back(*crs->m_event);
+      	EvtFrm->Tevents.push_back(*crs->m_event);
       }
       EvtFrm->d_event=EvtFrm->Pevents->begin();
 
-      //cout << "m_event: " << crs->m_event->T << endl;
-
       // analyze events up to m_event
-      for (it=start; it!=crs->m_event; ++it) {
+      for (it=start; it!=crs->m_event;) {
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  HiFrm->FillHist(&(*it));
+	  it->Analyzed=true;
 	  ++crs->nevents2;
+	  ++it;
+	  //++(crs->n_ana);
 	}
-	//cout <<"aa: " << it->T << endl;
+	else {
+	  it=crs->Levents.erase(it);
+	}
       }
-      //cout << "ana3: " << sz << " " << crs->n_ana << " " << crs->m_event->T << endl;
+
+      //cout << "start3: " << crs->m_event->Nevt << " " << crs->Levents.size() << endl;
+
       // start now points to the first event which is not analyzed yet
       start=crs->m_event;
 
-      /*
-      std::list<EventClass>::reverse_iterator rl(crs->m_event);
-      for (rl=crs->Levents.rbegin(); rl!=crs->r_event; ++rl) {
-	//std::list<EventClass>::reverse_iterator rl1=rl;
-	//++rl1;
-	cout <<"rev: " << rl->T << endl;
-      }
-      */
-
       // erase events if the list is too long
-      n2 = sz-opt.ev_max;
+      n2 = crs->Levents.size()-opt.ev_max;
       if (n2>0) {
-	int ii=0;
-	for (it=crs->Levents.begin(); it!=crs->m_event && ii<n2;) {
+	//cout << "### erase: " << n2 << endl;
+	ii=0;
+	for (it=crs->Levents.begin(); it!=start && ii<n2;) {
 	  it=crs->Levents.erase(it);
 	  ++ii;
 	  //++it;
-	  --crs->n_ana;
-	  //cout << "aa: " << n_ana << " " << crs->Levents.size() << " " << it->T << endl;
+	  //--(crs->n_ana);
 	}
       }
-      //cout << "ana4: " << crs->n_ana << " " << crs->m_event->T << " "
-      //<< start->T << " " << crs->nevents2 << endl;
-    }
+
+      //cout << "start4: " << crs->m_event->Nevt << " " << crs->Levents.size() << endl;
+
+    } // if (n1>0)
     else {
       gSystem->Sleep(10);
     }
   } //while (!crs->b_stop)
 
-  //cout << "Ana2: " << crs->n_ana << " " << crs->Levents.size() << endl;
-  // << " " << (--rl)->Nevt << endl;
-
   return 0;
     
 }
-
-/*
-  void *decode2(void* xxx) {
-  libusb_transfer* transfer = (libusb_transfer*) xxx;
-  crs->Decode2(transfer);
-  return NULL;
-  }
-*/
 
 static void cback(libusb_transfer *transfer) {
 
@@ -1335,7 +1338,7 @@ void CRS::DoReset() {
     EvtFrm->DoReset();
   }
 
-  n_ana=0;
+  //n_ana=0;
   m_event=Levents.end();
   //r_event=Levents.rend();
   //r_event=std::list<EventClass>::reverse_iterator(m_event);
@@ -1753,8 +1756,7 @@ void CRS::Show(bool force) {
       bytes1=bytes2;
 
       //gSystem->GetMemInfo(&info);
-      //cout << "show... " << info.fMemTotal << " " << info.fMemFree
-      //   << " " << info.fMemUsed << endl;
+      //cout << "show... " << info.fMemTotal << " " << info.fMemFree << " " << info.fMemUsed << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
 
       if (myM) {
 	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
