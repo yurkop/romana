@@ -1621,6 +1621,10 @@ int CRS::DoBuf() {
 
     //nvp = (nvp+1)%ntrans;
 
+    //double tmp = (Long64_t(gSystem->Now()))*0.001;
+    //double tmp = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
+    opt.T_acq = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
+
     return nbuffers;
   }
   else {
@@ -1643,6 +1647,8 @@ void CRS::FAnalyze() {
 
   TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
   cv->SetEditable(false);
+  opt.F_start = gSystem->Now();
+
   TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*) &nmax);;
   trd_fana->Run();
   b_run=1;
