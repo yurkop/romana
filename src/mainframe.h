@@ -47,6 +47,10 @@ private:
   Pixel_t fCyan;
   Pixel_t fBluevio;
 
+  static const Int_t n_stat=9;
+  TGTextEntry* fStat[n_stat];
+
+
   //TList* hlist;
 
   // TH1F* h_ampl[MAX_CH]; //amplitude - area of the peak
@@ -57,9 +61,6 @@ private:
 public:
   MainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MainFrame();
-
-  TGStatusBar          *fBar1;
-  TGStatusBar          *fBar2;
 
   //void Make_hist();
 

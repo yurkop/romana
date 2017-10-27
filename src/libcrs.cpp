@@ -36,7 +36,7 @@ extern int debug; // for printing debug messages
 
 #endif
 
-const double MB = 1024*1024;
+//const double MB = 1024*1024;
 
 //Int_t ev_max;
 
@@ -181,6 +181,7 @@ void *handle_ana(void* ptr) {
     if (unchecked && info.fMemFree<300) {
       opt.ev_max = crs->Levents.size()*0.005; //was sz*0.005;
       opt.ev_max*=100;
+      if (opt.ev_max < 500) opt.ev_max=500;
       cout << "ev_max updated: " << opt.ev_max << endl;
       unchecked=false;
     }
@@ -346,7 +347,7 @@ static void cback(libusb_transfer *transfer) {
     crs->totalbytes+=transfer->actual_length;
     //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
     //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
-    opt.T_acq = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
+    opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
 
     stat_mut.UnLock();
   } //if (crs->b_acq) {
@@ -1225,6 +1226,7 @@ int CRS::DoStartStop() {
     //nsmp=0;
 
     opt.F_start = gSystem->Now();
+    T_start = opt.F_start;
     if (opt.raw_write) {
       sprintf(raw_opt,"wb%d",opt.raw_compr);
       struct stat buffer;
@@ -1624,7 +1626,7 @@ int CRS::DoBuf() {
 
     //double tmp = (Long64_t(gSystem->Now()))*0.001;
     //double tmp = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
-    opt.T_acq = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
+    opt.T_acq = (Long64_t(gSystem->Now()) - T_start)*0.001;
 
     return nbuffers;
   }
@@ -1648,7 +1650,7 @@ void CRS::FAnalyze() {
 
   TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
   cv->SetEditable(false);
-  opt.F_start = gSystem->Now();
+  T_start = gSystem->Now();
 
   TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*) &nmax);;
   trd_fana->Run();
@@ -1734,65 +1736,45 @@ void CRS::DoNBuf() {
 */
 void CRS::Show(bool force) {
 
-  //cout << "Show" << endl;
-  static Long64_t bytes1=0;
-  static Long64_t bytes2;
-  static double t1;
-
   static Long64_t tm1=0;//gSystem->Now();
   static Long64_t tm2;
   //= gSystem->Now();
   //MemInfo_t info;
 
-  //while (!crs->b_stop) {
-    tm2=gSystem->Now();
-    if (tm2-tm1>opt.tsleep || force) {
-      tm1=tm2;
+  tm2=gSystem->Now();
+  if (tm2-tm1>opt.tsleep || force) {
+    tm1=tm2;
 
-      stat_mut.Lock();
-      bytes2 = crs->totalbytes;
-      stat_mut.UnLock();
+    //cout << "show... " << info.fMemTotal << " " << info.fMemFree << " " << info.fMemUsed << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
 
-      double dt = opt.T_acq - t1;
-      if (dt>0.1)
-	crs->mb_rate = (bytes2-bytes1)/MB/dt;
-      else
-	crs->mb_rate=0;
-
-      t1=opt.T_acq;
-      bytes1=bytes2;
-
-      //gSystem->GetMemInfo(&info);
-      //cout << "show... " << info.fMemTotal << " " << info.fMemFree << " " << info.fMemUsed << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
-
-      if (myM) {
-	if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
-	  EvtFrm->fCanvas->GetCanvas()->SetEditable(true);
-	  EvtFrm->DrawEvent2();
-	  EvtFrm->fCanvas->GetCanvas()->SetEditable(false);
+    if (myM) {
+      if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
+	EvtFrm->fCanvas->GetCanvas()->SetEditable(true);
+	EvtFrm->DrawEvent2();
+	EvtFrm->fCanvas->GetCanvas()->SetEditable(false);
+      }
+      else if (myM->fTab->GetCurrent()==HiFrm->ntab) {
+	//HiFrm->DrawHist();      
+	HiFrm->ReDraw();
+      }
+      else {
+	TString name = TString(myM->fTab->GetCurrentTab()->GetString());
+	if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
+	  //cout << "DoTab1a: " << name << endl;
+	  parpar->Update();
 	}
-	else if (myM->fTab->GetCurrent()==HiFrm->ntab) {
-	  //HiFrm->DrawHist();      
-	  HiFrm->ReDraw();
-	}
-	else {
-	  TString name = TString(myM->fTab->GetCurrentTab()->GetString());
-	  if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
-	    //cout << "DoTab1a: " << name << endl;
-	    parpar->Update();
-	  }
-	  else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
-	    crspar->UpdateStatus();
-	  }
+	else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
+	  crspar->UpdateStatus();
 	}
       }
-
-      myM->UpdateStatus();
-
     }
-    //}
 
-    //cout << "Show end" << endl;
+    myM->UpdateStatus();
+
+  }
+  //}
+
+  //cout << "Show end" << endl;
 }
 
 void CRS::Decode32(UChar_t *buffer, int length) {

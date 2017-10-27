@@ -102,6 +102,7 @@ RQ_OBJECT("CRS")
   struct libusb_transfer *transfer[MAXTRANS];
 
   //timeval t_start, t_stop;
+  Long64_t T_start; //start of the acuisition/analysis
   Long64_t totalbytes;
   Long64_t writtenbytes;
   Long64_t npulses; //total number of pulses (zero at Reset (Start button))
@@ -109,8 +110,8 @@ RQ_OBJECT("CRS")
   Long64_t nevents; //total number of events (zero at Reset (Start button))
   Long64_t nevents2; //number of analyzed/saved events
   Long64_t nbuffers; //total number of buffers (zero at Reset (Start button))
-  double mb_rate;
-  double ev_rate;
+  //double mb_rate;
+  //double ev_rate;
   Int_t npulses2[MAX_CH]; //number of pulses per channel
 
   bool b_acq; // true - acquisition is running

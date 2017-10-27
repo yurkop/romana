@@ -1669,73 +1669,80 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //HiFrm->DoReset();
   //HiFrm->Update();
 
-
-  
   //HiFrm->Update();
   fTab->SetTab(opt.seltab);
-
-  //Int_t parts[] = {44, 16, 16, 14, 10};
-  Int_t parts[] = {20,10,10,10,10,10,10,10,10};
-  const int nparts = 9;
-  const char* fbLabels[] = {"Start","Time","Events received","Events saved","Pulses","Buffers","MB received","MB/sec","MB written"};
 
   TGLayoutHints* fbHints = 
     new TGLayoutHints(kLHintsTop |kLHintsExpandX,0,0,0,0);
 
-  fBar2 = new TGStatusBar(this, 10, 10);
-  fBar2->SetParts(parts, nparts);
-  //fBar2->SetParts(nparts);
-  fBar2->Draw3DCorner(kFALSE);
-  AddFrame(fBar2, fbHints);
-  //AddFrame(fBar2, new TGLayoutHints(kLHintsTop |kLHintsLeft,2,2,2,2));
+  tfont=gClient->GetResourcePool()->GetStatusFont()->GetFontStruct();
+  //gClient->GetResourcePool()->GetStatusFont()->Print();
+  /*
 
-  for (int j=0;j<nparts;j++) {
-    fBar2->SetText(fbLabels[j],j);
-  }
-
-  fBar1 = new TGStatusBar(this, 10, 10);
-  fBar1->SetParts(parts, nparts);
-  //fBar1->SetParts(nparts);
-  fBar1->Draw3DCorner(kFALSE);
-  AddFrame(fBar1, fbHints);
-
-  font = pool->GetFont("misc", -10, kFontWeightNormal, kFontSlantRoman);
-  //font->Print();
+  font = pool->GetFont("*helvetica*", -11);
+  font->Print();
   tfont = 0;
 
   if (font) {
     tfont = font->GetFontStruct();
   }
+  */
 
   TGLayoutHints* fL11 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
   TGLayoutHints* fL12 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
 
   TGHorizontalFrame *fStatFrame1 = new TGHorizontalFrame(this,10,10);
+  TGHorizontalFrame *fStatFrame2 = new TGHorizontalFrame(this,10,10);
   AddFrame(fStatFrame1, fbHints);
+  AddFrame(fStatFrame2, fbHints);
 
-  int fwid=260;
+  const int fwid=160;
 
-  TGTextEntry* fStat[10];
-  for (int i=0;i<10;i++) {
-    fStat[i] = new TGTextEntry(fStatFrame1, "asdf");
+  const char* txtlab[n_stat] = {"Start","Time","Events","kHz","Events2","Buffers","MB in","MB/sec","MB out"};
+
+  const char* st_tip[n_stat] = {
+    "Acquisition start",
+    "Acquisition/Analysis Time",
+    "Total number of events received",
+    "Event rate received (in kHz)",
+    "Total number of events analyzed",
+    "Number of buffers received",
+    "Megabytes received",
+    "Megabytes per second",
+    "Megabytes saved"
+  };
+
+  TGTextEntry* fLab[n_stat];
+  //TGTextEntry* fStat[10];
+  for (int i=0;i<n_stat;i++) {
+    fLab[i] = new TGTextEntry(fStatFrame1, txtlab[i]);
+    fStat[i] = new TGTextEntry(fStatFrame2, " ");
     if (tfont) {
+      fLab[i]->SetFont(tfont,false);
       fStat[i]->SetFont(tfont,false);
     }
-    //fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedSize);
-    //fStat[i]->SetMinWidth(fwid);
-    fStat[i]->SetWidth(fwid);
+    fLab[i]->SetHeight(18);
+    fLab[i]->SetState(false);
+    fLab[i]->ChangeOptions(fLab[i]->GetOptions()|kSunkenFrame|kFixedHeight);
+    fLab[i]->SetToolTipText(st_tip[i]);
+
     fStat[i]->SetHeight(18);
     fStat[i]->SetState(false);
     fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kSunkenFrame|kFixedHeight);
-    //fStat[i]->SetToolTipText(st_tip[i]);
+    fStat[i]->SetToolTipText(st_tip[i]);
 
 
     if (i==0) {
+      fLab[i]->SetWidth(fwid);
+      fLab[i]->ChangeOptions(fLab[i]->GetOptions()|kFixedWidth);
+      fStatFrame1->AddFrame(fLab[i],fL11);
+      fStat[i]->SetWidth(fwid);
       fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedWidth);
-      fStatFrame1->AddFrame(fStat[i],fL11);
+      fStatFrame2->AddFrame(fStat[i],fL11);
     }
     else {
-      fStatFrame1->AddFrame(fStat[i],fL12);
+      fStatFrame1->AddFrame(fLab[i],fL12);
+      fStatFrame2->AddFrame(fStat[i],fL12);
     }
 
   }
@@ -2308,28 +2315,49 @@ void MainFrame::DoCheckTree() {
 
 void MainFrame::UpdateStatus() {
 
+  static Long64_t bytes1=0;
+  static Long64_t nevents1=0;
+  static double t1=0;
+  double mb_rate,ev_rate;
+
   char txt[100];
-  //TGString ss;
-
-  //cout << "Updatestatus1: " << endl;
-  //double rate = 0;
-  //if (opt.T_acq>0.01) rate = crs->totalbytes/MB/opt.T_acq;
-
   //time_t tt = opt.F_start.GetSec();
+
   time_t tt = (opt.F_start+788907600000)*0.001;
   struct tm *ptm = localtime(&tt);
   strftime(txt,sizeof(txt),"%F %T",ptm);
-  
+
+  double dt = opt.T_acq - t1;
+
+  if (dt>0.1) {
+    mb_rate = (crs->totalbytes-bytes1)/MB/dt;
+    ev_rate = (crs->nevents-nevents1)*0.001/dt;
+  }
+  else {
+    mb_rate=0;
+    ev_rate=0;
+  }
+
+  bytes1=crs->totalbytes;
+  nevents1=crs->nevents;
+  t1=opt.T_acq;
+
+
+  fStat[0]->SetText(txt,kFALSE);
+  fStat[1]->SetText(TGString::Format("%0.1f",opt.T_acq),1);
+  fStat[2]->SetText(TGString::Format("%lld",crs->nevents),kFALSE);
+  fStat[3]->SetText(TGString::Format("%0.3f",ev_rate),kFALSE);
+  fStat[4]->SetText(TGString::Format("%lld",crs->nevents2),kFALSE);
+  fStat[5]->SetText(TGString::Format("%lld",crs->nbuffers),kFALSE);
+  fStat[6]->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),kFALSE);
+  fStat[7]->SetText(TGString::Format("%0.2f",mb_rate),kFALSE);
+  fStat[8]->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),kFALSE);
+
   //cout << txt << endl;
   //return;
+  /*
   fBar1->SetText(txt,0);
-
-  
-  //opt.T_acq=0.235345;
   fBar1->SetText(TGString::Format("%0.2f",opt.T_acq),1);
-
-  //ss.Clear();
-
   fBar1->SetText(TGString::Format("%lld",crs->nevents),2);
   fBar1->SetText(TGString::Format("%lld",crs->nevents2),3);
   fBar1->SetText(TGString::Format("%lld",crs->npulses),4);
@@ -2337,22 +2365,8 @@ void MainFrame::UpdateStatus() {
   fBar1->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),6);
   fBar1->SetText(TGString::Format("%0.2f",crs->mb_rate),7);
   fBar1->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),8);
-
-  //cout << "Updatestatus2: " << endl;
-  /*
-  sprintf(txt,"Evt: %d",nevent);
-
-  Long64_t bytes = (recd-Buffer->r_buf+idx)*2;
-  sprintf(txt,"Bytes: %lld",bytes);
-  fBar1->SetText(txt,3);
-
-  UInt_t time = opt.F_stop.Convert(false);
-  time -= (UInt_t) tof;
-  //cout << "Tof: " << nevent << " " << tof << " " << peak64 << " " << first64 << endl;
-  opt.F_start.Set(time);
-
-  fBar1->SetText(TString("Start: ")+opt.F_start.AsSQLString(),1);
   */
+  //cout << "Updatestatus2: " << endl;
 
 }
 
