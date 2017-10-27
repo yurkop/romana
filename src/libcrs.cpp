@@ -30,7 +30,7 @@ extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
 extern ParParDlg *parpar;
-extern ChanParDlg *crspar;
+extern CrsParDlg *crspar;
 extern ChanParDlg *chanpar;
 extern int debug; // for printing debug messages
 
@@ -1366,6 +1366,7 @@ void CRS::DoReset() {
 
   npulses=0;
   nbuffers=0;
+  memset(npulses2,0,sizeof(npulses2));
 
   //npulses=0;
   npulses_buf=0;
@@ -1779,6 +1780,9 @@ void CRS::Show(bool force) {
 	  if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
 	    //cout << "DoTab1a: " << name << endl;
 	    parpar->Update();
+	  }
+	  else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
+	    crspar->UpdateStatus();
 	  }
 	}
       }
@@ -2334,6 +2338,8 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     return;
   }
   
+  npulses2[pls->Chan]++;
+
   if (opt.nsmoo[pls->Chan]) {
     pls->Smooth(opt.nsmoo[pls->Chan]);
   }
@@ -2341,18 +2347,8 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   pls->PeakAna();
 
   event_iter it;
-  //event_reviter rl;
-  //event_list_reviter Rit;
 
   Long64_t dt=pls->Tstamp64-T_last;
-
-  //cout << "iiii: " << &*Levents.begin() << " " << &*Levents.end() << " " 
-  //     << &*(--Levents.end()) << " " << &*m_event << endl;
-
-  //cout << "Insert: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
-  //<< T_last << " " << dt << " " << opt.tgate << endl;
-
-  //cout << "make_events4: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
 
   if (dt>opt.tgate) { //add event at the end of the list
     it=Levents.insert(Levents.end(),EventClass());
@@ -2360,18 +2356,12 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     it->Nevt=nevents;
     nevents++;
     it->Pulse_Ana_Add(pls);
-    // if (nevents>ev1 && nevents<ev2) {
-      // cout << "NewEv2: " << nevents << " " << (int) pls->Chan << " "
-      // 	   << pls->Tstamp64 << " " << dt
-      // 	   << " " << it->pulses.size() << " " << Levents.size() << endl;
-    // }
 
     T_last=pls->Tstamp64;
 
     return;
   }
 
-  //cout << "rl1: " << Levents.size() << " " << (--Levents.end())->T << " " << m_event->T << endl;
   
   for (it=--Levents.end();it!=m_event;--it) {
     //for (rl=Levents.rbegin(); rl!=r_event; ++rl) {

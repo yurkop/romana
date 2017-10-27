@@ -1537,3 +1537,49 @@ void CrsParDlg::AddLine0(int i, TGCompositeFrame* fcont1) {
   }
 
 }
+
+void CrsParDlg::UpdateStatus() {
+
+  static Int_t npulses3[MAX_CH];
+  static double t1;
+
+  TGString txt;
+
+  double dt = opt.T_acq - t1;
+
+  if (dt>0) {
+    for (int i=0;i<MAX_CH;i++) {
+      if (crs->npulses2[i]) {
+	double rate = (crs->npulses2[i]-npulses3[i])/dt*0.001;
+	if (rate>0) {
+	  txt.Form("%0.3f",rate);
+	  fStat[i]->SetText(txt);
+	  //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
+	}
+	npulses3[i]=crs->npulses2[i];
+      }
+    }
+  }
+  t1=opt.T_acq;
+
+  /*
+  if (i<MAX_CH) {
+    fStat[i] = new TGLabel(hframe1, "");
+    fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedSize|kSunkenFrame);
+
+    fStat[i]->SetMargins(10,0,0,0);
+    fStat[i]->SetTextJustify(kTextLeft|kTextCenterY);
+
+    fStat[i]->Resize(70,21);
+    int col=gROOT->GetColor(19)->GetPixel();
+    fStat[i]->SetBackgroundColor(col);
+    fStat[i]->SetText(0);
+    //fbar[i]->SetParts(parts, nparts);
+    //fBar2->SetParts(nparts);
+    //fStat[i]->Draw3DCorner(kFALSE);
+    //fbar[i]->DrawBorder();
+    hframe1->AddFrame(fStat[i],fL8);
+  }
+  */
+
+}

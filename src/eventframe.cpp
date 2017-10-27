@@ -464,12 +464,29 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   const char* st_nam[nstat]={"E","T","M"};
   const char* st_tip[nstat]={"Event number","Time stamp","Multiplicity"};
 
+  TGFontPool *pool = gClient->GetFontPool();
+  const TGFont *font = pool->GetFont("misc", -10, kFontWeightNormal, kFontSlantRoman);
+  //font->Print();
+  FontStruct_t tfont = 0;
+
+  if (font) {
+    tfont = font->GetFontStruct();
+  }
+
   for (int i=0;i<nstat;i++) {
     fHor[i] = new TGHorizontalFrame(fVer_st, 10, 10);
     st_lab[i]= new TGTextEntry(fHor[i], st_nam[i]);
-    fStat[i]=new TGStatusBar(fHor[i],10,10);
-    fStat[i]->Draw3DCorner(kFALSE);
 
+    //fStat[i]=new TGStatusBar(fHor[i],10,10);
+    //fStat[i]->Draw3DCorner(kFALSE);
+    fStat[i] = new TGTextEntry(fHor[i], "");
+    if (tfont) {
+      fStat[i]->SetFont(tfont,false);
+    }
+    fStat[i]->SetState(false);
+    fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kSunkenFrame);
+
+    
     st_lab[i]->SetState(false);
     //st_lab[i]->ChangeOptions(st_lab[i]->GetOptions()|kFixedWidth);
     st_lab[i]->ChangeOptions(kFixedWidth);

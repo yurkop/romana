@@ -1430,16 +1430,19 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   hframe1->AddFrame(vframe1, new TGLayoutHints(kLHintsLeft | kLHintsExpandY,2,2,2,2));
 
   TGFontPool *pool = gClient->GetFontPool();
+
+  //pool->Print();
+
   // family , size (minus value - in pixels, positive value - in points), weight, slant
   // kFontWeightNormal, kFontSlantRoman are defined in TGFont.h
   //font = pool->GetFont("helvetica", -18, kFontWeightMedium, kFontSlantRoman);
-  //const TGFont *font = pool->GetFont("fixed", -12, kFontWeightBold, kFontSlantRoman);
-  //const TGFont *font = pool->GetFont("helvetica", -18, 1, kFontSlantRoman);
+  //const TGFont *font = pool->GetFont("helvetica", -18, kFontWeightBold, kFontSlantRoman);
+  //const TGFont *font = pool->GetFont("helvetica", -18, 4, kFontSlantRoman);
   const TGFont *font = pool->GetFont("-*-helvetica-bold-r-*-*-18-*-*-*-*-*-iso8859-1",true);
 
   //const TGFont *font = gClient->GetFont("-*-arial-normal-r-*-*-20-*-*-*-*-*-*-*");
 
-  cout << "Font: " << font << endl;
+  //cout << "Font: " << font << endl;
   font->Print();
 
   if (!font)
@@ -1696,6 +1699,47 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fBar1->Draw3DCorner(kFALSE);
   AddFrame(fBar1, fbHints);
 
+  font = pool->GetFont("misc", -10, kFontWeightNormal, kFontSlantRoman);
+  //font->Print();
+  tfont = 0;
+
+  if (font) {
+    tfont = font->GetFontStruct();
+  }
+
+  TGLayoutHints* fL11 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
+  TGLayoutHints* fL12 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
+
+  TGHorizontalFrame *fStatFrame1 = new TGHorizontalFrame(this,10,10);
+  AddFrame(fStatFrame1, fbHints);
+
+  int fwid=260;
+
+  TGTextEntry* fStat[10];
+  for (int i=0;i<10;i++) {
+    fStat[i] = new TGTextEntry(fStatFrame1, "asdf");
+    if (tfont) {
+      fStat[i]->SetFont(tfont,false);
+    }
+    //fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedSize);
+    //fStat[i]->SetMinWidth(fwid);
+    fStat[i]->SetWidth(fwid);
+    fStat[i]->SetHeight(18);
+    fStat[i]->SetState(false);
+    fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kSunkenFrame|kFixedHeight);
+    //fStat[i]->SetToolTipText(st_tip[i]);
+
+
+    if (i==0) {
+      fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedWidth);
+      fStatFrame1->AddFrame(fStat[i],fL11);
+    }
+    else {
+      fStatFrame1->AddFrame(fStat[i],fL12);
+    }
+
+  }
+  
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
   //UpdateStatus();
 
@@ -1750,7 +1794,12 @@ MainFrame::~MainFrame() {
 
   if (crs->b_acq && crs->module) {
     crs->DoStartStop();
-    gSystem->Sleep(500);
+    gSystem->Sleep(300);
+  }
+
+  if (crs->b_fana) {
+    DoAna();
+    gSystem->Sleep(300);
   }
 
   delete crs;

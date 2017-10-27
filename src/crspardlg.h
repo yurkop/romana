@@ -182,6 +182,7 @@ virtual ~CrsParDlg() {};
 void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
 void AddHeader();
 void AddLine0(int i, TGCompositeFrame* fcont1);
+void UpdateStatus();
 
 ClassDef(CrsParDlg, 0)
 };

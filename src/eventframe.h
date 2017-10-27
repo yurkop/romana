@@ -13,6 +13,7 @@
 #include <THStack.h>
 #include <TMultiGraph.h>
 #include <TGStatusBar.h>
+#include <TGTextEntry.h>
 
 //#include "TThread.h"
 #include <list>
@@ -47,10 +48,8 @@ protected:
    //TGRadioButton          *fChn[MAX_CH+1];
 
    static const int nstat=3;
-   TGStatusBar            *fStat[nstat];
+   TGTextEntry            *fStat[nstat];
    TGStatusBar            *fStat2[4];
-   //TGStatusBar            *fStat2;
-   
 
    TGLayoutHints          *fLay1;
    TGLayoutHints          *fLay2;

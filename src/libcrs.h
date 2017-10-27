@@ -111,6 +111,7 @@ RQ_OBJECT("CRS")
   Long64_t nbuffers; //total number of buffers (zero at Reset (Start button))
   double mb_rate;
   double ev_rate;
+  Int_t npulses2[MAX_CH]; //number of pulses per channel
 
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
