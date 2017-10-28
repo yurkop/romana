@@ -16,9 +16,9 @@ extern ChanParDlg *chanpar;
 
 const int ncrspar=12;
 
-const int tlen[ncrspar]={26,60,24,25,24,21,45,40,40,25,36,37};
-const char* tlab[ncrspar]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Drv","Thr"};
-const char* tip[ncrspar]={
+const int tlen[ncrspar+1]={26,60,24,25,24,21,45,40,40,25,36,37,75};
+const char* tlab[ncrspar+1]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Drv","Thr","Pulse/sec"};
+const char* tip[ncrspar+1]={
   "Channel number",
   "Channel type",
   "On/Off",
@@ -30,7 +30,9 @@ const char* tip[ncrspar]={
   "Total length of the pulse in samples",
   "Additional Gain",
   "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-Drv)",
-  "Trigger threshold"};
+  "Trigger threshold",
+  "Pulse rate for a given channel"
+};
 
 const int nchpar=18;
 const int tlen2[nchpar]={26,60,26,25,32,40,40,40,42,42,35,35,20,35,35,35,42,42};
@@ -1410,7 +1412,7 @@ void CrsParDlg::AddHeader() {
 
   TGTextEntry* tt[ncrspar];
 
-  for (int i=0;i<ncrspar;i++) {
+  for (int i=0;i<=ncrspar;i++) {
     tt[i]=new TGTextEntry(head_frame, tlab[i]);
     tt[i]->SetWidth(tlen[i]);
     tt[i]->SetState(false);
@@ -1518,7 +1520,7 @@ void CrsParDlg::AddLine0(int i, TGCompositeFrame* fcont1) {
   AddNum1(i,kk++,all,hframe1,"deriv" ,&cpar.kderiv[i],&opt.kdrv[i]);
   AddNum1(i,kk++,all,hframe1,"thresh",&cpar.threshold[i],&opt.thresh[i]);
 
-  if (i<MAX_CH) {
+  if (i<=MAX_CH) {
     fStat[i] = new TGLabel(hframe1, "");
     fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedSize|kSunkenFrame);
 
@@ -1540,8 +1542,10 @@ void CrsParDlg::AddLine0(int i, TGCompositeFrame* fcont1) {
 
 void CrsParDlg::UpdateStatus() {
 
+  static Long64_t allpulses;
   static Int_t npulses3[MAX_CH];
   static double t1;
+  double rate;
 
   TGString txt;
 
@@ -1550,14 +1554,23 @@ void CrsParDlg::UpdateStatus() {
   if (dt>0) {
     for (int i=0;i<MAX_CH;i++) {
       if (crs->npulses2[i]) {
-	double rate = (crs->npulses2[i]-npulses3[i])/dt*0.001;
+	rate = (crs->npulses2[i]-npulses3[i])/dt;
 	if (rate>0) {
-	  txt.Form("%0.3f",rate);
+	  txt.Form("%0.0f",rate);
 	  fStat[i]->SetText(txt);
 	  //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
 	}
 	npulses3[i]=crs->npulses2[i];
       }
+    }
+    if (crs->npulses) {
+	rate = (crs->npulses-allpulses)/dt;
+	if (rate>0) {
+	  txt.Form("%0.0f",rate);
+	  fStat[MAX_CH]->SetText(txt);
+	  //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
+	}
+	allpulses=crs->npulses;
     }
   }
   t1=opt.T_acq;

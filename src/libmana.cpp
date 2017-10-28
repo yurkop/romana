@@ -1698,13 +1698,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   const int fwid=160;
 
-  const char* txtlab[n_stat] = {"Start","Time","Events","kHz","Events2","Buffers","MB in","MB/sec","MB out"};
+  const char* txtlab[n_stat] = {"Start","Time","Events","Ev/sec","Events2","Buffers","MB in","MB/sec","MB out"};
 
   const char* st_tip[n_stat] = {
     "Acquisition start",
     "Acquisition/Analysis Time",
     "Total number of events received",
-    "Event rate received (in kHz)",
+    "Event rate received (in Hz)",
     "Total number of events analyzed",
     "Number of buffers received",
     "Megabytes received",
@@ -2331,7 +2331,7 @@ void MainFrame::UpdateStatus() {
 
   if (dt>0.1) {
     mb_rate = (crs->totalbytes-bytes1)/MB/dt;
-    ev_rate = (crs->nevents-nevents1)*0.001/dt;
+    ev_rate = (crs->nevents-nevents1)/dt;
   }
   else {
     mb_rate=0;
