@@ -61,6 +61,20 @@ class peak_type {
   
 };
 
+class rpeak_type {
+ public:
+  Float_t Area;
+  Float_t Height;
+  Float_t Width;
+  Float_t Time; //exact time relative to pulse start (from 1st deriv)
+  UShort_t Ch; //Channel number
+  UShort_t Type; //peak type
+ public:
+  rpeak_type() {Type=0;};
+  virtual ~rpeak_type() {};
+  
+};
+
 //ptype==0 - > pulse had start and stop
 const unsigned char P_NOSTART=1; //pulse has no start
 const unsigned char P_NOSTOP=2; // pulse has no stop

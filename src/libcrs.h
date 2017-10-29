@@ -14,6 +14,7 @@
 #include <list>
 
 #include <RQ_OBJECT.h>
+#include <TTree.h>
 
 #include "pulseclass.h"
 #include "common.h"
@@ -60,8 +61,11 @@ RQ_OBJECT("CRS")
   gzFile f_read;
   gzFile f_dec;
 
+  TFile* f_tree;
+  TTree* Tree;
+
   char raw_opt[5];
-  char dec_opt[5];
+  //char dec_opt[5];
   Short_t Fmode; //1 - adcm raw; 2- crs2; 32 - crs32
   char Fname[255];
   UChar_t* Fbuf;

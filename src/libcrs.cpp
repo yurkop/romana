@@ -470,6 +470,8 @@ CRS::CRS() {
   f_raw=0;
   f_read=0;
   f_dec=0;
+  f_tree=0;
+  Tree=0;
 
   b_acq=false;
   b_fana=false;
@@ -477,7 +479,7 @@ CRS::CRS() {
   b_run=0;
 
   strcpy(raw_opt,"ab");
-  strcpy(dec_opt,"ab");
+  //strcpy(dec_opt,"ab");
 
   Fbuf=NULL;
   Fbuf2=0;
