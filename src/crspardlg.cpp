@@ -1410,7 +1410,7 @@ void CrsParDlg::AddHeader() {
   //TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
   //AddFrame(hframe1,fL1);
 
-  TGTextEntry* tt[ncrspar];
+  TGTextEntry* tt[ncrspar+1];
 
   for (int i=0;i<=ncrspar;i++) {
     tt[i]=new TGTextEntry(head_frame, tlab[i]);
@@ -1540,6 +1540,15 @@ void CrsParDlg::AddLine0(int i, TGCompositeFrame* fcont1) {
 
 }
 
+void CrsParDlg::ResetStatus() {
+
+  TGString txt="0";
+
+  for (int i=0;i<=MAX_CH;i++) {
+      fStat[i]->SetText(txt);
+  }
+
+}
 void CrsParDlg::UpdateStatus() {
 
   static Long64_t allpulses;
@@ -1551,6 +1560,7 @@ void CrsParDlg::UpdateStatus() {
 
   double dt = opt.T_acq - t1;
 
+  //cout << "DT: " << dt << endl;
   if (dt>0) {
     for (int i=0;i<MAX_CH;i++) {
       if (crs->npulses2[i]) {

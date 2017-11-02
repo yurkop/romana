@@ -1389,7 +1389,9 @@ void CRS::DoReset() {
     DoFopen(NULL,0);
 
   // parpar->Update();
-  // crspar->Update();
+  if (crspar) {
+    crspar->ResetStatus();
+  }
   // chanpar->Update();
 
   //gzrewind(f_raw);
