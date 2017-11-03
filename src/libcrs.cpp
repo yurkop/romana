@@ -1862,8 +1862,11 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 
     }
     else if (frmt==1) {
-      ipp->State = buffer[idx1+5]+1;
+      ipp->State = buffer[idx1+5];
       ipp->Counter = data & 0xFFFFFFFFFF;
+      // if (buffer[idx1+5]) {
+      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipp->State << endl;
+      // }
     }
     else if (frmt==2) {
 

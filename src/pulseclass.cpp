@@ -245,7 +245,10 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     }
   }
 
-  if (pls->State) State=1;
+  if (pls->State) {
+    State=1;
+    //cout << "state: " << Nevt << " " << (int) State << endl;
+  }
 
   pulses.push_back(*pls);
 
