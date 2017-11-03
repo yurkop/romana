@@ -102,7 +102,7 @@ class PulseClass {
   //int tdif; //difference in tstamp from the event tstamp
 
   UChar_t Chan; //channel number
-  UChar_t Control; //Control word
+  UChar_t State; //channel state word (Control word - external input in crs32)
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
   //short *Data; //raw pulse data
 
@@ -125,6 +125,7 @@ class EventClass { //event of pulses
 
  public:
   Long64_t Nevt;
+  Char_t State;
   Long64_t T; //Timestamp of the earliest pulse (threshold crossig)
   Float_t T0; //time of the earliest *START* peak, relative to T
   std::vector <PulseClass> pulses;

@@ -461,8 +461,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGHorizontalFrame* fHor[nstat];
   TGTextEntry* st_lab[nstat];
 
-  const char* st_nam[nstat]={"E","T","M"};
-  const char* st_tip[nstat]={"Event number","Time stamp","Multiplicity"};
+  const char* st_nam[nstat]={"E","T","M","S"};
+  const char* st_tip[nstat]={"Event number","Time stamp","Multiplicity","State"};
 
   TGFontPool *pool = gClient->GetFontPool();
   const TGFont *font = pool->GetFont("misc", -10, kFontWeightNormal, kFontSlantRoman);
@@ -473,13 +473,22 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     tfont = font->GetFontStruct();
   }
 
-  for (int i=0;i<nstat;i++) {
+  for (int i=0;i<nstat-1;i++) {
     fHor[i] = new TGHorizontalFrame(fVer_st, 10, 10);
-    st_lab[i]= new TGTextEntry(fHor[i], st_nam[i]);
+    fVer_st->AddFrame(fHor[i],fLay8);
+    fHor[i]->ChangeOptions(kFixedWidth);
+    fHor[i]->SetWidth(100);
+  }
 
-    //fStat[i]=new TGStatusBar(fHor[i],10,10);
+  for (int i=0;i<nstat;i++) {
+    int j=i;
+    if (i==nstat-1) j=i-1;
+    //fHor[i] = new TGHorizontalFrame(fVer_st, 10, 10);
+    st_lab[i]= new TGTextEntry(fHor[j], st_nam[i]);
+
+    //fStat[i]=new TGStatusBar(fHor[j],10,10);
     //fStat[i]->Draw3DCorner(kFALSE);
-    fStat[i] = new TGTextEntry(fHor[i], "");
+    fStat[i] = new TGTextEntry(fHor[j], "");
     if (tfont) {
       fStat[i]->SetFont(tfont,false);
     }
@@ -492,11 +501,11 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     st_lab[i]->ChangeOptions(kFixedWidth);
     st_lab[i]->SetWidth(16);
     st_lab[i]->SetToolTipText(st_tip[i]);
-    //fStat[i]->SetToolTipText(st_tip[i]);
+    fStat[i]->SetToolTipText(st_tip[i]);
 
-    fVer_st->AddFrame(fHor[i],fLay8);
-    fHor[i]->AddFrame(st_lab[i],fLay9);
-    fHor[i]->AddFrame(fStat[i],fLay3);
+    //fVer_st->AddFrame(fHor[j],fLay8);
+    fHor[j]->AddFrame(st_lab[i],fLay9);
+    fHor[j]->AddFrame(fStat[i],fLay3);
   }
 
   TGLayoutHints *fLay10 = new TGLayoutHints(kLHintsExpandX,2,2,0,0);
@@ -966,6 +975,9 @@ void EventFrame::DrawEvent2() {
 
   sprintf(ss,"%ld",d_event->pulses.size());
   fStat[2]->SetText(ss);
+
+  sprintf(ss,"%d",d_event->State);
+  fStat[3]->SetText(ss);
 
   for (int i=0;i<4;i++) {
     sprintf(ss,"%d: %lld",i+1,markt[i+1]-markt[i]);

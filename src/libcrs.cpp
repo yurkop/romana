@@ -1862,7 +1862,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 
     }
     else if (frmt==1) {
-      ipp->Control = buffer[idx1+5]+1;
+      ipp->State = buffer[idx1+5]+1;
       ipp->Counter = data & 0xFFFFFFFFFF;
     }
     else if (frmt==2) {

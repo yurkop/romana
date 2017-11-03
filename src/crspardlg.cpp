@@ -1320,7 +1320,7 @@ void ChanParDlg::DoNum() {
 
   pmap pp = Plist[id-1];
 
-  cout << "ch_donum: " << pp.data2 << endl;
+  //cout << "ch_donum: " << pp.data2 << endl;
 
   if (pp.cmd && crs->b_acq) {
     crs->Command2(4,0,0,0);
@@ -1544,9 +1544,11 @@ void CrsParDlg::ResetStatus() {
 
   TGString txt="0";
 
-  for (int i=0;i<=MAX_CH;i++) {
+  for (int i=0;i<chanPresent;i++) {
       fStat[i]->SetText(txt);
   }
+
+  fStat[MAX_CH]->SetText(txt);
 
 }
 void CrsParDlg::UpdateStatus() {
@@ -1562,7 +1564,7 @@ void CrsParDlg::UpdateStatus() {
 
   //cout << "DT: " << dt << endl;
   if (dt>0) {
-    for (int i=0;i<MAX_CH;i++) {
+    for (int i=0;i<chanPresent;i++) {
       if (crs->npulses2[i]) {
 	rate = (crs->npulses2[i]-npulses3[i])/dt;
 	if (rate>0) {
@@ -1584,25 +1586,5 @@ void CrsParDlg::UpdateStatus() {
     }
   }
   t1=opt.T_acq;
-
-  /*
-  if (i<MAX_CH) {
-    fStat[i] = new TGLabel(hframe1, "");
-    fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedSize|kSunkenFrame);
-
-    fStat[i]->SetMargins(10,0,0,0);
-    fStat[i]->SetTextJustify(kTextLeft|kTextCenterY);
-
-    fStat[i]->Resize(70,21);
-    int col=gROOT->GetColor(19)->GetPixel();
-    fStat[i]->SetBackgroundColor(col);
-    fStat[i]->SetText(0);
-    //fbar[i]->SetParts(parts, nparts);
-    //fBar2->SetParts(nparts);
-    //fStat[i]->Draw3DCorner(kFALSE);
-    //fbar[i]->DrawBorder();
-    hframe1->AddFrame(fStat[i],fL8);
-  }
-  */
 
 }

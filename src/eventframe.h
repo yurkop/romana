@@ -47,7 +47,7 @@ protected:
    TGCheckButton          *fChn[MAX_CH+1];
    //TGRadioButton          *fChn[MAX_CH+1];
 
-   static const int nstat=3;
+   static const int        nstat=4;
    TGTextEntry            *fStat[nstat];
    TGStatusBar            *fStat2[4];
 

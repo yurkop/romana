@@ -15,7 +15,7 @@ PulseClass::PulseClass() {
   //Npeaks=0;
   //Analyzed=false;
   Tstamp64=0;
-  Control=0;
+  State=0;
   //tdif=99;
   //sData=NULL;
   //Peaks=NULL;
@@ -230,6 +230,7 @@ void PulseClass::PeakAna() {
 }
 
 EventClass::EventClass() {
+  State=0;
   T=0;
   T0=99999;
   Analyzed=false;
@@ -244,6 +245,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     }
   }
 
+  if (pls->State) State=1;
 
   pulses.push_back(*pls);
 
