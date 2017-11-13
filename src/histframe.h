@@ -34,6 +34,16 @@ class MECanvas: public TRootEmbeddedCanvas {
 
 };
 */
+namespace PROF {
+
+  const int prof_ch[32] = {
+    0, 1, 2, 3, 4, 5, 6, 7,
+    7, 6, 5, 4, 3, 2, 1, 0,
+    7, 5, 3, 1, 6, 4, 2, 0,
+    0, 2, 4, 6, 1, 3, 5, 7
+  };
+
+}
 
 //-----------------------------------------------
 class HistFrame: public TGCompositeFrame {
@@ -56,7 +66,7 @@ class HistFrame: public TGCompositeFrame {
    int ndiv;
    int xdiv;
    int ydiv;
-   
+
    TH1F* h_ampl[MAX_CH]; //amplitude - area of the peak
    TH1F* h_height[MAX_CH]; //height of the peak
    TH1F* h_time[MAX_CH]; // real time
@@ -96,7 +106,7 @@ public:
    void Make_hist();
    void NewBins();
    //void Reset_hist();
-   void FillHist(EventClass* evt);
+   //void FillHist(EventClass* evt);
    void DoClick(TGListTreeItem* item,Int_t but);
    //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
    void DoCheck(TObject* obj, Bool_t check);

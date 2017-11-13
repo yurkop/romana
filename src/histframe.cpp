@@ -22,13 +22,6 @@ int Ch_Alpha_X[8]={25,29,26,30,27,31,28,32};
 int Ch_Alpha_Y[8]={24,20,23,19,22,18,21,17};
 */
 
-int prof_ch[32] = {
-  0, 1, 2, 3, 4, 5, 6, 7,
-  7, 6, 5, 4, 3, 2, 1, 0,
-  7, 5, 3, 1, 6, 4, 2, 0,
-  0, 2, 4, 6, 1, 3, 5, 7
-};
-
 extern Toptions opt;
 //extern Coptions cpar;
 extern MyMainFrame *myM;
@@ -258,19 +251,6 @@ void HistFrame::Make_hist() {
   }
   //idir->CheckItem(false);
 
-  idir = fListTree->AddItem(iroot, "2d",0,0,true);
-  for (int i=0;i<1;i++) {
-    sprintf(name,"h2d_%02d",i);
-    sprintf(title,"h2d_%02d;Channel;Counts",i);
-    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_2d[i]=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
-		     nn,opt.amp_min,opt.amp_max);
-    fListTree->AddItem(idir, name, h_2d[i], pic, pic,true);
-    //cout << i << " " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete);
-    //item->CheckItem(false);
-  }
-  //idir->CheckItem(false);
-
   idir = fListTree->AddItem(iroot, "Height",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(name,"height_%02d",i);
@@ -333,6 +313,19 @@ void HistFrame::Make_hist() {
     fListTree->AddItem(idir, name, h2_prof_real[i], pic, pic,true);
   }
 
+  idir = fListTree->AddItem(iroot, "2d",0,0,true);
+  for (int i=0;i<1;i++) {
+    sprintf(name,"h2d_%02d",i);
+    sprintf(title,"h2d_%02d;Channel;Counts",i);
+    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+    h_2d[i]=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
+		     nn,opt.amp_min,opt.amp_max);
+    fListTree->AddItem(idir, name, h_2d[i], pic, pic,true);
+    //cout << i << " " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete);
+    //item->CheckItem(false);
+  }
+  //idir->CheckItem(false);
+
 }
 
 void HistFrame::NewBins() {
@@ -388,6 +381,7 @@ void HistFrame::Reset_hist() {
 }
 */
 
+/*
 void HistFrame::FillHist(EventClass* evt) {
   double DT = crs->period*1e-9;
   //int ch[MAX_CH];
@@ -453,16 +447,16 @@ void HistFrame::FillHist(EventClass* evt) {
     for (UInt_t i=0;i<evt->pulses.size();i++) {
       int ch = evt->pulses[i].Chan;
       if (ch<8) { //prof_x
-	px=prof_ch[ch];
+	px=PROF::prof_ch[ch];
       }
       else if (ch<16) { //prof y
-	py=prof_ch[ch];
+	py=PROF::prof_ch[ch];
       }
       else if (ch<24) { //alpha y
-	ay=prof_ch[ch];
+	ay=PROF::prof_ch[ch];
       }
       else { //alpha x
-	ax=prof_ch[ch];
+	ax=PROF::prof_ch[ch];
       }
     }
 
@@ -475,6 +469,7 @@ void HistFrame::FillHist(EventClass* evt) {
   }
 
 }
+*/
 
 void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 {

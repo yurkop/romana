@@ -1,11 +1,13 @@
 #include "common.h"
 #include "toptions.h"
 #include "libcrs.h"
+#include "histframe.h"
 #include <iostream>
 
 //extern Coptions cpar;
 extern Toptions opt;
 extern CRS* crs;
+extern HistFrame* HiFrm;
 
 using namespace std;
 
@@ -281,6 +283,111 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   }
 }
 
+void EventClass::FillHistTree() {
+  double DT = crs->period*1e-9;
+  //int ch[MAX_CH];
+  double tt;
+
+  for (UInt_t i=0;i<pulses.size();i++) {
+    int ch = pulses[i].Chan;
+    for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
+      peak_type* pk = &pulses[i].Peaks[j];
+
+      HiFrm->h_ampl[ch]->Fill(pk->Area*opt.emult[ch]);
+      HiFrm->h_height[ch]->Fill(pk->Height);
+
+      tt = pulses[i].Tstamp64 + crs->Tstart64;
+      tt += pk->Pos;
+      HiFrm->h_time[ch]->Fill(tt*DT);
+
+      double dt = pulses[i].Tstamp64 - T;
+      //tt = pk->Time - cpar.preWr[ch] - T0 + dt;
+      tt = pk->Time - crs->Pre[ch] - T0 + dt;
+      // cout << "TOF: " << crs->nevents << " " << i << " "
+      // 	   << ch << " " << pk->Time << " " << T0 << " "
+      // 	   << dt << " " << tt << endl;
+      HiFrm->h_tof[ch]->Fill(tt*crs->period);
+
+      if (opt.dec_write) {
+	crs->rP.Area   = pk->Area;
+	crs->rP.Height = pk->Height;
+	crs->rP.Width  = pk->Width ;
+	crs->rP.Time   = pk->Time  ;
+	crs->rP.Ch     = ch    ;
+	crs->rP.Type   = pk->Type  ;
+
+	crs->rPeaks.push_back(crs->rP);
+      }
+
+    }
+
+    if (crs->Tstart0>0) {
+      tt = T - crs->Tstart0;
+      HiFrm->h_mtof[pulses.size()]->Fill(tt*crs->period/1000);
+    }
+    if (ch==opt.start_ch) {
+      crs->Tstart0 = T;
+    }
+  } //for (UInt_t i=0;i<pulses.size()...
+
+  if (opt.dec_write) {
+    crs->rTime=T;
+    crs->rState = State;
+    crs->Tree->Fill();
+    crs->rPeaks.clear();
+  }
+
+  if (pulses.size()>=2) {
+    double amp[2];
+    int nn=0;
+    for (UInt_t i=0;i<pulses.size();i++) {
+      int ch = pulses[i].Chan;
+      for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
+	peak_type* pk = &pulses[i].Peaks[j];
+
+	if (ch==0 && j==0) {
+	  amp[0]=pk->Area*opt.emult[ch];
+	  nn++;
+	}
+	if (ch==1 && j==0) {
+	  amp[1]=pk->Area*opt.emult[ch];
+	  nn++;
+	}
+
+      }
+    }
+    if (nn==2) {
+      HiFrm->h_2d[0]->Fill(amp[0],amp[1]);
+    }
+  }
+
+  int ax=0,ay=0,px=0,py=0;
+  if (pulses.size()==4) {
+    for (UInt_t i=0;i<pulses.size();i++) {
+      int ch = pulses[i].Chan;
+      if (ch<8) { //prof_x
+	px=PROF::prof_ch[ch];
+      }
+      else if (ch<16) { //prof y
+	py=PROF::prof_ch[ch];
+      }
+      else if (ch<24) { //alpha y
+	ay=PROF::prof_ch[ch];
+      }
+      else { //alpha x
+	ax=PROF::prof_ch[ch];
+      }
+    }
+
+    int ch_alpha = ax + ay*8;
+
+    //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
+
+    HiFrm->h2_prof_strip[ch_alpha]->Fill(px,py);
+    HiFrm->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
+  }
+
+}
 
 void PulseClass::Smooth(int nn) {
 

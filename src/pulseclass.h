@@ -70,7 +70,8 @@ class rpeak_type {
   UShort_t Ch; //Channel number
   UShort_t Type; //peak type
  public:
-  rpeak_type() {Type=0;};
+  //rpeak_type() {Type=0;};
+  rpeak_type() {};
   virtual ~rpeak_type() {};
   
 };
@@ -135,6 +136,7 @@ class EventClass { //event of pulses
   EventClass();
   virtual ~EventClass() {};
   void Pulse_Ana_Add(PulseClass *newpulse);
+  void FillHistTree();
   //void PeakAna();
   //ClassDef(EventClass, 0)
 };

@@ -1952,7 +1952,15 @@ void MainFrame::DoAna() {
     fAna->SetText("Pause");
     crs->b_fana=true;
     crs->b_stop=false;
+
+    if (opt.dec_write) {
+      crs->NewTree();
+    }
+
     crs->FAnalyze();
+
+    crs->f_tree->Write();
+
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
     crs->b_fana=false;

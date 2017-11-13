@@ -15,6 +15,7 @@
 
 #include <RQ_OBJECT.h>
 #include <TTree.h>
+#include <TFile.h>
 
 #include "pulseclass.h"
 #include "common.h"
@@ -34,7 +35,6 @@ typedef std::list<pulse_vect>::reverse_iterator list_pulse_reviter;
 
 typedef std::list<EventClass>::iterator event_iter;
 typedef std::list<EventClass>::reverse_iterator event_reviter;
-
 
 //using namespace std;
 
@@ -60,6 +60,7 @@ RQ_OBJECT("CRS")
   gzFile f_raw;
   gzFile f_read;
   gzFile f_dec;
+  //TFile* f_dec;
 
   TFile* f_tree;
   TTree* Tree;
@@ -160,6 +161,11 @@ RQ_OBJECT("CRS")
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   Long64_t Tstart0; //Tstamp of the m_tof start pulses
 
+  Long64_t rTime; //Tstamp of tree event
+  Char_t rState; //State of tree event
+  rpeak_type rP;
+  std::vector<rpeak_type> rPeaks;
+
   //--------functions---------
 
   //void Dummy_trd();
@@ -205,6 +211,9 @@ RQ_OBJECT("CRS")
   void Make_Events();
   void Select_Event(EventClass *evt);
   //void *Ana_Events(void* ptr);
+
+  void NewTree();
+  void CloseTree();
 
   void Print_Pulses();
   void Print_Events();

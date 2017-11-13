@@ -255,7 +255,8 @@ void *handle_ana(void* ptr) {
       // analyze events up to m_event
       for (it=start; it!=crs->m_event;) {
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
-	  HiFrm->FillHist(&(*it));
+	  //HiFrm->FillHist(&(*it));
+	  it->FillHistTree();
 	  it->Analyzed=true;
 	  ++crs->nevents2;
 	  ++it;
@@ -1399,6 +1400,9 @@ void CRS::DoReset() {
   //if (HiFrm)
   //  cout << "DoReset2: " << HiFrm->h_time[1]->GetName() << endl;
 
+  rPeaks.clear();
+  CloseTree();
+
 }
 
 void CRS::DoFopen(char* oname, int popt) {
@@ -2463,4 +2467,34 @@ void CRS::Select_Event(EventClass *evt) {
   //EvtFrm->d_event=m_event;
   //cout << "Select: " << EvtFrm->d_event->T << endl;
 
+}
+
+void CRS::NewTree() {
+  if (!f_tree) {
+    f_tree = new TFile(opt.fname_dec,"recreate");
+    if (!f_tree->IsOpen()) {
+      cout << "Couldn't open file: " << opt.fname_dec << endl;
+      delete f_tree;
+      f_tree=0;
+      opt.dec_write=false;
+      if (parpar) {
+	parpar->Update();
+      }
+      return;
+    }
+    Tree = new TTree("Tree","Tree");
+    Tree->Branch("T",&rTime,"T/L");
+    Tree->Branch("S",&rState,"S/B");
+    Tree->Branch("peaks",&rPeaks);
+  }
+}
+
+void CRS::CloseTree() {
+  cout << "CloseTree: " << endl;
+  if (f_tree) {
+    delete Tree;
+    Tree=0;
+    delete f_tree;
+    f_tree=0;
+  }
 }
