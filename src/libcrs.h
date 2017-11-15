@@ -84,10 +84,12 @@ RQ_OBJECT("CRS")
   // starting from "start"
   //int n_ana;
 
+  std::list<EventClass>::iterator m_start;
   std::list<EventClass>::iterator m_event;
-  //std::list<EventClass>::reverse_iterator r_event;
+  //new events can be inserted only after m_event (up to Levents.end())
   //m_event points to the first event, which is not yet analyzed
   //it is safe to fill events starting from this element
+  //m_start - temporary iterator for analysing events
 
   //Int_t m_flag; //flag used for cleaning the event list
   // 0 - after cleaning list or at the beginning

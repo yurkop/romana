@@ -1959,7 +1959,9 @@ void MainFrame::DoAna() {
 
     crs->FAnalyze();
 
-    crs->f_tree->Write();
+    if (crs->f_tree) {
+      crs->f_tree->Write();
+    }
 
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");

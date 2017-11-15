@@ -134,6 +134,8 @@ void *handle_buf(void *ctx)
 
   if (!res) { //end of file reached -> analyze all events
     crs->b_run=2;
+    //gzclose(crs->f_read);
+    //crs->f_read=0;
   }
   else { //otherwise just stop the analysis
     gSystem->Sleep(30);    
@@ -152,15 +154,16 @@ void *handle_ana(void* ptr) {
 
   std::list<EventClass>::iterator it;
 
-  //need this loop to have at least one event in Levents
-  while (crs->Levents.empty() && !crs->b_stop) {
-    gSystem->Sleep(10);
+  //check if it's the beginning of the analysis -> then define crs->m_start
+  //if (crs->m_start==crs->Levents.end()) {
+  if (crs->Levents.empty()) {
+    //need this loop to have at least one event in Levents
+    while (crs->Levents.empty() && !crs->b_stop) {
+      gSystem->Sleep(10);
+    }
+    crs->m_start = crs->Levents.begin();
   }
 
-  // start - first event which is NOT analyzed yet
-  std::list<EventClass>::iterator start = crs->Levents.begin();
-  //int sz; //event list size
-  //int n1; //number of events to analyze
   int n2; //number of events to erase
   //m_event - first event which is not analyzed
 
@@ -172,9 +175,6 @@ void *handle_ana(void* ptr) {
   while (crs->b_run) {
 
     //gSystem->Sleep(100);
-
-    //get Levents.size at the beginning of the loop and use only it
-    //sz=crs->Levents.size();
 
     //aviod exhausting all memory
     gSystem->GetMemInfo(&info);
@@ -189,15 +189,6 @@ void *handle_ana(void* ptr) {
     if (opt.ev_min>=opt.ev_max) {
       opt.ev_min=opt.ev_max/2;
     }
-    //opt.ev_max=opt.ev_min+5;
-
-    // if (crs->b_run==2) { //analyze all events, then stop
-    //   n1 = 99999999;
-    //   crs->b_run=0;
-    // }
-    // else { //analyze normally
-    //   n1 = sz-crs->n_ana-opt.ev_min;
-    // }
 
     if (crs->b_run==2) { //analyze all events, then stop
       crs->m_event=crs->Levents.end();
@@ -205,45 +196,17 @@ void *handle_ana(void* ptr) {
     }
     else { //analyze normally
       ii=0;
-      for (it=--crs->Levents.end(); it!=start && ii<opt.ev_min; --it) {
+      for (it=--crs->Levents.end(); it!=crs->m_start && ii<opt.ev_min; --it) {
 	++ii;
       }
       crs->m_event=it;
     }
 
-    //cout << "st: " << ii << " " << &*crs->m_event << " " << &*start << endl;
+    //cout << "st: " << ii << " " << &*crs->m_event << " " << &*crs->m_start << endl;
     //cout << "start3: " << &*crs->m_event << " " << crs->m_event->Nevt << " " << crs->Levents.size() << " " << ii << " " << crs->b_run << endl;
 
     
-    if (crs->m_event!=start) { //there are some events to analyze
-
-      //cout << "ana: " << endl;
-      // determine position of the last event which will be analysed (m_event)
-      // actually, m_event - first event which is NOT analyzed
-
-
-      //crs->m_event=start;
-
-      /*
-      ii=0;
-      for (it=start; it!=crs->Levents.end() && ii<n1; ++it) {
-	++ii;
-      }
-      crs->m_event=it;
-      */
-
-      //cout << "---------- start: " << crs->m_event->Nevt << " " << crs->m_event->T << " " << crs->Levents.size() << " " << crs->Levents.back().Nevt << " " << n1 << endl;
-      //std::advance(crs->m_event,n1);
-      //crs->n_ana+=n1;
-
-
-
-      /*
-      int ll = start->Nevt+n1-crs->m_event->Nevt;
-      if (ll) cout << "start2: " << ll << " " << start->Nevt << " " << n1 << " " << crs->m_event->Nevt << " " << crs->m_event->T << " " << crs->Levents.size() << " " << &*crs->m_event << " " << &*crs->Levents.end() << endl;
-      */
-
-
+    if (crs->m_event!=crs->m_start) { //there are some events to analyze
       
       // fill Tevents for EvtFrm::DrawEvent2
       EvtFrm->Tevents.clear();
@@ -252,8 +215,10 @@ void *handle_ana(void* ptr) {
       }
       EvtFrm->d_event=EvtFrm->Pevents->begin();
 
+      //cout << "ana: " << std::distance(crs->m_start,crs->m_event) << endl;
+
       // analyze events up to m_event
-      for (it=start; it!=crs->m_event;) {
+      for (it=crs->m_start; it!=crs->m_event;) {
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  //HiFrm->FillHist(&(*it));
 	  it->FillHistTree();
@@ -267,25 +232,21 @@ void *handle_ana(void* ptr) {
 	}
       }
 
-      //cout << "start3: " << crs->m_event->Nevt << " " << crs->Levents.size() << endl;
-
-      // start now points to the first event which is not analyzed yet
-      start=crs->m_event;
+      // m_start now points to the first event which is not analyzed yet
+      crs->m_start=crs->m_event;
 
       // erase events if the list is too long
       n2 = crs->Levents.size()-opt.ev_max;
       if (n2>0) {
 	//cout << "### erase: " << n2 << endl;
 	ii=0;
-	for (it=crs->Levents.begin(); it!=start && ii<n2;) {
+	for (it=crs->Levents.begin(); it!=crs->m_start && ii<n2;) {
 	  it=crs->Levents.erase(it);
 	  ++ii;
 	  //++it;
 	  //--(crs->n_ana);
 	}
       }
-
-      //cout << "start4: " << crs->m_event->Nevt << " " << crs->Levents.size() << endl;
 
     } // if (n1>0)
     else {
@@ -1299,8 +1260,6 @@ int CRS::DoStartStop() {
 
     gSystem->Sleep(300);
 
-    //trd_ana->Run(&m_flag);
-
     //cout << "Acquisition stopped2" << endl;
     Cancel_all(ntrans);
     b_stop=true;
@@ -1344,13 +1303,8 @@ void CRS::DoReset() {
   }
 
   //n_ana=0;
+  m_start=Levents.end();
   m_event=Levents.end();
-  //r_event=Levents.rend();
-  //r_event=std::list<EventClass>::reverse_iterator(m_event);
-
-  //cout << "reset: " << &*m_event << " " << &*r_event << " " << &*Levents.end() << " " << &*Levents.rend() << endl;
-  //exit(-1);
-  //m_event2=m_event;
 
   nevents=0;
   nevents2=0;
@@ -1410,14 +1364,6 @@ void CRS::DoFopen(char* oname, int popt) {
   int tp=0; //1 - adcm raw; 0 - crs2/32
   int bsize;
   int boffset;
-
-  //cout << "Select77: " << crs->m_event->T << " "
-  //     << crs->Levents.begin()->T << endl;
-  //Print_Events();
-
-  // if (opt.ev_max<=opt.ev_min) {
-  //   opt.ev_max=opt.ev_min*2;
-  // }
 
   if (oname)
     strcpy(Fname,oname);
@@ -1684,6 +1630,7 @@ void CRS::FAnalyze() {
   gSystem->Sleep(10);
   Show(true);
 
+  //cout << "asdfasdf" << endl;
   cv->SetEditable(true);
 }
 
@@ -1868,9 +1815,9 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     else if (frmt==1) {
       ipp->State = buffer[idx1+5];
       ipp->Counter = data & 0xFFFFFFFFFF;
-      // if (buffer[idx1+5]) {
-      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipp->State << endl;
-      // }
+      if (buffer[idx1+5]) {
+	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipp->State << " " << data << " " << buf8[idx8] << endl;
+      }
     }
     else if (frmt==2) {
 
