@@ -4,6 +4,6 @@
 !/utils
 !Makefile
 !TODO
-!/*.par
+#!/*.par
 !.gitignore
 !git-help
