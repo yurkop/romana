@@ -208,13 +208,17 @@ void *handle_ana(void* ptr) {
     
     if (crs->m_event!=crs->m_start) { //there are some events to analyze
       
+      //goto skip;
       // fill Tevents for EvtFrm::DrawEvent2
       EvtFrm->Tevents.clear();
+      //cout << "ev1: " << endl;
       if (crs->m_event!=crs->Levents.end()) {
       	EvtFrm->Tevents.push_back(*crs->m_event);
       }
+      //cout << "ev2: " << &*crs->m_event << endl;
       EvtFrm->d_event=EvtFrm->Pevents->begin();
 
+      //skip:
       //cout << "ana: " << std::distance(crs->m_start,crs->m_event) << endl;
 
       // analyze events up to m_event
@@ -1815,9 +1819,9 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     else if (frmt==1) {
       ipp->State = buffer[idx1+5];
       ipp->Counter = data & 0xFFFFFFFFFF;
-      if (buffer[idx1+5]) {
-	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipp->State << " " << data << " " << buf8[idx8] << endl;
-      }
+      // if (buffer[idx1+5]) {
+      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipp->State << " " << data << " " << buf8[idx8] << endl;
+      // }
     }
     else if (frmt==2) {
 

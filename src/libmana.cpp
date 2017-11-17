@@ -194,7 +194,7 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
-int debug=1; // for printing debug messages
+int debug=0; //=1// for printing debug messages
 
 int *opt_id[MXNUM];
 
@@ -327,6 +327,12 @@ void out_of_memory(void)
 
 void ctrl_c_handler(int s){
   printf("Caught signal %d\n",s);
+  delete myM;
+  //exit(1); 
+}
+
+void segfault_c_handler(int signal, siginfo_t *si, void *arg) {
+  printf("Caught segfault %d\n",signal);
   delete myM;
   //exit(1); 
 }
@@ -514,6 +520,33 @@ int main(int argc, char **argv)
   sigemptyset(&sigIntHandler.sa_mask);
   sigIntHandler.sa_flags = 0;
   sigaction(SIGINT, &sigIntHandler, NULL);
+
+
+
+
+
+// void segfault_sigaction(int signal, siginfo_t *si, void *arg)
+// {
+//     printf("Caught segfault at address %p\n", si->si_addr);
+//     exit(0);
+// }
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(struct sigaction));
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = segfault_c_handler;
+    sa.sa_flags   = SA_SIGINFO;
+    sigaction(SIGSEGV, &sa, NULL);
+
+
+
+
+
+
+
+
+
+
 
 
   cout << "sizeof(TDatime): " << sizeof(TDatime) << endl;

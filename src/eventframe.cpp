@@ -933,16 +933,23 @@ void EventFrame::DrawEvent2() {
   markt[0]=gSystem->Now();
 
   for (int i=0;i<MAX_CH;i++) {
+    Pixel_t cc;
     if (mask&(one<<i)) {
+      cc = gcol[i];
+      //cout << i << " " << fChn[i]->GetBackground() << " " << gcol[i] << endl;
       //fChn[i]->SetBackgroundColor(gcol[i]);
-      fChn[i]->ChangeBackground(gcol[i]);
+      //fChn[i]->ChangeBackground(gcol[i]);
       //fChn[i]->SetForegroundColor(fcol[i]);
     }
     else {
+      cc = 15263976;
+      //cout << i << " " << fChn[i]->GetBackground() << endl;
       //fChn[i]->SetBackgroundColor(15263976);
-      fChn[i]->ChangeBackground(15263976);
+      //fChn[i]->ChangeBackground(15263976);
       //fChn[i]->SetForegroundColor(0);
     }
+    if (cc!=fChn[i]->GetBackground())
+      fChn[i]->ChangeBackground(cc);
   }
 
   markt[1]=gSystem->Now();
