@@ -61,20 +61,16 @@ class peak_type {
   
 };
 
-class rpeak_type {
- public:
+#pragma pack (push, 1)
+struct rpeak_type {
   Float_t Area;
   Float_t Height;
   Float_t Width;
   Float_t Time; //exact time relative to pulse start (from 1st deriv)
-  UShort_t Ch; //Channel number
-  UShort_t Type; //peak type
- public:
-  //rpeak_type() {Type=0;};
-  rpeak_type() {};
-  virtual ~rpeak_type() {};
-  
+  UChar_t Ch; //Channel number
+  UChar_t Type; //peak type
 };
+#pragma pack (pop)
 
 //ptype==0 - > pulse had start and stop
 const unsigned char P_NOSTART=1; //pulse has no start

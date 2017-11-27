@@ -78,7 +78,6 @@ public:
   void DoCheckLeg();
   void DoCheckLogY();
   void DoCheckTime();
-  void DoCheckTree();
   void DoSave();
   void DoGcut(int);
   void DoExit();

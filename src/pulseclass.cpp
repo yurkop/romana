@@ -330,12 +330,14 @@ void EventClass::FillHistTree() {
     }
   } //for (UInt_t i=0;i<pulses.size()...
 
+  /*
   if (opt.dec_write) {
     crs->rTime=T;
     crs->rState = State;
     crs->Tree->Fill();
     crs->rPeaks.clear();
   }
+  */
 
   if (pulses.size()>=2) {
     double amp[2];

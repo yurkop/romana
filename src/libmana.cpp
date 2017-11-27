@@ -20,7 +20,8 @@
 #include <iostream>
 #include <fstream>
 
-#include <TTree.h>
+//#include <TTree.h>
+#include <TClass.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TApplication.h>
@@ -148,11 +149,7 @@ int tpeaks;
 double *tstarts;
 int *t_flag;
 
-bool b_tree = false;
-TFile *treefile;
-
 event_t evt;
-TTree *Tree;
 
 TH1F *hsum_ng[MAX_P]; // 0-gamma; 1-neutron; 2-tail; 3-unknown
 TH1F *htdc_ng[MAX_P];
@@ -580,7 +577,6 @@ int main(int argc, char **argv)
 
     if (!strcmp(argv[argnn],"run")) {
       batch=true;
-      b_tree = true;
       argnn++;
       //parname= (char*) "init.par";
     }
@@ -643,11 +639,6 @@ int main(int argc, char **argv)
     strcat(s_name,".root");
     cout << s_name << endl;
     saveroot(s_name);
-
-    if (Tree && treefile) {
-      treefile->cd();
-      Tree->Write();
-    }
 
     return 0;
   }
@@ -901,64 +892,6 @@ void greset() { //global reset
     last_peak64[i]=0;
 
   //printf("reset: %d %d\n",tstamp,pstamp);
-}
-
-void newtree(char* fname) {
-
-  char dir[100], name[100], ext[100];
-  char treename[200];
-
-  //strcpy(treename,fname);
-  //strcat(treename,".root");
-
-  SplitFilename (string(fname),dir,name,ext);
-  strcat(dir,"tree/");
-#ifdef LINUX
-  mkdir(dir,0755);
-#else
-  _mkdir(dir);
-#endif
-  strcpy(treename,dir);
-  strcat(treename,name);
-  strcat(treename,".root");
-  //cout << s_name << endl;
-
-  treefile = new TFile(treename,"RECREATE");
-
-  Tree = new TTree("tree","tree");
-
-  Tree->Branch("nch",&evt.nch,"nch/B");
-  Tree->Branch("ch",&evt.ch,"ch[nch]/B");
-  Tree->Branch("flag",&evt.flag,"flag[nch]/B");
-  Tree->Branch("E",&evt.E,"E[nch]/F");
-  Tree->Branch("T",&evt.T,"T[nch]/F");
-  Tree->Branch("W",&evt.W,"W[nch]/F");
-
-}
-
-void filltree() {
-  memset(&evt, 0, sizeof(evt));
-  evt.nch = mult;
-  for (int i=0;i<mult;i++) {
-    int ch = chan[i];
-    evt.ch[i] = ch+1;
-    evt.flag[i] = peak_flag[ch][0];
-    evt.E[i] = sum[ch][0]*0.01;
-    evt.T[i] = mean[ch][0]*10.0;
-    evt.W[i] = rms[ch][0];
-  }
-
-  /*
-    for (int i=0;i<evt.nch;i++) {
-    cout << nevent << " " << i << " " << int(evt.ch[i]) << endl;
-    }
-  */
-
-  Tree->Fill();
-  //Tree->Write();
-
-  //cout << nevent << " " << Tree->GetEntries() << endl;
-
 }
 
 void readpar_root(const char* pname)
@@ -1222,9 +1155,9 @@ int analyze() //analyze one event
   mkstart();
   mktof();
 
-  if (b_tree) {
-    filltree();
-  }
+  //if (b_tree) {
+    //filltree();
+  //}
 
   /*
     if (mult>1) {
@@ -1845,12 +1778,6 @@ MainFrame::~MainFrame() {
   delete crs;
   delete EvtFrm;
 
-  //cout << Tree << endl;
-  if (Tree && treefile) {
-    treefile->cd();
-    Tree->Write();
-  }
-
   // Clean up used widgets: frames, buttons, layouthints
   //printf("end\n");
   Cleanup();
@@ -1986,15 +1913,15 @@ void MainFrame::DoAna() {
     crs->b_fana=true;
     crs->b_stop=false;
 
-    if (opt.dec_write) {
-      crs->NewTree();
-    }
+    //if (opt.dec_write) {
+    //crs->NewTree();
+    //}
 
     crs->FAnalyze();
 
-    if (crs->f_tree) {
-      crs->f_tree->Write();
-    }
+    //if (crs->f_tree) {
+    //crs->f_tree->Write();
+    //}
 
     fAna->ChangeBackground(fGreen);
     fAna->SetText("Analyse");
@@ -2348,11 +2275,6 @@ void MainFrame::DoCheckLogY() {
 
 void MainFrame::DoCheckTime() {
   opt.b_time = ! opt.b_time;
-  //DoDraw();
-}
-
-void MainFrame::DoCheckTree() {
-  b_tree = ! b_tree;
   //DoDraw();
 }
 

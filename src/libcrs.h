@@ -14,7 +14,7 @@
 #include <list>
 
 #include <RQ_OBJECT.h>
-#include <TTree.h>
+//#include <TTree.h>
 #include <TFile.h>
 
 #include "pulseclass.h"
@@ -49,6 +49,7 @@ RQ_OBJECT("CRS")
 
   //--------constants---------
   static const int MAXTRANS=8;
+  static const int DECSIZE=1048576; //1 MB
 
   //static const Int_t MAXEV=1000; //maximal number of events in Levents
   //--------variables---------
@@ -62,15 +63,18 @@ RQ_OBJECT("CRS")
   gzFile f_dec;
   //TFile* f_dec;
 
-  TFile* f_tree;
-  TTree* Tree;
+  //TFile* f_tree;
+  //TTree* Tree;
 
   char raw_opt[5];
-  //char dec_opt[5];
+  char dec_opt[5];
   Short_t Fmode; //1 - adcm raw; 2- crs2; 32 - crs32
   char Fname[255];
   UChar_t* Fbuf;
   UChar_t* Fbuf2;
+
+  UChar_t* DecBuf;
+  Int_t idec; //index of DecBuf;
 
   //Vpulses - list of vectors of pulses for Decode*
   // size of Vpulses can not be larger than 2
@@ -163,8 +167,8 @@ RQ_OBJECT("CRS")
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   Long64_t Tstart0; //Tstamp of the m_tof start pulses
 
-  Long64_t rTime; //Tstamp of tree event
-  Char_t rState; //State of tree event
+  //Long64_t rTime; //Tstamp of decoded event
+  //Char_t rState; //State of decoded event
   rpeak_type rP;
   std::vector<rpeak_type> rPeaks;
 
@@ -214,8 +218,10 @@ RQ_OBJECT("CRS")
   void Select_Event(EventClass *evt);
   //void *Ana_Events(void* ptr);
 
-  void NewTree();
-  void CloseTree();
+  //void NewTree();
+  //void CloseTree();
+  void Fill_Dec(EventClass* evt);
+  void Flush_Dec();
 
   void Print_Pulses();
   void Print_Events();

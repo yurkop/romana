@@ -226,6 +226,9 @@ void *handle_ana(void* ptr) {
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  //HiFrm->FillHist(&(*it));
 	  it->FillHistTree();
+	  if (opt.dec_write) {
+	    crs->Fill_Dec(&(*it));
+	  }
 	  it->Analyzed=true;
 	  ++crs->nevents2;
 	  ++it;
@@ -257,6 +260,10 @@ void *handle_ana(void* ptr) {
       gSystem->Sleep(10);
     }
   } //while (!crs->b_stop)
+
+  if (opt.dec_write) {
+    crs->Flush_Dec();
+  }
 
   return 0;
     
@@ -436,8 +443,8 @@ CRS::CRS() {
   f_raw=0;
   f_read=0;
   f_dec=0;
-  f_tree=0;
-  Tree=0;
+  //f_tree=0;
+  //Tree=0;
 
   b_acq=false;
   b_fana=false;
@@ -449,6 +456,8 @@ CRS::CRS() {
 
   Fbuf=NULL;
   Fbuf2=0;
+
+  DecBuf=new UChar_t[DECSIZE]; //1 MB
 
   // if (Fbuf2)
   //   cout << "Fbuf2: " << Fbuf2 << endl;
@@ -508,6 +517,7 @@ CRS::~CRS() {
 
   DoExit();
   cout << "~CRS()" << endl;
+  delete[] DecBuf;
 
 }
 
@@ -1343,6 +1353,8 @@ void CRS::DoReset() {
   idnext=0;
   lastfl=1;
 
+  idec=0;
+
   //cout << "f_read: " << f_read << endl;
   if (f_read)
     DoFopen(NULL,0);
@@ -1359,7 +1371,7 @@ void CRS::DoReset() {
   //  cout << "DoReset2: " << HiFrm->h_time[1]->GetName() << endl;
 
   rPeaks.clear();
-  CloseTree();
+  //CloseTree();
 
 }
 
@@ -2420,32 +2432,48 @@ void CRS::Select_Event(EventClass *evt) {
 
 }
 
-void CRS::NewTree() {
-  if (!f_tree) {
-    f_tree = new TFile(opt.fname_dec,"recreate");
-    if (!f_tree->IsOpen()) {
-      cout << "Couldn't open file: " << opt.fname_dec << endl;
-      delete f_tree;
-      f_tree=0;
-      opt.dec_write=false;
-      if (parpar) {
-	parpar->Update();
-      }
-      return;
-    }
-    Tree = new TTree("Tree","Tree");
-    Tree->Branch("T",&rTime,"T/L");
-    Tree->Branch("S",&rState,"S/B");
-    Tree->Branch("peaks",&rPeaks);
+void CRS::Fill_Dec(EventClass* evt) {
+
+  UShort_t sz = 3 + sizeof(Long64_t) + rPeaks.size()*sizeof(rpeak_type);
+  if (idec+sz >= DECSIZE) {
+    Flush_Dec();
   }
+  DecBuf[idec++] = 'D';
+  UShort_t* buf2 = (UShort_t*) (DecBuf+idec);
+  *buf2 = sz;
+  idec+=2;
+  Long64_t* buf8 = (Long64_t*) (DecBuf+idec);
+  Long64_t tt = evt->State;
+  tt <<= 48;
+  tt += evt->T;
+  *buf8 = tt;
+  idec+=sizeof(Long64_t);
+  for (UInt_t i=0; i<rPeaks.size(); i++) {
+    rpeak_type* buf = (rpeak_type*) (DecBuf+idec);
+    memcpy(buf,&rPeaks[i],sizeof(rpeak_type));
+    idec+=sizeof(rpeak_type);
+  }
+
 }
 
-void CRS::CloseTree() {
-  cout << "CloseTree: " << endl;
-  if (f_tree) {
-    delete Tree;
-    Tree=0;
-    delete f_tree;
-    f_tree=0;
+void CRS::Flush_Dec() {
+  //char opt[8];
+  sprintf(dec_opt,"ab%d",opt.dec_compr);
+  f_dec = gzopen(opt.fname_dec,dec_opt);
+  if (!f_dec) {
+    cout << "Can't open file: " << opt.fname_dec << endl;
+    idec=0;
+    return;
   }
+
+  int res=gzwrite(f_dec,DecBuf,idec);
+  if (res!=idec) {
+    cout << "Error writing to file: " << opt.fname_dec << " " 
+	 << res << " " << idec << endl;
+  }
+  idec=0;
+
+  gzclose(f_dec);
+  f_dec=0;
+
 }
