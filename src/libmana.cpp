@@ -1303,6 +1303,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
+
+
+  /*  
   fMenuOptions = new TGPopupMenu(gClient->GetRoot());
   //fMenuOptions->AddEntry("Thresholds", M_THRESH);
   //fMenuOptions->AddEntry("Parameters", M_PARAM);
@@ -1326,24 +1329,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuHist->AddEntry("TOF 16 - 23", M_TOF16_23);
   fMenuHist->AddEntry("TOF 24 - 31", M_TOF24_31);
 
-  /*
-    fMenuHist->AddEntry("Silicon", M_SI);
-    fMenuHist->AddEntry("Silicon - max", M_SIMAX);
-    fMenuHist->AddEntry("Energy 1  - 6 ", M_1_6);
-    fMenuHist->AddEntry("Energy 7  - 12", M_7_12);
-    fMenuHist->AddEntry("Energy 13 - 18", M_13_18);
-    fMenuHist->AddEntry("Energy 19 - 24", M_19_24);
-    fMenuHist->AddEntry("Energy 25 - 30", M_25_30);
-    fMenuHist->AddEntry("Energy 27 - 32", M_27_32);
-
-    fMenuHist->AddEntry("Time 1  - 6 ", M_T1_6);
-    fMenuHist->AddEntry("Time 7  - 12", M_T7_12);
-    fMenuHist->AddEntry("Time 13 - 18", M_T13_18);
-    fMenuHist->AddEntry("Time 19 - 24", M_T19_24);
-    fMenuHist->AddEntry("Time 25 - 30", M_T25_30);
-    fMenuHist->AddEntry("Time 27 - 32", M_T27_32);
-  */
-
   //#ifdef ROMASH
   fMenuHist->AddEntry("MTOF 0  - 5 ",  M_TOF0_5  );
   fMenuHist->AddEntry("MTOF 6  - 11",  M_TOF6_11 );
@@ -1358,6 +1343,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuAna->Connect("Activated(Int_t)", "MainFrame", this,
 		    "HandleMenu(Int_t)");
 
+  */
+
+
+
   fMenuHelp = new TGPopupMenu(gClient->GetRoot());
   fMenuHelp->AddEntry("Display Help file", M_HELP);
   //fMenuHelp->AddEntry("Test", M_TEST);
@@ -1367,6 +1356,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuBar->AddPopup("&File", fMenuFile, 
 		     new TGLayoutHints(kLHintsTop|kLHintsLeft,0, 4, 0, 0));
 
+  /*
   fMenuBar->AddPopup("&Options", fMenuOptions, 
 		     new TGLayoutHints(kLHintsTop|kLHintsLeft));
 
@@ -1375,7 +1365,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fMenuBar->AddPopup("Analysis", fMenuAna, 
 		     new TGLayoutHints(kLHintsTop|kLHintsLeft));
-
+  */
+  
   fMenuBar->AddPopup("&Help", fMenuHelp,
 		     new TGLayoutHints(kLHintsTop|kLHintsRight));
 
