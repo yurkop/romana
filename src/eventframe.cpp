@@ -1,6 +1,6 @@
 //----- EventFrame ----------------
-#include "eventframe.h"
 #include "romana.h"
+
 #include <TColor.h>
 #include <TCanvas.h>
 #include <TText.h>

@@ -1,11 +1,14 @@
-#include "crspardlg.h"
-#include "libcrs.h"
-#include "toptions.h"
+// #include "crspardlg.h"
+// #include "libcrs.h"
+// #include "libmana.h"
+// #include "toptions.h"
+#include "romana.h"
+
 #include "TGFileDialog.h"
 #include <TGSplitter.h>
 #include <TG3DLine.h>
 #include <TSystem.h>
-#include "romana.h"
+//#include "romana.h"
 #include <TColor.h>
 
 //const char* t_raw = "Write raw data";

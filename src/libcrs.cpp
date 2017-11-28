@@ -5,8 +5,8 @@
 #include <sys/stat.h>
 #include "cyusb.h"
 //#include <pthread.h>
-#include "eventframe.h"
 #include "romana.h"
+
 #include <malloc.h>
 #include <TClass.h>
 #include <TCanvas.h>
@@ -14,6 +14,7 @@
 //#include <TSemaphore.h>
 //TSemaphore sem;
 #include "TThread.h"
+#include "TGMsgBox.h"
 
 TMutex Emut3;
 TMutex stat_mut;
@@ -1165,6 +1166,12 @@ int CRS::DoStartStop() {
   
   if (!b_acq) { //start
     DoReset();
+
+    EMsgBoxIcon icontype = kMBIconStop;
+    int retval;
+    new TGMsgBox(gClient->GetRoot(), myM->fMain,
+		 "test", "test",
+                icontype, 0, &retval);
 
     parpar->Update();
     crspar->Update();
