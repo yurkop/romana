@@ -1209,6 +1209,7 @@ int CRS::DoStartStop() {
       sprintf(raw_opt,"wb%d",opt.raw_compr);
       struct stat buffer;
       cout << "stat: " << stat (opt.fname_raw, &buffer) << endl;
+      cout << "stat: " << buffer.st_size << endl;
       //if (stat (opt.fname_raw, &buffer)) {
 	//UShort_t mod=module;
 
@@ -1730,11 +1731,12 @@ void CRS::Show(bool force) {
       }
       else {
 	TString name = TString(myM->fTab->GetCurrentTab()->GetString());
-	if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
-	  //cout << "DoTab1a: " << name << endl;
-	  parpar->Update();
-	}
-	else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
+	// if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
+	//   //cout << "DoTab1a: " << name << endl;
+	//   parpar->Update();
+	// }
+	// else
+	  if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
 	  crspar->UpdateStatus();
 	}
       }

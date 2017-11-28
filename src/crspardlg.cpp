@@ -802,15 +802,15 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
    // 2 column, n rows
    //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
 
-  tip1= "Total qcuisition time";
+  tip1= "Total aqcuisition time, in seconds";
   label="Time";
   AddLine3(frame,&opt.time_bins,&opt.time_min,&opt.time_max,tip1,label);
 
-  tip1= "Time of flight (relative to the starts - see Channels->St)";
+  tip1= "Time of flight (relative to the starts - see Channels->St), in ns";
   label="TOF";
   AddLine3(frame,&opt.tof_bins,&opt.tof_min,&opt.tof_max,tip1,label);
 
-  tip1= "Time of flight with multiplicity";
+  tip1= "Time of flight with multiplicity, in mks";
   label="M_TOF";
   AddLine3(frame,&opt.mtof_bins,&opt.mtof_min,&opt.mtof_max,tip1,label);
 

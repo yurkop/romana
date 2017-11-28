@@ -287,7 +287,7 @@ void HistFrame::Make_hist() {
   idir = fListTree->AddItem(iroot, "MTOF",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
     sprintf(name,"mtof_%02d",i);
-    sprintf(title,"mtof_%02d;t(ns);Counts",i);
+    sprintf(title,"mtof_%02d;t(mks);Counts",i);
     int nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
     h_mtof[i]=new TH1F(name,title,nn,opt.mtof_min,opt.mtof_max);
     fListTree->AddItem(idir, name, h_mtof[i], pic, pic,true);
