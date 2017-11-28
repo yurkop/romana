@@ -2453,11 +2453,15 @@ void CRS::Fill_Dec(EventClass* evt) {
     memcpy(buf,&rPeaks[i],sizeof(rpeak_type));
     idec+=sizeof(rpeak_type);
   }
+  rPeaks.clear();
 
 }
 
 void CRS::Flush_Dec() {
-  //char opt[8];
+
+  //idec=0;
+  //return;
+
   sprintf(dec_opt,"ab%d",opt.dec_compr);
   f_dec = gzopen(opt.fname_dec,dec_opt);
   if (!f_dec) {
