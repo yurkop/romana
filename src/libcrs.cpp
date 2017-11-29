@@ -14,7 +14,6 @@
 //#include <TSemaphore.h>
 //TSemaphore sem;
 #include "TThread.h"
-#include "TGMsgBox.h"
 
 TMutex Emut3;
 TMutex stat_mut;
@@ -1167,12 +1166,6 @@ int CRS::DoStartStop() {
   if (!b_acq) { //start
     DoReset();
 
-    EMsgBoxIcon icontype = kMBIconStop;
-    int retval;
-    new TGMsgBox(gClient->GetRoot(), myM->fMain,
-		 "test", "test",
-                icontype, 0, &retval);
-
     parpar->Update();
     crspar->Update();
     chanpar->Update();
@@ -1214,28 +1207,34 @@ int CRS::DoStartStop() {
     T_start = opt.F_start;
     if (opt.raw_write) {
       sprintf(raw_opt,"wb%d",opt.raw_compr);
-      struct stat buffer;
-      cout << "stat: " << stat (opt.fname_raw, &buffer) << endl;
-      cout << "stat: " << buffer.st_size << endl;
-      //if (stat (opt.fname_raw, &buffer)) {
-	//UShort_t mod=module;
 
-
-
-        f_raw = gzopen(opt.fname_raw,raw_opt);
-	if (f_raw) {
-	  cout << "Writing options... : " << opt.fname_raw << endl;
-	  SaveParGz(f_raw);
-	  gzclose(f_raw);
+      f_raw = gzopen(opt.fname_raw,raw_opt);
+      if (f_raw) {
+	cout << "Writing options... : " << opt.fname_raw << endl;
+	SaveParGz(f_raw);
+	gzclose(f_raw);
 	}
-	else {
-	  cout << "Can't open file: " << opt.fname_raw << endl;
-	}
+      else {
+	cout << "Can't open file: " << opt.fname_raw << endl;
+      }
 
-
-
-	//}
       sprintf(raw_opt,"ab%d",opt.raw_compr);
+    }   
+
+    if (opt.dec_write) {
+      sprintf(dec_opt,"wb%d",opt.dec_compr);
+
+      f_dec = gzopen(opt.fname_dec,dec_opt);
+      if (f_dec) {
+	cout << "Writing options... : " << opt.fname_dec << endl;
+	SaveParGz(f_dec);
+	gzclose(f_dec);
+	}
+      else {
+	cout << "Can't open file: " << opt.fname_dec << endl;
+      }
+
+      sprintf(dec_opt,"ab%d",opt.dec_compr);
     }   
 
     //nvp=0;
@@ -1301,7 +1300,7 @@ void CRS::DoReset() {
   //cout << "DoReset1: " << b_stop << endl;
 
   if (!b_stop) return;
-    
+
   opt.T_acq=0;
 
   Tstart64=0;

@@ -43,6 +43,8 @@
 
 #include <TDataMember.h>
 
+#include "TGMsgBox.h"
+
 //#include <TGColorDialog.h>
 
 #include "libcrs.h"
@@ -1792,14 +1794,17 @@ void MainFrame::DoStartStop() {
     fStart->SetText("Start");
     //crs->b_stop=false;
     //crs->Show();
+    crs->DoStartStop();
   }
   else {
-    fStart->ChangeBackground(fRed);
-    fStart->SetText("Stop");
+    if (TestFile()) {
+      fStart->ChangeBackground(fRed);
+      fStart->SetText("Stop");
+      crs->DoStartStop();
+    }
     //crs->b_stop=true;
   }
 
-  crs->DoStartStop();
 }
 
 void MainFrame::DoOpen() {
@@ -1898,27 +1903,19 @@ void MainFrame::DoAna() {
     crs->b_stop=true;
   }
   else { //start analysis
-    fAna->ChangeBackground(fRed);
-    fAna->SetText("Pause");
-    crs->b_fana=true;
-    crs->b_stop=false;
+    if (TestFile()) {
+      fAna->ChangeBackground(fRed);
+      fAna->SetText("Pause");
+      crs->b_fana=true;
+      crs->b_stop=false;
 
-    //if (opt.dec_write) {
-    //crs->NewTree();
-    //}
+      crs->FAnalyze();
 
-    crs->FAnalyze();
-
-    //if (crs->f_tree) {
-    //crs->f_tree->Write();
-    //}
-
-    fAna->ChangeBackground(fGreen);
-    fAna->SetText("Analyse");
-    crs->b_fana=false;
-    crs->b_stop=true;
-    //DoAna();
-    //Show();
+      fAna->ChangeBackground(fGreen);
+      fAna->SetText("Analyse");
+      crs->b_fana=false;
+      crs->b_stop=true;
+    }
   }
 
   //cout << "mainframe::doana: " << endl;
@@ -2830,6 +2827,35 @@ void MainFrame::HandleMenu(MENU_COM menu_id)
     DoExit();   // terminate theApp no need to use SendCloseMessage()
     break;
   }
+}
+
+bool MainFrame::TestFile() {
+  //EMsgBoxIcon icontype = kMBIconStop;
+  //EMsgBoxIcon icontype = kMBIconExclamation;
+  //EMsgBoxIcon icontype = kMBIconQuestion;
+  EMsgBoxIcon icontype = kMBIconAsterisk;
+  Int_t buttons = kMBOk|kMBCancel;
+  const char* msg_exists = "Output file already exists.\nIt will be overwritten.\nPress OK if you want to continue?";
+
+  struct stat buffer;
+
+  if ((opt.raw_write && !stat(opt.fname_raw, &buffer)) ||
+      (opt.dec_write && !stat(opt.fname_dec, &buffer))) {
+    Int_t retval;
+    new TGMsgBox(gClient->GetRoot(), this,
+		 "File exists",
+		 msg_exists, icontype, buttons, &retval);
+    if (retval == kMBOk) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+  else {
+    return true;
+  }
+
 }
 
 void MainFrame::exec3event(Int_t event, Int_t x, Int_t y, TObject *selected)

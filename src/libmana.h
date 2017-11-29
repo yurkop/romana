@@ -174,6 +174,7 @@ public:
   void DoNbuf();
   void DoTab(Int_t num);
 
+  bool TestFile();
   //void Show();
   //void MakeEvents();
 
