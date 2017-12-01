@@ -288,6 +288,7 @@ void EventClass::FillHistTree() {
   //int ch[MAX_CH];
   double tt;
 
+  cout << "Fill0: " << endl;
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
@@ -298,6 +299,8 @@ void EventClass::FillHistTree() {
 
       tt = pulses[i].Tstamp64 + crs->Tstart64;
       tt += pk->Pos;
+
+      cout << "Fill7: " << tt*DT << endl;
       HiFrm->h_time[ch]->Fill(tt*DT);
 
       double dt = pulses[i].Tstamp64 - T;
@@ -328,6 +331,7 @@ void EventClass::FillHistTree() {
     if (ch==opt.start_ch) {
       crs->Tstart0 = T;
     }
+
   } //for (UInt_t i=0;i<pulses.size()...
 
   /*
@@ -338,6 +342,8 @@ void EventClass::FillHistTree() {
     crs->rPeaks.clear();
   }
   */
+
+  cout << "Fill1: " << endl;
 
   if (pulses.size()>=2) {
     double amp[2];
@@ -363,6 +369,8 @@ void EventClass::FillHistTree() {
     }
   }
 
+  cout << "Fill2: " << endl;
+  /*
   int ax=0,ay=0,px=0,py=0;
   if (pulses.size()==4) {
     for (UInt_t i=0;i<pulses.size();i++) {
@@ -388,6 +396,7 @@ void EventClass::FillHistTree() {
     HiFrm->h2_prof_strip[ch_alpha]->Fill(px,py);
     HiFrm->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
   }
+  */
 
 }
 

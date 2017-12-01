@@ -164,6 +164,8 @@ void *handle_ana(void* ptr) {
     crs->m_start = crs->Levents.begin();
   }
 
+  cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << endl;
+
   int n2; //number of events to erase
   //m_event - first event which is not analyzed
 
@@ -202,13 +204,16 @@ void *handle_ana(void* ptr) {
       crs->m_event=it;
     }
 
-    //cout << "st: " << ii << " " << &*crs->m_event << " " << &*crs->m_start << endl;
+    cout << "st: " << ii << " " << std::distance(crs->m_start,crs->m_event)
+	 << " " << crs->m_event->Nevt << " " << crs->m_start->Nevt << endl;
     //cout << "start3: " << &*crs->m_event << " " << crs->m_event->Nevt << " " << crs->Levents.size() << " " << ii << " " << crs->b_run << endl;
 
     
     if (crs->m_event!=crs->m_start) { //there are some events to analyze
       
-      //goto skip;
+      goto skip;
+
+
       // fill Tevents for EvtFrm::DrawEvent2
       EvtFrm->Tevents.clear();
       //cout << "ev1: " << endl;
@@ -218,29 +223,42 @@ void *handle_ana(void* ptr) {
       //cout << "ev2: " << &*crs->m_event << endl;
       EvtFrm->d_event=EvtFrm->Pevents->begin();
 
-      //skip:
-      //cout << "ana: " << std::distance(crs->m_start,crs->m_event) << endl;
+
+
+      skip:
+      cout << "ana: " << std::distance(crs->m_start,crs->m_event) << endl;
 
       // analyze events up to m_event
       for (it=crs->m_start; it!=crs->m_event;) {
+	cout << "ana7: " << it->Nevt << " " << crs->m_event->Nevt << " "
+	     << std::distance(it,crs->m_event) << endl;
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  //HiFrm->FillHist(&(*it));
+
 	  it->FillHistTree();
 	  if (opt.dec_write) {
 	    crs->Fill_Dec(&(*it));
 	  }
+
+
 	  it->Analyzed=true;
 	  ++crs->nevents2;
 	  ++it;
 	  //++(crs->n_ana);
+	  cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	}
 	else {
 	  it=crs->Levents.erase(it);
+	  cout << "ana72: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	}
       }
 
+      cout << "ana2: " << std::distance(crs->m_start,crs->m_event) << endl;
+
       // m_start now points to the first event which is not analyzed yet
       crs->m_start=crs->m_event;
+
+      cout << "ana2a: " << std::distance(crs->m_start,crs->m_event) << endl;
 
       // erase events if the list is too long
       n2 = crs->Levents.size()-opt.ev_max;
@@ -255,6 +273,8 @@ void *handle_ana(void* ptr) {
 	}
       }
 
+      cout << "ana3: " << std::distance(crs->m_start,crs->m_event) << endl;
+
     } // if (n1>0)
     else {
       gSystem->Sleep(10);
@@ -264,6 +284,8 @@ void *handle_ana(void* ptr) {
   if (opt.dec_write) {
     crs->Flush_Dec();
   }
+
+  cout << "end_ana: " << endl;
 
   return 0;
     
@@ -293,21 +315,15 @@ static void cback(libusb_transfer *transfer) {
 	}
       }
       if (opt.raw_write) {
-	//cout << "raw_start: " << *(int*) transfer->user_data << endl;
-	//crs->f_raw = gzopen(opt.fname_raw,"wb0");
 	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
-	//cout << "raw_opt: " << crs->raw_opt << endl;
 	if (crs->f_raw) {
-	  //cout << "cback tell: " << gztell(crs->f_raw) << endl;
 	  int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
-	  //cout << "cback offset: " << gzoffset(crs->f_raw) << endl;
 	  gzclose(crs->f_raw);
 	  crs->writtenbytes+=res;
 	}
 	else {
 	  cout << "Can't open file: " << opt.fname_raw << endl;
 	}
-	//cout << "raw_stop: " << *(int*) transfer->user_data << endl;
       }
 
       crs->nbuffers++;
@@ -1210,7 +1226,7 @@ int CRS::DoStartStop() {
 
       f_raw = gzopen(opt.fname_raw,raw_opt);
       if (f_raw) {
-	cout << "Writing options... : " << opt.fname_raw << endl;
+	cout << "Writing parameters... : " << opt.fname_raw << endl;
 	SaveParGz(f_raw);
 	gzclose(f_raw);
 	}
@@ -1226,7 +1242,7 @@ int CRS::DoStartStop() {
 
       f_dec = gzopen(opt.fname_dec,dec_opt);
       if (f_dec) {
-	cout << "Writing options... : " << opt.fname_dec << endl;
+	cout << "Writing parameters... : " << opt.fname_dec << endl;
 	SaveParGz(f_dec);
 	gzclose(f_dec);
 	}
@@ -1618,7 +1634,7 @@ int CRS::DoBuf() {
 
 void CRS::FAnalyze() {
 
-  //cout << "FAnalyze: " << f_read << endl;
+  cout << "FAnalyze: " << gztell(f_read) << endl;
     
   EvtFrm->Clear();
   EvtFrm->Pevents = &EvtFrm->Tevents;
