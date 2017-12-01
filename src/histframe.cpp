@@ -273,6 +273,13 @@ void HistFrame::Make_hist() {
     sprintf(title,"time_%02d;T(sec);Counts",i);
     int nn=opt.time_bins*(opt.time_max-opt.time_min);
     h_time[i]=new TH1F(name,title,nn,opt.time_min,opt.time_max);
+
+#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
+    h_time[i]->CanExtendAllAxes();
+#else
+    h_time[i]->SetBit(TH1::kCanRebin);
+#endif
+
     fListTree->AddItem(idir, name, h_time[i], pic, pic,true);
     //item->CheckItem(false);
   }
@@ -521,7 +528,10 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
 
 void HistFrame::DoLog()
 {
-  //cout << "DoCheck: " << obj << " " << check << endl;
+  TGCheckButton *te = (TGCheckButton*) gTQSender;
+
+  opt.b_logy = (Bool_t)te->GetState();
+  
   if (crs->b_stop)
     Update();
   else
@@ -790,9 +800,17 @@ void HistFrame::DrawHist()
       cv->cd(nn);
       TH1 *hh = (TH1*) obj;
       if (hh->GetDimension()==2) {
+	if (opt.b_logy)
+	  gPad->SetLogz(1);
+	else
+	  gPad->SetLogz(0);
 	hh->Draw("zcol");
       }
       else {
+	if (opt.b_logy)
+	  gPad->SetLogy(1);
+	else
+	  gPad->SetLogy(0);
 	hh->Draw();
       }
       nn++;

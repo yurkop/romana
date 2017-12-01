@@ -956,7 +956,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gStyle->SetLabelSize(0.05,"xyz");
   gStyle->SetNdivisions(606,"xyz");
   gStyle->SetPadLeftMargin(0.15);
-  gStyle->SetPadRightMargin(0.05);
+  gStyle->SetPadRightMargin(0.1);
   //gStyle->SetPadBottomMargin(0.15);
   //gStyle->SetPadTopMargin(0.05);
   
