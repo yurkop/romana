@@ -165,9 +165,6 @@ public:
   void DoGcut(int);
   void DoExit();
   void DoStop();
-  void DoAllevents();
-  void DoFindBeam();
-  void DoChkPoint();
   //void Do1event();
   //void DoNevents();
   void Do1buf();
@@ -179,7 +176,6 @@ public:
   //void MakeEvents();
 
   void EventInfo(Int_t, Int_t, Int_t, TObject*);
-  void DoSync();
   void DoCross();
   //void DoInitMON();
   //void DoReadMakan();

@@ -110,6 +110,7 @@ public:
    void DoClick(TGListTreeItem* item,Int_t but);
    //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
    void DoCheck(TObject* obj, Bool_t check);
+   void DoLog();
    //void DoKey(TGListTreeItem* entry, UInt_t keysym);
    void SelectDiv(int nn);
    void DoRadio();
@@ -117,8 +118,6 @@ public:
    //void DoPeaks2();
    void DoPeaks();
    void DoReset();
-   //void Update2();
-   //void DrawHist2();
    void Update();
    void DrawHist();
    void ReDraw();

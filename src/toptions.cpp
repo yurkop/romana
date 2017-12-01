@@ -177,8 +177,6 @@ Toptions::Toptions() {
   T0=0.0;
   LL=20.0;
 
-  draw_opt=M_DEMON;
-
   for (int i=0;i<MAX_CH;i++) {
     sprintf(chname[i],"ch%02d",i);    
     color[i]=0;

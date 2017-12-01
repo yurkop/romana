@@ -65,53 +65,8 @@ enum MENU_COM {
   M_SAVEROOT,
   M_FILE_BROWSE,
   M_FILE_NEWCANVAS,
-  //M_FILE_OPEN,
-  //M_FILE_SAVE,
   M_FILE_EXIT,
-  //M_THRESH,
-  //M_PARAM,
-  M_DEMON,
-  M_SYNC,
-  //M_MKMON,
-  //M_MAKAN,
   M_HELP,
-  M_TEST,
-  //M_SI,
-  //M_SIMAX,
-  M_E0_7,
-  M_E8_15,
-  M_E16_23,
-  M_E24_31,
-  M_T0_7,
-  M_T8_15,
-  M_T16_23,
-  M_T24_31,
-  M_TOF0_7,
-  M_TOF8_15,
-  M_TOF16_23,
-  M_TOF24_31,
-  /*
-  M_1_6,
-  M_7_12,
-  M_13_18,
-  M_19_24,
-  M_25_30,
-  M_27_32,
-  M_T1_6,
-  M_T7_12,
-  M_T13_18,
-  M_T19_24,
-  M_T25_30,
-  M_T27_32,
-  */
-  //M_CHANNELS,
-
-  //#ifdef ROMASH
-  M_TOF0_5,
-  M_TOF6_11,
-  M_TOF12_17,
-  M_TOF18_23
-  //#endif
 };
 
 #endif

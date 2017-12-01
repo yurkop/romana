@@ -22,7 +22,7 @@
 //#include <TTree.h>
 #include <TClass.h>
 #include <TH1.h>
-#include <TH2.h>
+//#include <TH2.h>
 #include <TApplication.h>
 #include <TFile.h>
 #include <TKey.h>
@@ -152,39 +152,8 @@ int *t_flag;
 
 event_t evt;
 
-TH1F *hsum_ng[MAX_P]; // 0-gamma; 1-neutron; 2-tail; 3-unknown
-TH1F *htdc_ng[MAX_P];
-TH1F *htdc_a_ng[MAX_P];
-TH1F *hrms_ng[MAX_P];
-
-
-TH1F *hsum[MAX_CH];
-TH1F *hmax[MAX_CH];
-TH1F *hrms;
-TH2F *hsumrms;
-TH1F *hstart;
-TH1F *htdc[MAX_CH]; // tof relative to "each" nuclotron pulse
-// 0-all; 1-gamma; 2-n
-TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)
-// 0-all; 1-gamma; 2-n
-
-TH1F* htof[MAX_CH];   //tof all
-TH1F* htof_g[MAX_CH]; //tof gamma
-TH1F* htof_n[MAX_CH]; //tof neutrons
-
-//#ifdef ROMASH
-TH1F *h_mtof[24];
 int mult_gam;
 //#endif
-
-TH1F *htdc_frame[MAX_CH]; //absolute tof (start=0) for frames
-
-TH1F *hdeltat[4]; // time between neighboring pulses 
-                  // 0: g-g; 1: g-n; 2: n-g; 3: n-n
-
-TH1F *hsync;
-
-//TH1F *spec[6];
 
 //char hstnam[100];
 
@@ -693,43 +662,6 @@ void SplitFilename (string str, char *folder, char *name, char* ext)
   strcpy(ext,fname.substr(found+1).c_str());
 }
 
-void delete_hist() {
-
-  int nn=0;
-  gROOT->cd();
-
-  TIter next(gDirectory->GetList());
-
-  TH1 *h;
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    if (obj->InheritsFrom(TH1::Class())) {
-      h=(TH1*) obj;
-      //cout << h->GetName() << endl;
-      h->Delete();
-      nn++;
-    }
-  }
-
-  cout << "Deleted: " << nn << " histograms" << endl;
-}
-
-/*
-  void set_time_offset() {
-
-  //int i,j;
-
-  for (int j=0;j<MAX_P;j++) {
-  htdc_a_ng[j]->GetXaxis()->SetTimeDisplay(1);
-  }
-
-  for (int i=0;i<MAX_CH;i++) {
-  htdc_a[i]->GetXaxis()->SetTimeDisplay(1);
-  htdc_frame[i]->GetXaxis()->SetTimeDisplay(1);
-  }
-
-  }
-*/
 void saveroot(char *name) {
 
   TFile * tf = new TFile(name,"RECREATE");
@@ -976,233 +908,6 @@ void smooth(int n, int i)
   */
 }
 
-/*
-  int subtr_bkgr(int cmax, int i) //subtract background
-  {
-  int j;
-  double bkgr=0;
-
-  //bkgr=0;
-  for (j=0;j<cmax;j++) {
-  bkgr+=Event[i][j];
-  }
-  bkgr=bkgr/cmax;
-  //printf("%f\n",bkgr);
-
-  for (j=0;j<nsamp;j++) {
-  bEvent[i][j]=Event[i][j]-bkgr;
-  //printf("%d %d %d %f %d %f\n",i,j,cmax,bkgr,Event[i][j],bEvent[i][j]);
-  }
-
-  return 0;
-
-  }
-*/
-
-int deltat(int ng, unsigned int tt) { // fill DeltaT histograms
-  int dd=tt-pstop1;
-
-  int num=png1*2+ng;
-
-  if (num>=0 && num < 4) {
-    hdeltat[num]->Fill(dd);
-  }
-  else {
-    printf("Wrong ng: %d %d %d\n",num,png1,ng);
-  }
-
-  pstop1=tt;
-  png1=ng;
-
-  if (dd == 0) {
-    printf("DeltaT: %d %d %d %d %d %d %d\n", nevent, num, png1, ng, tt, pstop1, dd);
-  }
-
-  return dd;
-
-}
-
-void startbeam(int ch) {
-  //Long64_t t_prev;
-  if (opt.starts_thr2>0 && ch ==  opt.start_ch &&
-      frame_tof2 > opt.starts_thr2) {
-    //t_prev = t_ring[nring];
-    if (tstamp64 > t_ring[nring]) {
-      //cout << "start1: " 
-      //<< tstamp64 << " " << t_ring[nring] << endl;
-      nring++;
-      if (nring>=MAXRING) 
-	nring=0;
-
-      if (tstamp64-t_ring[nring] < opt.starts_thr1) {
-	//if (t_ring[nring]>0) {
-	/*
-	  cout << "start: " << nevent << " " << start64 << " " 
-	  << tstamp64-t_ring[nring] << " "
-	  << tstamp64 << " " << t_ring[nring] << " " << tof2 
-	  << " " << tof << endl;
-	*/
-	start64=peak64;
-	findbeam=1;
-	if (!beam_on) {
-	  beam_on=true;
-	}
-	//return true;
-      }
-      t_ring[nring]=tstamp64;
-    }
-  }
-  //return false;
-}
-
-/*
-  void fillframe(int ch) {
-  htdc_frame[ch]->Fill((double)tstamp64/1e8);
-  startbeam(ch);
-  }
-*/
-
-int analyze() //analyze one event
-{
-  //int i,j;
-
-  //bool ana_stop=false;
-
-  //unsigned int tmp;
-
-  //double bkg1=sdata[0];
-  //double max=0.0;
-  //int imax=0;
-  //int it1=0;
-  //int it2=0;
-
-  //double sum,mean,rms;
-
-  //int bad_rms=0;
-  //int zero_dt=0;
-  //int big_sum=0;
-
-  frame_tof = (tstamp64-first64)*1e-8;
-  frame_tof2 = (tstamp64-start64)*1e-8;
-
-  //cout << "TOF::: " << nevent << " " << frame_tof << " " << tstamp64 << " " << first64 << endl ;
-
-  /*
-    cout << "frame_tof2: " << frame_tof2
-    << " " << tstamp64
-    << " " << start64
-    << endl;
-  */
-
-  if (frame_tof < opt.Tstart) {
-    return 0;
-  }
-  else if (opt.Tstop && frame_tof > opt.Tstop) {
-    //printf("Tstop: %f %f\n",frame_tof,tof);
-    //cout << start64 << " " << first64 << " " << tstamp64 << endl;
-    return 11;
-  }
-
-  //#ifdef ROMASH
-  mult_gam=0;
-  //#endif
-
-  for (int i=0;i<mult;i++) {
-    int ch = chan[i];
-    htdc_frame[ch]->Fill(frame_tof);
-    startbeam(ch);
-
-    if (opt.channels[ch]==ch_ng) {
-      smooth(opt.nsmoo[ch],i);
-      //findpeaks_ng(ch,NSamp, sEvent[i]);
-      //peaktime(ch,sEvent[i],opt.ng_timing,opt.ng_twin);
-    }
-    else if (opt.channels[ch]==ch_gam) {
-      smooth(opt.nsmoo[ch],i);
-      //findpeaks_gam(ch,NSamp, sEvent[i]);
-      //peaktime(ch,sEvent[i],opt.gam_timing,opt.gam_twin);
-    }
-    else if (opt.channels[ch]==ch_nim) {
-      //htdc_frame[ch]->Fill((double)tstamp64/1e8);
-      fill_sEvent(i);
-      //findpeaks_start(ch,NSamp, sEvent[i]);
-      //findpeaks_nim(ch,NSamp, sEvent[i]);
-      //peaktime(ch,sEvent[i],opt.nim_timing,opt.nim_twin);
-    }
-
-    //if (ch==22) {
-    //checkpoint=1;
-    //}
-
-    //if (ch==8) findbeam=1;
-
-  } //for i
-
-  //#ifdef ROMASH
-  //cout << "MMM: " << mult_gam << " " << frame_tof2 << endl;
-  if (mult_gam>0 && mult_gam<24) {
-    h_mtof[0]->Fill(frame_tof2*1000000);
-    h_mtof[mult_gam]->Fill(frame_tof2*1000000);
-  }
-  //#endif
-
-  //cout << "process" << endl;
-
-  //if (mult>10) {
-  //cout << "Mult: " << mult << " Nevent: " << nevent << endl;
-  //}
-
-  
-  mkstart();
-  mktof();
-
-  //if (b_tree) {
-    //filltree();
-  //}
-
-  /*
-    if (mult>1) {
-    //htof->Fill(peaks[0][1]-peaks[1][1]);
-    mktof();
-    }
-  */
-
-  if (checkpoint) {
-    checkpoint=0;
-    return 7;
-  }
-
-  if (findbeam) {
-    findbeam=0;
-    return 2;
-  }
-
-  //if (big_sum) {
-  //return 4;
-  //}
-  /*
-    if (zero_dt>=20 && zero_dt < 50) {
-    return 4;
-    }
-  */
-  return 0;
-
-} //analyze
-
-/*
-  void swap_words(unsigned short* buf, int size)
-  {
-  int i,j;
-  unsigned short tmp;
-  for (i=0;i<size/2;i++) {
-  j=i*2;
-  tmp=*(buf+j);
-  *(buf+j)=*(buf+j+1);
-  *(buf+j+1)=tmp;
-  }
-  }
-*/
-
 void swap_bytes(unsigned short* buf)
 {
   //int i,j;
@@ -1303,49 +1008,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fMenuFile->AddPopup("&Cascaded menus", fCascadeMenu);
   fMenuFile->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
-
-
-
-  /*  
-  fMenuOptions = new TGPopupMenu(gClient->GetRoot());
-  //fMenuOptions->AddEntry("Thresholds", M_THRESH);
-  //fMenuOptions->AddEntry("Parameters", M_PARAM);
-  //fMenuOptions->AddEntry("Channels", M_CHANNELS);
-  fMenuOptions->Connect("Activated(Int_t)", "MainFrame", this,
-			"HandleMenu(Int_t)");
-
-  fMenuHist = new TGPopupMenu(gClient->GetRoot());
-  fMenuHist->AddEntry("DEMON", M_DEMON);
-
-  fMenuHist->AddEntry("Energy 0  - 7 ", M_E0_7);
-  fMenuHist->AddEntry("Energy 8  - 15", M_E8_15);
-  fMenuHist->AddEntry("Energy 16 - 23", M_E16_23);
-  fMenuHist->AddEntry("Energy 24 - 31", M_E24_31);
-  fMenuHist->AddEntry("Time 0  - 7 ", M_T0_7);
-  fMenuHist->AddEntry("Time 8  - 15", M_T8_15);
-  fMenuHist->AddEntry("Time 16 - 23", M_T16_23);
-  fMenuHist->AddEntry("Time 24 - 31", M_T24_31);
-  fMenuHist->AddEntry("TOF 0  - 7 ", M_TOF0_7);
-  fMenuHist->AddEntry("TOF 8  - 15", M_TOF8_15);
-  fMenuHist->AddEntry("TOF 16 - 23", M_TOF16_23);
-  fMenuHist->AddEntry("TOF 24 - 31", M_TOF24_31);
-
-  //#ifdef ROMASH
-  fMenuHist->AddEntry("MTOF 0  - 5 ",  M_TOF0_5  );
-  fMenuHist->AddEntry("MTOF 6  - 11",  M_TOF6_11 );
-  fMenuHist->AddEntry("MTOF 12  - 17", M_TOF12_17);
-  fMenuHist->AddEntry("MTOF 18  - 23", M_TOF18_23);
-  //#endif
-  fMenuHist->Connect("Activated(Int_t)", "MainFrame", this,
-		     "HandleMenu(Int_t)");
-
-  fMenuAna = new TGPopupMenu(gClient->GetRoot());
-  fMenuAna->AddEntry("Syncro-pulses histogram", M_SYNC);
-  fMenuAna->Connect("Activated(Int_t)", "MainFrame", this,
-		    "HandleMenu(Int_t)");
-
-  */
-
 
 
   fMenuHelp = new TGPopupMenu(gClient->GetRoot());
@@ -2322,123 +1984,6 @@ void MainFrame::UpdateStatus() {
 
 }
 
-void MainFrame::DoAllevents() {
-
-  /*
-  if (bRun) return;
-  bRun=true;
-
-  if (!Buffer->gzF || !Buffer->r_buf) {
-    bRun=false;
-    return;
-  }
-  */
-
-  for (int j=0;j<24;j++) {
-    printf("Integr: %d %0.0f %0.0f\n",j,htdc_a[j]->Integral(),hsum[j]->Integral());
-    //cout << "Integr: " 
-  }
-
-  //Long64_t nbytes = (recd-Buffer->r_buf+idx)*2;
-  //cout << "Bytes analyzed: " << nbytes << endl;
-
-  //printf("Bytes analyzed: %d\n",nbytes);
-  
-
-
-  UpdateStatus();
-
-  //DoDraw();
-  bRun=false;
-}
-
-void MainFrame::DoFindBeam() {
-
-  if (bRun) return;
-  bRun=true;
-
-  /*
-  if (!Buffer->gzF || !Buffer->r_buf) {
-    //if (!fp) {
-    bRun=false;
-    return;
-  }
-  */
-
-  UpdateStatus();
-
-  //DoDraw();
-  bRun=false;
-}
-
-void MainFrame::DoChkPoint() {
-
-  //cout << fChan << endl;
-
-  if (bRun) return;
-  bRun=true;
-  /*
-  if (!Buffer->gzF || !Buffer->r_buf) {
-    //if (!fp) {
-    bRun=false;
-    return;
-  }
-  */
-  UpdateStatus();
-  //DoDraw();
-  bRun=false;
-}
-
-/*
-  void MainFrame::Do1event() {
-  if (!fp || !Buffer->r_buf) {
-  //if (!fp) {
-  return;
-  }
-
-  if (nextevent()) {
-  analyze();
-  DoDraw2();
-  }
-  UpdateStatus();
-  }
-
-  void MainFrame::DoNevents() {
-  int i;
-
-  if (bRun) return;
-  bRun=true;
-
-  if (!fp || !Buffer->r_buf) {
-  //if (!fp) {
-  bRun=false;
-  return;
-  }
-
-  DoSetNum();
-
-  for (i=0;i<opt.num_events;i++) {
-  if (nextevent() && bRun) {
-  if (analyze()==11)
-  break;
-  }
-  else
-  break;
-
-  if (! (nevent % 1000)) {
-  UpdateStatus();
-  gSystem->ProcessEvents();
-  }
-
-  }
-
-  UpdateStatus();
-  //printf("Nevents: %d\n",nevent);
-  DoDraw();
-  bRun=false;
-  }
-*/
-
 void MainFrame::DoSetNumBuf() {
 
   if (bRun) return;
@@ -2563,20 +2108,6 @@ void MainFrame::DoGcut(int nn) {
 
 }
 
-
-void MainFrame::DoSync() {
-
-  TCanvas* cnv = (TCanvas*) gROOT->GetListOfCanvases()->FindObject("cnv");
-
-  if (cnv!=NULL) {
-    delete cnv;
-  }
-
-  cnv = new TCanvas("cnv","cnv",600,400);  
-
-  hsync->Draw();
-
-}
 
 /*
   void MainFrame::MakeEvents() {
@@ -2761,51 +2292,6 @@ void MainFrame::HandleMenu(MENU_COM menu_id)
 
     //break;
 
-  case M_DEMON:
-  case M_E0_7:
-  case M_E8_15:
-  case M_E16_23:
-  case M_E24_31:
-  case M_T0_7:
-  case M_T8_15:
-  case M_T16_23:
-  case M_T24_31:
-  case M_TOF0_7:
-  case M_TOF8_15:
-  case M_TOF16_23:
-  case M_TOF24_31:
-    /*
-      case M_SI:
-      case M_SIMAX:
-      case M_1_6:
-      case M_7_12:
-      case M_13_18:
-      case M_19_24:
-      case M_25_30:
-      case M_27_32:
-      case M_T1_6:
-      case M_T7_12:
-      case M_T13_18:
-      case M_T19_24:
-      case M_T25_30:
-      case M_T27_32:
-    */
-
-    //#ifdef ROMASH
-  case M_TOF0_5:
-  case M_TOF6_11:
-  case M_TOF12_17:
-  case M_TOF18_23:
-    //#endif
-    opt.draw_opt=menu_id;
-    //DoDraw();
-    break;
-
-  case M_SYNC:
-    DoSync();
-    DoCross();
-    break;
-
   case M_HELP:
 
     strcpy(command,"sevince ");
@@ -2814,12 +2300,6 @@ void MainFrame::HandleMenu(MENU_COM menu_id)
     if (status == -1) {
       cout << "Return value of system(command): " << status << endl;
     }
-
-    break;
-
-  case M_TEST:
-
-    //new TestDirList(gClient->GetRoot(), fMain, 400, 200);
 
     break;
 
@@ -2882,60 +2362,6 @@ void mkstart() {
 
     }
   }
-}
-
-void mktof() {
-  //double ygr[DSIZE];
-  //int k;
-  //double dmean[MAX_CH];
-
-  //printf("mktof: %d events\n",nevent);
-
-  //bool veto=false;
-
-  for (int i=0;i<mult;i++) {
-
-    int ch = chan[i];
-
-    for (int k=0;k<tpeaks;k++) {
-      double t0 = tstarts[k];
-      for (int j=0;j<npeaks[ch];j++) {
-	double tt=(t0-mean[ch][j])*10.0+opt.T0;
-
-	/*
-	  if (ch==19 && tt>=950 && tt<=1050) {
-	  cout << "tt1::: " << tt << endl;
-	  checkpoint=1;
-	  }
-
-	  if (ch==19 && tt>=1140 && tt<=1150) {
-	  cout << "tt2::: " << tt << endl;
-	  checkpoint=1;
-	  }
-	*/
-
-	/*
-	  double t2=tt-opt.T0;
-	  double ee=-5;
-	  if (t2>0) {
-	  ee=0.723*opt.LL/t2;
-	  ee=ee*ee;
-	  }
-	*/
-
-	htof[ch]->Fill(tt);
-
-	if (t_flag[k]==2) { //gamma
-	  htof_g[ch]->Fill(tt);
-	}
-	else if (t_flag[k]==3) { //neutrons
-	  htof_n[ch]->Fill(tt);
-	}
-
-      } //for j
-    } //for k
-  } //for i
-
 }
 
 int getmax(TH1F* hist[]) {

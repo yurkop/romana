@@ -34,8 +34,8 @@ extern ULong_t fGreen;
 extern ULong_t fRed;
 extern ULong_t fCyan;
 
-extern TH1F *hrms;
-extern TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)
+//extern TH1F *hrms;
+//extern TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)
 
 extern HistFrame* EvtFrm;
 
@@ -209,6 +209,11 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but = new TGTextButton(fHor2," >> ",4);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
   fHor2->AddFrame(but, fLay5);
+
+  TGCheckButton* chk;
+  chk = new TGCheckButton(fHor2,"Log",11);
+  chk->Connect("Clicked()", "HistFrame", this, "DoLog()");
+  fHor2->AddFrame(chk, fLay5);
 
   but = new TGTextButton(fHor2,"Peaks",4);
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
@@ -507,7 +512,16 @@ void HistFrame::DoClick(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, 
 
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
-  cout << "DoCheck: " << obj << " " << check << endl;
+  //cout << "DoCheck: " << obj << " " << check << endl;
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
+}
+
+void HistFrame::DoLog()
+{
+  //cout << "DoCheck: " << obj << " " << check << endl;
   if (crs->b_stop)
     Update();
   else
@@ -620,60 +634,6 @@ void HistFrame::DoButton()
 
 }
 
-/*
-void HistFrame::DoPeaks2()
-{
-
-  TSpectrum spec;
-  
-  int nn=1;
-  int ii=0;
-  for (std::list<TH1*>::iterator hh=hlist2.begin();
-       hh!=hlist2.end();++hh) {
-    if (ii>=opt.icheck) {
-      if (!fEc->GetCanvas()->GetPad(nn)) break;
-      fEc->GetCanvas()->cd(nn);
-      //TH1 *hh = (TH1*) obj;
-      //cout << "hhh: " << hh->GetTitleSize() << endl;
-      //hh->Draw();
-      int npk = spec.Search((*hh),2,"",0.5);
-      Float_t* peaks = spec.GetPositionX();
-      for (int j=0;j<npk;j++) {
-	int bin = (*hh)->FindFixBin(peaks[j]);
-	int k;
-	for (k=bin;k>0;k--) {
-	  if ((*hh)->GetBinContent(k)<spec.GetPositionY()[j]*0.5)
-	    break;
-	}
-	//cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
-	//     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
-	double sig = (bin-k)*2.0/2.35;
-
-	int width=(bin-k)*5;
-
-	TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
-	//cout << f1->GetNpar() << endl;
-	f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
-
-	//f1->Print();
-	const char* fitopt="+";
-	if (j==0) fitopt="";
-
-	//TF1* fitf=new TF1("fitf","gaus",0,10);
-	(*hh)->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
-	//f1->Draw("same");
-      }
-      nn++;
-    }
-    ii++;
-  }
-  fEc->GetCanvas()->SetEditable(true);
-  fEc->GetCanvas()->Update();
-  fEc->GetCanvas()->SetEditable(false);
-
-}
-*/
-
 void HistFrame::DoPeaks()
 {
 
@@ -771,103 +731,6 @@ void HistFrame::DoReset()
 
 }
 
-/*
-void HistFrame::Update2()
-{
-
-  Hmut.Lock();
-  int sel = abs(opt.sel_hdiv)%NR;
-  SelectDiv(sel);
-
-  hlist2.clear();
-  TGListTreeItem *idir = fListTree->GetFirstItem();
-  while (idir) {
-    if (idir->IsChecked() && idir->GetUserData()) {
-      hlist2.push_back((TH1*)idir->GetUserData());
-      //hlist->Add((TObject*)idir->GetUserData());
-      //cout << "upd1: " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete) << endl;
-    }
-    TGListTreeItem *item = idir->GetFirstChild();
-    while (item) {
-      if (item->IsChecked() && item->GetUserData()) {
-	hlist2.push_back((TH1*)item->GetUserData());
-	//hlist->Add((TObject*)item->GetUserData());
-	//cout << "upd2: " << ((TObject*)item->GetUserData())->TestBit(kCanDelete)<< endl;
-      }
-      item = item->GetNextSibling();
-    }
-    idir = idir->GetNextSibling();
-  }
-
-  //fListTree->GetChecked(hlist);
-  //cout << "hlist: " << hlist->GetSize() << endl;
-
-  if (opt.icheck > hlist2.size()-ndiv)
-    opt.icheck=hlist2.size()-ndiv;
-  //if (opt.icheck > hlist->GetSize()-ndiv)
-  //  opt.icheck=hlist->GetSize()-ndiv;
-  if (opt.icheck < 0)
-    opt.icheck=0;
-
-  //cout <<"Update1: " << endl;
-
-  //gStyle->Dump();
-
-  //cout << "update14" << endl;
-  DrawHist();
-  //cout << "update15" << endl;
-
-  //cout <<"Update2: " << endl;
-  //exit(1);
-
-  Hmut.UnLock();
-}
-
-void HistFrame::DrawHist2()
-{
-
-  //cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
-  TCanvas *cv=fEc->GetCanvas();
-  //cv->ls();
-  cv->SetEditable(true);
-  cv->Clear();
-  //fEc->GetCanvas()->Clear();
-  //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
-  //cout <<"dr2a: " << fEc << " " << fEc->GetCanvas() << endl;
-  cv->Divide(xdiv,ydiv);
-  cv->SetEditable(false);  
-  //cv->Update();
-  //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
-  //cout <<"dr2: " << hlist << endl;
-  //return;
-  int nn=1;
-  int ii=0;
-  //TIter next(hlist);
-  //TObject* obj;
-  //while ( (obj=(TObject*)next()) ) {
-  for (std::list<TH1*>::iterator hh=hlist2.begin();
-       hh!=hlist2.end();++hh) {
-    if (ii>=opt.icheck) {
-      //cout <<"ddd: " << nn << " " << ndiv << " " << ii << " " << fEc->GetCanvas()->GetPad(nn) << endl;
-      //if (!fEc->GetCanvas()->GetPad(nn)) break;
-      cv->SetEditable(true);  
-      cv->cd(nn);
-      (*hh)->Draw();
-      cv->SetEditable(false);  
-      nn++;
-      if (nn>ndiv)
-	break;
-    }
-    ii++;
-    //break;
-  }
-  //return;
-  //cout <<"dr3:" << endl;
-  cv->SetEditable(true);  
-  cv->Update();
-  cv->SetEditable(false);  
-}
-*/
 void HistFrame::Update()
 {
 
@@ -875,20 +738,16 @@ void HistFrame::Update()
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
 
-  //if (hlist
-
   hlist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     if (idir->IsChecked() && idir->GetUserData()) {
       hlist->Add((TObject*)idir->GetUserData());
-      //cout << "upd1: " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete) << endl;
     }
     TGListTreeItem *item = idir->GetFirstChild();
     while (item) {
       if (item->IsChecked() && item->GetUserData()) {
 	hlist->Add((TObject*)item->GetUserData());
-	//cout << "upd2: " << ((TObject*)item->GetUserData())->TestBit(kCanDelete)<< endl;
       }
       item = item->GetNextSibling();
     }
@@ -903,32 +762,15 @@ void HistFrame::Update()
   if (opt.icheck < 0)
     opt.icheck=0;
 
-  /*
-  TIter next(hlist);
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    TH1 *hh = (TH1*) obj;
-    //cout << "Checked: " << hh->GetName() << endl;
-  }
-  */
+  // TString* ss[1000000];
+  // for (int i=0;i<1000000;i++) {
+  //   ss[i] = new TString("asdasdasdf");
+  // }
+  // for (int i=0;i<1000000;i++) {
+  //   delete ss[i];
+  // }
 
-  TString* ss[1000000];
-  for (int i=0;i<1000000;i++) {
-    ss[i] = new TString("asdasdasdf");
-  }
-  for (int i=0;i<1000000;i++) {
-    delete ss[i];
-  }
-  //cout <<"Update1: " << endl;
-
-  //gStyle->Dump();
-
-  //cout << "update14" << endl;
   DrawHist();
-  //cout << "update15" << endl;
-
-  //cout <<"Update2: " << endl;
-  //exit(1);
 
   Hmut.UnLock();
 }
@@ -936,50 +778,30 @@ void HistFrame::Update()
 void HistFrame::DrawHist()
 {
 
-  //cout <<"dr1: " << fEc << " " << fEc->GetCanvas() << endl;
   TCanvas *cv=fEc->GetCanvas();
-  //cv->SetEditable(true);
   cv->Clear();
-  //fEc->GetCanvas()->Clear();
-  //cout <<"dr1a: " << fEc << " " << fEc->GetCanvas() << " " << xdiv << " " << ydiv << " " << ndiv << endl;
-  //cout <<"dr2a: " << fEc << " " << fEc->GetCanvas() << endl;
   cv->Divide(xdiv,ydiv);
-  //cv->SetEditable(false);  
-  //cv->Update();
-  //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
-  //cout <<"dr2: " << hlist << endl;
-  //return;
   int nn=1;
   int ii=0;
   TIter next(hlist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     if (ii>=opt.icheck) {
-      //cout <<"ddd: " << nn << " " << ndiv << " " << ii << " " << fEc->GetCanvas()->GetPad(nn) << endl;
-      //if (!fEc->GetCanvas()->GetPad(nn)) break;
-      //cv->SetEditable(true);  
       cv->cd(nn);
       TH1 *hh = (TH1*) obj;
-      //cout << "hhh: " << hh->GetTitleSize() << endl;
       if (hh->GetDimension()==2) {
 	hh->Draw("zcol");
       }
       else {
 	hh->Draw();
       }
-      //cv->SetEditable(false);  
       nn++;
       if (nn>ndiv)
 	break;
     }
     ii++;
-    //break;
   }
-  //return;
-  //cout <<"dr3:" << endl;
-  //cv->SetEditable(true);  
   cv->Update();
-  //cv->SetEditable(false);  
 }
 
 /*
