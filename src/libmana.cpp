@@ -43,8 +43,6 @@
 
 #include <TDataMember.h>
 
-#include "TGMsgBox.h"
-
 //#include <TGColorDialog.h>
 
 #include "libcrs.h"
@@ -199,6 +197,8 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
+    if (debug&0x2)
+      cout << "member: " << dm->GetName() << endl;
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -2315,8 +2315,8 @@ bool MainFrame::TestFile() {
   //EMsgBoxIcon icontype = kMBIconStop;
   //EMsgBoxIcon icontype = kMBIconExclamation;
   //EMsgBoxIcon icontype = kMBIconQuestion;
-  EMsgBoxIcon icontype = kMBIconAsterisk;
-  Int_t buttons = kMBOk|kMBCancel;
+  //EMsgBoxIcon icontype = kMBIconAsterisk;
+  //Int_t buttons = kMBOk|kMBCancel;
   const char* msg_exists = "Output file already exists.\nIt will be overwritten.\nPress OK if you want to continue?";
 
   struct stat buffer;
@@ -2324,9 +2324,10 @@ bool MainFrame::TestFile() {
   if ((opt.raw_write && !stat(opt.fname_raw, &buffer)) ||
       (opt.dec_write && !stat(opt.fname_dec, &buffer))) {
     Int_t retval;
+    //new ColorMsgBox(gClient->GetRoot(), this,
     new TGMsgBox(gClient->GetRoot(), this,
 		 "File exists",
-		 msg_exists, icontype, buttons, &retval);
+		 msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
     if (retval == kMBOk) {
       return true;
     }
@@ -2522,4 +2523,83 @@ void pointer_test() {
   pt = new MyClass[size];
   delete[] pt;
 
+}
+//-------------------------
+ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
+	    const char *title, const char *msg, EMsgBoxIcon icon,
+	    Int_t buttons, Int_t *ret_code)
+  : TGTransientFrame(p, main, 10, 10)
+{
+   UInt_t width, height;
+
+  Pixel_t fBluevio;
+  fBluevio=TColor::RGB2Pixel(255,114,86);
+
+  cout << "ColorBox: " << endl;
+
+  TGLayoutHints* fL1 = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 3, 3, 0, 0);
+  TGLayoutHints* fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
+  TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterY | kLHintsLeft | kLHintsExpandX,
+                           4, 2, 2, 2);
+ 
+  TGHorizontalFrame* fButtonFrame = new TGHorizontalFrame(this, 100, 20, kFixedWidth);
+  AddFrame(fButtonFrame, fL2);
+  TGVerticalFrame* fLabelFrame = new TGVerticalFrame(this, 60, 20);
+  AddFrame(fLabelFrame, fL2);
+
+  TGTextButton* fOK = new TGTextButton(fButtonFrame, new TGHotString("&OK"), 1);
+  //fOK->Associate(this);
+  fButtonFrame->AddFrame(fOK, fL1);
+  //width = TMath::Max(width, fOK->GetDefaultWidth());
+  TGTextButton* fCancel = new TGTextButton(fButtonFrame, new TGHotString("&Cancel"), 2);
+  //fCancel->Associate(this);
+  fButtonFrame->AddFrame(fCancel, fL1);
+  //    width = TMath::Max(width, fCancel->GetDefaultWidth()); ++nb;
+
+  //width = TMath::Max(width, fOK->GetDefaultWidth());
+
+
+  TGLabel *label;
+  label = new TGLabel(fLabelFrame, msg);
+  label->SetTextJustify(kTextCenterX);
+
+  this->SetBackgroundColor(fBluevio);
+
+  fLabelFrame->AddFrame(label, fL4);
+
+  MapSubwindows();
+
+  width  = GetDefaultWidth();
+  height = GetDefaultHeight();
+
+  Resize(width, height);
+
+   // position relative to the parent's window
+
+  CenterOnParent();
+
+  // make the message box non-resizable
+
+  SetWMSize(width, height);
+  SetWMSizeHints(width, height, width, height, 0, 0);
+
+  // set names
+
+  SetWindowName(title);
+  SetIconName(title);
+  SetClassHints("MsgBox", "MsgBox");
+
+  SetMWMHints(kMWMDecorAll | kMWMDecorResizeH  | kMWMDecorMaximize |
+	      kMWMDecorMinimize | kMWMDecorMenu,
+	      kMWMFuncAll  | kMWMFuncResize    | kMWMFuncMaximize |
+	      kMWMFuncMinimize,
+	      kMWMInputModeless);
+
+  MapRaised();
+
+  fClient->WaitFor(this);
+}
+//-------------------------
+ColorMsgBox::~ColorMsgBox()
+{
 }

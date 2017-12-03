@@ -184,6 +184,7 @@ class Toptions: public TObject {
   Int_t b_osc,b_leg,b_logy,b_time;
   Int_t draw_opt;
 
+  //std::vector<Float_t> cut[3];
   TCutG *gcut[3];
 
   Float_t T0,LL;

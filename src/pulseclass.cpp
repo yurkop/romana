@@ -388,7 +388,7 @@ void EventClass::FillHistTree() {
       }
     }
     if (nn==2) {
-      HiFrm->h_2d[0]->Fill(amp[0],amp[1]);
+      HiFrm->h_2d->Fill(amp[0],amp[1]);
     }
   }
 

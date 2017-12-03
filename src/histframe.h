@@ -73,7 +73,7 @@ class HistFrame: public TGCompositeFrame {
    TH1F* h_tof[MAX_CH]; // time of flight
    TH1F* h_mtof[MAX_CH]; // time of flight
 
-   TH2F* h_2d[1];
+   TH2F* h_2d;
 
    TH2F* h2_prof_strip[64];
    TH2F* h2_prof_real[64];
@@ -116,6 +116,7 @@ public:
    void DoRadio();
    void DoButton();
    //void DoPeaks2();
+   void DoCutG();
    void DoPeaks();
    void DoReset();
    void Update();

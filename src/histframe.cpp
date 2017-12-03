@@ -215,6 +215,14 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   chk->Connect("Clicked()", "HistFrame", this, "DoLog()");
   fHor2->AddFrame(chk, fLay5);
 
+  but = new TGTextButton(fHor2,"Cut +",1);
+  but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  fHor2->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor2,"Cut -",2);
+  but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  fHor2->AddFrame(but, fLay5);
+
   but = new TGTextButton(fHor2,"Peaks",4);
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
   fHor2->AddFrame(but, fLay5);
@@ -328,16 +336,17 @@ void HistFrame::Make_hist() {
   }
 
   idir = fListTree->AddItem(iroot, "2d",0,0,true);
-  for (int i=0;i<1;i++) {
-    sprintf(name,"h2d_%02d",i);
-    sprintf(title,"h2d_%02d;Channel;Counts",i);
-    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_2d[i]=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
-		     nn,opt.amp_min,opt.amp_max);
-    fListTree->AddItem(idir, name, h_2d[i], pic, pic,true);
-    //cout << i << " " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete);
-    //item->CheckItem(false);
-  }
+  //for (int i=0;i<1;i++) {
+  sprintf(name,"h2d");
+  sprintf(title,"h2d;Channel;Counts");
+  int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+  h_2d=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
+		   nn,opt.amp_min,opt.amp_max);
+  fListTree->AddItem(idir, name, h_2d, pic, pic,true);
+  //cout << i << " " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete);
+  //item->CheckItem(false);
+  //}
+
   //idir->CheckItem(false);
 
 }
@@ -368,12 +377,12 @@ void HistFrame::NewBins() {
     h_mtof[i]->Reset();
   }
 
-  for (int i=0; i<1; i++) {
+  //for (int i=0; i<1; i++) {
     nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_2d[i]->SetBins(nn,opt.amp_min,opt.amp_max,
+    h_2d->SetBins(nn,opt.amp_min,opt.amp_max,
 		     nn,opt.amp_min,opt.amp_max);
-    h_2d[i]->Reset();
-  }
+    h_2d->Reset();
+    //}
 
   for (int i=0; i<64; i++) {
     h2_prof_strip[i]->Reset();
@@ -644,6 +653,59 @@ void HistFrame::DoButton()
     changed=true;
   //cout << "doradio3: " << id << endl;
 
+}
+
+void HistFrame::DoCutG()
+{
+  TObject* obj=0;
+  const char* msg;// = "Gcut Test";
+  Int_t retval;
+
+  for (int i=1;i<=ndiv;i++) {
+    TPad* pad = (TPad*) fEc->GetCanvas()->GetPad(i);
+    obj = pad->GetPrimitive("h2d");
+    if (obj)
+      break;
+    //cout << obj << endl;
+    //TList* list = pad->GetL
+  }
+
+  if (obj) {
+    msg = "Use your mouse to create a graphical cut on the h2d histogram\nUse double click to finish";
+  }
+  else {
+    msg = "Error: Graphical cut is only possible with h2d histogram\nUse Histograms menu on the right to make it visible";
+    return;
+  }
+
+  new TGMsgBox(gClient->GetRoot(), this,
+	       "Graphical cut",
+	       msg, kMBIconAsterisk, kMBDismiss, &retval);
+
+  cout << "test: " << obj << endl;
+
+
+
+  /*
+
+  c1->WaitPrimitive("CUTG","CutG");
+  opt.gcut[nn] = new TCutG(*(TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG"));
+  opt.gcut[nn]->SetName(cname[nn]);
+
+  if (nn==0) {
+    opt.gcut[nn]->SetLineColor(2);
+  }
+  else if (nn==1) {
+    opt.gcut[nn]->SetLineColor(1);
+  }
+  else if (nn==2) {
+    opt.gcut[nn]->SetLineColor(4);
+  }
+  c1->cd();
+  opt.gcut[nn]->Print();
+  opt.gcut[nn]->Draw();
+
+*/
 }
 
 void HistFrame::DoPeaks()
