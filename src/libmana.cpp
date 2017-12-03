@@ -507,18 +507,9 @@ int main(int argc, char **argv)
 
 
 
-
-
-
-
-
-
-
-
-
-  cout << "sizeof(TDatime): " << sizeof(TDatime) << endl;
-  cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
-  cout << "sizeof(opt): " << sizeof(opt) << endl;
+  // cout << "sizeof(TDatime): " << sizeof(TDatime) << endl;
+  // cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
+  // cout << "sizeof(opt): " << sizeof(opt) << endl;
   
 
   crs = new CRS();
@@ -571,9 +562,14 @@ int main(int argc, char **argv)
     if (argnn<argc) {
       //parname = argv[argnn];
       gzFile ff = gzopen(argv[argnn],"rb");
-      crs->ReadParGz(ff,argv[argnn],0,1,1);
-      gzclose(ff);
-      crs->DoReset();
+      if (!ff) {
+	cout << "Can't open par file: " << argv[argnn] << endl;
+      }
+      else {
+	crs->ReadParGz(ff,argv[argnn],0,1,1);
+	gzclose(ff);
+	crs->DoReset();
+      }
       //pname=argv[argnn];
     }
 
@@ -1609,12 +1605,14 @@ void MainFrame::Do1buf() {
     return;
   }
 
-  crs->b_fana=true;
-  crs->b_stop=false;
-  crs->DoNBuf(1);
-  crs->b_fana=false;
-  crs->b_stop=true;
-    
+  if (TestFile()) {
+    crs->b_fana=true;
+    crs->b_stop=false;
+    crs->DoNBuf(1);
+    crs->b_fana=false;
+    crs->b_stop=true;
+  }  
+
 }
 
 void MainFrame::DoNbuf() {
@@ -1635,23 +1633,24 @@ void MainFrame::DoNbuf() {
     crs->b_stop=true;
   }
   else { //start analysis of n buffers
-    //cout << "donbuf1" << endl;
-    fAna->ChangeBackground(fRed);
-    fAna->SetText("Pause");
-    fNb->ChangeBackground(fRed);
-    crs->b_fana=true;
-    crs->b_stop=false;
-    crs->DoNBuf(opt.num_buf);
-    //gSystem->Sleep(1000);
-    //cout << "donbuf2" << endl;
-    //DoNbuf();
-    fAna->ChangeBackground(fGreen);
-    fAna->SetText("Analyse");
-    fNb->ChangeBackground(fGreen);
-    crs->b_fana=false;
-    crs->b_stop=true;
-    //cout << "donbuf3" << endl;
-    
+    if (TestFile()) {
+      //cout << "donbuf1" << endl;
+      fAna->ChangeBackground(fRed);
+      fAna->SetText("Pause");
+      fNb->ChangeBackground(fRed);
+      crs->b_fana=true;
+      crs->b_stop=false;
+      crs->DoNBuf(opt.num_buf);
+      //gSystem->Sleep(1000);
+      //cout << "donbuf2" << endl;
+      //DoNbuf();
+      fAna->ChangeBackground(fGreen);
+      fAna->SetText("Analyse");
+      fNb->ChangeBackground(fGreen);
+      crs->b_fana=false;
+      crs->b_stop=true;
+      //cout << "donbuf3" << endl;
+    }
   }
 
 }
@@ -2310,6 +2309,9 @@ void MainFrame::HandleMenu(MENU_COM menu_id)
 }
 
 bool MainFrame::TestFile() {
+
+  if (!crs->justopened) return true;
+
   //EMsgBoxIcon icontype = kMBIconStop;
   //EMsgBoxIcon icontype = kMBIconExclamation;
   //EMsgBoxIcon icontype = kMBIconQuestion;

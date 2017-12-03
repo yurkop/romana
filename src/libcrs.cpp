@@ -164,7 +164,7 @@ void *handle_ana(void* ptr) {
     crs->m_start = crs->Levents.begin();
   }
 
-  cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << endl;
+  //cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << endl;
 
   int n2; //number of events to erase
   //m_event - first event which is not analyzed
@@ -204,34 +204,28 @@ void *handle_ana(void* ptr) {
       crs->m_event=it;
     }
 
-    cout << "st: " << ii << " " << std::distance(crs->m_start,crs->m_event)
-	 << " " << crs->m_event->Nevt << " " << crs->m_start->Nevt << endl;
-    //cout << "start3: " << &*crs->m_event << " " << crs->m_event->Nevt << " " << crs->Levents.size() << " " << ii << " " << crs->b_run << endl;
-
+    //cout << "st: " << ii << " " << std::distance(crs->m_start,crs->m_event) << " " << crs->m_event->Nevt << " " << crs->m_start->Nevt << endl;
     
     if (crs->m_event!=crs->m_start) { //there are some events to analyze
       
-      goto skip;
+      //goto skip;
 
 
       // fill Tevents for EvtFrm::DrawEvent2
       EvtFrm->Tevents.clear();
-      //cout << "ev1: " << endl;
       if (crs->m_event!=crs->Levents.end()) {
       	EvtFrm->Tevents.push_back(*crs->m_event);
       }
-      //cout << "ev2: " << &*crs->m_event << endl;
       EvtFrm->d_event=EvtFrm->Pevents->begin();
 
 
 
-      skip:
-      cout << "ana: " << std::distance(crs->m_start,crs->m_event) << endl;
+      //skip:
+      //cout << "ana: " << std::distance(crs->m_start,crs->m_event) << endl;
 
       // analyze events up to m_event
       for (it=crs->m_start; it!=crs->m_event;) {
-	cout << "ana7: " << it->Nevt << " " << crs->m_event->Nevt << " "
-	     << std::distance(it,crs->m_event) << endl;
+	//cout << "ana7: " << it->Nevt << " " << crs->m_event->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  //HiFrm->FillHist(&(*it));
 
@@ -245,25 +239,24 @@ void *handle_ana(void* ptr) {
 	  ++crs->nevents2;
 	  ++it;
 	  //++(crs->n_ana);
-	  cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
+	  //cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	}
 	else {
 	  it=crs->Levents.erase(it);
-	  cout << "ana72: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
+	  //cout << "ana72: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	}
       }
 
-      cout << "ana2: " << std::distance(crs->m_start,crs->m_event) << endl;
+      //cout << "ana2: " << std::distance(crs->m_start,crs->m_event) << endl;
 
       // m_start now points to the first event which is not analyzed yet
       crs->m_start=crs->m_event;
 
-      cout << "ana2a: " << std::distance(crs->m_start,crs->m_event) << endl;
+      //cout << "ana2a: " << std::distance(crs->m_start,crs->m_event) << endl;
 
       // erase events if the list is too long
       n2 = crs->Levents.size()-opt.ev_max;
       if (n2>0) {
-	//cout << "### erase: " << n2 << endl;
 	ii=0;
 	for (it=crs->Levents.begin(); it!=crs->m_start && ii<n2;) {
 	  it=crs->Levents.erase(it);
@@ -273,7 +266,7 @@ void *handle_ana(void* ptr) {
 	}
       }
 
-      cout << "ana3: " << std::distance(crs->m_start,crs->m_event) << endl;
+      //cout << "ana3: " << std::distance(crs->m_start,crs->m_event) << endl;
 
     } // if (n1>0)
     else {
@@ -285,7 +278,7 @@ void *handle_ana(void* ptr) {
     crs->Flush_Dec();
   }
 
-  cout << "end_ana: " << endl;
+  //cout << "end_ana: " << endl;
 
   return 0;
     
@@ -466,6 +459,7 @@ CRS::CRS() {
   b_fana=false;
   b_stop=true;
   b_run=0;
+  //justopened=true;
 
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
@@ -1238,19 +1232,20 @@ int CRS::DoStartStop() {
     }   
 
     if (opt.dec_write) {
-      sprintf(dec_opt,"wb%d",opt.dec_compr);
+      Reset_Dec();
+      // sprintf(dec_opt,"wb%d",opt.dec_compr);
 
-      f_dec = gzopen(opt.fname_dec,dec_opt);
-      if (f_dec) {
-	cout << "Writing parameters... : " << opt.fname_dec << endl;
-	SaveParGz(f_dec);
-	gzclose(f_dec);
-	}
-      else {
-	cout << "Can't open file: " << opt.fname_dec << endl;
-      }
+      // f_dec = gzopen(opt.fname_dec,dec_opt);
+      // if (f_dec) {
+      // 	cout << "Writing parameters... : " << opt.fname_dec << endl;
+      // 	SaveParGz(f_dec);
+      // 	gzclose(f_dec);
+      // 	}
+      // else {
+      // 	cout << "Can't open file: " << opt.fname_dec << endl;
+      // }
 
-      sprintf(dec_opt,"ab%d",opt.dec_compr);
+      // sprintf(dec_opt,"ab%d",opt.dec_compr);
     }   
 
     //nvp=0;
@@ -1381,6 +1376,7 @@ void CRS::DoReset() {
   //cout << "f_read: " << f_read << endl;
   if (f_read)
     DoFopen(NULL,0);
+  justopened=true;
 
   // parpar->Update();
   if (crspar) {
@@ -1407,11 +1403,10 @@ void CRS::DoFopen(char* oname, int popt) {
   if (oname)
     strcpy(Fname,oname);
 
-  cout << "DoFopen: " << Fname << endl;
-
-  if (TString(Fname).EqualTo(" ",TString::kIgnoreCase)) {
-    return;
-  }
+  // cout << "DoFopen: " << Fname << endl;
+  // if (TString(Fname).EqualTo(" ",TString::kIgnoreCase)) {
+  //   return;
+  // }
 
   char dir[100], name[100], ext[100];
   SplitFilename(string(Fname),dir,name,ext);
@@ -1428,13 +1423,14 @@ void CRS::DoFopen(char* oname, int popt) {
     f_read=0;
   }
 
-  //cout << ext << endl;
   if (f_read) gzclose(f_read);
   f_read = gzopen(Fname,"rb");
+  cout << "f_read: " << f_read << endl;
   if (!f_read) {
     Fmode=0;
     cout << "Can't open file: " << Fname << endl;
     f_read=0;
+    return;
   }
 
   if (tp) { //adcm raw
@@ -1634,8 +1630,12 @@ int CRS::DoBuf() {
 
 void CRS::FAnalyze() {
 
-  cout << "FAnalyze: " << gztell(f_read) << endl;
-    
+  //cout << "FAnalyze: " << gztell(f_read) << endl;
+  if (justopened && opt.dec_write) {
+    Reset_Dec();
+  }
+  justopened=false;
+
   EvtFrm->Clear();
   EvtFrm->Pevents = &EvtFrm->Tevents;
 
@@ -1674,6 +1674,11 @@ void CRS::FAnalyze() {
 }
 
 void CRS::DoNBuf(int nb) {
+
+  if (justopened && opt.dec_write) {
+    Reset_Dec();
+  }
+  justopened=false;
 
   //cout << "FAnalyze: " << f_read << endl;
     
@@ -2454,6 +2459,22 @@ void CRS::Select_Event(EventClass *evt) {
   //EvtFrm->d_event=m_event;
   //cout << "Select: " << EvtFrm->d_event->T << endl;
 
+}
+
+void CRS::Reset_Dec() {
+  sprintf(dec_opt,"wb%d",opt.dec_compr);
+
+  f_dec = gzopen(opt.fname_dec,dec_opt);
+  if (f_dec) {
+    cout << "Writing parameters... : " << opt.fname_dec << endl;
+    SaveParGz(f_dec);
+    gzclose(f_dec);
+  }
+  else {
+    cout << "Can't open file: " << opt.fname_dec << endl;
+  }
+
+  sprintf(dec_opt,"ab%d",opt.dec_compr);
 }
 
 void CRS::Fill_Dec(EventClass* evt) {

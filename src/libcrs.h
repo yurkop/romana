@@ -61,6 +61,7 @@ RQ_OBJECT("CRS")
   gzFile f_raw;
   gzFile f_read;
   gzFile f_dec;
+  bool justopened;
   //TFile* f_dec;
 
   //TFile* f_tree;
@@ -220,6 +221,7 @@ RQ_OBJECT("CRS")
 
   //void NewTree();
   //void CloseTree();
+  void Reset_Dec();
   void Fill_Dec(EventClass* evt);
   void Flush_Dec();
 

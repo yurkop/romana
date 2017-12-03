@@ -274,11 +274,13 @@ void HistFrame::Make_hist() {
     int nn=opt.time_bins*(opt.time_max-opt.time_min);
     h_time[i]=new TH1F(name,title,nn,opt.time_min,opt.time_max);
 
+    /*
 #if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
     h_time[i]->CanExtendAllAxes();
 #else
     h_time[i]->SetBit(TH1::kCanRebin);
 #endif
+    */
 
     fListTree->AddItem(idir, name, h_time[i], pic, pic,true);
     //item->CheckItem(false);

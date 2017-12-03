@@ -286,9 +286,11 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 void EventClass::FillHistTree() {
   double DT = crs->period*1e-9;
   //int ch[MAX_CH];
-  double tt;
+  Double_t tt;
+  Double_t max,max2;
+  int nbin;
 
-  cout << "Fill0: " << endl;
+  //cout << "Fill0: " << endl;
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
@@ -299,9 +301,30 @@ void EventClass::FillHistTree() {
 
       tt = pulses[i].Tstamp64 + crs->Tstart64;
       tt += pk->Pos;
+      tt*=DT;
 
-      cout << "Fill7: " << tt*DT << endl;
-      HiFrm->h_time[ch]->Fill(tt*DT);
+      max = HiFrm->h_time[ch]->GetXaxis()->GetXmax();
+
+      if (tt > max) {
+	//cout << "Fill8: " << HiFrm->h_time[ch]->GetSize() << endl;
+	max2=max*2;
+	if (tt>max2) {
+	  cout << "Time leap is too large: " << ch << " " << tt << endl;
+	}
+	else {
+	  nbin = HiFrm->h_time[ch]->GetNbinsX()*max2/max;
+	  Float_t* arr = new Float_t[nbin+2];
+	  memset(arr,0,sizeof(Float_t)*(nbin+2));
+	  Float_t* arr2 = HiFrm->h_time[ch]->GetArray();
+	  memcpy(arr,arr2,HiFrm->h_time[ch]->GetSize()*sizeof(Float_t));
+	  HiFrm->h_time[ch]->SetBins(nbin,0,max2);
+	  HiFrm->h_time[ch]->Adopt(nbin+2,arr);
+	}
+
+      }
+
+      //cout << "Fill7: " << tt << endl;
+      HiFrm->h_time[ch]->Fill(tt);
 
       double dt = pulses[i].Tstamp64 - T;
       //tt = pk->Time - cpar.preWr[ch] - T0 + dt;
@@ -343,7 +366,7 @@ void EventClass::FillHistTree() {
   }
   */
 
-  cout << "Fill1: " << endl;
+  //cout << "Fill1: " << endl;
 
   if (pulses.size()>=2) {
     double amp[2];
@@ -369,7 +392,7 @@ void EventClass::FillHistTree() {
     }
   }
 
-  cout << "Fill2: " << endl;
+  //cout << "Fill2: " << endl;
   /*
   int ax=0,ay=0,px=0,py=0;
   if (pulses.size()==4) {
