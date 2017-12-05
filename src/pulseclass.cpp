@@ -290,83 +290,7 @@ void EventClass::FillHistTree() {
   Double_t max,max2;
   int nbin;
 
-  //cout << "Fill0: " << endl;
-  for (UInt_t i=0;i<pulses.size();i++) {
-    int ch = pulses[i].Chan;
-    for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
-      peak_type* pk = &pulses[i].Peaks[j];
-
-      HiFrm->h_ampl[ch]->Fill(pk->Area*opt.emult[ch]);
-      HiFrm->h_height[ch]->Fill(pk->Height);
-
-      tt = pulses[i].Tstamp64 + crs->Tstart64;
-      tt += pk->Pos;
-      tt*=DT;
-
-      max = HiFrm->h_time[ch]->GetXaxis()->GetXmax();
-
-      if (tt > max) {
-	//cout << "Fill8: " << HiFrm->h_time[ch]->GetSize() << endl;
-	max2=max*2;
-	if (tt>max2) {
-	  cout << "Time leap is too large: " << ch << " " << tt << endl;
-	}
-	else {
-	  nbin = HiFrm->h_time[ch]->GetNbinsX()*max2/max;
-	  Float_t* arr = new Float_t[nbin+2];
-	  memset(arr,0,sizeof(Float_t)*(nbin+2));
-	  Float_t* arr2 = HiFrm->h_time[ch]->GetArray();
-	  memcpy(arr,arr2,HiFrm->h_time[ch]->GetSize()*sizeof(Float_t));
-	  HiFrm->h_time[ch]->SetBins(nbin,0,max2);
-	  HiFrm->h_time[ch]->Adopt(nbin+2,arr);
-	}
-
-      }
-
-      //cout << "Fill7: " << tt << endl;
-      HiFrm->h_time[ch]->Fill(tt);
-
-      double dt = pulses[i].Tstamp64 - T;
-      //tt = pk->Time - cpar.preWr[ch] - T0 + dt;
-      tt = pk->Time - crs->Pre[ch] - T0 + dt;
-      // cout << "TOF: " << crs->nevents << " " << i << " "
-      // 	   << ch << " " << pk->Time << " " << T0 << " "
-      // 	   << dt << " " << tt << endl;
-      HiFrm->h_tof[ch]->Fill(tt*crs->period);
-
-      if (opt.dec_write) {
-	crs->rP.Area   = pk->Area;
-	crs->rP.Height = pk->Height;
-	crs->rP.Width  = pk->Width ;
-	crs->rP.Time   = pk->Time  ;
-	crs->rP.Ch     = ch    ;
-	crs->rP.Type   = pk->Type  ;
-
-	crs->rPeaks.push_back(crs->rP);
-      }
-
-    }
-
-    if (crs->Tstart0>0) {
-      tt = T - crs->Tstart0;
-      HiFrm->h_mtof[pulses.size()]->Fill(tt*crs->period/1000);
-    }
-    if (ch==opt.start_ch) {
-      crs->Tstart0 = T;
-    }
-
-  } //for (UInt_t i=0;i<pulses.size()...
-
-  /*
-  if (opt.dec_write) {
-    crs->rTime=T;
-    crs->rState = State;
-    crs->Tree->Fill();
-    crs->rPeaks.clear();
-  }
-  */
-
-  //cout << "Fill1: " << endl;
+  int icut=0;
 
   if (pulses.size()>=2) {
     double amp[2];
@@ -388,11 +312,109 @@ void EventClass::FillHistTree() {
       }
     }
     if (nn==2) {
-      HiFrm->h_2d->Fill(amp[0],amp[1]);
+      if (opt.ncuts) {
+	for (int j=0;j<opt.ncuts;j++) {
+	  if (HiFrm->cutG[j]->IsInside(amp[0],amp[1])) {
+	    icut=j+1;
+	    break;
+	  }
+	} 
+      }
+
+      HiFrm->h_2d[0]->Fill(amp[0],amp[1]);
+      if (icut) {
+	HiFrm->h_2d[icut]->Fill(amp[0],amp[1]);
+      }
     }
   }
 
-  //cout << "Fill2: " << endl;
+  for (UInt_t i=0;i<pulses.size();i++) {
+    int ch = pulses[i].Chan;
+
+    for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
+      peak_type* pk = &pulses[i].Peaks[j];
+
+      HiFrm->h_ampl[ch][0]->Fill(pk->Area*opt.emult[ch]);
+      HiFrm->h_height[ch][0]->Fill(pk->Height);
+      if (icut) {
+	HiFrm->h_ampl[ch][icut]->Fill(pk->Area*opt.emult[ch]);
+	HiFrm->h_height[ch][icut]->Fill(pk->Height);
+      }
+
+      tt = pulses[i].Tstamp64 + crs->Tstart64;
+      tt += pk->Pos;
+      tt*=DT;
+
+      max = HiFrm->h_time[ch][0]->GetXaxis()->GetXmax();
+
+      if (tt > max) {
+	max2=max*2;
+	if (tt>max2) {
+	  cout << "Time leap is too large: " << ch << " " << tt << endl;
+	}
+	else {
+	  nbin = HiFrm->h_time[ch][0]->GetNbinsX()*max2/max;
+	  Float_t* arr = new Float_t[nbin+2];
+	  memset(arr,0,sizeof(Float_t)*(nbin+2));
+	  Float_t* arr2 = HiFrm->h_time[ch][0]->GetArray();
+	  memcpy(arr,arr2,HiFrm->h_time[ch][0]->GetSize()*sizeof(Float_t));
+	  HiFrm->h_time[ch][0]->SetBins(nbin,0,max2);
+	  HiFrm->h_time[ch][0]->Adopt(nbin+2,arr);
+	}
+
+      }
+
+      HiFrm->h_time[ch][0]->Fill(tt);
+      if (icut) {
+	HiFrm->h_time[ch][icut]->Fill(tt);
+      }
+
+      double dt = pulses[i].Tstamp64 - T;
+      //tt = pk->Time - cpar.preWr[ch] - T0 + dt;
+      tt = pk->Time - crs->Pre[ch] - T0 + dt;
+      // cout << "TOF: " << crs->nevents << " " << i << " "
+      // 	   << ch << " " << pk->Time << " " << T0 << " "
+      // 	   << dt << " " << tt << endl;
+      HiFrm->h_tof[ch][0]->Fill(tt*crs->period);
+      if (icut) {
+	HiFrm->h_tof[ch][icut]->Fill(tt*crs->period);
+      }
+
+      if (opt.dec_write) {
+	crs->rP.Area   = pk->Area;
+	crs->rP.Height = pk->Height;
+	crs->rP.Width  = pk->Width ;
+	crs->rP.Time   = pk->Time  ;
+	crs->rP.Ch     = ch    ;
+	crs->rP.Type   = pk->Type  ;
+
+	crs->rPeaks.push_back(crs->rP);
+      }
+
+    }
+
+    if (crs->Tstart0>0) {
+      tt = T - crs->Tstart0;
+      HiFrm->h_mtof[pulses.size()][0]->Fill(tt*crs->period/1000);
+      if (icut) {
+	HiFrm->h_mtof[pulses.size()][icut]->Fill(tt*crs->period/1000);
+      }
+    }
+    if (ch==opt.start_ch) {
+      crs->Tstart0 = T;
+    }
+
+  } //for (UInt_t i=0;i<pulses.size()...
+
+  /*
+  if (opt.dec_write) {
+    crs->rTime=T;
+    crs->rState = State;
+    crs->Tree->Fill();
+    crs->rPeaks.clear();
+  }
+  */
+
   /*
   int ax=0,ay=0,px=0,py=0;
   if (pulses.size()==4) {

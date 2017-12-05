@@ -163,7 +163,6 @@ public:
   void DoCheckLogY();
   void DoCheckTime();
   void DoSave();
-  void DoGcut(int);
   void DoExit();
   void DoStop();
   //void Do1event();

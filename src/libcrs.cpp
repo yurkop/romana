@@ -89,17 +89,6 @@ void *handle_events_func(void *ctx)
   return NULL;
 }
 
-void *handle_dum(void* ptr)
-{
-
-  //gSystem->Sleep(1900);
-  HiFrm->Update();      
-  ////cout << "Dum: " << endl;
-
-  return NULL;
-
-}
-
 /*
 void *ballast(void* xxx) {
 
@@ -1333,6 +1322,9 @@ void CRS::DoReset() {
   if (EvtFrm) {
     EvtFrm->DoReset();
   }
+  if (HiFrm) {
+    HiFrm->DoReset();
+  }
 
   //n_ana=0;
   m_start=Levents.end();
@@ -1550,6 +1542,8 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
+  //DoReset();
+
   //ev_max=2*opt.ev_min;
 
   //list_min=opt.ev_max-opt.ev_min;
@@ -1755,6 +1749,7 @@ void CRS::Show(bool force) {
       else if (myM->fTab->GetCurrent()==HiFrm->ntab) {
 	//HiFrm->DrawHist();      
 	HiFrm->ReDraw();
+	//HiFrm->Update();
       }
       else {
 	TString name = TString(myM->fTab->GetCurrentTab()->GetString());

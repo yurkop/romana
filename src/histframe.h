@@ -14,6 +14,7 @@
 #include <TMultiGraph.h>
 #include <TGStatusBar.h>
 #include <TGListTree.h>
+//#include <TCutG.h>
 
 //#include "TThread.h"
 #include <list>
@@ -62,22 +63,24 @@ class HistFrame: public TGCompositeFrame {
    int ntab; //tab number where eventframe is placed
 
    Bool_t changed;
-   
+   Bool_t started;
+
    int ndiv;
    int xdiv;
    int ydiv;
 
-   TH1F* h_ampl[MAX_CH]; //amplitude - area of the peak
-   TH1F* h_height[MAX_CH]; //height of the peak
-   TH1F* h_time[MAX_CH]; // real time
-   TH1F* h_tof[MAX_CH]; // time of flight
-   TH1F* h_mtof[MAX_CH]; // time of flight
+   TH1F* h_ampl[MAX_CH][MAXCUTS]; //amplitude - area of the peak
+   TH1F* h_height[MAX_CH][MAXCUTS]; //height of the peak
+   TH1F* h_time[MAX_CH][MAXCUTS]; // real time
+   TH1F* h_tof[MAX_CH][MAXCUTS]; // time of flight
+   TH1F* h_mtof[MAX_CH][MAXCUTS]; // time of flight
 
-   TH2F* h_2d;
+   TH2F* h_2d[MAXCUTS];
 
-   TH2F* h2_prof_strip[64];
-   TH2F* h2_prof_real[64];
+   //TH2F* h2_prof_strip[64];
+   //TH2F* h2_prof_real[64];
 
+   TCutG* cutG[MAXCUTS];
 
  public:
 
@@ -103,7 +106,12 @@ public:
    HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
    virtual ~HistFrame();
 
+   void Upd()  { Emit("Upd()"); }   // *SIGNAL*
+
+   //void NameTitle();
    void Make_hist();
+   void Make_tree();
+   void Clear_tree();
    void NewBins();
    //void Reset_hist();
    //void FillHist(EventClass* evt);
@@ -116,7 +124,9 @@ public:
    void DoRadio();
    void DoButton();
    //void DoPeaks2();
-   void DoCutG();
+   void AddCutG();
+   void ShowCutG();
+   void ClearCutG();
    void DoPeaks();
    void DoReset();
    void Update();

@@ -42,6 +42,7 @@
 #include <TGDockableFrame.h>
 
 #include <TDataMember.h>
+#include "TThread.h"
 
 //#include <TGColorDialog.h>
 
@@ -162,6 +163,22 @@ Toptions opt;
 int debug=0; //=1// for printing debug messages
 
 int *opt_id[MXNUM];
+
+/*
+void *handle_dum(void* ptr)
+{
+
+  gSystem->Sleep(1000);
+  cout << myM << endl;
+  cout << HiFrm << endl;
+  HiFrm->Emit("Upd()");
+  //HiFrm->ReDraw();
+  ////cout << "Dum: " << endl;
+
+  return NULL;
+
+}
+*/
 
 //-------------------------------------
 UShort_t ClassToBuf(const char* name, char* var, char* buf) {
@@ -1229,10 +1246,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   tab4->AddFrame(EvtFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
-
   TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   HiFrm = new HistFrame(tab5, 800, 500,ntab);
+  HiFrm->Connect("Upd()","HistFrame",HiFrm,"Update()");
   tab5->AddFrame(HiFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
@@ -1408,6 +1425,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //DoDraw2();
   //crs->Dummy_trd();
+
+  //gSystem->Sleep(1000);
+
+  //HiFrm->Update();
+  // TThread* trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);;
+  // trd_dum->Run();
+  // trd_dum->Join();
+  // trd_dum->Delete();
 
 }
 
@@ -2076,46 +2101,6 @@ void MainFrame::DoSave() {
 
 }
 
-void MainFrame::DoGcut(int nn) {
-  const char* cname[3] = {"gamma","neutrons","tail"};
-  cout << "gcut " << nn << endl;
-
-  TPad *c1 = (TPad*) fEcanvas->GetCanvas()->GetPad(2);
-  c1->WaitPrimitive("CUTG","CutG");
-  //TCutG *cut1 = new TCutG((TCutG)gPad->GetPrimitive("CUTG"));
-
-
-  opt.gcut[nn] = new TCutG(*(TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG"));
-  //TCutG *cut2 = new TCutG(*cut1);
-  opt.gcut[nn]->SetName(cname[nn]);
-
-  if (nn==0) {
-    opt.gcut[nn]->SetLineColor(2);
-  }
-  else if (nn==1) {
-    opt.gcut[nn]->SetLineColor(1);
-  }
-  else if (nn==2) {
-    opt.gcut[nn]->SetLineColor(4);
-  }
-  c1->cd();
-  opt.gcut[nn]->Print();
-  opt.gcut[nn]->Draw();
-
-  //TCutG *cut1 = new TCutG( (TCutG) gPad->GetPrimitive("CUTG"));
-  //TCutG* cut = (TCutG*)gPad->GetPrimitive("CUTG");
-
-}
-
-
-/*
-  void MainFrame::MakeEvents() {
-
-  cout << "MakeEvents: " << crs->npulses << endl;
-
-  }
-*/
-
 void MainFrame::DoTab(Int_t num) {
   //cout << "DoTab: " << num << endl;
   TGTab *tab = (TGTab*) gTQSender;
@@ -2466,6 +2451,8 @@ void example() {
   // Popup the GUI...
   myM=0;
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
+
+  //gSystem->Sleep(1000);
   //HiFrm->Update();
   //myM->Move(-100,-100);
 }
