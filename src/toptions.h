@@ -184,7 +184,10 @@ class Toptions: public TObject {
   Int_t b_osc,b_leg,b_logy,b_time;
   Int_t draw_opt;
 
-  TCutG *gcut[3];
+  //std::vector<Float_t> cut[3];
+  Int_t ncuts;
+  Int_t pcuts[MAXCUTS]; //number of points in gcut
+  Float_t gcut[MAXCUTS][2][10]; //4 cuts; xy; 10 points
 
   Float_t T0,LL;
 
@@ -211,7 +214,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 100)
+  ClassDef(Toptions, 102)
 };
 
 ClassImp(Toptions)

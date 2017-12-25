@@ -150,10 +150,6 @@ Toptions::Toptions() {
   beam1=0.0;
   beam2=0.0;
 
-  gcut[0]=NULL;
-  gcut[1]=NULL;
-  gcut[2]=NULL;
-
   num_events=100000;
   num_buf=100;
 
@@ -227,6 +223,9 @@ Toptions::Toptions() {
   for (int i=0;i<10;i++) {
     b_peak[i]=true;
   }
+
+  ncuts=0;
+  memset(pcuts,0,sizeof(pcuts));
 
   rBSIZE=131072; //1024*128
   EBufsize=100;

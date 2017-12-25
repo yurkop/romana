@@ -42,8 +42,7 @@
 #include <TGDockableFrame.h>
 
 #include <TDataMember.h>
-
-#include "TGMsgBox.h"
+#include "TThread.h"
 
 //#include <TGColorDialog.h>
 
@@ -165,6 +164,22 @@ int debug=0; //=1// for printing debug messages
 
 int *opt_id[MXNUM];
 
+/*
+void *handle_dum(void* ptr)
+{
+
+  gSystem->Sleep(1000);
+  cout << myM << endl;
+  cout << HiFrm << endl;
+  HiFrm->Emit("Upd()");
+  //HiFrm->ReDraw();
+  ////cout << "Dum: " << endl;
+
+  return NULL;
+
+}
+*/
+
 //-------------------------------------
 UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer
@@ -199,6 +214,8 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
+    if (debug&0x2)
+      cout << "member: " << dm->GetName() << endl;
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -507,18 +524,9 @@ int main(int argc, char **argv)
 
 
 
-
-
-
-
-
-
-
-
-
-  cout << "sizeof(TDatime): " << sizeof(TDatime) << endl;
-  cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
-  cout << "sizeof(opt): " << sizeof(opt) << endl;
+  // cout << "sizeof(TDatime): " << sizeof(TDatime) << endl;
+  // cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
+  // cout << "sizeof(opt): " << sizeof(opt) << endl;
   
 
   crs = new CRS();
@@ -571,9 +579,14 @@ int main(int argc, char **argv)
     if (argnn<argc) {
       //parname = argv[argnn];
       gzFile ff = gzopen(argv[argnn],"rb");
-      crs->ReadParGz(ff,argv[argnn],0,1,1);
-      gzclose(ff);
-      crs->DoReset();
+      if (!ff) {
+	cout << "Can't open par file: " << argv[argnn] << endl;
+      }
+      else {
+	crs->ReadParGz(ff,argv[argnn],0,1,1);
+	gzclose(ff);
+	crs->DoReset();
+      }
       //pname=argv[argnn];
     }
 
@@ -1233,10 +1246,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   tab4->AddFrame(EvtFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
-
   TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   HiFrm = new HistFrame(tab5, 800, 500,ntab);
+  HiFrm->Connect("Upd()","HistFrame",HiFrm,"Update()");
   tab5->AddFrame(HiFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
@@ -1412,6 +1425,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //DoDraw2();
   //crs->Dummy_trd();
+
+  //gSystem->Sleep(1000);
+
+  //HiFrm->Update();
+  // TThread* trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);;
+  // trd_dum->Run();
+  // trd_dum->Join();
+  // trd_dum->Delete();
 
 }
 
@@ -1609,12 +1630,14 @@ void MainFrame::Do1buf() {
     return;
   }
 
-  crs->b_fana=true;
-  crs->b_stop=false;
-  crs->DoNBuf(1);
-  crs->b_fana=false;
-  crs->b_stop=true;
-    
+  if (TestFile()) {
+    crs->b_fana=true;
+    crs->b_stop=false;
+    crs->DoNBuf(1);
+    crs->b_fana=false;
+    crs->b_stop=true;
+  }  
+
 }
 
 void MainFrame::DoNbuf() {
@@ -1635,23 +1658,24 @@ void MainFrame::DoNbuf() {
     crs->b_stop=true;
   }
   else { //start analysis of n buffers
-    //cout << "donbuf1" << endl;
-    fAna->ChangeBackground(fRed);
-    fAna->SetText("Pause");
-    fNb->ChangeBackground(fRed);
-    crs->b_fana=true;
-    crs->b_stop=false;
-    crs->DoNBuf(opt.num_buf);
-    //gSystem->Sleep(1000);
-    //cout << "donbuf2" << endl;
-    //DoNbuf();
-    fAna->ChangeBackground(fGreen);
-    fAna->SetText("Analyse");
-    fNb->ChangeBackground(fGreen);
-    crs->b_fana=false;
-    crs->b_stop=true;
-    //cout << "donbuf3" << endl;
-    
+    if (TestFile()) {
+      //cout << "donbuf1" << endl;
+      fAna->ChangeBackground(fRed);
+      fAna->SetText("Pause");
+      fNb->ChangeBackground(fRed);
+      crs->b_fana=true;
+      crs->b_stop=false;
+      crs->DoNBuf(opt.num_buf);
+      //gSystem->Sleep(1000);
+      //cout << "donbuf2" << endl;
+      //DoNbuf();
+      fAna->ChangeBackground(fGreen);
+      fAna->SetText("Analyse");
+      fNb->ChangeBackground(fGreen);
+      crs->b_fana=false;
+      crs->b_stop=true;
+      //cout << "donbuf3" << endl;
+    }
   }
 
 }
@@ -2077,46 +2101,6 @@ void MainFrame::DoSave() {
 
 }
 
-void MainFrame::DoGcut(int nn) {
-  const char* cname[3] = {"gamma","neutrons","tail"};
-  cout << "gcut " << nn << endl;
-
-  TPad *c1 = (TPad*) fEcanvas->GetCanvas()->GetPad(2);
-  c1->WaitPrimitive("CUTG","CutG");
-  //TCutG *cut1 = new TCutG((TCutG)gPad->GetPrimitive("CUTG"));
-
-
-  opt.gcut[nn] = new TCutG(*(TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG"));
-  //TCutG *cut2 = new TCutG(*cut1);
-  opt.gcut[nn]->SetName(cname[nn]);
-
-  if (nn==0) {
-    opt.gcut[nn]->SetLineColor(2);
-  }
-  else if (nn==1) {
-    opt.gcut[nn]->SetLineColor(1);
-  }
-  else if (nn==2) {
-    opt.gcut[nn]->SetLineColor(4);
-  }
-  c1->cd();
-  opt.gcut[nn]->Print();
-  opt.gcut[nn]->Draw();
-
-  //TCutG *cut1 = new TCutG( (TCutG) gPad->GetPrimitive("CUTG"));
-  //TCutG* cut = (TCutG*)gPad->GetPrimitive("CUTG");
-
-}
-
-
-/*
-  void MainFrame::MakeEvents() {
-
-  cout << "MakeEvents: " << crs->npulses << endl;
-
-  }
-*/
-
 void MainFrame::DoTab(Int_t num) {
   //cout << "DoTab: " << num << endl;
   TGTab *tab = (TGTab*) gTQSender;
@@ -2310,11 +2294,14 @@ void MainFrame::HandleMenu(MENU_COM menu_id)
 }
 
 bool MainFrame::TestFile() {
+
+  if (!crs->justopened) return true;
+
   //EMsgBoxIcon icontype = kMBIconStop;
   //EMsgBoxIcon icontype = kMBIconExclamation;
   //EMsgBoxIcon icontype = kMBIconQuestion;
-  EMsgBoxIcon icontype = kMBIconAsterisk;
-  Int_t buttons = kMBOk|kMBCancel;
+  //EMsgBoxIcon icontype = kMBIconAsterisk;
+  //Int_t buttons = kMBOk|kMBCancel;
   const char* msg_exists = "Output file already exists.\nIt will be overwritten.\nPress OK if you want to continue?";
 
   struct stat buffer;
@@ -2322,9 +2309,10 @@ bool MainFrame::TestFile() {
   if ((opt.raw_write && !stat(opt.fname_raw, &buffer)) ||
       (opt.dec_write && !stat(opt.fname_dec, &buffer))) {
     Int_t retval;
+    //new ColorMsgBox(gClient->GetRoot(), this,
     new TGMsgBox(gClient->GetRoot(), this,
 		 "File exists",
-		 msg_exists, icontype, buttons, &retval);
+		 msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
     if (retval == kMBOk) {
       return true;
     }
@@ -2463,6 +2451,8 @@ void example() {
   // Popup the GUI...
   myM=0;
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
+
+  //gSystem->Sleep(1000);
   //HiFrm->Update();
   //myM->Move(-100,-100);
 }
@@ -2520,4 +2510,83 @@ void pointer_test() {
   pt = new MyClass[size];
   delete[] pt;
 
+}
+//-------------------------
+ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
+	    const char *title, const char *msg, EMsgBoxIcon icon,
+	    Int_t buttons, Int_t *ret_code)
+  : TGTransientFrame(p, main, 10, 10)
+{
+   UInt_t width, height;
+
+  Pixel_t fBluevio;
+  fBluevio=TColor::RGB2Pixel(255,114,86);
+
+  cout << "ColorBox: " << endl;
+
+  TGLayoutHints* fL1 = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 3, 3, 0, 0);
+  TGLayoutHints* fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
+  TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterY | kLHintsLeft | kLHintsExpandX,
+                           4, 2, 2, 2);
+ 
+  TGHorizontalFrame* fButtonFrame = new TGHorizontalFrame(this, 100, 20, kFixedWidth);
+  AddFrame(fButtonFrame, fL2);
+  TGVerticalFrame* fLabelFrame = new TGVerticalFrame(this, 60, 20);
+  AddFrame(fLabelFrame, fL2);
+
+  TGTextButton* fOK = new TGTextButton(fButtonFrame, new TGHotString("&OK"), 1);
+  //fOK->Associate(this);
+  fButtonFrame->AddFrame(fOK, fL1);
+  //width = TMath::Max(width, fOK->GetDefaultWidth());
+  TGTextButton* fCancel = new TGTextButton(fButtonFrame, new TGHotString("&Cancel"), 2);
+  //fCancel->Associate(this);
+  fButtonFrame->AddFrame(fCancel, fL1);
+  //    width = TMath::Max(width, fCancel->GetDefaultWidth()); ++nb;
+
+  //width = TMath::Max(width, fOK->GetDefaultWidth());
+
+
+  TGLabel *label;
+  label = new TGLabel(fLabelFrame, msg);
+  label->SetTextJustify(kTextCenterX);
+
+  this->SetBackgroundColor(fBluevio);
+
+  fLabelFrame->AddFrame(label, fL4);
+
+  MapSubwindows();
+
+  width  = GetDefaultWidth();
+  height = GetDefaultHeight();
+
+  Resize(width, height);
+
+   // position relative to the parent's window
+
+  CenterOnParent();
+
+  // make the message box non-resizable
+
+  SetWMSize(width, height);
+  SetWMSizeHints(width, height, width, height, 0, 0);
+
+  // set names
+
+  SetWindowName(title);
+  SetIconName(title);
+  SetClassHints("MsgBox", "MsgBox");
+
+  SetMWMHints(kMWMDecorAll | kMWMDecorResizeH  | kMWMDecorMaximize |
+	      kMWMDecorMinimize | kMWMDecorMenu,
+	      kMWMFuncAll  | kMWMFuncResize    | kMWMFuncMaximize |
+	      kMWMFuncMinimize,
+	      kMWMInputModeless);
+
+  MapRaised();
+
+  fClient->WaitFor(this);
+}
+//-------------------------
+ColorMsgBox::~ColorMsgBox()
+{
 }

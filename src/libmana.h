@@ -22,6 +22,7 @@ using namespace std;
 #include <TLegend.h>
 #include "TGTab.h"
 #include <TGFileDialog.h>
+#include "TGMsgBox.h"
 
 UShort_t ClassToBuf(const char* name, char* var, char* buf);
 void BufToClass(const char* name, char* var, char* buf, int size);
@@ -162,7 +163,6 @@ public:
   void DoCheckLogY();
   void DoCheckTime();
   void DoSave();
-  void DoGcut(int);
   void DoExit();
   void DoStop();
   //void Do1event();
@@ -208,6 +208,16 @@ class MyMainFrame: public MainFrame {
   MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MyMainFrame();
   ClassDef(MyMainFrame, 0)
+};
+
+//--------------------------------------
+class ColorMsgBox: public TGTransientFrame {
+ public:
+  ColorMsgBox(const TGWindow *p, const TGWindow *main,
+	      const char *title, const char *msg, EMsgBoxIcon icon,
+	      Int_t buttons, Int_t *ret_code);
+  ~ColorMsgBox();
+  //ClassDef(ColorMsgBox, 0)
 };
 
 #endif

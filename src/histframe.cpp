@@ -8,6 +8,7 @@
 #include <TLine.h>
 #include <TSpectrum.h>
 #include <TMutex.h>
+#include <TGButtonGroup.h>
 //#include <TROOT.h>
 
 
@@ -47,7 +48,7 @@ TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 TGLayoutHints* fLay2 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
 TGLayoutHints* fLay3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,10,10,0,0);
 TGLayoutHints* fLay4 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,0,0,0,0);
-TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsTop,5,5,0,0);
+TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsTop,10,10,0,2);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
 //TGLayoutHints* fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
@@ -85,7 +86,24 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   ntab=nt;
 
   changed=false;
+  started=true;
   //char ss[100];
+
+  for (int i=0;i<MAXCUTS;i++) {
+    cutG[i]=0;
+  }
+
+  for (int cc=0;cc<MAXCUTS;cc++) {
+    for (int i=0;i<MAX_CH;i++) {
+      h_ampl[i][cc]=0;
+      h_height[i][cc]=0;
+      h_time[i][cc]=0;
+      h_tof[i][cc]=0;
+      h_mtof[i][cc]=0;
+    }
+    h_2d[cc]=0;
+  }
+
 
   //Frames.....
 
@@ -146,12 +164,14 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fListTree->Associate(this);
   //fEc->SetDNDTarget(kTRUE);
 
-
   Make_hist();
-  NewBins();
+  //exit(-1);
+  Make_tree();
+  //Clear_tree();
+  //Make_tree();
 
+  //NewBins();
 
-  
   /*
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
@@ -215,9 +235,38 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   chk->Connect("Clicked()", "HistFrame", this, "DoLog()");
   fHor2->AddFrame(chk, fLay5);
 
+  /*
+   // control horizontal position of the text
+  TGButtonGroup *cuts = new TGButtonGroup(fHor2, "Horizontal Position",kChildFrame|kHorizontalFrame);
+  //cuts->SetTitlePos(TGGroupFrame::kCenter);
+  cuts->SetBorderDrawn(false);
+   new TGTextButton(cuts, "Add", 1);
+   new TGTextButton(cuts, "Show", 2);
+   new TGTextButton(cuts, "Clear", 3);
+   //horizontal->SetButton(kTextCenterX);
+   //horizontal->Connect("Pressed(Int_t)", "ButtonWindow", this, "DoHPosition(Int_t)");
+   fHor2->AddFrame(cuts, fLay5);
+  */
+
   but = new TGTextButton(fHor2,"Peaks",4);
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
   fHor2->AddFrame(but, fLay5);
+
+  fHor2->AddFrame(new TGLabel(fHor2, "Cuts:"), fLay5);
+
+  but = new TGTextButton(fHor2,"Add",1);
+  but->Connect("Clicked()", "HistFrame", this, "AddCutG()");
+  fHor2->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor2,"Show",2);
+  but->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
+  fHor2->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor2,"Clear",3);
+  but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
+  fHor2->AddFrame(but, fLay5);
+
+  DoReset();
 
   //Update();
 }
@@ -227,6 +276,17 @@ HistFrame::~HistFrame()
   cout << "~HistFrame()" << endl;
 }
 
+void NameTitle(char* name, char* title, int i, int cc, 
+			  const char* nm, const char* axis) {
+  if (cc) {
+    sprintf(name,"%s_%02d_cut%d",nm,i,cc);
+    sprintf(title,"%s_%02d_cut%d%s_cut%d",nm,i,cc,axis,cc);
+  }
+  else {
+    sprintf(name,"%s_%02d",nm,i);
+    sprintf(title,"%s_%02d%s",nm,i,axis);
+  }
+}
 
 void HistFrame::Make_hist() {
 
@@ -234,109 +294,141 @@ void HistFrame::Make_hist() {
   char name[100];
   char title[100];
 
+  for (int cc=0;cc<MAXCUTS;cc++) {
+    for (int i=0;i<MAX_CH;i++) {
+      //sprintf(name,"ampl_%02d",i);
+      //sprintf(title,"ampl_%02d;Channel;Counts",i);
+      NameTitle(name,title,i,cc,"ampl",";Channel;Counts");
+      int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+      h_ampl[i][cc]=new TH1F(name,title,nn,opt.amp_min,opt.amp_max);
+    }
+
+    for (int i=0;i<MAX_CH;i++) {
+      //sprintf(name,"height_%02d",i);
+      //sprintf(title,"height_%02d;Channel;Counts",i);
+      NameTitle(name,title,i,cc,"height",";Channel;Counts");
+      int nn=opt.hei_bins*(opt.hei_max-opt.hei_min);
+      h_height[i][cc]=new TH1F(name,title,nn,opt.hei_min,opt.hei_max);
+    }
+
+    for (int i=0;i<MAX_CH;i++) {
+      //sprintf(name,"time_%02d",i);
+      //sprintf(title,"time_%02d;T(sec);Counts",i);
+      NameTitle(name,title,i,cc,"time",";T(sec);Counts");
+      int nn=opt.time_bins*(opt.time_max-opt.time_min);
+      h_time[i][cc]=new TH1F(name,title,nn,opt.time_min,opt.time_max);
+    }
+  
+    for (int i=0;i<MAX_CH;i++) {
+      //sprintf(name,"tof_%02d",i);
+      //sprintf(title,"tof_%02d;t(ns);Counts",i);
+      NameTitle(name,title,i,cc,"tof",";t(ns);Counts");
+      int nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
+      h_tof[i][cc]=new TH1F(name,title,nn,opt.tof_min,opt.tof_max);
+    }
+
+    for (int i=0;i<MAX_CH;i++) {
+      //sprintf(name,"mtof_%02d",i);
+      //sprintf(title,"mtof_%02d;t(mks);Counts",i);
+      NameTitle(name,title,i,cc,"mtof",";t(mks);Counts");
+      int nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
+      h_mtof[i][cc]=new TH1F(name,title,nn,opt.mtof_min,opt.mtof_max);
+    }
+
+    /*
+    for (int i=0; i<64; i++){
+      //sprintf(name,"Profile_strip%02d",i);
+      //sprintf(title,"Profile_strip%02d;X_strip;Y_strip",i);
+      h2_prof_strip[i] = new TH2F(name,title,8,0,8,8,0,8);
+    }
+
+    for (int i=0; i<64; i++){
+      //sprintf(name,"profile_real%02d",i);
+      //sprintf(title,"Profile_real%02d;X (mm);Y (mm)",i);
+      h2_prof_real[i] = new TH2F(name,title,8,0,120,8,0,120); 
+    }
+    */
+
+    if (cc) {
+      sprintf(name,"h2d_cut%d",cc);
+      sprintf(title,"h2d_cut%d;Channel;Counts",cc);
+    }
+    else {
+      sprintf(name,"h2d");
+      sprintf(title,"h2d;Channel;Counts");
+    }
+    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+    h_2d[cc]=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
+		  nn,opt.amp_min,opt.amp_max);
+  } //for cc
+
+}
+
+void HistFrame::Make_tree() {
+
+  char ss[64];
   const TGPicture *pic = gClient->GetPicture("h1_t.xpm");
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir;
   //TGListTreeItem *item;
 
-  //gStyle->SetNdivisions(606,"xyz");
-  
+  idir = fListTree->AddItem(iroot, "IBR2",0,0,true);
+  fListTree->AddItem(idir, h_ampl[0][0]->GetName(), h_ampl[0][0], pic, pic,true);
+  fListTree->AddItem(idir, h_ampl[1][0]->GetName(), h_ampl[1][0], pic, pic,true);
+  fListTree->AddItem(idir, h_mtof[2][0]->GetName(), h_mtof[2][0], pic, pic,true);
+  fListTree->AddItem(idir, h_2d[0]->GetName(),      h_2d[0],      pic, pic,true);
 
-  //iroot = fListTree->AddItem(0, "All",0,0,true);
+  for (int cc=0;cc<opt.ncuts;cc++) {
+    sprintf(ss,"IBR2_cut%d",cc+1);
+    idir = fListTree->AddItem(iroot, ss,0,0,true);
+    fListTree->AddItem(idir, h_ampl[0][cc+1]->GetName(), h_ampl[0][cc+1], pic, pic,true);
+    fListTree->AddItem(idir, h_ampl[1][cc+1]->GetName(), h_ampl[1][cc+1], pic, pic,true);
+    fListTree->AddItem(idir, h_mtof[2][cc+1]->GetName(), h_mtof[2][cc+1], pic, pic,true);
+    fListTree->AddItem(idir, h_2d[cc+1]->GetName(),      h_2d[cc+1],      pic, pic,true);
+
+  }
 
   idir = fListTree->AddItem(iroot, "Amplitude",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(name,"ampl_%02d",i);
-    sprintf(title,"ampl_%02d;Channel;Counts",i);
-    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_ampl[i]=new TH1F(name,title,nn,opt.amp_min,opt.amp_max);
-    fListTree->AddItem(idir, name, h_ampl[i], pic, pic,true);
-    //cout << i << " " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete);
+    fListTree->AddItem(idir, h_ampl[i][0]->GetName(), h_ampl[i][0], pic, pic,true);
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
 
   idir = fListTree->AddItem(iroot, "Height",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(name,"height_%02d",i);
-    sprintf(title,"height_%02d;Channel;Counts",i);
-    int nn=opt.hei_bins*(opt.hei_max-opt.hei_min);
-    h_height[i]=new TH1F(name,title,nn,opt.hei_min,opt.hei_max);
-    fListTree->AddItem(idir, name, h_height[i], pic, pic,true);
-    //item->CheckItem(false);
+    fListTree->AddItem(idir, h_height[i][0]->GetName(), h_height[i][0], pic, pic,true);
   }
-  //idir->CheckItem(false);
 
   idir = fListTree->AddItem(iroot, "Time",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(name,"time_%02d",i);
-    sprintf(title,"time_%02d;T(sec);Counts",i);
-    int nn=opt.time_bins*(opt.time_max-opt.time_min);
-    h_time[i]=new TH1F(name,title,nn,opt.time_min,opt.time_max);
-
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,0,0)
-    h_time[i]->CanExtendAllAxes();
-#else
-    h_time[i]->SetBit(TH1::kCanRebin);
-#endif
-
-    fListTree->AddItem(idir, name, h_time[i], pic, pic,true);
-    //item->CheckItem(false);
+    fListTree->AddItem(idir, h_time[i][0]->GetName(), h_time[i][0], pic, pic,true);
   }
-  //idir->CheckItem(false);
   
   idir = fListTree->AddItem(iroot, "TOF",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(name,"tof_%02d",i);
-    sprintf(title,"tof_%02d;t(ns);Counts",i);
-    int nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
-    h_tof[i]=new TH1F(name,title,nn,opt.tof_min,opt.tof_max);
-    fListTree->AddItem(idir, name, h_tof[i], pic, pic,true);
-    //item->CheckItem(false);
+    fListTree->AddItem(idir, h_tof[i][0]->GetName(), h_tof[i][0], pic, pic,true);
   }
-  //idir->CheckItem(false);
 
   idir = fListTree->AddItem(iroot, "MTOF",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    sprintf(name,"mtof_%02d",i);
-    sprintf(title,"mtof_%02d;t(mks);Counts",i);
-    int nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
-    h_mtof[i]=new TH1F(name,title,nn,opt.mtof_min,opt.mtof_max);
-    fListTree->AddItem(idir, name, h_mtof[i], pic, pic,true);
-    //item->CheckItem(false);
+    fListTree->AddItem(idir, h_mtof[i][0]->GetName(), h_mtof[i][0], pic, pic,true);
   }
-  //idir->CheckItem(false);
-
+  /*
   idir = fListTree->AddItem(iroot, "Profile strip",0,0,true);
   for (int i=0; i<64; i++){
-    sprintf(name,"Profile_strip%02d",i);
-    sprintf(title,"Profile_strip%02d;X_strip;Y_strip",i);
-    h2_prof_strip[i] = new TH2F(name,title,8,0,8,8,0,8);
-    //h2_prof_strip[i]->GetXaxis()->CenterTitle();
-    //h2_prof_strip[i]->GetYaxis()->CenterTitle();
-    fListTree->AddItem(idir, name, h2_prof_strip[i], pic, pic,true);
+    fListTree->AddItem(idir, h2_prof_strip[i], pic, pic,true);
   }
 
   idir = fListTree->AddItem(iroot, "Profile real",0,0,true);
   for (int i=0; i<64; i++){
-    sprintf(name,"profile_real%02d",i);
-    sprintf(title,"Profile_real%02d;X (mm);Y (mm)",i);
-    h2_prof_real[i] = new TH2F(name,title,8,0,120,8,0,120); 
     fListTree->AddItem(idir, name, h2_prof_real[i], pic, pic,true);
   }
-
+  */
   idir = fListTree->AddItem(iroot, "2d",0,0,true);
-  for (int i=0;i<1;i++) {
-    sprintf(name,"h2d_%02d",i);
-    sprintf(title,"h2d_%02d;Channel;Counts",i);
-    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_2d[i]=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
-		     nn,opt.amp_min,opt.amp_max);
-    fListTree->AddItem(idir, name, h_2d[i], pic, pic,true);
-    //cout << i << " " << ((TObject*)idir->GetUserData())->TestBit(kCanDelete);
-    //item->CheckItem(false);
-  }
-  //idir->CheckItem(false);
+  fListTree->AddItem(idir, h_2d[0]->GetName(), h_2d[0], pic, pic,true);
+
+  //fListTree->Sort(idir);
 
 }
 
@@ -344,39 +436,52 @@ void HistFrame::NewBins() {
 
   int nn;
 
-  for (int i=0;i<MAX_CH;i++) {
-    nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_ampl[i]->SetBins(nn,opt.amp_min,opt.amp_max);
-    h_ampl[i]->Reset();
+  for (int cc=0;cc<MAXCUTS;cc++) {
+    for (int i=0;i<MAX_CH;i++) {
+      if (h_ampl[i][cc]) {
+	nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+	h_ampl[i][cc]->SetBins(nn,opt.amp_min,opt.amp_max);
+	h_ampl[i][cc]->Reset();
+      }
     
-    nn=opt.hei_bins*(opt.hei_max-opt.hei_min);
-    h_height[i]->SetBins(nn,opt.hei_min,opt.hei_max);
-    h_height[i]->Reset();
-    
-    nn=opt.time_bins*(opt.time_max-opt.time_min);
-    h_time[i]->SetBins(nn,opt.time_min,opt.time_max);
-    h_time[i]->Reset();
-    
-    nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
-    h_tof[i]->SetBins(nn,opt.tof_min,opt.tof_max);
-    h_tof[i]->Reset();
+      if (h_height[i][cc]) {
+	nn=opt.hei_bins*(opt.hei_max-opt.hei_min);
+	h_height[i][cc]->SetBins(nn,opt.hei_min,opt.hei_max);
+	h_height[i][cc]->Reset();
+      }
 
-    nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
-    h_mtof[i]->SetBins(nn,opt.mtof_min,opt.mtof_max);
-    h_mtof[i]->Reset();
+      if (h_time[i][cc]) {
+	nn=opt.time_bins*(opt.time_max-opt.time_min);
+	h_time[i][cc]->SetBins(nn,opt.time_min,opt.time_max);
+	h_time[i][cc]->Reset();
+      }
+    
+      if (h_tof[i][cc]) {
+	nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
+	h_tof[i][cc]->SetBins(nn,opt.tof_min,opt.tof_max);
+	h_tof[i][cc]->Reset();
+      }
+
+      if (h_mtof[i][cc]) {
+	nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
+	h_mtof[i][cc]->SetBins(nn,opt.mtof_min,opt.mtof_max);
+	h_mtof[i][cc]->Reset();
+      }
+    }
+    //for (int i=0; i<1; i++) {
+    if (h_2d[cc]) {
+      nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+      h_2d[cc]->SetBins(nn,opt.amp_min,opt.amp_max,
+			nn,opt.amp_min,opt.amp_max);
+      h_2d[cc]->Reset();
+    }
+    //}
   }
 
-  for (int i=0; i<1; i++) {
-    nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_2d[i]->SetBins(nn,opt.amp_min,opt.amp_max,
-		     nn,opt.amp_min,opt.amp_max);
-    h_2d[i]->Reset();
-  }
-
-  for (int i=0; i<64; i++) {
-    h2_prof_strip[i]->Reset();
-    h2_prof_real[i]->Reset();
-  }
+  // for (int i=0; i<64; i++) {
+  //   h2_prof_strip[i]->Reset();
+  //   h2_prof_real[i]->Reset();
+  // }
 
 }
 
@@ -644,6 +749,186 @@ void HistFrame::DoButton()
 
 }
 
+void HistFrame::AddCutG()
+{
+  TObject* obj=0;
+  TPad* pad;
+  const char* msg;// = "Gcut Test";
+  Int_t retval;
+
+  for (int i=1;i<=ndiv;i++) {
+    pad = (TPad*) fEc->GetCanvas()->GetPad(i);
+    obj = pad->GetPrimitive("h2d");
+    if (obj)
+      break;
+    //cout << obj << endl;
+    //TList* list = pad->GetL
+  }
+
+  if (opt.ncuts>=MAXCUTS-1) {
+    msg = "Too manu cuts. Delete them first";
+    obj=0;
+  }
+  else {
+    if (obj) {
+      msg = "Use your mouse to create a graphical cut on the h2d histogram\nUse double click to finish";
+    }
+    else {
+      msg = "Error: Graphical cut is only possible with h2d histogram\nUse Histograms menu on the right to make it visible";
+    }
+  }
+
+  new TGMsgBox(gClient->GetRoot(), this,
+	       "Graphical cut",
+	       msg, kMBIconAsterisk, kMBDismiss, &retval);
+
+  if (!obj) return;
+  //cout << "test: " << obj << endl;
+
+  pad->cd();
+  pad->SetCrosshair(true);
+  pad->WaitPrimitive("CUTG","CutG");
+  pad->SetCrosshair(false);
+
+  TCutG* cc= (TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG");
+
+  int np = cc->GetN();
+
+  if (np>9) {
+    new TGMsgBox(gClient->GetRoot(), this,
+		 "Graphical cut",
+		 "Too many points", kMBIconAsterisk, kMBDismiss, &retval);
+    delete cc;
+    return;
+  }
+  if (np<=3) {
+    new TGMsgBox(gClient->GetRoot(), this,
+		 "Graphical cut",
+		 "Too few points", kMBIconAsterisk, kMBDismiss, &retval);
+    delete cc;
+    return;
+  }
+  //cout << "cc: " << cc->GetN() << endl;
+  int nc=opt.ncuts;
+
+  cutG[nc] = new TCutG(*cc);
+  delete cc;
+  cutG[nc]->SetLineColor(nc+2);
+
+  char ss[64];
+  sprintf(ss,"cut%d",nc+1);
+  cutG[nc]->SetName(ss);
+
+  pad->cd();
+
+  opt.pcuts[nc]=np;
+  for (int i=0;i<np;i++) {
+    opt.gcut[nc][0][i] = cutG[nc]->GetX()[i];
+    opt.gcut[nc][1][i] = cutG[nc]->GetY()[i];
+  }
+
+  //opt.gcut[0]->Print();
+  cutG[nc]->Draw();
+
+  opt.ncuts++;
+  //Make_hist(opt.ncuts);
+  Clear_tree();
+  Make_tree();
+
+  fEc->GetCanvas()->Update();
+}
+
+void HistFrame::ShowCutG()
+{
+
+  //cout << "show..." << endl;
+
+  TObject* obj=0;
+  TPad* pad;
+  bool found=false;
+
+  for (int i=1;i<=ndiv;i++) {
+    pad = (TPad*) fEc->GetCanvas()->GetPad(i);
+    TList* list = pad->GetListOfPrimitives();
+    TIter next(list);
+    while ( (obj=(TObject*)next()) ) {
+      TString name = TString(((TNamed*) obj)->GetName());
+      //const char* name = ((TNamed*) obj)->GetName();
+      //cout << name << " " << endl;
+      //cout << name << " " << name.Contains("h2d",TString::kIgnoreCase) << endl;
+      if (name.Contains("h2d",TString::kIgnoreCase)) {
+	found=true;
+      }
+    }
+    
+    //obj = pad->GetPrimitive("h2d");
+    if (found)
+      break;
+    //cout << obj << endl;
+    //TList* list = pad->GetL
+  }
+
+  if (!found || opt.ncuts==0)
+    return;
+
+  TLegend *leg = new TLegend(0.7,0.8,0.99,0.99);
+  leg->SetMargin(0.5);
+  pad->cd();
+  //opt.gcut[0]->Print();
+  for (int i=0;i<opt.ncuts;i++) {
+    if (cutG[i]) {
+      cout << "cut: " << i << " " << cutG[i]->GetName() << endl;
+      cutG[i]->Draw("same");
+      leg->AddEntry(cutG[i],cutG[i]->GetName(),"l");
+    }
+  }
+
+  leg->Draw();
+  fEc->GetCanvas()->Update();
+}
+
+void HistFrame::ClearCutG()
+{
+  cout << "Clear_cuts: " << endl;
+
+  Clear_tree();
+
+  //opt.gcut[0]->Print();
+  for (int i=0;i<opt.ncuts;i++) {
+    delete cutG[i];
+    cutG[i]=0;
+  }
+
+  /*
+  for (int cc=1;cc<MAXCUTS;cc++) {
+    for (int i=0;i<MAX_CH;i++) {
+      delete h_ampl[i][cc];
+      delete h_height[i][cc];
+      delete h_time[i][cc];
+      delete h_tof[i][cc];
+      delete h_mtof[i][cc];
+
+      h_ampl[i][cc]=0;
+      h_height[i][cc]=0;
+      h_time[i][cc]=0;
+      h_tof[i][cc]=0;
+      h_mtof[i][cc]=0;
+    }
+    delete h_2d[cc];
+    h_2d[cc]=0;
+  }
+  */
+
+  //Clear_tree();
+  opt.ncuts=0;
+  memset(opt.pcuts,0,sizeof(opt.pcuts));
+  memset(opt.gcut,0,sizeof(opt.gcut));
+  fEc->GetCanvas()->Update();
+
+  Make_tree();
+
+}
+
 void HistFrame::DoPeaks()
 {
 
@@ -697,6 +982,22 @@ void HistFrame::DoPeaks()
 
 }
 
+void HistFrame::Clear_tree()
+{
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  while (idir) {
+    TGListTreeItem *item = idir->GetFirstChild();
+    while (item) {
+      fListTree->DeleteItem(item);
+      item = item->GetNextSibling();
+    }
+    //if (idir->GetUserData()) {
+      fListTree->DeleteItem(idir);
+      //}
+    idir = idir->GetNextSibling();
+  }
+}
+
 void HistFrame::DoReset()
 {
 
@@ -712,6 +1013,20 @@ void HistFrame::DoReset()
   //cout << "hst::DoReset: " << endl;
   //cv->ls();
   
+  for (int i=0;i<MAXCUTS;i++) {
+    if (cutG[i]) {
+      delete cutG[i];
+      cutG[i]=0;
+    }
+  }
+
+  for (int i=0;i<opt.ncuts;i++) {
+    char ss[64];
+    sprintf(ss,"cut%d",i+1);
+    cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
+    cutG[i]->SetLineColor(i+2);
+  }
+
   NewBins();
 
   /*
@@ -743,6 +1058,8 @@ void HistFrame::DoReset()
 
 void HistFrame::Update()
 {
+
+  //cout << "HiFrm::Update()" << endl;
 
   Hmut.Lock();
   int sel = abs(opt.sel_hdiv)%NR;
@@ -850,12 +1167,13 @@ void HistFrame::ReDraw()
 
   TCanvas *cv=fEc->GetCanvas();
 
-  if (changed) {
+  if (changed || started) {
     //fEc->GetCanvas()->Draw();
     //fEc->GetCanvas()->Update();
     //cout << "changed" << endl;
     Update();
     changed=false;
+    started=false;
   }
   else {
     //cout << "unchanged1" << endl;

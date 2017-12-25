@@ -1,5 +1,6 @@
 #pragma link C++ class MainFrame+;
 #pragma link C++ class MyMainFrame+;
+//#pragma link C++ class ColorMsgBox+;
 //#pragma link C++ class NumDlg+;
 //#pragma link C++ class ParDlg+;
 //#pragma link C++ class MThreshDlg+;
