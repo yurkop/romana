@@ -1,8 +1,6 @@
 #ifndef crs_H
 #define crs_H 1
 
-//#include "cyusb.h"
-
 //#include <pthread.h>
 #include <libusb-1.0/libusb.h>
 #include <stdlib.h>
