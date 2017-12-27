@@ -1611,6 +1611,10 @@ int CRS::DoBuf() {
     //double tmp = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
     opt.T_acq = (Long64_t(gSystem->Now()) - T_start)*0.001;
 
+    list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
+    PulseClass *ipp = &vv->back();
+    cout << "TTT: " << ipp->Tstamp64*1e-9*period << endl;
+
     return nbuffers;
   }
   else {

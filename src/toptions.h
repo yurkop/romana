@@ -105,7 +105,7 @@ class Toptions: public TObject {
   Long64_t F_start; //start of the acuisition
   Float_t T_acq; //duration of the acquisition / file (in seconds)
 
-  Int_t Tstart,Tstop;
+  Float_t Tstart,Tstop;
   Int_t tsleep;
   Int_t usb_size; //in kB
   Int_t rbuf_size; //in kB

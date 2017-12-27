@@ -736,7 +736,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Analysis start (in sec)";
   tip2= "Analysis stop (in sec)";
   label="Time limits";
-  AddLine2(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_int);
+  AddLine2(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0);
 
   tip1= "";
   tip2= "Delay between drawing events (in msec)";
