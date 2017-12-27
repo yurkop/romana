@@ -318,6 +318,7 @@ void ctrl_c_handler(int s){
 void segfault_c_handler(int signal, siginfo_t *si, void *arg) {
   printf("Caught segfault %d\n",signal);
   delete myM;
+  exit(-1);
   //exit(1); 
 }
 
@@ -1228,7 +1229,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //crspar->Update();
 
-  //cout << "threshold0: " << opt.threshold[0] << endl;
+  //cout << "tab3: " << endl;
   
   TGCompositeFrame *tab3 = fTab->AddTab("Channels");
   TGCompositeFrame* fr3 = new TGCompositeFrame(tab3, 10, 10, kHorizontalFrame);
