@@ -14,8 +14,9 @@
 //#include <TSemaphore.h>
 //TSemaphore sem;
 #include "TThread.h"
+#include "TMutex.h"
 
-TMutex Emut3;
+//TMutex Emut3;
 TMutex stat_mut;
 //TMutex ana_mut;
 
@@ -1467,29 +1468,6 @@ void CRS::DoFopen(char* oname, int popt) {
   rbuf4 = (UInt_t*) Fbuf;
   rbuf2 = (UShort_t*) Fbuf;
 
-
-  // if (Fmode==1) {//adcm raw file
-  //   if (Searchsync()) {
-  //     cout<<Fname<<": Sync word in ADCM RAW file not found. File is closed."
-  // 	  <<endl;
-  //     gzclose(f_read);
-  //     f_read=0;
-  //     Fmode=0;
-  //   }
-  // }
-
-  //EvtFrm->Levents = &Levents;
-
-  // parpar->Update();
-  // crspar->Update();
-  // chanpar->Update();
-
-  //parpar->Update();
-
-  //cout << f_raw << endl;
-
-  //cout << "smooth: " << cpar.smooth[0] << endl;
-  //cout << "DoFopen2: " << f_read << " " << Fmode << endl;
   if (myM)
     myM->SetTitle(Fname);
 }

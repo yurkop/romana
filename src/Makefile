@@ -27,6 +27,9 @@ ifdef ROOTSYS
   CPPFLAGS += $(shell  $(ROOTSYS)/bin/root-config --cflags)
   LDFLAGS   += $(shell  $(ROOTSYS)/bin/root-config --glibs) # -lXMLIO
   LDFLAGS   += -lSpectrum
+
+  VER = $(shell root-config --version)
+  VER2 = $(findstring 5.,$(VER))
 endif
 
 all: $(OBJ_D) $(PROG).x
@@ -45,8 +48,14 @@ $(OBJ_D)/%.o: $(SRC_D)/%.cpp
 #svnver: Makefile
 #	echo \#define SVNVERSION $(SVNVER) >$(OBJ_D)/svn.h
 
+
+ifeq ($(VER2),5.) # root 5
 $(OBJ_D)/romdict.cpp: src/LinkDef.h $(SRC_D)/*.h #$(LIB_D)/*.h
 	rootcint -f $(OBJ_D)/romdict.cpp -c -p $(SRC_D)/$(PROG).h $(SRC_D)/LinkDef.h
+else # root 6+
+$(OBJ_D)/romdict.cpp: src/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
+	rootcling -f $(OBJ_D)/romdict.cpp -s romana.pcm -p $(SRC_D)/$(PROG).h $(SRC_D)/LinkDef.h
+endif
 
 $(OBJ_D)/romdict.o: $(OBJ_D)/romdict.cpp
 	g++ $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<

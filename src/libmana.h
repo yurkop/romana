@@ -184,7 +184,7 @@ public:
   void UpdateStatus();
 
   void DoSetNumBuf();
-  void HandleMenu(MENU_COM);
+  void HandleMenu(Int_t);
   //void HandleHelp();
 
   void exec3event(Int_t, Int_t, Int_t, TObject *);

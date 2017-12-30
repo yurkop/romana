@@ -2221,7 +2221,7 @@ void MainFrame::DoCross() {
 
 }
 
-void MainFrame::HandleMenu(MENU_COM menu_id)
+void MainFrame::HandleMenu(Int_t menu_id)
 {
 
   char command[128];
