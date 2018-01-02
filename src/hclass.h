@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include <TH1.h>
+#include <TH2.h>
 
 //-----------------------------------------------
 class HClass {

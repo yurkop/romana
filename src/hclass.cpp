@@ -22,6 +22,21 @@ extern HistFrame* EvtFrm;
 
 HClass::HClass()
 {
+  for (int i=0;i<MAXCUTS;i++) {
+    cutG[i]=0;
+  }
+
+  for (int cc=0;cc<MAXCUTS;cc++) {
+    for (int i=0;i<MAX_CH;i++) {
+      h_ampl[i][cc]=0;
+      h_height[i][cc]=0;
+      h_time[i][cc]=0;
+      h_tof[i][cc]=0;
+      h_mtof[i][cc]=0;
+    }
+    h_2d[cc]=0;
+  }
+
   Make_hist();
 }
 

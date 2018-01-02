@@ -55,7 +55,7 @@ int chanPresent;
 
 EventFrame* EvtFrm;
 HistFrame* HiFrm;
-HClass* hst;
+HClass* hcl;
 
 ParParDlg *parpar;
 CrsParDlg *crspar;
@@ -417,6 +417,8 @@ int main(int argc, char **argv)
   // cout << "sizeof(opt): " << sizeof(opt) << endl;
   
 
+    
+  hcl = new HClass();
   crs = new CRS();
 #ifdef CYUSB
   crs->Detect_device();
@@ -535,6 +537,7 @@ int main(int argc, char **argv)
 
   //greset();
 
+  hcl->NewBins();
   EvtFrm = 0;
   if (batch) {
 
@@ -1168,7 +1171,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   HiFrm = new HistFrame(tab5, 800, 500,ntab);
-  HiFrm->Connect("Upd()","HistFrame",HiFrm,"Update()");
+  //HiFrm->Connect("Upd()","HistFrame",HiFrm,"Update()");
   tab5->AddFrame(HiFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 

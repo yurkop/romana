@@ -30,6 +30,7 @@ extern MyMainFrame *myM;
 
 extern CRS* crs;
 extern ParParDlg *parpar;
+extern HClass* hcl;
 
 extern ULong_t fGreen;
 extern ULong_t fRed;
@@ -88,21 +89,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   changed=false;
   started=true;
   //char ss[100];
-
-  for (int i=0;i<MAXCUTS;i++) {
-    cutG[i]=0;
-  }
-
-  for (int cc=0;cc<MAXCUTS;cc++) {
-    for (int i=0;i<MAX_CH;i++) {
-      h_ampl[i][cc]=0;
-      h_height[i][cc]=0;
-      h_time[i][cc]=0;
-      h_tof[i][cc]=0;
-      h_mtof[i][cc]=0;
-    }
-    h_2d[cc]=0;
-  }
 
 
   //Frames.....
@@ -164,9 +150,9 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fListTree->Associate(this);
   //fEc->SetDNDTarget(kTRUE);
 
-  Make_hist();
+  //Make_hist();
   //exit(-1);
-  Make_tree();
+  Make_Ltree();
   //Clear_tree();
   //Make_tree();
 
@@ -290,7 +276,7 @@ void NameTitle(char* name, char* title, int i, int cc,
 }
 */
 
-void HistFrame::Make_tree() {
+void HistFrame::Make_Ltree() {
 
   char ss[64];
   const TGPicture *pic = gClient->GetPicture("h1_t.xpm");
@@ -299,46 +285,46 @@ void HistFrame::Make_tree() {
   //TGListTreeItem *item;
 
   idir = fListTree->AddItem(iroot, "IBR2",0,0,true);
-  fListTree->AddItem(idir, h_ampl[0][0]->GetName(), h_ampl[0][0], pic, pic,true);
-  fListTree->AddItem(idir, h_ampl[1][0]->GetName(), h_ampl[1][0], pic, pic,true);
-  fListTree->AddItem(idir, h_mtof[2][0]->GetName(), h_mtof[2][0], pic, pic,true);
-  fListTree->AddItem(idir, h_2d[0]->GetName(),      h_2d[0],      pic, pic,true);
+  fListTree->AddItem(idir, hcl->h_ampl[0][0]->GetName(), hcl->h_ampl[0][0], pic, pic,true);
+  fListTree->AddItem(idir, hcl->h_ampl[1][0]->GetName(), hcl->h_ampl[1][0], pic, pic,true);
+  fListTree->AddItem(idir, hcl->h_mtof[2][0]->GetName(), hcl->h_mtof[2][0], pic, pic,true);
+  fListTree->AddItem(idir, hcl->h_2d[0]->GetName(),      hcl->h_2d[0],      pic, pic,true);
 
   for (int cc=0;cc<opt.ncuts;cc++) {
     sprintf(ss,"IBR2_cut%d",cc+1);
     idir = fListTree->AddItem(iroot, ss,0,0,true);
-    fListTree->AddItem(idir, h_ampl[0][cc+1]->GetName(), h_ampl[0][cc+1], pic, pic,true);
-    fListTree->AddItem(idir, h_ampl[1][cc+1]->GetName(), h_ampl[1][cc+1], pic, pic,true);
-    fListTree->AddItem(idir, h_mtof[2][cc+1]->GetName(), h_mtof[2][cc+1], pic, pic,true);
-    fListTree->AddItem(idir, h_2d[cc+1]->GetName(),      h_2d[cc+1],      pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_ampl[0][cc+1]->GetName(), hcl->h_ampl[0][cc+1], pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_ampl[1][cc+1]->GetName(), hcl->h_ampl[1][cc+1], pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_mtof[2][cc+1]->GetName(), hcl->h_mtof[2][cc+1], pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_2d[cc+1]->GetName(),      hcl->h_2d[cc+1],      pic, pic,true);
 
   }
 
   idir = fListTree->AddItem(iroot, "Amplitude",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, h_ampl[i][0]->GetName(), h_ampl[i][0], pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_ampl[i][0]->GetName(), hcl->h_ampl[i][0], pic, pic,true);
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
 
   idir = fListTree->AddItem(iroot, "Height",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, h_height[i][0]->GetName(), h_height[i][0], pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_height[i][0]->GetName(), hcl->h_height[i][0], pic, pic,true);
   }
 
   idir = fListTree->AddItem(iroot, "Time",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, h_time[i][0]->GetName(), h_time[i][0], pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_time[i][0]->GetName(), hcl->h_time[i][0], pic, pic,true);
   }
   
   idir = fListTree->AddItem(iroot, "TOF",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, h_tof[i][0]->GetName(), h_tof[i][0], pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_tof[i][0]->GetName(), hcl->h_tof[i][0], pic, pic,true);
   }
 
   idir = fListTree->AddItem(iroot, "MTOF",0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, h_mtof[i][0]->GetName(), h_mtof[i][0], pic, pic,true);
+    fListTree->AddItem(idir, hcl->h_mtof[i][0]->GetName(), hcl->h_mtof[i][0], pic, pic,true);
   }
   /*
   idir = fListTree->AddItem(iroot, "Profile strip",0,0,true);
@@ -352,62 +338,9 @@ void HistFrame::Make_tree() {
   }
   */
   idir = fListTree->AddItem(iroot, "2d",0,0,true);
-  fListTree->AddItem(idir, h_2d[0]->GetName(), h_2d[0], pic, pic,true);
+  fListTree->AddItem(idir, hcl->h_2d[0]->GetName(), hcl->h_2d[0], pic, pic,true);
 
   //fListTree->Sort(idir);
-
-}
-
-void HistFrame::NewBins() {
-
-  int nn;
-
-  for (int cc=0;cc<MAXCUTS;cc++) {
-    for (int i=0;i<MAX_CH;i++) {
-      if (h_ampl[i][cc]) {
-	nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-	h_ampl[i][cc]->SetBins(nn,opt.amp_min,opt.amp_max);
-	h_ampl[i][cc]->Reset();
-      }
-    
-      if (h_height[i][cc]) {
-	nn=opt.hei_bins*(opt.hei_max-opt.hei_min);
-	h_height[i][cc]->SetBins(nn,opt.hei_min,opt.hei_max);
-	h_height[i][cc]->Reset();
-      }
-
-      if (h_time[i][cc]) {
-	nn=opt.time_bins*(opt.time_max-opt.time_min);
-	h_time[i][cc]->SetBins(nn,opt.time_min,opt.time_max);
-	h_time[i][cc]->Reset();
-      }
-    
-      if (h_tof[i][cc]) {
-	nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
-	h_tof[i][cc]->SetBins(nn,opt.tof_min,opt.tof_max);
-	h_tof[i][cc]->Reset();
-      }
-
-      if (h_mtof[i][cc]) {
-	nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
-	h_mtof[i][cc]->SetBins(nn,opt.mtof_min,opt.mtof_max);
-	h_mtof[i][cc]->Reset();
-      }
-    }
-    //for (int i=0; i<1; i++) {
-    if (h_2d[cc]) {
-      nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-      h_2d[cc]->SetBins(nn,opt.amp_min,opt.amp_max,
-			nn,opt.amp_min,opt.amp_max);
-      h_2d[cc]->Reset();
-    }
-    //}
-  }
-
-  // for (int i=0; i<64; i++) {
-  //   h2_prof_strip[i]->Reset();
-  //   h2_prof_real[i]->Reset();
-  // }
 
 }
 
@@ -737,29 +670,29 @@ void HistFrame::AddCutG()
   //cout << "cc: " << cc->GetN() << endl;
   int nc=opt.ncuts;
 
-  cutG[nc] = new TCutG(*cc);
+  hcl->cutG[nc] = new TCutG(*cc);
   delete cc;
-  cutG[nc]->SetLineColor(nc+2);
+  hcl->cutG[nc]->SetLineColor(nc+2);
 
   char ss[64];
   sprintf(ss,"cut%d",nc+1);
-  cutG[nc]->SetName(ss);
+  hcl->cutG[nc]->SetName(ss);
 
   pad->cd();
 
   opt.pcuts[nc]=np;
   for (int i=0;i<np;i++) {
-    opt.gcut[nc][0][i] = cutG[nc]->GetX()[i];
-    opt.gcut[nc][1][i] = cutG[nc]->GetY()[i];
+    opt.gcut[nc][0][i] = hcl->cutG[nc]->GetX()[i];
+    opt.gcut[nc][1][i] = hcl->cutG[nc]->GetY()[i];
   }
 
   //opt.gcut[0]->Print();
-  cutG[nc]->Draw();
+  hcl->cutG[nc]->Draw();
 
   opt.ncuts++;
   //Make_hist(opt.ncuts);
-  Clear_tree();
-  Make_tree();
+  Clear_Ltree();
+  Make_Ltree();
 
   fEc->GetCanvas()->Update();
 }
@@ -802,10 +735,10 @@ void HistFrame::ShowCutG()
   pad->cd();
   //opt.gcut[0]->Print();
   for (int i=0;i<opt.ncuts;i++) {
-    if (cutG[i]) {
-      cout << "cut: " << i << " " << cutG[i]->GetName() << endl;
-      cutG[i]->Draw("same");
-      leg->AddEntry(cutG[i],cutG[i]->GetName(),"l");
+    if (hcl->cutG[i]) {
+      cout << "cut: " << i << " " << hcl->cutG[i]->GetName() << endl;
+      hcl->cutG[i]->Draw("same");
+      leg->AddEntry(hcl->cutG[i],hcl->cutG[i]->GetName(),"l");
     }
   }
 
@@ -817,12 +750,12 @@ void HistFrame::ClearCutG()
 {
   cout << "Clear_cuts: " << endl;
 
-  Clear_tree();
+  Clear_Ltree();
 
   //opt.gcut[0]->Print();
   for (int i=0;i<opt.ncuts;i++) {
-    delete cutG[i];
-    cutG[i]=0;
+    delete hcl->cutG[i];
+    hcl->cutG[i]=0;
   }
 
   /*
@@ -851,7 +784,7 @@ void HistFrame::ClearCutG()
   memset(opt.gcut,0,sizeof(opt.gcut));
   fEc->GetCanvas()->Update();
 
-  Make_tree();
+  Make_Ltree();
 
 }
 
@@ -912,7 +845,7 @@ void HistFrame::DoPeaks()
 
 }
 
-void HistFrame::Clear_tree()
+void HistFrame::Clear_Ltree()
 {
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
@@ -944,20 +877,20 @@ void HistFrame::DoReset()
   //cv->ls();
   
   for (int i=0;i<MAXCUTS;i++) {
-    if (cutG[i]) {
-      delete cutG[i];
-      cutG[i]=0;
+    if (hcl->cutG[i]) {
+      delete hcl->cutG[i];
+      hcl->cutG[i]=0;
     }
   }
 
   for (int i=0;i<opt.ncuts;i++) {
     char ss[64];
     sprintf(ss,"cut%d",i+1);
-    cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
-    cutG[i]->SetLineColor(i+2);
+    hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
+    hcl->cutG[i]->SetLineColor(i+2);
   }
 
-  NewBins();
+  hcl->NewBins();
 
   /*
   TGListTreeItem *idir = fListTree->GetFirstItem();

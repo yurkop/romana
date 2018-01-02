@@ -1,13 +1,14 @@
 #include "common.h"
 #include "toptions.h"
 #include "libcrs.h"
-#include "histframe.h"
+#include "hclass.h"
 #include <iostream>
 
 //extern Coptions cpar;
 extern Toptions opt;
 extern CRS* crs;
-extern HistFrame* HiFrm;
+extern HClass* hcl;
+//extern HistFrame* HiFrm;
 
 using namespace std;
 
@@ -283,7 +284,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   }
 }
 
-void EventClass::FillHistTree() {
+void EventClass::FillHist() {
   double DT = crs->period*1e-9;
   //int ch[MAX_CH];
   Double_t tt;
@@ -291,6 +292,8 @@ void EventClass::FillHistTree() {
   int nbin;
 
   int icut=0;
+
+  //cout << "FillHist: " << endl;
 
   if (pulses.size()>=2) {
     double amp[2];
@@ -314,16 +317,16 @@ void EventClass::FillHistTree() {
     if (nn==2) {
       if (opt.ncuts) {
 	for (int j=0;j<opt.ncuts;j++) {
-	  if (HiFrm->cutG[j]->IsInside(amp[0],amp[1])) {
+	  if (hcl->cutG[j]->IsInside(amp[0],amp[1])) {
 	    icut=j+1;
 	    break;
 	  }
 	} 
       }
 
-      HiFrm->h_2d[0]->Fill(amp[0],amp[1]);
+      hcl->h_2d[0]->Fill(amp[0],amp[1]);
       if (icut) {
-	HiFrm->h_2d[icut]->Fill(amp[0],amp[1]);
+	hcl->h_2d[icut]->Fill(amp[0],amp[1]);
       }
     }
   }
@@ -334,18 +337,21 @@ void EventClass::FillHistTree() {
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
       peak_type* pk = &pulses[i].Peaks[j];
 
-      HiFrm->h_ampl[ch][0]->Fill(pk->Area*opt.emult[ch]);
-      HiFrm->h_height[ch][0]->Fill(pk->Height);
+      // if (ch==0) {
+      // 	cout << "ampl: " << pk->Area*opt.emult[ch] << " " << opt.emult[ch] << "    " << hcl->h_ampl[0][0]->Integral() << endl;
+      // }
+      hcl->h_ampl[ch][0]->Fill(pk->Area*opt.emult[ch]);
+      hcl->h_height[ch][0]->Fill(pk->Height);
       if (icut) {
-	HiFrm->h_ampl[ch][icut]->Fill(pk->Area*opt.emult[ch]);
-	HiFrm->h_height[ch][icut]->Fill(pk->Height);
+	hcl->h_ampl[ch][icut]->Fill(pk->Area*opt.emult[ch]);
+	hcl->h_height[ch][icut]->Fill(pk->Height);
       }
 
       tt = pulses[i].Tstamp64 + crs->Tstart64;
       tt += pk->Pos;
       tt*=DT;
 
-      max = HiFrm->h_time[ch][0]->GetXaxis()->GetXmax();
+      max = hcl->h_time[ch][0]->GetXaxis()->GetXmax();
 
       if (tt > max) {
 	max2=max*2;
@@ -353,20 +359,20 @@ void EventClass::FillHistTree() {
 	  cout << "Time leap is too large: " << ch << " " << tt << endl;
 	}
 	else {
-	  nbin = HiFrm->h_time[ch][0]->GetNbinsX()*max2/max;
+	  nbin = hcl->h_time[ch][0]->GetNbinsX()*max2/max;
 	  Float_t* arr = new Float_t[nbin+2];
 	  memset(arr,0,sizeof(Float_t)*(nbin+2));
-	  Float_t* arr2 = HiFrm->h_time[ch][0]->GetArray();
-	  memcpy(arr,arr2,HiFrm->h_time[ch][0]->GetSize()*sizeof(Float_t));
-	  HiFrm->h_time[ch][0]->SetBins(nbin,0,max2);
-	  HiFrm->h_time[ch][0]->Adopt(nbin+2,arr);
+	  Float_t* arr2 = hcl->h_time[ch][0]->GetArray();
+	  memcpy(arr,arr2,hcl->h_time[ch][0]->GetSize()*sizeof(Float_t));
+	  hcl->h_time[ch][0]->SetBins(nbin,0,max2);
+	  hcl->h_time[ch][0]->Adopt(nbin+2,arr);
 	}
 
       }
 
-      HiFrm->h_time[ch][0]->Fill(tt);
+      hcl->h_time[ch][0]->Fill(tt);
       if (icut) {
-	HiFrm->h_time[ch][icut]->Fill(tt);
+	hcl->h_time[ch][icut]->Fill(tt);
       }
 
       double dt = pulses[i].Tstamp64 - T;
@@ -375,9 +381,9 @@ void EventClass::FillHistTree() {
       // cout << "TOF: " << crs->nevents << " " << i << " "
       // 	   << ch << " " << pk->Time << " " << T0 << " "
       // 	   << dt << " " << tt << endl;
-      HiFrm->h_tof[ch][0]->Fill(tt*crs->period);
+      hcl->h_tof[ch][0]->Fill(tt*crs->period);
       if (icut) {
-	HiFrm->h_tof[ch][icut]->Fill(tt*crs->period);
+	hcl->h_tof[ch][icut]->Fill(tt*crs->period);
       }
 
       if (opt.dec_write) {
@@ -395,9 +401,9 @@ void EventClass::FillHistTree() {
 
     if (crs->Tstart0>0) {
       tt = T - crs->Tstart0;
-      HiFrm->h_mtof[pulses.size()][0]->Fill(tt*crs->period/1000);
+      hcl->h_mtof[pulses.size()][0]->Fill(tt*crs->period/1000);
       if (icut) {
-	HiFrm->h_mtof[pulses.size()][icut]->Fill(tt*crs->period/1000);
+	hcl->h_mtof[pulses.size()][icut]->Fill(tt*crs->period/1000);
       }
     }
     if (ch==opt.start_ch) {
@@ -438,8 +444,8 @@ void EventClass::FillHistTree() {
 
     //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
 
-    HiFrm->h2_prof_strip[ch_alpha]->Fill(px,py);
-    HiFrm->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
+    hcl->h2_prof_strip[ch_alpha]->Fill(px,py);
+    hcl->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
   }
   */
 

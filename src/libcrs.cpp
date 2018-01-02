@@ -33,6 +33,7 @@ using namespace std;
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
+extern HClass* hcl;
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern ChanParDlg *chanpar;
@@ -279,7 +280,7 @@ void *handle_ana(void* ptr) {
 	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  //HiFrm->FillHist(&(*it));
 
-	  it->FillHistTree();
+	  it->FillHist();
 	  if (opt.dec_write) {
 	    crs->Fill_Dec(&(*it));
 	  }
@@ -1485,6 +1486,13 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
+  for (int i=0;i<opt.ncuts;i++) {
+    char ss[64];
+    sprintf(ss,"cut%d",i+1);
+    hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
+    hcl->cutG[i]->SetLineColor(i+2);
+  }
+
   return 0;
 }
 
@@ -1611,7 +1619,7 @@ void CRS::FAnalyze(bool nobatch) {
   trd_ana->Join();
   trd_ana->Delete();
 
-  //cout << "batch06: " << endl;
+  cout << "batch06: " << hcl->h_ampl[0][0]->Integral() << endl;
   //gSystem->Sleep(opt.tsleep);
   if (nobatch) {
     EvtFrm->Clear();
