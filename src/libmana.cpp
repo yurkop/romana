@@ -55,6 +55,7 @@ int chanPresent;
 
 EventFrame* EvtFrm;
 HistFrame* HiFrm;
+HClass* hst;
 
 ParParDlg *parpar;
 CrsParDlg *crspar;
