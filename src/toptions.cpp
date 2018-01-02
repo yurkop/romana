@@ -239,6 +239,7 @@ Toptions::Toptions() {
   //printf("opt: %f\n", *(double*) opt_id[9]);
 
   F_start = gSystem->Now();
+  T_acq = 0;
 
 }
 

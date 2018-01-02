@@ -62,13 +62,13 @@ ChanParDlg *chanpar;
 
 const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
-//extern const char* parname;
-char* parname;
+char* parname=0;
+char* fname=0;
 
 //FILE* fp=0;
 //gzFile fp=0;
 
-char fname[180]="";
+//char fname[180]="";
 char rootname[180]="";
 
 char pr_name[180];
@@ -312,7 +312,7 @@ void out_of_memory(void)
 void ctrl_c_handler(int s){
   printf("Caught signal %d\n",s);
   delete myM;
-  //exit(1); 
+  exit(1); 
 }
 
 void segfault_c_handler(int signal, siginfo_t *si, void *arg) {
@@ -321,119 +321,6 @@ void segfault_c_handler(int signal, siginfo_t *si, void *arg) {
   exit(-1);
   //exit(1); 
 }
-
-/*
-void change_gz_file(char* name1, char* name2) {
-
-  //exit(-1);
-
-  gzFile f1 = gzopen(name1,"rb");
-  gzFile f2 = gzopen(name2,"wb");
-
-  char buf[1000000];
-  Version_t ver;
-  UShort_t mod[2];
-  
-  cout << name1 << " " << name2 << " " << f1 << " " << f2 << endl;
-
-  if (!f1 || !f2) {
-    cout << "can't open file" << endl;
-    exit(-1);
-  }
-  
-  gzread(f1,mod,sizeof(mod));
-  gzread(f1,buf,mod[1]);
-  gzread(f1,&ver,sizeof(ver));
-  
-  gzwrite(f2,mod,sizeof(mod));
-  gzwrite(f2,&ver,sizeof(ver));
-  gzwrite(f2,buf,mod[1]);
-
-  
-  int res=1;
-  do {
-    res = gzread(f1,buf,sizeof(buf));
-    gzwrite(f2,buf,sizeof(buf));
-  } while (res>0);
-
-  gzclose(f1);
-  gzclose(f2);
-
-  exit(-1);
-
-}
-//----------------------------
-void change_gz_file2(char* name1, char* name2) {
-
-  gzFile f1 = gzopen(name1,"rb");
-  gzFile f2 = gzopen(name2,"wb");
-
-  char buf[1000000];
-  Version_t ver;
-  UShort_t mod2[2];
-  UShort_t mod[8];
-
-  cout << name1 << " " << name2 << " " << f1 << " " << f2 << endl;
-
-  if (!f1 || !f2) {
-    cout << "can't open file" << endl;
-    exit(-1);
-  }
-  
-  gzread(f1,mod2,sizeof(mod2));
-  gzread(f1,&ver,sizeof(ver));
-  gzread(f1,&opt,mod2[1]);
-
-  memcpy(&cpar.smooth,   &opt.smooth,   sizeof(cpar.smooth));
-  memcpy(&cpar.deadTime, &opt.deadTime, sizeof(cpar.deadTime));
-  memcpy(&cpar.preWr,    &opt.preWr,    sizeof(cpar.preWr));
-  memcpy(&cpar.durWr,    &opt.durWr,    sizeof(cpar.durWr));
-  memcpy(&cpar.kderiv,   &opt.kderiv,   sizeof(cpar.kderiv));
-  memcpy(&cpar.threshold,&opt.threshold,sizeof(cpar.threshold));
-  memcpy(&cpar.adcGain,  &opt.adcGain,  sizeof(cpar.adcGain));
-  memcpy(&cpar.acdc,     &opt.acdc,     sizeof(cpar.acdc));
-  memcpy(&cpar.inv,      &opt.inv,      sizeof(cpar.inv));
-  memcpy(&cpar.forcewr,  &opt.forcewr,  sizeof(cpar.forcewr));
-  memcpy(&cpar.enabl,    &opt.enabl,    sizeof(cpar.enabl));
-  memcpy(&cpar.chtype,   &opt.chtype,   sizeof(cpar.chtype));
-
-  cout << "ver: " << ver << " " << opt.durWr[0] << endl;
-  cout << "ver2: " << ver << " " << cpar.durWr[0] << endl;
-
-
-  memset(mod,0,sizeof(mod));
-  mod[0]=mod2[0];
-  mod[1]=sizeof(cpar);
-  mod[2]=TClass::GetClass("Coptions")->GetClassVersion();
-  mod[3]=sizeof(opt);
-  mod[4]=TClass::GetClass("Toptions")->GetClassVersion();
-
-
-  cout << sizeof(Coptions) << " "
-       << mod[0] << " "
-       << mod[1] << " "
-       << mod[2] << " "
-       << mod[3] << " "
-       << mod[4] << endl;
-
-  gzwrite(f2,mod,sizeof(mod));
-  gzwrite(f2,&cpar,sizeof(cpar));
-  gzwrite(f2,&opt,sizeof(opt));
-
-  
-  int res=1;
-  do {
-    res = gzread(f1,buf,sizeof(buf));
-    gzwrite(f2,buf,sizeof(buf));
-  } while (res>0);
-
-  gzclose(f1);
-  gzclose(f2);
-
-  exit(-1);
-
-}
-*/
 
 int main(int argc, char **argv)
 {
@@ -496,7 +383,6 @@ int main(int argc, char **argv)
 
 
   char s_name[200], dir[100], name[100], ext[100];
-  //char* pname = (char*) parname;
 
   bool batch=false;
 
@@ -531,12 +417,9 @@ int main(int argc, char **argv)
   
 
   crs = new CRS();
+#ifdef CYUSB
   crs->Detect_device();
-
-  parname = (char*)"romana.par";
-  gzFile ff = gzopen(parname,"rb");
-  crs->ReadParGz(ff,parname,0,1,1);
-  gzclose(ff);
+#endif
 
 #ifdef LINUX
   if (getcwd(startdir,100)) {}
@@ -549,8 +432,9 @@ int main(int argc, char **argv)
 
   strcpy(maintitle,pr_name);
 
-  int argnn=1;
 
+  /*
+  int argnn=1;
   //strcpy(fname," ");
   if (argc > 1) {
 
@@ -568,12 +452,10 @@ int main(int argc, char **argv)
       //strcat(maintitle," ");
       //strcat(maintitle,argv[argnn]);
 
-      /*
-      strcpy(crs->Fname,argv[argnn]);
-      
-      strcpy(fname,argv[argnn]);
-      printf("%s\n",fname);
-      */
+      // strcpy(crs->Fname,argv[argnn]);
+      // strcpy(fname,argv[argnn]);
+      // printf("%s\n",fname);
+
       argnn++;
     }
 
@@ -592,24 +474,81 @@ int main(int argc, char **argv)
     }
 
   }
+  */
 
-  greset();
-  int nf = 0;//YK - ?? Buffer->NewFile();
-
-  if (batch && nf) {
-    return -1;
+  //process command line parameters
+  if (argc > 1) {
+    int argnn=1;
+    while (argnn<argc) {
+      char cc = argv[argnn][0];
+      if (cc=='-') { //control character
+	char pp = argv[argnn][1];
+	switch (pp) {
+	case 'b':
+	  batch=true;
+	  break;
+	default:
+	  break;
+	}
+      }
+      else if (cc=='+') { //read file of parameters
+	parname = argv[argnn]+1;
+      }
+      else { //read file
+	fname = argv[argnn];
+      }
+      cout << "argnn: " << argnn << " " << argv[argnn] << " "
+	   << argv[argnn]+1 << " " << argc << endl;
+      argnn++;
+    }
   }
-  else if (batch) {
 
-    //readinit(pname);
-    //YK - ????
-    //gzFile ff = gzopen(pname,"rb");
-    //crs->ReadParGz(ff,1,1);
-    //gzclose(ff);
-    //YK - ????
+  if (fname) {
+    crs->DoFopen(fname,1); //read ile and parameters from it
+  }
+  
+  if (parname) {
+    gzFile ff = gzopen(parname,"rb");
+    if (!ff) {
+      cout << "Can't open par file: " << parname << endl;
+    }
+    else {
+      crs->ReadParGz(ff,parname,0,1,1);
+      gzclose(ff);
+    }
+  }
+  else {
+    parname = (char*)"romana.par";
+    gzFile ff = gzopen(parname,"rb");
+    if (!ff) {
+      cout << "Can't open par file: " << parname << endl;
+    }
+    else {
+      crs->ReadParGz(ff,parname,0,1,1);
+      gzclose(ff);
+    }
+  }
 
-    //opt.num_events=0;
-    allevents();
+  //exit(0);
+
+
+  //greset();
+
+  EvtFrm = 0;
+  if (batch) {
+
+    //cout << "batch0: " << endl;
+
+    crs->b_fana=true;
+    crs->b_stop=false;
+
+    crs->FAnalyze(false);
+
+    crs->b_fana=false;
+    crs->b_stop=true;
+
+    //allevents();
+    //cout << "batch99: " << endl;
 
     SplitFilename (string(fname),dir,name,ext);
     strcat(dir,"save/");
@@ -626,6 +565,12 @@ int main(int argc, char **argv)
 
     return 0;
   }
+
+
+
+
+
+
 
   TApplication theApp("App",&argc,argv);
   example();
@@ -848,7 +793,7 @@ void readpar_root(const char* pname)
   cpar.Read("Coptions");
   opt.Read("Toptions");
 
-  greset();
+  //greset();
 
   f2->Close();
   delete f2;
@@ -1170,34 +1115,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   f1b->Connect("Clicked()","MainFrame",this,"Do1buf()");
   fGr2->AddFrame(f1b, l_But);
 
-  //exit(-1);
-
-  //crs = new CRS();
-  //crs->Detect_device();
-
-
-  //opt.threshold[0]=50;
-  //opt.threshold[1]=50;
-
-  //cout << "module: " << crs->module << " " << chanPresent << endl;
-  //exit(-1);
-
-  // if (crs->module==2) parname=(char*)"crs2.par";
-  // else if (crs->module==32) parname=(char*)"crs32.par";
-  // else parname=(char*)"romana.par";
-
-  /*
-  parname = (char*)"romana.par";
-  //readinit(parname);
-  //cout << "1 ReadParGz(ff,1,1);" << endl;
-  gzFile ff = gzopen(parname,"rb");
-  crs->ReadParGz(ff,parname,0,1,1);
-  //cout << "2 ReadParGz(ff,1,1);" << endl;
-  gzclose(ff);
-  */
-
-
-
 
   fTab = new TGTab(hframe1, 300, 300);
   //TGLayoutHints *fL5 = new TGLayoutHints(kLHintsTop | kLHintsExpandX |
@@ -1330,13 +1247,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   AddFrame(fStatFrame1, fbHints);
   AddFrame(fStatFrame2, fbHints);
 
-  const int fwid=160;
+  const int fwid=120;
 
-  const char* txtlab[n_stat] = {"Start","Time","Events","Ev/sec","Events2","Buffers","MB in","MB/sec","MB out"};
+  const char* txtlab[n_stat] = {"Start","AcqTime","Events","Ev/sec","Events2","Buffers","MB in","MB/sec","MB out"};
 
   const char* st_tip[n_stat] = {
     "Acquisition start",
-    "Acquisition/Analysis Time",
+    //"Total Acquisition Time",
+    "Acquisition Time",
     "Total number of events received",
     "Event rate received (in Hz)",
     "Total number of events analyzed",
@@ -1442,7 +1360,8 @@ MainFrame::~MainFrame() {
   //cout << "end: module: " << crs->module << endl;
 
   if (crs->b_acq && crs->module) {
-    crs->DoStartStop();
+    //crs->DoStartStop();
+    DoStartStop();
     gSystem->Sleep(300);
   }
 
@@ -1473,6 +1392,7 @@ void MainFrame::DoStartStop() {
 
   //cout << gROOT->FindObject("Start") << endl;
 
+#ifdef CYUSB
   if (crs->b_acq) {
     fStart->ChangeBackground(fGreen);
     fStart->SetText("Start");
@@ -1488,6 +1408,7 @@ void MainFrame::DoStartStop() {
     }
     //crs->b_stop=true;
   }
+#endif
 
 }
 
@@ -1593,7 +1514,7 @@ void MainFrame::DoAna() {
       crs->b_fana=true;
       crs->b_stop=false;
 
-      crs->FAnalyze();
+      crs->FAnalyze(true);
 
       fAna->ChangeBackground(fGreen);
       fAna->SetText("Analyse");
@@ -1712,8 +1633,13 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
     if (nn==kFDOpen) {
       //readinit(pname);
       gzFile ff = gzopen(pname,"rb");
-      crs->ReadParGz(ff,pname,0,1,1);
-      gzclose(ff);
+      if (!ff) {
+	cout << "Can't open par file: " << pname << endl;
+      }
+      else {
+	crs->ReadParGz(ff,pname,0,1,1);
+	gzclose(ff);
+      }
 
       parpar->Update();
       crspar->Update();
@@ -1828,7 +1754,7 @@ void MainFrame::DoReset() {
 
   if (!crs->b_stop) return;
 
-  greset();
+  //greset();
 
   crs->DoReset();
   HiFrm->DoReset();
@@ -1954,6 +1880,8 @@ void MainFrame::DoCheckTime() {
 
 void MainFrame::UpdateStatus() {
 
+  int ii=0;
+
   static Long64_t bytes1=0;
   static Long64_t nevents1=0;
   static double t1=0;
@@ -1982,15 +1910,16 @@ void MainFrame::UpdateStatus() {
   t1=opt.T_acq;
 
 
-  fStat[0]->SetText(txt,kFALSE);
-  fStat[1]->SetText(TGString::Format("%0.1f",opt.T_acq),1);
-  fStat[2]->SetText(TGString::Format("%lld",crs->nevents),kFALSE);
-  fStat[3]->SetText(TGString::Format("%0.3f",ev_rate),kFALSE);
-  fStat[4]->SetText(TGString::Format("%lld",crs->nevents2),kFALSE);
-  fStat[5]->SetText(TGString::Format("%lld",crs->nbuffers),kFALSE);
-  fStat[6]->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),kFALSE);
-  fStat[7]->SetText(TGString::Format("%0.2f",mb_rate),kFALSE);
-  fStat[8]->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),kFALSE);
+  fStat[ii++]->SetText(txt,kFALSE);
+  //fStat[ii++]->SetText(TGString::Format("%0.1f",crs->F_acq),1);
+  fStat[ii++]->SetText(TGString::Format("%0.1f",opt.T_acq),1);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.3f",ev_rate),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents2),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->nbuffers),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),kFALSE);
 
   //cout << txt << endl;
   //return;
@@ -2034,6 +1963,7 @@ void MainFrame::DoExit() {
 #else
   _chdir(startdir);
 #endif
+  parname = (char*)"romana.par";
   gzFile ff = gzopen(parname,"wb");
   if (ff) {
     crs->SaveParGz(ff);

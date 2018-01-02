@@ -3,7 +3,11 @@
 #include <zlib.h>
 
 #include <sys/stat.h>
+
+#ifdef CYUSB
 #include "cyusb.h"
+#endif
+
 //#include <pthread.h>
 #include "romana.h"
 
@@ -26,7 +30,6 @@ TCondition* cond[CRS::MAXTRANS];
 
 using namespace std;
 
-#ifndef CRSTXT
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
@@ -35,8 +38,6 @@ extern CrsParDlg *crspar;
 extern ChanParDlg *chanpar;
 extern int debug; // for printing debug messages
 
-#endif
-
 //const double MB = 1024*1024;
 
 //Int_t ev_max;
@@ -44,7 +45,6 @@ extern int debug; // for printing debug messages
 //bool bstart=true;
 //bool btest=false;
 
-cyusb_handle *cy_handle;
 //pthread_t tid1;
 TThread* trd_crs;
 //TThread* trd_stat;
@@ -78,9 +78,11 @@ extern int chanPresent;
 
 //static gzFile fp;// = stdout;
 //static int timeout_provided;
-static int timeout = 0;
-//static cyusb_handle *h1 = NULL;
 
+//static int timeout = 0;
+
+#ifdef CYUSB
+cyusb_handle *cy_handle;
 
 void *handle_events_func(void *ctx)
 {
@@ -109,6 +111,62 @@ void *ballast(void* xxx) {
 
 }
 */
+
+static void cback(libusb_transfer *transfer) {
+
+  //static TTimeStamp t1;
+
+  //cout << "cback: " << endl;
+  //return;
+
+  //TTimeStamp t2;
+  //t2.Set();
+
+  crs->npulses_buf=0;
+
+  if (crs->b_acq) {
+
+    if (transfer->actual_length) {
+      if (opt.decode) {
+	if (crs->module==2) {
+	  crs->Decode2(transfer->buffer,transfer->actual_length);
+	}
+	else if (crs->module==32) {
+	  crs->Decode32(transfer->buffer,transfer->actual_length);
+	}
+      }
+      if (opt.raw_write) {
+	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
+	if (crs->f_raw) {
+	  int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
+	  gzclose(crs->f_raw);
+	  crs->writtenbytes+=res;
+	}
+	else {
+	  cout << "Can't open file: " << opt.fname_raw << endl;
+	}
+      }
+
+      crs->nbuffers++;
+
+    } //if (transfer->actual_length) {
+
+    libusb_submit_transfer(transfer);
+
+    stat_mut.Lock();
+    crs->totalbytes+=transfer->actual_length;
+    //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
+    //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
+    opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
+
+    stat_mut.UnLock();
+  } //if (crs->b_acq) {
+
+  //crs->nvp = (crs->nvp+1)%crs->ntrans;
+  
+}
+
+#endif //CYUSB
 
 void *handle_buf(void *ctx)
 {
@@ -146,15 +204,17 @@ void *handle_ana(void* ptr) {
 
   //check if it's the beginning of the analysis -> then define crs->m_start
   //if (crs->m_start==crs->Levents.end()) {
+  //cout << "ana_start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
   if (crs->Levents.empty()) {
     //need this loop to have at least one event in Levents
     while (crs->Levents.empty() && !crs->b_stop) {
+      //cout << "a9: " << crs->Levents.empty() << " " << crs->b_stop << endl;
       gSystem->Sleep(10);
     }
     crs->m_start = crs->Levents.begin();
   }
 
-  //cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << endl;
+  //cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << " " << EvtFrm << endl;
 
   int n2; //number of events to erase
   //m_event - first event which is not analyzed
@@ -200,14 +260,14 @@ void *handle_ana(void* ptr) {
       
       //goto skip;
 
-
-      // fill Tevents for EvtFrm::DrawEvent2
-      EvtFrm->Tevents.clear();
-      if (crs->m_event!=crs->Levents.end()) {
-      	EvtFrm->Tevents.push_back(*crs->m_event);
+      if (EvtFrm) {
+	// fill Tevents for EvtFrm::DrawEvent2
+	EvtFrm->Tevents.clear();
+	if (crs->m_event!=crs->Levents.end()) {
+	  EvtFrm->Tevents.push_back(*crs->m_event);
+	}
+	EvtFrm->d_event=EvtFrm->Pevents->begin();
       }
-      EvtFrm->d_event=EvtFrm->Pevents->begin();
-
 
 
       //skip:
@@ -272,60 +332,6 @@ void *handle_ana(void* ptr) {
 
   return 0;
     
-}
-
-static void cback(libusb_transfer *transfer) {
-
-  //static TTimeStamp t1;
-
-  //cout << "cback: " << endl;
-  //return;
-
-  //TTimeStamp t2;
-  //t2.Set();
-
-  crs->npulses_buf=0;
-
-  if (crs->b_acq) {
-
-    if (transfer->actual_length) {
-      if (opt.decode) {
-	if (crs->module==2) {
-	  crs->Decode2(transfer->buffer,transfer->actual_length);
-	}
-	else if (crs->module==32) {
-	  crs->Decode32(transfer->buffer,transfer->actual_length);
-	}
-      }
-      if (opt.raw_write) {
-	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
-	if (crs->f_raw) {
-	  int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
-	  gzclose(crs->f_raw);
-	  crs->writtenbytes+=res;
-	}
-	else {
-	  cout << "Can't open file: " << opt.fname_raw << endl;
-	}
-      }
-
-      crs->nbuffers++;
-
-    } //if (transfer->actual_length) {
-
-    libusb_submit_transfer(transfer);
-
-    stat_mut.Lock();
-    crs->totalbytes+=transfer->actual_length;
-    //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
-    //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
-    opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
-
-    stat_mut.UnLock();
-  } //if (crs->b_acq) {
-
-  //crs->nvp = (crs->nvp+1)%crs->ntrans;
-  
 }
 
 CRS::CRS() {
@@ -469,7 +475,9 @@ CRS::CRS() {
 
   module=0;
 
+#ifdef CYUSB
   cy_handle=NULL;
+#endif
 
   event_thread_run=1;
 
@@ -527,6 +535,8 @@ void CRS::Dummy_trd() {
   trd_dum->Run();
 }
 */
+
+#ifdef CYUSB
 
 int CRS::Detect_device() {
 
@@ -594,8 +604,10 @@ int CRS::Detect_device() {
   //cout << "Error creating thread: " << r1 << endl;
   //}
 
+#ifdef CYUSB
   trd_crs = new TThread("trd_crs", handle_events_func, (void*) 0);
   trd_crs->Run();
+#endif
 
   // trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
   // trd_stat->Run();
@@ -667,29 +679,6 @@ int CRS::Detect_device() {
 
   return 0;
 
-}
-
-void CRS::DoExit()
-{
-  cout << "CRS::DoExit" << endl;
-
-  event_thread_run=0;
-  cyusb_close();
-  if (trd_crs) {
-    trd_crs->Delete();
-  }
-  //if (trd_stat) {
-  //trd_stat->Delete();
-  //}
-  //if (trd_evt) {
-  //trd_evt->Delete();
-  //}
-  //if (trd_ana) {
-  //trd_ana->Delete();
-  //}
-  //pthread_join(tid1,NULL);
-  //gzclose(fp);
-  //exit(-1);
 }
 
 int CRS::SetPar() {
@@ -897,7 +886,7 @@ void CRS::Command32(byte cmd, byte ch, byte type, int par) {
     return;
   }
   
-  r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, timeout * 1000);
+  r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, 0);
   if (r) {
     printf("Error6! %d: \n",buf_out[1]);
     cyusb_error(r);
@@ -905,7 +894,7 @@ void CRS::Command32(byte cmd, byte ch, byte type, int par) {
   }
 
   if (cmd!=7) {
-    r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, timeout * 1000);
+    r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, 0);
     if (r) {
       printf("Error7! %d: \n",buf_out[1]);
       cyusb_error(r);
@@ -946,14 +935,14 @@ void CRS::Command2(byte cmd, byte ch, byte type, int par) {
 
   len_in=2;
 
-  r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, timeout * 1000);
+  r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, 0);
   if (r) {
     printf("Error6! %d: \n",buf_out[1]);
     cyusb_error(r);
     //cyusb_close();
   }
 
-  r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, timeout * 1000);
+  r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, 0);
   if (r) {
     printf("Error7! %d: \n",buf_out[1]);
     cyusb_error(r);
@@ -961,51 +950,6 @@ void CRS::Command2(byte cmd, byte ch, byte type, int par) {
   }
 
 }
-
-/*
-int CRS::Command_old(int len_out, int len_in) {
-  int transferred = 0;
-  int r;
-
-  r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, timeout * 1000);
-  if ( r == 0 ) {
-  }
-  else {
-    printf("Error6! %d: \n",buf_out[1]);
-    cyusb_error(r);
-    cyusb_close();
-    return 0;
-  }
-
-  r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, timeout * 1000);
-  if ( r == 0 ) {
-  }
-  else {
-    printf("Error7! %d: \n",buf_out[1]);
-    cyusb_error(r);
-    cyusb_close();
-    return 0;
-  }
-
-  return 1;
-}
-*/
-
-/*
-void CRS::SendParametr(const char* name, int len_out) {
-  //int len_in=6; //input length must be at least 2, not 1
-  //int len_out = 6;
-
-  if (Command(len_out,6)) {
-    if (debug) {
-      printf("Chan: %2d Par: %3d %3d %3d %3d Answer: %d %s\n",
-	     buf_out[1],buf_out[2],buf_out[3],buf_out[4],buf_out[5],
-	     buf_in[0],name);
-    }
-  }
-
-}
-*/
 
 void CRS::Command_crs(byte cmd, byte chan, int par) {
 
@@ -1295,6 +1239,32 @@ int CRS::DoStartStop() {
 
 }
 
+#endif //CYUSB
+
+void CRS::DoExit()
+{
+  cout << "CRS::DoExit" << endl;
+
+  event_thread_run=0;
+#ifdef CYUSB
+  cyusb_close();
+  if (trd_crs) {
+    trd_crs->Delete();
+  }
+#endif
+  //if (trd_stat) {
+  //trd_stat->Delete();
+  //}
+  //if (trd_evt) {
+  //trd_evt->Delete();
+  //}
+  //if (trd_ana) {
+  //trd_ana->Delete();
+  //}
+  //pthread_join(tid1,NULL);
+  //gzclose(fp);
+  //exit(-1);
+}
 
 void CRS::DoReset() {
 
@@ -1473,7 +1443,8 @@ void CRS::DoFopen(char* oname, int popt) {
 }
 
 int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
-  //m1 - read Fmode (1/0); p1 - read cpar (1/0); p2 - read opt (1/0)
+  //m1 - read Fmode (1/0); 1 - read from raw/dec file; 0 - read from par file
+  //p1 - read cpar (1/0); p2 - read opt (1/0)
   UShort_t sz;
 
   UShort_t mod;
@@ -1481,7 +1452,18 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   cout << "Initial Fmode: " << Fmode << endl;
 
+  gzread(ff,&sz,sizeof(sz));
+
+  char buf[100000];
+  gzread(ff,buf,sz);
+
+  if (p1) 
+    BufToClass("Coptions",(char*) &cpar, buf, sz);
+  if (p2)
+    BufToClass("Toptions",(char*) &opt, buf, sz);
+
   if (m1) {
+    T_start = opt.F_start;
     if (mod==2) {
       Fmode=2;
       cout << "CRS2 File: " << Fname << " " << mod << endl;
@@ -1497,35 +1479,12 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     }
   }
 
-  gzread(ff,&sz,sizeof(sz));
-
-  //cout << "readpar_gz1: " << sz << endl;
-
-  char buf[100000];
-  gzread(ff,buf,sz);
-
-  if (p1) 
-    BufToClass("Coptions",(char*) &cpar, buf, sz);
-  if (p2)
-    BufToClass("Toptions",(char*) &opt, buf, sz);
-
   cout << "ReadParGz: " << sz << " " << pname << endl;
-  //opt.raw_write=false;
-
-  //if (Fbuf) delete[] Fbuf;
-  //Fbuf = new UChar_t[opt.usb_size*1024];
-  //EvtFrm->Levents = &Levents;
 
   if (Fmode!=1) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
-  //DoReset();
-
-  //ev_max=2*opt.ev_min;
-
-  //list_min=opt.ev_max-opt.ev_min;
-  //cout << "readpar_gz3" << endl;
   return 0;
 }
 
@@ -1587,11 +1546,15 @@ int CRS::DoBuf() {
 
     //double tmp = (Long64_t(gSystem->Now()))*0.001;
     //double tmp = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
-    opt.T_acq = (Long64_t(gSystem->Now()) - T_start)*0.001;
+
+
+
+    //opt.T_acq = (Long64_t(gSystem->Now()) - T_start)*0.001;
 
     list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
     PulseClass *ipp = &vv->back();
-    cout << "TTT: " << ipp->Tstamp64*1e-9*period << endl;
+    opt.T_acq = (ipp->Tstamp64 - Tstart64)*1e-9*period;
+    //cout << "TTT: " << ipp->Tstamp64*1e-9*period << endl;
 
     return nbuffers;
   }
@@ -1604,49 +1567,62 @@ int CRS::DoBuf() {
 
 }
 
-void CRS::FAnalyze() {
+void CRS::FAnalyze(bool nobatch) {
 
+  TCanvas *cv=0;
   //cout << "FAnalyze: " << gztell(f_read) << endl;
   if (justopened && opt.dec_write) {
     Reset_Dec();
   }
   justopened=false;
 
-  EvtFrm->Clear();
-  EvtFrm->Pevents = &EvtFrm->Tevents;
+  //cout << "batch01: " << endl;
 
   static int nmax=BFMAX-1;
 
-  TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
-  cv->SetEditable(false);
-  T_start = gSystem->Now();
+  if (nobatch) {
+    EvtFrm->Clear();
+    EvtFrm->Pevents = &EvtFrm->Tevents;
 
+    cv=EvtFrm->fCanvas->GetCanvas();
+    cv->SetEditable(false);
+  }
+  //T_start = gSystem->Now();
+
+  //cout << "batch02: " << endl;
   TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*) &nmax);;
   trd_fana->Run();
   b_run=1;
+  //cout << "batch03: " << endl;
   TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
   trd_ana->Run();
-  while (!crs->b_stop) {
-    Show();
-    gSystem->Sleep(10);   
-    gSystem->ProcessEvents();
+  if (nobatch) {
+    while (!crs->b_stop) {
+      Show();
+      gSystem->Sleep(10);   
+      gSystem->ProcessEvents();
+    }
   }
+  //cout << "batch04: " << endl;
   trd_fana->Join();
   trd_fana->Delete();
 
+  //cout << "batch05: " << endl;
   trd_ana->Join();
   trd_ana->Delete();
 
-  EvtFrm->Clear();
-  EvtFrm->Pevents = &Levents;
-  EvtFrm->d_event=--EvtFrm->Pevents->end();
-
+  //cout << "batch06: " << endl;
   //gSystem->Sleep(opt.tsleep);
-  gSystem->Sleep(10);
-  Show(true);
+  if (nobatch) {
+    EvtFrm->Clear();
+    EvtFrm->Pevents = &Levents;
+    EvtFrm->d_event=--EvtFrm->Pevents->end();
 
-  //cout << "asdfasdf" << endl;
-  cv->SetEditable(true);
+    gSystem->Sleep(10);
+    Show(true);
+    //cout << "asdfasdf" << endl;
+    cv->SetEditable(true);
+  }
 }
 
 void CRS::DoNBuf(int nb) {

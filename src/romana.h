@@ -7,6 +7,7 @@
 #include "libcrs.h"
 #include "eventframe.h"
 #include "histframe.h"
+#include "hclass.h"
 
 //--------------------------------------
 //class MyMainFrame: public MainFrame {

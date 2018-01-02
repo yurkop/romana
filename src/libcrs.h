@@ -2,7 +2,7 @@
 #define crs_H 1
 
 //#include <pthread.h>
-#include <libusb-1.0/libusb.h>
+//#include <libusb-1.0/libusb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -113,6 +113,7 @@ RQ_OBJECT("CRS")
 
   //timeval t_start, t_stop;
   Long64_t T_start; //start of the acuisition/analysis
+  //Float_t F_acq; //file acquisition time
   Long64_t totalbytes;
   Long64_t writtenbytes;
   Long64_t npulses; //total number of pulses (zero at Reset (Start button))
@@ -174,35 +175,41 @@ RQ_OBJECT("CRS")
   //--------functions---------
 
   //void Dummy_trd();
+
+#ifdef CYUSB
   int Detect_device();
-  void DoExit();
   int SetPar();
-  int Init_Transfer();
   void Free_Transfer();
   void Submit_all(int ntr);
   void Cancel_all(int ntr);
-  //int Command_old(int len_out, int len_in); //send and receive command
-  void Command_crs(byte cmd, byte chan, int par);
+  int Init_Transfer();
   void Command32(byte cmd, byte ch, byte type, int par);
   void Command2(byte cmd, byte ch, byte type, int par);
-  //void SendParametr(const char* name, int len_out); //send one parameter
+  void Command_crs(byte cmd, byte chan, int par);
+  void AllParameters32(); // load all parameters
+  void AllParameters2(); // load all parameters
   int DoStartStop(); // start-stop acquisition
+#endif
+
+
+
+  void DoExit();
+  //int Command_old(int len_out, int len_in); //send and receive command
+  //void SendParametr(const char* name, int len_out); //send one parameter
   void DoReset(); //reset BPulses
   void DoFopen(char* oname, int popt);
   int ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2);
   void SaveParGz(gzFile &ff);
 
   //void DoFAna();
-  void FAnalyze();
+  void FAnalyze(bool nobatch);
   int DoBuf();
   void DoNBuf(int nb);
   void Show(bool force=false);
 
-  void AllParameters32(); // load all parameters
   //void AllParameters32_old(); // load all parameters
   void Decode32(UChar_t* buffer, int length);
 
-  void AllParameters2(); // load all parameters
   void Decode2(UChar_t* buffer, int length);
 
   int Searchsync();

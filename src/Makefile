@@ -17,8 +17,14 @@ endif
 
 CPPFLAGS += $(LFS) -MD -MP -D LINUX=1 -I. #-I$(LIB_D)
 CXXFLAGS += -O3 -Wall
-LDFLAGS += -lz -l cyusb -l usb-1.0
+#LDFLAGS += -lz -l cyusb -l usb-1.0
+LDFLAGS += -lz
 #SVNVER=\"$(shell svnversion)\"
+
+ifdef CYUSB_ROOT
+CPPFLAGS += -D CYUSB=1
+LDFLAGS += -l cyusb -l usb-1.0
+endif
 
 PROG=romana
 
@@ -80,5 +86,13 @@ clean:
 
 cleanx: clean
 	rm -f *.x
+
+test_target:
+ifdef CYUSB_ROOT
+#ifeq ($(ROOTSYS),"TRUE")
+	echo "Do something"
+else
+	echo "Do nothing"
+endif
 
 -include $(OBJ:.o=.d)

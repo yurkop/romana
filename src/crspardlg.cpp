@@ -210,11 +210,13 @@ void ParDlg::DoNum_SetBuf() {
   SetNum(pp,te->GetNumber());
 
   if (te->GetNumMax() < 3000) { //this is USB buffer
+#ifdef CYUSB
     if (crs->module && !crs->b_acq) {
       crs->Free_Transfer();
       gSystem->Sleep(50);
       crs->Init_Transfer();
     }
+#endif
   }
   else { //this is READ buffer
     int bsize=opt.rbuf_size*1024;
@@ -1326,10 +1328,12 @@ void ChanParDlg::DoNum() {
   //cout << "ch_donum: " << pp.data2 << endl;
 
   if (pp.cmd && crs->b_acq) {
+#ifdef CYUSB
     crs->Command2(4,0,0,0);
     printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
     crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
     crs->Command2(3,0,0,0);
+#endif
   }
 
 }

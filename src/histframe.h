@@ -10,7 +10,6 @@
 #include "TGDoubleSlider.h"
 #include <TG3DLine.h>
 #include <TH2.h>
-#include <THStack.h>
 #include <TMultiGraph.h>
 #include <TGStatusBar.h>
 #include <TGListTree.h>
@@ -55,7 +54,7 @@ class HistFrame: public TGCompositeFrame {
    //MECanvas    *fEc;
    TGListTree             *fListTree;    // list tree with histograms
    TList* hlist;
-   std::list<TH1*> hlist2;   
+   //std::list<TH1*> hlist2;   
 
    static const int NR=7;
    TGRadioButton *Rb[NR];
@@ -68,19 +67,6 @@ class HistFrame: public TGCompositeFrame {
    int ndiv;
    int xdiv;
    int ydiv;
-
-   TH1F* h_ampl[MAX_CH][MAXCUTS]; //amplitude - area of the peak
-   TH1F* h_height[MAX_CH][MAXCUTS]; //height of the peak
-   TH1F* h_time[MAX_CH][MAXCUTS]; // real time
-   TH1F* h_tof[MAX_CH][MAXCUTS]; // time of flight
-   TH1F* h_mtof[MAX_CH][MAXCUTS]; // time of flight
-
-   TH2F* h_2d[MAXCUTS];
-
-   //TH2F* h2_prof_strip[64];
-   //TH2F* h2_prof_real[64];
-
-   TCutG* cutG[MAXCUTS];
 
  public:
 
@@ -95,7 +81,6 @@ class HistFrame: public TGCompositeFrame {
    //TH1F *hh[3][MAX_CH];
    //double gx1,gx2,gy1[3],gy2[3];
    //TH2F fPaint[3];
-   //THStack* hst[3];
    //TMultiGraph* mgr[3];
 
    //bool bprint;
@@ -106,13 +91,13 @@ public:
    HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
    virtual ~HistFrame();
 
-   void Upd()  { Emit("Upd()"); }   // *SIGNAL*
+   //void Upd()  { Emit("Upd()"); }   // *SIGNAL*
 
    //void NameTitle();
-   void Make_hist();
-   void Make_tree();
-   void Clear_tree();
-   void NewBins();
+   //void Make_hist();
+   void Make_Ltree();
+   void Clear_Ltree();
+   //void NewBins();
    //void Reset_hist();
    //void FillHist(EventClass* evt);
    void DoClick(TGListTreeItem* item,Int_t but);
