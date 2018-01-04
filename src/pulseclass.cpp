@@ -208,7 +208,7 @@ void PulseClass::PeakAna() {
     if (nbkg)
       bkg/=nbkg;
     else {
-      cout << "zero background!!!: " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+      cout << "zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
     }
 
     int nn=0;
@@ -224,7 +224,7 @@ void PulseClass::PeakAna() {
       pk->Area/=nn;
     }
     else {
-      cout << "zero Area!!!" << endl;
+      cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
     }
     pk->Area-=bkg;
 
@@ -347,7 +347,7 @@ void EventClass::FillHist() {
 	hcl->h_height[ch][icut]->Fill(pk->Height);
       }
 
-      tt = pulses[i].Tstamp64 + crs->Tstart64;
+      tt = pulses[i].Tstamp64 - crs->Tstart64;
       tt += pk->Pos;
       tt*=DT;
 

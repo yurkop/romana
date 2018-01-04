@@ -61,9 +61,10 @@ ParParDlg *parpar;
 CrsParDlg *crspar;
 ChanParDlg *chanpar;
 
-const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
+//const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
-char* parname=0;
+char* parname=(char*)"romana.par";;
+char* parname2=0;
 char* fname=0;
 
 //FILE* fp=0;
@@ -479,7 +480,17 @@ int main(int argc, char **argv)
   }
   */
 
-  //process command line parameters
+  //parname = (char*)"romana.par";
+  gzFile ff = gzopen(parname,"rb");
+  if (!ff) {
+    cout << "Can't open par file: " << parname << endl;
+  }
+  else {
+    crs->ReadParGz(ff,parname,0,1,1);
+    gzclose(ff);
+  }
+
+    //process command line parameters
   if (argc > 1) {
     int argnn=1;
     while (argnn<argc) {
@@ -495,7 +506,7 @@ int main(int argc, char **argv)
 	}
       }
       else if (cc=='+') { //read file of parameters
-	parname = argv[argnn]+1;
+	parname2 = argv[argnn]+1;
       }
       else { //read file
 	fname = argv[argnn];
@@ -507,31 +518,19 @@ int main(int argc, char **argv)
   }
 
   if (fname) {
-    crs->DoFopen(fname,1); //read ile and parameters from it
+    crs->DoFopen(fname,1); //read file and parameters from it
   }
   
-  if (parname) {
-    gzFile ff = gzopen(parname,"rb");
+  if (parname2) {
+    gzFile ff = gzopen(parname2,"rb");
     if (!ff) {
-      cout << "Can't open par file: " << parname << endl;
+      cout << "Can't open par file: " << parname2 << endl;
     }
     else {
-      crs->ReadParGz(ff,parname,0,1,1);
+      crs->ReadParGz(ff,parname2,0,1,1);
       gzclose(ff);
     }
   }
-  else {
-    parname = (char*)"romana.par";
-    gzFile ff = gzopen(parname,"rb");
-    if (!ff) {
-      cout << "Can't open par file: " << parname << endl;
-    }
-    else {
-      crs->ReadParGz(ff,parname,0,1,1);
-      gzclose(ff);
-    }
-  }
-
   //exit(0);
 
 
@@ -1967,7 +1966,7 @@ void MainFrame::DoExit() {
 #else
   _chdir(startdir);
 #endif
-  parname = (char*)"romana.par";
+  //parname = (char*)"romana.par";
   gzFile ff = gzopen(parname,"wb");
   if (ff) {
     crs->SaveParGz(ff);

@@ -222,22 +222,22 @@ void *handle_ana(void* ptr) {
 
   int ii=0; //temporary variable
 
-  MemInfo_t info;
-  bool unchecked=true;
+  //MemInfo_t info;
+  //bool unchecked=true;
 
   while (crs->b_run) {
 
     //gSystem->Sleep(100);
 
-    //aviod exhausting all memory
-    gSystem->GetMemInfo(&info);
-    if (unchecked && info.fMemFree<300) {
-      opt.ev_max = crs->Levents.size()*0.005; //was sz*0.005;
-      opt.ev_max*=100;
-      if (opt.ev_max < 500) opt.ev_max=500;
-      cout << "ev_max updated: " << opt.ev_max << endl;
-      unchecked=false;
-    }
+    // //aviod exhausting all memory
+    // gSystem->GetMemInfo(&info);
+    // if (unchecked && info.fMemFree<300) {
+    //   opt.ev_max = crs->Levents.size()*0.005; //was sz*0.005;
+    //   opt.ev_max*=100;
+    //   if (opt.ev_max < 500) opt.ev_max=500;
+    //   cout << "ev_max updated: " << opt.ev_max << endl;
+    //   unchecked=false;
+    // }
 
     if (opt.ev_min>=opt.ev_max) {
       opt.ev_min=opt.ev_max/2;
@@ -1275,7 +1275,12 @@ void CRS::DoReset() {
 
   opt.T_acq=0;
 
-  Tstart64=0;
+  if (Fmode==1) {
+    Tstart64=-1;
+  }
+  else {
+    Tstart64=0;
+  }
   Tstart0=0;
   T_last=-99999999;
   //cout << "crs::reset: " << endl;
@@ -1451,7 +1456,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   UShort_t mod;
   gzread(ff,&mod,sizeof(mod));
 
-  cout << "Initial Fmode: " << Fmode << endl;
+  //cout << "Initial Fmode: " << Fmode << endl;
 
   gzread(ff,&sz,sizeof(sz));
 
@@ -2291,6 +2296,10 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   }
   pls->FindPeaks();
   pls->PeakAna();
+
+  if (Tstart64<0) {
+    Tstart64 = pls->Tstamp64;
+  }
 
   event_iter it;
 

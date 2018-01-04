@@ -133,7 +133,7 @@ RQ_OBJECT("CRS")
   // b_run=1 - analyze events normally
   // b_run=2 - analyze all events, then stop 
 
-  Long64_t T_last;
+  Long64_t T_last; //tstamp of the previous event
 
   //vars for decoding...
 
