@@ -44,6 +44,21 @@ class ParDlg: public TGCompositeFrame {
 
  protected:
 
+  Float_t RGB[ADDCH][3] =
+    {
+      {1,1,0}, //0
+      {0,1,1},
+      {1,0.4,1},
+      {0.4,0.4,1},
+      {1,0.8,0.8}, //4
+      {0,1,0},
+      {1,0.7,0.4},
+      {0.2,0.8,0.6},
+      {1,1,1}//8
+    };
+
+  ULong_t tcol[ADDCH];
+
   // TGLayoutHints* fL0;
   // TGLayoutHints* fL1;
   // TGLayoutHints* fL2;
@@ -60,6 +75,9 @@ class ParDlg: public TGCompositeFrame {
 
  public:
   std::vector<pmap> Plist;
+
+  TGHorizontalFrame *cframe[MAX_CH+ADDCH];
+  TGTextEntry* clab[MAX_CH+ADDCH];
 
  public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);

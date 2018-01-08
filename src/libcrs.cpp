@@ -496,7 +496,7 @@ CRS::CRS() {
     buftr[i]=NULL;
   }
 
-  cout << "creating threads... " << endl;
+  //cout << "creating threads... " << endl;
 
   //trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
   //trd_stat->Run();
@@ -508,7 +508,7 @@ CRS::CRS() {
   //mTh= new TThread("memberfunction",
   //(void(*)(void *))&Thread0,(void*) this);
  
-  cout << "threads created... " << endl;
+  //cout << "threads created... " << endl;
 
 }
 
@@ -1281,6 +1281,9 @@ void CRS::DoReset() {
   else {
     Tstart64=0;
   }
+
+  //cout << "Doreset: " << Fmode << " " << Tstart64 << endl;
+
   Tstart0=0;
   T_last=-99999999;
   //cout << "crs::reset: " << endl;
@@ -1423,6 +1426,13 @@ void CRS::DoFopen(char* oname, int popt) {
     bsize=opt.rbuf_size*1024;
     boffset=0;
     period=5;
+  }
+
+  if (Fmode==1) {
+    Tstart64=-1;
+  }
+  else {
+    Tstart64=0;
   }
 
   //list_min=opt.ev_max-opt.ev_min;
