@@ -56,7 +56,7 @@ $(OBJ_D)/%.o: $(SRC_D)/%.cpp
 
 
 ifeq ($(VER2),5.) # root 5
-$(OBJ_D)/romdict.cpp: src/LinkDef.h $(SRC_D)/*.h #$(LIB_D)/*.h
+$(OBJ_D)/romdict.cpp: src/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
 	rootcint -f $(OBJ_D)/romdict.cpp -c -p $(SRC_D)/$(PROG).h $(SRC_D)/LinkDef.h
 else # root 6+
 $(OBJ_D)/romdict.cpp: src/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
@@ -89,7 +89,6 @@ cleanx: clean
 
 test_target:
 ifdef CYUSB_ROOT
-#ifeq ($(ROOTSYS),"TRUE")
 	echo "Do something"
 else
 	echo "Do nothing"

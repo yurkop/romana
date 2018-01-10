@@ -1634,7 +1634,7 @@ void CRS::FAnalyze(bool nobatch) {
   trd_ana->Join();
   trd_ana->Delete();
 
-  cout << "batch06: " << hcl->h_ampl[0][0]->Integral() << endl;
+  //cout << "batch06: " << hcl->h_ampl[0][0]->Integral() << endl;
   //gSystem->Sleep(opt.tsleep);
   if (nobatch) {
     EvtFrm->Clear();
