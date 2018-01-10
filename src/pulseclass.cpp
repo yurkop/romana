@@ -293,7 +293,6 @@ void EventClass::FillHist() {
 
   int icut=0;
 
-  if (this->Nevt==75) cout << "fill1: " << this->Nevt << endl;
   //cout << "FillHist: " << endl;
 
   if (pulses.size()>=2) {
@@ -332,19 +331,15 @@ void EventClass::FillHist() {
     }
   }
 
-  if (this->Nevt==75) cout << "fill2: " << this->Nevt << endl;
-
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
 
-  if (this->Nevt==75) cout << "fill3: " << this->Nevt << endl;
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
       peak_type* pk = &pulses[i].Peaks[j];
 
       // if (ch==0) {
       // 	cout << "ampl: " << pk->Area*opt.emult[ch] << " " << opt.emult[ch] << "    " << hcl->h_ampl[0][0]->Integral() << endl;
       // }
-      if (this->Nevt==75) cout << "fill4: " << this->Nevt << endl;
       hcl->h_ampl[ch][0]->Fill(pk->Area*opt.emult[ch]);
       hcl->h_height[ch][0]->Fill(pk->Height);
       if (icut) {
@@ -352,14 +347,12 @@ void EventClass::FillHist() {
 	hcl->h_height[ch][icut]->Fill(pk->Height);
       }
 
-      if (this->Nevt==75) cout << "fill5: " << this->Nevt << endl;
       tt = pulses[i].Tstamp64 - crs->Tstart64;
       tt += pk->Pos;
       tt*=DT;
 
       max = hcl->h_time[ch][0]->GetXaxis()->GetXmax();
 
-      if (this->Nevt==75) cout << "fill6: " << this->Nevt << endl;
       if (tt > max) {
 	max2=max*2;
 	if (tt>max2) {
@@ -377,13 +370,11 @@ void EventClass::FillHist() {
 
       }
 
-      if (this->Nevt==75) cout << "fill7: " << this->Nevt << endl;
       hcl->h_time[ch][0]->Fill(tt);
       if (icut) {
 	hcl->h_time[ch][icut]->Fill(tt);
       }
 
-      if (this->Nevt==75) cout << "fill8: " << this->Nevt << endl;
       double dt = pulses[i].Tstamp64 - T;
       //tt = pk->Time - cpar.preWr[ch] - T0 + dt;
       tt = pk->Time - crs->Pre[ch] - T0 + dt;
@@ -395,7 +386,6 @@ void EventClass::FillHist() {
 	hcl->h_tof[ch][icut]->Fill(tt*crs->period);
       }
 
-      if (this->Nevt==75) cout << "fill9: " << this->Nevt << endl;
       if (opt.dec_write) {
 	crs->rP.Area   = pk->Area;
 	crs->rP.Height = pk->Height;
@@ -409,21 +399,23 @@ void EventClass::FillHist() {
 
     }
 
-    if (this->Nevt==75) cout << "fill10: " << icut << " " << pulses.size() << " " << tt*crs->period/1000 << endl;
-    
     if (crs->Tstart0>0) {
-      tt = T - crs->Tstart0;
-      YK error is in the next line;
-      hcl->h_mtof[pulses.size()][0]->Fill(tt*crs->period/1000);
+      int mult = pulses.size();
+      if (mult>=MAX_CH) mult=MAX_CH-1;
+
+      tt = (T - crs->Tstart0)*0.001*crs->period;
+
+      hcl->h_mtof[mult][0]->Fill(tt);
+      hcl->h_mtof[0][0]->Fill(tt);
       if (icut) {
-	hcl->h_mtof[pulses.size()][icut]->Fill(tt*crs->period/1000);
+	hcl->h_mtof[mult][icut]->Fill(tt);
+	hcl->h_mtof[0][0]->Fill(tt);
       }
     }
     if (ch==opt.start_ch) {
       crs->Tstart0 = T;
     }
 
-    if (this->Nevt==75) cout << "fill11: " << this->Nevt << endl;
   } //for (UInt_t i=0;i<pulses.size()...
 
   /*
@@ -463,7 +455,6 @@ void EventClass::FillHist() {
   }
   */
 
-  if (this->Nevt==75) cout << "fill99: " << this->Nevt << endl;
 }
 
 void PulseClass::Smooth(int nn) {
