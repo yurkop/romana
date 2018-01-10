@@ -44,19 +44,6 @@ class ParDlg: public TGCompositeFrame {
 
  protected:
 
-  Float_t RGB[ADDCH][3] =
-    {
-      {1,1,0}, //0
-      {0,1,1},
-      {1,0.4,1},
-      {0.4,0.4,1},
-      {1,0.8,0.8}, //4
-      {0,1,0},
-      {1,0.7,0.4},
-      {0.2,0.8,0.6},
-      {1,1,1}//8
-    };
-
   ULong_t tcol[ADDCH];
 
   // TGLayoutHints* fL0;

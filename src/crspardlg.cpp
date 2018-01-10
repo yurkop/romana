@@ -13,6 +13,21 @@
 
 //const char* t_raw = "Write raw data";
 
+namespace CP {
+  Float_t RGB[ADDCH][3] =
+    {
+      {1,1,0}, //0
+      {0,1,1},
+      {1,0.4,1},
+      {0.4,0.4,1},
+      {1,0.8,0.8}, //4
+      {0,1,0},
+      {1,0.7,0.4},
+      {0.2,0.8,0.6},
+      {1,1,1}//8
+    };
+}
+
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern ChanParDlg *chanpar;
@@ -104,7 +119,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   nfld=0;
 
   for (int i=0;i<ADDCH;i++) {
-    Int_t cc=TColor::GetColor(TColor::RGB2Pixel(RGB[i][0],RGB[i][1],RGB[i][2]));
+    Int_t cc=TColor::GetColor(TColor::RGB2Pixel(CP::RGB[i][0],CP::RGB[i][1],CP::RGB[i][2]));
     tcol[i]=gROOT->GetColor(cc)->GetPixel();
   }
 
