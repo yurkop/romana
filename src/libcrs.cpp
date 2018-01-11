@@ -1285,7 +1285,8 @@ void CRS::DoReset() {
   //cout << "Doreset: " << Fmode << " " << Tstart64 << endl;
 
   Tstart0=0;
-  T_last=-99999999;
+  T_last_good=0;
+  Pstamp64=0;
   //cout << "crs::reset: " << endl;
   //cout << "crs::reset: " << (int) CRS::b_fana << endl;
   //exit(1);
@@ -1454,8 +1455,11 @@ void CRS::DoFopen(char* oname, int popt) {
   rbuf4 = (UInt_t*) Fbuf;
   rbuf2 = (UShort_t*) Fbuf;
 
-  if (myM)
+  if (myM) {
     myM->SetTitle(Fname);
+    myM->fTab->SetEnabled(1,false);
+    //cout << "fTab: " << myM->fTab << endl;
+  }
 }
 
 int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
@@ -1574,9 +1578,10 @@ int CRS::DoBuf() {
 
     //opt.T_acq = (Long64_t(gSystem->Now()) - T_start)*0.001;
 
-    list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
-    PulseClass *ipp = &vv->back();
-    opt.T_acq = (ipp->Tstamp64 - Tstart64)*1e-9*period;
+    //list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
+    //PulseClass *ipp = &vv->back();
+    //opt.T_acq = (ipp->Tstamp64 - Tstart64)*1e-9*period;
+    opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
     //cout << "TTT: " << ipp->Tstamp64*1e-9*period << endl;
 
     return nbuffers;
@@ -2293,6 +2298,8 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   //pls->PrintPulse();
   //}
 
+  event_iter it;
+
   if (pls->ptype & 0x7) {
     cout << "bad pulse: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
 	 << (int) pls->ptype << endl;
@@ -2311,23 +2318,62 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     Tstart64 = pls->Tstamp64;
   }
 
-  event_iter it;
+  // if (nevents==10) {
+  //   //pls->Tstamp64=111;
+  //   pls->Tstamp64-=1e11;
+  //   //cout << "event10: " << nevents << " " << pls->Tstamp64 << endl;
+  // }
 
-  Long64_t dt=pls->Tstamp64-T_last;
+  //Long64_t dt=pls->Tstamp64-T_last_good;
+  Long64_t dt=pls->Tstamp64-Pstamp64;
+  Pstamp64=pls->Tstamp64;
 
-  if (dt>opt.tgate) { //add event at the end of the list
+  if (!nevents) { //first event
+    //add new event at the end of the list, set T_last_good and return
     it=Levents.insert(Levents.end(),EventClass());
-
     it->Nevt=nevents;
     nevents++;
     it->Pulse_Ana_Add(pls);
 
-    T_last=pls->Tstamp64;
+    T_last_good=pls->Tstamp64;
+    return;
+  }
+
+  //if (nevents>32960)
+  //cout << "dt: " << dt << " " << nevents << endl;
+  
+  //10 or 20 sec
+  if (abs(dt) > 2000000000) { //bad event
+    //now: ignore bad event
+    // was://add new event at the end of the list and return
+
+    //it=Levents.insert(Levents.end(),EventClass());
+    //it->Nevt=nevents;
+    nevents++;
+    //it->Pulse_Ana_Add(pls);
+
+    cout << "bad event: " << dt << " " << nevents << " " << pls->Tstamp64 << endl;
+    //T_last_good=pls->Tstamp64;
+    return;
+  }
+
+  pls->Tstamp64=T_last_good+dt;
+
+  if (dt>opt.tgate) { //new event (the last one by time)
+    //add new event at the end of the list, set T_last_good and return
+    it=Levents.insert(Levents.end(),EventClass());
+    it->Nevt=nevents;
+    nevents++;
+    it->Pulse_Ana_Add(pls);
+
+    //if (it->Nevt>32960)
+    //cout << "event: " << dt << " " << it->Nevt << " " << pls->Tstamp64 << endl;
+    T_last_good=pls->Tstamp64;
 
     return;
   }
 
-  
+  // probably coincidence event (or event coming earlier than the last)
   for (it=--Levents.end();it!=m_event;--it) {
     //for (rl=Levents.rbegin(); rl!=r_event; ++rl) {
     dt = (pls->Tstamp64 - it->T);
@@ -2337,11 +2383,15 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
       it=Levents.insert(it,EventClass());
       it->Nevt=nevents;
       nevents++;
+      //if (it->Nevt>32960)
+      //cout << "add: " << dt << " " << it->Nevt << " " << pls->Tstamp64 << endl;
       it->Pulse_Ana_Add(pls);
       return;
     }
     else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
       // coincidence event
+      //if (it->Nevt>32960)
+      //cout << "coin: " << dt << " " << it->Nevt << " " << pls->Tstamp64 << endl;
       it->Pulse_Ana_Add(pls);
       return;
     }

@@ -1174,7 +1174,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   tab5->AddFrame(HiFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
-
+  if (crs->Fmode) {
+    crspar->SetEnabled(false);
+  }
   //TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
   //TGColorPick* tg = new TGColorPick(tab6);
   //tab6->AddFrame(tg, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,

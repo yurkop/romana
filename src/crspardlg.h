@@ -87,6 +87,8 @@ class ParDlg: public TGCompositeFrame {
   void CopyField(int from, int to);
   void UpdateField(int nn);
   void Update();
+  void EnableField(int nn, bool state);
+  void SetEnabled(bool state);
   TGWidget *FindWidget(void* p);
 
   ClassDef(ParDlg, 0)
@@ -127,13 +129,13 @@ class ParParDlg: public ParDlg {
 		//TGNumberFormat::EAttribute attr, 
 		double min=0, double max=0);
   */
-  void AddLine2(TGGroupFrame* frame, int width, void *x1, void *x2, 
+  void AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
 		const char* tip1, const char* tip2, const char* label,
 		TGNumberFormat::EStyle style, 
 		//TGNumberFormat::EAttribute attr, 
 		double min1=0, double max1=0,
 		double min2=0, double max2=0, char* connect=NULL);
-  void AddLine3(TGGroupFrame* frame, Float_t *x1,
+  void AddLine_hist(TGGroupFrame* frame, Float_t *x1,
 			 Float_t *x2, Float_t *x3, 
 			 const char* tip, const char* label);
   void AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
@@ -160,7 +162,7 @@ virtual ~ChanParDlg() {};
 void Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h);
 
 void AddHeader();
-void AddLine1(int i, TGCompositeFrame* fcont1);
+void AddLine_chan(int i, TGCompositeFrame* fcont1);
 void AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	     const char* name, void* apar, void* apar2);
 void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
@@ -176,21 +178,21 @@ ClassDef(ChanParDlg, 0)
 //-----------------------------------------------
 class CrsParDlg: public ChanParDlg {
 
-public:
+ public:
 
-TGLabel *fStat[MAX_CH+1];
+  TGLabel *fStat[MAX_CH+1];
 
-public:
-CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-virtual ~CrsParDlg() {};
+ public:
+  CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~CrsParDlg() {};
 
-void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
-void AddHeader();
-void AddLine0(int i, TGCompositeFrame* fcont1);
-void ResetStatus();
-void UpdateStatus();
+  void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
+  void AddHeader();
+  void AddLine_crs(int i, TGCompositeFrame* fcont1);
+  void ResetStatus();
+  void UpdateStatus();
 
-ClassDef(CrsParDlg, 0)
+  ClassDef(CrsParDlg, 0)
 };
 
 #endif

@@ -549,21 +549,16 @@ void ParDlg::UpdateField(int nn) {
   switch (pp->type) {
     case p_inum: {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      //te->BlockSignals(true);
       te->SetNumber(*(Int_t*) pp->data);
-      //te->BlockSignals(false);
     }
       break;
     case p_fnum: {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      //te->BlockSignals(true);
       te->SetNumber(*(Float_t*) pp->data);
-      //te->BlockSignals(false);
     }
       break;
     case p_chk: {
       TGCheckButton *te = (TGCheckButton*) pp->field;
-      //te->BlockSignals(true);
       Bool_t bb = *(Bool_t*) pp->data;
       te->SetState((EButtonState) bb);
       TString str = TString(te->GetName());
@@ -579,31 +574,23 @@ void ParDlg::UpdateField(int nn) {
 	  but->ChangeBackground(gROOT->GetColor(18)->GetPixel());
 	  te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
 	}
-	//te2->SetEnabled(bb);
-	//but->SetEnabled(bb);
       }
-      //te->BlockSignals(false);
     }
       break;
     case p_cmb: {
       TGComboBox *te = (TGComboBox*) pp->field;
-      //te->BlockSignals(true);
       int line = nn/nfld;
       int sel = *(ChDef*) pp->data;
       if (line<=MAX_CH) {
 	clab[line]->ChangeBackground(tcol[sel-1]);
 	cframe[line]->ChangeBackground(tcol[sel-1]);
       }
-      //cout << "Combo2: " << nn << " " << line << " " << *(ChDef*) pp->data << endl;
       te->Select(sel,false);
-      //te->BlockSignals(false);
     }
       break;
     case p_txt: {
       TGTextEntry *te = (TGTextEntry*) pp->field;
-      //te->BlockSignals(true);
       te->SetText((char*) pp->data);
-      //te->BlockSignals(false);
     }
       break;
     case p_open:
@@ -617,15 +604,48 @@ void ParDlg::UpdateField(int nn) {
 }
 
 void ParDlg::Update() {
-
-  //cout << "smooth39: " << cpar.smooth[39] << " " << Plist.size() << endl;
-  //cout << "smooth1: " << cpar.smooth[0] << " " << Plist.size() << endl;
   for (UInt_t i=0;i<Plist.size();i++) {
-    //cout << "smooth3: " << cpar.smooth[0] << " " << i << endl;
     UpdateField(i);
-    //cout << "smooth4: " << cpar.smooth[0] << " " << i << endl;
   }
-  //cout << "smooth2: " << cpar.smooth[0] << endl;
+}
+
+void ParDlg::EnableField(int nn, bool state) {
+
+  pmap* pp = &Plist[nn];
+  
+  TQObject* tq = (TQObject*) pp->field;
+  tq->BlockAllSignals(true);
+
+  switch (pp->type) {
+  case p_inum:
+  case p_fnum:
+  case p_txt: {
+    TGTextEntry *te = (TGTextEntry*) pp->field;
+    te->SetEnabled(state);
+  }
+    break;
+  case p_chk: {
+    TGCheckButton *te = (TGCheckButton*) pp->field;
+    te->SetEnabled(state);
+  }
+    break;
+  case p_cmb: {
+    TGComboBox *te = (TGComboBox*) pp->field;
+    te->SetEnabled(state);
+  }
+    break;
+  default: ;
+  } //switch
+
+  tq->BlockAllSignals(false);
+
+}
+
+void ParDlg::SetEnabled(bool state) {
+
+  for (UInt_t i=0;i<Plist.size();i++) {
+    EnableField(i,state);
+  }
 }
 
 TGWidget *ParDlg::FindWidget(void* p) {
@@ -721,6 +741,8 @@ void ParParDlg::AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
+  //fchk->SetState(kButtonDown,false);
+
   id = Plist.size()+1;
   TGNumberEntry* fNum1 = new TGNumberEntry(hframe1, *compr, 2, id, k_int, 
 					   TGNumberFormat::kNEAAnyNumber,
@@ -768,23 +790,23 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Analysis start (in sec)";
   tip2= "Analysis stop (in sec)";
   label="Time limits";
-  AddLine2(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0);
+  AddLine_opt(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0);
 
   tip1= "";
   tip2= "Delay between drawing events (in msec)";
   label="DrawEvent delay";
-  AddLine2(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000,100,10000);
+  AddLine_opt(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000,100,10000);
 
   tip1= "Size of the USB buffer in kilobytes (1024 is OK)";
   tip2= "Size of the READ buffer in kilobytes (as large as possible for faster speed)";
   label="USB/READ buffer size";
-  AddLine2(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,1,2048,
+  AddLine_opt(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,1,2048,
 	   1,20000,(char*) "DoNum_SetBuf()");
 
   tip1= "Maximal size of the event list:\nNumber events available for viewing in the Events Tab";
   tip2= "Event lag:\nMaximal number of events which may come delayed from another channel";
   label="Event_list size / Event lag";
-  AddLine2(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,1,1000000,1,1000000);
+  AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,1,1000000,1,1000000);
 
   fF6->Resize();
 
@@ -804,18 +826,18 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   tip1= "Coincidence window for making events (in samples)";
   tip2= "Veto window (in samples): \nsubsequent pulses from the same channel coming within this window are ignored";
   label="Coincidence (smp), veto (smp)";
-  AddLine2(fF6,ww,&opt.tgate,&opt.tveto,tip1,tip2,label,k_int,0,1000,5,10);
+  AddLine_opt(fF6,ww,&opt.tgate,&opt.tveto,tip1,tip2,label,k_int,0,1000,5,10);
 
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";
   label="Multiplicity (min, max)";
-  AddLine2(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH,
+  AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH,
 	   1,MAX_CH);
 
   tip1= "";
   tip2= "M_TOF start channel";
   label="M_TOF start channel";
-  AddLine2(fF6,ww,NULL,&opt.start_ch,tip1,tip2,label,k_int,0,MAX_CH-1,
+  AddLine_opt(fF6,ww,NULL,&opt.start_ch,tip1,tip2,label,k_int,0,MAX_CH-1,
 	   0,MAX_CH-1);
 
   fF6->Resize();
@@ -839,40 +861,40 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
   tip1= "Total aqcuisition time, in seconds";
   label="Time";
-  AddLine3(frame,&opt.time_bins,&opt.time_min,&opt.time_max,tip1,label);
+  AddLine_hist(frame,&opt.time_bins,&opt.time_min,&opt.time_max,tip1,label);
 
   tip1= "Time of flight (relative to the starts - see Channels->St), in ns";
   label="TOF";
-  AddLine3(frame,&opt.tof_bins,&opt.tof_min,&opt.tof_max,tip1,label);
+  AddLine_hist(frame,&opt.tof_bins,&opt.tof_min,&opt.tof_max,tip1,label);
 
   tip1= "Time of flight with multiplicity, in mks";
   label="M_TOF";
-  AddLine3(frame,&opt.mtof_bins,&opt.mtof_min,&opt.mtof_max,tip1,label);
+  AddLine_hist(frame,&opt.mtof_bins,&opt.mtof_min,&opt.mtof_max,tip1,label);
 
   tip1= "Amplitude or energy, calibrated (see Channels->EM for calibration)";
   label="Amplitude";
-  AddLine3(frame,&opt.amp_bins,&opt.amp_min,&opt.amp_max,tip1,label);
+  AddLine_hist(frame,&opt.amp_bins,&opt.amp_min,&opt.amp_max,tip1,label);
 
   tip1= "Pulse height (in channels)";
   label="Height";
-  AddLine3(frame,&opt.hei_bins,&opt.hei_min,&opt.hei_max,tip1,label);
+  AddLine_hist(frame,&opt.hei_bins,&opt.hei_min,&opt.hei_max,tip1,label);
 
   /*
   tip1= "Bins per channel for Width";
   tip2= "Length of Width (in channels)";
   label="Width";
-  AddLine2(frame,ww,&opt.rms_bins,&opt.rms_max,tip1,tip2,label,k_r0);
+  AddLine_opt(frame,ww,&opt.rms_bins,&opt.rms_max,tip1,tip2,label,k_r0);
 
   tip1= "Bins per nanosecond for TOF";
   tip2= "Length of TOF (in nanoseconds)";
   label="TOF";
-  AddLine2(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
+  AddLine_opt(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
   */
 
 }
 
 /*
-void ParParDlg::AddLine2(TGCompositeFrame* frame, int width, void *x1, void *x2, 
+void ParParDlg::AddLine_opt(TGCompositeFrame* frame, int width, void *x1, void *x2, 
 		      const char* tip1, const char* tip2, const char* label,
 		      TGNumberFormat::EStyle style, 
 			 //TGNumberFormat::EAttribute attr, 
@@ -922,7 +944,7 @@ void ParParDlg::AddLine2(TGCompositeFrame* frame, int width, void *x1, void *x2,
 }
 */
 
-void ParParDlg::AddLine2(TGGroupFrame* frame, int width, void *x1, void *x2, 
+void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
 		      const char* tip1, const char* tip2, const char* label,
 		      TGNumberFormat::EStyle style, 
 			 //TGNumberFormat::EAttribute attr, 
@@ -1008,7 +1030,7 @@ void ParParDlg::AddLine2(TGGroupFrame* frame, int width, void *x1, void *x2,
 
 }
 
-void ParParDlg::AddLine3(TGGroupFrame* frame, Float_t *x1,
+void ParParDlg::AddLine_hist(TGGroupFrame* frame, Float_t *x1,
 			 Float_t *x2, Float_t *x3, 
 			 const char* tip, const char* label)
 {
@@ -1167,13 +1189,13 @@ void ChanParDlg::Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h) {
   AddHeader();
 
   for (int i=0;i<chanPresent;i++) {
-    AddLine1(i,fcont1);
+    AddLine_chan(i,fcont1);
   }
 
-  AddLine1(MAX_CH,fcont2);
+  AddLine_chan(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
-    AddLine1(MAX_CH+i,fcont2);
+    AddLine_chan(MAX_CH+i,fcont2);
   }
 
 
@@ -1197,7 +1219,7 @@ void ChanParDlg::AddHeader() {
 
 }
 
-void ChanParDlg::AddLine1(int i, TGCompositeFrame* fcont1) {
+void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
   char txt[255];
   int kk=0;
   int all=0;
@@ -1426,14 +1448,14 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
   */
 
   for (int i=0;i<chanPresent;i++) {
-    AddLine0(i,fcont1);
+    AddLine_crs(i,fcont1);
     //cout << "crs: addLine1: " << Plist.size() << endl; 
   }
 
-  AddLine0(MAX_CH,fcont2);
+  AddLine_crs(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
-    AddLine0(MAX_CH+i,fcont2);
+    AddLine_crs(MAX_CH+i,fcont2);
     //cout << "crs2: addLine1: " << Plist.size() << endl; 
   }
 
@@ -1471,7 +1493,7 @@ void CrsParDlg::AddHeader() {
 
 }
 
-void CrsParDlg::AddLine0(int i, TGCompositeFrame* fcont1) {
+void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   char txt[255];
   int kk=0;
   int all=0;
