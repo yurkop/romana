@@ -272,6 +272,8 @@ void ParDlg::DoChk() {
 
   SetChk(pp,(Bool_t)te->GetState());
 
+  //te->SetState(kButtonDisabled);
+
   if (pp.all>0) {
     if (nfld) {
       int kk = (id-1)%nfld;
@@ -326,6 +328,7 @@ void ParDlg::DoChkWrite() {
     te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
   }
 
+  //te->SetState(kButtonDisabled);
   //te2->SetEnabled(state);
   //but->SetEnabled(state);
 
@@ -560,7 +563,12 @@ void ParDlg::UpdateField(int nn) {
     case p_chk: {
       TGCheckButton *te = (TGCheckButton*) pp->field;
       Bool_t bb = *(Bool_t*) pp->data;
+      EButtonState st = te->GetState();
       te->SetState((EButtonState) bb);
+      if (st==kButtonDisabled) {
+	te->SetEnabled(false);
+      }
+
       TString str = TString(te->GetName());
       if (str.Contains("write",TString::kIgnoreCase)) {
 	TGTextButton *but = (TGTextButton*) (pp+2)->field;
@@ -613,8 +621,8 @@ void ParDlg::EnableField(int nn, bool state) {
 
   pmap* pp = &Plist[nn];
   
-  TQObject* tq = (TQObject*) pp->field;
-  tq->BlockAllSignals(true);
+  //TQObject* tq = (TQObject*) pp->field;
+  //tq->BlockAllSignals(true);
 
   switch (pp->type) {
   case p_inum:
@@ -626,7 +634,11 @@ void ParDlg::EnableField(int nn, bool state) {
     break;
   case p_chk: {
     TGCheckButton *te = (TGCheckButton*) pp->field;
+    // if (state)
+    //   te->SetState(kButtonUp);
+    // else
     te->SetEnabled(state);
+    //cout << "p_chk: " << te->GetState() << endl;
   }
     break;
   case p_cmb: {
@@ -637,7 +649,7 @@ void ParDlg::EnableField(int nn, bool state) {
   default: ;
   } //switch
 
-  tq->BlockAllSignals(false);
+  //tq->BlockAllSignals(false);
 
 }
 
