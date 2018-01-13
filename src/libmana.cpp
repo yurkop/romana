@@ -1564,7 +1564,7 @@ void MainFrame::Do1buf() {
     crs->b_fana=false;
     crs->b_stop=true;
   }  
-
+  //cout << "do1buf: " << endl;
 }
 
 void MainFrame::DoNbuf() {

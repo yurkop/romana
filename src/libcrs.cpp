@@ -172,6 +172,7 @@ static void cback(libusb_transfer *transfer) {
 void *handle_buf(void *ctx)
 {
 
+  return 0;
   int* nmax = (int*) ctx; 
   //cout << "handle_buf: " << *nmax << endl; 
 
@@ -191,7 +192,7 @@ void *handle_buf(void *ctx)
     crs->b_run=0;
   }
 
-  //cout << "buf: " << crs->nbuffers << " " << i << " " << res << " " << crs->b_run << endl;
+  //cout << "end_buf: " << crs->nbuffers << " " << i << " " << res << " " << crs->b_run << endl;
   crs->b_stop=true;
   return NULL;
 }
