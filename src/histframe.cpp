@@ -284,11 +284,11 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
   TGListTreeItem *item;
   if (userData) {
     item=fListTree->AddItem(parent, string, userData, open, closed, checkbox);
-    //item->SetDNDSource(kTRUE);
+    item->SetDNDSource(kTRUE);
   }
   else {
     item=fListTree->AddItem(parent, string, open, closed, checkbox);
-    //item->SetDNDTarget(kTRUE);
+    item->SetDNDTarget(kTRUE);
   }
   return item;
 

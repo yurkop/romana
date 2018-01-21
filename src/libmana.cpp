@@ -449,7 +449,10 @@ int main(int argc, char **argv)
 
 
   TApplication theApp("App",&argc,argv);
-  example();
+  //example();
+
+  myM=0;
+  myM = new MyMainFrame(gClient->GetRoot(),800,600);
 
   //gSystem->Sleep(100);
   //crs->Dummy_trd();
@@ -1876,16 +1879,15 @@ bool MainFrame::TestFile() {
 */
 //______________________________________________________________________________
 
-
+/*
 void example() {
   // Popup the GUI...
-  myM=0;
-  myM = new MyMainFrame(gClient->GetRoot(),800,600);
 
   //gSystem->Sleep(1000);
   //HiFrm->Update();
   //myM->Move(-100,-100);
 }
+*/
 
 /*
   void dumpbuf(int nn)
