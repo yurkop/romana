@@ -144,11 +144,10 @@ Toptions::Toptions() {
   //tdc_bins1=1000;
   //tdc_bins2=1000;
 
-  starts_thr1=10000;
-  starts_thr2=6;
-
-  beam1=0.0;
-  beam2=0.0;
+  // starts_thr1=10000;
+  // starts_thr2=6;
+  // beam1=0.0;
+  // beam2=0.0;
 
   num_events=100000;
   num_buf=100;
@@ -158,20 +157,24 @@ Toptions::Toptions() {
   decode=true;
   analyze=true;
 
-  b_osc=false;
-  b_leg=false;
-  //for (int jj=0;jj<6;jj++) {
   b_logy=false;
-    //}
-  b_time=false;
+
+  start_ch=0;
+
+
+
+  //b_osc=false;
+  //b_leg=false;
+  //for (int jj=0;jj<6;jj++) {
+  //}
+  //b_time=false;
 
   //nsmoo=2;
-  psd_ch=0;
-  start_ch=0;
+  //psd_ch=0;
   //mon_ch=28;
 
-  T0=0.0;
-  LL=20.0;
+  //T0=0.0;
+  //LL=20.0;
 
   for (int i=0;i<MAX_CH;i++) {
     sprintf(chname[i],"ch%02d",i);    
@@ -212,10 +215,10 @@ Toptions::Toptions() {
   Tstart=0;
   Tstop=0;
 
-  Ecalibr[0]=0.0;
-  Ecalibr[1]=1.0;
+  //Ecalibr[0]=0.0;
+  //Ecalibr[1]=1.0;
 
-  LongStamp=1;
+  //LongStamp=1;
 
   b_deriv[0]=true;
   b_deriv[1]=false;
@@ -227,8 +230,8 @@ Toptions::Toptions() {
   ncuts=0;
   memset(pcuts,0,sizeof(pcuts));
 
-  rBSIZE=131072; //1024*128
-  EBufsize=100;
+  //rBSIZE=131072; //1024*128
+  //EBufsize=100;
   //period=5;
 
   usb_size=1024;

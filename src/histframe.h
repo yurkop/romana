@@ -84,6 +84,7 @@ public:
 
    //void NameTitle();
    //void Make_hist();
+   TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0, Bool_t checkbox = kTRUE);
    void Make_Ltree();
    void Clear_Ltree();
    //void NewBins();
@@ -106,6 +107,7 @@ public:
    void Update();
    void DrawHist();
    void ReDraw();
+   void DataDropped(TGListTreeItem *, TDNDData *data);
 
    ClassDef(HistFrame, 0)
 };

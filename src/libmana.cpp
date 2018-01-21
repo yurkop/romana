@@ -67,96 +67,15 @@ char* parname=(char*)"romana.par";;
 char* parname2=0;
 char* fname=0;
 
-//FILE* fp=0;
-//gzFile fp=0;
 
-//char fname[180]="";
-char rootname[180]="";
 
-char pr_name[180];
-char maintitle[180];
 
 char startdir[180];
+char pr_name[180];
+char maintitle[180];
+char rootname[180]="";
 
-const char* ng_name[] = {"gamma","neutrons","tail","other","pileup"};
 
-int idx,idnext;
-Long64_t recd;
-int nevent,bad_events;
-int syncw,type,len,len2,dlen2;
-
-//event:
-short int nbits; //ADC bits
-short int nw; //samples per word = 2
-short int lflag; //last fragment flag
-//short int NSamp0; // number of samples in the fragment
-short int NSamp; // number of samples recorded in the channel
-short int Nch; // channel number
-short int id; // block id (=0,1,2)
-int evcnt; // event count
-int fr_num; //fragment number
-int burstcnt; //burst count
-int evprev; // previous event count
-unsigned int tst=0; // temporary time stamp
-int cnst=0; //temporary constant (64 bit timestamp)
-int cnst_prev=0; //previous temporary constant (64 bit timestamp)
-unsigned int tstamp=0; // time stamp
-unsigned int pstamp=0; // time stamp of the previous event
-unsigned int istamp=0; // number of tstamp overflows
-Long64_t offset64; //istamp offset
-Long64_t first64; //first timestamp (zero offset)
-Long64_t tstamp64; //64-bit timestamp (corrected for overflows)
-Long64_t pstamp64; //64-bit timestamp of the previous event
-Long64_t peak64; //64-bit peak time
-Long64_t last_peak64[MAX_CH]; //64-bit last peak time (from previous event)
-Long64_t start64; // timestamp of nuclotron starts 
-//unsigned int tstart=0; // time start (from ch 15)
-
-double tof,tof2,tof3,frame_tof,frame_tof2;
-int png1 = -99;
-unsigned int pstop1=0;
-
-Long64_t t_ring[MAXRING];
-Long64_t t_prev;
-unsigned int nring;
-
-//unsigned short data[DSIZE];
-int mult=0;
-int chan[MAX_CH];
-bool new_event=false;
-bool beam_on=false;
-unsigned short Event[MAX_CH][DSIZE];
-double bEvent[MAX_CH][DSIZE]; // background subtracted
-double sEvent[MAX_CH][DSIZE]; // smoothed
-//double sDeriv[MAX_CH][DSIZE]; // derivative smoothed
-int findbeam=0;
-int checkpoint=0;
-
-int npeaks[MAX_CH];
-int peaks[MAX_CH][DSIZE];
-int peaks1[MAX_CH][DSIZE];
-int peaks2[MAX_CH][DSIZE];
-int peaks0[MAX_CH][DSIZE];
-int peak_flag[MAX_CH][DSIZE]; 
-// 0 -undetermined; 2 - gamma; 3 - neutron; 4 - tail; 5 - unknown; 6 - NIM;
-// 11 - bad "left"; 12 - bad "right"; 13 - true pileup; 14 - false pileup
-
-double evmax[MAX_CH];
-
-double sum[MAX_CH][DSIZE];
-double mean[MAX_CH][DSIZE];
-double rms[MAX_CH][DSIZE];
-
-int tpeaks;
-double *tstarts;
-int *t_flag;
-
-event_t evt;
-
-int mult_gam;
-//#endif
-
-//char hstnam[100];
 
 MyMainFrame *myM;
 
@@ -164,7 +83,7 @@ Coptions cpar;
 Toptions opt;
 int debug=0; //=1// for printing debug messages
 
-int *opt_id[MXNUM];
+//int *opt_id[MXNUM];
 
 /*
 void *handle_dum(void* ptr)
@@ -436,50 +355,6 @@ int main(int argc, char **argv)
 
   strcpy(maintitle,pr_name);
 
-
-  /*
-  int argnn=1;
-  //strcpy(fname," ");
-  if (argc > 1) {
-
-    if (!strcmp(argv[argnn],"run")) {
-      batch=true;
-      argnn++;
-      //parname= (char*) "init.par";
-    }
-
-    //    cout << "argnn: " << argnn << " " << argc << endl;
-
-    if (argnn<argc) {
-      crs->DoFopen(argv[argnn],0);
-
-      //strcat(maintitle," ");
-      //strcat(maintitle,argv[argnn]);
-
-      // strcpy(crs->Fname,argv[argnn]);
-      // strcpy(fname,argv[argnn]);
-      // printf("%s\n",fname);
-
-      argnn++;
-    }
-
-    if (argnn<argc) {
-      //parname = argv[argnn];
-      gzFile ff = gzopen(argv[argnn],"rb");
-      if (!ff) {
-	cout << "Can't open par file: " << argv[argnn] << endl;
-      }
-      else {
-	crs->ReadParGz(ff,argv[argnn],0,1,1);
-	gzclose(ff);
-	crs->DoReset();
-      }
-      //pname=argv[argnn];
-    }
-
-  }
-  */
-
   //parname = (char*)"romana.par";
   gzFile ff = gzopen(parname,"rb");
   if (!ff) {
@@ -534,8 +409,6 @@ int main(int argc, char **argv)
   //exit(0);
 
 
-  //greset();
-
   hcl->NewBins();
   EvtFrm = 0;
   if (batch) {
@@ -589,11 +462,12 @@ int main(int argc, char **argv)
   //fclose(fp);
   //gzclose(fp);
 
+  /*
   //printf("%d buffers\n",nbuf);
   printf("%lld bytes\n",recd*2);
   printf("%d events\n",nevent);
   printf("%d bad events\n",bad_events);
-
+  */
   //HRPUT(0,(char*)"spectra.hbook",(char*)" ");
 
   //memcpy(buf2,buf[0],BSIZE);
@@ -664,8 +538,8 @@ void saveroot(char *name) {
     }
   }
 
-  opt.Nevt=nevent;
-  opt.Tof=tof;
+  //opt.Nevt=nevent;
+  //opt.Tof=tof;
   cpar.Write();
   opt.Write();
 
@@ -743,60 +617,12 @@ void clear_hist() {
 
 }
 
-void greset() { //global reset
-  //int i,j;
-
-  //YK new_hist();
-  //YK set_hist_attr();
-
-  //buf=buf2+BOFFSET;
-  //signed_buf=(short*) buf;
-
-  //if (buf) delete[] buf;
-  //buf = new unsigned short[opt.rBSIZE];
-
-  //nEvents=0;
-
-  beam_on=false;
-  //nbuf=0;
-  recd=0;
-  nevent=-1;
-  //nbuf=0;
-  evprev=-9;
-  //  devent=0;
-  bad_events=0;
-  idx=0;
-  //r_buf=0;
-  istamp=0;
-  tstamp=0;
-  pstamp=0;
-  cnst_prev=0;
-
-  tof=0;
-  //opt.Tof=0;
-  new_event=false;
-  //dstart=-999;
-  start64=(Long64_t) (-100*1e8);
-  first64=0;
-  offset64=0;
-  //pdstart=-999;
-  nring=0;
-  memset(t_ring,0,sizeof(t_ring));
-
-  for (int i=0;i<MAX_CH;i++)
-    last_peak64[i]=0;
-
-  //printf("reset: %d %d\n",tstamp,pstamp);
-}
-
 void readpar_root(const char* pname)
 {
   TFile *f2 = new TFile(pname,"READ");
 
   cpar.Read("Coptions");
   opt.Read("Toptions");
-
-  //greset();
 
   f2->Close();
   delete f2;
@@ -822,53 +648,6 @@ void savepar_root(const char* pname)
 
 }
 */
-
-void fill_sEvent(int i)
-{
-  evmax[i]=0;
-
-  for (int j=0;j<NSamp;j++) {
-    if (Event[i][j]>evmax[i]) {
-      evmax[i]=Event[i][j];
-    }
-    sEvent[i][j]=Event[i][j];
-  }
-
-}
-
-void smooth(int n, int i)
-{
-  int k,ll;
-
-  evmax[i]=0;
-  memset(sEvent[i],0,NSamp*sizeof(double));
-
-  for (int j=0;j<NSamp;j++) {
-    if (Event[i][j]>evmax[i]) {
-      evmax[i]=Event[i][j];
-    }
-    ll=0;
-    for (int j1=-n;j1<=n;j1++) {
-      k=j+j1;
-      if (k>=0 && k<NSamp) {
-	sEvent[i][j]+=Event[i][k];
-	ll++;
-      }
-    }
-    sEvent[i][j]/=ll;
-
-    //if (j>0) {
-    //sDeriv[i][j]=sEvent[i][j]-sEvent[i][j-1];
-    //}
-    //sEvent[i][j]-=bkgr[i];
-  }
-
-  /*
-    for (j=0;j<nsamp-1;j++) {
-    bEvent[i][j]=sEvent[i][j+1]-sEvent[i][j];
-    }
-  */
-}
 
 void swap_bytes(unsigned short* buf)
 {
@@ -946,7 +725,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsTop,0,0,5,5);
   TGLayoutHints* lay2 = new TGLayoutHints(kLHintsLeft | kLHintsTop,1,1,1,1);
 
-  bRun = false;
+  //bRun = false;
 
   fMenuBar = new TGMenuBar(this, 35, 50, kHorizontalFrame);
 
@@ -959,7 +738,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->AddEntry("Save ROOT file", M_SAVEROOT);
   fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Browser\tCtrl+B", M_FILE_BROWSE);
-  fMenuFile->AddEntry("New Canvas\tCtrl+N", M_FILE_NEWCANVAS);
+  //fMenuFile->AddEntry("New Canvas\tCtrl+N", M_FILE_NEWCANVAS);
 
   //fMenuFile->AddEntry("&Open...", M_FILE_OPEN);
   //fMenuFile->AddEntry("&Save", M_FILE_SAVE);
@@ -1324,40 +1103,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   Move(-100,-100);
 
-  for (int j=0;j<8;j++) {
-    fLeg[j] = new TLegend(0.70,0.80,0.99,0.99);
-    //sprintf(txt,"dum%d",j);
-    //fHist[j] = new TH2F(txt,"",1000,0.,25.,100.,0.,25.);
-    //fHist[j]->SetStats(kFALSE);
-    //fGr[j] = new TGraph(nn,xx,yy);
-    //fHS[j] = new THStack(txt,"");
-  }
-  //fHS[2]->SetBit(TH1::kCanRebin);
-
-  /*
-    fHS[0]->SetTitle("Amplitude");
-    fHS[1]->SetTitle("Width_Energy");
-    fHS[2]->SetTitle("Long Time");
-    fHS[3]->SetTitle("Energy");
-    fHS[4]->SetTitle("Width");
-    fHS[5]->SetTitle("Time");
-  */
-
-
-  //hlist = new TList();
-  //Make_hist();
-
-  //DoDraw2();
-  //crs->Dummy_trd();
-
-  //gSystem->Sleep(1000);
-
-  //HiFrm->Update();
-  // TThread* trd_dum = new TThread("trd_dum", handle_dum, (void*) 0);;
-  // trd_dum->Run();
-  // trd_dum->Join();
-  // trd_dum->Delete();
-
 }
 
 MainFrame::~MainFrame() {
@@ -1365,7 +1110,6 @@ MainFrame::~MainFrame() {
   //cout << "end: module: " << crs->module << endl;
 
   if (crs->b_acq && crs->module) {
-    //crs->DoStartStop();
     DoStartStop();
     gSystem->Sleep(300);
   }
@@ -1419,7 +1163,7 @@ void MainFrame::DoStartStop() {
 
 void MainFrame::DoOpen() {
 
-  if (bRun) return;
+  if (!crs->b_stop) return;
 
   const char *dnd_types[] = {
     "all files",     "*",
@@ -1471,33 +1215,7 @@ void MainFrame::DoOpen() {
   }
 
 }
-/*
-void MainFrame::DoAna() {
 
-  if (!crs->f_read) {
-    cout << "File not open" << endl;
-    return;
-  }
-
-  //cout << "DoAna" << endl;
-
-  if (crs->b_fana) {
-    fAna->ChangeBackground(fGreen);
-    fAna->SetText("Analyse");
-    crs->b_fana=false;
-  }
-  else {
-    fAna->ChangeBackground(fRed);
-    fAna->SetText("Stop");
-    crs->b_fana=true;
-    crs->FAnalyze();
-  }
-
-  //cout << "mainframe::doana: " << endl;
-  
-  //crs->DoFAna();
-}
-*/
 void MainFrame::DoAna() {
 
   if (!crs->f_read) {
@@ -1533,21 +1251,6 @@ void MainFrame::DoAna() {
   //crs->DoFAna();
 }
 
-/*
-void MainFrame::Do1buf() {
-
-  if (crs->b_stop) {
-    //cout << "Do1buf" << endl;
-    crs->Do1Buf();
-    //crs->b_stop=false;
-    crs->Show();
-    EvtFrm->fCanvas->GetCanvas()->SetEditable(true);
-    //crs->b_stop=true;
-  }
-
-}
-*/
-
 void MainFrame::Do1buf() {
 
   //cout << "DoNbuf" << endl;
@@ -1564,7 +1267,7 @@ void MainFrame::Do1buf() {
     crs->b_fana=false;
     crs->b_stop=true;
   }  
-  //cout << "do1buf: " << endl;
+
 }
 
 void MainFrame::DoNbuf() {
@@ -1609,7 +1312,7 @@ void MainFrame::DoNbuf() {
 
 void MainFrame::DoRWinit(EFileDialogMode nn) {
 
-  if (bRun) return;
+  if (!crs->b_stop) return;
 
   const char *dnd_types[] = {
     "par files",     "*.par",
@@ -1682,7 +1385,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 
 void MainFrame::DoReadRoot() {
 
-  if (bRun) return;
+  if (!crs->b_stop) return;
 
   const char *dnd_types[] = {
     "par files",     "*.root",
@@ -1716,8 +1419,8 @@ void MainFrame::DoReadRoot() {
     chanpar->Update();
     HiFrm->Update();
 
-    nevent=opt.Nevt;
-    tof=opt.Tof;
+    //nevent=opt.Nevt;
+    //tof=opt.Tof;
 
     //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
     UpdateStatus();
@@ -1759,8 +1462,6 @@ void MainFrame::DoReset() {
 
   if (!crs->b_stop) return;
 
-  //greset();
-
   crs->DoReset();
   HiFrm->DoReset();
 
@@ -1776,111 +1477,6 @@ void MainFrame::DoReset() {
   UpdateStatus();
   //DoDraw();
 
-}
-
-void MainFrame::DoClear() {
-
-  if (bRun) return;
-
-  clear_hist();
-
-  //DoDraw();
-
-}
-
-/*
-  void MainFrame::AddStack(int i, TH1* hh) {
-
-  if (fHS[i]->GetHists()) {
-  if (!(fHS[i]->GetHists()->FindObject(hh))) {
-  fHS[i]->Add(hh);
-  }
-  }
-  else {
-  fHS[i]->Add(hh);
-  }
-
-  }
-*/
-
-void MainFrame::InitCanvas(int nn) {
-
-  if (nn!=nPads) {
-
-    //fEcanvas->Clear();
-    TCanvas *fPad = fEcanvas->GetCanvas();
-    fPad->Clear();
-
-    if (nn==6) {
-      fPad->Divide(3,2);
-    }
-    else if (nn==8) {
-      fPad->Divide(4,2);
-    }
-
-    fPad->SetFillColor(kGray);
-    for (int i=1;i<=nn;i++) {
-      ((TPad*)fPad->GetPad(i))->SetFillColor(kWhite);
-      if (opt.b_logy)
-	((TPad*)fPad->GetPad(i))->SetLogy(1);
-      else
-	((TPad*)fPad->GetPad(i))->SetLogy(0);
-    }
-
-    ((TPad*)fPad->GetPad(2))->SetLogz(1);
-
-    nPads=nn;
-
-  }
-
-}
-
-/*
-  void MainFrame::DoCheckGcut() {
-  //printf("CheckDraw\n");
-  opt.b_gcut = ! opt.b_gcut;
-  DoDraw();
-  }
-*/
-
-void MainFrame::DoCheckOsc() {
-  //printf("CheckDraw\n");
-  opt.b_osc = ! opt.b_osc;
-  //DoDraw2();
-
-  //malloc_stats();
-
-}
-
-void MainFrame::DoCheckLeg() {
-  //printf("CheckDraw\n");
-  opt.b_leg = ! opt.b_leg;
-  //DoDraw();
-}
-
-void MainFrame::DoCheckLogY() {
-  //printf("CheckDraw\n");
-  //for (int jj=0;jj<6;jj++) {
-  opt.b_logy = ! opt.b_logy;
-  //}
-
-  TCanvas *fPad = fEcanvas->GetCanvas();
-
-  for (int i=1;i<=nPads;i++) {
-    if (opt.b_logy) {
-      ((TPad*)fPad->GetPad(i))->SetLogy(1);
-    }
-    else {
-      ((TPad*)fPad->GetPad(i))->SetLogy(0);
-    }
-  }
-
-  //DoDraw();
-}
-
-void MainFrame::DoCheckTime() {
-  opt.b_time = ! opt.b_time;
-  //DoDraw();
 }
 
 void MainFrame::UpdateStatus() {
@@ -1943,18 +1539,14 @@ void MainFrame::UpdateStatus() {
 
 }
 
-void MainFrame::DoSetNumBuf() {
+// void MainFrame::DoSetNumBuf() {
 
-  if (bRun) return;
+//   if (bRun) return;
 
-  opt.num_buf=(int) n_buffers->GetNumber();
-  //printf("test %d\n",gg);
-}
+//   opt.num_buf=(int) n_buffers->GetNumber();
+//   printf("test %d\n",opt.num_buf);
+// }
 
-void MainFrame::DoStop() {
-  bRun=false;
-  //DoDraw();
-}
 void MainFrame::DoExit() {
   //int i;
   //double it[4];
@@ -1978,9 +1570,9 @@ void MainFrame::DoExit() {
     cout << "Can't open file: " << parname << endl;
   }
 
-  printf("%lld bytes\n",recd*2);
-  printf("%d events\n",nevent);
-  printf("%d bad events\n",bad_events);
+  // printf("%lld bytes\n",recd*2);
+  // printf("%d events\n",nevent);
+  // printf("%d bad events\n",bad_events);
 
   delete this;
   //gApplication->Terminate(0);
@@ -1988,7 +1580,7 @@ void MainFrame::DoExit() {
 
 void MainFrame::DoSave() {
 
-  if (bRun) return;
+  if (!crs->b_stop) return;
 
   const char *dnd_types[] = {
     "root files",     "*.root",
@@ -2162,7 +1754,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
   char command[128];
   int status;
 
-  if (bRun) return;
+  if (!crs->b_stop) return;
 
   //cout << menu_id << endl;
 
@@ -2191,9 +1783,9 @@ void MainFrame::HandleMenu(Int_t menu_id)
   case M_FILE_BROWSE:
     new TBrowser();
     break;
-  case M_FILE_NEWCANVAS:
-    gROOT->MakeDefCanvas();
-    break;
+  // case M_FILE_NEWCANVAS:
+  //   gROOT->MakeDefCanvas();
+  //   break;
 
     //case M_PARAM:
     //if (fPar!=NULL) {
@@ -2262,111 +1854,13 @@ bool MainFrame::TestFile() {
 
 }
 
-void MainFrame::exec3event(Int_t event, Int_t x, Int_t y, TObject *selected)
-{
-  TCanvas *c = (TCanvas *) gTQSender;
-  printf("Canvas %s: event=%d, x=%d, y=%d, selected=%s\n", c->GetName(),
-	 event, x, y, selected->GetName());
-  //   printf("Canvas %s: event=%d, x=%d, y=%d \n", c->GetName(),
-  //     event, x, y);
-}
-
-void mkstart() {
-
-  tpeaks=0;
-
-  for (int i=0;i<mult;i++) {
-    int ch = chan[i];
-    if (ch==opt.start_ch) {
-      tpeaks = npeaks[ch];
-      tstarts = mean[ch];
-      t_flag = peak_flag[ch];
-
-      //cout << "TOF:: " << nevent << " " << i << " " << chan[i] << " " << npeaks[ch]<< endl;
-
-    }
-  }
-}
-
-int getmax(TH1F* hist[]) {
-
-  int j,jmax=-1;
-  double max=0;
-  double max2;
-
-  for (j=0;j<MAX_CH;j++) {
-    if (hist[j]->GetEntries()>0 && opt.channels[j]!=ch_off2 && 
-	opt.color[j]!=0) {
-      max2 = hist[j]->GetMaximum();
-      if (max2 > max) {
-	max = max2;
-	jmax=j;
-      }
-    }
-  }
-
-  return jmax;
-}
-
-void fitpeak(TH1* hh, double ww) {
-
-  int imax = hh->GetMaximumBin();
-  double max2 = hh->GetBinContent(imax)*0.5;
-  if (max2 < 10) return;
-
-  int i2=1;
-
-  for (int i=imax;i<hh->GetNbinsX();i++) {
-    if (hh->GetBinContent(i)<max2) {
-      i2=i-imax;
-      break;
-    }
-  }
-
-  double x1=hh->GetBinCenter(imax-i2*ww);
-  double x2=hh->GetBinCenter(imax+i2*ww);
-
-  hh->Fit("gaus","","",x1,x2);
-
-  cout << imax << " " << x1 << " " << x2 << endl;
-  gPad->Update();
-  double y1=gPad->GetUymin();
-  double y2=gPad->GetUymax();
-  TLine* ll=new TLine(x1,y1,x1,y2);
-  ll->SetLineColor(3);
-  ll->Draw();
-  ll->DrawLine(x2,y1,x2,y2);
-
-  double mean = hh->GetFunction("gaus")->GetParameter(1);
-  double sig = hh->GetFunction("gaus")->GetParameter(2);
-
-  double fwhm=sig*2.35/mean;
-  char txt[100];
-  sprintf(txt,"R=%6.3f",fwhm);
-
-  TText tt;
-  tt.DrawTextNDC(0.5,0.7,txt);
-
-}
-
-void allevents() {
-
-  /*
-  if (!Buffer->gzF || !Buffer->r_buf) {
-    return;
-  }
-  */
-}
-
-
-
 //______________________________________________________________________________
 
 /*
   void MainFrame::HandleHelp()
   {
 
-  if (bRun) return;
+  if (!crs->b_stop) return;
 
   cout << "test" << endl;
 
@@ -2408,21 +1902,6 @@ void example() {
   //close(ftmp);
   }
 */
-
-void dumpevent()
-{
-  int i;
-
-  //ftmp=fopen("event.dat","w");
-
-  //fprintf(ftmp,"%d\n",nevent);
-  printf("Event: %d %d %d\n",nevent,dlen2,NSamp);
-  for (i=0;i<NSamp;i++) {
-    //fprintf(ftmp,"%d %d\n",i,data[i]);
-    //printf("%d %d %f\n",i,data[i],sdata[i]);
-  }
-  //close(ftmp);
-}
 
 //-----------------------------
 //#############################################

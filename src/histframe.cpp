@@ -138,14 +138,14 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   fListTree = new TGListTree(fCanvas, kHorizontalFrame);
   fListTree->SetCheckMode(TGListTree::kRecursive);
-  fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
-  fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
-  		     "DoClick(TGListTreeItem*,Int_t)");
+  // fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
+  // fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
+  // 		     "DoClick(TGListTreeItem*,Int_t)");
+
+
+
   //fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","TGListTree",fListTree,
   //		     "DoubleClicked(TGListTreeItem*,Int_t)");
-
-
-
 
   //fListTree->Associate(this);
   //fEc->SetDNDTarget(kTRUE);
@@ -155,6 +155,9 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   Make_Ltree();
   //Clear_tree();
   //Make_tree();
+
+  fListTree->Connect("DataDropped(TGListTreeItem*, TDNDData*)", "HistFrame",
+                    this, "DataDropped(TGListTreeItem*,TDNDData*)");
 
   //NewBins();
 
@@ -276,69 +279,85 @@ void NameTitle(char* name, char* title, int i, int cc,
 }
 */
 
+TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open, const TGPicture *closed, Bool_t checkbox) {
+
+  TGListTreeItem *item;
+  if (userData) {
+    item=fListTree->AddItem(parent, string, userData, open, closed, checkbox);
+    //item->SetDNDSource(kTRUE);
+  }
+  else {
+    item=fListTree->AddItem(parent, string, open, closed, checkbox);
+    //item->SetDNDTarget(kTRUE);
+  }
+  return item;
+
+}
+
 void HistFrame::Make_Ltree() {
 
   char ss[64];
-  const TGPicture *pic = gClient->GetPicture("h1_t.xpm");
+  const TGPicture *pic1 = gClient->GetPicture("h1_t.xpm");
+  const TGPicture *pic2 = gClient->GetPicture("h2_t.xpm");
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir;
   //TGListTreeItem *item;
 
-  idir = fListTree->AddItem(iroot, "IBR2",0,0,true);
-  fListTree->AddItem(idir, hcl->h_ampl[0][0]->GetName(), hcl->h_ampl[0][0], pic, pic,true);
-  fListTree->AddItem(idir, hcl->h_ampl[1][0]->GetName(), hcl->h_ampl[1][0], pic, pic,true);
-  fListTree->AddItem(idir, hcl->h_mtof[2][0]->GetName(), hcl->h_mtof[2][0], pic, pic,true);
-  fListTree->AddItem(idir, hcl->h_2d[0]->GetName(),      hcl->h_2d[0],      pic, pic,true);
+  idir = Item_Ltree(iroot, "IBR2",0,0,0,true);
+  Item_Ltree(idir, hcl->h_ampl[0][0]->GetName(), hcl->h_ampl[0][0], pic1, pic1,true);
+  Item_Ltree(idir, hcl->h_ampl[1][0]->GetName(), hcl->h_ampl[1][0], pic1, pic1,true);
+  Item_Ltree(idir, hcl->h_mtof[2][0]->GetName(), hcl->h_mtof[2][0], pic1, pic1,true);
+  Item_Ltree(idir, hcl->h_2d[0]->GetName(),      hcl->h_2d[0],      pic2, pic2,true);
 
   for (int cc=0;cc<opt.ncuts;cc++) {
     sprintf(ss,"IBR2_cut%d",cc+1);
-    idir = fListTree->AddItem(iroot, ss,0,0,true);
-    fListTree->AddItem(idir, hcl->h_ampl[0][cc+1]->GetName(), hcl->h_ampl[0][cc+1], pic, pic,true);
-    fListTree->AddItem(idir, hcl->h_ampl[1][cc+1]->GetName(), hcl->h_ampl[1][cc+1], pic, pic,true);
-    fListTree->AddItem(idir, hcl->h_mtof[2][cc+1]->GetName(), hcl->h_mtof[2][cc+1], pic, pic,true);
-    fListTree->AddItem(idir, hcl->h_2d[cc+1]->GetName(),      hcl->h_2d[cc+1],      pic, pic,true);
+    idir = Item_Ltree(iroot, ss,0,0,0,true);
+    Item_Ltree(idir, hcl->h_ampl[0][cc+1]->GetName(), hcl->h_ampl[0][cc+1], pic1, pic1,true);
+    Item_Ltree(idir, hcl->h_ampl[1][cc+1]->GetName(), hcl->h_ampl[1][cc+1], pic1, pic1,true);
+    Item_Ltree(idir, hcl->h_mtof[2][cc+1]->GetName(), hcl->h_mtof[2][cc+1], pic1, pic1,true);
+    Item_Ltree(idir, hcl->h_2d[cc+1]->GetName(),      hcl->h_2d[cc+1],      pic2, pic2,true);
 
   }
 
-  idir = fListTree->AddItem(iroot, "Amplitude",0,0,true);
+  idir = Item_Ltree(iroot, "Amplitude",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, hcl->h_ampl[i][0]->GetName(), hcl->h_ampl[i][0], pic, pic,true);
+    Item_Ltree(idir, hcl->h_ampl[i][0]->GetName(), hcl->h_ampl[i][0], pic1, pic1,true);
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
 
-  idir = fListTree->AddItem(iroot, "Height",0,0,true);
+  idir = Item_Ltree(iroot, "Height",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, hcl->h_height[i][0]->GetName(), hcl->h_height[i][0], pic, pic,true);
+    Item_Ltree(idir, hcl->h_height[i][0]->GetName(), hcl->h_height[i][0], pic1, pic1,true);
   }
 
-  idir = fListTree->AddItem(iroot, "Time",0,0,true);
+  idir = Item_Ltree(iroot, "Time",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, hcl->h_time[i][0]->GetName(), hcl->h_time[i][0], pic, pic,true);
+    Item_Ltree(idir, hcl->h_time[i][0]->GetName(), hcl->h_time[i][0], pic1, pic1,true);
   }
   
-  idir = fListTree->AddItem(iroot, "TOF",0,0,true);
+  idir = Item_Ltree(iroot, "TOF",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, hcl->h_tof[i][0]->GetName(), hcl->h_tof[i][0], pic, pic,true);
+    Item_Ltree(idir, hcl->h_tof[i][0]->GetName(), hcl->h_tof[i][0], pic1, pic1,true);
   }
 
-  idir = fListTree->AddItem(iroot, "MTOF",0,0,true);
+  idir = Item_Ltree(iroot, "MTOF",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    fListTree->AddItem(idir, hcl->h_mtof[i][0]->GetName(), hcl->h_mtof[i][0], pic, pic,true);
+    Item_Ltree(idir, hcl->h_mtof[i][0]->GetName(), hcl->h_mtof[i][0], pic1, pic1,true);
   }
   /*
-  idir = fListTree->AddItem(iroot, "Profile strip",0,0,true);
+  idir = Item_Ltree(iroot, "Profile strip",0,0,true);
   for (int i=0; i<64; i++){
-    fListTree->AddItem(idir, h2_prof_strip[i], pic, pic,true);
+    Item_Ltree(idir, h2_prof_strip[i], pic1, pic1,true);
   }
 
-  idir = fListTree->AddItem(iroot, "Profile real",0,0,true);
+  idir = Item_Ltree(iroot, "Profile real",0,0,true);
   for (int i=0; i<64; i++){
-    fListTree->AddItem(idir, name, h2_prof_real[i], pic, pic,true);
+    Item_Ltree(idir, name, h2_prof_real[i], pic1, pic1,true);
   }
   */
-  idir = fListTree->AddItem(iroot, "2d",0,0,true);
-  fListTree->AddItem(idir, hcl->h_2d[0]->GetName(), hcl->h_2d[0], pic, pic,true);
+  idir = Item_Ltree(iroot, "2d",0,0,0,true);
+  Item_Ltree(idir, hcl->h_2d[0]->GetName(), hcl->h_2d[0], pic2, pic2,true);
 
   //fListTree->Sort(idir);
 
@@ -975,4 +994,9 @@ void HistFrame::ReDraw()
     //cout << "unchanged4" << endl;
   }
 
+}
+
+void HistFrame::DataDropped(TGListTreeItem *, TDNDData *data)
+{
+  cout << "YK dropped" << endl;
 }

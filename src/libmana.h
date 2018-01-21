@@ -27,7 +27,6 @@ using namespace std;
 UShort_t ClassToBuf(const char* name, char* var, char* buf);
 void BufToClass(const char* name, char* var, char* buf, int size);
 
-
 void SplitFilename(string str, char *folder, char *name);
 void SplitFilename(string str, char *folder, char *name, char* ext);
 void new_hist();
@@ -35,7 +34,6 @@ void set_hist_attr();
 void saveroot(char *name);
 void readroot(char *name);
 void clear_hist();
-void greset();
 //int newfile();
 void readpar_root(const char* fname);
 //void savepar_root(const char* fname);
@@ -62,8 +60,7 @@ void anabuf_adcm();
 //int readbuf();
 short int bits(int n, int i1, int i2);
 //void readmonitor(char* fname);
-void fitpeak(TH1* hh, double ww);
-int getmax(TH1F* hist[]);
+//void fitpeak(TH1* hh, double ww);
 void swap_bytes(unsigned short* buf);
 
 //void drawevent(int i, int opt_ch, int deriv);
@@ -74,7 +71,6 @@ void example();
 void dumpbuf(int nn);
 void dumpevent();
 
-void mkstart();
 void mktof();
 void peaktime(int ch, double* dat, int method, int twin);
 void delete_hist();
@@ -97,33 +93,21 @@ typedef struct {
 
 //-----------------------------------------------
 class MainFrame : public TGMainFrame {
-  //RQ_OBJECT("MainFrame")
+
  public:
   TGMainFrame          *fMain;
 private:
-  //TGMainFrame          *fMain;
   TRootEmbeddedCanvas  *fEcanvas;
-  //TCanvas              *fcanvas;
-  //TCanvas              *fAna;
-  //TGNumberEntry        *n_events;
-  TGNumberEntry        *n_buffers;
+
   TGMenuBar            *fMenuBar;     // main menu bar
   TGPopupMenu          *fMenuFile;    // "File" popup menu entry
-  TGPopupMenu          *fMenuOptions;    
-  TGPopupMenu          *fMenuHist;    
-  TGPopupMenu          *fMenuAna;    
   TGPopupMenu          *fMenuHelp;    // "Help" popup menu entry
-  TLegend              *fLeg[8];
-  TLegend              *fLeg1ev;
-  //THStack              *fHS[6];
-  //TH2F                 *fHist[6];
-  //TGraph               *fGr[6];
   TGTextButton *fStart;
   TGTextButton *fAna;
   TGTextButton *fNb;
 
  public:
-  bool                   bRun;
+  //bool                   bRun;
   TGTab                *fTab;
 
   Pixel_t fGreen;
@@ -134,70 +118,34 @@ private:
   static const Int_t n_stat=9;
   TGTextEntry* fStat[n_stat];
 
-
-  //TList* hlist;
-
-  // TH1F* h_ampl[MAX_CH]; //amplitude - area of the peak
-  // TH1F* h_height[MAX_CH]; //height of the peak
-  // TH1F* h_time[MAX_CH]; // real time
-  // TH1F* h_tof[MAX_CH]; // time of flight
-
 public:
   MainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MainFrame();
 
-  //void Make_hist();
-
   void SetTitle(char* fname);
   void DoStartStop();
+
   void DoOpen();
   void DoAna();
   void DoRWinit(EFileDialogMode);
   void DoReadRoot();
   void DoReset();
-  void DoClear();
-  void InitCanvas(int);
-  //void DoCheckGcut();
-  void DoCheckOsc();
-  void DoCheckLeg();
-  void DoCheckLogY();
-  void DoCheckTime();
   void DoSave();
   void DoExit();
-  void DoStop();
-  //void Do1event();
-  //void DoNevents();
+  //void DoStop();
   void Do1buf();
   void DoNbuf();
   void DoTab(Int_t num);
 
   bool TestFile();
-  //void Show();
-  //void MakeEvents();
 
   void EventInfo(Int_t, Int_t, Int_t, TObject*);
   void DoCross();
-  //void DoInitMON();
-  //void DoReadMakan();
-  //void MakeMonitor();
 
   void UpdateStatus();
 
-  void DoSetNumBuf();
+  //void DoSetNumBuf();
   void HandleMenu(Int_t);
-  //void HandleHelp();
-
-  void exec3event(Int_t, Int_t, Int_t, TObject *);
-
-  //void FillHist(EventClass* evt);
-  //NumDlg               *fNumD;
-  //ParDlg               *fPar;
-  //ChanDlg              *fChan;
-  //EventFrame           *fEv;
-
-  //TGCanvas             *fTst;
-
-  int nPads;
 
   ClassDef(MainFrame, 0)
 };

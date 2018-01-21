@@ -815,7 +815,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   AddLine_opt(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,1,2048,
 	   1,20000,(char*) "DoNum_SetBuf()");
 
-  tip1= "Maximal size of the event list:\nNumber events available for viewing in the Events Tab";
+  tip1= "Maximal size of the event list:\nNumber of events available for viewing in the Events Tab";
   tip2= "Event lag:\nMaximal number of events which may come delayed from another channel";
   label="Event_list size / Event lag";
   AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,1,1000000,1,1000000);

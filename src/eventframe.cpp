@@ -240,41 +240,6 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor_but = new TGHorizontalFrame(fVer0, 10, 10);
   fVer0->AddFrame(fHor_but, fLay4);
 
-  /*
-  
-  //freset = new TGTextButton(fHor_but,"Reset");
-  //freset->Connect("Clicked()","EventFrame",this,"DoReset()");
-  //fHor_but->AddFrame(freset, fLay4);
-
-  f1buf = new TGTextButton(fHor_but,"1 buf");
-  f1buf->Connect("Clicked()","EventFrame",this,"Do1buf()");
-  fHor_but->AddFrame(f1buf, fLay4);
-
-  fNbuf = new TGTextButton(fHor_but,"N buf");
-  fNbuf->ChangeBackground(fGreen);
-  fNbuf->Connect("Clicked()","EventFrame",this,"DoNbuf()");
-  fHor_but->AddFrame(fNbuf, fLay4);
-
-  int id;
-  id = parpar->Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(fHor_but, 0, 0, id,
-					   TGNumberFormat::kNESInteger,
-					   TGNumberFormat::kNEAAnyNumber,
-					   TGNumberFormat::kNELLimitMinMax,
-					   1,100000);
-  parpar->DoMap(fNum1->GetNumberEntry(),&opt.num_buf,p_inum,0);
-  fNum1->Resize(65, fNum1->GetDefaultHeight());
-  //fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "EventFrame", this,
-  //				   "DoNum()");
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
-				   "DoNum()");
-  fHor_but->AddFrame(fNum1,fLay4);
-
-  //cout << "num_buf: " << id << " " << opt.num_buf << endl;
-
-  //fHor_but->AddSeparator();
-  */
-
   fFirst = new TGTextButton(fHor_but,"First");
   fFirst->Connect("Clicked()","EventFrame",this,"First()");
   fHor_but->AddFrame(fFirst, fLay5);

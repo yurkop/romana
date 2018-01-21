@@ -172,7 +172,6 @@ static void cback(libusb_transfer *transfer) {
 void *handle_buf(void *ctx)
 {
 
-  return 0;
   int* nmax = (int*) ctx; 
   //cout << "handle_buf: " << *nmax << endl; 
 
