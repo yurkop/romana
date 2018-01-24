@@ -6,6 +6,23 @@
 #include <TH2.h>
 
 //-----------------------------------------------
+class HMap: public TNamed {
+
+ public:
+
+  HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w);
+  ~HMap();
+  HMap(const HMap& other);
+  HMap& operator=(const HMap& other);
+  
+  TH1* hst;
+  Bool_t* chk;
+  Bool_t* wrk;
+
+  ClassDef(HMap, 0)
+};
+
+//-----------------------------------------------
 class HClass {
 
  public:
@@ -20,12 +37,18 @@ class HClass {
 
   TCutG* cutG[MAXCUTS];
 
+  TList* hilist;
+
  public:
 
   HClass();
   virtual ~HClass();
 
    //void NameTitle();
+  void Make_1d(const char* dname, const char* name, const char* title,
+	       TH1F* hh[MAX_CH][MAXCUTS],
+	       Float_t bins, Float_t min, Float_t max,
+	       Bool_t* sel, Bool_t* wrk);
    void Make_hist();
    void NewBins();
    //void Reset_hist();

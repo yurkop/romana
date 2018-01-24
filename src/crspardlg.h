@@ -88,7 +88,7 @@ class ParDlg: public TGCompositeFrame {
   void UpdateField(int nn);
   void Update();
   void EnableField(int nn, bool state);
-  void SetEnabled(bool state);
+  void AllEnabled(bool state);
   TGWidget *FindWidget(void* p);
 
   ClassDef(ParDlg, 0)

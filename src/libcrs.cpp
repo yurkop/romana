@@ -1457,7 +1457,7 @@ void CRS::DoFopen(char* oname, int popt) {
 
   if (myM) {
     myM->SetTitle(Fname);
-    crspar->SetEnabled(false);
+    crspar->AllEnabled(false);
     //myM->fTab->SetEnabled(1,false);
     //cout << "fTab: " << myM->fTab << endl;
   }

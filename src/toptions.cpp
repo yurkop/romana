@@ -138,8 +138,27 @@ Toptions::Toptions() {
   amp_min=0;
   hei_min=0;
 
+  b_time=true;
+  b_tof=true;
+  b_mtof=true;
+  b_amp=true;
+  b_hei=true;
 
+  for (int i=0;i<MAX_CH;i++) {
+    s_time[i]=true;
+    s_tof[i]=true;
+    s_mtof[i]=true;
+    s_amp[i]=true;
+    s_hei[i]=true;
+    w_time[i]=false;
+    w_tof[i]=false;
+    w_mtof[i]=false;
+    w_amp[i]=false;
+    w_hei[i]=false;
+  }
 
+  //s_amp[1]=false;
+  //w_amp[2]=true;
 
   //tdc_bins1=1000;
   //tdc_bins2=1000;

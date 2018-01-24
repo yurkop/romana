@@ -133,6 +133,28 @@ class Toptions: public TObject {
   Float_t amp_bins;
   Float_t hei_bins;
 
+  //b-flags: - create histograms and analyze them
+  Bool_t b_time;
+  Bool_t b_tof;
+  Bool_t b_mtof;
+  Bool_t b_amp;
+  Bool_t b_hei;
+
+  //s-flags: Show histograms in fListTree
+  Bool_t s_time[MAX_CH];
+  Bool_t s_tof[MAX_CH];
+  Bool_t s_mtof[MAX_CH];
+  Bool_t s_amp[MAX_CH];
+  Bool_t s_hei[MAX_CH];
+
+  //w-flags: Put histograms in WORK* folders
+  Bool_t w_time[MAX_CH];
+  Bool_t w_tof[MAX_CH];
+  Bool_t w_mtof[MAX_CH];
+  Bool_t w_amp[MAX_CH];
+  Bool_t w_hei[MAX_CH];
+
+
   Int_t start_ch;
 
   Int_t num_events;

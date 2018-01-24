@@ -16,6 +16,7 @@
 #pragma link C++ class ChanParDlg+;
 #pragma link C++ class CrsParDlg+;
 #pragma link C++ class CRS+;
+#pragma link C++ class HMap+;
 #pragma link C++ class HClass+;
 //#pragma link C++ class rpeak_type+;
 #pragma link C++ class vector<rpeak_type>+;

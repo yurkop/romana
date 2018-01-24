@@ -42,6 +42,8 @@ class HistFrame: public TGCompositeFrame {
    TRootEmbeddedCanvas    *fEc;
    //MECanvas    *fEc;
    TGListTree             *fListTree;    // list tree with histograms
+   TGListTreeItem         *iWork;
+   TGListTreeItem         *iWork_cut[MAXCUTS];
    TList* hlist;
    //std::list<TH1*> hlist2;   
 
@@ -84,7 +86,7 @@ public:
 
    //void NameTitle();
    //void Make_hist();
-   TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0, Bool_t checkbox = kTRUE);
+   TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
    void Make_Ltree();
    void Clear_Ltree();
    //void NewBins();
@@ -94,7 +96,7 @@ public:
    //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
    void DoCheck(TObject* obj, Bool_t check);
    void DoLog();
-   //void DoKey(TGListTreeItem* entry, UInt_t keysym);
+   void DoKey(TGListTreeItem* entry, UInt_t keysym);
    void SelectDiv(int nn);
    void DoRadio();
    void DoButton();

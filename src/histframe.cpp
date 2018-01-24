@@ -138,9 +138,9 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   fListTree = new TGListTree(fCanvas, kHorizontalFrame);
   fListTree->SetCheckMode(TGListTree::kRecursive);
-  // fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
-  // fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
-  // 		     "DoClick(TGListTreeItem*,Int_t)");
+  fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
+  fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
+   		     "DoClick(TGListTreeItem*,Int_t)");
 
 
 
@@ -152,7 +152,9 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //Make_hist();
   //exit(-1);
+  cout << "Make_Ltree1: " << endl;
   Make_Ltree();
+  cout << "Make_Ltree2: " << endl;
   //Clear_tree();
   //Make_tree();
 
@@ -183,8 +185,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fListTree->Connect("DoubleClicked(TGListTreeItem*,Int_t)","HistFrame",this,
   //		     "DoDblClick(TGListTreeItem*,Int_t)");
 
-   //fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
-   //		     this,"DoKey(TGListTreeItem*, UInt_t)");
+  fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
+   		     this,"DoKey(TGListTreeItem*, UInt_t)");
   
 
   for (int i=0;i<NR;i++) {
@@ -279,21 +281,64 @@ void NameTitle(char* name, char* title, int i, int cc,
 }
 */
 
-TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open, const TGPicture *closed, Bool_t checkbox) {
+TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open, const TGPicture *closed) {
 
   TGListTreeItem *item;
   if (userData) {
-    item=fListTree->AddItem(parent, string, userData, open, closed, checkbox);
+    item=fListTree->AddItem(parent, string, userData, open, closed, true);
     item->SetDNDSource(kTRUE);
+    HMap* map = (HMap*) userData;
+    fListTree->CheckItem(item,*map->chk);
   }
   else {
-    item=fListTree->AddItem(parent, string, open, closed, checkbox);
+    item=fListTree->AddItem(parent, string, open, closed, true);
     item->SetDNDTarget(kTRUE);
   }
   return item;
 
 }
 
+void HistFrame::Make_Ltree() {
+
+  TObject* obj=0;
+  TIter next(hcl->hilist);
+
+  char ss[64];
+  TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
+  TGPicture *pic2 = (TGPicture*) gClient->GetPicture("h2_t.xpm");
+  TGPicture *pic=0;
+  TGListTreeItem *iroot=0;
+  TGListTreeItem *idir=0;
+  //TGListTreeItem *item;
+
+  iWork = Item_Ltree(iroot, "WORK",0,0,0);
+  for (int cc=0;cc<opt.ncuts;cc++) {
+    sprintf(ss,"WORK_cut%d",cc+1);
+    iWork_cut[cc] = Item_Ltree(iroot, ss,0,0,0);
+  }
+
+  next.Reset();
+  while ( (obj=(TObject*)next()) ) {
+    HMap* map = (HMap*) obj;
+    TString title = TString(map->GetTitle());
+    //cout << "Title: " << title << " " << endl;
+    if (!fListTree->FindChildByName(0,title)) {
+      idir = Item_Ltree(iroot, title,0,0,0);
+    }
+    if (map->hst->InheritsFrom(TH2::Class()))
+      pic=pic2;
+    else
+      pic=pic1;
+    Item_Ltree(idir, map->GetName(), map, pic, pic);
+    //cout << "map: " << map->hst->GetName() << " " << *map->wrk);
+    if (*map->wrk) {
+      Item_Ltree(iWork, map->GetName(), map, pic, pic);
+    }
+  }
+
+}
+
+/*
 void HistFrame::Make_Ltree() {
 
   char ss[64];
@@ -303,65 +348,69 @@ void HistFrame::Make_Ltree() {
   TGListTreeItem *idir;
   //TGListTreeItem *item;
 
-  idir = Item_Ltree(iroot, "IBR2",0,0,0,true);
-  Item_Ltree(idir, hcl->h_ampl[0][0]->GetName(), hcl->h_ampl[0][0], pic1, pic1,true);
-  Item_Ltree(idir, hcl->h_ampl[1][0]->GetName(), hcl->h_ampl[1][0], pic1, pic1,true);
-  Item_Ltree(idir, hcl->h_mtof[2][0]->GetName(), hcl->h_mtof[2][0], pic1, pic1,true);
-  Item_Ltree(idir, hcl->h_2d[0]->GetName(),      hcl->h_2d[0],      pic2, pic2,true);
+  iWork = Item_Ltree(iroot, "WORK",0,0,0,true);
+  Item_Ltree(iWork, hcl->h_ampl[0][0]->GetName(), hcl->h_ampl[0][0], pic1, pic1,true);
+  Item_Ltree(iWork, hcl->h_ampl[1][0]->GetName(), hcl->h_ampl[1][0], pic1, pic1,true);
+  Item_Ltree(iWork, hcl->h_mtof[2][0]->GetName(), hcl->h_mtof[2][0], pic1, pic1,true);
+  Item_Ltree(iWork, hcl->h_2d[0]->GetName(),      hcl->h_2d[0],      pic2, pic2,true);
 
   for (int cc=0;cc<opt.ncuts;cc++) {
-    sprintf(ss,"IBR2_cut%d",cc+1);
-    idir = Item_Ltree(iroot, ss,0,0,0,true);
-    Item_Ltree(idir, hcl->h_ampl[0][cc+1]->GetName(), hcl->h_ampl[0][cc+1], pic1, pic1,true);
-    Item_Ltree(idir, hcl->h_ampl[1][cc+1]->GetName(), hcl->h_ampl[1][cc+1], pic1, pic1,true);
-    Item_Ltree(idir, hcl->h_mtof[2][cc+1]->GetName(), hcl->h_mtof[2][cc+1], pic1, pic1,true);
-    Item_Ltree(idir, hcl->h_2d[cc+1]->GetName(),      hcl->h_2d[cc+1],      pic2, pic2,true);
+    sprintf(ss,"WORK_cut%d",cc+1);
+    iWork_cut[cc] = Item_Ltree(iroot, ss,0,0,0,true);
+    Item_Ltree(iWork_cut[cc], hcl->h_ampl[0][cc+1]->GetName(), hcl->h_ampl[0][cc+1], pic1, pic1,true);
+    Item_Ltree(iWork_cut[cc], hcl->h_ampl[1][cc+1]->GetName(), hcl->h_ampl[1][cc+1], pic1, pic1,true);
+    Item_Ltree(iWork_cut[cc], hcl->h_mtof[2][cc+1]->GetName(), hcl->h_mtof[2][cc+1], pic1, pic1,true);
+    Item_Ltree(iWork_cut[cc], hcl->h_2d[cc+1]->GetName(),      hcl->h_2d[cc+1],      pic2, pic2,true);
 
   }
 
   idir = Item_Ltree(iroot, "Amplitude",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_ampl[i][0]->GetName(), hcl->h_ampl[i][0], pic1, pic1,true);
+    Item_Ltree(idir, hcl->h_ampl[i][0]->GetName(), hcl->h_ampl[i][0], pic1, pic1,true,opt.s_amp[i]);
     //item->CheckItem(false);
   }
   //idir->CheckItem(false);
 
   idir = Item_Ltree(iroot, "Height",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_height[i][0]->GetName(), hcl->h_height[i][0], pic1, pic1,true);
+    Item_Ltree(idir, hcl->h_height[i][0]->GetName(), hcl->h_height[i][0], pic1, pic1,true,opt.s_hei[i]);
   }
 
   idir = Item_Ltree(iroot, "Time",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_time[i][0]->GetName(), hcl->h_time[i][0], pic1, pic1,true);
+    Item_Ltree(idir, hcl->h_time[i][0]->GetName(), hcl->h_time[i][0], pic1, pic1,true,opt.s_time[i]);
   }
   
   idir = Item_Ltree(iroot, "TOF",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_tof[i][0]->GetName(), hcl->h_tof[i][0], pic1, pic1,true);
+    Item_Ltree(idir, hcl->h_tof[i][0]->GetName(), hcl->h_tof[i][0], pic1, pic1,true,opt.s_tof[i]);
   }
 
   idir = Item_Ltree(iroot, "MTOF",0,0,0,true);
   for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_mtof[i][0]->GetName(), hcl->h_mtof[i][0], pic1, pic1,true);
-  }
-  /*
-  idir = Item_Ltree(iroot, "Profile strip",0,0,true);
-  for (int i=0; i<64; i++){
-    Item_Ltree(idir, h2_prof_strip[i], pic1, pic1,true);
+    Item_Ltree(idir, hcl->h_mtof[i][0]->GetName(), hcl->h_mtof[i][0], pic1, pic1,true,opt.s_mtof[i]);
   }
 
-  idir = Item_Ltree(iroot, "Profile real",0,0,true);
-  for (int i=0; i<64; i++){
-    Item_Ltree(idir, name, h2_prof_real[i], pic1, pic1,true);
-  }
-  */
+
+  // idir = Item_Ltree(iroot, "Profile strip",0,0,true);
+  // for (int i=0; i<64; i++){
+  //   Item_Ltree(idir, h2_prof_strip[i], pic1, pic1,true);
+  // }
+
+  // idir = Item_Ltree(iroot, "Profile real",0,0,true);
+  // for (int i=0; i<64; i++){
+  //   Item_Ltree(idir, name, h2_prof_real[i], pic1, pic1,true);
+  // }
+
+  
   idir = Item_Ltree(iroot, "2d",0,0,0,true);
   Item_Ltree(idir, hcl->h_2d[0]->GetName(), hcl->h_2d[0], pic2, pic2,true);
 
   //fListTree->Sort(idir);
 
 }
+*/
+
 
 /*
 void HistFrame::Reset_hist() {
@@ -378,9 +427,67 @@ void HistFrame::Reset_hist() {
 
 void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 {
-  //cout << "DoClick: " << item << " " << but << endl;
+  char hname[100];
+  char hname2[100]; 
+  TGListTreeItem* item2;
+
+  cout << "DoClick: " << item->GetText() << " " << item->GetParent() << " " << but << endl;
+
+  //return;
+  if (item->GetParent() && (but==2 || but==3)) {
+    if (TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
+      //cout << "work: " << endl;
+      TObject* hh = (TObject*) item->GetUserData();
+      strcpy(hname2,hh->GetName());
+      char* str = strstr(hname2,"_cut");
+      if (str) {
+	strncpy(hname,hname2,str-hname2);
+	hname[str-hname2] = '\0';   /* null character manually added */
+      }
+      else {
+	strcpy(hname,hname2);
+      }
+
+      //cout << "work1: " << item << endl;
+      item2 = fListTree->FindChildByName(iWork,hname);
+
+      if (item2) {
+	HMap* map = (HMap*) item2->GetUserData();
+	*map->wrk=false;
+	fListTree->DeleteItem(item2);
+      }
+
+      //cout << "work2: " << item << endl;
+      for (int cc=0;cc<opt.ncuts;cc++) {
+	sprintf(hname2,"%s_cut%d",hname,cc+1);
+	item2 = fListTree->FindChildByName(iWork_cut[cc],hname2);
+	//cout << "cc: " << cc << " " << hname2 << " " << item2 << endl;
+	if (item2)
+	  fListTree->DeleteItem(item2);
+      }
+    }
+    else {
+      //cout << "nowork: " << item << endl;
+      TObject* hh = (TObject*) item->GetUserData();
+      strcpy(hname,hh->GetName());
+      const TGPicture *pic = item->GetPicture();
+      Item_Ltree(iWork, hh->GetName(), hh, pic, pic);
+
+      HMap* map = (HMap*) item->GetUserData();
+      *map->wrk=true;
+
+      for (int cc=0;cc<opt.ncuts;cc++) {
+	sprintf(hname2,"%s_cut%d",hname,cc+1);
+	hh = gROOT->FindObject(hname2);
+	//cout << "cc: " << cc << " " << hname2 << " " << hh << endl;
+	Item_Ltree(iWork_cut[cc], hh->GetName(), hh, pic, pic);
+      }
+    }
+  }
+  
   //fListTree->DoubleClicked(item,but);
 
+  /*
   if (but==1) {
     if (item->IsOpen()) {
       fListTree->CloseItem(item);
@@ -389,7 +496,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       fListTree->OpenItem(item);
     }
   }
-
+  */
 }
 
 /*
@@ -413,6 +520,25 @@ void HistFrame::DoClick(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, 
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
   //cout << "DoCheck: " << obj << " " << check << endl;
+  /*
+  if (!obj) {
+    TGListTreeItem *idir = fListTree->GetFirstItem();
+    while (idir) {
+      cout << "Dir: " << idir->GetText()<< " " << idir->IsChecked() << endl;
+      // TGListTreeItem *item = idir->GetFirstChild();
+      // while (item) {
+      // 	cout << item->GetText()<< endl;
+      // 	item = item->GetNextSibling();
+      // }    
+      idir = idir->GetNextSibling();
+    }
+    
+  }
+  else {
+    cout << "item1: " << obj->GetName() << endl;
+  }
+  */
+
   if (crs->b_stop)
     Update();
   else
@@ -431,9 +557,9 @@ void HistFrame::DoLog()
     changed=true;
 }
 
-//void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym) {
-//  cout << "key: " << entry << " " << keysym << endl;
-//}
+void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym) {
+  cout << "key: " << entry << " " << keysym << endl;
+}
 
 void HistFrame::SelectDiv(int nn)
 {
@@ -850,7 +976,6 @@ void HistFrame::DoReset()
 
 void HistFrame::Update()
 {
-
   //cout << "HiFrm::Update()" << endl;
 
   Hmut.Lock();
@@ -860,21 +985,25 @@ void HistFrame::Update()
   hlist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
-    if (idir->IsChecked() && idir->GetUserData()) {
-      hlist->Add((TObject*)idir->GetUserData());
-    }
+    // if (idir->IsChecked() && idir->GetUserData()) {
+    //   hlist->Add(((HMap*)idir->GetUserData())->hst);
+    //   //hlist->Add((TObject*)idir->GetUserData());
+    // }
     TGListTreeItem *item = idir->GetFirstChild();
     while (item) {
-      if (item->IsChecked() && item->GetUserData()) {
-	hlist->Add((TObject*)item->GetUserData());
+      if (item->GetUserData()) {
+	HMap* map = (HMap*) item->GetUserData();
+	if (!TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
+	  *map->chk = item->IsChecked();
+	}
+	if (item->IsChecked()) {
+	  hlist->Add(((HMap*)item->GetUserData())->hst);
+	}
       }
       item = item->GetNextSibling();
     }
     idir = idir->GetNextSibling();
   }
-
-  //fListTree->GetChecked(hlist);
-  //cout << "hlist: " << hlist->GetSize() << endl;
 
   if (opt.icheck > hlist->GetSize()-ndiv)
     opt.icheck=hlist->GetSize()-ndiv;

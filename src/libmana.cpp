@@ -408,8 +408,15 @@ int main(int argc, char **argv)
   }
   //exit(0);
 
+  //cout << "hcl1: " << endl;
+  //hcl->NewBins();
+  //for (int i=0;i<100000;i++) {
+  hcl->Make_hist();
+  //cout << i << endl;
+  //}
+  //cout << "hcl2: " << endl;
+  //exit(1);
 
-  hcl->NewBins();
   EvtFrm = 0;
   if (batch) {
 
@@ -957,7 +964,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   ntab++;
 
   if (crs->Fmode) {
-    crspar->SetEnabled(false);
+    crspar->AllEnabled(false);
   }
   //TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
   //TGColorPick* tg = new TGColorPick(tab6);

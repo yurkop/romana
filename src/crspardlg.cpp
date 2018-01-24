@@ -653,7 +653,7 @@ void ParDlg::EnableField(int nn, bool state) {
 
 }
 
-void ParDlg::SetEnabled(bool state) {
+void ParDlg::AllEnabled(bool state) {
 
   for (UInt_t i=0;i<Plist.size();i++) {
     EnableField(i,state);
