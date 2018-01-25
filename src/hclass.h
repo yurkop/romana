@@ -33,7 +33,7 @@ class HClass {
   TH1F* h_tof[MAX_CH][MAXCUTS]; // time of flight
   TH1F* h_mtof[MAX_CH][MAXCUTS]; // time of flight
 
-  TH2F* h_2d[MAXCUTS];
+  TH2F* h_2d[1][MAXCUTS];
 
   TCutG* cutG[MAXCUTS];
 
@@ -48,9 +48,13 @@ class HClass {
   void Make_1d(const char* dname, const char* name, const char* title,
 	       TH1F* hh[MAX_CH][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
-	       Bool_t* sel, Bool_t* wrk);
+	       Bool_t bb, Bool_t* sel, Bool_t* wrk);
+  void Make_2d(const char* dname, const char* name, const char* title,
+	       TH2F* hh[][MAXCUTS],
+	       Float_t bins, Float_t min, Float_t max,
+	       Bool_t bb, Bool_t* sel, Bool_t* wrk);
    void Make_hist();
-   void NewBins();
+   //void NewBins();
    //void Reset_hist();
    //void FillHist(EventClass* evt);
 

@@ -64,7 +64,7 @@ HClass::HClass()
       h_tof[i][cc]=0;
       h_mtof[i][cc]=0;
     }
-    h_2d[cc]=0;
+    h_2d[0][cc]=0;
   }
 
   //Make_hist();
@@ -91,7 +91,10 @@ void NameTitle(char* name, char* title, int i, int cc,
 void HClass::Make_1d(const char* dname, const char* name, const char* title,
 		     TH1F* hh[MAX_CH][MAXCUTS],
 		     Float_t bins, Float_t min, Float_t max,
-		     Bool_t* chk, Bool_t* wrk) {
+		     Bool_t bb, Bool_t* chk, Bool_t* wrk) {
+
+  if (!bb) return;
+
   char name2[100];
   char title2[100];
 
@@ -108,6 +111,27 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
   }
 }
 
+void HClass::Make_2d(const char* dname, const char* name, const char* title,
+		     TH2F* hh[][MAXCUTS],
+		     Float_t bins, Float_t min, Float_t max,
+		     Bool_t bb, Bool_t* chk, Bool_t* wrk) {
+
+  if (!bb) return;
+
+  char name2[100];
+  char title2[100];
+
+  sprintf(name2,"%s",name);
+  sprintf(title2,"%s%s",name,title);
+
+  int nn=bins*(max-min);
+  hh[0][0]=new TH2F(name2,title2,nn,min,max,nn,min,max);
+
+  HMap* map = new HMap(dname,hh[0][0],chk+0,wrk+0);
+  hilist->Add(map);
+
+}
+
 void HClass::Make_hist() {
 
   //char title[100];
@@ -121,16 +145,19 @@ void HClass::Make_hist() {
 
   //int cc=0;
 
-  Make_1d("Amplitude","ampl",";Channel;Counts",h_ampl,
-	  opt.amp_bins,opt.amp_min,opt.amp_max,opt.s_amp,opt.w_amp);
-  Make_1d("Height","height",";Channel;Counts",h_height,
-	  opt.hei_bins,opt.hei_min,opt.hei_max,opt.s_hei,opt.w_hei);
-  Make_1d("Time","time",";T(sec);Counts",h_time,
-	  opt.time_bins,opt.time_min,opt.time_max,opt.s_time,opt.w_time);
-  Make_1d("TOF","tof",";t(ns);Counts",h_tof,
-	  opt.tof_bins,opt.tof_min,opt.tof_max,opt.s_tof,opt.w_tof);
-  Make_1d("MTOF","mtof",";t(mks);Counts",h_mtof,
-	  opt.mtof_bins,opt.mtof_min,opt.mtof_max,opt.s_mtof,opt.w_mtof);
+  Make_1d("Amplitude","ampl",";Channel;Counts",h_ampl,opt.amp_bins,
+	  opt.amp_min,opt.amp_max,opt.b_amp,opt.s_amp,opt.w_amp);
+  Make_1d("Height","height",";Channel;Counts",h_height,opt.hei_bins,
+	  opt.hei_min,opt.hei_max,opt.b_hei,opt.s_hei,opt.w_hei);
+  Make_1d("Time","time",";T(sec);Counts",h_time,opt.time_bins,
+	  opt.time_min,opt.time_max,opt.b_time,opt.s_time,opt.w_time);
+  Make_1d("TOF","tof",";t(ns);Counts",h_tof,opt.tof_bins,
+	  opt.tof_min,opt.tof_max,opt.b_tof,opt.s_tof,opt.w_tof);
+  Make_1d("MTOF","mtof",";t(mks);Counts",h_mtof,opt.mtof_bins,
+	  opt.mtof_min,opt.mtof_max,opt.b_mtof,opt.s_mtof,opt.w_mtof);
+
+  Make_2d("H2d","h2d",";Channel;Channel",h_2d,opt.h2d_bins,
+	  opt.h2d_min,opt.h2d_max,opt.b_h2d,opt.s_h2d,opt.w_h2d);
 
    //for (int cc=0;cc<MAXCUTS;cc++) {
 
@@ -228,57 +255,3 @@ void HClass::Make_hist() {
     */
 
 }
-
-void HClass::NewBins() {
-
-  int nn;
-
-  for (int cc=0;cc<MAXCUTS;cc++) {
-    for (int i=0;i<MAX_CH;i++) {
-      if (h_ampl[i][cc]) {
-	nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-	h_ampl[i][cc]->SetBins(nn,opt.amp_min,opt.amp_max);
-	h_ampl[i][cc]->Reset();
-      }
-    
-      if (h_height[i][cc]) {
-	nn=opt.hei_bins*(opt.hei_max-opt.hei_min);
-	h_height[i][cc]->SetBins(nn,opt.hei_min,opt.hei_max);
-	h_height[i][cc]->Reset();
-      }
-
-      if (h_time[i][cc]) {
-	nn=opt.time_bins*(opt.time_max-opt.time_min);
-	h_time[i][cc]->SetBins(nn,opt.time_min,opt.time_max);
-	h_time[i][cc]->Reset();
-      }
-    
-      if (h_tof[i][cc]) {
-	nn=opt.tof_bins*(opt.tof_max-opt.tof_min);
-	h_tof[i][cc]->SetBins(nn,opt.tof_min,opt.tof_max);
-	h_tof[i][cc]->Reset();
-      }
-
-      if (h_mtof[i][cc]) {
-	nn=opt.mtof_bins*(opt.mtof_max-opt.mtof_min);
-	h_mtof[i][cc]->SetBins(nn,opt.mtof_min,opt.mtof_max);
-	h_mtof[i][cc]->Reset();
-      }
-    }
-    //for (int i=0; i<1; i++) {
-    if (h_2d[cc]) {
-      nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-      h_2d[cc]->SetBins(nn,opt.amp_min,opt.amp_max,
-			nn,opt.amp_min,opt.amp_max);
-      h_2d[cc]->Reset();
-    }
-    //}
-  }
-
-  // for (int i=0; i<64; i++) {
-  //   h2_prof_strip[i]->Reset();
-  //   h2_prof_real[i]->Reset();
-  // }
-
-}
-

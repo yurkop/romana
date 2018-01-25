@@ -335,9 +335,9 @@ void EventClass::FillHist() {
 	} 
       }
 
-      hcl->h_2d[0]->Fill(amp[0],amp[1]);
+      hcl->h_2d[0][0]->Fill(amp[0],amp[1]);
       if (icut) {
-	hcl->h_2d[icut]->Fill(amp[0],amp[1]);
+	hcl->h_2d[0][icut]->Fill(amp[0],amp[1]);
       }
     }
   }
@@ -348,53 +348,57 @@ void EventClass::FillHist() {
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
       peak_type* pk = &pulses[i].Peaks[j];
 
-      // if (ch==0) {
-      // 	cout << "ampl: " << pk->Area*opt.emult[ch] << " " << opt.emult[ch] << "    " << hcl->h_ampl[0][0]->Integral() << endl;
-      // }
-      hcl->h_ampl[ch][0]->Fill(pk->Area*opt.emult[ch]);
-      hcl->h_height[ch][0]->Fill(pk->Height);
-      if (icut) {
-	hcl->h_ampl[ch][icut]->Fill(pk->Area*opt.emult[ch]);
-	hcl->h_height[ch][icut]->Fill(pk->Height);
-      }
-
-      tt = pulses[i].Tstamp64 - crs->Tstart64;
-      tt += pk->Pos;
-      tt*=DT;
-
-      max = hcl->h_time[ch][0]->GetXaxis()->GetXmax();
-
-      if (tt > max) {
-	max2=max*2;
-	if (tt>max2) {
-	  cout << "Time leap is too large: " << this->Nevt << " " << ch << " " << tt << " " << pulses[i].Tstamp64 << " " << crs->Tstart64 << endl;
+      if (opt.b_amp) {
+	hcl->h_ampl[ch][0]->Fill(pk->Area*opt.emult[ch]);
+	if (icut) {
+	  hcl->h_ampl[ch][icut]->Fill(pk->Area*opt.emult[ch]);
 	}
-	else {
-	  nbin = hcl->h_time[ch][0]->GetNbinsX()*max2/max;
-	  Float_t* arr = new Float_t[nbin+2];
-	  memset(arr,0,sizeof(Float_t)*(nbin+2));
-	  Float_t* arr2 = hcl->h_time[ch][0]->GetArray();
-	  memcpy(arr,arr2,hcl->h_time[ch][0]->GetSize()*sizeof(Float_t));
-	  hcl->h_time[ch][0]->SetBins(nbin,0,max2);
-	  hcl->h_time[ch][0]->Adopt(nbin+2,arr);
+      }
+
+      if (opt.b_hei) {
+	hcl->h_height[ch][0]->Fill(pk->Height);
+	if (icut) {
+	  hcl->h_height[ch][icut]->Fill(pk->Height);
+	}
+      }
+
+      if (opt.b_time) {
+	tt = pulses[i].Tstamp64 - crs->Tstart64;
+	tt += pk->Pos;
+	tt*=DT;
+
+	max = hcl->h_time[ch][0]->GetXaxis()->GetXmax();
+
+	if (tt > max) {
+	  max2=max*2;
+	  if (tt>max2) {
+	    cout << "Time leap is too large: " << this->Nevt << " " << ch << " " << tt << " " << pulses[i].Tstamp64 << " " << crs->Tstart64 << endl;
+	  }
+	  else {
+	    nbin = hcl->h_time[ch][0]->GetNbinsX()*max2/max;
+	    Float_t* arr = new Float_t[nbin+2];
+	    memset(arr,0,sizeof(Float_t)*(nbin+2));
+	    Float_t* arr2 = hcl->h_time[ch][0]->GetArray();
+	    memcpy(arr,arr2,hcl->h_time[ch][0]->GetSize()*sizeof(Float_t));
+	    hcl->h_time[ch][0]->SetBins(nbin,0,max2);
+	    hcl->h_time[ch][0]->Adopt(nbin+2,arr);
+	  }
+
 	}
 
+	hcl->h_time[ch][0]->Fill(tt);
+	if (icut) {
+	  hcl->h_time[ch][icut]->Fill(tt);
+	}
       }
 
-      hcl->h_time[ch][0]->Fill(tt);
-      if (icut) {
-	hcl->h_time[ch][icut]->Fill(tt);
-      }
-
-      double dt = pulses[i].Tstamp64 - T;
-      //tt = pk->Time - cpar.preWr[ch] - T0 + dt;
-      tt = pk->Time - crs->Pre[ch] - T0 + dt;
-      // cout << "TOF: " << crs->nevents << " " << i << " "
-      // 	   << ch << " " << pk->Time << " " << T0 << " "
-      // 	   << dt << " " << tt << endl;
-      hcl->h_tof[ch][0]->Fill(tt*crs->period);
-      if (icut) {
-	hcl->h_tof[ch][icut]->Fill(tt*crs->period);
+      if (opt.b_tof) {
+	double dt = pulses[i].Tstamp64 - T;
+	tt = pk->Time - crs->Pre[ch] - T0 + dt;
+	hcl->h_tof[ch][0]->Fill(tt*crs->period);
+	if (icut) {
+	  hcl->h_tof[ch][icut]->Fill(tt*crs->period);
+	}
       }
 
       if (opt.dec_write) {
@@ -410,21 +414,23 @@ void EventClass::FillHist() {
 
     }
 
-    if (crs->Tstart0>0) {
-      int mult = pulses.size();
-      if (mult>=MAX_CH) mult=MAX_CH-1;
+    if (opt.b_mtof) {
+      if (crs->Tstart0>0) {
+	int mult = pulses.size();
+	if (mult>=MAX_CH) mult=MAX_CH-1;
 
-      tt = (T - crs->Tstart0)*0.001*crs->period;
+	tt = (T - crs->Tstart0)*0.001*crs->period;
 
-      hcl->h_mtof[mult][0]->Fill(tt);
-      hcl->h_mtof[0][0]->Fill(tt);
-      if (icut) {
-	hcl->h_mtof[mult][icut]->Fill(tt);
+	hcl->h_mtof[mult][0]->Fill(tt);
 	hcl->h_mtof[0][0]->Fill(tt);
+	if (icut) {
+	  hcl->h_mtof[mult][icut]->Fill(tt);
+	  hcl->h_mtof[0][0]->Fill(tt);
+	}
       }
-    }
-    if (ch==opt.start_ch) {
-      crs->Tstart0 = T;
+      if (ch==opt.start_ch) {
+	crs->Tstart0 = T;
+      }
     }
 
   } //for (UInt_t i=0;i<pulses.size()...

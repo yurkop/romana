@@ -161,8 +161,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fListTree->Connect("DataDropped(TGListTreeItem*, TDNDData*)", "HistFrame",
                     this, "DataDropped(TGListTreeItem*,TDNDData*)");
 
-  //NewBins();
-
   /*
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
@@ -412,19 +410,6 @@ void HistFrame::Make_Ltree() {
 */
 
 
-/*
-void HistFrame::Reset_hist() {
-
-  for (int i=0;i<MAX_CH;i++) {
-    h_ampl[i]->   SetBins(opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-    h_height[i]-> SetBins(opt.sum_max*opt.sum_bins,0.,opt.sum_max);
-    h_time[i]->   SetBins(opt.long_max*opt.long_bins,0.,opt.long_max);
-    h_tof[i]->    SetBins(opt.tof_max*opt.tof_bins,0.,opt.tof_max);
-  }
-
-}
-*/
-
 void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 {
   char hname[100];
@@ -485,18 +470,11 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
     }
   }
   
-  //fListTree->DoubleClicked(item,but);
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
 
-  /*
-  if (but==1) {
-    if (item->IsOpen()) {
-      fListTree->CloseItem(item);
-    }
-    else {
-      fListTree->OpenItem(item);
-    }
-  }
-  */
 }
 
 /*
@@ -902,6 +880,7 @@ void HistFrame::DoPeaks()
 
 void HistFrame::Clear_Ltree()
 {
+  hlist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     TGListTreeItem *item = idir->GetFirstChild();
@@ -945,7 +924,12 @@ void HistFrame::DoReset()
     hcl->cutG[i]->SetLineColor(i+2);
   }
 
-  hcl->NewBins();
+  //hcl->NewBins();
+  cout << "Make_hist():: " << endl;
+  Clear_Ltree();
+  hcl->Make_hist();
+  Make_Ltree();
+  cout << "Make_hist()::2 " << endl;
 
   /*
   TGListTreeItem *idir = fListTree->GetFirstItem();
@@ -976,13 +960,19 @@ void HistFrame::DoReset()
 
 void HistFrame::Update()
 {
-  //cout << "HiFrm::Update()" << endl;
+  cout << "HiFrm::Update()" << endl;
 
   Hmut.Lock();
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
 
+  cout << "yyy2:" << endl;
+  
   hlist->Clear();
+  cout << "yyy3:" << endl;
+
+  //Hmut.UnLock();
+  //return;
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     // if (idir->IsChecked() && idir->GetUserData()) {
@@ -1020,7 +1010,10 @@ void HistFrame::Update()
 
   DrawHist();
 
+  //hlist->Print();
+
   Hmut.UnLock();
+  cout << "HiFrm::Update()2" << endl;
 }
 
 void HistFrame::DrawHist()

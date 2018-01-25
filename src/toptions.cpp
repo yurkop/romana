@@ -131,18 +131,21 @@ Toptions::Toptions() {
   mtof_max=mtof_bins=1;
   amp_max=amp_bins=1;
   hei_max=hei_bins=1;
+  h2d_max=h2d_bins=1;
 
   time_min=0;
   tof_min=0;
   mtof_min=0;
   amp_min=0;
   hei_min=0;
+  h2d_min=0;
 
   b_time=true;
   b_tof=true;
   b_mtof=true;
   b_amp=true;
   b_hei=true;
+  b_h2d=true;
 
   for (int i=0;i<MAX_CH;i++) {
     s_time[i]=true;
@@ -150,11 +153,13 @@ Toptions::Toptions() {
     s_mtof[i]=true;
     s_amp[i]=true;
     s_hei[i]=true;
+    s_h2d[i]=true;
     w_time[i]=false;
     w_tof[i]=false;
     w_mtof[i]=false;
     w_amp[i]=false;
     w_hei[i]=false;
+    w_h2d[i]=false;
   }
 
   //s_amp[1]=false;

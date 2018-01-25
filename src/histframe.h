@@ -89,7 +89,6 @@ public:
    TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
    void Make_Ltree();
    void Clear_Ltree();
-   //void NewBins();
    //void Reset_hist();
    //void FillHist(EventClass* evt);
    void DoClick(TGListTreeItem* item,Int_t but);

@@ -873,23 +873,27 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
   tip1= "Total aqcuisition time, in seconds";
   label="Time";
-  AddLine_hist(frame,&opt.time_bins,&opt.time_min,&opt.time_max,tip1,label);
+  AddLine_hist(frame,&opt.b_time,&opt.time_bins,&opt.time_min,&opt.time_max,tip1,label);
 
   tip1= "Time of flight (relative to the starts - see Channels->St), in ns";
   label="TOF";
-  AddLine_hist(frame,&opt.tof_bins,&opt.tof_min,&opt.tof_max,tip1,label);
+  AddLine_hist(frame,&opt.b_tof,&opt.tof_bins,&opt.tof_min,&opt.tof_max,tip1,label);
 
   tip1= "Time of flight with multiplicity, in mks";
   label="M_TOF";
-  AddLine_hist(frame,&opt.mtof_bins,&opt.mtof_min,&opt.mtof_max,tip1,label);
+  AddLine_hist(frame,&opt.b_mtof,&opt.mtof_bins,&opt.mtof_min,&opt.mtof_max,tip1,label);
 
   tip1= "Amplitude or energy, calibrated (see Channels->EM for calibration)";
   label="Amplitude";
-  AddLine_hist(frame,&opt.amp_bins,&opt.amp_min,&opt.amp_max,tip1,label);
+  AddLine_hist(frame,&opt.b_amp,&opt.amp_bins,&opt.amp_min,&opt.amp_max,tip1,label);
 
   tip1= "Pulse height (in channels)";
   label="Height";
-  AddLine_hist(frame,&opt.hei_bins,&opt.hei_min,&opt.hei_max,tip1,label);
+  AddLine_hist(frame,&opt.b_hei,&opt.hei_bins,&opt.hei_min,&opt.hei_max,tip1,label);
+
+  tip1= "2-dimensional histogram (ampl0-ampl1)";
+  label="h2d";
+  AddLine_hist(frame,&opt.b_h2d,&opt.h2d_bins,&opt.h2d_min,&opt.h2d_max,tip1,label);
 
   /*
   tip1= "Bins per channel for Width";
@@ -1042,8 +1046,8 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 
 }
 
-void ParParDlg::AddLine_hist(TGGroupFrame* frame, Float_t *x1,
-			 Float_t *x2, Float_t *x3, 
+void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
+			     Float_t *x1, Float_t *x2, Float_t *x3, 
 			 const char* tip, const char* label)
 {
   double ww=70;
@@ -1056,6 +1060,13 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Float_t *x1,
 
   TGNumberFormat::ELimit nolim = TGNumberFormat::kNELNoLimits;
   TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
+
+  //checkbutton
+  id = Plist.size()+1;
+  TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
+  DoMap(chk_hist,b1,p_chk,0);
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheck()");
+  hfr1->AddFrame(chk_hist,fL3);
 
   //nbins
   id = Plist.size()+1;
@@ -1156,6 +1167,27 @@ void ParParDlg::Update() {
 
 }
 */
+
+void ParParDlg::DoCheck() {
+
+  TGCheckButton *te = (TGCheckButton*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  DoChk();
+
+  cout << "DoCheck: " << Plist.size() << " " << id << " " << opt.b_time << endl;
+
+  Bool_t state = (Bool_t) te->GetState();      
+  pmap pp;
+  for (int i=0;i<3;i++) {
+    pp = Plist[id+i];
+    TGNumberEntryField *te2 = (TGNumberEntryField*) pp.field;
+    cout << i << " " << te2->GetNumber() << endl;
+    te2->SetState(state);
+  }
+  
+}
+
 //------ ChanParDlg -------
 
 ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
@@ -1306,7 +1338,7 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
   TGCheckButton *fst = new TGCheckButton(cframe[i], "", id);
   DoMap(fst,&opt.Start[i],p_chk,all,0,0);
 
-  fst->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
+  fst->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
 
   cframe[i]->AddFrame(fst,fL3);
   kk++;
@@ -1413,7 +1445,7 @@ void ChanParDlg::DoNum() {
 
 }
 
-void ChanParDlg::DoChk() {
+void ChanParDlg::DoCheck() {
   ParDlg::DoChk();
 }
 
@@ -1603,9 +1635,9 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   DoMap(f_inv,&cpar.inv[i],p_chk,all,2,i);
   DoMap(f_acdc,&cpar.acdc[i],p_chk,all,3,i);
 
-  f_en->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
-  f_inv->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
-  f_acdc->Connect("Clicked()", "ChanParDlg", this, "DoChk()");
+  f_en->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
+  f_inv->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
+  f_acdc->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
 
   //f_inv->ChangeOptions(facdc->GetOptions()|kFixedSize);
   //f_acdc->ChangeOptions(facdc->GetOptions()|kFixedSize);

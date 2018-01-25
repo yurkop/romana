@@ -135,14 +135,15 @@ class ParParDlg: public ParDlg {
 		//TGNumberFormat::EAttribute attr, 
 		double min1=0, double max1=0,
 		double min2=0, double max2=0, char* connect=NULL);
-  void AddLine_hist(TGGroupFrame* frame, Float_t *x1,
-			 Float_t *x2, Float_t *x3, 
-			 const char* tip, const char* label);
+  void AddLine_hist(TGGroupFrame* frame, Bool_t* b1,
+		    Float_t *x1, Float_t *x2, Float_t *x3, 
+		    const char* tip, const char* label);
   void AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
 		char* opt_fname);
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
+  void DoCheck();
   //void Update();
 
 };
@@ -170,7 +171,7 @@ void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
  void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan,
 	    void* d2=0);
 void DoNum();
-void DoChk();
+void DoCheck();
 
 ClassDef(ChanParDlg, 0)
 };
