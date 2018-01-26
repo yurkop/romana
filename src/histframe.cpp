@@ -152,9 +152,9 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //Make_hist();
   //exit(-1);
-  cout << "Make_Ltree1: " << endl;
+  //cout << "Make_Ltree1: " << endl;
   Make_Ltree();
-  cout << "Make_Ltree2: " << endl;
+  //cout << "Make_Ltree2: " << endl;
   //Clear_tree();
   //Make_tree();
 
@@ -925,11 +925,11 @@ void HistFrame::DoReset()
   }
 
   //hcl->NewBins();
-  cout << "Make_hist():: " << endl;
+  //cout << "Make_hist():: " << endl;
   Clear_Ltree();
   hcl->Make_hist();
   Make_Ltree();
-  cout << "Make_hist()::2 " << endl;
+  //cout << "Make_hist()::2 " << endl;
 
   /*
   TGListTreeItem *idir = fListTree->GetFirstItem();
@@ -960,16 +960,13 @@ void HistFrame::DoReset()
 
 void HistFrame::Update()
 {
-  cout << "HiFrm::Update()" << endl;
+  //cout << "HiFrm::Update()" << endl;
 
   Hmut.Lock();
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
 
-  cout << "yyy2:" << endl;
-  
   hlist->Clear();
-  cout << "yyy3:" << endl;
 
   //Hmut.UnLock();
   //return;
@@ -1013,7 +1010,7 @@ void HistFrame::Update()
   //hlist->Print();
 
   Hmut.UnLock();
-  cout << "HiFrm::Update()2" << endl;
+  //cout << "HiFrm::Update()2" << endl;
 }
 
 void HistFrame::DrawHist()
