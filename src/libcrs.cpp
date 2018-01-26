@@ -2327,6 +2327,10 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   //Long64_t dt=pls->Tstamp64-T_last_good;
   Long64_t dt=pls->Tstamp64-Pstamp64;
+
+  cout << "dt1: " << (int) pls->Chan << " " << dt << " " << nevents << " "
+       << pls->Tstamp64 << " " << T_last_good << " " << Pstamp64 << endl;
+
   Pstamp64=pls->Tstamp64;
 
   if (!nevents) { //first event
@@ -2340,9 +2344,6 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     return;
   }
 
-  //if (nevents>32960)
-  //cout << "dt: " << dt << " " << nevents << endl;
-  
   //10 or 20 sec
   if (abs(dt) > 2000000000) { //bad event
     //now: ignore bad event
@@ -2360,6 +2361,10 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   pls->Tstamp64=T_last_good+dt;
 
+  //if (nevents>32960)
+  cout << "dt2: " << (int) pls->Chan << " " << dt << " " << nevents << " "
+       << pls->Tstamp64 << " " << T_last_good << " " << Pstamp64 << endl;
+  
   if (dt>opt.tgate) { //new event (the last one by time)
     //add new event at the end of the list, set T_last_good and return
     it=Levents.insert(Levents.end(),EventClass());

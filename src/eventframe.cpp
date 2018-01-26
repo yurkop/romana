@@ -729,6 +729,9 @@ void EventFrame::FillGraph(int dr) {
     Gr[dr][i]->SetMarkerColor(chcol[ch[i]]);
 
     double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch[i]];
+    cout << "dt: " << (int) pulse->Chan << " " << dt << " "
+	 << ch[i] << " " << pulse->Tstamp64 << " "
+	 << d_event->T << " " << crs->Pre[ch[i]] << endl;
     //double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch[i]];
     //double dt=pulse->Tstamp64 - d_event->T;
 

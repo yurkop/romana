@@ -146,6 +146,7 @@ class ParParDlg: public ParDlg {
   void DoCheck();
   //void Update();
 
+  ClassDef(ParParDlg, 0)
 };
 
 //-----------------------------------------------

@@ -193,6 +193,7 @@ void PulseClass::PeakAna() {
 
     pk->Pos = pk->Time+0.5;
 
+    //cout << "pk: " << (int) Chan << " " << pk->T3 << " " << pk->T4 << " " << pk->Time << " " << pk->Pos << endl;
 
     pk->B1=pk->Pos+opt.bkg1[Chan];
     pk->B2=pk->Pos+opt.bkg2[Chan];
@@ -306,38 +307,40 @@ void EventClass::FillHist() {
 
   //cout << "FillHist: " << endl;
 
-  if (pulses.size()>=2) {
-    double amp[2];
-    int nn=0;
-    for (UInt_t i=0;i<pulses.size();i++) {
-      int ch = pulses[i].Chan;
-      for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
-	peak_type* pk = &pulses[i].Peaks[j];
+  if (opt.b_h2d) {
+    if (pulses.size()>=2) {
+      double amp[2];
+      int nn=0;
+      for (UInt_t i=0;i<pulses.size();i++) {
+	int ch = pulses[i].Chan;
+	for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
+	  peak_type* pk = &pulses[i].Peaks[j];
 
-	if (ch==0 && j==0) {
-	  amp[0]=pk->Area*opt.emult[ch];
-	  nn++;
-	}
-	if (ch==1 && j==0) {
-	  amp[1]=pk->Area*opt.emult[ch];
-	  nn++;
-	}
-
-      }
-    }
-    if (nn==2) {
-      if (opt.ncuts) {
-	for (int j=0;j<opt.ncuts;j++) {
-	  if (hcl->cutG[j]->IsInside(amp[0],amp[1])) {
-	    icut=j+1;
-	    break;
+	  if (ch==0 && j==0) {
+	    amp[0]=pk->Area*opt.emult[ch];
+	    nn++;
 	  }
-	} 
-      }
+	  if (ch==1 && j==0) {
+	    amp[1]=pk->Area*opt.emult[ch];
+	    nn++;
+	  }
 
-      hcl->h_2d[0][0]->Fill(amp[0],amp[1]);
-      if (icut) {
-	hcl->h_2d[0][icut]->Fill(amp[0],amp[1]);
+	}
+      }
+      if (nn==2) {
+	if (opt.ncuts) {
+	  for (int j=0;j<opt.ncuts;j++) {
+	    if (hcl->cutG[j]->IsInside(amp[0],amp[1])) {
+	      icut=j+1;
+	      break;
+	    }
+	  } 
+	}
+
+	hcl->h_2d[0][0]->Fill(amp[0],amp[1]);
+	if (icut) {
+	  hcl->h_2d[0][icut]->Fill(amp[0],amp[1]);
+	}
       }
     }
   }
