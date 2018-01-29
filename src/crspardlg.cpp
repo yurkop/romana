@@ -1175,14 +1175,14 @@ void ParParDlg::DoCheck() {
 
   DoChk();
 
-  cout << "DoCheck: " << Plist.size() << " " << id << " " << opt.b_time << endl;
+  //cout << "DoCheck: " << Plist.size() << " " << id << " " << opt.b_time << endl;
 
   Bool_t state = (Bool_t) te->GetState();      
   pmap pp;
   for (int i=0;i<3;i++) {
     pp = Plist[id+i];
     TGNumberEntryField *te2 = (TGNumberEntryField*) pp.field;
-    cout << i << " " << te2->GetNumber() << endl;
+    //cout << i << " " << te2->GetNumber() << endl;
     te2->SetState(state);
   }
   

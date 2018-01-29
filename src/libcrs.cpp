@@ -337,11 +337,10 @@ void *handle_ana(void* ptr) {
 
 CRS::CRS() {
 
-
+  /*
   //cout << TClass::GetClass("Toptions")->GetClassVersion() << endl;
   //exit(1);
 
-  /*
     // begin test block
     std::list<int> mylist;
     std::list<int>::iterator it;
@@ -352,8 +351,17 @@ CRS::CRS() {
     // set some initial values:
     for (int i=1; i<=5; ++i) mylist.push_back(i); // 1 2 3 4 5
 
-    cout << *it << " " << *mylist.begin() << endl;
-    //exit(1);
+    it = --mylist.end();
+    //mylist.insert(mylist.end(),77);
+    mylist.insert(it,77);
+    //cout << *it << endl;
+
+    for (it=mylist.begin(); it!=mylist.end(); ++it)
+      std::cout << ' ' << *it;
+    std::cout << '\n';
+
+    //cout << *it << " " << *mylist.begin() << endl;
+    exit(1);
     
     rit=mylist.rbegin();
     mylist.insert(rit.base(),10);
@@ -433,7 +441,7 @@ CRS::CRS() {
 
     exit(1);
     // end test block
-    */
+*/
 
   //ev_max=2*opt.ev_min;
 
@@ -2296,12 +2304,13 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   //const Long64_t ev2=0;
 
   //if (nbuffers < 1) {
-  //pls->PrintPulse();
+  //pls->PrintPulse(1);
   //}
 
   event_iter it;
+  Long64_t dt;
 
-  if (pls->ptype & 0x7) {
+  if (pls->ptype & 0xF) { //P_NOSTART | P_NOSTOP | P_BADCH | P_BADTST
     cout << "bad pulse: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
 	 << (int) pls->ptype << endl;
     return;
@@ -2325,13 +2334,12 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   //   //cout << "event10: " << nevents << " " << pls->Tstamp64 << endl;
   // }
 
-  //Long64_t dt=pls->Tstamp64-T_last_good;
-  Long64_t dt=pls->Tstamp64-Pstamp64;
+  //dt=pls->Tstamp64-Pstamp64;
 
-  cout << "dt1: " << (int) pls->Chan << " " << dt << " " << nevents << " "
-       << pls->Tstamp64 << " " << T_last_good << " " << Pstamp64 << endl;
+  // cout << "dt1: " << (int) pls->Chan << " " << dt << " " << nevents << " "
+  //      << pls->Tstamp64 << " " << T_last_good << " " << Pstamp64 << endl;
 
-  Pstamp64=pls->Tstamp64;
+  //Pstamp64=pls->Tstamp64;
 
   if (!nevents) { //first event
     //add new event at the end of the list, set T_last_good and return
@@ -2340,10 +2348,11 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     nevents++;
     it->Pulse_Ana_Add(pls);
 
-    T_last_good=pls->Tstamp64;
+    //T_last_good=pls->Tstamp64;
     return;
   }
 
+  /*
   //10 or 20 sec
   if (abs(dt) > 2000000000) { //bad event
     //now: ignore bad event
@@ -2361,10 +2370,13 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   pls->Tstamp64=T_last_good+dt;
 
+  */
+
   //if (nevents>32960)
-  cout << "dt2: " << (int) pls->Chan << " " << dt << " " << nevents << " "
-       << pls->Tstamp64 << " " << T_last_good << " " << Pstamp64 << endl;
-  
+  // cout << "dt2: " << (int) pls->Chan << " " << dt << " " << nevents << " "
+  //      << pls->Tstamp64 << " " << T_last_good << " " << Pstamp64 << endl;
+
+  /*
   if (dt>opt.tgate) { //new event (the last one by time)
     //add new event at the end of the list, set T_last_good and return
     it=Levents.insert(Levents.end(),EventClass());
@@ -2372,32 +2384,25 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     nevents++;
     it->Pulse_Ana_Add(pls);
 
-    //if (it->Nevt>32960)
-    //cout << "event: " << dt << " " << it->Nevt << " " << pls->Tstamp64 << endl;
-    T_last_good=pls->Tstamp64;
+    //T_last_good=pls->Tstamp64;
 
     return;
   }
+  */
 
   // probably coincidence event (or event coming earlier than the last)
   for (it=--Levents.end();it!=m_event;--it) {
-    //for (rl=Levents.rbegin(); rl!=r_event; ++rl) {
     dt = (pls->Tstamp64 - it->T);
-    //cout << "tt: " << dt << " " << pls->Tstamp64 << " " << it->T << endl;
     if (dt > opt.tgate) {
       //add new event at the current position of the eventlist
       it=Levents.insert(it,EventClass());
       it->Nevt=nevents;
       nevents++;
-      //if (it->Nevt>32960)
-      //cout << "add: " << dt << " " << it->Nevt << " " << pls->Tstamp64 << endl;
       it->Pulse_Ana_Add(pls);
       return;
     }
     else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
       // coincidence event
-      //if (it->Nevt>32960)
-      //cout << "coin: " << dt << " " << it->Nevt << " " << pls->Tstamp64 << endl;
       it->Pulse_Ana_Add(pls);
       return;
     }

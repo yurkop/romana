@@ -76,8 +76,9 @@ struct rpeak_type {
 const unsigned char P_NOSTART=1; //pulse has no start
 const unsigned char P_NOSTOP=2; // pulse has no stop
 const unsigned char P_BADCH=4;
-const unsigned char P_BADSZ=8;
-const unsigned char P_BADCNT=16;
+const unsigned char P_BADTST=8;
+const unsigned char P_BADSZ=16;
+const unsigned char P_BADCNT=32;
 //-----------------------------------------------
 
 // Pulse is a signal registered in physical channel Chan
