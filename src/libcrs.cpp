@@ -2175,16 +2175,22 @@ void CRS::Decode_adcm() {
       ipp->Tstamp64 += rbuf4[idx+rLen-3];
       //ipp->Tstamp64 = rbuf4[idx+rLen-3];
 
-//       static int ii;
-//       ii++;
-//       // test1 -> tstamp is bad for all events starting from 3
-//       if (ii>=3) {
-// `	ipp->Tstamp64-=149304694026798308;
-//       }
-//       // test2 -> tstamp is bad only for event 3
-//       if (ii==3) {
-// 	ipp->Tstamp64-=149304694026798308;
-//       }
+      /*
+      Long64_t t_orig = ipp->Tstamp64;
+      static int ii;
+      ii++;
+      bool tst=false;
+      if (ii>257030 && ii<257060) tst=true;
+      // // test1 -> tstamp is bad for all events starting from 3
+      // if (ii>=3) {
+      // 	ipp->Tstamp64-=109304694026798308;
+      // }
+      // // test2 -> tstamp is bad only for event 3
+      // if (ii==3) {
+      // 	ipp->Tstamp64-=149304694026798308;
+      // }
+      */
+
 
       if (Pstamp64==P64_0) {
 	Pstamp64=ipp->Tstamp64;
@@ -2212,9 +2218,10 @@ void CRS::Decode_adcm() {
 	Pstamp64=ipp->Tstamp64;
       }
 
-      if (Offset64) {
-	cout << "Tst: " << dt << " " << ipp->Tstamp64 << " " << Pstamp64 << " " << Offset64 << endl;
-      }
+      // if (tst)
+      // if (Offset64) {
+      // 	cout << "Tst: " << ii << " " << dt << " " << ipp->Tstamp64 << " " << Pstamp64 << " " << Offset64 << endl;
+      // }
 
       if (lflag)
 	ipp->ptype&=~P_NOSTOP; //pulse has stop
@@ -2294,7 +2301,7 @@ void CRS::Decode_adcm() {
   //      << BufLength << " " << hex << rbuf4[idx2] << " " << rbuf4[idx]
   //      << dec << endl;
 
-  cout << "Offset64: " << nbuffers << " " << Offset64 << endl;
+  //cout << "Offset64: " << nbuffers << " " << Offset64 << endl;
 } //Decode_adcm
 
 //-------------------------------------
