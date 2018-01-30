@@ -294,6 +294,13 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
       // 	   << T << endl;
     }
   }
+
+  // cout << "Evt: " << Nevt << ":";
+  // for (UInt_t i=0;i<pulses.size();i++) {
+  //   cout << " " << (int)pulses.at(i).Chan<< "," << pulses.at(i).Tstamp64-crs->Tstart64;
+  // }
+  // cout << endl;
+  
 }
 
 void EventClass::FillHist() {
@@ -511,7 +518,7 @@ void PulseClass::Smooth(int nn) {
 
 
 void PulseClass::PrintPulse(int pdata) {
-  printf("Pulse: %2d %2d %6ld %10lld %10lld\n",Chan,ptype,sData.size(),Counter,Tstamp64);
+  printf("Pulse: %2d %2d %6ld %10lld %10lld\n",Chan,ptype,sData.size(),Counter,Tstamp64-crs->Tstart64);
   if (pdata) {
     for (int i=0;i<(int)sData.size();i++) {
       printf("-- %d %f\n",i,sData[i]);

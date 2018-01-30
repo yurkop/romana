@@ -53,6 +53,8 @@ TThread* trd_crs;
 //TThread* trd_dum;
 //TThread* trd_ana;
 
+const Long64_t P64_0=-123456789123456789;
+
 int event_thread_run;//=1;
 
 //UInt_t list_min=100;
@@ -1293,8 +1295,9 @@ void CRS::DoReset() {
   //cout << "Doreset: " << Fmode << " " << Tstart64 << endl;
 
   Tstart0=0;
-  T_last_good=0;
-  Pstamp64=0;
+  //Offset64=0;
+  //T_last_good=0;
+  Pstamp64=P64_0;
   //cout << "crs::reset: " << endl;
   //cout << "crs::reset: " << (int) CRS::b_fana << endl;
   //exit(1);
@@ -2172,6 +2175,47 @@ void CRS::Decode_adcm() {
       ipp->Tstamp64 += rbuf4[idx+rLen-3];
       //ipp->Tstamp64 = rbuf4[idx+rLen-3];
 
+//       static int ii;
+//       ii++;
+//       // test1 -> tstamp is bad for all events starting from 3
+//       if (ii>=3) {
+// `	ipp->Tstamp64-=149304694026798308;
+//       }
+//       // test2 -> tstamp is bad only for event 3
+//       if (ii==3) {
+// 	ipp->Tstamp64-=149304694026798308;
+//       }
+
+      if (Pstamp64==P64_0) {
+	Pstamp64=ipp->Tstamp64;
+	Offset64=0;
+	//cout << "Zero Offset64: " << Offset64 << endl;
+      }
+
+      if (Offset64)
+	ipp->Tstamp64-=Offset64;
+
+      Long64_t dt=ipp->Tstamp64-Pstamp64;
+      //10 or 20 sec = 2e9
+      if (abs(dt) > 2000000000) { //bad event - ignore it
+
+	Offset64+=dt;
+	if (abs(Offset64) < 20000000) //~100-200 msec
+	  Offset64=0;
+
+	//cout << "Offset64: " << Offset64 << endl;
+	ipp->ptype|=P_BADTST;
+
+	cout << "bad Tstamp: "<<dt<<" "<<ipp->Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
+      }
+      else {
+	Pstamp64=ipp->Tstamp64;
+      }
+
+      if (Offset64) {
+	cout << "Tst: " << dt << " " << ipp->Tstamp64 << " " << Pstamp64 << " " << Offset64 << endl;
+      }
+
       if (lflag)
 	ipp->ptype&=~P_NOSTOP; //pulse has stop
 
@@ -2250,6 +2294,7 @@ void CRS::Decode_adcm() {
   //      << BufLength << " " << hex << rbuf4[idx2] << " " << rbuf4[idx]
   //      << dec << endl;
 
+  cout << "Offset64: " << nbuffers << " " << Offset64 << endl;
 } //Decode_adcm
 
 //-------------------------------------
@@ -2289,12 +2334,128 @@ void CRS::Print_Events() {
        it!=Levents.end();++it) {
     cout << nn++ << " " << it->T << " :>>";
     for (UInt_t i=0;i<it->pulses.size();i++) {
-      cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64;
+      cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64-Tstart64;
     }
     cout << endl;
   }
 }
 
+void CRS::Event_Insert_Pulse(PulseClass *pls) {
+
+  event_iter it;
+  event_iter it_last;
+  Long64_t dt;
+
+  //if (pls->ptype & 0xF) { //P_NOSTART | P_NOSTOP | P_BADCH | P_BADTST
+  if (pls->ptype) { //any bad pulse
+    cout << "bad pulse: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
+	 << (int) pls->ptype << endl;
+    return;
+  }
+  
+  //const Long64_t ev1=36090;
+  //const Long64_t ev2=37010;
+
+  //const Long64_t ev1=1;
+  //const Long64_t ev2=0;
+
+  //if (nbuffers < 1) {
+  //pls->PrintPulse(0);
+  //}
+
+  if (pls->ptype & 0x7) {
+    cout << "bad pulse: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
+	 << (int) pls->ptype << endl;
+    return;
+  }
+  
+  npulses2[pls->Chan]++;
+
+  if (opt.nsmoo[pls->Chan]) {
+    pls->Smooth(opt.nsmoo[pls->Chan]);
+  }
+  pls->FindPeaks();
+  pls->PeakAna();
+
+  if (Levents.empty()) {
+    //if (Tstart64<0) {
+    Tstart64 = pls->Tstamp64;
+
+    it=Levents.insert(Levents.end(),EventClass());
+    it->Nevt=nevents;
+    nevents++;
+    it->Pulse_Ana_Add(pls);
+
+    //Pstamp64=pls->Tstamp64;
+
+    return;
+  }
+
+  //it_last=--Levents.end();
+  //dt=pls->Tstamp64-it_last->T;
+
+
+
+
+
+
+
+  // //10 or 20 sec
+  // Long64_t dt1=-99;
+  // Long64_t T1=-99;
+  // if (it!=Levents.end()) {
+  //   dt1=pls->Tstamp64-it->T;
+  //   T1=it->T;
+  // }
+  // cout << "tt: " << dt << " " << dt1 << " " << pls->Tstamp64-Tstart64 << " "
+  //      << T1-Tstart64 << endl;
+
+  // if (dt>opt.tgate) { //add event at the end of the list
+  //   it=Levents.insert(Levents.end(),EventClass());
+
+  //   it->Nevt=nevents;
+  //   nevents++;
+  //   it->Pulse_Ana_Add(pls);
+
+  //   Pstamp64=pls->Tstamp64;
+
+  //   return;
+  // }
+
+  for (it=--Levents.end();it!=m_event;--it) {
+    //for (rl=Levents.rbegin(); rl!=r_event; ++rl) {
+    dt = (pls->Tstamp64 - it->T);
+    //cout << "tt: " << it->Nevt << " " << dt << " " << pls->Tstamp64 << " " << it->T << endl;
+    if (dt > opt.tgate) {
+      //cout << "t1: " << endl;
+      //add new event at the current position of the eventlist
+      it=Levents.insert(++it,EventClass());
+      it->Nevt=nevents;
+      nevents++;
+      it->Pulse_Ana_Add(pls);
+      return;
+    }
+    else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
+      //cout << "t2: " << endl;
+      // coincidence event
+      it->Pulse_Ana_Add(pls);
+      return;
+    }
+  }
+
+  if (debug)
+    cout << "beginning: " << nevents << " " << pls->Tstamp64 << " " << dt
+	 << " " << Levents.size() << endl;
+
+  // if the current event is too early, insert it at the end of the event list
+  it=Levents.insert(Levents.end(),EventClass());
+  it->Nevt=nevents;
+  it->Pulse_Ana_Add(pls);
+  nevents++;
+
+}
+
+/*
 void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   //const Long64_t ev1=36090;
@@ -2352,43 +2513,43 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     return;
   }
 
-  /*
-  //10 or 20 sec
-  if (abs(dt) > 2000000000) { //bad event
-    //now: ignore bad event
-    // was://add new event at the end of the list and return
 
-    //it=Levents.insert(Levents.end(),EventClass());
-    //it->Nevt=nevents;
-    nevents++;
-    //it->Pulse_Ana_Add(pls);
+  // //10 or 20 sec
+  // if (abs(dt) > 2000000000) { //bad event
+  //   //now: ignore bad event
+  //   // was://add new event at the end of the list and return
 
-    cout << "bad event: " << dt << " " << nevents << " " << pls->Tstamp64 << endl;
-    //T_last_good=pls->Tstamp64;
-    return;
-  }
+  //   //it=Levents.insert(Levents.end(),EventClass());
+  //   //it->Nevt=nevents;
+  //   nevents++;
+  //   //it->Pulse_Ana_Add(pls);
 
-  pls->Tstamp64=T_last_good+dt;
+  //   cout << "bad event: " << dt << " " << nevents << " " << pls->Tstamp64 << endl;
+  //   //T_last_good=pls->Tstamp64;
+  //   return;
+  // }
 
-  */
+  // pls->Tstamp64=T_last_good+dt;
+
+
 
   //if (nevents>32960)
   // cout << "dt2: " << (int) pls->Chan << " " << dt << " " << nevents << " "
   //      << pls->Tstamp64 << " " << T_last_good << " " << Pstamp64 << endl;
 
-  /*
-  if (dt>opt.tgate) { //new event (the last one by time)
-    //add new event at the end of the list, set T_last_good and return
-    it=Levents.insert(Levents.end(),EventClass());
-    it->Nevt=nevents;
-    nevents++;
-    it->Pulse_Ana_Add(pls);
 
-    //T_last_good=pls->Tstamp64;
+  // if (dt>opt.tgate) { //new event (the last one by time)
+  //   //add new event at the end of the list, set T_last_good and return
+  //   it=Levents.insert(Levents.end(),EventClass());
+  //   it->Nevt=nevents;
+  //   nevents++;
+  //   it->Pulse_Ana_Add(pls);
 
-    return;
-  }
-  */
+  //   //T_last_good=pls->Tstamp64;
+
+  //   return;
+  // }
+
 
   // probably coincidence event (or event coming earlier than the last)
   for (it=--Levents.end();it!=m_event;--it) {
@@ -2419,6 +2580,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   nevents++;
 
 }
+*/
 
 void CRS::Make_Events() {
 
@@ -2470,6 +2632,7 @@ void CRS::Make_Events() {
     }
   }
 
+  //Print_Events();
   //Select_Event(firstevent);
 
 
