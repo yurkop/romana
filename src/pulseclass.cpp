@@ -2,12 +2,14 @@
 #include "toptions.h"
 #include "libcrs.h"
 #include "hclass.h"
+#include "libmana.h"
 #include <iostream>
 
 //extern Coptions cpar;
 extern Toptions opt;
 extern CRS* crs;
 extern HClass* hcl;
+extern MyMainFrame *myM;
 //extern HistFrame* HiFrm;
 
 namespace PROF {
@@ -372,17 +374,25 @@ void EventClass::FillHist() {
 	}
       }
 
-      if (opt.b_time) {
-	tt = pulses[i].Tstamp64 - crs->Tstart64;
-	tt += pk->Pos;
-	tt*=DT;
+      tt = pulses[i].Tstamp64 - crs->Tstart64;
+      tt += pk->Pos;
+      opt.T_acq=tt*DT;
 
+      if (opt.Tstop && opt.T_acq>opt.Tstop) {
+	//cout << "Tstop: " << opt.T_acq << " " << opt.Tstop << " " << myM->fStart << endl;
+	crs->b_stop=true;
+	crs->b_fana=false;
+	crs->b_acq=false;
+	//myM->fAna->Emit("Clicked()");
+      }
+
+      if (opt.b_time) {
 	max = hcl->h_time[ch][0]->GetXaxis()->GetXmax();
 
-	if (tt > max) {
+	if (opt.T_acq > max) {
 	  max2=max*2;
-	  if (tt>max2) {
-	    cout << "Time leap is too large: " << this->Nevt << " " << ch << " " << tt << " " << pulses[i].Tstamp64 << " " << crs->Tstart64 << endl;
+	  if (opt.T_acq>max2) {
+	    cout << "Time leap is too large: " << this->Nevt << " " << ch << " " << opt.T_acq << " " << pulses[i].Tstamp64 << " " << crs->Tstart64 << endl;
 	  }
 	  else {
 	    nbin = hcl->h_time[ch][0]->GetNbinsX()*max2/max;
@@ -396,9 +406,9 @@ void EventClass::FillHist() {
 
 	}
 
-	hcl->h_time[ch][0]->Fill(tt);
+	hcl->h_time[ch][0]->Fill(opt.T_acq);
 	if (icut) {
-	  hcl->h_time[ch][icut]->Fill(tt);
+	  hcl->h_time[ch][icut]->Fill(opt.T_acq);
 	}
       }
 

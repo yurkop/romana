@@ -72,8 +72,8 @@ const char* tip2[nchpar]={
   "Timing window start, included (usually negative, if 99 - use T1)",
   "Timing window end, excluded (usually positive, if 99 - use T2)",
   "Energy multiplier",
-  "Low energy limit",
-  "High energy limit"
+  "Low energy limit (not working yet)",
+  "High energy limit (not working yet)"
 };
 
 
@@ -166,7 +166,7 @@ void ParDlg::DoNum() {
   // cout << pp.data << " " << opt.bkg1[0] << " ";
   // cout << (Int_t) pp.all << endl;
 
-  //cout << "Donum: " << te->GetName() << endl;
+  cout << "Donum: " << te->GetName() << endl;
   //return;
   
   SetNum(pp,te->GetNumber());

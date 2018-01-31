@@ -279,7 +279,8 @@ void *handle_ana(void* ptr) {
       // analyze events up to m_event
       for (it=crs->m_start; it!=crs->m_event;) {
 	//cout << "ana7: " << it->Nevt << " " << crs->m_event->Nevt << " " << std::distance(it,crs->m_event) << endl;
-	if (it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
+	if (!crs->b_stop &&
+	    it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  //HiFrm->FillHist(&(*it));
 
 	  it->FillHist();
@@ -1593,7 +1594,9 @@ int CRS::DoBuf() {
     //list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
     //PulseClass *ipp = &vv->back();
     //opt.T_acq = (ipp->Tstamp64 - Tstart64)*1e-9*period;
-    opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
+    if (!b_stop) {
+      opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
+    }
     //cout << "TTT: " << ipp->Tstamp64*1e-9*period << endl;
 
     return nbuffers;
@@ -1609,6 +1612,10 @@ int CRS::DoBuf() {
 
 void CRS::FAnalyze(bool nobatch) {
 
+  if (gzeof(f_read)) {
+    cout << "Enf of file: " << endl;
+    return;
+  }
   TCanvas *cv=0;
   //cout << "FAnalyze: " << gztell(f_read) << endl;
   if (justopened && opt.dec_write) {
@@ -1666,6 +1673,11 @@ void CRS::FAnalyze(bool nobatch) {
 }
 
 void CRS::DoNBuf(int nb) {
+
+  if (gzeof(f_read)) {
+    cout << "Enf of file: " << endl;
+    return;
+  }
 
   if (justopened && opt.dec_write) {
     Reset_Dec();

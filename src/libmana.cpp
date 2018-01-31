@@ -1149,7 +1149,7 @@ void MainFrame::SetTitle(char* fname) {
 
 void MainFrame::DoStartStop() {
 
-  //cout << gROOT->FindObject("Start") << endl;
+  //cout << "Dostartstop: " << gROOT->FindObject("Start") << endl;
 
 #ifdef CYUSB
   if (crs->b_acq) {
@@ -1228,17 +1228,19 @@ void MainFrame::DoOpen() {
 
 void MainFrame::DoAna() {
 
+  cout << "DoAna: " << gROOT->FindObject("Start") << endl;
+
   if (!crs->f_read) {
     cout << "File not open" << endl;
     return;
   }
 
   if (crs->b_fana) { //analysis is running -> stop it
-    fAna->ChangeBackground(fGreen);
-    fAna->SetText("Analyse");
-    gSystem->Sleep(100);
     crs->b_fana=false;
     crs->b_stop=true;
+    gSystem->Sleep(100);
+    fAna->ChangeBackground(fGreen);
+    fAna->SetText("Analyse");
   }
   else { //start analysis
     if (TestFile()) {

@@ -39,7 +39,7 @@ class MainFrame : public TGMainFrame {
 
  public:
   TGMainFrame          *fMain;
-private:
+ public:
   TRootEmbeddedCanvas  *fEcanvas;
 
   TGMenuBar            *fMenuBar;     // main menu bar
