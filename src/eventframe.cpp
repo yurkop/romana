@@ -283,6 +283,17 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 				   "DoNum()");
   fHor_but->AddFrame(fNum2,fLay4);
 
+  fChk = new TGTextButton(fHor_but," Chk ");
+  fChk->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
+  fHor_but->AddFrame(fChk, fLay4);
+
+  cout << "formula: " << opt.formula << endl;
+  TGTextEntry* tEnt = new TGTextEntry(fHor_but,opt.formula,0);;
+  tEnt->SetWidth(100);
+  //tt->SetState(false);
+  fHor_but->AddFrame(tEnt,fLay4);
+  tEnt->Connect("TextChanged(char*)", "EventFrame", this, "DoFormula()");
+
   opt.b_deriv[0]=true;
 
   fDeriv[0] = new TGCheckButton(fVer_d, "Pulse", 0);
@@ -623,6 +634,23 @@ void EventFrame::MinusN() {
     DrawEvent2();
   }
 }
+
+void EventFrame::DoCheckPoint() {
+  cout << "DoCheck: " << opt.formula << endl;
+}
+
+void EventFrame::DoFormula() {
+  TGTextEntry *te = (TGTextEntry*) gTQSender;
+  //Int_t id = te->WidgetId();
+
+  //int sel = te->GetSelected();
+
+  
+  strcpy(opt.formula,te->GetText());
+
+  cout << "DoFormula: " << te->GetText() << " " << opt.formula << endl;
+}
+
 
 // void EventFrame::Clear()
 // {

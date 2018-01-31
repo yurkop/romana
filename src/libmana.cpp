@@ -81,7 +81,7 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
-int debug=0; //=1// for printing debug messages
+int debug=2; //=1// for printing debug messages
 
 //int *opt_id[MXNUM];
 
@@ -135,8 +135,8 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
-    if (debug&0x2)
-      cout << "member: " << dm->GetName() << endl;
+    //if (debug&0x2)
+    //cout << "member: " << dm->GetName() << endl;
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -152,10 +152,12 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
       memcpy(buf+sz,var+dm->GetOffset(),len);
       sz+=len;
       if (debug&0x2)
-	cout << dm->GetName() << " " << len << endl;
+	cout << dm->GetName() << " " << len << " " << sz << endl;
     }
   }
 
+  if (debug&0x2)
+    cout << "size: " << sz << endl;
   return sz;
 
 }
@@ -166,7 +168,8 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
   //copies all data members from a buffer, size - size of the buffer
   //buffer should exist. Only data members with matching names are copied
 
-  //cout <<"BufToClass::" << endl;
+  if (debug&0x2)
+    cout <<"BufToClass:: " << size << endl;
 
   TList* lst = TClass::GetClass(name)->GetListOfDataMembers();
   if (!lst) {
@@ -181,7 +184,7 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
   TDataMember *dm;
   char memname[100];
   char clname[100];
-  const UShort_t mx=5000;
+  const UShort_t mx=50000;
   char data[mx];
   while (sz<size) {
     memcpy(&len,buf+sz,sizeof(len));
@@ -211,15 +214,19 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
 	len2*=dm->GetMaxIndex(i);
       }
       if (debug&0x2)
-	cout << dm->GetName() << " " << len << " " << len2 << endl;
+	cout << dm->GetName() << " " << len << " " << sz << endl;
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
     else {
-      //cout << "member not found: " << dm << " " << memname << " " 
-      //   << clname << " " << name << endl;
+      cout << "member not found: " << dm << " " << memname << " " 
+         << clname << " " << name << endl;
     }
 
   }
+
+  if (debug&0x2)
+    cout << "len: " << len << " " << sz << endl;
+  
 
 }
 //--------------------------------

@@ -314,7 +314,7 @@ void EventClass::FillHist() {
 
   int icut=0;
 
-  static Long64_t T_prev[MAX_CH];
+  //static Long64_t T_prev[MAX_CH];
 
   //cout << "FillHist: " << endl;
 
@@ -456,21 +456,17 @@ void EventClass::FillHist() {
     }
 
     if (opt.b_per) {
-      if (crs->Tstart0>0) {
-	int mult = pulses.size();
-	if (mult>=MAX_CH) mult=MAX_CH-1;
-
-	tt = (T - crs->Tstart0)*0.001*crs->period;
-
-	hcl->h_per[mult][0]->Fill(tt);
-	hcl->h_per[0][0]->Fill(tt);
+      if (hcl->T_prev[ch]) {
+	tt = pulses[i].Tstamp64 - hcl->T_prev[ch];
+	tt*=0.001*crs->period; //convert to mks
+	hcl->h_per[ch][0]->Fill(tt);
 	if (icut) {
-	  hcl->h_per[mult][icut]->Fill(tt);
-	  hcl->h_per[0][0]->Fill(tt);
+	  hcl->h_per[ch][icut]->Fill(tt);
 	}
       }
-      if (ch==opt.start_ch) {
-	crs->Tstart0 = T;
+      hcl->T_prev[ch]=pulses[i].Tstamp64;
+      if (ch==30) {
+	cout << "Prev: " << ch << " " << tt << endl;
       }
     }
 

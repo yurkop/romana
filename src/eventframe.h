@@ -33,14 +33,15 @@ protected:
    TGHorizontalFrame      *fHor2;
 
    //TGTextButton           *freset;
-   TGTextButton           *f1buf;
-   TGTextButton           *fNbuf;
+   //TGTextButton           *f1buf;
+   //TGTextButton           *fNbuf;
    TGTextButton           *fOne;
    TGTextButton           *fNev;
    TGTextButton           *fmOne;
    TGTextButton           *fmNev;
    TGTextButton           *fFirst;
    TGTextButton           *fLast;
+   TGTextButton           *fChk;
 
    TGDoubleHSlider        *fHslider;
    TGDoubleVSlider        *fVslider;
@@ -125,6 +126,8 @@ public:
    void MinusN();
    void First();
    void Last();
+   void DoCheckPoint();
+   void DoFormula();
    void DoSlider();
    void DoChkDeriv();
    void DoChkPeak();
