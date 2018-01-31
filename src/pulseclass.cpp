@@ -314,6 +314,8 @@ void EventClass::FillHist() {
 
   int icut=0;
 
+  static Long64_t T_prev[MAX_CH];
+
   //cout << "FillHist: " << endl;
 
   if (opt.b_h2d) {
@@ -432,7 +434,7 @@ void EventClass::FillHist() {
 	crs->rPeaks.push_back(crs->rP);
       }
 
-    }
+    } //for peaks...
 
     if (opt.b_mtof) {
       if (crs->Tstart0>0) {
@@ -446,6 +448,25 @@ void EventClass::FillHist() {
 	if (icut) {
 	  hcl->h_mtof[mult][icut]->Fill(tt);
 	  hcl->h_mtof[0][0]->Fill(tt);
+	}
+      }
+      if (ch==opt.start_ch) {
+	crs->Tstart0 = T;
+      }
+    }
+
+    if (opt.b_per) {
+      if (crs->Tstart0>0) {
+	int mult = pulses.size();
+	if (mult>=MAX_CH) mult=MAX_CH-1;
+
+	tt = (T - crs->Tstart0)*0.001*crs->period;
+
+	hcl->h_per[mult][0]->Fill(tt);
+	hcl->h_per[0][0]->Fill(tt);
+	if (icut) {
+	  hcl->h_per[mult][icut]->Fill(tt);
+	  hcl->h_per[0][0]->Fill(tt);
 	}
       }
       if (ch==opt.start_ch) {

@@ -126,6 +126,7 @@ class Toptions: public TObject {
   Float_t mtof_min,mtof_max;
   Float_t amp_min,amp_max;
   Float_t hei_min,hei_max;
+  Float_t per_min,per_max;
   Float_t h2d_min,h2d_max;
 
   Float_t time_bins;
@@ -133,6 +134,7 @@ class Toptions: public TObject {
   Float_t mtof_bins;
   Float_t amp_bins;
   Float_t hei_bins;
+  Float_t per_bins;
   Float_t h2d_bins;
 
   //b-flags: - create histograms and analyze them
@@ -141,6 +143,7 @@ class Toptions: public TObject {
   Bool_t b_mtof;
   Bool_t b_amp;
   Bool_t b_hei;
+  Bool_t b_per;
   Bool_t b_h2d;
 
   //s-flags: Show histograms in fListTree
@@ -149,6 +152,7 @@ class Toptions: public TObject {
   Bool_t s_mtof[MAX_CH];
   Bool_t s_amp[MAX_CH];
   Bool_t s_hei[MAX_CH];
+  Bool_t s_per[MAX_CH];
   Bool_t s_h2d[MAX_CH];
 
   //w-flags: Put histograms in WORK* folders
@@ -157,6 +161,7 @@ class Toptions: public TObject {
   Bool_t w_mtof[MAX_CH];
   Bool_t w_amp[MAX_CH];
   Bool_t w_hei[MAX_CH];
+  Bool_t w_per[MAX_CH];
   Bool_t w_h2d[MAX_CH];
 
 
@@ -181,7 +186,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 103)
+  ClassDef(Toptions, 104)
 };
 
 ClassImp(Toptions)

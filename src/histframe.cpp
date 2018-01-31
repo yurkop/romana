@@ -336,80 +336,6 @@ void HistFrame::Make_Ltree() {
 
 }
 
-/*
-void HistFrame::Make_Ltree() {
-
-  char ss[64];
-  const TGPicture *pic1 = gClient->GetPicture("h1_t.xpm");
-  const TGPicture *pic2 = gClient->GetPicture("h2_t.xpm");
-  TGListTreeItem *iroot=0;
-  TGListTreeItem *idir;
-  //TGListTreeItem *item;
-
-  iWork = Item_Ltree(iroot, "WORK",0,0,0,true);
-  Item_Ltree(iWork, hcl->h_ampl[0][0]->GetName(), hcl->h_ampl[0][0], pic1, pic1,true);
-  Item_Ltree(iWork, hcl->h_ampl[1][0]->GetName(), hcl->h_ampl[1][0], pic1, pic1,true);
-  Item_Ltree(iWork, hcl->h_mtof[2][0]->GetName(), hcl->h_mtof[2][0], pic1, pic1,true);
-  Item_Ltree(iWork, hcl->h_2d[0]->GetName(),      hcl->h_2d[0],      pic2, pic2,true);
-
-  for (int cc=0;cc<opt.ncuts;cc++) {
-    sprintf(ss,"WORK_cut%d",cc+1);
-    iWork_cut[cc] = Item_Ltree(iroot, ss,0,0,0,true);
-    Item_Ltree(iWork_cut[cc], hcl->h_ampl[0][cc+1]->GetName(), hcl->h_ampl[0][cc+1], pic1, pic1,true);
-    Item_Ltree(iWork_cut[cc], hcl->h_ampl[1][cc+1]->GetName(), hcl->h_ampl[1][cc+1], pic1, pic1,true);
-    Item_Ltree(iWork_cut[cc], hcl->h_mtof[2][cc+1]->GetName(), hcl->h_mtof[2][cc+1], pic1, pic1,true);
-    Item_Ltree(iWork_cut[cc], hcl->h_2d[cc+1]->GetName(),      hcl->h_2d[cc+1],      pic2, pic2,true);
-
-  }
-
-  idir = Item_Ltree(iroot, "Amplitude",0,0,0,true);
-  for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_ampl[i][0]->GetName(), hcl->h_ampl[i][0], pic1, pic1,true,opt.s_amp[i]);
-    //item->CheckItem(false);
-  }
-  //idir->CheckItem(false);
-
-  idir = Item_Ltree(iroot, "Height",0,0,0,true);
-  for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_height[i][0]->GetName(), hcl->h_height[i][0], pic1, pic1,true,opt.s_hei[i]);
-  }
-
-  idir = Item_Ltree(iroot, "Time",0,0,0,true);
-  for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_time[i][0]->GetName(), hcl->h_time[i][0], pic1, pic1,true,opt.s_time[i]);
-  }
-  
-  idir = Item_Ltree(iroot, "TOF",0,0,0,true);
-  for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_tof[i][0]->GetName(), hcl->h_tof[i][0], pic1, pic1,true,opt.s_tof[i]);
-  }
-
-  idir = Item_Ltree(iroot, "MTOF",0,0,0,true);
-  for (int i=0;i<MAX_CH;i++) {
-    Item_Ltree(idir, hcl->h_mtof[i][0]->GetName(), hcl->h_mtof[i][0], pic1, pic1,true,opt.s_mtof[i]);
-  }
-
-
-  // idir = Item_Ltree(iroot, "Profile strip",0,0,true);
-  // for (int i=0; i<64; i++){
-  //   Item_Ltree(idir, h2_prof_strip[i], pic1, pic1,true);
-  // }
-
-  // idir = Item_Ltree(iroot, "Profile real",0,0,true);
-  // for (int i=0; i<64; i++){
-  //   Item_Ltree(idir, name, h2_prof_real[i], pic1, pic1,true);
-  // }
-
-  
-  idir = Item_Ltree(iroot, "2d",0,0,0,true);
-  Item_Ltree(idir, hcl->h_2d[0]->GetName(), hcl->h_2d[0], pic2, pic2,true);
-
-  //fListTree->Sort(idir);
-
-}
-*/
-
-
 void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 {
   char hname[100];
@@ -790,26 +716,6 @@ void HistFrame::ClearCutG()
     delete hcl->cutG[i];
     hcl->cutG[i]=0;
   }
-
-  /*
-  for (int cc=1;cc<MAXCUTS;cc++) {
-    for (int i=0;i<MAX_CH;i++) {
-      delete h_ampl[i][cc];
-      delete h_height[i][cc];
-      delete h_time[i][cc];
-      delete h_tof[i][cc];
-      delete h_mtof[i][cc];
-
-      h_ampl[i][cc]=0;
-      h_height[i][cc]=0;
-      h_time[i][cc]=0;
-      h_tof[i][cc]=0;
-      h_mtof[i][cc]=0;
-    }
-    delete h_2d[cc];
-    h_2d[cc]=0;
-  }
-  */
 
   //Clear_tree();
   opt.ncuts=0;

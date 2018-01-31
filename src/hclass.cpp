@@ -63,6 +63,7 @@ HClass::HClass()
       h_time[i][cc]=0;
       h_tof[i][cc]=0;
       h_mtof[i][cc]=0;
+      h_per[i][cc]=0;
     }
     h_2d[0][cc]=0;
   }
@@ -138,6 +139,8 @@ void HClass::Make_hist() {
   //char name[100];
   //char title[100];
 
+  memset(T_prev,0,sizeof(T_prev));
+
   if (hilist)
     delete hilist;
   hilist = new TList();
@@ -155,6 +158,8 @@ void HClass::Make_hist() {
 	  opt.tof_min,opt.tof_max,opt.b_tof,opt.s_tof,opt.w_tof);
   Make_1d("MTOF","mtof",";t(mks);Counts",h_mtof,opt.mtof_bins,
 	  opt.mtof_min,opt.mtof_max,opt.b_mtof,opt.s_mtof,opt.w_mtof);
+  Make_1d("Period","period",";t(mks);Counts",h_per,opt.per_bins,
+	  opt.per_min,opt.per_max,opt.b_per,opt.s_per,opt.w_per);
 
   Make_2d("H2d","h2d",";Channel;Channel",h_2d,opt.h2d_bins,
 	  opt.h2d_min,opt.h2d_max,opt.b_h2d,opt.s_h2d,opt.w_h2d);

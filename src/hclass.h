@@ -32,12 +32,15 @@ class HClass {
   TH1F* h_time[MAX_CH][MAXCUTS]; // real time
   TH1F* h_tof[MAX_CH][MAXCUTS]; // time of flight
   TH1F* h_mtof[MAX_CH][MAXCUTS]; // time of flight
+  TH1F* h_period[MAX_CH][MAXCUTS]; // period
 
   TH2F* h_2d[1][MAXCUTS];
 
   TCutG* cutG[MAXCUTS];
 
   TList* hilist;
+
+  Long64_t T_prev[MAX_CH];
 
  public:
 

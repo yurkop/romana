@@ -891,6 +891,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Height";
   AddLine_hist(frame,&opt.b_hei,&opt.hei_bins,&opt.hei_min,&opt.hei_max,tip1,label);
 
+  tip1= "Pulse period (distance between two consecutive pulses), in mks";
+  label="Period";
+  AddLine_hist(frame,&opt.b_per,&opt.per_bins,&opt.per_min,&opt.per_max,tip1,label);
+
   tip1= "2-dimensional histogram (ampl0-ampl1)";
   label="h2d";
   AddLine_hist(frame,&opt.b_h2d,&opt.h2d_bins,&opt.h2d_min,&opt.h2d_max,tip1,label);
