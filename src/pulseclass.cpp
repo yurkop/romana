@@ -313,6 +313,8 @@ void EventClass::FillHist() {
   int nbin;
 
   int icut=0;
+  int mult=0;
+  Long64_t tm;
 
   //static Long64_t T_prev[MAX_CH];
 
@@ -434,70 +436,77 @@ void EventClass::FillHist() {
 	crs->rPeaks.push_back(crs->rP);
       }
 
+      if (j==0) { //only for the first peak
+	if (opt.b_mtof) {
+	  if (ch==opt.start_ch) {
+	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Pos;
+	  }
+	  if (opt.Mt[ch]) {
+	    mult++;
+	  }
+	  if (mult && (i==pulses.size()-1)) { //last pulse
+	    if (crs->Tstart0>0) {
+	      if (mult>=MAX_CH) mult=MAX_CH-1;
+
+	      tm = pulses[i].Tstamp64 + pk->Pos;
+	      tt = (tm - crs->Tstart0)*0.001*crs->period;
+
+	      hcl->h_mtof[mult][0]->Fill(tt);
+	      hcl->h_mtof[0][0]->Fill(tt);
+	      if (icut) {
+		hcl->h_mtof[mult][icut]->Fill(tt);
+		hcl->h_mtof[0][0]->Fill(tt);
+	      }
+	    }
+	  } //if last pulse
+	} //if b_mtof
+
+	if (opt.b_per) {
+	  tm = pulses[i].Tstamp64 + pk->Pos;
+	  if (hcl->T_prev[ch]) {
+	    tt = (tm - hcl->T_prev[ch])*0.001*crs->period; //convert to mks
+	    hcl->h_per[ch][0]->Fill(tt);
+	    if (icut) {
+	      hcl->h_per[ch][icut]->Fill(tt);
+	    }
+	  }
+	  hcl->T_prev[ch]=tm;
+	  // if (ch==30) {
+	  //   cout << "Prev: " << ch << " " << tt << endl;
+	  // }
+	}
+      } // only for 1st peak
+
     } //for peaks...
-
-    if (opt.b_mtof) {
-      if (crs->Tstart0>0) {
-	int mult = pulses.size();
-	if (mult>=MAX_CH) mult=MAX_CH-1;
-
-	tt = (T - crs->Tstart0)*0.001*crs->period;
-
-	hcl->h_mtof[mult][0]->Fill(tt);
-	hcl->h_mtof[0][0]->Fill(tt);
-	if (icut) {
-	  hcl->h_mtof[mult][icut]->Fill(tt);
-	  hcl->h_mtof[0][0]->Fill(tt);
-	}
-      }
-      if (ch==opt.start_ch) {
-	crs->Tstart0 = T;
-      }
-    }
-
-    if (opt.b_per) {
-      if (hcl->T_prev[ch]) {
-	tt = pulses[i].Tstamp64 - hcl->T_prev[ch];
-	tt*=0.001*crs->period; //convert to mks
-	hcl->h_per[ch][0]->Fill(tt);
-	if (icut) {
-	  hcl->h_per[ch][icut]->Fill(tt);
-	}
-      }
-      hcl->T_prev[ch]=pulses[i].Tstamp64;
-      if (ch==30) {
-	cout << "Prev: " << ch << " " << tt << endl;
-      }
-    }
 
   } //for (UInt_t i=0;i<pulses.size()...
 
   /*
-  if (opt.dec_write) {
+    if (opt.dec_write) {
     crs->rTime=T;
     crs->rState = State;
     crs->Tree->Fill();
     crs->rPeaks.clear();
-  }
+    }
   */
 
   /*
-  int ax=0,ay=0,px=0,py=0;
-  if (pulses.size()==4) {
+    int ax=0,ay=0,px=0,py=0;
+    if (pulses.size()==4) {
     for (UInt_t i=0;i<pulses.size();i++) {
-      int ch = pulses[i].Chan;
-      if (ch<8) { //prof_x
-	px=PROF::prof_ch[ch];
-      }
-      else if (ch<16) { //prof y
-	py=PROF::prof_ch[ch];
-      }
-      else if (ch<24) { //alpha y
-	ay=PROF::prof_ch[ch];
-      }
-      else { //alpha x
-	ax=PROF::prof_ch[ch];
-      }
+    int ch = pulses[i].Chan;
+    if (ch<8) { //prof_x
+    px=PROF::prof_ch[ch];
+    }
+    else if (ch<16) { //prof y
+    py=PROF::prof_ch[ch];
+    }
+    else if (ch<24) { //alpha y
+    ay=PROF::prof_ch[ch];
+    }
+    else { //alpha x
+    ax=PROF::prof_ch[ch];
+    }
     }
 
     int ch_alpha = ax + ay*8;
@@ -506,7 +515,7 @@ void EventClass::FillHist() {
 
     hcl->h2_prof_strip[ch_alpha]->Fill(px,py);
     hcl->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
-  }
+    }
   */
 
 }

@@ -52,13 +52,14 @@ const char* tip[ncrspar+1]={
   "Pulse rate for a given channel"
 };
 
-const int nchpar=18;
-const int tlen2[nchpar]={26,60,26,25,32,40,40,40,42,42,35,35,20,35,35,35,42,42};
-const char* tlab2[nchpar]={"Ch","Type","St","sS","Drv","Thr","Bkg1","Bkg2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
+const int nchpar=19;
+const int tlen2[nchpar]={27,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,35,42,42};
+const char* tlab2[nchpar]={"Ch","Type","St","Mt","sS","Drv","Thr","Bkg1","Bkg2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
 const char* tip2[nchpar]={
   "Channel number",
   "Channel type",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
+  "Mtof channel - use this channel for in mtof spectra",
   "Software smoothing",
   "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
@@ -1341,10 +1342,15 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
   id = Plist.size()+1;
   TGCheckButton *fst = new TGCheckButton(cframe[i], "", id);
   DoMap(fst,&opt.Start[i],p_chk,all,0,0);
-
   fst->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
-
   cframe[i]->AddFrame(fst,fL3);
+  kk++;
+
+  id = Plist.size()+1;
+  TGCheckButton *fmt = new TGCheckButton(cframe[i], "", id);
+  DoMap(fmt,&opt.Mt[i],p_chk,all,0,0);
+  fmt->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
+  cframe[i]->AddFrame(fmt,fL3);
   kk++;
 
 

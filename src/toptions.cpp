@@ -108,9 +108,10 @@ Toptions::Toptions() {
   for (int i=0;i<MAX_CH;i++) {
     //chtype[i]=(ChDef) 99;
     //cout << "chtype: " << chtype[i] << endl;
-    channels[i]=ch_off2;
+    //channels[i]=ch_off2;
     //cout << i << " toptions " << channels[i] << endl;
     nsmoo[i]=2;
+    Mt[i]=true;
     //enabl[i]=true;
   }
 
@@ -206,41 +207,41 @@ Toptions::Toptions() {
   //T0=0.0;
   //LL=20.0;
 
-  for (int i=0;i<MAX_CH;i++) {
-    sprintf(chname[i],"ch%02d",i);    
-    color[i]=0;
-    channels[i]=ch_off2;
-    //chinv[i]=false;
-    //sprintf(chname[i],"ch%0d",i);
-  }
+  // for (int i=0;i<MAX_CH;i++) {
+  //   sprintf(chname[i],"ch%02d",i);    
+  //   color[i]=0;
+  //   channels[i]=ch_off2;
+  //   //chinv[i]=false;
+  //   //sprintf(chname[i],"ch%0d",i);
+  // }
 
-  sprintf(chname[0],"demon");
-  sprintf(chname[2],"isomer");
-  sprintf(chname[6],"pulser");
-  sprintf(chname[8],"monitor1");
-  sprintf(chname[12],"stilbene");
-  sprintf(chname[14],"start");
+  // sprintf(chname[0],"demon");
+  // sprintf(chname[2],"isomer");
+  // sprintf(chname[6],"pulser");
+  // sprintf(chname[8],"monitor1");
+  // sprintf(chname[12],"stilbene");
+  // sprintf(chname[14],"start");
 
-  channels[0]=ch_ng;
-  channels[2]=ch_nim;
-  channels[6]=ch_nim;
-  channels[8]=ch_nim;
-  channels[12]=ch_ng;
-  channels[14]=ch_nim;
+  // channels[0]=ch_ng;
+  // channels[2]=ch_nim;
+  // channels[6]=ch_nim;
+  // channels[8]=ch_nim;
+  // channels[12]=ch_ng;
+  // channels[14]=ch_nim;
 
-  color[0]=1;
-  color[2]=1;
-  color[6]=1;
-  color[8]=1;
-  color[12]=1;
-  color[14]=1;
+  // color[0]=1;
+  // color[2]=1;
+  // color[6]=1;
+  // color[8]=1;
+  // color[12]=1;
+  // color[14]=1;
 
-  lcolor[0]=1;
-  lcolor[1]=1;
-  lcolor[2]=1;
-  lcolor[3]=1;
-  lcolor[4]=1;
-  lcolor[5]=1;
+  // lcolor[0]=1;
+  // lcolor[1]=1;
+  // lcolor[2]=1;
+  // lcolor[3]=1;
+  // lcolor[4]=1;
+  // lcolor[5]=1;
 
   Tstart=0;
   Tstop=0;
@@ -274,6 +275,7 @@ Toptions::Toptions() {
   F_start = gSystem->Now();
   T_acq = 0;
 
+  strcpy(formula,"0");
 }
 
 //Toptions::~Toptions() {

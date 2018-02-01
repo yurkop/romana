@@ -241,26 +241,32 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fVer0->AddFrame(fHor_but, fLay4);
 
   fFirst = new TGTextButton(fHor_but,"First");
+  fFirst->SetToolTipText("Go to the first event in the list");
   fFirst->Connect("Clicked()","EventFrame",this,"First()");
   fHor_but->AddFrame(fFirst, fLay5);
 
   fLast = new TGTextButton(fHor_but,"Last");
+  fLast->SetToolTipText("Go to the last event in the list");
   fLast->Connect("Clicked()","EventFrame",this,"Last()");
   fHor_but->AddFrame(fLast, fLay4);
 
   fmOne = new TGTextButton(fHor_but," -1 ");
+  fmOne->SetToolTipText("One event backward");
   fmOne->Connect("Clicked()","EventFrame",this,"Minus1()");
   fHor_but->AddFrame(fmOne, fLay4);
 
   fOne = new TGTextButton(fHor_but," +1 ");
+  fOne->SetToolTipText("One event forward");
   fOne->Connect("Clicked()","EventFrame",this,"Plus1()");
   fHor_but->AddFrame(fOne, fLay4);
 
   fmNev = new TGTextButton(fHor_but," -N ");
+  fmNev->SetToolTipText("N events backward");
   fmNev->Connect("Clicked()","EventFrame",this,"MinusN()");
   fHor_but->AddFrame(fmNev, fLay4);
 
   fNev = new TGTextButton(fHor_but," +N ");
+  fNev->SetToolTipText("N events forward");
   fNev->Connect("Clicked()","EventFrame",this,"PlusN()");
   fHor_but->AddFrame(fNev, fLay4);
 
@@ -283,13 +289,23 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 				   "DoNum()");
   fHor_but->AddFrame(fNum2,fLay4);
 
-  fChk = new TGTextButton(fHor_but," Chk ");
-  fChk->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
-  fHor_but->AddFrame(fChk, fLay4);
+  const char* ttip = "Checkpoint: search backward for an event which satisfies the following condition";
+  fChk1 = new TGTextButton(fHor_but," S-: ",1);
+  fChk1->SetToolTipText(ttip);
+  fChk1->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
+  fHor_but->AddFrame(fChk1, fLay4);
 
-  cout << "formula: " << opt.formula << endl;
-  TGTextEntry* tEnt = new TGTextEntry(fHor_but,opt.formula,0);;
+  ttip = "Checkpoint: search forward for an event which satisfies the following condition";
+  fChk2 = new TGTextButton(fHor_but," S+: ",2);
+  fChk2->SetToolTipText(ttip);
+  fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
+  fHor_but->AddFrame(fChk2, fLay4);
+
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - amplitude;\n[2] - time;\n[3] - tof;\n[4] - multiplicity";
+  //cout << "formula: " << opt.formula << endl;
+  tEnt = new TGTextEntry(fHor_but,opt.formula,0);;
   tEnt->SetWidth(100);
+  tEnt->SetToolTipText(ttip);
   //tt->SetState(false);
   fHor_but->AddFrame(tEnt,fLay4);
   tEnt->Connect("TextChanged(char*)", "EventFrame", this, "DoFormula()");
@@ -516,6 +532,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     }
   }  
 
+  formula = new TFormula("formula",opt.formula);
+
   //mgr[0]=new TMultiGraph();
   //mgr[1]=new TMultiGraph();
   //mgr[2]=new TMultiGraph();
@@ -636,18 +654,84 @@ void EventFrame::MinusN() {
 }
 
 void EventFrame::DoCheckPoint() {
-  cout << "DoCheck: " << opt.formula << endl;
+  TGButton *btn = (TGButton *) gTQSender;
+  Int_t id = btn->WidgetId();
+
+  Pixel_t color;
+  Double_t par[6];
+  formula->SetTitle(opt.formula);
+  formula->Clear();
+  int ires = formula->Compile();
+  if (ires) {
+    gClient->GetColorByName("red", color);
+    tEnt->SetBackgroundColor(color);
+  }
+  else {
+    gClient->GetColorByName("white", color);
+    tEnt->SetBackgroundColor(color);
+    double res = 0;//formula->Eval(7);
+
+    std::list<EventClass>::iterator ievt;
+    //++ievt;
+    if (id==1) {
+      //cout << "dd1: " << d_event->Nevt << " " << d_event->T << endl;
+      ievt = Pevents->begin();
+      if (d_event==Pevents->begin())
+	return;
+      else
+	--d_event;
+      //cout << "dd2: " << d_event->Nevt << " " << d_event->T << endl;
+    }
+    else {
+      //cout << "dd1: " << d_event->Nevt << " " << d_event->T << endl;
+      ievt = --Pevents->end();
+      ++d_event;
+      if (d_event==Pevents->end()) {
+	--d_event;
+	return;
+      }
+      //cout << "dd2: " << d_event->Nevt << " " << d_event->T << endl;
+    }
+    while (d_event!=ievt) {
+      //for (d_event=d_event;d_event!=Pevents->end();++d_event) {
+      //cout << d_event->Nevt << " " << d_event->T << endl;
+      par[4]=d_event->pulses.size();
+      par[2]=(d_event->T-crs->Tstart64)*crs->period*1e-9;
+
+      for (UInt_t i=0;i<d_event->pulses.size();i++) {
+	int ch = d_event->pulses[i].Chan;
+	par[0]=ch;
+
+	for (UInt_t j=0;j<d_event->pulses[i].Peaks.size();j++) {
+	  peak_type* pk = &d_event->pulses[i].Peaks[j];
+	  par[1]=pk->Area;
+	  par[3]=pk->Time;
+	  res = formula->EvalPar(0,par);
+	  if (res) {
+	    //d_event = d_event;
+	    //cout << "DoCheck: " << id << " " << opt.formula << d_event->Nevt << " " << d_event->T << " " << res << endl;
+	    DrawEvent2();
+	    return;
+	  }
+	}
+      }
+      if (id==1) {
+	--d_event;
+      }
+      else {
+	++d_event;
+      }
+    } //while
+
+    DrawEvent2();
+  } //else
 }
 
 void EventFrame::DoFormula() {
   TGTextEntry *te = (TGTextEntry*) gTQSender;
   //Int_t id = te->WidgetId();
-
-  //int sel = te->GetSelected();
-
   
   strcpy(opt.formula,te->GetText());
-
   cout << "DoFormula: " << te->GetText() << " " << opt.formula << endl;
 }
 

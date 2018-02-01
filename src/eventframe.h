@@ -41,8 +41,10 @@ protected:
    TGTextButton           *fmNev;
    TGTextButton           *fFirst;
    TGTextButton           *fLast;
-   TGTextButton           *fChk;
-
+   TGTextButton           *fChk1;
+   TGTextButton           *fChk2;
+   TGTextEntry            *tEnt;
+  
    TGDoubleHSlider        *fHslider;
    TGDoubleVSlider        *fVslider;
 
@@ -56,6 +58,8 @@ protected:
    static const int        nstat=4;
    TGTextEntry            *fStat[nstat];
    TGStatusBar            *fStat2[4];
+
+   TFormula               *formula;
 
    TGLayoutHints          *fLay1;
    TGLayoutHints          *fLay2;

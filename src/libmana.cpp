@@ -81,7 +81,7 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
-int debug=2; //=1// for printing debug messages
+int debug=0; //=1 or 2// for printing debug messages
 
 //int *opt_id[MXNUM];
 
@@ -189,16 +189,28 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
   while (sz<size) {
     memcpy(&len,buf+sz,sizeof(len));
     sz+=sizeof(len);
-    if (len==0 || len>=mx || sz>=size) break;
+    if (len==0 || len>=mx || sz>size) {
+      cout << "br1: " << endl;
+      break;
+    }
     memcpy(memname,buf+sz,len);
     sz+=len;
-    if (sz>=size) break;
+    if (sz>size) {
+      cout << "br2: " << endl;
+      break;
+    }
     memcpy(&len,buf+sz,sizeof(len));
     sz+=sizeof(len);
-    if (len==0 || len>=mx || sz>=size) break;
+    if (len==0 || len>=mx || sz>size) {
+      cout << "br3: " << endl;
+      break;
+    }
     memcpy(data,buf+sz,len);
     sz+=len;
-    if (sz>=size) break;
+    if (sz>size) {
+      cout << "br4: " << sz << " " << size << endl;
+      break;
+    }
 
     if (strcmp(memname,"class")==0) {
       strcpy(clname,data);
@@ -218,8 +230,8 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
     else {
-      cout << "member not found: " << dm << " " << memname << " " 
-         << clname << " " << name << endl;
+      //cout << "member not found: " << dm << " " << memname << " " 
+      //<< clname << " " << name << endl;
     }
 
   }

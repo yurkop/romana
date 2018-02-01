@@ -49,6 +49,7 @@ class Toptions: public TObject {
   virtual ~Toptions() {};
 
   Bool_t Start[MAX_CH+ADDCH]; //
+  Bool_t Mt[MAX_CH+ADDCH]; // flag to use channel for mtof
   //UInt_t ch_flag[MAX_CH+ADDCH];
   Int_t nsmoo[MAX_CH+ADDCH]; //software smoothing 0..100
   Int_t kdrv[MAX_CH+ADDCH]; //K=0 - trigger on the signal; k!=0 - on derivative
@@ -69,10 +70,10 @@ class Toptions: public TObject {
   Float_t elim2[MAX_CH+ADDCH];
 
 
-  Int_t channels[MAX_CH+1]; //+all
-  Int_t color[MAX_CH+1]; //+all
-  Int_t lcolor[MAX_L];
-  char chname[MAX_CH+1][16]; //+all
+  //Int_t channels[MAX_CH+1]; //+all
+  //Int_t color[MAX_CH+1]; //+all
+  //Int_t lcolor[MAX_L];
+  //char chname[MAX_CH+1][16]; //+all
 
   //----------------------------------------------
   // Important common parameters
