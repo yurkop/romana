@@ -584,6 +584,15 @@ void ParDlg::UpdateField(int nn) {
 	  te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
 	}
       }
+      if (str.Contains("b_hist",TString::kIgnoreCase)) {
+	for (int i=0;i<3;i++) {
+	  pp = &Plist[nn+i+1];
+	  //TGWidget* wg = (TGWidget*) pp->field;
+	  TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
+	  //cout << "upd: " << i << " " << te2->GetName() << " " << st << endl;
+	  te2->SetState(bb);
+	}
+      }
     }
       break;
     case p_cmb: {
@@ -1056,12 +1065,14 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
 			 const char* tip, const char* label)
 {
   double ww=70;
-  
+  char name[20];
+
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1);
 
   //double zz;
   int id;
+  //int id0;
 
   TGNumberFormat::ELimit nolim = TGNumberFormat::kNELNoLimits;
   TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
@@ -1069,10 +1080,14 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
   //checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
+  sprintf(name,"b_hist%d",id);
+  chk_hist->SetName(name);
   DoMap(chk_hist,b1,p_chk,0);
   chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheck()");
   hfr1->AddFrame(chk_hist,fL3);
+  //id0=id;
 
+  //cout << "hist: " << id << " " << chk_hist->GetName() << " " << chk_hist->GetTitle() << endl;
   //nbins
   id = Plist.size()+1;
   TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
@@ -1183,10 +1198,10 @@ void ParParDlg::DoCheck() {
   //cout << "DoCheck: " << Plist.size() << " " << id << " " << opt.b_time << endl;
 
   Bool_t state = (Bool_t) te->GetState();      
-  pmap pp;
+  pmap *pp;
   for (int i=0;i<3;i++) {
-    pp = Plist[id+i];
-    TGNumberEntryField *te2 = (TGNumberEntryField*) pp.field;
+    pp = &Plist[id+i];
+    TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
     //cout << i << " " << te2->GetNumber() << endl;
     te2->SetState(state);
   }

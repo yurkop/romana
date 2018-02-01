@@ -570,10 +570,26 @@ void HistFrame::DoButton()
 void HistFrame::AddCutG()
 {
   TObject* obj=0;
-  TPad* pad;
+  TPad* pad=0;
   const char* msg;// = "Gcut Test";
   Int_t retval;
 
+  pad = (TPad*) fEc->GetCanvas()->GetPad(1);
+
+  //pad->cd();
+  //pad->SetCrosshair(true);
+  cout << "gPad1: " << gPad << " " << pad << endl;
+  gPad->WaitPrimitive("CUTG","CutG");
+  //pad->SetCrosshair(false);
+
+  cout << "gPad2: " << gPad << endl;
+  return;
+
+
+
+
+
+  
   for (int i=1;i<=ndiv;i++) {
     pad = (TPad*) fEc->GetCanvas()->GetPad(i);
     obj = pad->GetPrimitive("h2d");
@@ -601,13 +617,14 @@ void HistFrame::AddCutG()
 	       msg, kMBIconAsterisk, kMBDismiss, &retval);
 
   if (!obj) return;
-  //cout << "test: " << obj << endl;
+  cout << "test1: " << obj << " " << pad << endl;
 
   pad->cd();
   pad->SetCrosshair(true);
   pad->WaitPrimitive("CUTG","CutG");
   pad->SetCrosshair(false);
 
+  cout << "test1: " << obj << endl;
   TCutG* cc= (TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG");
 
   int np = cc->GetN();
