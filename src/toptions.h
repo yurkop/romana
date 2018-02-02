@@ -180,7 +180,7 @@ class Toptions: public TObject {
   Int_t ncuts;
   Int_t pcuts[MAXCUTS]; //number of points in gcut
 
-  Float_t gcut[MAXCUTS][2][10]; //4 cuts; xy; 10 points
+  Float_t gcut[MAXCUTS][2][MAX_PCUTS]; //20 cuts; xy; 10 points
 
   char formula[90];
 

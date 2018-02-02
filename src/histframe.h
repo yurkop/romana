@@ -18,6 +18,8 @@
 //#include "TThread.h"
 #include <list>
 
+void DynamicExec();
+
 /*
 //-----------------------------------------------
 class MECanvas: public TRootEmbeddedCanvas {
@@ -38,15 +40,21 @@ class MECanvas: public TRootEmbeddedCanvas {
 class HistFrame: public TGCompositeFrame {
 
  public:
-   TGCanvas               *fCanvas;
+  //TGVerticalFrame        *fV1;
+  TGCanvas               *gCanvas; //hist Gcanvas
+  TGCanvas               *gCanvas2; //cuts Gcanvas
+  //TGLabel                *clab;
    TRootEmbeddedCanvas    *fEc;
    //MECanvas    *fEc;
    TGListTree             *fListTree;    // list tree with histograms
+   TGListTree             *fCutTree;    // list tree with histograms
+
    TGListTreeItem         *iWork;
    TGListTreeItem         *iWork_cut[MAXCUTS];
    TList* hlist;
    //std::list<TH1*> hlist2;   
 
+   TGCheckButton* chklog;
    static const int NR=7;
    TGRadioButton *Rb[NR];
 
@@ -54,6 +62,10 @@ class HistFrame: public TGCompositeFrame {
 
    Bool_t changed;
    Bool_t started;
+   Bool_t in_gcut;
+   int np_gcut; //number of points in gcut
+
+   //TLine line;
 
    int ndiv;
    int xdiv;

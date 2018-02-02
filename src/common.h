@@ -25,6 +25,7 @@ const int MAX_CH=32; //max number of channels
 const int ADDCH=9; //nai, bgo, si1, si2, stlb, demon, hpge, NIM, other
 
 const int MAXCUTS=20; //maximal number of cutG;
+const int MAX_PCUTS=10; //maximal number of points in cutG
 
 #define MAX_R 4 //number of channel types (gam,ng,nim,off)
 #define MAX_L 6 //line types (gam,neu,tail,unkn,pileup,frame)

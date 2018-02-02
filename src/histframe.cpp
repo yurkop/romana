@@ -9,12 +9,13 @@
 #include <TSpectrum.h>
 #include <TMutex.h>
 #include <TGButtonGroup.h>
+#include <TGShutter.h>
 //#include <TROOT.h>
 
 
 #include <TRandom.h>
 
-//TLine ln1;
+TLine ln1;
 
 /*
 int Ch_Gamma_X[8]={ 1, 2, 3, 4, 5, 6, 7, 8};
@@ -39,7 +40,7 @@ extern ULong_t fCyan;
 //extern TH1F *hrms;
 //extern TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)
 
-extern HistFrame* EvtFrm;
+extern HistFrame* HiFrm;
 
 //TText txt;
 
@@ -53,7 +54,8 @@ TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsTop,10,10,0,2);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
 //TGLayoutHints* fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
-TGLayoutHints* fLay7 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,5,0,0,0);
+TGLayoutHints* fLay7 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,3,0,0,0);
+TGLayoutHints* fLay8 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,0,0,0,0);
 
 //------------------------------
 
@@ -66,6 +68,86 @@ Bool_t MECanvas::HandleDNDDrop(TDNDData *data) {
 */
 
 //------------------------------
+
+void DynamicExec()
+{
+  //static int nn;
+  //nn++;
+  static Double_t xx[MAX_PCUTS],yy[MAX_PCUTS];
+
+  TList* list = gPad->GetListOfPrimitives();
+  TIter next(list);
+  TObject* obj=0;
+  int hdim=0;
+  while ( (obj=(TObject*)next()) ) {
+    if (obj->InheritsFrom(TH2::Class())) {
+      hdim=2;
+    }
+    else if ( (obj->InheritsFrom(TH1::Class())) ) {
+      hdim=1;
+    }
+  }
+
+  int ev = gPad->GetEvent();
+  int px = gPad->GetEventX();
+  int py = gPad->GetEventY();
+  
+  Double_t x1 = gPad->AbsPixeltoX(px);
+  Double_t y1 = gPad->AbsPixeltoY(py);
+
+  cout << "cutg: " << hdim << " " << HiFrm->np_gcut << " " << ev << " " << x1 << " " << y1 << endl;
+
+  if (HiFrm->np_gcut) {
+    ln1.SetX2(x1);
+    ln1.SetY2(y1);
+    ln1.Draw();
+    ((TPad*)gPad)->DrawCrosshair();
+    gPad->Update();
+    ((TPad*)gPad)->DrawCrosshair();
+    //gPad->Modified();
+    //gPad->SetCrosshair(true);
+  }
+
+  if(ev==1) { //left click
+    ln1.SetX1(x1);
+    ln1.SetY1(y1);
+    xx[HiFrm->np_gcut]=x1;
+    yy[HiFrm->np_gcut]=y1;
+    if (HiFrm->np_gcut) {
+      ln1.DrawLine(xx[HiFrm->np_gcut-1],yy[HiFrm->np_gcut-1],x1,y1);
+    }
+    HiFrm->np_gcut++;
+    if (HiFrm->np_gcut>=MAX_PCUTS) {
+      cout << "max: " << HiFrm->np_gcut << endl;
+      HiFrm->np_gcut--;
+    }
+    
+  }
+  
+  /*
+  TObject *select = gPad->GetSelected();
+   if(!select) {
+     cout << "no select:" << endl;
+     return;
+   }
+
+   //return;
+   float uxmin = gPad->GetUxmin();
+   float uxmax = gPad->GetUxmax();
+   int pxmin = gPad->XtoAbsPixel(uxmin);
+   int pxmax = gPad->XtoAbsPixel(uxmax);
+   Float_t upy = gPad->AbsPixeltoY(py);
+   Float_t upy1 = gPad->AbsPixeltoY(py);
+   Float_t y = gPad->PadtoY(upy);
+
+   cout << ev << " " << px << " " << py << " "
+	<< upy << " " << upy1 << " " << select << " " << list->GetSize()
+	<< endl;
+
+   //list->ls();
+   return;
+  */
+}
 
 HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
@@ -95,10 +177,12 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   TGHorizontalFrame      *fHor1; //contains canvas and list of histograms
   TGHorizontalFrame      *fHor2; //contains buttons etc
-  //TGHorizontalFrame      *fHor3; //contains buttons etc
 
   TGVerticalFrame *fVer[NR];
   TGLabel *flab[NR];
+
+  TGShutterItem *item;
+  TGCompositeFrame *container;
 
   fHor1 = new TGHorizontalFrame(this, 10, 10);
   AddFrame(fHor1, fLay1);
@@ -106,37 +190,43 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor2 = new TGHorizontalFrame(this, 10, 10);
   AddFrame(fHor2, fLay2);
 
-  //fHor3 = new TGHorizontalFrame(this, 10, 10);
-  //AddFrame(fHor3, fLay3);
-
-  // fHor2->AddFrame(flab, fLay4);
-
-  // TGRadioButton* rb1= new TGRadioButton(fHor3,"",1);
-  // TGRadioButton* rb2= new TGRadioButton(fHor3,"",2);
-  // TGRadioButton* rb3= new TGRadioButton(fHor3,"",3);
-  // TGRadioButton* rb4= new TGRadioButton(fHor3,"",4);
-
-  // fHor3->AddFrame(rb1, fLay5);
-  // fHor3->AddFrame(rb2, fLay5);
-  // fHor3->AddFrame(rb3, fLay5);
-  // fHor3->AddFrame(rb4, fLay5);
-
   fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
-  //fEc->GetCanvas()->SetEditable(false);
-  //fEc = new MECanvas("Hcanvas", fHor1, 10, 10);
   fHor1->AddFrame(fEc, fLay1);
 
-  //TGVertical3DLine *separator1 = new TGVertical3DLine(fHor1);
-  //fHor1->AddFrame(separator1, fLay2);
+  //TGVerticalFrame *fV1 = new TGVerticalFrame(fHor1, 10,10);
+  //fHor1->AddFrame(fV1, fLay7);
 
-  fCanvas = new TGCanvas(fHor1, 150, 100);
-  fHor1->AddFrame(fCanvas, fLay7);
+  TGShutter* fShutter = new TGShutter(fHor1);
+  fShutter->SetDefaultSize(150,10);
+  fHor1->AddFrame(fShutter, fLay7);
 
+  item = new TGShutterItem(fShutter, new TGHotString("Histograms"), 1);
+  container = (TGCompositeFrame *) item->GetContainer();
+  fShutter->AddItem(item);
+  gCanvas = new TGCanvas(container, 150, 100);
+  container->AddFrame(gCanvas, fLay8);
+
+  item = new TGShutterItem(fShutter, new TGHotString("Cuts"), 2);
+  container = (TGCompositeFrame *) item->GetContainer();
+  fShutter->AddItem(item);
+  gCanvas2 = new TGCanvas(container, 150, 100);
+  container->AddFrame(gCanvas2, fLay8);
+
+  //TGVerticalFrame *fV2 = new TGVerticalFrame(fHor1, 10, 10);
+  //fHor1->AddFrame(fV2, fLay7);
+  //clab = new TGLabel(fV1, "--Cuts--");
+  //fV1->AddFrame(clab, fLay4);
+
+  //fCanvas->AddFrame(new TGLabel(fCanvas, "--Histograms--"), fLay5);
+  //TGCanvas *gCanvas2 = new TGCanvas(fV1, 150, 150);
+  //fV1->AddFrame(gCanvas2, fLay8);
+
+  //new TGLabel(fCanvas2, "--Histograms--");
 
   //fListTree=NULL;
   //if (fListTree) delete fListTree;
 
-  fListTree = new TGListTree(fCanvas, kHorizontalFrame);
+  fListTree = new TGListTree(gCanvas, kHorizontalFrame);
   fListTree->SetCheckMode(TGListTree::kRecursive);
   fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
   fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
@@ -144,47 +234,16 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
 
 
-  //fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","TGListTree",fListTree,
-  //		     "DoubleClicked(TGListTreeItem*,Int_t)");
-
-  //fListTree->Associate(this);
-  //fEc->SetDNDTarget(kTRUE);
-
-  //Make_hist();
-  //exit(-1);
-  //cout << "Make_Ltree1: " << endl;
   Make_Ltree();
-  //cout << "Make_Ltree2: " << endl;
-  //Clear_tree();
-  //Make_tree();
 
   fListTree->Connect("DataDropped(TGListTreeItem*, TDNDData*)", "HistFrame",
                     this, "DataDropped(TGListTreeItem*,TDNDData*)");
 
-  /*
-  TGListTreeItem *idir = fListTree->GetFirstItem();
-  while (idir) {
-    cout << "Dir: " << idir->GetText()<< endl;
-    TGListTreeItem *item = idir->GetFirstChild();
-    while (item) {
-      cout << item->GetText()<< endl;
-      item = item->GetNextSibling();
-    }    
-    idir = idir->GetNextSibling();
-  }
-  */
+  //fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
+  //		     this,"DoKey(TGListTreeItem*, UInt_t)");
 
 
-
-  
-  //void Clicked(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, Int_t y)
-
-
-  //fListTree->Connect("DoubleClicked(TGListTreeItem*,Int_t)","HistFrame",this,
-  //		     "DoDblClick(TGListTreeItem*,Int_t)");
-
-  fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
-   		     this,"DoKey(TGListTreeItem*, UInt_t)");
+  fCutTree = new TGListTree(gCanvas2, kHorizontalFrame);
   
 
   for (int i=0;i<NR;i++) {
@@ -197,9 +256,11 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fVer[i]->AddFrame(flab[i], fLay4);
   }
 
-  int sel = abs(opt.sel_hdiv)%NR;
-  SelectDiv(sel);
-  Rb[sel]->Clicked();
+  // cout << "1111c7" << endl;
+  // int sel = abs(opt.sel_hdiv)%NR;
+  // SelectDiv(sel);
+  // Rb[sel]->Clicked();
+  // cout << "1111c8" << endl;
 
   TGTextButton* but;
 
@@ -219,10 +280,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
   fHor2->AddFrame(but, fLay5);
 
-  TGCheckButton* chk;
-  chk = new TGCheckButton(fHor2,"Log",11);
-  chk->Connect("Clicked()", "HistFrame", this, "DoLog()");
-  fHor2->AddFrame(chk, fLay5);
+  //TGCheckButton* chk;
+  chklog = new TGCheckButton(fHor2,"Log",11);
+  chklog->Connect("Clicked()", "HistFrame", this, "DoLog()");
+  fHor2->AddFrame(chklog, fLay5);
 
   /*
    // control horizontal position of the text
@@ -247,15 +308,19 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->Connect("Clicked()", "HistFrame", this, "AddCutG()");
   fHor2->AddFrame(but, fLay5);
 
-  but = new TGTextButton(fHor2,"Show",2);
+  but = new TGTextButton(fHor2,"Cancel",2);
+  but->Connect("Clicked()", "HistFrame", this, "AddCutG()");
+  fHor2->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor2,"Show",3);
   but->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
   fHor2->AddFrame(but, fLay5);
 
-  but = new TGTextButton(fHor2,"Clear",3);
+  but = new TGTextButton(fHor2,"Clear",4);
   but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
   fHor2->AddFrame(but, fLay5);
 
-  DoReset();
+  //DoReset();
 
   //Update();
 }
@@ -569,20 +634,40 @@ void HistFrame::DoButton()
 
 void HistFrame::AddCutG()
 {
+
+  TGButton *btn = (TGButton *) gTQSender;
+  Int_t id = btn->WidgetId();
+
+  if (id==1) {
+    in_gcut=true;
+  }
+  else {
+    in_gcut=false;
+  }
+
+  Update();
+  return;
+  
   TObject* obj=0;
   TPad* pad=0;
   const char* msg;// = "Gcut Test";
   Int_t retval;
 
-  pad = (TPad*) fEc->GetCanvas()->GetPad(1);
+  TCanvas* cv = fEc->GetCanvas();
+  cv->SetCrosshair(true);
+  //pad = (TPad*) fEc->GetCanvas()->GetPad(1);
 
   //pad->cd();
-  //pad->SetCrosshair(true);
-  cout << "gPad1: " << gPad << " " << pad << endl;
-  gPad->WaitPrimitive("CUTG","CutG");
+  //cout << "gPad1: " << gPad << " " << pad << endl;
+  //gPad->WaitPrimitive("CUTG","CutG");
   //pad->SetCrosshair(false);
 
-  cout << "gPad2: " << gPad << endl;
+  cv->AddExec("dynamic","DynamicExec()");
+  for (int i=1;i<=ndiv;i++) {
+    TPad* pad = (TPad*) cv->GetPad(i);
+    pad->AddExec("dynamic","DynamicExec()");    
+  }
+
   return;
 
 
@@ -726,6 +811,14 @@ void HistFrame::ClearCutG()
 {
   cout << "Clear_cuts: " << endl;
 
+  // fV1->RemoveFrame(clab);
+  // fV1->RemoveFrame(gCanvas2);
+  // //delete clab;
+  // //delete gCanvas2;
+  // fV1->Resize(GetDefaultSize());
+  // fV1->MapSubwindows();
+  // fV1->MapWindow();
+
   Clear_Ltree();
 
   //opt.gcut[0]->Print();
@@ -825,6 +918,8 @@ void HistFrame::DoReset()
   
   if (!crs->b_stop) return;
 
+  in_gcut=false;
+
   TCanvas *cv=fEc->GetCanvas();
   //cv->SetEditable(true);
   cv->Clear();
@@ -874,6 +969,11 @@ void HistFrame::DoReset()
   Make_hist();
   */
   //cout << "update1" << endl;
+
+  int sel = abs(opt.sel_hdiv)%NR;
+  SelectDiv(sel);
+  Rb[sel]->Clicked();
+
   Update();
 
   cv->Draw();
@@ -883,11 +983,14 @@ void HistFrame::DoReset()
 
 void HistFrame::Update()
 {
+  //cout << "in_gcut: " << in_gcut << " " << opt.b_logy << " " << chklog << endl;
+
   //cout << "HiFrm::Update()" << endl;
 
   Hmut.Lock();
   int sel = abs(opt.sel_hdiv)%NR;
   SelectDiv(sel);
+  chklog->SetState((EButtonState) opt.b_logy);
 
   hlist->Clear();
 
@@ -929,7 +1032,20 @@ void HistFrame::Update()
   // }
 
   DrawHist();
-
+  
+  TCanvas* cv=fEc->GetCanvas();
+  if (in_gcut) {
+    np_gcut=0;
+    cv->SetCrosshair(true);
+    for (int i=1;i<=ndiv;i++) {
+      TPad* pad = (TPad*) cv->GetPad(i);
+      if (pad)
+	pad->AddExec("dynamic","DynamicExec()");
+    }
+  }
+  else {
+    cv->SetCrosshair(false);
+  }
   //hlist->Print();
 
   Hmut.UnLock();
@@ -938,7 +1054,6 @@ void HistFrame::Update()
 
 void HistFrame::DrawHist()
 {
-
   TCanvas *cv=fEc->GetCanvas();
   cv->Clear();
   cv->Divide(xdiv,ydiv);
