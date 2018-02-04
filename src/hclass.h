@@ -16,8 +16,9 @@ class HMap: public TNamed {
   HMap& operator=(const HMap& other);
   
   TH1* hst;
-  Bool_t* chk;
-  Bool_t* wrk;
+  Bool_t* chk; //item is checked
+  Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*)
+  TList* list_cuts;
 
   ClassDef(HMap, 0)
 };
@@ -41,6 +42,8 @@ class HClass {
   TList* hilist;
 
   Long64_t T_prev[MAX_CH];
+
+  Bool_t wfalse;
 
  public:
 

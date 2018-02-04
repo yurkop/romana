@@ -26,17 +26,21 @@ HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w) {
   wrk = w;
   SetName(hist->GetName());
   SetTitle(dname);
+  list_cuts = new TList();
 }
 
 HMap::~HMap() {
   delete hst;
   hst=0;
+  delete list_cuts;
+  list_cuts=0;
 }
 
 HMap::HMap(const HMap& other) {
   hst = other.hst;
   chk = other.chk;
   wrk = other.wrk;
+  list_cuts = (TList*) other.list_cuts->Clone();
 }
 
 //TH1F& TH1F::operator=(const TH1F &h1)
@@ -45,6 +49,7 @@ HMap& HMap::operator=(const HMap& other) {
   hst = other.hst;
   chk = other.chk;
   wrk = other.wrk;
+  list_cuts = (TList*) other.list_cuts->Clone();
   return *this;
 }
 
@@ -68,6 +73,7 @@ HClass::HClass()
     h_2d[0][cc]=0;
   }
 
+  wfalse=false;
   //Make_hist();
   hilist=NULL;
 }

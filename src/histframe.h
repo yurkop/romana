@@ -13,6 +13,7 @@
 #include <TMultiGraph.h>
 #include <TGStatusBar.h>
 #include <TGListTree.h>
+#include <TPolyLine.h>
 //#include <TCutG.h>
 
 //#include "TThread.h"
@@ -100,7 +101,8 @@ public:
    //void Make_hist();
    TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
    void Make_Ltree();
-   void Clear_Ltree();
+   void Clear_Ltree(TGListTree* lTree);
+   TGListTreeItem* FindItem(TGListTree* lTree, const char* name);
    //void Reset_hist();
    //void FillHist(EventClass* evt);
    void DoClick(TGListTreeItem* item,Int_t but);
@@ -112,8 +114,10 @@ public:
    void DoRadio();
    void DoButton();
    //void DoPeaks2();
-   void AddCutG();
-   void ShowCutG();
+   //void AddCutG(Double_t *xx, Double_t *yy);
+   void AddCutG(TPolyLine *pl);
+   void DoCutG();
+   void ShowCutG(TObject* cut=0);
    void ClearCutG();
    void DoPeaks();
    void DoReset();
