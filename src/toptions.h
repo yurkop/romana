@@ -165,6 +165,14 @@ class Toptions: public TObject {
   Bool_t w_per[MAX_CH];
   Bool_t w_h2d[MAX_CH];
 
+  //index of cuts
+  Char_t cut_time[MAX_CH][MAXCUTS];
+  Char_t cut_tof[MAX_CH][MAXCUTS];
+  Char_t cut_mtof[MAX_CH][MAXCUTS];
+  Char_t cut_amp[MAX_CH][MAXCUTS];
+  Char_t cut_hei[MAX_CH][MAXCUTS];
+  Char_t cut_per[MAX_CH][MAXCUTS];
+  Char_t cut_h2d[MAX_CH][MAXCUTS];
 
   Int_t start_ch;
 
@@ -190,7 +198,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 105)
+  ClassDef(Toptions, 106)
 };
 
 ClassImp(Toptions)

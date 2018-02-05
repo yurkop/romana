@@ -975,13 +975,15 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   tab4->AddFrame(EvtFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
+  //cout << "hifrm1: " << endl;
   TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   HiFrm = new HistFrame(tab5, 800, 500,ntab);
-  HiFrm->DoReset();
+  HiFrm->HiReset();
   //HiFrm->Connect("Upd()","HistFrame",HiFrm,"Update()");
   tab5->AddFrame(HiFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
+  //cout << "hifrm2: " << endl;
 
   if (crs->Fmode) {
     crspar->AllEnabled(false);
@@ -1133,7 +1135,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   Move(-100,-100);
 
-  cout << "2222" << endl;
+  //cout << "2222" << endl;
 }
 
 MainFrame::~MainFrame() {
@@ -1496,7 +1498,7 @@ void MainFrame::DoReset() {
   if (!crs->b_stop) return;
 
   crs->DoReset();
-  HiFrm->DoReset();
+  HiFrm->HiReset();
 
   parpar->Update();
   crspar->Update();

@@ -74,19 +74,9 @@ void DynamicExec()
   //static Double_t xx[MAX_PCUTS],yy[MAX_PCUTS];
   static TLine gline[2];
   static TPolyLine pl;
-
-  TList* list = gPad->GetListOfPrimitives();
-  TIter next(list);
-  TObject* obj=0;
-  int hdim=0;
-  while ( (obj=(TObject*)next()) ) {
-    if (obj->InheritsFrom(TH2::Class())) {
-      hdim=2;
-    }
-    else if ( (obj->InheritsFrom(TH1::Class())) ) {
-      hdim=1;
-    }
-  }
+  static HMap* map=0; // hmap of histogram, on which cut is set
+  //TObject* obj=0;
+  static int hdim=0;
 
   int ev = gPad->GetEvent();
   int px = gPad->GetEventX();
@@ -95,59 +85,63 @@ void DynamicExec()
   Double_t x1 = gPad->AbsPixeltoX(px);
   Double_t y1 = gPad->AbsPixeltoY(py);
 
-  cout << "cutg: " << hdim << " " << HiFrm->np_gcut << " " << ev << " " << x1 << " " << y1 << endl;
+  //cout << "cutg: " << hdim << " " << HiFrm->np_gcut << " " << ev << " " << x1 << " " << y1 << endl;
 
-  if (ev==51 && hdim==2 && HiFrm->np_gcut) {
-    //gline[0] = new TLine(xx[HiFrm->np_gcut-1],yy[HiFrm->np_gcut-1],x1,y1);
+  if (ev==51 && hdim==2 && HiFrm->np_gcut) { //mouse movement
     gline[0].SetX2(x1);
     gline[0].SetY2(y1);
-    //gline[0]->Modify();
     gline[0].Draw();
     HiFrm->fEc->GetCanvas()->SetCrosshair(false);
-    //((TPad*)gPad)->DrawCrosshair();
-    //gPad->Modified();
     gPad->Update();
-    //((TPad*)gPad)->DrawCrosshair();
   }
 
-  if(ev==1 || ev==12) { //left click
+  if(ev==1 || ev==12) { //left click (also middle click)
+    if (HiFrm->np_gcut==0) {//first click
+      int np=0;
+      map=0;
+      for (int i=1;i<=HiFrm->ndiv;i++) {
+	if (gPad == HiFrm->fEc->GetCanvas()->GetPad(i)) {
+	  np=i;
+	  break;
+	}
+      }
+      if (np) {
+	map=(HMap*) HiFrm->padmap[np-1];
+	cout << "hist found: " << map << endl;
+	cout << "hist found: " << map->hst->GetName() << endl;
+      }
+      if (!map) {
+	cout << "hist not found: " << endl;
+	HiFrm->in_gcut=false;
+	HiFrm->Update();
+      }
+      hdim=map->hst->GetDimension();
+      cout << "dimension: " << hdim << endl;
+      pl.SetPolyLine(0);
+    } //first click
+
     if (hdim==2) {
-      if (!HiFrm->np_gcut)
-	pl.SetPolyLine(0);
-      //cout << "000: " << pl.GetN() << " " << HiFrm->np_gcut << endl;
       HiFrm->np_gcut=pl.SetNextPoint(x1,y1)+1;
-      //cout << "111: " << pl.GetN() << " " << HiFrm->np_gcut << endl;
-      //xx[HiFrm->np_gcut]=x1;
-      //yy[HiFrm->np_gcut]=y1;
       if (HiFrm->np_gcut>1) {
-	//gline[0].DrawLine(xx[HiFrm->np_gcut-1],yy[HiFrm->np_gcut-1],x1,y1);
 	pl.Draw();
       }
-      //HiFrm->np_gcut++;
       if (HiFrm->np_gcut>=MAX_PCUTS-1) {
 	HiFrm->np_gcut=pl.SetNextPoint(pl.GetX()[0],pl.GetY()[0])+1;
-	// cout << "max: " << HiFrm->np_gcut << endl;
-	// HiFrm->np_gcut--;
-	//xx[HiFrm->np_gcut]=xx[0];
-	//yy[HiFrm->np_gcut]=yy[0];
-	//HiFrm->np_gcut++;
-	HiFrm->AddCutG(&pl);
+	HiFrm->AddCutG(&pl,map);
 	return;
       }
 
       gline[0].SetX1(x1);
       gline[0].SetY1(y1);
-    }
+    } //if hdim==2
     else if (hdim==1) {
     }
-  }
+  } //if(ev==1 || ev==12)
   
   if (ev==61 || ev==12) { //middle click or double click
     HiFrm->np_gcut=pl.SetNextPoint(pl.GetX()[0],pl.GetY()[0])+1;
-    //xx[HiFrm->np_gcut]=xx[0];
-    //yy[HiFrm->np_gcut]=yy[0];
-    //HiFrm->np_gcut++;
-    HiFrm->AddCutG(&pl);
+    //cout << "pl2: " << HiFrm->np_gcut << " " << pl.Size() << endl;
+    HiFrm->AddCutG(&pl,map);
   }
   
 }
@@ -238,7 +232,9 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fListTree->AddRoot("Histograms");
 
 
+  //cout << "make_ltree1: " << endl;
   Make_Ltree();
+  //cout << "make_ltree2: " << endl;
 
   fListTree->Connect("DataDropped(TGListTreeItem*, TDNDData*)", "HistFrame",
                     this, "DataDropped(TGListTreeItem*,TDNDData*)");
@@ -371,19 +367,26 @@ void HistFrame::Make_Ltree() {
   TObject* obj=0;
   TIter next(hcl->hilist);
 
-  char name[64];
+  char cuttitle[MAXCUTS][99];
+  char cutname[99];
+  char name[99],htitle[99];
+  TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("marker25.xpm");
+  TGPicture *pic_xy = (TGPicture*) gClient->GetPicture("marker.xpm");
   TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
   TGPicture *pic2 = (TGPicture*) gClient->GetPicture("h2_t.xpm");
   TGPicture *pic=0;
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir=0;
+  TGListTreeItem *item=0;
   //TGListTreeItem *item;
+  int col[MAXCUTS];
+  memset(col,2,sizeof(col));
 
   //fListTree->AddRoot("Histograms");
   iWork = Item_Ltree(iroot, "WORK",0,0,0);
   for (int cc=0;cc<opt.ncuts;cc++) {
-    sprintf(name,"WORK_cut%d",cc+1);
-    iWork_cut[cc] = Item_Ltree(iroot, name,0,0,0);
+    sprintf(cutname,"WORK_cut%d",cc+1);
+    iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
   }
 
   next.Reset();
@@ -402,32 +405,89 @@ void HistFrame::Make_Ltree() {
     //cout << "map: " << map->hst->GetName() << " " << *map->wrk);
     if (*map->wrk) {
       Item_Ltree(iWork, map->GetName(), map, pic, pic);
-      for (int cc=0;cc<opt.ncuts;cc++) {
-	Item_Ltree(iWork, map->GetName(), map, pic, pic);
+
+      //make clones of _work_ histograms and their hmaps
+      Clone_Hist(map);
+      // TH1* h0 = (TH1*) map->hst;
+      // for (int cc=0;cc<opt.ncuts;cc++) {
+      // 	sprintf(name,"%s_%d",h0->GetName(),cc+1);
+      // 	sprintf(htitle,"%s_%d",h0->GetTitle(),cc+1);
+      // 	//cout << "clone: " << name << " " << htitle << endl;
+      // 	TH1* hcut = (TH1*) h0->Clone();
+      // 	hcut->SetNameTitle(name,htitle);
+      // 	HMap* mcut = new HMap(cutname,hcut,map->chk,&hcl->wfalse,0);
+      // 	// add this map to the list h_cuts
+      // 	map->h_cuts[cc]=mcut;
+      // 	Item_Ltree(iWork_cut[cc], mcut->GetName(), mcut, pic, pic);
+      // }
+    }
+    //determine cut colors
+    for (int i=0;i<MAXCUTS;i++) {
+      col[i]=*(map->cut_index)[i];
+      if (col[i]==0) {
+	break;
       }
+      col[i]+=1;
+      sprintf(cuttitle[i],"%s",map->GetName());
     }
   }
 
-}
 
-void HistFrame::Clear_Ltree(TGListTree* lTree)
-{
-  if (lTree == fListTree)
-    hlist->Clear();
+  //make gcuts and fill fCutTree
+  for (int i=0;i<opt.ncuts;i++) {
+    //make gcut
+    TCutG* gcut = hcl->cutG[i];
+    if (gcut) delete gcut;
+    sprintf(cutname,"cut%d",i+1);
+    gcut = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
+    gcut->SetTitle(cuttitle[i]);
+    gcut->SetLineColor(col[i]);
+    //gcut->Print();
 
-  TGListTreeItem *idir = lTree->GetFirstItem();
-  while (idir) {
-    lTree->DeleteChildren(idir);
-    /*
-    TGListTreeItem *item = idir->GetFirstChild();
-    while (item) {
-      lTree->DeleteItem(item);
-      item = item->GetNextSibling();
+    //fill fCutTree
+    item = fCutTree->AddItem(0, gcut->GetName(), gcut, pic_2d, pic_2d, false);
+    fCutTree->AddItem(item, gcut->GetTitle(), gcut, pic2, pic2, false);
+    for (int i=0;i<gcut->GetN();i++) {
+      sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
+      fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
     }
-    */
-    lTree->DeleteItem(idir);
+    cout << "AddCutg: " << i+1 << " " << gcut->GetName() << " " << opt.pcuts[i] << endl;
+
+  }
+}
+/*
+void HistFrame::Delete_work_item(TGListTreeItem *item)
+{
+  HMap* map = (HMap*) item->GetUserData();
+
+  for (int i=0;i<opt.ncuts;i++) {
+    HMap* mcut = map->h_cuts[i];
+
+  }
+  
+}
+*/
+void HistFrame::Clear_Ltree()
+{
+  hlist->Clear();
+
+  TGListTreeItem *idir;
+  //clear fListTree
+  idir = fListTree->GetFirstItem();
+  while (idir) {
+    fListTree->DeleteChildren(idir);
+    fListTree->DeleteItem(idir);
     idir = idir->GetNextSibling();
   }
+  
+  //clear fCutTree
+  idir = fCutTree->GetFirstItem();
+  while (idir) {
+    fCutTree->DeleteChildren(idir);
+    fCutTree->DeleteItem(idir);
+    idir = idir->GetNextSibling();
+  }
+  
 }
 
 TGListTreeItem* HistFrame::FindItem(TGListTree* lTree, const char* name) {
@@ -444,6 +504,9 @@ TGListTreeItem* HistFrame::FindItem(TGListTree* lTree, const char* name) {
 
 void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 {
+  if (!crs->b_stop)
+    return;
+
   char hname[100];
   char hname2[100]; 
   TGListTreeItem* item2;
@@ -453,13 +516,14 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
   //return;
   if (item->GetParent() && (but==2 || but==3)) {
     if (TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
-      //cout << "work: " << endl;
+      //remove items
+      //cout << "work or work_cut*: " << endl;
       TObject* hh = (TObject*) item->GetUserData();
       strcpy(hname2,hh->GetName());
       char* str = strstr(hname2,"_cut");
       if (str) {
 	strncpy(hname,hname2,str-hname2);
-	hname[str-hname2] = '\0';   /* null character manually added */
+	hname[str-hname2] = '\0';   // null character manually added
       }
       else {
 	strcpy(hname,hname2);
@@ -484,6 +548,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       }
     }
     else {
+      // add items
       //cout << "nowork: " << item << endl;
       TObject* hh = (TObject*) item->GetUserData();
       strcpy(hname,hh->GetName());
@@ -493,12 +558,13 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       HMap* map = (HMap*) item->GetUserData();
       *map->wrk=true;
 
-      for (int cc=0;cc<opt.ncuts;cc++) {
-	sprintf(hname2,"%s_cut%d",hname,cc+1);
-	hh = gROOT->FindObject(hname2);
-	//cout << "cc: " << cc << " " << hname2 << " " << hh << endl;
-	Item_Ltree(iWork_cut[cc], hh->GetName(), hh, pic, pic);
-      }
+      Clone_Hist(map);
+      // for (int cc=0;cc<opt.ncuts;cc++) {
+      // 	sprintf(hname2,"%s_cut%d",hname,cc+1);
+      // 	hh = gROOT->FindObject(hname2);
+      // 	//cout << "cc: " << cc << " " << hname2 << " " << hh << endl;
+      // 	Item_Ltree(iWork_cut[cc], hh->GetName(), hh, pic, pic);
+      // }
     }
   }
   
@@ -509,21 +575,80 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 
 }
 
+void HistFrame::Clone_Hist(HMap* map) {
+  char cutname[99];
+  char name[99],htitle[99];
+  TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
+  TGPicture *pic2 = (TGPicture*) gClient->GetPicture("h2_t.xpm");
+  TGPicture *pic=0;
+
+  if (map->hst->InheritsFrom(TH2::Class()))
+    pic=pic2;
+  else
+    pic=pic1;
+
+  TH1* h0 = (TH1*) map->hst;
+  for (int cc=0;cc<opt.ncuts;cc++) {
+    sprintf(cutname,"WORK_cut%d",cc+1);
+    sprintf(name,"%s_cut%d",h0->GetName(),cc+1);
+    sprintf(htitle,"%s_cut%d",h0->GetTitle(),cc+1);
+    //cout << "clone: " << name << " " << htitle << endl;
+    TH1* hcut = (TH1*) h0->Clone();
+    hcut->SetNameTitle(name,htitle);
+    HMap* mcut = new HMap(cutname,hcut,map->chk,&hcl->wfalse,0);
+    // add this map to the list h_cuts
+    map->h_cuts[cc]=mcut;
+    Item_Ltree(iWork_cut[cc], mcut->GetName(), mcut, pic, pic);
+  }
+}
+
 /*
-void HistFrame::DoClick(TGListTreeItem* entry, Int_t btn, UInt_t mask, Int_t x, Int_t y)
+void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 {
-  cout << "DoClick2: " << entry << " " << btn << " " << mask << " "
-       << entry->IsChecked() << endl;
-  //entry->SetColor(TColor::GetColor(myM->fBluevio));
+  if (!crs->b_stop)
+    return;
+
+  char hname[100];
+  char hname2[100]; 
+  TGListTreeItem* item2;
+
+  cout << "DoClick: " << item->GetText() << " " << item->GetParent() << " " << but << endl;
 
   //return;
+  if (item->GetParent() && (but==2 || but==3)) {
+    if (TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
+      //cout << "work or work_cut*: " << endl;
+      TObject* hh = (TObject*) item->GetUserData();
+      strcpy(hname2,hh->GetName());
+      char* str = strstr(hname2,"_cut");
+      if (str) {
+	strncpy(hname,hname2,str-hname2);
+	hname[str-hname2] = '\0';   // null character manually added
+      }
+      else {
+	strcpy(hname,hname2);
+      }
 
-  if (mask) {
-    entry->Toggle();
-    //entry->CheckAllChildren(entry->IsChecked());
-    //Update();
+      //cout << "work1: " << item << endl;
+      item2 = fListTree->FindChildByName(iWork,hname);
+
+      if (item2) {
+	HMap* map = (HMap*) item2->GetUserData();
+	*map->wrk=false;
+      }
+    }
+    else {
+      //cout << "nowork: " << item << endl;
+      HMap* map = (HMap*) item->GetUserData();
+      *map->wrk=true;
+    }
   }
   
+
+  Clear_Ltree();
+  Make_Ltree();
+  //Update();
+
 }
 */
 
@@ -673,55 +798,19 @@ void HistFrame::DoButton()
 
 }
 
-//void HistFrame::AddCutG(Double_t *xx, Double_t *yy) {
-void HistFrame::AddCutG(TPolyLine *pl) {
-  char name[99],title[99];
-  TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("marker25.xpm");
-  TGPicture *pic_xy = (TGPicture*) gClient->GetPicture("marker.xpm");
-  TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
-  TGPicture *pic2 = (TGPicture*) gClient->GetPicture("h2_t.xpm");
-  HMap* map;
-
-  TList* list = gPad->GetListOfPrimitives();
-  TIter next(list);
-  TObject* obj=0;
-  while ( (obj=(TObject*)next()) ) {
-    if (obj->InheritsFrom(TH1::Class())) {
-      break;
-    }
-  }
-
-  TH1* hh = (TH1*) obj;
+void HistFrame::AddCutG(TPolyLine *pl, TObject* hobj) {
 
   // check if the histogram exists
-  if (!hh) {
-    cout << "histogram not found: " << endl;
+  if (!hobj) {
+    cout << "AddCutg: histogram not found: " << endl;
     return;
   }
 
-  //check if the item with the histogram exists
-  TGListTreeItem* item = FindItem(fListTree,hh->GetName());
-  if (!item) {
-    cout << "item not found: " << endl;
-    return;
-  }
-  map = (HMap*) item->GetUserData();
-  
-  opt.ncuts++;
-  TCutG* gcut = hcl->cutG[opt.ncuts];
-  
-  sprintf(name,"cut%d",opt.ncuts);
-  //hcl->cutG[opt.ncuts] = new TCutG(ss,np_gcut,xx,yy);
-  gcut = new TCutG(name,np_gcut,pl->GetX(),pl->GetY());
-  gcut->SetTitle("h2dcut");
-  opt.pcuts[opt.ncuts]=np_gcut;
-  for (int i=0;i<np_gcut;i++) {
-    opt.gcut[opt.ncuts][0][i] = gcut->GetX()[i];
-    opt.gcut[opt.ncuts][1][i] = gcut->GetY()[i];
-  }
+  //opt.ncuts++;
+
   in_gcut=false;
   TCanvas* cv=fEc->GetCanvas();
-  cv->SetCrosshair(false);
+  //cv->SetCrosshair(false);
   for (int i=1;i<=ndiv;i++) {
     TPad* pad = (TPad*) cv->GetPad(i);
     if (pad) {
@@ -729,70 +818,112 @@ void HistFrame::AddCutG(TPolyLine *pl) {
     }
   }
 
-  gcut->SetLineColor(2);
-  //Update();
-  //gPad->cd();
+  MakeCutG(opt.ncuts,pl,hobj);
+  Update();
+  //ShowCutG(gcut);
 
-  cout << "AddCutg: " << opt.ncuts << " " << fCutTree->GetFirstItem() << endl;
+  HMap* map = (HMap*) hobj;
+  for (int i=0;i<MAXCUTS;i++) {
+    cout << "index: " << i << " " << (int)*(map->cut_index)[i]
+	 << " " << (int) opt.cut_h2d[0][i] << endl;
+  }
+
+}
+
+void HistFrame::MakeCutG(int icut, TPolyLine *pl, TObject* hobj) {
+  //TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("marker25.xpm");
+  //TGPicture *pic_xy = (TGPicture*) gClient->GetPicture("marker.xpm");
+  //TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
+  //TGPicture *pic2 = (TGPicture*) gClient->GetPicture("h2_t.xpm");
+
+  char name[99];//,title[99];
+  char cutname[99];
+  HMap *map;
+  //HMap *map2;
+  //HMap *map3;
+  //TH1* hh;
+  TGListTreeItem* item;
+
+  if (icut<0 || icut>=MAXCUTS) {
+    cout << "Wrong icut: " << icut << endl;
+    return;
+  }
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  if (strcmp(idir->GetText(),"WORK")) {
+    cout << "first item is not WORK" << endl;
+    return;
+  }
+
+  map = (HMap*) hobj;
+
+  //1. add current cut to the cut_index of hmap
+  //(map->cut_index) ?? check it 
+  for (int i=0;i<MAXCUTS;i++) {
+    if (*(map->cut_index)[i]==0) {
+      *(map->cut_index[i])=icut+1;
+      break;
+    }
+  }
+  // for (int i=0;i<MAXCUTS;i++) {
+  //   cout << "index: " << i << " " << (int)*(map->cut_index)[i] << endl;
+  // }
+
+  //1a fill opt.** variables
+  opt.pcuts[icut] = pl->Size();
+  //cout << "pl: " << endl;
+  //pl->Print();
+  for (int i=0;i<pl->Size();i++) {
+    opt.gcut[icut][0][i]=pl->GetX()[i];
+    opt.gcut[icut][1][i]=pl->GetY()[i];
+  }
+
+  /*
+  //1b. make gcut, set linecolor
+  //?? change pl to opt.***
+  TCutG* gcut = hcl->cutG[icut];
+  if (gcut) delete gcut;
+  sprintf(cutname,"cut%d",icut+1);
+  gcut = new TCutG(cutname,pl->GetN(),pl->GetX(),pl->GetY());
+  //gcut->SetTitle("h2dcut");
+  gcut->SetLineColor(2);
+  gcut->Print();
+  
+  //2. add gcut to fCutTree
+  //cout << "AddCutg: " << icut << " " << fCutTree->GetFirstItem() << endl;
   item = fCutTree->AddItem(0, gcut->GetName(), gcut, pic_2d, pic_2d, false);
   fCutTree->AddItem(item, gcut->GetTitle(), gcut, pic2, pic2, false);
   for (int i=0;i<gcut->GetN();i++) {
     sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
     fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
   }
-  cout << "AddCutg: " << opt.ncuts << " " << fCutTree->GetFirstItem() << " "
+  cout << "AddCutg: " << icut+1 << " " << fCutTree->GetFirstItem() << " "
        << map->hst->GetName() << endl;
-  //hcl->cutG[opt.ncuts]->Print();
-  map->list_cuts->Add(gcut);
+  */
 
-  //gPad->Clear();
-  //hh->Draw();
-  //gcut->Draw("same");
-  //gPad->Update();
 
-  // make copies of all histograms which are in the iWork directory
-  TGListTreeItem *idir = fListTree->GetFirstItem();
-  if (strcmp(idir->GetText(),"WORK")) {
-    cout << "first item is not WORK" << endl;
-    return;
-  }
-  item = idir->GetFirstChild();
-  while (item) {
-    map = (HMap*) item->GetUserData();
-    //if (map->wrk) {
-    TH1* h0 = (TH1*) map->hst;
-    sprintf(name,"%s_%d",h0->GetName(),opt.ncuts);
-    sprintf(title,"%s_%d",h0->GetTitle(),opt.ncuts);
-    cout << "clone: " << name << " " << title << endl;
-    TH1* hcut = (TH1*) h0->Clone();
-    hcut->SetNameTitle(name,title);
-    HMap* map2 = new HMap(name,hcut,map->chk,&hcl->wfalse);
-    //}
-    item = item->GetNextSibling();
-  }
+  //4. make copies of all histograms which are in the iWork directory
+  //?? move it to the Make_Lhist
+  // item = idir->GetFirstChild();
+  // while (item) {
+  //   map2 = (HMap*) item->GetUserData();
+  //   TH1* h0 = (TH1*) map2->hst;
+  //   sprintf(name,"%s_%d",h0->GetName(),icut+1);
+  //   sprintf(title,"%s_%d",h0->GetTitle(),icut+1);
+  //   cout << "clone: " << name << " " << title << endl;
+  //   TH1* hcut = (TH1*) h0->Clone();
+  //   hcut->SetNameTitle(name,title);
+  //   HMap* map3 = new HMap(cutname,hcut,map->chk,&hcl->wfalse,0);
+  //   map2->h_cuts[icut]=map3;
+  //   item = item->GetNextSibling();
+  // }
   
-
-  // TList* list = gPad->GetListOfPrimitives();
-  // TObject* obj=0;
-  // while ( (obj=list->FindObject("TLine")) ) {
-  //   list->Remove(obj);
-  //   //cout << obj << endl;
-  //   //delete obj;
-  // }
-  // while ( (obj=list->FindObject("TPolyLine")) ) {
-  //   list->Remove(obj);
-  //   //cout << obj << endl;
-  //   //delete obj;
-  // }
-  // list->ls();
-
-  gcut->Print();
-
-  Clear_Ltree(fListTree);
+  opt.ncuts++;
+  //5. remake Ltree
+  Clear_Ltree();
   Make_Ltree();
-  Update();
+  //Update();
+  return;
 
-  ShowCutG(gcut);
 }
 
 void HistFrame::DoCutG() {
@@ -840,141 +971,43 @@ void HistFrame::DoCutG() {
 
   return;
 
-
-
-
-
-  
-  for (int i=1;i<=ndiv;i++) {
-    pad = (TPad*) fEc->GetCanvas()->GetPad(i);
-    obj = pad->GetPrimitive("h2d");
-    if (obj)
-      break;
-    //cout << obj << endl;
-    //TList* list = pad->GetL
-  }
-
-  if (opt.ncuts>=MAXCUTS-1) {
-    msg = "Too manu cuts. Delete them first";
-    obj=0;
-  }
-  else {
-    if (obj) {
-      msg = "Use your mouse to create a graphical cut on the h2d histogram\nUse double click to finish";
-    }
-    else {
-      msg = "Error: Graphical cut is only possible with h2d histogram\nUse Histograms menu on the right to make it visible";
-    }
-  }
-
-  new TGMsgBox(gClient->GetRoot(), this,
-	       "Graphical cut",
-	       msg, kMBIconAsterisk, kMBDismiss, &retval);
-
-  if (!obj) return;
-  cout << "test1: " << obj << " " << pad << endl;
-
-  pad->cd();
-  pad->SetCrosshair(true);
-  pad->WaitPrimitive("CUTG","CutG");
-  pad->SetCrosshair(false);
-
-  cout << "test1: " << obj << endl;
-  TCutG* cc= (TCutG*)gROOT->GetListOfSpecials()->FindObject("CUTG");
-
-  int np = cc->GetN();
-
-  if (np>9) {
-    new TGMsgBox(gClient->GetRoot(), this,
-		 "Graphical cut",
-		 "Too many points", kMBIconAsterisk, kMBDismiss, &retval);
-    delete cc;
-    return;
-  }
-  if (np<=3) {
-    new TGMsgBox(gClient->GetRoot(), this,
-		 "Graphical cut",
-		 "Too few points", kMBIconAsterisk, kMBDismiss, &retval);
-    delete cc;
-    return;
-  }
-  //cout << "cc: " << cc->GetN() << endl;
-  int nc=opt.ncuts;
-
-  hcl->cutG[nc] = new TCutG(*cc);
-  delete cc;
-  hcl->cutG[nc]->SetLineColor(nc+2);
-
-  char ss[64];
-  sprintf(ss,"cut%d",nc+1);
-  hcl->cutG[nc]->SetName(ss);
-
-  pad->cd();
-
-  opt.pcuts[nc]=np;
-  for (int i=0;i<np;i++) {
-    opt.gcut[nc][0][i] = hcl->cutG[nc]->GetX()[i];
-    opt.gcut[nc][1][i] = hcl->cutG[nc]->GetY()[i];
-  }
-
-  //opt.gcut[0]->Print();
-  hcl->cutG[nc]->Draw();
-
-  opt.ncuts++;
-  //Make_hist(opt.ncuts);
-  Clear_Ltree(fListTree);
-  Make_Ltree();
-
-  fEc->GetCanvas()->Update();
 }
 
-void HistFrame::ShowCutG(TObject* cut)
+void HistFrame::ShowCutG()
 {
+  TLegend leg = TLegend(0.7,0.8,0.99,0.99);
+  leg.SetMargin(0.5);
+  int nn=0;
 
-  cout << "show..." << cut << endl;
+  cout << "show..." << endl;
 
-  TObject* obj=0;
-  TPad* pad;
-  bool found=false;
-
+  TCanvas* cv=fEc->GetCanvas();
   for (int i=1;i<=ndiv;i++) {
-    pad = (TPad*) fEc->GetCanvas()->GetPad(i);
-    TList* list = pad->GetListOfPrimitives();
-    TIter next(list);
-    while ( (obj=(TObject*)next()) ) {
-      TString name = TString(((TNamed*) obj)->GetName());
-      //const char* name = ((TNamed*) obj)->GetName();
-      //cout << name << " " << endl;
-      //cout << name << " " << name.Contains("h2d",TString::kIgnoreCase) << endl;
-      if (name.Contains("h2d",TString::kIgnoreCase)) {
-	found=true;
-      }
-    }
-    
-    //obj = pad->GetPrimitive("h2d");
-    if (found)
+    cv->cd(i);
+    HMap* map=(HMap*) padmap[i-1];
+    cout << "map: " << i << " " << map << endl;
+    if (padmap[i-1]==0)
       break;
-    //cout << obj << endl;
-    //TList* list = pad->GetL
-  }
+    bool found=false;
+    leg.Clear();
+    for (int j=0;j<MAXCUTS;j++) {
+      nn=*(map->cut_index[j]);
+      if (nn<=0 || nn>=MAXCUTS)
+      	break;
+      cout << "showcut: " << i << " " << j << " " << nn << endl;
 
-  if (!found || opt.ncuts==0)
-    return;
-
-  TLegend *leg = new TLegend(0.7,0.8,0.99,0.99);
-  leg->SetMargin(0.5);
-  pad->cd();
-  //opt.gcut[0]->Print();
-  for (int i=0;i<opt.ncuts;i++) {
-    if (hcl->cutG[i]) {
-      cout << "cut: " << i << " " << hcl->cutG[i]->GetName() << endl;
-      hcl->cutG[i]->Draw("same");
-      leg->AddEntry(hcl->cutG[i],hcl->cutG[i]->GetName(),"l");
+      // if (hcl->cutG[nn]) {
+      // found=true;
+      // cout << "showcut: " << i << " " << j << " " << nn << " " << hcl->cutG[nn] << endl;
+      //hcl->cutG[nn]->Draw("same");
+      //leg.AddEntry(hcl->cutG[i],hcl->cutG[i]->GetName(),"l");
+      //}
+    }
+    if (found) {
+      leg.Draw("same");
     }
   }
-
-  leg->Draw();
-  fEc->GetCanvas()->Update();
+  cv->Update();
 }
 
 void HistFrame::ClearCutG()
@@ -989,7 +1022,7 @@ void HistFrame::ClearCutG()
   // fV1->MapSubwindows();
   // fV1->MapWindow();
 
-  Clear_Ltree(fListTree);
+  Clear_Ltree();
 
   //opt.gcut[0]->Print();
   for (int i=0;i<opt.ncuts;i++) {
@@ -1020,7 +1053,7 @@ void HistFrame::DoPeaks()
     if (ii>=opt.icheck) {
       if (!fEc->GetCanvas()->GetPad(nn)) break;
       fEc->GetCanvas()->cd(nn);
-      TH1 *hh = (TH1*) obj;
+      TH1 *hh = ((HMap*) obj)->hst;
       //cout << "hhh: " << hh->GetTitleSize() << endl;
       //hh->Draw();
       int npk = spec.Search(hh,2,"",0.5);
@@ -1064,7 +1097,7 @@ void HistFrame::DoPeaks()
 
 }
 
-void HistFrame::DoReset()
+void HistFrame::HiReset()
 {
 
   //return;
@@ -1097,7 +1130,7 @@ void HistFrame::DoReset()
 
   //hcl->NewBins();
   //cout << "Make_hist():: " << endl;
-  Clear_Ltree(fListTree);
+  Clear_Ltree();
   hcl->Make_hist();
   Make_Ltree();
   //cout << "Make_hist()::2 " << endl;
@@ -1163,7 +1196,7 @@ void HistFrame::Update()
 	  *map->chk = item->IsChecked();
 	}
 	if (item->IsChecked()) {
-	  hlist->Add(((HMap*)item->GetUserData())->hst);
+	  hlist->Add((TObject*)item->GetUserData());
 	}
       }
       item = item->GetNextSibling();
@@ -1209,6 +1242,7 @@ void HistFrame::DrawHist()
 {
   TCanvas *cv=fEc->GetCanvas();
   cv->Clear();
+  memset(padmap,0,sizeof(padmap));
   cv->Divide(xdiv,ydiv);
   int nn=1;
   int ii=0;
@@ -1217,7 +1251,7 @@ void HistFrame::DrawHist()
   while ( (obj=(TObject*)next()) ) {
     if (ii>=opt.icheck) {
       cv->cd(nn);
-      TH1 *hh = (TH1*) obj;
+      TH1 *hh = ((HMap*) obj)->hst;
       if (hh->GetDimension()==2) {
 	if (opt.b_logy)
 	  gPad->SetLogz(1);
@@ -1232,6 +1266,7 @@ void HistFrame::DrawHist()
 	  gPad->SetLogy(0);
 	hh->Draw();
       }
+      padmap[nn-1]=obj;
       nn++;
       if (nn>ndiv)
 	break;

@@ -2,6 +2,7 @@
 #define histframe_H 1
 
 #include "common.h"
+//#include "hclass.h"
 #include <TRootEmbeddedCanvas.h>
 #include <TGLabel.h>
 #include <TGButton.h>
@@ -19,6 +20,7 @@
 //#include "TThread.h"
 #include <list>
 
+class HMap; //forward declaration
 void DynamicExec();
 
 /*
@@ -71,6 +73,7 @@ class HistFrame: public TGCompositeFrame {
    int ndiv;
    int xdiv;
    int ydiv;
+   TObject *padmap[MAX_PADS];
 
  public:
 
@@ -101,10 +104,11 @@ public:
    //void Make_hist();
    TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
    void Make_Ltree();
-   void Clear_Ltree(TGListTree* lTree);
+   void Clear_Ltree();
    TGListTreeItem* FindItem(TGListTree* lTree, const char* name);
    //void Reset_hist();
    //void FillHist(EventClass* evt);
+   void Clone_Hist(HMap* hmap);
    void DoClick(TGListTreeItem* item,Int_t but);
    //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
    void DoCheck(TObject* obj, Bool_t check);
@@ -115,12 +119,13 @@ public:
    void DoButton();
    //void DoPeaks2();
    //void AddCutG(Double_t *xx, Double_t *yy);
-   void AddCutG(TPolyLine *pl);
+   void AddCutG(TPolyLine *pl, TObject* hobj);
+   void MakeCutG(int icut, TPolyLine *pl, TObject* hobj);
    void DoCutG();
-   void ShowCutG(TObject* cut=0);
+   void ShowCutG();
    void ClearCutG();
    void DoPeaks();
-   void DoReset();
+   void HiReset();
    void Update();
    void DrawHist();
    void ReDraw();

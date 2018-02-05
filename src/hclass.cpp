@@ -20,27 +20,45 @@ extern HistFrame* EvtFrm;
 
 //------------------------------
 
-HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w) {
+HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
+	   Char_t (*cuts)[MAXCUTS]) {
   hst = hist;
   chk = s;
   wrk = w;
+  cut_index = cuts;
   SetName(hist->GetName());
   SetTitle(dname);
-  list_cuts = new TList();
+  memset(h_cuts,0,sizeof(h_cuts));
+  //list_cuts = new TList();
+  //list_h_cuts = new TList();
 }
 
 HMap::~HMap() {
   delete hst;
   hst=0;
-  delete list_cuts;
-  list_cuts=0;
+  for (int i=0;i<MAXCUTS;i++) {
+    if (h_cuts[i]) {
+      delete h_cuts[i]->hst;
+      h_cuts[i]->hst=0;
+      delete h_cuts[i];
+      h_cuts[i]=0;
+    }
+  }
+  //delete list_cuts;
+  //delete list_h_cuts;
+  //list_h_cuts=0;
 }
 
 HMap::HMap(const HMap& other) {
   hst = other.hst;
   chk = other.chk;
   wrk = other.wrk;
-  list_cuts = (TList*) other.list_cuts->Clone();
+  cut_index = other.cut_index;
+  for (int i=0;i<MAXCUTS;i++) {
+    h_cuts[i]=other.h_cuts[i];
+  }
+  //list_cuts = (TList*) other.list_cuts->Clone();
+  //list_h_cuts = (TList*) other.list_h_cuts->Clone();
 }
 
 //TH1F& TH1F::operator=(const TH1F &h1)
@@ -49,7 +67,12 @@ HMap& HMap::operator=(const HMap& other) {
   hst = other.hst;
   chk = other.chk;
   wrk = other.wrk;
-  list_cuts = (TList*) other.list_cuts->Clone();
+  cut_index = other.cut_index;
+  for (int i=0;i<MAXCUTS;i++) {
+    h_cuts[i]=other.h_cuts[i];
+  }
+  //list_cuts = (TList*) other.list_cuts->Clone();
+  //list_h_cuts = (TList*) other.list_h_cuts->Clone();
   return *this;
 }
 
@@ -98,7 +121,8 @@ void NameTitle(char* name, char* title, int i, int cc,
 void HClass::Make_1d(const char* dname, const char* name, const char* title,
 		     TH1F* hh[MAX_CH][MAXCUTS],
 		     Float_t bins, Float_t min, Float_t max,
-		     Bool_t bb, Bool_t* chk, Bool_t* wrk) {
+		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
+		     Char_t (*cuts)[MAXCUTS]) {
 
   if (!bb) return;
 
@@ -112,7 +136,7 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
     int nn=bins*(max-min);
     hh[i][0]=new TH1F(name2,title2,nn,min,max);
 
-    HMap* map = new HMap(dname,hh[i][0],chk+i,wrk+i);
+    HMap* map = new HMap(dname,hh[i][0],chk+i,wrk+i,cuts+i);
     hilist->Add(map);
 
   }
@@ -121,7 +145,8 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 void HClass::Make_2d(const char* dname, const char* name, const char* title,
 		     TH2F* hh[][MAXCUTS],
 		     Float_t bins, Float_t min, Float_t max,
-		     Bool_t bb, Bool_t* chk, Bool_t* wrk) {
+		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
+		     Char_t (*cuts)[MAXCUTS]) {
 
   if (!bb) return;
 
@@ -134,7 +159,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
   int nn=bins*(max-min);
   hh[0][0]=new TH2F(name2,title2,nn,min,max,nn,min,max);
 
-  HMap* map = new HMap(dname,hh[0][0],chk+0,wrk+0);
+  HMap* map = new HMap(dname,hh[0][0],chk+0,wrk+0,cuts+0);
   hilist->Add(map);
 
 }
@@ -155,20 +180,20 @@ void HClass::Make_hist() {
   //int cc=0;
 
   Make_1d("Amplitude","ampl",";Channel;Counts",h_ampl,opt.amp_bins,
-	  opt.amp_min,opt.amp_max,opt.b_amp,opt.s_amp,opt.w_amp);
+	  opt.amp_min,opt.amp_max,opt.b_amp,opt.s_amp,opt.w_amp,opt.cut_amp);
   Make_1d("Height","height",";Channel;Counts",h_height,opt.hei_bins,
-	  opt.hei_min,opt.hei_max,opt.b_hei,opt.s_hei,opt.w_hei);
+	  opt.hei_min,opt.hei_max,opt.b_hei,opt.s_hei,opt.w_hei,opt.cut_hei);
   Make_1d("Time","time",";T(sec);Counts",h_time,opt.time_bins,
-	  opt.time_min,opt.time_max,opt.b_time,opt.s_time,opt.w_time);
+	  opt.time_min,opt.time_max,opt.b_time,opt.s_time,opt.w_time,opt.cut_time);
   Make_1d("TOF","tof",";t(ns);Counts",h_tof,opt.tof_bins,
-	  opt.tof_min,opt.tof_max,opt.b_tof,opt.s_tof,opt.w_tof);
+	  opt.tof_min,opt.tof_max,opt.b_tof,opt.s_tof,opt.w_tof,opt.cut_tof);
   Make_1d("MTOF","mtof",";t(mks);Counts",h_mtof,opt.mtof_bins,
-	  opt.mtof_min,opt.mtof_max,opt.b_mtof,opt.s_mtof,opt.w_mtof);
+	  opt.mtof_min,opt.mtof_max,opt.b_mtof,opt.s_mtof,opt.w_mtof,opt.cut_mtof);
   Make_1d("Period","period",";t(mks);Counts",h_per,opt.per_bins,
-	  opt.per_min,opt.per_max,opt.b_per,opt.s_per,opt.w_per);
+	  opt.per_min,opt.per_max,opt.b_per,opt.s_per,opt.w_per,opt.cut_per);
 
   Make_2d("H2d","h2d",";Channel;Channel",h_2d,opt.h2d_bins,
-	  opt.h2d_min,opt.h2d_max,opt.b_h2d,opt.s_h2d,opt.w_h2d);
+	  opt.h2d_min,opt.h2d_max,opt.b_h2d,opt.s_h2d,opt.w_h2d,opt.cut_h2d);
 
    //for (int cc=0;cc<MAXCUTS;cc++) {
 

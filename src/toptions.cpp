@@ -169,7 +169,15 @@ Toptions::Toptions() {
     w_h2d[i]=false;
   }
 
-  //s_amp[1]=false;
+  memset(cut_time, 0, sizeof(cut_time));
+  memset(cut_tof,  0, sizeof(cut_tof));
+  memset(cut_mtof, 0, sizeof(cut_mtof));
+  memset(cut_amp,  0, sizeof(cut_amp));
+  memset(cut_hei,  0, sizeof(cut_hei));
+  memset(cut_per,  0, sizeof(cut_per));
+  memset(cut_h2d,  0, sizeof(cut_h2d));
+
+      //s_amp[1]=false;
   //w_amp[2]=true;
 
   //tdc_bins1=1000;

@@ -1315,9 +1315,9 @@ void CRS::DoReset() {
   if (EvtFrm) {
     EvtFrm->DoReset();
   }
-  if (HiFrm) {
-    HiFrm->DoReset();
-  }
+  //if (HiFrm) {
+  //HiFrm->DoReset();
+  //}
 
   //n_ana=0;
   m_start=Levents.end();
