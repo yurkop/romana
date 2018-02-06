@@ -166,13 +166,13 @@ class Toptions: public TObject {
   Bool_t w_h2d[MAX_CH];
 
   //index of cuts
-  Char_t cut_time[MAX_CH][MAXCUTS];
-  Char_t cut_tof[MAX_CH][MAXCUTS];
-  Char_t cut_mtof[MAX_CH][MAXCUTS];
-  Char_t cut_amp[MAX_CH][MAXCUTS];
-  Char_t cut_hei[MAX_CH][MAXCUTS];
-  Char_t cut_per[MAX_CH][MAXCUTS];
-  Char_t cut_h2d[MAX_CH][MAXCUTS];
+  Char_t cut_time[MAX_CH*MAXCUTS];
+  Char_t cut_tof[MAX_CH*MAXCUTS];
+  Char_t cut_mtof[MAX_CH*MAXCUTS];
+  Char_t cut_amp[MAX_CH*MAXCUTS];
+  Char_t cut_hei[MAX_CH*MAXCUTS];
+  Char_t cut_per[MAX_CH*MAXCUTS];
+  Char_t cut_h2d[MAX_CH*MAXCUTS];
 
   Int_t start_ch;
 
@@ -181,6 +181,7 @@ class Toptions: public TObject {
 
   //Int_t b_osc,b_leg,b_logy,b_time;
   Bool_t b_logy;
+  Bool_t b_gcuts;
   Bool_t b_deriv[3];
   Bool_t b_peak[16];
   

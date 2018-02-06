@@ -342,12 +342,12 @@ void EventClass::FillHist() {
       }
       if (nn==2) {
 	if (opt.ncuts) {
-	  for (int j=0;j<opt.ncuts;j++) {
-	    if (hcl->cutG[j]->IsInside(amp[0],amp[1])) {
-	      icut=j+1;
-	      break;
-	    }
-	  } 
+	  // for (int j=0;j<opt.ncuts;j++) {
+	  //   if (hcl->cutG[j]->IsInside(amp[0],amp[1])) {
+	  //     icut=j+1;
+	  //     break;
+	  //   }
+	  // } 
 	}
 
 	hcl->h_2d[0][0]->Fill(amp[0],amp[1]);

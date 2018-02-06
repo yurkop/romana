@@ -58,6 +58,7 @@ class HistFrame: public TGCompositeFrame {
    //std::list<TH1*> hlist2;   
 
    TGCheckButton* chklog;
+   TGCheckButton* chkgcuts;
    static const int NR=7;
    TGRadioButton *Rb[NR];
 

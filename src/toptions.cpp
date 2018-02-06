@@ -197,6 +197,7 @@ Toptions::Toptions() {
   analyze=true;
 
   b_logy=false;
+  b_gcuts=false;
 
   start_ch=0;
 

@@ -13,7 +13,7 @@ class HMap: public TNamed {
  public:
 
   HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
-       Char_t (*cuts)[MAXCUTS]);
+       Char_t *cuts);
   ~HMap();
   HMap(const HMap& other);
   HMap& operator=(const HMap& other);
@@ -21,7 +21,7 @@ class HMap: public TNamed {
   TH1* hst;
   Bool_t* chk; //item is checked
   Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*)
-  Char_t (*cut_index)[MAXCUTS]; //список окон, заданных на этой гистограмме (hst)
+  Char_t *cut_index; //список окон, заданных на этой гистограмме (hst)
   //TList* list_cuts; 
   HMap* h_cuts[MAXCUTS];
   //TList* list_h_cuts;
@@ -63,11 +63,11 @@ class HClass {
   void Make_1d(const char* dname, const char* name, const char* title,
 	       TH1F* hh[MAX_CH][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
-	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t (*cuts)[MAXCUTS]);
+	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
   void Make_2d(const char* dname, const char* name, const char* title,
 	       TH2F* hh[][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
-	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t (*cuts)[MAXCUTS]);
+	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
    void Make_hist();
    //void NewBins();
    //void Reset_hist();
