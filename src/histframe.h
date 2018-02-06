@@ -111,6 +111,7 @@ public:
    //void FillHist(EventClass* evt);
    void Clone_Hist(HMap* hmap);
    void DoClick(TGListTreeItem* item,Int_t but);
+   void CutClick(TGListTreeItem* item,Int_t but);
    //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
    void DoCheck(TObject* obj, Bool_t check);
    void DoLog();

@@ -47,6 +47,7 @@ class HClass {
   TH2F* h_2d[1][MAXCUTS];
 
   TCutG* cutG[MAXCUTS];
+  //HMap *cutmap[MAXCUTS];
 
   TList* hilist;
 

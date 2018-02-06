@@ -188,7 +188,6 @@ class Toptions: public TObject {
   //std::vector<Float_t> cut[3];
   Int_t ncuts;
   Int_t pcuts[MAXCUTS]; //number of points in gcut
-
   Float_t gcut[MAXCUTS][2][MAX_PCUTS]; //20 cuts; xy; 10 points
 
   char formula[90];

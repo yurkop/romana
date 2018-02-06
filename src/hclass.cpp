@@ -38,6 +38,7 @@ HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
 HMap::~HMap() {
   delete hst;
   hst=0;
+  //memset(cut_index,0,MAXCUTS);
   for (int i=0;i<MAXCUTS;i++) {
     if (h_cuts[i]) {
       delete h_cuts[i]->hst;
@@ -84,6 +85,7 @@ HClass::HClass()
 {
   for (int i=0;i<MAXCUTS;i++) {
     cutG[i]=0;
+    //cutmap[i]=0;
   }
 
   for (int cc=0;cc<MAXCUTS;cc++) {
