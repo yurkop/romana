@@ -133,7 +133,7 @@ class EventClass { //event of pulses
   EventClass();
   virtual ~EventClass() {};
   void Pulse_Ana_Add(PulseClass *newpulse);
-  void FillHist();
+  void FillHist_old();
   //void PeakAna();
   //ClassDef(EventClass, 0)
 };

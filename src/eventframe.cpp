@@ -662,38 +662,36 @@ void EventFrame::DoCheckPoint() {
   formula->SetTitle(opt.formula);
   formula->Clear();
   int ires = formula->Compile();
+  //formula is not valid
   if (ires) {
     gClient->GetColorByName("red", color);
     tEnt->SetBackgroundColor(color);
   }
+  //formula is valid
   else {
     gClient->GetColorByName("white", color);
     tEnt->SetBackgroundColor(color);
-    double res = 0;//formula->Eval(7);
+    double res = 0;
 
     std::list<EventClass>::iterator ievt;
-    //++ievt;
+    // prepare search backward
     if (id==1) {
-      //cout << "dd1: " << d_event->Nevt << " " << d_event->T << endl;
       ievt = Pevents->begin();
       if (d_event==Pevents->begin())
 	return;
       else
 	--d_event;
-      //cout << "dd2: " << d_event->Nevt << " " << d_event->T << endl;
     }
+    //prepare seach forward
     else {
-      //cout << "dd1: " << d_event->Nevt << " " << d_event->T << endl;
       ievt = --Pevents->end();
       ++d_event;
       if (d_event==Pevents->end()) {
 	--d_event;
 	return;
       }
-      //cout << "dd2: " << d_event->Nevt << " " << d_event->T << endl;
     }
     while (d_event!=ievt) {
-      //for (d_event=d_event;d_event!=Pevents->end();++d_event) {
       //cout << d_event->Nevt << " " << d_event->T << endl;
       par[4]=d_event->pulses.size();
       par[2]=(d_event->T-crs->Tstart64)*crs->period*1e-9;
@@ -707,9 +705,9 @@ void EventFrame::DoCheckPoint() {
 	  par[1]=pk->Area;
 	  par[3]=pk->Time;
 	  res = formula->EvalPar(0,par);
+	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->T << " " << res << endl;
 	  if (res) {
 	    //d_event = d_event;
-	    //cout << "DoCheck: " << id << " " << opt.formula << d_event->Nevt << " " << d_event->T << " " << res << endl;
 	    DrawEvent2();
 	    return;
 	  }
@@ -1083,31 +1081,17 @@ void EventFrame::DrawEvent2() {
 
 void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 
-  //gPad->Update();
-  //double ux1=gPad->GetUxmin();
-  //double ux2=gPad->GetUxmax();
-  //double uy1=gPad->GetUymin();
-  //double uy2=gPad->GetUymax();
-
-  //for (UInt_t i=0;i<d_event->pulses.size();i++) {
-  //PulseClass *pulse = &d_event->pulses.at(i);
-
   double dy=y2-y1;
   if (dr>0) y1=0;
   
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
     double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch];
-    //double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
-    //double dt=pulse->Tstamp64 - d_event->T;
-
-    //int dt=d_event->pulses.at(i).Tstamp64 - d_event->T;
-    //cout << "Dt: " << i << " " << d_event->T << " " << dt
-    // << " " << d_event->pulses.size() << " " << hst[dr]->GetNhists() << endl;
-    //UInt_t ch= pulse->Chan;
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];
+      //cout << "drawpeak: " << (int) pulse->Chan << " " << pk->Pos << endl;
+
       if (fPeak[1]->IsOn()) // Pos
 	doXline(pk->Pos+dt,y1,y2-dy*0.3,2,1);
       if (fPeak[2]->IsOn()) // Time
@@ -1128,7 +1112,7 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
       //   << pulse->Tstamp64 << " " << d_event->T << endl;
     }
   }
-    //}
+
 }
 
 //void EventFrame::DrawEvent() {
@@ -1211,6 +1195,8 @@ void EventFrame::ReDraw() {
 	if (fChn[pulse->Chan]->IsOn()) {
 	  Gr[i][j]->Draw("lp");
 	  DrawPeaks(i,pulse,y1,y2);
+	  //int ideriv = (Bool_t) opt.kdrv[pulse->Chan];
+	  //cout << "idrv: " << ideriv << " " << opt.kdrv[pulse->Chan] << endl;
 	  if (i==1 && fPeak[7]->IsOn()) //threshold
 	    doYline(opt.thresh[pulse->Chan],gx1[j],
 		    gx2[j],chcol[pulse->Chan],2);

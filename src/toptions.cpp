@@ -8,7 +8,7 @@ using namespace std;
 Coptions::Coptions() {
   //ver = TClass::GetClass("Coptions")->GetClassVersion();
   for (int i=0;i<MAX_CH;i++) {
-    chtype[i]=ch_other;
+    //chtype[i]=ch_other;
     enabl[i]=true;
   }
 }
@@ -106,6 +106,7 @@ Toptions::Toptions() {
 
   //cout << "toptions" << endl;
   for (int i=0;i<MAX_CH;i++) {
+    chtype[i]=ch_other;
     //chtype[i]=(ChDef) 99;
     //cout << "chtype: " << chtype[i] << endl;
     //channels[i]=ch_off2;

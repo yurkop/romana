@@ -46,6 +46,15 @@ class HClass {
 
   TH2F* h_2d[1][MAXCUTS];
 
+  HMap* m_ampl[MAX_CH][MAXCUTS]; //amplitude - area of the peak
+  HMap* m_height[MAX_CH][MAXCUTS]; //height of the peak
+  HMap* m_time[MAX_CH][MAXCUTS]; // real time
+  HMap* m_tof[MAX_CH][MAXCUTS]; // time of flight
+  HMap* m_mtof[MAX_CH][MAXCUTS]; // time of flight
+  HMap* m_per[MAX_CH][MAXCUTS]; // period
+
+  HMap* m_2d[1][MAXCUTS];
+
   TCutG* cutG[MAXCUTS];
   //HMap *cutmap[MAXCUTS];
 
@@ -62,14 +71,15 @@ class HClass {
 
    //void NameTitle();
   void Make_1d(const char* dname, const char* name, const char* title,
-	       TH1F* hh[MAX_CH][MAXCUTS],
+	       HMap* mm[MAX_CH][MAXCUTS], TH1F* hh[MAX_CH][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
 	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
   void Make_2d(const char* dname, const char* name, const char* title,
-	       TH2F* hh[][MAXCUTS],
+	       HMap* mm[][MAXCUTS], TH2F* hh[][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
 	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
-   void Make_hist();
+  void Fill2d(HMap* map, Float_t x, Float_t y);
+  void Make_hist();
    //void NewBins();
    //void Reset_hist();
    //void FillHist(EventClass* evt);

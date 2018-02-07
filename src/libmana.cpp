@@ -941,7 +941,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGCompositeFrame* fr1 = new TGCompositeFrame(tab1, 10, 10, kHorizontalFrame);
   tab1->AddFrame(fr1, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
   parpar = new ParParDlg(fr1, 600, 500);
-  //parpar->Update();
+  parpar->Update();
   fr1->AddFrame(parpar, 
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
@@ -955,7 +955,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
-  //crspar->Update();
+  crspar->Update();
 
   //cout << "tab3: " << endl;
   
@@ -967,6 +967,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   chanpar->Make_chanpar(fr3, 600, 210);
   fr3->AddFrame(chanpar, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
+  chanpar->Update();
 
 
   TGCompositeFrame *tab4 = fTab->AddTab("Events");

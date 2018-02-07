@@ -176,7 +176,7 @@ void ParDlg::DoNum() {
     if (nfld) {
       int kk = (id-1)%nfld;
       for (int i=0;i<chanPresent;i++) {
-	if (pp.all==1 || cpar.chtype[i]==pp.all-1) {
+	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetNum(p2,te->GetNumber());
 	  TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
@@ -187,7 +187,7 @@ void ParDlg::DoNum() {
     // int kk;
     // (nfld ? (kk=(id-1)%nfld) : (kk=0));
     // for (int i=0;i<chanPresent;i++) {
-    //   if (pp.all==1 || cpar.chtype[i]==pp.all-1) {
+    //   if (pp.all==1 || opt.chtype[i]==pp.all-1) {
     // 	pmap p2 = Plist[i*nfld+kk];
     // 	SetNum(p2,te->GetNumber());
     // 	TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
@@ -279,7 +279,7 @@ void ParDlg::DoChk() {
     if (nfld) {
       int kk = (id-1)%nfld;
       for (int i=0;i<chanPresent;i++) {
-	if (pp.all==1 || cpar.chtype[i]==pp.all-1) {
+	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetChk(p2,te->GetState());
 	  TGCheckButton *te2 = (TGCheckButton*) p2.field;
@@ -290,7 +290,7 @@ void ParDlg::DoChk() {
     // int kk;
     // (nfld ? (kk=(id-1)%nfld) : (kk=0));
     // for (int i=0;i<chanPresent;i++) {
-    //   if (pp.all==1 || cpar.chtype[i]==pp.all-1) {
+    //   if (pp.all==1 || opt.chtype[i]==pp.all-1) {
     // 	pmap p2 = Plist[i*nfld+kk];
     // 	SetChk(p2,te->GetState());
     // 	TGCheckButton *te2 = (TGCheckButton*) p2.field;
@@ -452,7 +452,7 @@ void ParDlg::DoCombo() {
     // }
   }
 
-  //cout << "DoCombo chtype: " << cpar.chtype[0] << " " << id << endl;
+  //cout << "DoCombo chtype: " << opt.chtype[0] << " " << id << endl;
 
 }
 
@@ -507,7 +507,11 @@ void ParDlg::CopyParLine(int sel, int line) {
     }
     clab[line]->ChangeBackground(tcol[sel-1]);
     cframe[line]->ChangeBackground(tcol[sel-1]);
-    //cout << "copypar: " << line << endl;
+    //cout << "copypar: " << line << " " << sel << " " << tcol[sel-1] << endl;
+  }
+  if (sel==ADDCH) { //other
+    clab[line]->ChangeBackground(tcol[sel-1]);
+    cframe[line]->ChangeBackground(tcol[sel-1]);
   }
 }
  
@@ -545,6 +549,7 @@ void ParDlg::CopyField(int from, int to) {
 
 void ParDlg::UpdateField(int nn) {
 
+  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
   pmap* pp = &Plist[nn];
   
   TQObject* tq = (TQObject*) pp->field;
@@ -553,12 +558,33 @@ void ParDlg::UpdateField(int nn) {
   switch (pp->type) {
     case p_inum: {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      te->SetNumber(*(Int_t*) pp->data);
+      Int_t *dat = (Int_t*) pp->data;
+      if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
+      	// cout << "IUpdMax: " << te->WidgetId() << " " << te->GetNumLimits()
+	//      << " " << lim
+	//      << " " << te->GetNumMax() << " " << *dat << endl;
+      	*dat = te->GetNumMax();
+      }
+      if (te->GetNumLimits()==lim && *dat < te->GetNumMin()) {
+      	//cout << "IUpdMin: " << te->GetNumMin() << " " << *dat << endl;
+      	*dat = te->GetNumMin();
+      }
+      te->SetNumber(*dat);
     }
       break;
     case p_fnum: {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      te->SetNumber(*(Float_t*) pp->data);
+      Float_t *dat = (Float_t*) pp->data;
+      if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
+      	cout << "FUpdMax: " << te->GetNumMax() << " " << *dat << endl;
+      	//*dat = te->GetNumMax();
+      }
+      if (te->GetNumLimits()==lim && *dat < te->GetNumMin()) {
+      	//cout << "FUpdMin: " << te->GetNumMin() << " " << *dat << endl;
+      	*dat = te->GetNumMin();
+      }
+      te->SetNumber(*dat);
+      //te->SetNumber(*(Float_t*) pp->data);
     }
       break;
     case p_chk: {
@@ -1349,7 +1375,7 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
     
   }
 
-  DoMap(fCombo,&cpar.chtype[i],p_cmb,all,0,0);
+  DoMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
 
@@ -1371,7 +1397,7 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
 
 
   AddNum2(i,kk++,all,cframe[i],&opt.nsmoo[i],0,99,p_inum);
-  AddNum2(i,kk++,all,cframe[i],&opt.kdrv[i],0,999,p_inum);
+  AddNum2(i,kk++,all,cframe[i],&opt.kdrv[i],1,999,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.thresh[i],0,9999,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.bkg1[i],-4999,999,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.bkg2[i],-999,999,p_inum);
@@ -1395,12 +1421,22 @@ void ChanParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
   cpar.GetPar(name,crs->module,i,par,min,max);
 
+  TGNumberFormat::ELimit limits;
+
+  limits = TGNumberFormat::kNELLimitMinMax;
+  if (max==0) {
+    limits = TGNumberFormat::kNELNoLimits;
+  }
+
   int id = Plist.size()+1;
   TGNumberEntryField* fNum =
     new TGNumberEntryField(hframe1, id, par, TGNumberFormat::kNESInteger,
 			   TGNumberFormat::kNEAAnyNumber,
-			   TGNumberFormat::kNELLimitMinMax,min,max);
+			   limits,min,max);
 
+  // if (apar == &cpar.preWr[1]) {
+  //   cout << "prewr[0]: " << id << " " << fNum->GetNumLimits() << " " << min << " " << max << endl;
+  // }
   DoMap(fNum,apar,p_inum, all,kk-1,i,apar2);
   
   //fNum->SetName(name);
@@ -1648,7 +1684,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   //   fCombo->GetSelectedEntry()->SetForegroundColor(yellow);
   // }
   
-  DoMap(fCombo,&cpar.chtype[i],p_cmb,all,0,0);
+  DoMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
 

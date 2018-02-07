@@ -305,7 +305,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   
 }
 
-void EventClass::FillHist() {
+void EventClass::FillHist_old() {
   double DT = crs->period*1e-9;
   //int ch[MAX_CH];
   Double_t tt;
@@ -322,7 +322,7 @@ void EventClass::FillHist() {
 
   if (opt.b_h2d) {
     if (pulses.size()>=2) {
-      double amp[2];
+      Float_t amp[2];
       int nn=0;
       for (UInt_t i=0;i<pulses.size();i++) {
 	int ch = pulses[i].Chan;

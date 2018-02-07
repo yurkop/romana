@@ -283,7 +283,7 @@ void *handle_ana(void* ptr) {
 	    it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 	  //HiFrm->FillHist(&(*it));
 
-	  it->FillHist();
+	  it->FillHist_old();
 	  if (opt.dec_write) {
 	    crs->Fill_Dec(&(*it));
 	  }
@@ -1872,11 +1872,11 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     else if (frmt==2) {
 
       if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
-	// cout << "32: ERROR Nsamp: " << nbuf << " " << cnt
+	// cout << "32: ERROR Nsamp: "
 	//      << " " << (ipp->Counter & 0x0F)
 	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
 	//      << " " << (int) ch << " " << (int) ipp->Chan
-	//      << " " << idx8 << " " << transfer->actual_length
+	//      << " " << idx8 //<< " " << transfer->actual_length
 	//      << endl;
 	ipp->ptype|=P_BADSZ;
       }

@@ -17,7 +17,7 @@ class Coptions: public TObject {
   //Version_t ver;
   // parameters of the crs32 or crs2 module
 
-  Int_t chtype[MAX_CH+ADDCH]; //channel type
+  //Int_t chtype[MAX_CH+ADDCH]; //channel type
   Int_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
   Int_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
   Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
@@ -48,6 +48,7 @@ class Toptions: public TObject {
   Toptions();
   virtual ~Toptions() {};
 
+  Int_t chtype[MAX_CH+ADDCH]; //channel type
   Bool_t Start[MAX_CH+ADDCH]; //
   Bool_t Mt[MAX_CH+ADDCH]; // flag to use channel for mtof
   //UInt_t ch_flag[MAX_CH+ADDCH];
@@ -198,7 +199,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 106)
+  ClassDef(Toptions, 107)
 };
 
 ClassImp(Toptions)
