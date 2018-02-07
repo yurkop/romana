@@ -1147,6 +1147,7 @@ int CRS::DoStartStop() {
     //buf_out[0]=3;
     b_acq=true;
     b_stop=false;
+    b_fstart=false;
     //bstart=true;
     //totalbytes=0;
     //writtenbytes=0;
@@ -1284,6 +1285,7 @@ void CRS::DoReset() {
 
   if (!b_stop) return;
 
+  b_fstart=false;
   opt.T_acq=0;
 
   if (Fmode==1) {
@@ -1794,8 +1796,20 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   list_pulse_reviter vv2 = vv; //vv2 - vector of pulses from previous buffer
   ++vv2;
 
-  //cout << "Decode32 1: " << Vpulses.size() << " " << &*vv2
-  //     << " " << &*Vpulses.rend() << endl;
+
+  // if (vv2!=Vpulses.rend()) { //this is not start of the acqisition
+  //   cout << "aa: " << vv->size() << " " << vv2->size() << endl;
+  //   for (UInt_t i=0;i<vv2->size();i++) {
+  //     PulseClass *pls = &vv2->at(i);
+  //     cout << "XXXX: " << i << " " << pls << " " << pls->Tstamp64 << " "
+  // 	   << " " << pls->Counter << " " << (int) pls->ptype
+  // 	   << " " << pls->sData.size() << " " << (int) pls->Chan
+  // 	   << endl;
+  //   }
+  // }
+  
+  // cout << "Decode32 1: " << Vpulses.size() << " " << &*vv2
+  //      << " " << &*Vpulses.rend() << endl;
 
   if (vv2==Vpulses.rend()) { //this is start of the acqisition
     vv->push_back(PulseClass());
@@ -1817,7 +1831,6 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   ULong64_t data;
 
   while (idx1<length) {
-    //frmt = (buffer[6] & 0xF0);
     frmt = buffer[idx1+6];
     //YKYKYK!!!! do something with cnt - ???
     //int cnt = frmt & 0x0F;
@@ -1825,8 +1838,6 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     data = buf8[idx8] & 0xFFFFFFFFFFFF;
     unsigned char ch = buffer[idx1+7];
     
-    //printf("d32: %d %d %d %d %d\n",idx1,frmt,cnt,ch,ipp->tdif);
-    //cout << "vv: " << vv << endl;
     if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
       cout << "32: Bad channel: " << (int) ch
 	   << " " << (int) ipp->Chan
@@ -1842,20 +1853,15 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     if (frmt==0) {
       //make new pulse only if this is not the first record.
       //For the first record new pulse is already created at the beginning
-
-      if (idx8) {
-
-	//if (nbuffers < 3) {
-	//cout << nbuf << " " << idx8 << " ";
-	//ipp->PrintPulse();
-	//}
-
+      //if (idx8) {
+      if (b_fstart) {
 	ipp->ptype&=~P_NOSTOP; //pulse has stop
 	vv->push_back(PulseClass());
 	npulses++;
 	ipp = &vv->back();
       }
       else { //idx8==0 -> pulse has start
+	b_fstart=true;
 	ipp->ptype&=~P_NOSTART;
       }
       ipp->Chan=ch;
@@ -1880,20 +1886,9 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 	//      << endl;
 	ipp->ptype|=P_BADSZ;
       }
-      /*
-	else if (ipp->sData.size()%1000 == 0) {
-	cout << "32: Nsamp: " << nbuf << " " << cnt
-	<< " " << (ipp->Counter & 0x0F)
-	<< " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
-	<< " " << (int) ch << " " << (int) ipp->Chan
-	<< " " << idx8 << " " << transfer->actual_length
-	<< endl;
-	ipp->ptype|=p_bad;
-	}
-      */
       //else {
       for (int i=0;i<4;i++) {
-	//YKYKYK int zzz = data & 0xFFF;
+
 	int zzz = data & 0xFFF;
 	ipp->sData.push_back((zzz<<20)>>20);
 	//ipp->sData[ipp->Nsamp++]=(zzz<<20)>>20;
@@ -1907,10 +1902,32 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     idx1=idx8*8;
   }
 
-  // for (UInt_t i=0;i<vv->size();i++) {
-  //   cout << "Decode32: " << i << " " << vv->at(i).Tstamp64 << " "
-  // 	 << (int) vv->at(i).ptype << endl;
-  // }
+  /*
+  //if (crs->nbuffers>=52 && crs->nbuffers<=54) {
+  cout << "buf: " << crs->nbuffers << " " << Vpulses.size() << " " << vv->size() << " " << endl;
+
+  if (vv2!=Vpulses.rend()) { //this is not start of the acqisition
+    //PulseClass *pls2 = &vv2->at(0);
+    //cout << "bbb: " << &vv2->at(0) << " " << pls2 << " " << vv2->size() << endl;
+
+    for (UInt_t i=0;i<vv2->size();i++) {
+      PulseClass *pls = &vv2->at(i);
+      cout << "prev: " << i << " " << pls << " " << pls->Tstamp64 << " "
+      	   << " " << pls->Counter << " " << (int) pls->ptype
+      	   << " " << pls->sData.size() << " " << (int) pls->Chan
+      	   << endl;
+    }
+  }
+  
+  for (UInt_t i=0;i<vv->size();i++) {
+      PulseClass *pls = &vv->at(i);
+      cout << "VECT: " << i << " " << pls->Tstamp64 << " "
+	   << " " << pls->Counter << " " << (int) pls->ptype
+	   << " " << pls->sData.size() << " " << (int) pls->Chan
+	   << endl;
+    }
+    //}
+    */
 
   //cout << "Decode32 3: " << Vpulses.size() << endl;
   if (opt.analyze)
@@ -1991,7 +2008,8 @@ void CRS::Decode2(UChar_t* buffer, int length) {
     if (frmt==0) {
       //make new pulse only if this is not the first record.
       //For the first record new pulse is already created at the beginning
-      if (idx2) {
+      //if (idx2) {
+      if (b_fstart) {
 	ipp->ptype&=~P_NOSTOP; //pulse has stop
 	//ipp->PrintPulse(1);
 	vv->push_back(PulseClass());
@@ -1999,6 +2017,7 @@ void CRS::Decode2(UChar_t* buffer, int length) {
 	ipp = &vv->back();
       }
       else { //idx2==0 -> pulse has start
+	b_fstart=true;
 	ipp->ptype&=~P_NOSTART; // reset ptype, as this is a good pulse
       }
       ipp->Chan = ch;
@@ -2367,8 +2386,8 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
   //if (pls->ptype & 0xF) { //P_NOSTART | P_NOSTOP | P_BADCH | P_BADTST
   if (pls->ptype) { //any bad pulse
-    cout << "bad pulse: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
-	 << (int) pls->ptype << endl;
+    cout << "bad pulse: " << (int) pls->Chan << " " << pls->Counter << " "
+	 << pls->Tstamp64 << " " << (int) pls->ptype << endl;
     return;
   }
   

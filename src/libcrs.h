@@ -125,6 +125,8 @@ RQ_OBJECT("CRS")
   //double ev_rate;
   Int_t npulses2[MAX_CH]; //number of pulses per channel
 
+  bool b_fstart; // 
+  
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
   bool b_stop; // true if acquisition and analysis are stopped
