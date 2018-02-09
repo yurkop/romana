@@ -374,7 +374,6 @@ void HistFrame::Make_Ltree() {
   TObject* obj=0;
   TIter next(hcl->hilist);
 
-  char cuttitle[MAXCUTS][99];
   char cutname[99];
   char name[99];
   TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("marker25.xpm");
@@ -386,8 +385,10 @@ void HistFrame::Make_Ltree() {
   TGListTreeItem *idir=0;
   TGListTreeItem *item=0;
   //TGListTreeItem *item;
-  int col[MAXCUTS];
-  memset(col,2,sizeof(col));
+  //int col[MAXCUTS];
+  //memset(col,2,sizeof(col));
+
+  hcl->Make_cuts();
 
   //fListTree->AddRoot("Histograms");
   iWork = Item_Ltree(iroot, "WORK",0,0,0);
@@ -418,34 +419,23 @@ void HistFrame::Make_Ltree() {
     }
     //determine cut colors
 
-    for (int i=0;i<MAXCUTS;i++) {
-      col[i]=map->cut_index[i];
-      if (col[i]==0) {
-    	break;
-      }
-      col[i]+=1;
-      sprintf(cuttitle[i],"%s",map->GetName());
-    }
+    // for (int i=0;i<MAXCUTS;i++) {
+    //   col[i]=map->cut_index[i];
+    //   if (col[i]==0) {
+    // 	break;
+    //   }
+    //   col[i]+=1;
+    //   sprintf(cuttitle[i],"%s",map->GetName());
+    // }
 
   }
 
 
-  //make gcuts and fill fCutTree
+  //fill fCutTree
   for (int i=0;i<opt.ncuts;i++) {
-    //make gcut
-    if (hcl->cutG[i]) delete hcl->cutG[i];
-    
-    sprintf(cutname,"cut%d",i+1);
-    hcl->cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
     TCutG* gcut = hcl->cutG[i];
-    gcut->SetTitle(cuttitle[i]);
-    gcut->SetLineColor(col[i]);
-    //cout << "gcut: " << gcut << " " << hcl->cutG[0] << endl;
-    //gcut->Print();
 
-    //cout << "tree: " << fCutTree << endl;
     item = fCutTree->AddItem(0, gcut->GetName(), gcut, pic_2d, pic_2d, false);
-    //cout << "item: " << item << endl;
     fCutTree->AddItem(item, gcut->GetTitle(), pic2, pic2, false);
     for (int i=0;i<gcut->GetN();i++) {
       sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
@@ -592,11 +582,11 @@ void HistFrame::Clone_Hist(HMap* map) {
     sprintf(cutname,"WORK_cut%d",cc+1);
     sprintf(name,"%s_cut%d",h0->GetName(),cc+1);
     sprintf(htitle,"%s_cut%d",h0->GetTitle(),cc+1);
-    //cout << "clone: " << name << " " << htitle << endl;
     TH1* hcut = (TH1*) h0->Clone();
     hcut->Reset();
     hcut->SetNameTitle(name,htitle);
     HMap* mcut = new HMap(cutname,hcut,map->chk,&hcl->wfalse,map->cut_index);
+
     // add this map to the list h_cuts
     map->h_cuts[cc]=mcut;
     Item_Ltree(iWork_cut[cc], mcut->GetName(), mcut, pic, pic);
@@ -1045,7 +1035,8 @@ void HistFrame::HiReset()
 
   //cout << "hst::DoReset: " << endl;
   //cv->ls();
-  
+
+  /*
   for (int i=0;i<MAXCUTS;i++) {
     if (hcl->cutG[i]) {
       delete hcl->cutG[i];
@@ -1059,6 +1050,7 @@ void HistFrame::HiReset()
     hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
     hcl->cutG[i]->SetLineColor(i+2);
   }
+  */
 
   //hcl->NewBins();
   //cout << "Make_hist():: " << endl;

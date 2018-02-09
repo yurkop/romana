@@ -135,6 +135,7 @@ class EventClass { //event of pulses
   EventClass();
   virtual ~EventClass() {};
   void Pulse_Ana_Add(PulseClass *newpulse);
+  void Fill_Time_Extend(HMap* map);
   void Fill1d(Bool_t first, HMap* map, Float_t x);
   void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);
   void FillHist(Bool_t first);

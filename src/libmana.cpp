@@ -370,8 +370,15 @@ int main(int argc, char **argv)
 #endif
   //cout << "startdir: " << startdir << endl;
 
-  strcpy(pr_name,argv[0]);
 
+  cout << "----------------------------------------------" << endl;
+  cout << "Usage: ./romana.x [filename] [+parname] [-b]" << endl;
+  cout << "filename - read data and parameters from filename" << endl;
+  cout << "+parname - read parameters from parname, parameters of filename are ignored" << endl;
+  cout << "-b - analyze file in batch mode (without gui) and exit" << endl;
+  cout << "----------------------------------------------" << endl;
+
+  strcpy(pr_name,argv[0]);
   strcpy(maintitle,pr_name);
 
   //parname = (char*)"romana.par";

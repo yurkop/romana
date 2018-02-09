@@ -61,7 +61,7 @@ const char* tip2[nchpar]={
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Mtof channel - use this channel for mtof spectra",
   "Software smoothing",
-  "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-Drv)",
+  "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
   "Background start, relative to peak Pos (negative)",
   "Background end, relative to peak Pos (negative)",

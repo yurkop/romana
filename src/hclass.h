@@ -37,25 +37,29 @@ class HClass {
 
  public:
 
-  TH1F* h_ampl[MAX_CH][MAXCUTS]; //amplitude - area of the peak
-  TH1F* h_height[MAX_CH][MAXCUTS]; //height of the peak
-  TH1F* h_time[MAX_CH][MAXCUTS]; // real time
-  TH1F* h_tof[MAX_CH][MAXCUTS]; // time of flight
-  TH1F* h_mtof[MAX_CH][MAXCUTS]; // time of flight
-  TH1F* h_per[MAX_CH][MAXCUTS]; // period
+  // TH1F* h_ampl[MAX_CH]; //amplitude - area of the peak
+  // TH1F* h_height[MAX_CH]; //height of the peak
+  // TH1F* h_time[MAX_CH]; // real time
+  // TH1F* h_tof[MAX_CH]; // time of flight
+  // TH1F* h_mtof[MAX_CH]; // time of flight
+  // TH1F* h_per[MAX_CH]; // period
 
-  TH2F* h_2d[1][MAXCUTS];
+  // TH2F* h_2d[1];
 
-  HMap* m_ampl[MAX_CH][MAXCUTS]; //amplitude - area of the peak
-  HMap* m_height[MAX_CH][MAXCUTS]; //height of the peak
-  HMap* m_time[MAX_CH][MAXCUTS]; // real time
-  HMap* m_tof[MAX_CH][MAXCUTS]; // time of flight
-  HMap* m_mtof[MAX_CH][MAXCUTS]; // time of flight
-  HMap* m_per[MAX_CH][MAXCUTS]; // period
+  HMap* m_ampl[MAX_CH]; //amplitude - area of the peak
+  HMap* m_height[MAX_CH]; //height of the peak
+  HMap* m_time[MAX_CH]; // real time
+  HMap* m_tof[MAX_CH]; // time of flight
+  HMap* m_mtof[MAX_CH]; // time of flight
+  HMap* m_per[MAX_CH]; // period
 
-  HMap* m_2d[1][MAXCUTS];
+  HMap* m_2d[1];
 
   TCutG* cutG[MAXCUTS];
+  Bool_t cut_flag[MAXCUTS];
+  char cuttitle[MAXCUTS][99];
+  int cutcolor[MAXCUTS];
+
   //HMap *cutmap[MAXCUTS];
 
   TList* hilist;
@@ -71,14 +75,15 @@ class HClass {
 
    //void NameTitle();
   void Make_1d(const char* dname, const char* name, const char* title,
-	       HMap* mm[MAX_CH][MAXCUTS], TH1F* hh[MAX_CH][MAXCUTS],
+	       HMap* map[],// TH1F* hh[MAX_CH][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
 	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
   void Make_2d(const char* dname, const char* name, const char* title,
-	       HMap* mm[][MAXCUTS], TH2F* hh[][MAXCUTS],
+	       HMap* map[],// TH2F* hh[][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
 	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
   void Make_hist();
+  void Make_cuts();
    //void NewBins();
    //void Reset_hist();
    //void FillHist(EventClass* evt);

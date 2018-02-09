@@ -281,9 +281,10 @@ void *handle_ana(void* ptr) {
 	//cout << "ana7: " << it->Nevt << " " << crs->m_event->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	if (!crs->b_stop &&
 	    it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
-	  //HiFrm->FillHist(&(*it));
 
-	  it->FillHist_old();
+	  it->FillHist(true);
+	  it->FillHist(false);
+	  //it->FillHist_old();
 	  if (opt.dec_write) {
 	    crs->Fill_Dec(&(*it));
 	  }
