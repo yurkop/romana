@@ -289,7 +289,7 @@ void *handle_ana(void* ptr) {
 	  }
 
 
-	  it->Analyzed=true;
+	  //it->Analyzed=true;
 	  ++crs->nevents2;
 	  ++it;
 	  //++(crs->n_ana);

@@ -23,39 +23,19 @@
 class HMap; //forward declaration
 void DynamicExec();
 
-/*
-//-----------------------------------------------
-class MECanvas: public TRootEmbeddedCanvas {
- public:
- MECanvas(const char* name = 0, const TGWindow* p = 0, UInt_t w = 10, 
-	  UInt_t h = 10, UInt_t options = kSunkenFrame|kDoubleBorder,
-	  Pixel_t back = GetDefaultFrameBackground())
-   : TRootEmbeddedCanvas(name,p,w,h,options,back) {};
-
-
-  //~TECanvas() {};
-
-  Bool_t HandleDNDDrop(TDNDData *data);
-
-};
-*/
 //-----------------------------------------------
 class HistFrame: public TGCompositeFrame {
 
  public:
-  //TGVerticalFrame        *fV1;
   TGCanvas               *gCanvas; //hist Gcanvas
   TGCanvas               *gCanvas2; //cuts Gcanvas
-  //TGLabel                *clab;
    TRootEmbeddedCanvas    *fEc;
-   //MECanvas    *fEc;
    TGListTree             *fListTree;    // list tree with histograms
    TGListTree             *fCutTree;    // list tree with histograms
 
    TGListTreeItem         *iWork;
    TGListTreeItem         *iWork_cut[MAXCUTS];
    TList* hlist;
-   //std::list<TH1*> hlist2;   
 
    TGCheckButton* chklog;
    TGCheckButton* chkgcuts;
@@ -77,50 +57,22 @@ class HistFrame: public TGCompositeFrame {
    TObject *padmap[MAX_PADS];
 
  public:
-
-   //int ievent; //current event to be drawn
-   //std::list<EventClass>::iterator d_event;
-   //std::list<EventClass> Tevents;
-   //std::list<EventClass> *Levents;
-   //EventClass *d_event; //current event to draw
-   //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
-   //int NGr;
-   //TGraph Gr[3][MAX_CH];
-   //TH1F *hh[3][MAX_CH];
-   //double gx1,gx2,gy1[3],gy2[3];
-   //TH2F fPaint[3];
-   //TMultiGraph* mgr[3];
-
-   //bool bprint;
-
-   //TThread *trd;
-
-public:
    HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
    virtual ~HistFrame();
 
-   //void Upd()  { Emit("Upd()"); }   // *SIGNAL*
-
-   //void NameTitle();
-   //void Make_hist();
    TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
    void Make_Ltree();
    void Clear_Ltree();
    TGListTreeItem* FindItem(TGListTree* lTree, const char* name);
-   //void Reset_hist();
-   //void FillHist(EventClass* evt);
    void Clone_Hist(HMap* hmap);
    void DoClick(TGListTreeItem* item,Int_t but);
    void CutClick(TGListTreeItem* item,Int_t but);
-   //void DoClick(TGListTreeItem*, Int_t, UInt_t, Int_t, Int_t);
    void DoCheck(TObject* obj, Bool_t check);
    void DoLog();
    void DoKey(TGListTreeItem* entry, UInt_t keysym);
    void SelectDiv(int nn);
    void DoRadio();
    void DoButton();
-   //void DoPeaks2();
-   //void AddCutG(Double_t *xx, Double_t *yy);
    void AddCutG(TPolyLine *pl, TObject* hobj);
    void MakeCutG(int icut, TPolyLine *pl, TObject* hobj);
    void DoCutG();

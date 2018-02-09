@@ -250,7 +250,7 @@ EventClass::EventClass() {
   State=0;
   T=0;
   T0=99999;
-  Analyzed=false;
+  //Analyzed=false;
 }
 
 void EventClass::Pulse_Ana_Add(PulseClass *pls) {
@@ -303,6 +303,226 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   // }
   // cout << endl;
   
+}
+
+void EventClass::Fill1d(Bool_t first, HMap* map, Float_t x) {
+  map->hst->Fill(x);
+}
+
+void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
+  map->hst->Fill(x,y);
+  for (int i=0;i<MAXCUTS;i++) {
+    int icut=map->cut_index[i];
+    if (icut==0)
+      break;
+    if (hcl->cutG[icut]->IsInside(x,y)) {
+      
+    }
+
+  }
+}
+
+void EventClass::FillHist(Bool_t first) {
+  double DT = crs->period*1e-9;
+  //int ch[MAX_CH];
+  Double_t tt;
+  Double_t max,max2;
+  int nbin;
+
+  //int icut=0;
+  int mult=0;
+  Long64_t tm;
+
+  int nn=0;
+  Float_t amp[2];
+  static char cut_flag[MAXCUTS];
+
+  //cout << "FillHist: " << endl;
+
+  /*
+  if (opt.b_h2d) {
+    if (pulses.size()>=2) {
+      Float_t amp[2];
+      int nn=0;
+      for (UInt_t i=0;i<pulses.size();i++) {
+	int ch = pulses[i].Chan;
+	for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
+	  peak_type* pk = &pulses[i].Peaks[j];
+
+	  if (ch==0 && j==0) {
+	    amp[0]=pk->Area*opt.emult[ch];
+	    nn++;
+	  }
+	  if (ch==1 && j==0) {
+	    amp[1]=pk->Area*opt.emult[ch];
+	    nn++;
+	  }
+
+	}
+      }
+      if (nn==2) {
+	Fill2d(hcl->m_2d[0][0],amp[0],amp[1]);
+      }
+    }
+  }
+  */
+
+  if (first) {
+    opt.T_acq=(T-crs->Tstart64)*DT;
+
+    if (opt.Tstop && opt.T_acq>opt.Tstop) {
+      crs->b_stop=true;
+      crs->b_fana=false;
+      crs->b_acq=false;
+      //return;
+    }
+    if (opt.ncuts)
+      memset(cut_flag,0,sizeof(cut_flag));
+  }
+
+  for (UInt_t i=0;i<pulses.size();i++) {
+    int ch = pulses[i].Chan;
+
+    for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
+      peak_type* pk = &pulses[i].Peaks[j];
+
+      if (first) {
+	if (opt.dec_write) {
+	  crs->rP.Area   = pk->Area;
+	  crs->rP.Height = pk->Height;
+	  crs->rP.Width  = pk->Width ;
+	  crs->rP.Time   = pk->Time  ;
+	  crs->rP.Ch     = ch    ;
+	  crs->rP.Type   = pk->Type  ;
+
+	  crs->rPeaks.push_back(crs->rP);
+	}
+      }
+
+      if (opt.b_time) {
+	max = hcl->h_time[ch][0]->GetXaxis()->GetXmax();
+
+	if (opt.T_acq > max) {
+	  max2=max*2;
+	  if (opt.T_acq>max2) {
+	    cout << "Time leap is too large: " << this->Nevt << " " << ch << " " << opt.T_acq << " " << pulses[i].Tstamp64 << " " << crs->Tstart64 << endl;
+	  }
+	  else {
+	    nbin = hcl->h_time[ch][0]->GetNbinsX()*max2/max;
+	    Float_t* arr = new Float_t[nbin+2];
+	    memset(arr,0,sizeof(Float_t)*(nbin+2));
+	    Float_t* arr2 = hcl->h_time[ch][0]->GetArray();
+	    memcpy(arr,arr2,hcl->h_time[ch][0]->GetSize()*sizeof(Float_t));
+	    hcl->h_time[ch][0]->SetBins(nbin,0,max2);
+	    hcl->h_time[ch][0]->Adopt(nbin+2,arr);
+	  }
+	}
+
+	Fill1d(first,hcl->m_time[ch][0],opt.T_acq);
+      }
+
+      if (opt.b_amp) {
+	Fill1d(first,hcl->m_ampl[ch][0],pk->Area*opt.emult[ch]);
+      }
+
+      if (opt.b_hei) {
+	Fill1d(first,hcl->m_height[ch][0],pk->Height);
+      }
+
+      if (opt.b_tof) {
+	double dt = pulses[i].Tstamp64 - T;
+	tt = pk->Time - crs->Pre[ch] - T0 + dt;
+	Fill1d(first,hcl->m_tof[ch][0],tt*crs->period);
+      }
+
+      if (j==0) { //only for the first peak
+	if (opt.b_mtof) {
+	  if (ch==opt.start_ch) {
+	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Pos;
+	  }
+	  if (opt.Mt[ch]) {
+	    mult++;
+	  }
+	  if (mult && (i==pulses.size()-1)) { //last pulse
+	    if (crs->Tstart0>0) {
+	      if (mult>=MAX_CH) mult=MAX_CH-1;
+
+	      tm = pulses[i].Tstamp64 + pk->Pos;
+	      tt = (tm - crs->Tstart0)*0.001*crs->period;
+
+	      Fill1d(first,hcl->m_mtof[mult][0],tt);
+	      Fill1d(first,hcl->m_mtof[0][0],tt);
+	    }
+	  } //if last pulse
+	} //if b_mtof
+
+	if (opt.b_h2d) {
+	  if (ch==0) {
+	    amp[0]=pk->Area*opt.emult[ch];
+	    nn++;
+	  }
+	  if (ch==1) {
+	    amp[1]=pk->Area*opt.emult[ch];
+	    nn++;
+	  }
+	  if (nn==2) {
+	    Fill2d(first,hcl->m_2d[0][0],amp[0],amp[1]);
+	    nn++;
+	  }
+	  
+	}
+
+	if (opt.b_per) {
+	  tm = pulses[i].Tstamp64 + pk->Pos;
+	  if (hcl->T_prev[ch]) {
+	    tt = (tm - hcl->T_prev[ch])*0.001*crs->period; //convert to mks
+	    Fill1d(first,hcl->m_per[ch][0],tt);
+	  }
+	  hcl->T_prev[ch]=tm;
+	}
+      } // only for 1st peak
+
+    } //for peaks...
+
+  } //for (UInt_t i=0;i<pulses.size()...
+
+  /*
+    if (opt.dec_write) {
+    crs->rTime=T;
+    crs->rState = State;
+    crs->Tree->Fill();
+    crs->rPeaks.clear();
+    }
+  */
+
+  /*
+    int ax=0,ay=0,px=0,py=0;
+    if (pulses.size()==4) {
+    for (UInt_t i=0;i<pulses.size();i++) {
+    int ch = pulses[i].Chan;
+    if (ch<8) { //prof_x
+    px=PROF::prof_ch[ch];
+    }
+    else if (ch<16) { //prof y
+    py=PROF::prof_ch[ch];
+    }
+    else if (ch<24) { //alpha y
+    ay=PROF::prof_ch[ch];
+    }
+    else { //alpha x
+    ax=PROF::prof_ch[ch];
+    }
+    }
+
+    int ch_alpha = ax + ay*8;
+
+    //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
+
+    hcl->h2_prof_strip[ch_alpha]->Fill(px,py);
+    hcl->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
+    }
+  */
+
 }
 
 void EventClass::FillHist_old() {

@@ -3,6 +3,7 @@
 
 #include <TROOT.h>
 
+class HMap;
 
 enum PeakDef {
   p_undet,
@@ -123,16 +124,20 @@ class EventClass { //event of pulses
 
  public:
   Long64_t Nevt;
-  Char_t State;
+  Char_t State; //state word from CRS module
   Long64_t T; //Timestamp of the earliest pulse (threshold crossig)
   Float_t T0; //time of the earliest *START* peak, relative to T
   std::vector <PulseClass> pulses;
-  bool Analyzed;
+  //Bool_t Analyzed;
+  //Bool_t ecut[MAXCUTS];
 
  public:
   EventClass();
   virtual ~EventClass() {};
   void Pulse_Ana_Add(PulseClass *newpulse);
+  void Fill1d(Bool_t first, HMap* map, Float_t x);
+  void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);
+  void FillHist(Bool_t first);
   void FillHist_old();
   //void PeakAna();
   //ClassDef(EventClass, 0)

@@ -78,7 +78,6 @@ class HClass {
 	       HMap* mm[][MAXCUTS], TH2F* hh[][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
 	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
-  void Fill2d(HMap* map, Float_t x, Float_t y);
   void Make_hist();
    //void NewBins();
    //void Reset_hist();

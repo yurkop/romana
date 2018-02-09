@@ -123,7 +123,7 @@ void NameTitle(char* name, char* title, int i, int cc,
 }
 
 void HClass::Make_1d(const char* dname, const char* name, const char* title,
-		     HMap* mm[MAX_CH][MAXCUTS], TH1F* hh[MAX_CH][MAXCUTS],
+		     HMap* map[MAX_CH][MAXCUTS], TH1F* hh[MAX_CH][MAXCUTS],
 		     Float_t bins, Float_t min, Float_t max,
 		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
 		     Char_t *cuts) {
@@ -141,14 +141,14 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
     hh[i][0]=new TH1F(name2,title2,nn,min,max);
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
-    HMap* map = new HMap(dname,hh[i][0],chk+i,wrk+i,cuts+i*MAXCUTS);
-    hilist->Add(map);
+    map[i][0] = new HMap(dname,hh[i][0],chk+i,wrk+i,cuts+i*MAXCUTS);
+    hilist->Add(map[i][0]);
 
   }
 }
 
 void HClass::Make_2d(const char* dname, const char* name, const char* title,
-		     HMap* mm[][MAXCUTS], TH2F* hh[][MAXCUTS],
+		     HMap* map[][MAXCUTS], TH2F* hh[][MAXCUTS],
 		     Float_t bins, Float_t min, Float_t max,
 		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
 		     Char_t *cuts) {
@@ -164,13 +164,9 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
   int nn=bins*(max-min);
   hh[0][0]=new TH2F(name2,title2,nn,min,max,nn,min,max);
 
-  HMap* map = new HMap(dname,hh[0][0],chk+0,wrk+0,cuts+0*MAXCUTS);
-  hilist->Add(map);
+  map[0][0] = new HMap(dname,hh[0][0],chk+0,wrk+0,cuts+0*MAXCUTS);
+  hilist->Add(map[0][0]);
 
-}
-
-void Fill2d(HMap* map, Float_t x, Float_t y) {
-  map->hst->Fill(x,y);
 }
 
 void HClass::Make_hist() {

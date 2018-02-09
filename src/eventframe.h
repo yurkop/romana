@@ -106,24 +106,13 @@ public:
    EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
    virtual ~EventFrame();
 
-   //void StartThread();
-
-   //void Clear();
-   //void Start();
    void DoReset();
    void FillGraph(int dr);
    void SetRanges(int dr);
-   //void FillHist(int dr);
-   //void FillHstack(int dr);
    void DrawEvent2();
    void DrawPeaks(int dr, PulseClass* pulse, double y1,double y2);
-   //void DrawEvent();
    void DoGraph(int ndiv, int deriv);
    void ReDraw();
-   /* void DoNum(); */
-   /* void Do1buf(); */
-   /* void DoNbuf(); */
-   //void DoColor();
    void Plus1();
    void Minus1();
    void PlusN();
@@ -136,8 +125,6 @@ public:
    void DoChkDeriv();
    void DoChkPeak();
    void DoPulseOff();
-   //void DoDraw(int);
-   //void CloseWindow();
 
   ClassDef(EventFrame, 0)
 };
