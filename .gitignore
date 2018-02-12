@@ -4,6 +4,7 @@
 !/utils
 !Makefile
 !TODO
+!/decoder
 #!/*.par
 !.gitignore
 !git-help
