@@ -64,7 +64,7 @@ class HistFrame: public TGCompositeFrame {
    void Make_Ltree();
    void Clear_Ltree();
    TGListTreeItem* FindItem(TGListTree* lTree, const char* name);
-   void Clone_Hist(HMap* hmap);
+   void Clone_Ltree(HMap* hmap);
    void DoClick(TGListTreeItem* item,Int_t but);
    void CutClick(TGListTreeItem* item,Int_t but);
    void DoCheck(TObject* obj, Bool_t check);

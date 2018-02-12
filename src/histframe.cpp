@@ -372,7 +372,7 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
 void HistFrame::Make_Ltree() {
 
   TObject* obj=0;
-  TIter next(hcl->hilist);
+  TIter next(hcl->map_list);
 
   char cutname[99];
   char name[99];
@@ -388,7 +388,7 @@ void HistFrame::Make_Ltree() {
   //int col[MAXCUTS];
   //memset(col,2,sizeof(col));
 
-  hcl->Make_cuts();
+  //YKYKYK hcl->Make_cuts();
 
   //fListTree->AddRoot("Histograms");
   iWork = Item_Ltree(iroot, "WORK",0,0,0);
@@ -415,7 +415,7 @@ void HistFrame::Make_Ltree() {
       Item_Ltree(iWork, map->GetName(), map, pic, pic);
 
       //make clones of _work_ histograms and their hmaps
-      Clone_Hist(map);
+      Clone_Ltree(map);
     }
     //determine cut colors
 
@@ -441,7 +441,7 @@ void HistFrame::Make_Ltree() {
       sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
       fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
     }
-    cout << "AddCutg: " << i+1 << " " << gcut->GetName() << " " << opt.pcuts[i] << endl;
+    //cout << "AddCutg: " << i+1 << " " << gcut->GetName() << " " << opt.pcuts[i] << endl;
   }
 
 }
@@ -548,7 +548,8 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       HMap* map = (HMap*) item->GetUserData();
       *map->wrk=true;
 
-      Clone_Hist(map);
+      hcl->Clone_Hist(map);
+      Clone_Ltree(map);
       // for (int cc=0;cc<opt.ncuts;cc++) {
       // 	sprintf(hname2,"%s_cut%d",hname,cc+1);
       // 	hh = gROOT->FindObject(hname2);
@@ -565,6 +566,28 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 
 }
 
+void HistFrame::Clone_Ltree(HMap* map) {
+  //char cutname[99];
+  //char name[99],htitle[99];
+  TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
+  TGPicture *pic2 = (TGPicture*) gClient->GetPicture("h2_t.xpm");
+  TGPicture *pic=0;
+
+  if (*map->wrk) {
+    if (map->hst->InheritsFrom(TH2::Class()))
+      pic=pic2;
+    else
+      pic=pic1;
+
+    for (int i=0;i<opt.ncuts;i++) {
+      HMap* mcut = map->h_cuts[i];
+      if (mcut)
+	Item_Ltree(iWork_cut[i], mcut->GetName(), mcut, pic, pic);
+    }
+  }
+}
+
+/*
 void HistFrame::Clone_Hist(HMap* map) {
   char cutname[99];
   char name[99],htitle[99];
@@ -592,6 +615,7 @@ void HistFrame::Clone_Hist(HMap* map) {
     Item_Ltree(iWork_cut[cc], mcut->GetName(), mcut, pic, pic);
   }
 }
+*/
 
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
@@ -844,7 +868,7 @@ void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
     //char cc = ss.Atoi();
     int icut = ss.Atoi();
     cout << gcut->GetName() << " " << ss << " " << icut << endl;
-    HMap *map = (HMap*) hcl->hilist->FindObject(gcut->GetTitle());
+    HMap *map = (HMap*) hcl->map_list->FindObject(gcut->GetTitle());
     //clear cut from cut_index
     if (map) {
       Char_t cp[MAXCUTS];
@@ -936,7 +960,7 @@ void HistFrame::ClearCutG()
   cout << "Clear_cuts: " << endl;
 
   // clear cut_index for all histograms
-  TIter next(hcl->hilist);
+  TIter next(hcl->map_list);
   TObject* obj=0;
   while ( (obj=(TObject*)next()) ) {
     HMap* map = (HMap*) obj;
@@ -1056,7 +1080,9 @@ void HistFrame::HiReset()
   //cout << "Make_hist():: " << endl;
   Clear_Ltree();
   hcl->Make_hist();
+  //cout << "hist_list1: " << hcl->m_ampl[0]->h_cuts[0]->hst << endl;
   Make_Ltree();
+  //cout << "hist_list2: " << hcl->m_ampl[0]->h_cuts[0]->hst << endl;
   //cout << "Make_hist()::2 " << endl;
 
   /*

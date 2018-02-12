@@ -265,66 +265,9 @@ void segfault_c_handler(int signal, siginfo_t *si, void *arg) {
 int main(int argc, char **argv)
 {
 
-  /*
-  TList* lst = TClass::GetClass("Coptions")->GetListOfDataMembers();
-  //lst->ls();
+  string s_name, dir, name, ext;
 
-  char buf[100000];
-
-  Coptions* par1 = new Coptions();
-  Coptions* par2 = new Coptions();
-  Toptions* opt1 = new Toptions();
-  Toptions* opt2 = new Toptions();
-
-  par2->adcGain[11]=7;
-  opt2->channels[11]=255;
-
-  cout << "-------------" << endl;
-  cout << memcmp(par1,par2,sizeof(*par1)) << " " << sizeof(*par1) << endl;
-  cout << ClassToBuf("Coptions",(char*) par1, buf) << endl;
-  BufToClass("Coptions",(char*) par2, buf, sizeof(buf));
-  cout << memcmp(par1,par2,sizeof(*par1)) << " " << sizeof(*par1) << endl;
-  cout << "-------------" << endl;
-
-  exit(1);
-
-  TIter nextd(lst);
-  TDataMember *dm;
-  while ((dm = (TDataMember *) nextd())) {
-    if (dm->GetDataType()) {
-      cout << dm->GetName() << " " << dm->GetOffset() << " " 
-	   << strlen(dm->GetName()) << " " 
-	   << dm->GetDataType()->Size() << " " 
-	   << dm->GetDataType()->Size()
-	   << endl;
-      //dm->Dump();
-      //dm->Inspect();
-    }
-  }
-
-  dm = (TDataMember*) lst->FindObject("acdc");
-  void* pp = &cpar;
-  pp+=dm->GetOffset();
-  cout << pp << " " << dm->GetArrayDim() << " " << dm->GetMaxIndex(1) << endl;
-
-  cout << &cpar << " " << &cpar.acdc << " " << endl;
-
-  exit(1);
-  
-  */
-
-  //cpar.ver=TClass::GetClass("Coptions")->GetClassVersion();
-
-  // if (argc<3) {
-  //   cout << "need two arguments" << endl;
-  //   return 1;
-  // }
-  // change_gz_file2(argv[1],argv[2]);
-
-
-  char s_name[200], dir[100], name[100], ext[100];
-
-  bool batch=false;
+  //bool batch=false;
 
   struct sigaction sigIntHandler;
   sigIntHandler.sa_handler = ctrl_c_handler;
@@ -400,7 +343,7 @@ int main(int argc, char **argv)
 	char pp = argv[argnn][1];
 	switch (pp) {
 	case 'b':
-	  batch=true;
+	  crs->batch=true;
 	  break;
 	default:
 	  break;
@@ -418,10 +361,7 @@ int main(int argc, char **argv)
     }
   }
 
-  if (fname) {
-    crs->DoFopen(fname,1); //read file and parameters from it
-  }
-  
+  int rdpar=1;
   if (parname2) {
     gzFile ff = gzopen(parname2,"rb");
     if (!ff) {
@@ -430,8 +370,16 @@ int main(int argc, char **argv)
     else {
       crs->ReadParGz(ff,parname2,0,1,1);
       gzclose(ff);
+      rdpar=0; // if parname2 is OK -> don't read par from file
     }
   }
+
+
+  if (fname) {
+    crs->DoFopen(fname,rdpar); //read file and parameters from it
+  }
+  
+
   //exit(0);
 
   //cout << "hcl1: " << endl;
@@ -444,7 +392,7 @@ int main(int argc, char **argv)
   //exit(1);
 
   EvtFrm = 0;
-  if (batch) {
+  if (crs->batch) {
 
     //cout << "batch0: " << endl;
 
@@ -460,25 +408,21 @@ int main(int argc, char **argv)
     //cout << "batch99: " << endl;
 
     SplitFilename (string(fname),dir,name,ext);
-    strcat(dir,"save/");
+    dir.append("save/");
 #ifdef LINUX
-    mkdir(dir,0755);
+    mkdir(dir.c_str(),0755);
 #else
-    _mkdir(dir);
+    _mkdir(dir.c_str());
 #endif
-    strcpy(s_name,dir);
-    strcat(s_name,name);
-    strcat(s_name,".root");
+    s_name = dir;
+    s_name.append(name);
+    s_name.append(".root");
+
     cout << s_name << endl;
-    saveroot(s_name);
+    saveroot(s_name.c_str());
 
     return 0;
   }
-
-
-
-
-
 
 
   TApplication theApp("App",&argc,argv);
@@ -510,31 +454,37 @@ int main(int argc, char **argv)
 
 }
 
-void SplitFilename (string str, char *folder, char *name)
+void SplitFilename (string str, string &folder, string &name)
 {
   size_t found;
-  //cout << "Splitting: " << str << endl;
   found=str.find_last_of("/\\");
-  //cout << " folder: " << str.substr(0,found) << endl;
-  //cout << " file: " << str.substr(found+1) << endl;
-  //printf("%s %s\n",str.substr(0,found+1).c_str(),str.substr(found+1).c_str());
 
-  strcpy(folder,str.substr(0,found+1).c_str());
-  strcpy(name,str.substr(found+1).c_str());
+  folder = str.substr(0,found+1);
+  name = str.substr(found+1);
+  //cout << "spl1: " << str << ";" << folder << ";" << name << endl;
+  //strcpy(folder,str.substr(0,found+1).c_str());
+  //strcpy(name,str.substr(found+1).c_str());
 
 }
 
-void SplitFilename (string str, char *folder, char *name, char* ext)
+void SplitFilename (string str, string &folder, string &name, string &ext)
 {
 
   SplitFilename(str, folder, name);
   string fname(name);
   size_t found = fname.find_last_of(".");
-  strcpy(name,fname.substr(0,found).c_str());
-  strcpy(ext,fname.substr(found+1).c_str());
+  //cout << "spl22: " << found << " " << string::npos << endl;
+  //return;
+  name = fname.substr(0,found);
+  if (found!=string::npos) {
+    ext = fname.substr(found);
+  }
+  //cout << "spl2: " << str << ";" << folder << ";" << name << ";" << ext << endl;
+  //strcpy(name,fname.substr(0,found).c_str());
+  //strcpy(ext,fname.substr(found+1).c_str());
 }
 
-void saveroot(char *name) {
+void saveroot(const char *name) {
 
   TFile * tf = new TFile(name,"RECREATE");
 
@@ -554,7 +504,7 @@ void saveroot(char *name) {
       h2=(TH2F*) obj;
       //h2->Print();
       if (h2->GetEntries() > 0) {
-	//printf("saveroot2: %s\n",h2->GetName());
+	printf("saveroot2: %s\n",h2->GetName());
 	h2->Write();
       }
     }
@@ -563,7 +513,7 @@ void saveroot(char *name) {
       //h->Print();
       if (h->GetEntries() > 0) {
 	col=h->GetLineColor();
-	//printf("saveroot: %d %s\n",col,h->GetName());
+	printf("saveroot1: %d %s\n",col,h->GetName());
 	if (col==0) {
 	  h->SetLineColor(50);
 	}
@@ -591,7 +541,8 @@ void readroot(char *name) {
   //cout << opt.channels[0] << endl;
 
   gROOT->cd();
-  TList *list = gDirectory->GetList();
+  //TList *list = gDirectory->GetList();
+  TList *list = hcl->hist_list;
 
   //list->ls();
 
@@ -613,11 +564,14 @@ void readroot(char *name) {
 	obj2 = (TH1*) list->FindObject(obj->GetName());
 	if (obj2) {
 	  //printf("%d\n",obj2);
-	  //cout << obj2 << endl;
+	  // cout << "readroot1: " << obj2 << " " << obj2->GetName() << " "
+	  //      << ((TH1*) obj2)->Integral() << endl;
 	  TDirectory* dir = obj2->GetDirectory();
 	  obj->Copy(*obj2);
 	  obj->Delete();
 	  obj2->SetDirectory(dir);
+	  // cout << "readroot2: " << obj2 << " " << obj2->GetName() << " "
+	  //      << ((TH1*) obj2)->Integral() << endl;
 	}
       }
     }
@@ -1286,6 +1240,11 @@ void MainFrame::DoAna() {
       fAna->SetText("Analyse");
       crs->b_fana=false;
       crs->b_stop=true;
+
+      if (opt.root_write) {
+	saveroot(opt.fname_root);
+      }
+
     }
   }
 
@@ -1436,6 +1395,30 @@ void MainFrame::DoReadRoot() {
     0,               0
   };
 
+
+
+
+
+  // hcl->hist_list->ls();
+  // TH1* h1;
+  // TH1* h2;
+  // //h1 = (TH1*) gROOT->FindObject("ampl_00_cut1");
+  // h1 = (TH1*) hcl->hist_list->FindObject("ampl_00_cut1");
+  // cout << "hist_list3: " << hcl->m_ampl[0]->h_cuts[0]->hst << endl;
+  // cout << "before: " << hcl->m_ampl[0]->h_cuts[0]->hst->GetName()
+  //      << " " << hcl->m_ampl[0]->h_cuts[0]->hst << " "
+  //      << h1->GetName() << " " << h1;
+  // if (h1) {
+  //   cout << " " << h1->Integral() << endl;
+  // }
+  // else {
+  //   cout << endl;
+  // }
+
+
+
+
+
   static TString dir(".");
   TGFileInfo fi;
   fi.fFileTypes = dnd_types;
@@ -1455,7 +1438,18 @@ void MainFrame::DoReadRoot() {
     readpar_root(rootname);
     //reset();
     //new_hist();
+
     readroot(rootname);
+
+    // h2 = (TH1*) hcl->hist_list->FindObject("ampl_00_cut1");
+    // cout << "after: " << h1 << " " << h2
+    // 	 << " " << hcl->m_ampl[0]->h_cuts[0]->hst;
+    // if (h2) {
+    //   cout << " " << h2->Integral() << endl;
+    // }
+    // else {
+    //   cout << endl;
+    // }
 
     parpar->Update();
     crspar->Update();
@@ -1630,34 +1624,31 @@ void MainFrame::DoSave() {
     0,               0
   };
 
-  //int i=0;
-  char s_name[100];
-  //int len;
-  //int nbins;
+  //char s_name[100];
 
-  //double x,y0,y1,y2,y3,y4,y5;
-
-  char dir[100], name[100], ext[100];
+  string s_name, dir, name, ext;
   TGFileInfo fi;
-
-  //string str(fname);
-  //string str2 ("c:\\windows\\winhelp.exe");
 
   SplitFilename (string(fname),dir,name,ext);
 
-  //printf("split: %s %s %s\n",dir,name,ext);
-  //SplitFilename (str2);
-  //exit(-1);
+  dir.append("save/");
+#ifdef LINUX
+  mkdir(dir.c_str(),0755);
+#else
+  _mkdir(dir.c_str());
+#endif
 
-  strcat(dir,"save/");
-  //strcpy(s_name,dir);
-  //strcat(s_name,name);
-  strcpy(s_name,name);
-  strcat(s_name,".root");
+  s_name = dir;
+  s_name.append(name);
+  s_name.append(".root");
+
+  //strcat(dir,"save/");
+  //strcpy(s_name,name);
+  //strcat(s_name,".root");
 
   fi.fFileTypes = dnd_types;
-  fi.fIniDir    = StrDup(dir);
-  fi.fFilename  = StrDup(s_name);
+  fi.fIniDir    = StrDup(dir.c_str());
+  fi.fFilename  = StrDup(s_name.c_str());
 
   //TGFileDialog *gfsave = 
   new TGFileDialog(gClient->GetRoot(), this, kFDSave, &fi);

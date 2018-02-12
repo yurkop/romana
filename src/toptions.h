@@ -101,15 +101,18 @@ class Toptions: public TObject {
   Int_t sel_hdiv; //number of divisions in histframe
   Int_t icheck; //first histogram to plot among checked
   
-  Bool_t raw_write;
-  Bool_t dec_write;
-  Int_t raw_compr; //raw data compr level
-  Int_t dec_compr; //decoded data compr level
-
   Bool_t decode;
   Bool_t analyze;
-  char fname_raw[255];
-  char fname_dec[255];
+
+  Bool_t raw_write;
+  Bool_t dec_write;
+  Bool_t root_write;
+  Int_t raw_compr; //raw data compr level
+  Int_t dec_compr; //decoded data compr level
+  Int_t root_compr; //decoded data compr level
+  char fname_raw[99];
+  char fname_dec[99];
+  char fname_root[99];
 
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list
@@ -199,7 +202,7 @@ class Toptions: public TObject {
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 107)
+  ClassDef(Toptions, 108)
 };
 
 ClassImp(Toptions)

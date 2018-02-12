@@ -60,6 +60,8 @@ class ParDlg: public TGCompositeFrame {
 
   int nfld; //number of fields in a line
 
+  int id_write[3]; //id of different *write* text fields
+
  public:
   std::vector<pmap> Plist;
 

@@ -27,11 +27,11 @@ using namespace std;
 UShort_t ClassToBuf(const char* name, char* var, char* buf);
 void BufToClass(const char* name, char* var, char* buf, int size);
 
-void SplitFilename(string str, char *folder, char *name);
-void SplitFilename(string str, char *folder, char *name, char* ext);
+void SplitFilename(string str, string &folder, string &name);
+void SplitFilename(string str, string &folder, string &name, string &ext);
 
-void saveroot(char *name);
-void readroot(char *name);
+void saveroot(const char *name);
+void readroot(const char *name);
 short int bits(int n, int i1, int i2);
 
 //-----------------------------------------------

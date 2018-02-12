@@ -39,7 +39,7 @@ extern CrsParDlg *crspar;
 extern ChanParDlg *chanpar;
 extern int debug; // for printing debug messages
 
-//const double MB = 1024*1024;
+const double MB = 1024*1024;
 
 //Int_t ev_max;
 
@@ -464,6 +464,7 @@ CRS::CRS() {
   //f_tree=0;
   //Tree=0;
 
+  batch=false;
   b_acq=false;
   b_fana=false;
   b_stop=true;
@@ -1396,13 +1397,13 @@ void CRS::DoFopen(char* oname, int popt) {
   //   return;
   // }
 
-  char dir[100], name[100], ext[100];
+  string dir, name, ext;
   SplitFilename(string(Fname),dir,name,ext);
 
-  if (TString(ext).EqualTo("dat",TString::kIgnoreCase)) {
+  if (TString(ext).EqualTo(".dat",TString::kIgnoreCase)) {
     tp=1;
   }
-  else if (TString(ext).EqualTo("gz",TString::kIgnoreCase)) {
+  else if (TString(ext).EqualTo(".gz",TString::kIgnoreCase)) {
     tp=0;
   }
   else {
@@ -1549,6 +1550,7 @@ void CRS::SaveParGz(gzFile &ff) {
 
 int CRS::DoBuf() {
 
+  //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
   //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
   if (BufLength>0) {
@@ -1567,40 +1569,16 @@ int CRS::DoBuf() {
       }
     }
 
-    //gSystem->Sleep(500);
-
-    //Select_Event();
-
-    /*
-    if (myM && myM->fTab->GetCurrent()==EvtFrm->ntab) {
-      EvtFrm->DrawEvent2();      
-    }
-
-    if (myM && myM->fTab->GetCurrent()==HiFrm->ntab) {
-      //HiFrm->DrawHist();      
-      HiFrm->ReDraw();
-    }
-    */
     nbuffers++;
-    //myM->UpdateStatus();
-    //gSystem->ProcessEvents();
 
-    //nvp = (nvp+1)%ntrans;
+    if (batch) {
+      cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
+	   << totalbytes/MB << endl;
+    }
 
-    //double tmp = (Long64_t(gSystem->Now()))*0.001;
-    //double tmp = (Long64_t(gSystem->Now()) - opt.F_start)*0.001;
-
-
-
-    //opt.T_acq = (Long64_t(gSystem->Now()) - T_start)*0.001;
-
-    //list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
-    //PulseClass *ipp = &vv->back();
-    //opt.T_acq = (ipp->Tstamp64 - Tstart64)*1e-9*period;
     if (!b_stop) {
       opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
     }
-    //cout << "TTT: " << ipp->Tstamp64*1e-9*period << endl;
 
     return nbuffers;
   }

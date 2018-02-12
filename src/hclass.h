@@ -62,7 +62,8 @@ class HClass {
 
   //HMap *cutmap[MAXCUTS];
 
-  TList* hilist;
+  TList* map_list;
+  TList* hist_list;
 
   Long64_t T_prev[MAX_CH];
 
@@ -83,6 +84,7 @@ class HClass {
 	       Float_t bins, Float_t min, Float_t max,
 	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
   void Make_hist();
+  void Clone_Hist(HMap* map);
   void Make_cuts();
    //void NewBins();
    //void Reset_hist();

@@ -102,7 +102,8 @@ HClass::HClass()
 
   wfalse=false;
   //Make_hist();
-  hilist=NULL;
+  map_list=NULL;
+  hist_list=NULL;
 }
 
 HClass::~HClass()
@@ -142,7 +143,8 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
     map[i] = new HMap(dname,hh,chk+i,wrk+i,cuts+i*MAXCUTS);
-    hilist->Add(map[i]);
+    map_list->Add(map[i]);
+    hist_list->Add(map[i]->hst);
 
   }
 }
@@ -165,19 +167,40 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
   TH2F* hh=new TH2F(name2,title2,nn,min,max,nn,min,max);
 
   map[0] = new HMap(dname,hh,chk+0,wrk+0,cuts+0*MAXCUTS);
-  hilist->Add(map[0]);
+  map_list->Add(map[0]);
+  hist_list->Add(map[0]->hst);
 
 }
 
-//void HClass::Clone_Hist(HMap* map) {
-//}
+void HClass::Clone_Hist(HMap* map) {
+  char cutname[99];
+  char name[99],htitle[99];
+  // clone map->hist as many times as there are cuts; put it in map->h_cuts[i]
+
+  if (*map->wrk) {
+    TH1* h0 = (TH1*) map->hst;
+    for (int i=0;i<opt.ncuts;i++) {
+      sprintf(cutname,"WORK_cut%d",i+1);
+      sprintf(name,"%s_cut%d",h0->GetName(),i+1);
+      sprintf(htitle,"%s_cut%d",h0->GetTitle(),i+1);
+      TH1* hcut = (TH1*) h0->Clone();
+      hcut->Reset();
+      hcut->SetNameTitle(name,htitle);
+      hist_list->Add(hcut);
+      HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
+
+      // add this map to the list h_cuts
+      map->h_cuts[i]=mcut;
+    }
+  }
+}
 
 void HClass::Make_cuts() {
   char cutname[99];
-  char name[99],htitle[99];
+  //char name[99],htitle[99];
 
   // loop through all maps
-  TIter next(hilist);
+  TIter next(map_list);
   TObject* obj=0;
   while ( (obj=(TObject*)next()) ) {
     HMap* map = (HMap*) obj;
@@ -193,22 +216,9 @@ void HClass::Make_cuts() {
     }
 
     //clone histograms if map flag is set
-    if (*map->wrk) {
-      TH1* h0 = (TH1*) map->hst;
-      for (int i=0;i<opt.ncuts;i++) {
-
-	sprintf(cutname,"WORK_cut%d",i+1);
-	sprintf(name,"%s_cut%d",h0->GetName(),i+1);
-	sprintf(htitle,"%s_cut%d",h0->GetTitle(),i+1);
-	TH1* hcut = (TH1*) h0->Clone();
-	hcut->Reset();
-	hcut->SetNameTitle(name,htitle);
-	HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
-
-	// add this map to the list h_cuts
-	map->h_cuts[i]=mcut;
-      }
-    }
+    //if (*map->wrk) {
+    Clone_Hist(map);
+    //}
   
   } //while obj
 
@@ -233,11 +243,17 @@ void HClass::Make_hist() {
 
   memset(T_prev,0,sizeof(T_prev));
 
-  if (hilist)
-    delete hilist;
-  hilist = new TList();
-  hilist->SetName("hilist");
-  hilist->SetOwner(true);
+  if (hist_list)
+    delete hist_list;
+  hist_list = new TList();
+  hist_list->SetName("hist_list");
+  hist_list->SetOwner(false);
+
+  if (map_list)
+    delete map_list;
+  map_list = new TList();
+  map_list->SetName("map_list");
+  map_list->SetOwner(true);
 
   //int cc=0;
 
@@ -261,6 +277,8 @@ void HClass::Make_hist() {
   if (opt.ncuts)
     Make_cuts();
 
+  //cout << "hist_list: " << m_ampl[0]->h_cuts[0]->hst << endl;
+  //hist_list->ls();
   /*
     //Profilometer
     for (int i=0; i<64; i++){

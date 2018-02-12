@@ -467,15 +467,42 @@ void ParDlg::SetTxt(pmap pp, const char* txt) {
 
 void ParDlg::DoTxt() {
 
+  const char *r_ext[] = {".raw",".dec",".root"};
+  const int len[] = {4,4,5};
+  string dir, name, ext;
+
   TGTextEntry *te = (TGTextEntry*) gTQSender;
   Int_t id = te->WidgetId();
+  Int_t i2=-1;
+  for (int i=0;i<3;i++) {
+    if (id==id_write[i]) {
+      i2=i;
+      break;
+    }
+  }
 
   //int sel = te->GetSelected();
 
   pmap pp = Plist[id-1];
 
-  //cout << "DoTxt: " << id << " " << kk << " " << sel << endl;
-  
+  //cout << "DoTxt: " << id << " " << i2 << " " << te->GetText() << endl;
+  //cout << r_ext[i2] << endl;
+
+  if (i2>=0) {
+    string ss(te->GetText());
+    SplitFilename (ss,dir,name,ext);
+
+    if (!TString(ext).EqualTo(r_ext[i2],TString::kIgnoreCase)) {
+      ss=dir;
+      ss.append(name);
+      ss.append(r_ext[i2]);
+    }
+
+    te->SetText(ss.c_str(),false);
+    te->SetCursorPosition(ss.length()-len[i2]);
+    //cout << ss.length() << endl;
+  }
+
   SetTxt(pp,te->GetText());
 
   if (pp.all==1) {
@@ -733,6 +760,8 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //opt.chk_raw=true;
   //opt.chk_dec=false;
   AddWrite("Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
+  id_write[0]=Plist.size();
+  //cout << "raw: " << Plist.size()+1 << endl;
 
   TGCheckButton *fchk;
   int id;
@@ -759,6 +788,12 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
   AddWrite("Write decoded data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
+  id_write[1]=Plist.size();
+  //cout << "dec: " << Plist.size()+1 << endl;
+
+  AddWrite("Write root histograms",&opt.root_write,&opt.root_compr,opt.fname_root);
+  id_write[2]=Plist.size();
+  //cout << "root: " << Plist.size()+1 << endl;
 
   hor = new TGSplitFrame(fcont1,10,10);
   fcont1->AddFrame(hor,fLexp);

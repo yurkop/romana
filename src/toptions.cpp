@@ -107,21 +107,27 @@ Toptions::Toptions() {
   //cout << "toptions" << endl;
   for (int i=0;i<MAX_CH;i++) {
     chtype[i]=ch_other;
-    //chtype[i]=(ChDef) 99;
-    //cout << "chtype: " << chtype[i] << endl;
-    //channels[i]=ch_off2;
-    //cout << i << " toptions " << channels[i] << endl;
     nsmoo[i]=2;
     Mt[i]=true;
-    //enabl[i]=true;
   }
+
+  raw_write=false;
+  dec_write=false;
+  root_write=false;
+
+  raw_compr=1;
+  dec_compr=1;
+  root_compr=1;
+
+  memset(fname_raw,0,sizeof(fname_raw));
+  memset(fname_dec,0,sizeof(fname_dec));
+  memset(fname_root,0,sizeof(fname_root));
 
   ev_min=5;
   ev_max=10;
 
   tgate=500;
   tveto=10;
-  //tgate2=100;
   mult1=1;
   mult2=32;
 
@@ -178,21 +184,9 @@ Toptions::Toptions() {
   memset(cut_per,  0, sizeof(cut_per));
   memset(cut_h2d,  0, sizeof(cut_h2d));
 
-      //s_amp[1]=false;
-  //w_amp[2]=true;
-
-  //tdc_bins1=1000;
-  //tdc_bins2=1000;
-
-  // starts_thr1=10000;
-  // starts_thr2=6;
-  // beam1=0.0;
-  // beam2=0.0;
 
   num_events=100000;
   num_buf=100;
-
-  //b_gcut=false;
 
   decode=true;
   analyze=true;
@@ -202,64 +196,8 @@ Toptions::Toptions() {
 
   start_ch=0;
 
-
-
-  //b_osc=false;
-  //b_leg=false;
-  //for (int jj=0;jj<6;jj++) {
-  //}
-  //b_time=false;
-
-  //nsmoo=2;
-  //psd_ch=0;
-  //mon_ch=28;
-
-  //T0=0.0;
-  //LL=20.0;
-
-  // for (int i=0;i<MAX_CH;i++) {
-  //   sprintf(chname[i],"ch%02d",i);    
-  //   color[i]=0;
-  //   channels[i]=ch_off2;
-  //   //chinv[i]=false;
-  //   //sprintf(chname[i],"ch%0d",i);
-  // }
-
-  // sprintf(chname[0],"demon");
-  // sprintf(chname[2],"isomer");
-  // sprintf(chname[6],"pulser");
-  // sprintf(chname[8],"monitor1");
-  // sprintf(chname[12],"stilbene");
-  // sprintf(chname[14],"start");
-
-  // channels[0]=ch_ng;
-  // channels[2]=ch_nim;
-  // channels[6]=ch_nim;
-  // channels[8]=ch_nim;
-  // channels[12]=ch_ng;
-  // channels[14]=ch_nim;
-
-  // color[0]=1;
-  // color[2]=1;
-  // color[6]=1;
-  // color[8]=1;
-  // color[12]=1;
-  // color[14]=1;
-
-  // lcolor[0]=1;
-  // lcolor[1]=1;
-  // lcolor[2]=1;
-  // lcolor[3]=1;
-  // lcolor[4]=1;
-  // lcolor[5]=1;
-
   Tstart=0;
   Tstop=0;
-
-  //Ecalibr[0]=0.0;
-  //Ecalibr[1]=1.0;
-
-  //LongStamp=1;
 
   b_deriv[0]=true;
   b_deriv[1]=false;
@@ -271,26 +209,14 @@ Toptions::Toptions() {
   ncuts=0;
   memset(pcuts,0,sizeof(pcuts));
 
-  //rBSIZE=131072; //1024*128
-  //EBufsize=100;
-  //period=5;
-
   usb_size=1024;
   rbuf_size=20000;
   tsleep=500;
   event_buf=1000;
   event_lag=10;
-  //printf("opt: %f\n", *(double*) opt_id[9]);
 
   F_start = gSystem->Now();
   T_acq = 0;
 
   strcpy(formula,"0");
 }
-
-//Toptions::~Toptions() {
-//}
-
-//void Toptions::Read(char* filename) {
-//}
-
