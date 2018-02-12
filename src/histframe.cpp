@@ -13,7 +13,8 @@
 //#include <TROOT.h>
 #include <TRandom.h>
 
-//TLine gline[2];
+TLine gline[2];
+TLine cline;
 
 /*
 int Ch_Gamma_X[8]={ 1, 2, 3, 4, 5, 6, 7, 8};
@@ -72,7 +73,7 @@ void DynamicExec()
   //static int nn;
   //nn++;
   //static Double_t xx[MAX_PCUTS],yy[MAX_PCUTS];
-  static TLine gline[2];
+  //static TLine gline[2];
   static TPolyLine pl;
   static HMap* map=0; // hmap of histogram, on which cut is set
   //TObject* obj=0;
@@ -82,14 +83,16 @@ void DynamicExec()
   int px = gPad->GetEventX();
   int py = gPad->GetEventY();
   
-  Double_t x1 = gPad->AbsPixeltoX(px);
-  Double_t y1 = gPad->AbsPixeltoY(py);
+  Double_t xx = gPad->AbsPixeltoX(px);
+  Double_t yy = gPad->AbsPixeltoY(py);
 
-  //cout << "cutg: " << hdim << " " << HiFrm->np_gcut << " " << ev << " " << x1 << " " << y1 << endl;
+  Double_t y1 = gPad->GetUymin();
+  Double_t y2 = gPad->GetUymax();
+  //cout << "cutg: " << hdim << " " << HiFrm->np_gcut << " " << ev << " " << xx << " " << yy << endl;
 
   if (ev==51 && hdim==2 && HiFrm->np_gcut) { //mouse movement
-    gline[0].SetX2(x1);
-    gline[0].SetY2(y1);
+    gline[0].SetX2(xx);
+    gline[0].SetY2(yy);
     gline[0].Draw();
     HiFrm->fEc->GetCanvas()->SetCrosshair(false);
     gPad->Update();
@@ -107,8 +110,8 @@ void DynamicExec()
       }
       if (np) {
 	map=(HMap*) HiFrm->padmap[np-1];
-	cout << "hist found: " << map << endl;
-	cout << "hist found: " << map->hst->GetName() << endl;
+	//cout << "hist found: " << map << endl;
+	//cout << "hist found: " << map->hst->GetName() << endl;
       }
       if (!map) {
 	cout << "hist not found: " << endl;
@@ -116,12 +119,16 @@ void DynamicExec()
 	HiFrm->Update();
       }
       hdim=map->hst->GetDimension();
-      cout << "dimension: " << hdim << endl;
+      //cout << "dimension: " << hdim << endl;
       pl.SetPolyLine(0);
+      // if (hdim==1) {
+      // 	gline[0]->SetLineColor(2);
+      // 	gline[1]->SetLineColor(2);
+      // }
     } //first click
 
     if (hdim==2) {
-      HiFrm->np_gcut=pl.SetNextPoint(x1,y1)+1;
+      HiFrm->np_gcut=pl.SetNextPoint(xx,yy)+1;
       if (HiFrm->np_gcut>1) {
 	pl.Draw();
       }
@@ -131,16 +138,31 @@ void DynamicExec()
 	return;
       }
 
-      gline[0].SetX1(x1);
-      gline[0].SetY1(y1);
+      gline[0].SetX1(xx);
+      gline[0].SetY1(yy);
     } //if hdim==2
     else if (hdim==1) {
+      int np=pl.SetNextPoint(xx,yy);
+      HiFrm->np_gcut=np+1;
+      //cout << "np: " << np << endl;
+      //gline[np] = TLine(xx,y1,xx,y2);
+      if (np<=1) {
+	gline[np].SetX1(xx);
+	gline[np].SetX2(xx);
+	gline[np].SetY1(y1);
+	gline[np].SetY2(y2);
+	gline[np].Draw();
+      }
+      if (np>=1) {
+      	HiFrm->AddCutG(&pl,map);
+      	return;
+      }
     }
   } //if(ev==1 || ev==12)
   
   if (ev==61 || ev==12) { //middle click or double click
     HiFrm->np_gcut=pl.SetNextPoint(pl.GetX()[0],pl.GetY()[0])+1;
-    cout << "pl2: " << HiFrm->np_gcut << " " << pl.Size() << endl;
+    //cout << "pl2: " << HiFrm->np_gcut << " " << pl.Size() << endl;
     HiFrm->AddCutG(&pl,map);
   }
   
@@ -150,7 +172,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
 
-  const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4","8x8"};
+  gline[0].SetLineColor(2);
+  gline[1].SetLineColor(2);
+
+ const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4","8x8"};
 
   xdiv=1;
   ydiv=1;
@@ -435,8 +460,13 @@ void HistFrame::Make_Ltree() {
   for (int i=0;i<opt.ncuts;i++) {
     TCutG* gcut = hcl->cutG[i];
 
+    if (opt.pcuts[i]==2)
+      pic=pic1;
+    else
+      pic=pic2;
+
     item = fCutTree->AddItem(0, gcut->GetName(), gcut, pic_2d, pic_2d, false);
-    fCutTree->AddItem(item, gcut->GetTitle(), pic2, pic2, false);
+    fCutTree->AddItem(item, gcut->GetTitle(), pic, pic, false);
     for (int i=0;i<gcut->GetN();i++) {
       sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
       fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
@@ -796,11 +826,11 @@ void HistFrame::AddCutG(TPolyLine *pl, TObject* hobj) {
     }
   }
 
-  cout << "makecut1: " << endl;
+  //cout << "makecut1: " << endl;
   MakeCutG(opt.ncuts,pl,hobj);
-  cout << "makecut2: " << endl;
+  //cout << "makecut2: " << endl;
   Update();
-  cout << "makecut3: " << endl;
+  //cout << "makecut3: " << endl;
   //ShowCutG(gcut);
 
   // HMap* map = (HMap*) hobj;
@@ -828,7 +858,7 @@ void HistFrame::MakeCutG(int icut, TPolyLine *pl, TObject* hobj) {
 
   //1. add current cut to the cut_index of hmap
   //(map->cut_index) ?? check it 
-  cout << "make1: " << endl;
+  //cout << "make1: " << endl;
   for (int i=0;i<MAXCUTS;i++) {
     if (map->cut_index[i]==0) {
       map->cut_index[i]=icut+1;
@@ -836,7 +866,7 @@ void HistFrame::MakeCutG(int icut, TPolyLine *pl, TObject* hobj) {
     }
   }
 
-  cout << "make2: " << endl;
+  //cout << "make2: " << pl->Size() << endl;
   //1a fill opt.** variables
   opt.pcuts[icut] = pl->Size();
   //cout << "pl: " << endl;
@@ -849,13 +879,13 @@ void HistFrame::MakeCutG(int icut, TPolyLine *pl, TObject* hobj) {
   //hcl->cutmap[icut]=map;
   opt.ncuts++;
 
-  cout << "make3: " << endl;
+  //cout << "make3: " << endl;
   //5. remake Ltree
   Clear_Ltree();
-  cout << "make4: " << endl;
+  //cout << "make4: " << endl;
   hcl->Make_cuts();
   Make_Ltree();
-  cout << "make5: " << endl;
+  //cout << "make5: " << endl;
   //Update();
 
 }
@@ -1252,12 +1282,28 @@ void HistFrame::DrawHist()
 
 	  if (hcl->cutG[icut-1]) {
 	    found=true;
-	    hcl->cutG[icut-1]->Draw("same");
+	    //cout << "pcuts: " << icut << " " << opt.pcuts[icut-1] << endl;
+	    if (opt.pcuts[icut-1]==2) {
+	      cline.SetLineColor(hcl->cutG[icut-1]->GetLineColor());
+	      gPad->Update();
+	      Double_t xx;
+	      Double_t y1 = gPad->GetUymin();
+	      Double_t y2 = gPad->GetUymax();
+
+	      xx = hcl->cutG[icut-1]->GetX()[0];
+	      cline.DrawLine(xx,y1,xx,y2);
+	      xx = hcl->cutG[icut-1]->GetX()[1];
+	      cline.DrawLine(xx,y1,xx,y2);
+	      //cout << "cline: " << xx << " " << y2 << " " << hcl->cutG[icut-1]->GetLineColor() << endl;
+	    }
+	    else {
+	      hcl->cutG[icut-1]->Draw("same");
+	    }
 	    leg.AddEntry(hcl->cutG[icut-1],hcl->cutG[icut-1]->GetName(),"l");
 	  }
 	}
 	if (found) {
-	  leg.Draw("same");
+	  leg.DrawClone("same");
 	}
       }
 

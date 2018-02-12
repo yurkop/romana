@@ -330,6 +330,17 @@ void EventClass::Fill1d(Bool_t first, HMap* map, Float_t x) {
   if (first) {
     //cout << "fill: " << map->hst->GetName() << endl;
     map->hst->Fill(x);
+    if (opt.ncuts) {
+      for (int i=0;i<MAXCUTS;i++) {
+	int icut=map->cut_index[i]-1;
+	if (icut<0)
+	  break;
+	//cout << "cut: " << i << " " << icut << " " << hcl->cutG[icut] << endl;
+	if (x>=hcl->cutG[icut]->GetX()[0] && x<hcl->cutG[icut]->GetX()[1]) {
+	  hcl->cut_flag[icut]=true;
+	}
+      }
+    }
   }
   else if (*(map->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {

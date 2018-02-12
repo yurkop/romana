@@ -379,21 +379,14 @@ int main(int argc, char **argv)
     crs->DoFopen(fname,rdpar); //read file and parameters from it
   }
   
-
-  //exit(0);
-
-  //cout << "hcl1: " << endl;
-  //hcl->NewBins();
-  //for (int i=0;i<100000;i++) {
-  hcl->Make_hist();
-  //cout << i << endl;
-  //}
-  //cout << "hcl2: " << endl;
-  //exit(1);
+  //cout << "gStyle1: " << gStyle << endl;
+  //hcl->Make_hist();
+  //cout << "gStyle2: " << gStyle << endl;
 
   EvtFrm = 0;
   if (crs->batch) {
 
+    hcl->Make_hist();
     //cout << "batch0: " << endl;
 
     crs->b_fana=true;
@@ -678,7 +671,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   : TGMainFrame(p,w,h) {
   // Create a main frame
 
-
+  //cout << "gStyle: " << gStyle << endl;
   gStyle->SetOptStat(kFALSE);
   gStyle->SetPalette(1,0);
   gStyle->SetTitleFontSize(0.07);

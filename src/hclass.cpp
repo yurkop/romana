@@ -1,6 +1,6 @@
 //----- HClass ----------------
 #include "romana.h"
-
+#include <TStyle.h>
 
 extern Toptions opt;
 
@@ -184,8 +184,11 @@ void HClass::Clone_Hist(HMap* map) {
       sprintf(name,"%s_cut%d",h0->GetName(),i+1);
       sprintf(htitle,"%s_cut%d",h0->GetTitle(),i+1);
       TH1* hcut = (TH1*) h0->Clone();
+      //////TH1* hcut = new TH1(*h0);
+      //////TH1F* hcut = new TH1F("a","a",100,0,100);
       hcut->Reset();
       hcut->SetNameTitle(name,htitle);
+      //cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
       hist_list->Add(hcut);
       HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
 
@@ -225,12 +228,14 @@ void HClass::Make_cuts() {
 
     //determine cut titles and colors
     for (int i=0;i<MAXCUTS;i++) {
-      cutcolor[i]=map->cut_index[i];
-      if (cutcolor[i]==0) {
+      int icut=map->cut_index[i];
+      if (icut==0) {
     	break;
       }
-      cutcolor[i]+=1;
-      sprintf(cuttitle[i],"%s",map->GetName());
+      cutcolor[icut-1]=i+2;
+      //cutcolor[i]+=1;
+      sprintf(cuttitle[icut-1],"%s",map->GetName());
+      //cout << "cutcolor: " << i << " " << cutcolor[icut-1] << " " << cuttitle[icut-1] << endl;
     }
 
     //clone histograms if map flag is set
@@ -241,6 +246,7 @@ void HClass::Make_cuts() {
   
   } //while obj
 
+  //cout << "color[0]: " << cutcolor[0] << endl;
   //make cuts
   for (int i=0;i<opt.ncuts;i++) {
     if (cutG[i]) delete cutG[i];
@@ -248,6 +254,7 @@ void HClass::Make_cuts() {
     cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
     cutG[i]->SetTitle(cuttitle[i]);
     cutG[i]->SetLineColor(cutcolor[i]);
+    //cout << "make_cuts: " << i << " " << cutcolor[i] << " " << cutG[i]->GetLineColor() << endl;
   }
   
 }
