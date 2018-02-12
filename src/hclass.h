@@ -85,6 +85,7 @@ class HClass {
 	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
   void Make_hist();
   void Clone_Hist(HMap* map);
+  void Remove_Clones(HMap* map);
   void Make_cuts();
    //void NewBins();
    //void Reset_hist();

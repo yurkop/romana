@@ -177,7 +177,7 @@ void HClass::Clone_Hist(HMap* map) {
   char name[99],htitle[99];
   // clone map->hist as many times as there are cuts; put it in map->h_cuts[i]
 
-  if (*map->wrk) {
+  //if (*map->wrk) {
     TH1* h0 = (TH1*) map->hst;
     for (int i=0;i<opt.ncuts;i++) {
       sprintf(cutname,"WORK_cut%d",i+1);
@@ -192,6 +192,24 @@ void HClass::Clone_Hist(HMap* map) {
       // add this map to the list h_cuts
       map->h_cuts[i]=mcut;
     }
+    //}
+}
+
+void HClass::Remove_Clones(HMap* map) {
+  // remove clones of map->hist from map->h_cuts[i] and from hist_list
+  //cout << "Remove: " << map << " " << map->GetName() << endl;
+  for (int i=0;i<MAXCUTS;i++) {
+  //for (int i=0;i<opt.ncuts;i++) {
+    //cout << i << " " << map->h_cuts[i] << endl;
+    HMap* mcut = map->h_cuts[i];
+    if (mcut) {
+      TH1* hcut = map->h_cuts[i]->hst;
+      hist_list->Remove(hcut);
+      delete mcut;
+      map->h_cuts[i]=0;
+    }
+    else
+      break;
   }
 }
 
@@ -216,9 +234,10 @@ void HClass::Make_cuts() {
     }
 
     //clone histograms if map flag is set
-    //if (*map->wrk) {
-    Clone_Hist(map);
-    //}
+    if (*map->wrk) {
+      Remove_Clones(map);
+      Clone_Hist(map);
+    }
   
   } //while obj
 

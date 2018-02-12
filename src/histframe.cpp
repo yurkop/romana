@@ -140,7 +140,7 @@ void DynamicExec()
   
   if (ev==61 || ev==12) { //middle click or double click
     HiFrm->np_gcut=pl.SetNextPoint(pl.GetX()[0],pl.GetY()[0])+1;
-    //cout << "pl2: " << HiFrm->np_gcut << " " << pl.Size() << endl;
+    cout << "pl2: " << HiFrm->np_gcut << " " << pl.Size() << endl;
     HiFrm->AddCutG(&pl,map);
   }
   
@@ -526,6 +526,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	HMap* map = (HMap*) item2->GetUserData();
 	*map->wrk=false;
 	fListTree->DeleteItem(item2);
+	hcl->Remove_Clones(map);
       }
 
       //cout << "work2: " << item << endl;
@@ -795,8 +796,11 @@ void HistFrame::AddCutG(TPolyLine *pl, TObject* hobj) {
     }
   }
 
+  cout << "makecut1: " << endl;
   MakeCutG(opt.ncuts,pl,hobj);
+  cout << "makecut2: " << endl;
   Update();
+  cout << "makecut3: " << endl;
   //ShowCutG(gcut);
 
   // HMap* map = (HMap*) hobj;
@@ -824,6 +828,7 @@ void HistFrame::MakeCutG(int icut, TPolyLine *pl, TObject* hobj) {
 
   //1. add current cut to the cut_index of hmap
   //(map->cut_index) ?? check it 
+  cout << "make1: " << endl;
   for (int i=0;i<MAXCUTS;i++) {
     if (map->cut_index[i]==0) {
       map->cut_index[i]=icut+1;
@@ -831,6 +836,7 @@ void HistFrame::MakeCutG(int icut, TPolyLine *pl, TObject* hobj) {
     }
   }
 
+  cout << "make2: " << endl;
   //1a fill opt.** variables
   opt.pcuts[icut] = pl->Size();
   //cout << "pl: " << endl;
@@ -843,9 +849,13 @@ void HistFrame::MakeCutG(int icut, TPolyLine *pl, TObject* hobj) {
   //hcl->cutmap[icut]=map;
   opt.ncuts++;
 
+  cout << "make3: " << endl;
   //5. remake Ltree
   Clear_Ltree();
+  cout << "make4: " << endl;
+  hcl->Make_cuts();
   Make_Ltree();
+  cout << "make5: " << endl;
   //Update();
 
 }
@@ -923,6 +933,7 @@ void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
     opt.ncuts=i;
 
     Clear_Ltree();
+    hcl->Make_cuts();
     Make_Ltree();
     Update();
   
@@ -982,6 +993,7 @@ void HistFrame::ClearCutG()
   memset(opt.gcut,0,sizeof(opt.gcut));
   fEc->GetCanvas()->Update();
 
+  hcl->Make_cuts();
   Make_Ltree();
 
 }
@@ -1186,6 +1198,9 @@ void HistFrame::Update()
   //hlist->Print();
 
   Hmut.UnLock();
+  //cout << "hist_list: " << endl;
+  //hcl->hist_list->ls();
+  //cout << "hist_list: " << hcl->hist_list << " " << hcl->hist_list->GetSize() << endl;
   //cout << "HiFrm::Update()2" << endl;
 }
 
