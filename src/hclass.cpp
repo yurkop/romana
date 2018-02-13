@@ -83,8 +83,11 @@ HMap& HMap::operator=(const HMap& other) {
 
 HClass::HClass()
 {
+  char ss[99];
   for (int i=0;i<MAXCUTS;i++) {
     cutG[i]=0;
+    sprintf(ss,"form%d",i+1);
+    cform[i]=new TFormula(ss,"0");
     //cutmap[i]=0;
   }
 
@@ -220,6 +223,10 @@ void HClass::Make_cuts() {
   char cutname[99];
   //char name[99],htitle[99];
 
+  // for (int i=0;i<MAXCUTS;i++) {
+  //   cutcolor[i]=0;
+  // }
+
   // loop through all maps
   TIter next(map_list);
   TObject* obj=0;
@@ -248,15 +255,30 @@ void HClass::Make_cuts() {
 
   //cout << "color[0]: " << cutcolor[0] << endl;
   //make cuts
+  int b_res=0;
   for (int i=0;i<opt.ncuts;i++) {
     if (cutG[i]) delete cutG[i];
-    sprintf(cutname,"cut%d",i+1);
+    if (opt.pcuts[i]==1) {
+      sprintf(cutname,"cut%d formula",i+1);
+      b_formula=true;
+      cform[i+1]->SetTitle(opt.cut_form[i]);
+      cform[i+1]->Clear();
+      int ires = cform[i+1]->Compile();
+      if (ires) {//formula is not valid
+	b_res=1;
+      }
+    }
+    else {
+      sprintf(cutname,"cut%d %s",i+1,cuttitle[i]);
+    }
     cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
-    cutG[i]->SetTitle(cuttitle[i]);
+    cutG[i]->SetTitle(opt.cut_form[i]);
     cutG[i]->SetLineColor(cutcolor[i]);
     //cout << "make_cuts: " << i << " " << cutcolor[i] << " " << cutG[i]->GetLineColor() << endl;
   }
-  
+  if (b_res) {
+    b_formula=false;
+  }
 }
 
 void HClass::Make_hist() {
@@ -300,6 +322,7 @@ void HClass::Make_hist() {
   	  opt.h2d_min,opt.h2d_max,opt.b_h2d,opt.s_h2d,opt.w_h2d,opt.cut_h2d);
 
 
+  b_formula=false;
   if (opt.ncuts)
     Make_cuts();
 

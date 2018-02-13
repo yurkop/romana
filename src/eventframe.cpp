@@ -730,7 +730,7 @@ void EventFrame::DoFormula() {
   //Int_t id = te->WidgetId();
   
   strcpy(opt.formula,te->GetText());
-  cout << "DoFormula: " << te->GetText() << " " << opt.formula << endl;
+  //cout << "DoFormula: " << te->GetText() << " " << opt.formula << endl;
 }
 
 

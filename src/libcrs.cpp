@@ -1529,6 +1529,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     hcl->cutG[i]->SetLineColor(i+2);
   }
 
+  //cout << "ReadParGz2: " << sz << " " << pname << endl;
   return 0;
 }
 

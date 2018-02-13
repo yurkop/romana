@@ -167,7 +167,7 @@ void ParDlg::DoNum() {
   // cout << pp.data << " " << opt.bkg1[0] << " ";
   // cout << (Int_t) pp.all << endl;
 
-  cout << "Donum: " << te->GetName() << endl;
+  //cout << "Donum: " << te->GetName() << endl;
   //return;
   
   SetNum(pp,te->GetNumber());
@@ -392,31 +392,38 @@ void ParDlg::DoCombo() {
 
   int nline = id/nfld;
 
-  // cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
-  //      << " " << nfld
-  //      << " " << sel << " " << (chanPresent+sel)*nfld
-  //      << endl;
-  // cout << this << " " << crspar << " " << chanpar << endl;
+  if (nline < chanPresent) {
+    // cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
+    // 	 << " " << nfld
+    // 	 << " " << sel << " " << (chanPresent+sel)*nfld
+    // 	 << endl;
+    // cout << this << " " << crspar << " " << chanpar << endl;
 
-  SetCombo(pp,sel);
+    //cout << "combo1: " << endl;
+    SetCombo(pp,sel);
+    //cout << "combo2: " << sel << " " << nline << endl;
 
-  crspar->CopyParLine(sel,nline);
-  chanpar->CopyParLine(sel,nline);
+    crspar->CopyParLine(sel,nline);
+    //cout << "combo3: " << endl;
+    chanpar->CopyParLine(sel,nline);
 
-  //cout << "combo: " << sel << " " << nline << endl;
-
-  //crspar->cframe[nline]->SetBackgroundColor(tcol[sel-1]);
-  //crspar->clab[nline]->SetBackgroundColor(tcol[sel-1]);
-  //chanpar->cframe[nline]->SetBackgroundColor(tcol[sel-1]);
-  //chanpar->clab[nline]->SetBackgroundColor(tcol[sel-1]);
+    //cout << "combo4: " << endl;
 
 
-  // if (sel<ADDCH) {
-  //   for (int j=1;j<nfld;j++) {
-  //     CopyField((chanPresent+sel)*nfld+j,id-1+j);
-  //   }
-  // }
-  
+
+    //crspar->cframe[nline]->SetBackgroundColor(tcol[sel-1]);
+    //crspar->clab[nline]->SetBackgroundColor(tcol[sel-1]);
+    //chanpar->cframe[nline]->SetBackgroundColor(tcol[sel-1]);
+    //chanpar->clab[nline]->SetBackgroundColor(tcol[sel-1]);
+
+
+    // if (sel<ADDCH) {
+    //   for (int j=1;j<nfld;j++) {
+    //     CopyField((chanPresent+sel)*nfld+j,id-1+j);
+    //   }
+    // }
+  }
+
   if (pp.all==1) {
     if (nfld) {
       int kk = (id-1)%nfld;
@@ -529,12 +536,15 @@ void ParDlg::DoTxt() {
 
 void ParDlg::CopyParLine(int sel, int line) {
   if (sel<ADDCH) {
+    //cout << "copypar0: " << line << " " << sel << " " << nfld << " " << tcol[sel-1] << endl;
     for (int j=1;j<nfld;j++) {
       CopyField((chanPresent+sel)*nfld+j,line*nfld+j);
     }
+    //cout << "copypar1: " << line << " " << sel << " " << tcol[sel-1] << " "
+    //<< clab[line] << " " << cframe[line] << endl;
     clab[line]->ChangeBackground(tcol[sel-1]);
     cframe[line]->ChangeBackground(tcol[sel-1]);
-    //cout << "copypar: " << line << " " << sel << " " << tcol[sel-1] << endl;
+    //cout << "copypar2: " << line << " " << sel << " " << tcol[sel-1] << endl;
   }
   if (sel==ADDCH) { //other
     clab[line]->ChangeBackground(tcol[sel-1]);
@@ -547,6 +557,7 @@ void ParDlg::CopyField(int from, int to) {
   pmap* p1 = &Plist[from];
   pmap* p2 = &Plist[to];
 
+  //cout << "copyfield: " << p1 << " " << p2 << endl;
   if (p1->type!=p2->type) {
     cout << "CopyField bad type: "
 	 << (int) p1->type << " " << (int) p2->type << endl; 
@@ -572,6 +583,7 @@ void ParDlg::CopyField(int from, int to) {
   default:
     cout << "unknown pp->type: " << p1->type << endl;
   } //switch  
+  //cout << "copyfield2: " << p1 << " " << p2 << endl;
 }
 
 void ParDlg::UpdateField(int nn) {
@@ -581,6 +593,9 @@ void ParDlg::UpdateField(int nn) {
   
   TQObject* tq = (TQObject*) pp->field;
   tq->BlockAllSignals(true);
+
+  //cout << "updatefield0: " << nn << endl;
+  //cout << "updatefield: " << nn << " " << pp->type << " " << p_chk << " " << p_cmb << " " << gROOT << endl;
 
   switch (pp->type) {
     case p_inum: {
@@ -628,13 +643,19 @@ void ParDlg::UpdateField(int nn) {
 	TGTextButton *but = (TGTextButton*) (pp+2)->field;
 	TGTextEntry *te2 = (TGTextEntry*) (pp+3)->field;	
 
+	//cout << "updatefield2: " << te << " " << str << " " << but << " " << te2 << endl;
+
 	if (bb) {
+	  //cout << "updatefield4: " << te << " " << str << endl;
 	  but->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
 	  te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
 	}
 	else {
+	  //cout << "updatefield5: " << te << " " << str << " " << gROOT->GetColor(18) << endl;
 	  but->ChangeBackground(gROOT->GetColor(18)->GetPixel());
+	  //cout << "updatefield6: " << te << " " << str << endl;
 	  te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
+	  //cout << "updatefield7: " << te << " " << str << endl;
 	}
       }
       if (str.Contains("b_hist",TString::kIgnoreCase)) {
@@ -649,14 +670,18 @@ void ParDlg::UpdateField(int nn) {
     }
       break;
     case p_cmb: {
+      //cout << "cmb1: " << endl;
       TGComboBox *te = (TGComboBox*) pp->field;
       int line = nn/nfld;
       int sel = *(ChDef*) pp->data;
-      if (line<=MAX_CH) {
+      //cout << "cmb2: " << sel << " " << line << endl;
+      if (line<chanPresent) {
 	clab[line]->ChangeBackground(tcol[sel-1]);
 	cframe[line]->ChangeBackground(tcol[sel-1]);
       }
+      //cout << "cmb3: " << tcol[sel-1] << endl;
       te->Select(sel,false);
+      //cout << "cmb4: " << tcol[sel-1] << endl;
     }
       break;
     case p_txt: {
@@ -675,9 +700,11 @@ void ParDlg::UpdateField(int nn) {
 }
 
 void ParDlg::Update() {
+  //cout << "update1: " << Plist.size() << endl;
   for (UInt_t i=0;i<Plist.size();i++) {
     UpdateField(i);
   }
+  //cout << "update2: " << endl;
 }
 
 void ParDlg::EnableField(int nn, bool state) {

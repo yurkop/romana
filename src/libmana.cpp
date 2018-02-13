@@ -808,7 +808,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fBluevio=TColor::RGB2Pixel(255,114,86);
 
-  //cout << "fBluevio: " << fBluevio << " " << TColor::GetColor(fBluevio) << endl;
+  cout << "fBluevio: " << fBluevio << " " << TColor::GetColor(fBluevio) << endl;
 
   //gROOT->GetListOfColors()->ls();
 
@@ -891,6 +891,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   int ntab=0;
 
+  cout << "tab1: " << endl;
   TGCompositeFrame *tab1 = fTab->AddTab("Parameters");
   TGCompositeFrame* fr1 = new TGCompositeFrame(tab1, 10, 10, kHorizontalFrame);
   tab1->AddFrame(fr1, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
@@ -900,6 +901,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
+  cout << "tab2: " << endl;
   TGCompositeFrame *tab2 = fTab->AddTab("DAQ");
   TGCompositeFrame* fr2 = new TGCompositeFrame(tab2, 10, 10, kHorizontalFrame);
   tab2->AddFrame(fr2, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
@@ -909,9 +911,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
+  cout << "tab2a: " << endl;
   crspar->Update();
 
-  //cout << "tab3: " << endl;
+  cout << "tab3: " << endl;
   
   TGCompositeFrame *tab3 = fTab->AddTab("Channels");
   TGCompositeFrame* fr3 = new TGCompositeFrame(tab3, 10, 10, kHorizontalFrame);

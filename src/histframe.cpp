@@ -52,9 +52,10 @@ TGLayoutHints* fLay4 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,0,0,0,0);
 TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsTop,10,10,0,2);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
-//TGLayoutHints* fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
+TGLayoutHints* fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
 TGLayoutHints* fLay7 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,3,0,0,0);
 TGLayoutHints* fLay8 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,0,0,0,0);
+TGLayoutHints* fLay9 = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
 
 //------------------------------
 
@@ -206,6 +207,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGShutterItem *item;
   TGCompositeFrame *container;
 
+  TGTextButton* but;
+
   fHor1 = new TGHorizontalFrame(this, 10, 10);
   AddFrame(fHor1, fLay1);
 
@@ -239,11 +242,27 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //clab = new TGLabel(fV1, "--Cuts--");
   //fV1->AddFrame(clab, fLay4);
 
-  //fCanvas->AddFrame(new TGLabel(fCanvas, "--Histograms--"), fLay5);
+  container->AddFrame(new TGLabel(container, "--Formula--"), fLay2);
+  TGHorizontalFrame *fHor7 = new TGHorizontalFrame(container, 10, 10);
+  container->AddFrame(fHor7, fLay9);
+
+  but = new TGTextButton(fHor7,"Add",7);
+  but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
+  fHor7->AddFrame(but, fLay6);
+  
+  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [1] [2] [3] ... for other cuts in the formula\nExamples:\n [1] && [2] - cut1 \"and\" cut2\n [2] || [3] - cut2 \"or\" cut3";
+
+  tForm    = new TGTextEntry(fHor7,"",8);;
+  tForm->SetWidth(120);
+  tForm->SetToolTipText(ttip);
+  //tForm->Connect("TextChanged(char*)", "HistFrame", this, "DoFormula()");
+  fHor7->AddFrame(tForm,fLay2);
+
+  //container->AddFrame(new TGLabel(container, "--Histograms--"), fLay9);
+  //gCanvas->AddFrame(new TGLabel(gCanvas, "--Histograms--"), fLay5);
   //TGCanvas *gCanvas2 = new TGCanvas(fV1, 150, 150);
   //fV1->AddFrame(gCanvas2, fLay8);
 
-  //new TGLabel(gCanvas2, "--Cuts--");
 
   //fListTree=NULL;
   //if (fListTree) delete fListTree;
@@ -256,10 +275,14 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //fListTree->AddRoot("Histograms");
 
+  //new TGLabel(gCanvas2, "--Cuts--");
+  //gCanvas2->AddFrame(new TGLabel(gCanvas2, "--Cuts--"));
+
   fCutTree = new TGListTree(gCanvas2, kVerticalFrame);
   fCutTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
    		     "CutClick(TGListTreeItem*,Int_t)");
   
+
 
   //cout << "make_ltree1: " << endl;
   Make_Ltree();
@@ -289,8 +312,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   // SelectDiv(sel);
   // Rb[sel]->Clicked();
   // cout << "1111c8" << endl;
-
-  TGTextButton* but;
 
   but = new TGTextButton(fHor2," < ",1);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
@@ -882,7 +903,6 @@ void HistFrame::MakeCutG(int icut, TPolyLine *pl, TObject* hobj) {
   //cout << "make3: " << endl;
   //5. remake Ltree
   Clear_Ltree();
-  //cout << "make4: " << endl;
   hcl->Make_cuts();
   Make_Ltree();
   //cout << "make5: " << endl;
@@ -995,6 +1015,44 @@ void HistFrame::DoCutG() {
   return;
   
 }
+
+void HistFrame::AddFormula() {
+  Pixel_t color;
+  int len = strlen(tForm->GetText());
+  //cout << "len: " << len << endl;
+  TFormula form = TFormula("form",tForm->GetText());
+  //hcl->cform[0]->SetTitle(tForm->GetText());
+  //hcl->cform[0]->Clear();
+  int ires = form.Compile();
+  //formula is not valid
+  if (ires || len>=16) {
+    gClient->GetColorByName("red", color);
+    tForm->SetBackgroundColor(color);
+  }
+  //formula is valid
+  else {
+    gClient->GetColorByName("white", color);
+    tForm->SetBackgroundColor(color);
+    int icut = opt.ncuts;
+    opt.pcuts[icut]=1;
+    opt.gcut[icut][0][0]=0;
+    opt.gcut[icut][1][0]=0;
+    strcpy(opt.cut_form[icut],tForm->GetText());
+    opt.ncuts++;
+
+    Clear_Ltree();
+    hcl->Make_cuts();
+    Make_Ltree();
+    
+  }
+}
+
+// void HistFrame::DoFormula() {
+//   TGTextEntry *te = (TGTextEntry*) gTQSender;
+//   //Int_t id = te->WidgetId();
+//   strcpy(opt.cut_form,te->GetText());
+//   //cout << "DoFormula: " << te->GetText() << " " << opt.formula << endl;
+// }
 
 void HistFrame::ClearCutG()
 {

@@ -218,5 +218,7 @@ Toptions::Toptions() {
   F_start = gSystem->Now();
   T_acq = 0;
 
-  strcpy(formula,"0");
+  memset(formula,0,sizeof(formula));
+  memset(cut_form,0,sizeof(cut_form));
+  //strcpy(formula,"0");
 }

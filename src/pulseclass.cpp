@@ -337,14 +337,14 @@ void EventClass::Fill1d(Bool_t first, HMap* map, Float_t x) {
 	  break;
 	//cout << "cut: " << i << " " << icut << " " << hcl->cutG[icut] << endl;
 	if (x>=hcl->cutG[icut]->GetX()[0] && x<hcl->cutG[icut]->GetX()[1]) {
-	  hcl->cut_flag[icut]=true;
+	  hcl->cut_flag[icut+1]=true;
 	}
       }
     }
   }
   else if (*(map->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
-      if (hcl->cut_flag[i])
+      if (hcl->cut_flag[i+1])
 	map->h_cuts[i]->hst->Fill(x);      
     }
   }
@@ -360,14 +360,14 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
 	  break;
 	//cout << "cut: " << i << " " << icut << " " << hcl->cutG[icut] << endl;
 	if (hcl->cutG[icut]->IsInside(x,y)) {
-	  hcl->cut_flag[icut]=true;
+	  hcl->cut_flag[icut+1]=true;
 	}
       }
     }
   }
   else if (*(map->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
-      if (hcl->cut_flag[i])
+      if (hcl->cut_flag[i+1])
 	map->h_cuts[i]->hst->Fill(x,y);      
     }
   }
@@ -527,6 +527,15 @@ void EventClass::FillHist(Bool_t first) {
     hcl->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
     }
   */
+
+  if (first && hcl->b_formula) {
+    for (int i=0;i<opt.ncuts;i++) {
+      if (opt.pcuts[i]==1) {//formula
+	hcl->cut_flag[i+1]=hcl->cform[i+1]->EvalPar(0,hcl->cut_flag);
+      }
+      //cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i+1] << endl;
+    }
+  }
 
 }
 

@@ -42,6 +42,8 @@ class HistFrame: public TGCompositeFrame {
    static const int NR=7;
    TGRadioButton *Rb[NR];
 
+   TGTextEntry* tForm;
+
    int ntab; //tab number where eventframe is placed
 
    Bool_t changed;
@@ -76,6 +78,8 @@ class HistFrame: public TGCompositeFrame {
    void AddCutG(TPolyLine *pl, TObject* hobj);
    void MakeCutG(int icut, TPolyLine *pl, TObject* hobj);
    void DoCutG();
+   void AddFormula();
+   //void DoFormula();
    void ShowCutG();
    void ClearCutG();
    void DoPeaks();

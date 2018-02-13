@@ -4,6 +4,7 @@
 #include "common.h"
 #include <TH1.h>
 #include <TH2.h>
+#include <TFormula.h>
 
 class HMap; //forward declaration
 
@@ -56,9 +57,11 @@ class HClass {
   HMap* m_2d[1];
 
   TCutG* cutG[MAXCUTS];
-  Bool_t cut_flag[MAXCUTS];
+  Double_t cut_flag[MAXCUTS+1]; //starts from 1, not from 0
   char cuttitle[MAXCUTS][99];
   int cutcolor[MAXCUTS];
+  TFormula* cform[MAXCUTS+1]; //starts from 1, not from 0
+  bool b_formula;
 
   //HMap *cutmap[MAXCUTS];
 

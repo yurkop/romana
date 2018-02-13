@@ -30,6 +30,7 @@ void BufToClass(const char* name, char* var, char* buf, int size);
 void SplitFilename(string str, string &folder, string &name);
 void SplitFilename(string str, string &folder, string &name, string &ext);
 
+void example();
 void saveroot(const char *name);
 void readroot(const char *name);
 short int bits(int n, int i1, int i2);
