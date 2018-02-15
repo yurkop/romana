@@ -133,7 +133,8 @@ class ParParDlg: public ParDlg {
   */
   void AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
 		const char* tip1, const char* tip2, const char* label,
-		TGNumberFormat::EStyle style, 
+		TGNumberFormat::EStyle style1, 
+		TGNumberFormat::EStyle style2, 
 		//TGNumberFormat::EAttribute attr, 
 		double min1=0, double max1=0,
 		double min2=0, double max2=0, char* connect=NULL);

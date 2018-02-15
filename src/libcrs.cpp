@@ -558,6 +558,7 @@ int CRS::Detect_device() {
 
   module=0;
   chanPresent=32;
+  ver_po=0;
 
   /*
     for (int i=0;i<ntrans;i++) {
@@ -637,14 +638,15 @@ int CRS::Detect_device() {
   //buf_out[0] = 1; //get card info
   Command2(4,0,0,0);
 
-  Command32(1,0,0,0);
+  int sz;
+  sz = Command32(1,0,0,0);
 
-  /*
-    for (int i=0;i<6;i++) {
+  cout << "Info: " << sz << " : ";
+  for (int i=0;i<sz;i++) {
     cout << int(buf_in[i]) << " ";
-    }
-    cout << endl;
-  */
+  }
+  cout << endl;
+  ver_po=buf_in[4];
 
   if (buf_in[1]==3) {
     module=2;
@@ -653,6 +655,15 @@ int CRS::Detect_device() {
   else {
     module=32;
     chanPresent=buf_in[3]*4;
+    if (ver_po==2) {//версия ПО=2
+      chanPresent=4;
+      sz = Command32(10,0,0,0);
+      cout << "Channels: " << sz << " : ";
+      for (int i=0;i<sz;i++) {
+	cout << int(buf_in[i]) << " ";
+      }
+      cout << endl;
+    }
   }
 
   cout << "module: " << module << " chanPresent: " << chanPresent << endl;
@@ -701,7 +712,10 @@ int CRS::SetPar() {
     AllParameters2();
   }
   else if (module==32) {
-    AllParameters32();
+    if (ver_po==1)
+      AllParameters32_old();
+    else
+      AllParameters32_old();
   }
   else {
     cout << "InitPar Error! No module found" << endl;
@@ -856,7 +870,8 @@ int CRS::Init_Transfer() {
 
 }
 
-void CRS::Command32(byte cmd, byte ch, byte type, int par) {
+int CRS::Command32_old(byte cmd, byte ch, byte type, int par) {
+  //для версии ПО 1
   int transferred = 0;
   int r;
 
@@ -897,7 +912,7 @@ void CRS::Command32(byte cmd, byte ch, byte type, int par) {
     break;
   default:
     cout << "Wrong CRS32 command: " << cmd << endl;
-    return;
+    return 0;
   }
   
   r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, 0);
@@ -916,9 +931,80 @@ void CRS::Command32(byte cmd, byte ch, byte type, int par) {
     }
   }
 
+  return len_in;
 }
 
-void CRS::Command2(byte cmd, byte ch, byte type, int par) {
+int CRS::Command32(byte cmd, byte ch, byte type, int par) {
+  //для версии ПО 2
+  int transferred = 0;
+  int r;
+
+  int len_in,len_out;
+
+  //byte buf_out[6];//={0};
+  //byte buf_in[7];//={0};
+
+  buf_out[0] = cmd;
+  buf_out[1] = ch;
+  buf_out[2] = type;
+  buf_out[3] = (byte) (par >> 16);
+  buf_out[4] = (byte) (par >> 8);
+  buf_out[5] = (byte) par;
+
+  switch (cmd) {
+  case 1:
+    len_out=1;
+    len_in=5;
+    break;
+  case 2:
+    len_out=6;
+    len_in=1;
+    break;
+  case 3:
+  case 4:
+    len_out=1;
+    len_in=1;
+    break;
+  case 5:
+    len_out=2;
+    len_in=7;
+    break;
+  case 6:
+  case 7:
+  case 8:
+  case 9:
+    len_out=1;
+    len_in=2;
+    break;
+  case 10:
+    len_out=1;
+    len_in=9;
+    break;
+  default:
+    cout << "Wrong CRS32 command: " << cmd << endl;
+    return 0;
+  }
+  
+  r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, 0);
+  if (r) {
+    printf("Error6! %d: \n",buf_out[1]);
+    cyusb_error(r);
+    //cyusb_close();
+  }
+
+  if (cmd!=7) {
+    r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, 0);
+    if (r) {
+      printf("Error7! %d: \n",buf_out[1]);
+      cyusb_error(r);
+      //cyusb_close();
+    }
+  }
+
+  return len_in;
+}
+
+int CRS::Command2(byte cmd, byte ch, byte type, int par) {
   int transferred = 0;
   int r;
 
@@ -944,7 +1030,7 @@ void CRS::Command2(byte cmd, byte ch, byte type, int par) {
     break;
   default:
     cout << "Wrong CRS2 command: " << cmd << endl;
-    return;
+    return 0;
   }
 
   len_in=2;
@@ -963,9 +1049,10 @@ void CRS::Command2(byte cmd, byte ch, byte type, int par) {
     //cyusb_close();
   }
 
+  return len_in;
 }
 
-void CRS::Command_crs(byte cmd, byte chan, int par) {
+void CRS::Command_crs(byte cmd, byte chan) {
 
   if (module==32) {
     switch (cmd) {
@@ -1058,7 +1145,7 @@ void CRS::Command_crs(byte cmd, byte chan, int par) {
 
 }
 
-void CRS::AllParameters32()
+void CRS::AllParameters32_old()
 {
 
   for (byte chan = 0; chan < chanPresent; chan++) {
@@ -1080,6 +1167,28 @@ void CRS::AllParameters32()
       Command32(2,chan,7,max);
     }
     Command32(2,chan,8,(int)cpar.adcGain[chan]);
+  }
+
+}
+
+void CRS::AllParameters32()
+{
+
+  for (byte chan = 0; chan < chanPresent; chan++) {
+    Command32(2,chan,0,(int)cpar.acdc[chan]);
+    Command32(2,chan,1,(int)cpar.inv[chan]);
+    Command32(2,chan,2,(int)cpar.smooth[chan]);
+    Command32(2,chan,3,(int)cpar.deadTime[chan]);
+    Command32(2,chan,4,(int)cpar.preWr[chan]);
+    Command32(2,chan,5,(int)cpar.durWr[chan]);
+    Command32(2,chan,6,(int)cpar.kderiv[chan]);
+    Command32(2,chan,7,(int)cpar.threshold[chan]);
+    Command32(2,chan,8,(int)cpar.adcGain[chan]);
+    // new commands
+    Command32(2,chan,9,0); //delay
+    //Command32(2,chan,10,0); //test signal
+    //Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
+    Command32(2,chan,11,1); //enabled
   }
 
 }

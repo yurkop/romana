@@ -455,6 +455,10 @@ void EventClass::FillHist(Bool_t first) {
 
 	      tm = pulses[i].Tstamp64 + pk->Pos;
 	      tt = (tm - crs->Tstart0)*0.001*crs->period;
+	      if (tt>opt.mtof_period) {
+		crs->Tstart0+=opt.mtof_period;
+		tt = (tm - crs->Tstart0)*0.001*crs->period;
+	      }
 
 	      Fill1d(first,hcl->m_mtof[mult],tt);
 	      Fill1d(first,hcl->m_mtof[0],tt);

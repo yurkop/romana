@@ -68,7 +68,7 @@ const char* tip2[nchpar]={
   "Peak start, relative to peak Pos (usually negative)",
   "Peak end, relative to peak Pos (usually positive)",
   "Dead-time window \nsubsequent peaks within this window are ignored",
-  "Pileup window \nall peaks within this window are marked as pileup",
+  "Pileup window \nmultiple peaks within this window are marked as pileup",
   "Timing mode (in 1st derivative):\n0 - maximum (Pos);\n1 - left minimum (T1);\n2 - right minimum",
   "Timing window start, included (usually negative, if 99 - use T1)",
   "Timing window end, excluded (usually positive, if 99 - use T2)",
@@ -900,23 +900,23 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Analysis start (in sec)";
   tip2= "Analysis stop (in sec)";
   label="Time limits";
-  AddLine_opt(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0);
+  AddLine_opt(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0,k_r0);
 
   tip1= "";
   tip2= "Delay between drawing events (in msec)";
   label="DrawEvent delay";
-  AddLine_opt(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,100,10000,100,10000);
+  AddLine_opt(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_int,k_int,100,10000,100,10000);
 
   tip1= "Size of the USB buffer in kilobytes (1024 is OK)";
   tip2= "Size of the READ buffer in kilobytes (as large as possible for faster speed)";
   label="USB/READ buffer size";
-  AddLine_opt(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,1,2048,
+  AddLine_opt(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,k_int,1,2048,
 	   1,20000,(char*) "DoNum_SetBuf()");
 
   tip1= "Maximal size of the event list:\nNumber of events available for viewing in the Events Tab";
   tip2= "Event lag:\nMaximal number of events which may come delayed from another channel";
   label="Event_list size / Event lag";
-  AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,1,1000000,1,1000000);
+  AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,k_int,1,1000000,1,1000000);
 
   fF6->Resize();
 
@@ -936,19 +936,19 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   tip1= "Coincidence window for making events (in samples)";
   tip2= "Veto window (in samples): \nsubsequent pulses from the same channel coming within this window are ignored";
   label="Coincidence (smp), veto (smp)";
-  AddLine_opt(fF6,ww,&opt.tgate,&opt.tveto,tip1,tip2,label,k_int,0,1000,0,1000);
+  AddLine_opt(fF6,ww,&opt.tgate,&opt.tveto,tip1,tip2,label,k_int,k_int,0,1000,0,1000);
 
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";
   label="Multiplicity (min, max)";
-  AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,1,MAX_CH,
+  AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,k_int,1,MAX_CH,
 	   1,MAX_CH);
 
-  tip1= "";
+  tip1= "M_TOF period (mks) (ignored if set to zero)";
   tip2= "M_TOF start channel";
-  label="M_TOF start channel";
-  AddLine_opt(fF6,ww,NULL,&opt.start_ch,tip1,tip2,label,k_int,0,MAX_CH-1,
-	   0,MAX_CH-1);
+  label="M_TOF period / start channel";
+  AddLine_opt(fF6,ww,&opt.mtof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
+	      0,1e9,0,MAX_CH-1);
 
   fF6->Resize();
 
@@ -1064,7 +1064,8 @@ void ParParDlg::AddLine_opt(TGCompositeFrame* frame, int width, void *x1, void *
 
 void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
 		      const char* tip1, const char* tip2, const char* label,
-		      TGNumberFormat::EStyle style, 
+		      TGNumberFormat::EStyle style1, 
+		      TGNumberFormat::EStyle style2, 
 			 //TGNumberFormat::EAttribute attr, 
 			 double min1, double max1,
 			 double min2, double max2, char* connect)
@@ -1082,13 +1083,20 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 
   //double zz;
   int id;
-  P_Def pdef;
+  P_Def pdef1,pdef2;
 
-  if (style==k_int) {
-    pdef=p_inum;
+  if (style1==k_int) {
+    pdef1=p_inum;
   }
   else {
-    pdef=p_fnum;
+    pdef1=p_fnum;
+  }
+
+  if (style2==k_int) {
+    pdef2=p_inum;
+  }
+  else {
+    pdef2=p_fnum;
   }
 
   TGNumberFormat::ELimit limits;
@@ -1100,10 +1108,10 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 
   if (x1!=NULL) {
     id = Plist.size()+1;
-    TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, style, 
+    TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, style1, 
 					     TGNumberFormat::kNEAAnyNumber,
 					     limits,min1,max1);
-    DoMap(fNum1->GetNumberEntry(),x1,pdef,0);
+    DoMap(fNum1->GetNumberEntry(),x1,pdef1,0);
     fNum1->GetNumberEntry()->SetToolTipText(tip1);
     fNum1->SetWidth(width);
     //fNum1->Resize(width, fNum1->GetDefaultHeight());
@@ -1125,10 +1133,10 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 
   if (x2!=NULL) {
     id = Plist.size()+1;
-    TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, style, 
+    TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, style2, 
 					     TGNumberFormat::kNEAAnyNumber,
 					     limits,min2,max2);
-    DoMap(fNum2->GetNumberEntry(),x2,pdef,0);
+    DoMap(fNum2->GetNumberEntry(),x2,pdef2,0);
     fNum2->GetNumberEntry()->SetToolTipText(tip2);
     fNum2->SetWidth(width);
     //fNum2->Resize(width, fNum2->GetDefaultHeight());
@@ -1561,7 +1569,8 @@ void ChanParDlg::DoNum() {
 #ifdef CYUSB
     crs->Command2(4,0,0,0);
     printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
-    crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
+    //crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
+    crs->Command_crs(pp.cmd,pp.chan);
     crs->Command2(3,0,0,0);
 #endif
   }

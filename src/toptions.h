@@ -179,6 +179,7 @@ class Toptions: public TObject {
   Char_t cut_h2d[MAX_CH*MAXCUTS];
 
   Int_t start_ch;
+  Float_t mtof_period;
 
   Int_t num_events;
   Int_t num_buf; //number of buffers to analyze in DoNbuf

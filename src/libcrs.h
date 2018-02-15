@@ -100,6 +100,7 @@ RQ_OBJECT("CRS")
   // 2 - list is analyzed, but not cleaned (at the end of file etc)
 
   Short_t module; //2 - crs2; 32 - crs32
+  Short_t ver_po;
   Int_t period;
 
   int ntrans; //number of "simultaneous" transfers
@@ -188,9 +189,11 @@ RQ_OBJECT("CRS")
   void Submit_all(int ntr);
   void Cancel_all(int ntr);
   int Init_Transfer();
-  void Command32(byte cmd, byte ch, byte type, int par);
-  void Command2(byte cmd, byte ch, byte type, int par);
-  void Command_crs(byte cmd, byte chan, int par);
+  int Command32_old(byte cmd, byte ch, byte type, int par);
+  int Command32(byte cmd, byte ch, byte type, int par);
+  int Command2(byte cmd, byte ch, byte type, int par);
+  void Command_crs(byte cmd, byte chan);
+  void AllParameters32_old(); // load all parameters
   void AllParameters32(); // load all parameters
   void AllParameters2(); // load all parameters
   int DoStartStop(); // start-stop acquisition
