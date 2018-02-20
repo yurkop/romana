@@ -301,7 +301,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - amplitude;\n[2] - time;\n[3] - tof;\n[4] - multiplicity";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - amplitude;\n[2] - time (sec);\n[3] - Tstamp;\n[4] - tof;\n[5] - multiplicity";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);;
   tEnt->SetWidth(100);
@@ -484,7 +484,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     if (tfont) {
       fStat[i]->SetFont(tfont,false);
     }
-    fStat[i]->SetState(false);
+    //fStat[i]->SetState(false);
     fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kSunkenFrame);
 
     
@@ -693,8 +693,9 @@ void EventFrame::DoCheckPoint() {
     }
     while (d_event!=ievt) {
       //cout << d_event->Nevt << " " << d_event->T << endl;
-      par[4]=d_event->pulses.size();
+      par[5]=d_event->pulses.size();
       par[2]=(d_event->T-crs->Tstart64)*crs->period*1e-9;
+      par[3]=d_event->T;
 
       for (UInt_t i=0;i<d_event->pulses.size();i++) {
 	int ch = d_event->pulses[i].Chan;
@@ -703,7 +704,7 @@ void EventFrame::DoCheckPoint() {
 	for (UInt_t j=0;j<d_event->pulses[i].Peaks.size();j++) {
 	  peak_type* pk = &d_event->pulses[i].Peaks[j];
 	  par[1]=pk->Area;
-	  par[3]=pk->Time;
+	  par[4]=pk->Time;
 	  res = formula->EvalPar(0,par);
 	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->T << " " << res << endl;
 	  if (res) {
