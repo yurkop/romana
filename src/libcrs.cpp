@@ -715,7 +715,7 @@ int CRS::SetPar() {
     if (ver_po==1)
       AllParameters32_old();
     else
-      AllParameters32_old();
+      AllParameters32();
   }
   else {
     cout << "InitPar Error! No module found" << endl;
@@ -1147,7 +1147,7 @@ void CRS::Command_crs(byte cmd, byte chan) {
 
 void CRS::AllParameters32_old()
 {
-
+  cout << "AllParameters32_old(): " << endl;
   for (byte chan = 0; chan < chanPresent; chan++) {
     Command32(2,chan,0,(int)cpar.acdc[chan]);
     Command32(2,chan,1,(int)cpar.inv[chan]);
@@ -1173,6 +1173,7 @@ void CRS::AllParameters32_old()
 
 void CRS::AllParameters32()
 {
+  cout << "AllParameters32(): " << endl;
 
   for (byte chan = 0; chan < chanPresent; chan++) {
     Command32(2,chan,0,(int)cpar.acdc[chan]);
