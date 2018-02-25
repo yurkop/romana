@@ -297,13 +297,13 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     }
   }
 
-  if (T>=149270116965358390 && T<=149270116965364203) {
-    cout << "Evt: " << Nevt << ":";
-    for (UInt_t i=0;i<pulses.size();i++) {
-      cout << " " << (int)pulses.at(i).Chan<< "," << pulses.at(i).Tstamp64-crs->Tstart64;
-    }
-    cout << endl;
-  }
+  // if (T>=149270116965358390 && T<=149270116965364203) {
+  //   cout << "Evt: " << Nevt << ":";
+  //   for (UInt_t i=0;i<pulses.size();i++) {
+  //     cout << " " << (int)pulses.at(i).Chan<< "," << pulses.at(i).Tstamp64-crs->Tstart64;
+  //   }
+  //   cout << endl;
+  // }
   
 }
 

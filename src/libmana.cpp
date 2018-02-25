@@ -497,7 +497,7 @@ void saveroot(const char *name) {
       h2=(TH2F*) obj;
       //h2->Print();
       if (h2->GetEntries() > 0) {
-	printf("saveroot2: %s\n",h2->GetName());
+	//printf("saveroot2: %s\n",h2->GetName());
 	h2->Write();
       }
     }
@@ -506,7 +506,7 @@ void saveroot(const char *name) {
       //h->Print();
       if (h->GetEntries() > 0) {
 	col=h->GetLineColor();
-	printf("saveroot1: %d %s\n",col,h->GetName());
+	//printf("saveroot1: %d %s\n",col,h->GetName());
 	if (col==0) {
 	  h->SetLineColor(50);
 	}
@@ -1209,7 +1209,7 @@ void MainFrame::DoOpen() {
 
 void MainFrame::DoAna() {
 
-  cout << "DoAna: " << gROOT->FindObject("Start") << endl;
+  //cout << "DoAna: " << gROOT->FindObject("Start") << endl;
 
   if (!crs->f_read) {
     cout << "File not open" << endl;
