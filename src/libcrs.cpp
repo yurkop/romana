@@ -280,7 +280,9 @@ void *handle_ana(void* ptr) {
       // analyze events up to m_event
       for (it=crs->m_start; it!=crs->m_event;) {
 	//if (it->Nevt>100000) {
-	//cout << "ana7: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
+	cout << "ana7: " << it->Nevt << " " << std::distance(it,crs->m_event)
+	     << " " << crs->b_stop << " " << it->pulses.size()
+	     << endl;
 	  //exit(0);
 	  //}
 	if (!crs->b_stop &&
@@ -298,14 +300,18 @@ void *handle_ana(void* ptr) {
 	  ++crs->nevents2;
 	  ++it;
 	  //++(crs->n_ana);
-	  //cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
+	  cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	}
 	else {
 	  it=crs->Levents.erase(it);
-	  // cout << "ana72: " << it->Nevt
-	  //      << " " << std::distance(it,crs->m_event)
-	  //      << " " << std::distance(it,crs->Levents.end())
-	  //      << endl;
+	  if (it!=crs->m_event)
+	    cout << "ana72: " << it->Nevt
+		 << " " << std::distance(it,crs->m_event)
+		 << " " << std::distance(it,crs->Levents.end())
+		 << " " << &*it
+		 << " " << &*crs->m_event
+		 << " " << &*crs->Levents.end()
+		 << endl;
 	}
       }
 
