@@ -394,14 +394,15 @@ void EventClass::FillHist(Bool_t first) {
   if (first) {
     opt.T_acq=(T-crs->Tstart64)*DT;
 
-    if (opt.Tstop && opt.T_acq>opt.Tstop) {
-      crs->b_stop=true;
-      crs->b_fana=false;
-      crs->b_acq=false;
-      //return;
-    }
     if (opt.ncuts)
       memset(hcl->cut_flag,0,sizeof(hcl->cut_flag));
+  }
+
+  if (opt.Tstop && opt.T_acq>opt.Tstop) {
+    crs->b_stop=true;
+    crs->b_fana=false;
+    crs->b_acq=false;
+    return;
   }
 
   for (UInt_t i=0;i<pulses.size();i++) {

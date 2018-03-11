@@ -695,7 +695,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   */
 
 
-
+  hAna=new TGHotString("&Analyze");
+  hPause=new TGHotString("&Pause");
 
   //int nn=2;
   //double xx[nn];
@@ -847,7 +848,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
 
 
-  TGTextButton *fOpen = new TGTextButton(fGr2,"Open");
+  TGTextButton *fOpen = new TGTextButton(fGr2,new TGHotString("&Open"));
   fOpen->SetFont(tfont,false);
   fOpen->Resize(butx,buty);
   fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
@@ -855,7 +856,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fOpen->Connect("Clicked()","MainFrame",this,"DoOpen()");
   fGr2->AddFrame(fOpen, l_But);
 
-  TGTextButton *fReset2 = new TGTextButton(fGr2,"Reset");
+  TGTextButton *fReset2 = new TGTextButton(fGr2,new TGHotString("&Reset"));
   fReset2->SetFont(tfont,false);
   fReset2->Resize(butx,buty);
   fReset2->ChangeOptions(fReset2->GetOptions() | kFixedSize);
@@ -864,7 +865,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
   fGr2->AddFrame(fReset2, l_But);
 
-  fAna = new TGTextButton(fGr2,"Analyze");
+  fAna = new TGTextButton(fGr2,hAna);
   fAna->SetFont(tfont,false);
   fAna->Resize(butx,buty);
   fAna->ChangeOptions(fAna->GetOptions() | kFixedSize);
@@ -872,7 +873,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fAna->Connect("Clicked()","MainFrame",this,"DoAna()");
   fGr2->AddFrame(fAna, l_But);
 
-  TGTextButton* f1b = new TGTextButton(fGr2,"1 buf");
+  TGTextButton* f1b = new TGTextButton(fGr2,new TGHotString("&1 buf"));
   f1b->SetFont(tfont,false);
   f1b->Resize(butx,buty);
   f1b->ChangeOptions(f1b->GetOptions() | kFixedSize);
@@ -981,7 +982,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 				   "DoNum()");
   hfr1->AddFrame(fNum1,lay2);
 
-  fNb = new TGTextButton(hfr1,"N buf");
+  fNb = new TGTextButton(hfr1,new TGHotString("&N buf"));
   //fNb->SetFont(tfont,false);
   fNb->Resize(35,22);
   fNb->ChangeOptions(fNb->GetOptions() | kFixedSize);
@@ -1221,19 +1222,22 @@ void MainFrame::DoAna() {
     crs->b_stop=true;
     gSystem->Sleep(100);
     fAna->ChangeBackground(fGreen);
-    fAna->SetText("Analyse");
+    fAna->SetText(hAna);
   }
   else { //start analysis
     if (TestFile()) {
+      //cout << "hAna: " << hAna->GetString() << " " << hPause->GetString() << endl;
+      //fAna->SetText(hPause);
+      fAna->SetText(new TGHotString("&Pause"));
       fAna->ChangeBackground(fRed);
-      fAna->SetText("Pause");
       crs->b_fana=true;
       crs->b_stop=false;
 
       crs->FAnalyze(true);
 
+      //fAna->SetText(hAna));
+      fAna->SetText(new TGHotString("&Analyze"));
       fAna->ChangeBackground(fGreen);
-      fAna->SetText("Analyse");
       crs->b_fana=false;
       crs->b_stop=true;
 

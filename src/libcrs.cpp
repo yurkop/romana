@@ -207,7 +207,7 @@ void *handle_ana(void* ptr) {
 
   //check if it's the beginning of the analysis -> then define crs->m_start
   //if (crs->m_start==crs->Levents.end()) {
-  cout << "ana_start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
+  //cout << "ana_start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
   if (crs->Levents.empty()) {
     //need this loop to have at least one event in Levents
     while (crs->Levents.empty() && !crs->b_stop) {
@@ -274,18 +274,18 @@ void *handle_ana(void* ptr) {
 
 
       //skip:
-      cout << "ana: " << std::distance(crs->m_start,crs->m_event)
-	   << " " << std::distance(crs->m_event,crs->Levents.end()) << endl;
+      // cout << "ana: " << std::distance(crs->m_start,crs->m_event)
+      // 	   << " " << std::distance(crs->m_event,crs->Levents.end()) << endl;
 
       // analyze events up to m_event
       for (it=crs->m_start; it!=crs->m_event;) {
 	//if (it->Nevt>100000) {
-	cout << "ana7: " << it->Nevt << " " << std::distance(it,crs->m_event)
-	     << " " << crs->b_stop << " " << it->pulses.size()
-	     << endl;
+	// cout << "ana7: " << it->Nevt << " " << std::distance(it,crs->m_event)
+	//      << " " << crs->b_stop << " " << it->pulses.size()
+	//      << endl;
 	  //exit(0);
 	  //}
-	if (!crs->b_stop &&
+	if (//!crs->b_stop &&
 	    it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
 
 	  it->FillHist(true);
@@ -300,22 +300,22 @@ void *handle_ana(void* ptr) {
 	  ++crs->nevents2;
 	  ++it;
 	  //++(crs->n_ana);
-	  cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
+	  cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << " " << crs->nevents2 << endl;
 	}
 	else {
 	  it=crs->Levents.erase(it);
-	  if (it!=crs->m_event)
-	    cout << "ana72: " << it->Nevt
-		 << " " << std::distance(it,crs->m_event)
-		 << " " << std::distance(it,crs->Levents.end())
-		 << " " << &*it
-		 << " " << &*crs->m_event
-		 << " " << &*crs->Levents.end()
-		 << endl;
+	  // if (it!=crs->m_event)
+	  //   cout << "ana72: " << it->Nevt
+	  // 	 << " " << std::distance(it,crs->m_event)
+	  // 	 << " " << std::distance(it,crs->Levents.end())
+	  // 	 << " " << &*it
+	  // 	 << " " << &*crs->m_event
+	  // 	 << " " << &*crs->Levents.end()
+	  // 	 << endl;
 	}
       }
 
-      cout << "ana2: " << std::distance(crs->m_start,crs->m_event) << endl;
+      // cout << "ana2: " << std::distance(crs->m_start,crs->m_event) << endl;
 
       // m_start now points to the first event which is not analyzed yet
       crs->m_start=crs->m_event;
@@ -347,7 +347,7 @@ void *handle_ana(void* ptr) {
     crs->Flush_Dec();
   }
 
-  cout << "end_ana: " << endl;
+  //cout << "end_ana: " << endl;
 
   return 0;
     
