@@ -58,3 +58,10 @@ avoid overwriting raw/dec files
 
 31.01.18
 check opt.Tstop for data acquisition
+
+23.03.18
+1. chanPresent=buf_in[3]*4; (libcrs.cpp) - как номеровать каналы, когда их два на плате?
+2. Поправить пределы параметров для новой платы (например, M = 0…4093)
+3. Поправить Command_crs (используется в crspardlg.cpp при изменении параметров при работающей acq)
+4. Добавить задержку в параметры
+

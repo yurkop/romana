@@ -300,7 +300,7 @@ void *handle_ana(void* ptr) {
 	  ++crs->nevents2;
 	  ++it;
 	  //++(crs->n_ana);
-	  cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << " " << crs->nevents2 << endl;
+	  //YK cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << " " << crs->nevents2 << endl;
 	}
 	else {
 	  it=crs->Levents.erase(it);
@@ -328,7 +328,7 @@ void *handle_ana(void* ptr) {
 	ii=0;
 	for (it=crs->Levents.begin(); it!=crs->m_start && ii<n2;) {
 	  it=crs->Levents.erase(it);
-	  cout << "ana73: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
+	  //YK cout << "ana73: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	  ++ii;
 	  //++it;
 	  //--(crs->n_ana);
@@ -670,11 +670,11 @@ int CRS::Detect_device() {
     module=32;
     chanPresent=buf_in[3]*4;
     if (ver_po==2) {//версия ПО=2
-      chanPresent=4;
+      //chanPresent=4;
       sz = Command32(10,0,0,0);
-      cout << "Channels: " << sz << " : ";
+      cout << "Channels " << sz << " :";
       for (int i=0;i<sz;i++) {
-	cout << int(buf_in[i]) << " ";
+	cout << " " << int(buf_in[i]);
       }
       cout << endl;
     }
@@ -2001,7 +2001,32 @@ void CRS::Decode32(UChar_t *buffer, int length) {
       }
       //}
     }
-    
+    else if (frmt==3) {
+
+      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+	// cout << "32: ERROR Nsamp: "
+	//      << " " << (ipp->Counter & 0x0F)
+	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
+	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << idx8 //<< " " << transfer->actual_length
+	//      << endl;
+	ipp->ptype|=P_BADSZ;
+      }
+      //else {
+      for (int i=0;i<3;i++) {
+
+	int zzz = data & 0xFFFF;
+	ipp->sData.push_back((zzz<<16)>>16);
+	//ipp->sData[ipp->Nsamp++]=(zzz<<20)>>20;
+	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
+	data>>=16;
+      }
+      //}
+    }
+    else {
+      cout << "bad frmt: " << frmt << endl;
+    }
+
     idx8++;
     idx1=idx8*8;
   }
@@ -2489,6 +2514,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   Long64_t dt;
 
   //if (pls->ptype & 0xF) { //P_NOSTART | P_NOSTOP | P_BADCH | P_BADTST
+  //if (pls->ptype & 0x7) {
   if (pls->ptype) { //any bad pulse
     cout << "bad pulse: " << (int) pls->Chan << " " << pls->Counter << " "
 	 << pls->Tstamp64 << " " << (int) pls->ptype << endl;
@@ -2506,7 +2532,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   //}
 
   if (pls->ptype & 0x7) {
-    cout << "bad pulse: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
+    cout << "bad pulse2: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
 	 << (int) pls->ptype << endl;
     return;
   }
