@@ -82,6 +82,7 @@ RQ_OBJECT("CRS")
 
   //std::list<event_list> Levents; //list of events
   std::list<EventClass> Levents; //list of events
+  EventClass mean_event;
 
   // n_ana - number of events which are already analyzed, but not erased,
   // starting from "start"

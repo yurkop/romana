@@ -500,12 +500,12 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fHor[j]->AddFrame(fStat[i],fLay3);
   }
 
-  TGLayoutHints *fLay10 = new TGLayoutHints(kLHintsExpandX,2,2,0,0);
-  for (int i=0;i<4;i++) {
-    fStat2[i]=new TGStatusBar(fVer_st,10,10);
-    fStat2[i]->Draw3DCorner(kFALSE);
-    fVer_st->AddFrame(fStat2[i],fLay10);
-  }
+  // TGLayoutHints *fLay10 = new TGLayoutHints(kLHintsExpandX,2,2,0,0);
+  // for (int i=0;i<4;i++) {
+  //   fStat2[i]=new TGStatusBar(fVer_st,10,10);
+  //   fStat2[i]->Draw3DCorner(kFALSE);
+  //   fVer_st->AddFrame(fStat2[i],fLay10);
+  // }
 
   // fStat[1]=new TGStatusBar(fVer_st,10,10);
   // fVer_st->AddFrame(fStat[0],fLay3);
@@ -1067,10 +1067,10 @@ void EventFrame::DrawEvent2() {
   sprintf(ss,"%d",d_event->State);
   fStat[3]->SetText(ss);
 
-  for (int i=0;i<4;i++) {
-    sprintf(ss,"%d: %lld",i+1,markt[i+1]-markt[i]);
-    fStat2[i]->SetText(ss);
-  }
+  // for (int i=0;i<4;i++) {
+  //   sprintf(ss,"%d: %lld",i+1,markt[i+1]-markt[i]);
+  //   fStat2[i]->SetText(ss);
+  // }
 
 
   cv->Update();

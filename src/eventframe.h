@@ -57,7 +57,7 @@ protected:
 
    static const int        nstat=4;
    TGTextEntry            *fStat[nstat];
-   TGStatusBar            *fStat2[4];
+   //TGStatusBar            *fStat2[4];
 
    TFormula               *formula;
 

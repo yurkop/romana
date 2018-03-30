@@ -467,6 +467,8 @@ CRS::CRS() {
     type_ch[i]=255;
   }
 
+  mean_event.Make_Mean_Event();
+
   MAXTRANS2=MAXTRANS;
   memset(Pre,0,sizeof(Pre));
 

@@ -189,7 +189,8 @@ class Toptions: public TObject {
   Bool_t b_gcuts;
   Bool_t b_deriv[3];
   Bool_t b_peak[16];
-  
+  Bool_t b_mean;
+
   //std::vector<Float_t> cut[3];
   Int_t ncuts;
   Int_t pcuts[MAXCUTS]; //number of points in gcut

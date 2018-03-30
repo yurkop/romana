@@ -11,6 +11,8 @@ extern CRS* crs;
 extern HClass* hcl;
 extern MyMainFrame *myM;
 //extern HistFrame* HiFrm;
+extern Coptions cpar;
+extern int chanPresent;
 
 namespace PROF {
 
@@ -305,6 +307,33 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   //   cout << endl;
   // }
   
+}
+
+void EventClass::Make_Mean_Event() {
+  for (int i=0;i<chanPresent;i++) {
+    PulseClass pp = PulseClass();
+    pp.ptype=0;
+    pp.Chan=i;
+    pp.Counter=0;
+    for (int j=0;j<cpar.durWr[i];j++) {
+      pp.sData.push_back(0);
+    }
+  }
+}
+
+void EventClass::Pulse_Mean_Add(PulseClass *pls) {
+
+  if (pls->Chan >=chanPresent) {
+    cout << "Pulse_Mean_Add: wrong channel: " << pls->Chan << endl; 
+  }
+  PulseClass pp = pulses.at(pls->Chan);
+
+  for (int j=0;j<cpar.durWr[pls->Chan];j++) {
+    pp.sData.at(j)+=pls->sData.at(j);
+  }
+
+  pp.Counter++;
+
 }
 
 void EventClass::Fill_Time_Extend(HMap* map) {
