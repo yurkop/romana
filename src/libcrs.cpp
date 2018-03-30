@@ -463,6 +463,10 @@ CRS::CRS() {
 
   //ev_max=2*opt.ev_min;
 
+  for (int i=0;i<MAX_CH+ADDCH;i++) {
+    type_ch[i]=255;
+  }
+
   MAXTRANS2=MAXTRANS;
   memset(Pre,0,sizeof(Pre));
 
@@ -655,28 +659,52 @@ int CRS::Detect_device() {
   int sz;
   sz = Command32(1,0,0,0);
 
-  cout << "Info: " << sz << " : ";
-  for (int i=0;i<sz;i++) {
-    cout << int(buf_in[i]) << " ";
-  }
-  cout << endl;
+  cout << "Info: " << sz << endl;
+  cout << "Device code: " << int(buf_in[0]) << endl;
+  cout << "Serial Nr: " << int(buf_in[1]) << endl;
+  cout << "Number of working plates: " << int(buf_in[2]) << endl;
+  cout << "Firmware version: " << int(buf_in[3]) << endl;
+
+  //for (int i=0;i<sz;i++) {
+  //cout << int(buf_in[i]) << " ";
+  //}
+  //cout << endl;
   ver_po=buf_in[4];
 
-  if (buf_in[1]==3) {
+  if (buf_in[1]==3) { //serial Nr=3 -> crs2
     module=2;
     chanPresent=2;
+    for (int j=0;j<chanPresent;j++) {
+      type_ch[j]=0;
+    }
   }
-  else {
+  else { //crs32
     module=32;
-    chanPresent=buf_in[3]*4;
+    int nplates= buf_in[3];
+    chanPresent=nplates*4;
     if (ver_po==2) {//версия ПО=2
       //chanPresent=4;
       sz = Command32(10,0,0,0);
-      cout << "Channels " << sz << " :";
-      for (int i=0;i<sz;i++) {
-	cout << " " << int(buf_in[i]);
+      sz--;
+      for (int i=0;i<nplates;i++) {
+	cout << "Channels(" << i << "):";
+	for (int j=0;j<4;j++) {
+	  type_ch[i*4+j]=buf_in[sz];
+	  cout << " " << type_ch[i*4+j];
+	}
+	cout << endl;
+	sz--;
+	//cout << i << " " << sz << endl;
       }
-      cout << endl;
+      //cout << "nplates: " << nplates << " " << sz << endl;
+      //exit(0);
+      //for (int i=0;i<MAX_CH;i++) {
+      //cout << " " << chtype[i];
+      //}
+      //for (int i=sz-1;i>=0;i--) {
+      //cout << " " << int(buf_in[i]);
+      //}
+      //cout << endl;
     }
   }
 
@@ -726,9 +754,9 @@ int CRS::SetPar() {
     AllParameters2();
   }
   else if (module==32) {
-    if (ver_po==1)
-      AllParameters32_old();
-    else
+    // if (ver_po==1)
+    //   AllParameters32_old();
+    // else
       AllParameters32();
   }
   else {
@@ -1071,17 +1099,7 @@ void CRS::Command_crs(byte cmd, byte chan) {
   if (module==32) {
     switch (cmd) {
     case 1: //enabl
-      if (cpar.enabl[chan]) {
-	Command32(2,chan,6,(int)cpar.kderiv[chan]);
-	Command32(2,chan,7,(int)cpar.threshold[chan]);
-      }
-      else {
-	int tmp,max;
-	cpar.GetPar("thresh",module,chan,tmp,tmp,max);
-	//cout << "Off: " << (int) chan << " " << max << endl;
-	Command32(2,chan,6,0);
-	Command32(2,chan,7,max);
-      }
+      Command32(2,chan,11,(int)cpar.enabl[chan]);
       break;
     case 2: //inv
       Command32(2,chan,1,(int)cpar.inv[chan]);
@@ -1121,7 +1139,7 @@ void CRS::Command_crs(byte cmd, byte chan) {
       }
       else {
 	int tmp,max;
-	cpar.GetPar("thresh",module,chan,tmp,tmp,max);
+	cpar.GetPar("thresh",module,chan,type_ch[chan],tmp,tmp,max);
 	//cout << "Off: " << (int) chan << " " << max << endl;
 	Command2(2,chan,3,0);
 	Command2(2,chan,4,max);
@@ -1159,32 +1177,6 @@ void CRS::Command_crs(byte cmd, byte chan) {
 
 }
 
-void CRS::AllParameters32_old()
-{
-  cout << "AllParameters32_old(): " << endl;
-  for (byte chan = 0; chan < chanPresent; chan++) {
-    Command32(2,chan,0,(int)cpar.acdc[chan]);
-    Command32(2,chan,1,(int)cpar.inv[chan]);
-    Command32(2,chan,2,(int)cpar.smooth[chan]);
-    Command32(2,chan,3,(int)cpar.deadTime[chan]);
-    Command32(2,chan,4,(int)cpar.preWr[chan]);
-    Command32(2,chan,5,(int)cpar.durWr[chan]);
-    if (cpar.enabl[chan]) {
-      Command32(2,chan,6,(int)cpar.kderiv[chan]);
-      Command32(2,chan,7,(int)cpar.threshold[chan]);
-    }
-    else {
-      int tmp,max;
-      cpar.GetPar("thresh",module,chan,tmp,tmp,max);
-      //cout << "Off: " << (int) chan << " " << max << endl;
-      Command32(2,chan,6,0);
-      Command32(2,chan,7,max);
-    }
-    Command32(2,chan,8,(int)cpar.adcGain[chan]);
-  }
-
-}
-
 void CRS::AllParameters32()
 {
   cout << "AllParameters32(): " << endl;
@@ -1202,8 +1194,8 @@ void CRS::AllParameters32()
     // new commands
     Command32(2,chan,9,0); //delay
     //Command32(2,chan,10,0); //test signal
-    //Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
-    Command32(2,chan,11,1); //enabled
+    Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
+    //Command32(2,chan,11,1); //enabled
   }
 
 }
@@ -1215,20 +1207,20 @@ void CRS::AllParameters2()
     Command2(2,chan,0,(int)cpar.adcGain[chan]);
     Command2(2,chan,1,(int)cpar.inv[chan]);
     Command2(2,chan,2,(int)cpar.smooth[chan]);
-   if (cpar.enabl[chan]) {
+    if (cpar.enabl[chan]) {
       Command2(2,chan,3,(int)cpar.kderiv[chan]);
       Command2(2,chan,4,(int)cpar.threshold[chan]);
     }
-   else {
-     int tmp,max;
-     cpar.GetPar("thresh",module,chan,tmp,tmp,max);
-     //cout << "Off: " << (int) chan << " " << max << endl;
-     Command2(2,chan,3,0);
-     Command2(2,chan,4,max);
-   }
+    else {
+      int tmp,max;
+      cpar.GetPar("thresh",module,chan,type_ch[chan],tmp,tmp,max);
+      //cout << "Off: " << (int) chan << " " << max << endl;
+      Command2(2,chan,3,0);
+      Command2(2,chan,4,max);
+    }
 
-   Command2(2,chan,5,(int)cpar.preWr[chan]);
-   Command2(2,chan,6,(int)cpar.durWr[chan]);
+    Command2(2,chan,5,(int)cpar.preWr[chan]);
+    Command2(2,chan,6,(int)cpar.durWr[chan]);
   }
 
   Command2(2,0,7,(int)cpar.forcewr);

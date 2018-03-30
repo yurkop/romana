@@ -42,7 +42,7 @@ struct pmap {
 //-----------------------------------------------
 class ParDlg: public TGCompositeFrame {
 
- protected:
+protected:
 
   ULong_t tcol[ADDCH];
 
@@ -62,13 +62,13 @@ class ParDlg: public TGCompositeFrame {
 
   int id_write[3]; //id of different *write* text fields
 
- public:
+public:
   std::vector<pmap> Plist;
 
   TGHorizontalFrame *cframe[MAX_CH+ADDCH];
   TGTextEntry* clab[MAX_CH+ADDCH];
 
- public:
+public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ParDlg() {};
 
@@ -94,15 +94,15 @@ class ParDlg: public TGCompositeFrame {
   TGWidget *FindWidget(void* p);
 
   ClassDef(ParDlg, 0)
-    };
+};
 
 //-----------------------------------------------
 class ParParDlg: public ParDlg {
- public:
+public:
   ParParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ParParDlg() {};
 
- protected:
+protected:
 
   //TGHorizontalFrame *hor;
   //TGVerticalFrame *ver1;
@@ -123,21 +123,21 @@ class ParParDlg: public ParDlg {
   TGNumberFormat::EStyle k_r2;
   TGNumberFormat::EStyle k_r3;
 
- public:
+public:
   /*
-  void AddLine3(TGCompositeFrame* frame, int width, void *x1, void *x2, 
-		const char* tip1, const char* tip2, const char* label,
-		TGNumberFormat::EStyle style, 
-		//TGNumberFormat::EAttribute attr, 
-		double min=0, double max=0);
+    void AddLine3(TGCompositeFrame* frame, int width, void *x1, void *x2, 
+    const char* tip1, const char* tip2, const char* label,
+    TGNumberFormat::EStyle style, 
+    //TGNumberFormat::EAttribute attr, 
+    double min=0, double max=0);
   */
   void AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
-		const char* tip1, const char* tip2, const char* label,
-		TGNumberFormat::EStyle style1, 
-		TGNumberFormat::EStyle style2, 
-		//TGNumberFormat::EAttribute attr, 
-		double min1=0, double max1=0,
-		double min2=0, double max2=0, char* connect=NULL);
+		   const char* tip1, const char* tip2, const char* label,
+		   TGNumberFormat::EStyle style1, 
+		   TGNumberFormat::EStyle style2, 
+		   //TGNumberFormat::EAttribute attr, 
+		   double min1=0, double max1=0,
+		   double min2=0, double max2=0, char* connect=NULL);
   void AddLine_hist(TGGroupFrame* frame, Bool_t* b1,
 		    Float_t *x1, Float_t *x2, Float_t *x3, 
 		    const char* tip, const char* label);
@@ -156,46 +156,48 @@ class ParParDlg: public ParDlg {
 class ChanParDlg: public ParDlg {
 
 protected:
-TGCanvas* fCanvas2;
-TGCompositeFrame* fcont2;
-TGHorizontalFrame *head_frame;
+  TGCanvas* fCanvas2;
+  TGCompositeFrame* fcont2;
+  TGHorizontalFrame *head_frame;
 
 public:
-ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-virtual ~ChanParDlg() {};
+  ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~ChanParDlg() {};
 
-void Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h);
+  void Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h);
 
-void AddHeader();
-void AddLine_chan(int i, TGCompositeFrame* fcont1);
-void AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
-	     const char* name, void* apar, void* apar2);
-void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
+  void AddHeader();
+  void AddLine_chan(int i, TGCompositeFrame* fcont1);
+  void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       void* apar, double min, double max, P_Def ptype);
- void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan,
-	    void* d2=0);
-void DoNum();
-void DoCheck();
+  void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan,
+	     void* d2=0);
+  void DoNum();
+  //void DoCheck();
 
-ClassDef(ChanParDlg, 0)
+  ClassDef(ChanParDlg, 0)
 };
 
 //-----------------------------------------------
 class CrsParDlg: public ChanParDlg {
 
- public:
+public:
 
   TGLabel *fStat[MAX_CH+1];
 
- public:
+public:
   CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~CrsParDlg() {};
 
   void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
   void AddHeader();
   void AddLine_crs(int i, TGCompositeFrame* fcont1);
+  void AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
+	       const char* name, void* apar, void* apar2=0);
   void ResetStatus();
   void UpdateStatus();
+  void DoNum();
+  void DoCheck();
 
   ClassDef(CrsParDlg, 0)
 };

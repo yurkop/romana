@@ -36,7 +36,7 @@ class Coptions: public TObject {
 
  public:
   void InitPar(Int_t module);
-  void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
+  void GetPar(const char* name, Int_t module, Int_t i, Short_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
   ClassDef(Coptions, 2)
 };

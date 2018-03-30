@@ -100,6 +100,7 @@ RQ_OBJECT("CRS")
   // 2 - list is analyzed, but not cleaned (at the end of file etc)
 
   Short_t module; //2 - crs2; 32 - crs32
+  Short_t type_ch[MAX_CH+ADDCH];
   Short_t ver_po;
   Int_t period;
 
@@ -193,7 +194,6 @@ RQ_OBJECT("CRS")
   int Command32(byte cmd, byte ch, byte type, int par);
   int Command2(byte cmd, byte ch, byte type, int par);
   void Command_crs(byte cmd, byte chan);
-  void AllParameters32_old(); // load all parameters
   void AllParameters32(); // load all parameters
   void AllParameters2(); // load all parameters
   int DoStartStop(); // start-stop acquisition

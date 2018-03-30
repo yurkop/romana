@@ -49,7 +49,7 @@ void Coptions::InitPar(int module) {
 
 }
 
-void Coptions::GetPar(const char* name, int module, int i, int &par, int &min, int &max) {
+void Coptions::GetPar(const char* name, int module, int i, Short_t type_ch, int &par, int &min, int &max) {
 
   min=0;
   max=0;
@@ -68,10 +68,17 @@ void Coptions::GetPar(const char* name, int module, int i, int &par, int &min, i
     par = preWr[i];
     min = 0;
     if (module==32) {
-      max=4094;
+      if (type_ch==0)
+	max=4094;
+      else if (type_ch==1)
+	max=4093;
     }
     else if (module==2) {
       max=8184;
+    }
+    else {
+      cout << "GetPar: wrong channel: " << name << " " << i << endl;
+      exit(-1);
     }
   }
   else if (!strcmp(name,"len")) {
@@ -89,15 +96,36 @@ void Coptions::GetPar(const char* name, int module, int i, int &par, int &min, i
     min = 0;
     max=1023;
   }
-  else if (!strcmp(name,"gain")) {
-    par = adcGain[i];
-    min = 0;
-    max=12;
-  }
   else if (!strcmp(name,"thresh")) {
     par = threshold[i];
-    min = 0;
-    max=2047;
+    if (type_ch==1) {
+      min = -65536;
+      max= 65535;
+    }
+    else {
+      min = -2048;
+      max = 2047;
+    }
+  }
+  else if (!strcmp(name,"gain")) {
+    par = adcGain[i];
+    if (type_ch==1) {
+      min = 0;
+      max=3;
+    }
+    else {
+      min = 5;
+      max=12;
+    }
+  }
+  else {
+    cout << "GetPar: wrong name: " << name << " " << i << endl;
+    exit(-1);
+  }
+
+  if (type_ch==255) {
+    min = -65536;
+    max= 65535;
   }
 
 }

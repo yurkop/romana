@@ -34,7 +34,7 @@ extern ChanParDlg *chanpar;
 
 const int ncrspar=12;
 
-const int tlen[ncrspar+1]={26,60,24,25,24,21,45,40,40,25,36,37,75};
+const int tlen[ncrspar+1]={26,60,24,25,24,21,45,40,40,25,36,45,75};
 const char* tlab[ncrspar+1]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Drv","Thr","Pulse/sec"};
 const char* tip[ncrspar+1]={
   "Channel number",
@@ -53,7 +53,7 @@ const char* tip[ncrspar+1]={
 };
 
 const int nchpar=19;
-const int tlen2[nchpar]={27,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,35,42,42};
+const int tlen2[nchpar]={26,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,35,42,42};
 const char* tlab2[nchpar]={"Ch","Type","St","Mt","sS","Drv","Thr","Bkg1","Bkg2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
 const char* tip2[nchpar]={
   "Channel number",
@@ -175,12 +175,19 @@ void ParDlg::DoNum() {
   if (pp.all>0) {
     if (nfld) {
       int kk = (id-1)%nfld;
+      //cout << "donum: " << kk << " " << te->GetNumber() << endl;
       for (int i=0;i<chanPresent;i++) {
 	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
-	  SetNum(p2,te->GetNumber());
 	  TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
-	  te2->SetNumber(te->GetNumber());
+	  double min = te2->GetNumMin();
+	  double max = te2->GetNumMax();
+	  double fnum=te->GetNumber();
+	  //cout << "donum: " << i << " " << min << " " << max << " " << fnum << endl;
+	  if (fnum<min) fnum=min;
+	  if (fnum>max) fnum=max;	  
+	  te2->SetNumber(fnum);
+	  SetNum(p2,fnum);
 	}
       }
     }
@@ -283,7 +290,8 @@ void ParDlg::DoChk() {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetChk(p2,te->GetState());
 	  TGCheckButton *te2 = (TGCheckButton*) p2.field;
-	  te2->SetState(te->GetState());      
+	  te2->SetState(te->GetState());
+	  te2->Clicked();
 	}
       }
     }
@@ -1453,14 +1461,14 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
   id = Plist.size()+1;
   TGCheckButton *fst = new TGCheckButton(cframe[i], "", id);
   DoMap(fst,&opt.Start[i],p_chk,all,0,0);
-  fst->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
+  fst->Connect("Clicked()", "ParDlg", this, "DoChk()");
   cframe[i]->AddFrame(fst,fL3);
   kk++;
 
   id = Plist.size()+1;
   TGCheckButton *fmt = new TGCheckButton(cframe[i], "", id);
   DoMap(fmt,&opt.Mt[i],p_chk,all,0,0);
-  fmt->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
+  fmt->Connect("Clicked()", "ParDlg", this, "DoChk()");
   cframe[i]->AddFrame(fmt,fL3);
   kk++;
 
@@ -1482,41 +1490,6 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
   AddNum2(i,kk++,all,cframe[i],&opt.emult[i],0,99999,p_fnum);
   AddNum2(i,kk++,all,cframe[i],&opt.elim1[i],0,99999,p_fnum);
   AddNum2(i,kk++,all,cframe[i],&opt.elim2[i],0,99999,p_fnum);
-}
-
-void ChanParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
-			 const char* name, void* apar, void* apar2=0) {  //const char* name) {
-
-  int par, min, max;
-
-  cpar.GetPar(name,crs->module,i,par,min,max);
-
-  TGNumberFormat::ELimit limits;
-
-  limits = TGNumberFormat::kNELLimitMinMax;
-  if (max==0) {
-    limits = TGNumberFormat::kNELNoLimits;
-  }
-
-  int id = Plist.size()+1;
-  TGNumberEntryField* fNum =
-    new TGNumberEntryField(hframe1, id, par, TGNumberFormat::kNESInteger,
-			   TGNumberFormat::kNEAAnyNumber,
-			   limits,min,max);
-
-  // if (apar == &cpar.preWr[1]) {
-  //   cout << "prewr[0]: " << id << " " << fNum->GetNumLimits() << " " << min << " " << max << endl;
-  // }
-  DoMap(fNum,apar,p_inum, all,kk-1,i,apar2);
-  
-  //fNum->SetName(name);
-  fNum->SetWidth(tlen[kk]);
-  fNum->SetHeight(20);
-
-  fNum->Connect("TextChanged(char*)", "ChanParDlg", this, "DoNum()");
-
-  hframe1->AddFrame(fNum,fL0);
-
 }
 
 void ChanParDlg::AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
@@ -1558,28 +1531,29 @@ void ChanParDlg::DoMap(TGWidget *f, void *d, P_Def t, int all,
 void ChanParDlg::DoNum() {
   ParDlg::DoNum();
 
-  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
-  Int_t id = te->WidgetId();
+  // TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  // Int_t id = te->WidgetId();
 
-  pmap pp = Plist[id-1];
+  // pmap pp = Plist[id-1];
 
   //cout << "ch_donum: " << pp.data2 << endl;
 
-  if (pp.cmd && crs->b_acq) {
-#ifdef CYUSB
-    crs->Command2(4,0,0,0);
-    printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
-    //crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
-    crs->Command_crs(pp.cmd,pp.chan);
-    crs->Command2(3,0,0,0);
-#endif
-  }
+// #ifdef CYUSB
+//   printf("cmd77: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
+//   if (pp.cmd && crs->b_acq) {
+//     crs->Command2(4,0,0,0);
+//     printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
+//     //crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
+//     crs->Command_crs(pp.cmd,pp.chan);
+//     crs->Command2(3,0,0,0);
+//   }
+// #endif
 
 }
 
-void ChanParDlg::DoCheck() {
-  ParDlg::DoChk();
-}
+//void ChanParDlg::DoCheck() {
+//ParDlg::DoChk();
+//}
 
 //------ ChanParDlg -------
 
@@ -1643,7 +1617,7 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
     TGCheckButton *fforce = new TGCheckButton(hforce, "", id);
     hforce->AddFrame(fforce,fL3);
     DoMap((TGWidget*)fforce,&cpar.forcewr,p_chk,0,0,0);
-    fforce->Connect("Clicked()", "ParDlg", this, "DoChk()");
+    fforce->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
     
     TGLabel* lforce = new TGLabel(hforce, "  Force_write all channels");
     hforce->AddFrame(lforce,fL1);
@@ -1767,9 +1741,9 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   DoMap(f_inv,&cpar.inv[i],p_chk,all,2,i);
   DoMap(f_acdc,&cpar.acdc[i],p_chk,all,3,i);
 
-  f_en->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
-  f_inv->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
-  f_acdc->Connect("Clicked()", "ChanParDlg", this, "DoCheck()");
+  f_en->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
+  f_inv->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
+  f_acdc->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
 
   //f_inv->ChangeOptions(facdc->GetOptions()|kFixedSize);
   //f_acdc->ChangeOptions(facdc->GetOptions()|kFixedSize);
@@ -1814,6 +1788,42 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
 
 }
 
+void CrsParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
+			 const char* name, void* apar, void* apar2) {  //const char* name) {
+
+  int par, min, max;
+
+  cpar.GetPar(name,crs->module,i,crs->type_ch[i],par,min,max);
+  //cout << "getpar1: " << i << " " << min << " " << max << endl;
+
+  TGNumberFormat::ELimit limits;
+
+  limits = TGNumberFormat::kNELLimitMinMax;
+  if (max==0) {
+    limits = TGNumberFormat::kNELNoLimits;
+  }
+
+  int id = Plist.size()+1;
+  TGNumberEntryField* fNum =
+    new TGNumberEntryField(hframe1, id, par, TGNumberFormat::kNESInteger,
+			   TGNumberFormat::kNEAAnyNumber,
+			   limits,min,max);
+
+  // if (apar == &cpar.preWr[1]) {
+  //   cout << "prewr[0]: " << id << " " << fNum->GetNumLimits() << " " << min << " " << max << endl;
+  // }
+  DoMap(fNum,apar,p_inum, all,kk-1,i,apar2);
+  
+  //fNum->SetName(name);
+  fNum->SetWidth(tlen[kk]);
+  fNum->SetHeight(20);
+
+  fNum->Connect("TextChanged(char*)", "CrsParDlg", this, "DoNum()");
+
+  hframe1->AddFrame(fNum,fL0);
+
+}
+
 void CrsParDlg::ResetStatus() {
 
   TGString txt="0";
@@ -1839,26 +1849,69 @@ void CrsParDlg::UpdateStatus() {
   //cout << "DT: " << dt << endl;
   if (dt>0) {
     for (int i=0;i<chanPresent;i++) {
-      if (crs->npulses2[i]) {
+      //if (crs->npulses2[i]) {
 	rate = (crs->npulses2[i]-npulses3[i])/dt;
-	if (rate>0) {
+	//if (rate>0) {
 	  txt.Form("%0.0f",rate);
 	  fStat[i]->SetText(txt);
 	  //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
-	}
+	  //}
 	npulses3[i]=crs->npulses2[i];
-      }
+	//}
     }
-    if (crs->npulses) {
-	rate = (crs->npulses-allpulses)/dt;
-	if (rate>0) {
-	  txt.Form("%0.0f",rate);
-	  fStat[MAX_CH]->SetText(txt);
-	  //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
-	}
-	allpulses=crs->npulses;
-    }
+    //if (crs->npulses) {
+      rate = (crs->npulses-allpulses)/dt;
+      //if (rate>0) {
+	txt.Form("%0.0f",rate);
+	fStat[MAX_CH]->SetText(txt);
+	//cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
+	//}
+      allpulses=crs->npulses;
+      //}
   }
   t1=opt.T_acq;
+
+}
+
+void CrsParDlg::DoNum() {
+  ParDlg::DoNum();
+
+  //cout << "CrsParDlg::DoNum()" << endl;
+#ifdef CYUSB
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+  pmap pp = Plist[id-1];
+
+  //cout << "ch_donum: " << pp.data2 << endl;
+
+  //printf("cmd77: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
+  if (pp.cmd && crs->b_acq) {
+    crs->Command2(4,0,0,0);
+    //printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
+    //crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
+    crs->Command_crs(pp.cmd,pp.chan);
+    crs->Command2(3,0,0,0);
+  }
+#endif
+
+}
+
+void CrsParDlg::DoCheck() {
+  ParDlg::DoChk();
+
+#ifdef CYUSB
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+  pmap pp = Plist[id-1];
+
+  //printf("chk77: %d %d %d\n",pp.cmd,pp.chan,*(Bool_t*)pp.data);
+  if (pp.cmd && crs->b_acq) {
+    crs->Command2(4,0,0,0);
+    //printf("chk: %d %d %d\n",pp.cmd,pp.chan,*(Bool_t*)pp.data);
+    //crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
+    crs->Command_crs(pp.cmd,pp.chan);
+    crs->Command2(3,0,0,0);
+  }
+#endif
 
 }
