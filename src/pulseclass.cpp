@@ -257,6 +257,10 @@ EventClass::EventClass() {
 
 void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 
+  if (opt.b_pulse) {
+    crs->mean_event.Pulse_Mean_Add(pls);
+  }
+  
   for (UInt_t i=0;i<pulses.size();i++) {
     if (pls->Chan == pulses[i].Chan &&
 	TMath::Abs(pls->Tstamp64-pulses[i].Tstamp64) < opt.tveto) {
@@ -323,16 +327,18 @@ void EventClass::Make_Mean_Event() {
 
 void EventClass::Pulse_Mean_Add(PulseClass *pls) {
 
+  cout << "Pulse_Mean_Add1: " << pulses.size() << " " << (int) pls->Chan << endl; 
   if (pls->Chan >=chanPresent) {
-    cout << "Pulse_Mean_Add: wrong channel: " << pls->Chan << endl; 
+    cout << "Pulse_Mean_Add: wrong channel: " << (int) pls->Chan << endl; 
   }
   PulseClass pp = pulses.at(pls->Chan);
 
   for (int j=0;j<cpar.durWr[pls->Chan];j++) {
-    pp.sData.at(j)+=pls->sData.at(j);
+    pp.sData[j]+=pls->sData[j];
   }
 
   pp.Counter++;
+  cout << "Pulse_Mean_Add2: " << pls->Chan << endl; 
 
 }
 

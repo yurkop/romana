@@ -150,8 +150,9 @@ class Toptions: public TObject {
   Bool_t b_hei;
   Bool_t b_per;
   Bool_t b_h2d;
+  Bool_t b_pulse;
 
-  //s-flags: Show histograms in fListTree
+  //s-flags: Show (check) histograms in fListTree
   Bool_t s_time[MAX_CH];
   Bool_t s_tof[MAX_CH];
   Bool_t s_mtof[MAX_CH];
@@ -159,6 +160,7 @@ class Toptions: public TObject {
   Bool_t s_hei[MAX_CH];
   Bool_t s_per[MAX_CH];
   Bool_t s_h2d[MAX_CH];
+  Bool_t s_pulse[MAX_CH];
 
   //w-flags: Put histograms in WORK* folders
   Bool_t w_time[MAX_CH];
@@ -168,6 +170,7 @@ class Toptions: public TObject {
   Bool_t w_hei[MAX_CH];
   Bool_t w_per[MAX_CH];
   Bool_t w_h2d[MAX_CH];
+  Bool_t w_pulse[MAX_CH];
 
   //index of cuts
   Char_t cut_time[MAX_CH*MAXCUTS];
@@ -177,6 +180,7 @@ class Toptions: public TObject {
   Char_t cut_hei[MAX_CH*MAXCUTS];
   Char_t cut_per[MAX_CH*MAXCUTS];
   Char_t cut_h2d[MAX_CH*MAXCUTS];
+  Char_t cut_pulse[MAX_CH*MAXCUTS];
 
   Int_t start_ch;
   Float_t mtof_period;
@@ -189,7 +193,6 @@ class Toptions: public TObject {
   Bool_t b_gcuts;
   Bool_t b_deriv[3];
   Bool_t b_peak[16];
-  Bool_t b_mean;
 
   //std::vector<Float_t> cut[3];
   Int_t ncuts;

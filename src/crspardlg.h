@@ -141,6 +141,8 @@ public:
   void AddLine_hist(TGGroupFrame* frame, Bool_t* b1,
 		    Float_t *x1, Float_t *x2, Float_t *x3, 
 		    const char* tip, const char* label);
+  void AddLine_mean(TGGroupFrame* frame, Bool_t* b1,
+		    const char* tip, const char* label);
   void AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
 		char* opt_fname);
   void AddHist(TGCompositeFrame* frame);

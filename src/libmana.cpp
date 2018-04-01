@@ -898,6 +898,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   tab1->AddFrame(fr1, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
   parpar = new ParParDlg(fr1, 600, 500);
   parpar->Update();
+
   fr1->AddFrame(parpar, 
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;

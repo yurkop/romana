@@ -1005,6 +1005,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="h2d";
   AddLine_hist(frame,&opt.b_h2d,&opt.h2d_bins,&opt.h2d_min,&opt.h2d_max,tip1,label);
 
+  tip1= "Average pulse shapes for all channels";
+  label="Mean_pulses";
+  AddLine_mean(frame,&opt.b_pulse,tip1,label);
+
   /*
   tip1= "Bins per channel for Width";
   tip2= "Length of Width (in channels)";
@@ -1228,6 +1232,38 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
 				     "DoNum()");
   hfr1->AddFrame(fNum3,fL8);
 
+
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  //fLabel->SetWidth();
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText(tip);
+  fLabel->SetAlignment(kTextCenterY);
+
+  //TGLabel* fLabel = new TGLabel(hfr1, label);
+  //fLabel->SetToolTipText(tip);
+  hfr1->AddFrame(fLabel,fL8);
+
+}
+
+void ParParDlg::AddLine_mean(TGGroupFrame* frame, Bool_t *b1,
+			 const char* tip, const char* label)
+{
+  char name[20];
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
+  int id;
+
+  //checkbutton
+  id = Plist.size()+1;
+  TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
+  sprintf(name,"b_pulse%d",id);
+  chk_hist->SetName(name);
+  DoMap(chk_hist,b1,p_chk,0);
+  chk_hist->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  hfr1->AddFrame(chk_hist,fL3);
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
   //fLabel->SetWidth();

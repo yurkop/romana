@@ -77,8 +77,9 @@ void Coptions::GetPar(const char* name, int module, int i, Short_t type_ch, int 
       max=8184;
     }
     else {
-      cout << "GetPar: wrong channel: " << name << " " << i << endl;
-      exit(-1);
+      max=4093;
+      //cout << "GetPar: wrong channel: " << name << " " << module << " " << i << " " << type_ch << endl;
+      //exit(-1);
     }
   }
   else if (!strcmp(name,"len")) {
@@ -185,6 +186,7 @@ Toptions::Toptions() {
   b_hei=true;
   b_per=true;
   b_h2d=true;
+  b_pulse=false;
 
   for (int i=0;i<MAX_CH;i++) {
     s_time[i]=true;
@@ -194,6 +196,7 @@ Toptions::Toptions() {
     s_hei[i]=true;
     s_per[i]=true;
     s_h2d[i]=true;
+    s_pulse[i]=true;
 
     w_time[i]=false;
     w_tof[i]=false;
@@ -202,6 +205,7 @@ Toptions::Toptions() {
     w_hei[i]=false;
     w_per[i]=false;
     w_h2d[i]=false;
+    w_pulse[i]=false;
   }
 
   memset(cut_time, 0, sizeof(cut_time));
@@ -211,6 +215,7 @@ Toptions::Toptions() {
   memset(cut_hei,  0, sizeof(cut_hei));
   memset(cut_per,  0, sizeof(cut_per));
   memset(cut_h2d,  0, sizeof(cut_h2d));
+  memset(cut_pulse,  0, sizeof(cut_pulse));
 
 
   num_events=100000;

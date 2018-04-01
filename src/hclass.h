@@ -56,6 +56,8 @@ class HClass {
 
   HMap* m_2d[1];
 
+  HMap* m_pulse[MAX_CH]; // period
+
   TCutG* cutG[MAXCUTS];
   Double_t cut_flag[MAXCUTS+1]; //starts from 1, not from 0
   char cuttitle[MAXCUTS][99];
@@ -82,6 +84,10 @@ class HClass {
 	       HMap* map[],// TH1F* hh[MAX_CH][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
 	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
+  void Make_1d_pulse(const char* dname, const char* name,
+		     const char* title, HMap* map[],
+		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
+		     Char_t *cuts);
   void Make_2d(const char* dname, const char* name, const char* title,
 	       HMap* map[],// TH2F* hh[][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,

@@ -6,6 +6,7 @@ extern Toptions opt;
 
 extern CRS* crs;
 extern ParParDlg *parpar;
+extern Coptions cpar;
 
 extern ULong_t fGreen;
 extern ULong_t fRed;
@@ -141,6 +142,34 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
     //sprintf(name,"ampl_%02d",i);
     //sprintf(title,"ampl_%02d;Channel;Counts",i);
     NameTitle(name2,title2,i,0,name,title);
+    int nn=bins*(max-min);
+    TH1F* hh=new TH1F(name2,title2,nn,min,max);
+
+    //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
+    map[i] = new HMap(dname,hh,chk+i,wrk+i,cuts+i*MAXCUTS);
+    map_list->Add(map[i]);
+    hist_list->Add(map[i]->hst);
+
+  }
+}
+
+void HClass::Make_1d_pulse(const char* dname, const char* name,
+			   const char* title, HMap* map[],
+			   Bool_t bb, Bool_t* chk, Bool_t* wrk,
+			   Char_t *cuts) {
+
+  if (!bb) return;
+
+  char name2[100];
+  char title2[100];
+
+  for (int i=0;i<MAX_CH;i++) {
+    NameTitle(name2,title2,i,0,name,title);
+
+    Float_t min = 0;
+    Float_t max = cpar.durWr[i];
+    Float_t bins = 1;
+
     int nn=bins*(max-min);
     TH1F* hh=new TH1F(name2,title2,nn,min,max);
 
@@ -321,6 +350,8 @@ void HClass::Make_hist() {
   Make_2d("H2d","h2d",";Channel;Channel",m_2d,opt.h2d_bins,
   	  opt.h2d_min,opt.h2d_max,opt.b_h2d,opt.s_h2d,opt.w_h2d,opt.cut_h2d);
 
+  Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,
+  	  opt.b_pulse,opt.s_pulse,opt.w_pulse,opt.cut_pulse);
 
   b_formula=false;
   if (opt.ncuts)

@@ -467,8 +467,6 @@ CRS::CRS() {
     type_ch[i]=255;
   }
 
-  mean_event.Make_Mean_Event();
-
   MAXTRANS2=MAXTRANS;
   memset(Pre,0,sizeof(Pre));
 
@@ -519,7 +517,7 @@ CRS::CRS() {
   // b_fana=false;
   // bstart=true;
 
-  chanPresent=32;
+  chanPresent=MAX_CH;
 
   ntrans=MAXTRANS;
   //opt.usb_size=1024*1024;
@@ -1401,7 +1399,9 @@ void CRS::DoExit()
 
 void CRS::DoReset() {
 
-  //cout << "DoReset1: " << b_stop << endl;
+  //mean_event.Make_Mean_Event();
+
+  cout << "DoReset1: " << b_stop << endl;
 
   if (!b_stop) return;
 
@@ -1847,6 +1847,8 @@ void CRS::Show(bool force) {
   tm2=gSystem->Now();
   if (tm2-tm1>opt.tsleep || force) {
     tm1=tm2;
+
+    cout << "Show: " << endl;
 
     //cout << "show... " << info.fMemTotal << " " << info.fMemFree << " " << info.fMemUsed << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
 
