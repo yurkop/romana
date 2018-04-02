@@ -1144,6 +1144,7 @@ void MainFrame::DoStartStop() {
   }
   else {
     if (TestFile()) {
+      //ParLock();
       fStart->ChangeBackground(fRed);
       fStart->SetText("Stop");
       crs->DoStartStop();
@@ -1312,6 +1313,15 @@ void MainFrame::DoNbuf() {
   }
 
 }
+
+// void MainFrame::ParLock() {
+//   cout << "ParLock: " << endl;
+//   crspar->SelectEnabled(false,"pre");
+// }
+
+// void MainFrame::ParUnLock() {
+//   cout << "ParUnLock: " << endl;
+// }
 
 void MainFrame::DoRWinit(EFileDialogMode nn) {
 

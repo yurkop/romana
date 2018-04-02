@@ -91,6 +91,7 @@ public:
   void Update();
   void EnableField(int nn, bool state);
   void AllEnabled(bool state);
+  void SelectEnabled(bool state, const char* text);
   TGWidget *FindWidget(void* p);
 
   ClassDef(ParDlg, 0)

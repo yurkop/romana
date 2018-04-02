@@ -83,6 +83,9 @@ public:
   void DoNbuf();
   void DoTab(Int_t num);
 
+  //void ParLock();
+  //void ParUnLock();
+
   bool TestFile();
 
   void EventInfo(Int_t, Int_t, Int_t, TObject*);

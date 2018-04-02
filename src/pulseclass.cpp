@@ -255,6 +255,44 @@ EventClass::EventClass() {
   //Analyzed=false;
 }
 
+void EventClass::Make_Mean_Event() {
+  for (int i=0;i<MAX_CH;i++) {
+    PulseClass pp = PulseClass();
+    pp.ptype=0;
+    pp.Chan=i;
+    pp.Counter=0;
+    for (UInt_t j=0;j<cpar.durWr[i];j++) {
+      pp.sData.push_back(0);
+    }
+    pulses.push_back(pp);
+  }
+
+  //cout << "Make_mean: " << pulses.size() << endl; 
+
+}
+
+void EventClass::Pulse_Mean_Add(PulseClass *pls) {
+
+  //cout << "Pulse_Mean_Add1: " << pulses.size() << " " << (int) pls->Chan << endl; 
+  if (pls->Chan >=chanPresent) {
+    cout << "Pulse_Mean_Add: wrong channel: " << (int) pls->Chan << endl; 
+  }
+  PulseClass *pp = &pulses.at(pls->Chan);
+
+  if (pp->sData.size()!=cpar.durWr[pls->Chan]) {
+    pp->sData.resize(cpar.durWr[pls->Chan]);
+    cout << "Pulse_Mean_Add: resize: " << pp->sData.size() << endl;     
+  }
+
+  for (UInt_t j=0;j<cpar.durWr[pls->Chan];j++) {
+    pp->sData[j]+=pls->sData[j];
+  }
+
+  pp->Counter++;
+  //cout << "Pulse_Mean_Add2: " << (int) pls->Chan << endl; 
+
+}
+
 void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 
   if (opt.b_pulse) {
@@ -311,35 +349,6 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   //   cout << endl;
   // }
   
-}
-
-void EventClass::Make_Mean_Event() {
-  for (int i=0;i<chanPresent;i++) {
-    PulseClass pp = PulseClass();
-    pp.ptype=0;
-    pp.Chan=i;
-    pp.Counter=0;
-    for (int j=0;j<cpar.durWr[i];j++) {
-      pp.sData.push_back(0);
-    }
-  }
-}
-
-void EventClass::Pulse_Mean_Add(PulseClass *pls) {
-
-  cout << "Pulse_Mean_Add1: " << pulses.size() << " " << (int) pls->Chan << endl; 
-  if (pls->Chan >=chanPresent) {
-    cout << "Pulse_Mean_Add: wrong channel: " << (int) pls->Chan << endl; 
-  }
-  PulseClass pp = pulses.at(pls->Chan);
-
-  for (int j=0;j<cpar.durWr[pls->Chan];j++) {
-    pp.sData[j]+=pls->sData[j];
-  }
-
-  pp.Counter++;
-  cout << "Pulse_Mean_Add2: " << pls->Chan << endl; 
-
 }
 
 void EventClass::Fill_Time_Extend(HMap* map) {

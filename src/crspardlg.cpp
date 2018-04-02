@@ -727,11 +727,13 @@ void ParDlg::EnableField(int nn, bool state) {
   case p_fnum:
   case p_txt: {
     TGTextEntry *te = (TGTextEntry*) pp->field;
+    //cout << "enable1: " << te->GetName() << " " << te->GetTitle() << endl;
     te->SetEnabled(state);
   }
     break;
   case p_chk: {
     TGCheckButton *te = (TGCheckButton*) pp->field;
+    //cout << "enable2: " << te->GetName() << " " << te->GetTitle() << endl;
     // if (state)
     //   te->SetState(kButtonUp);
     // else
@@ -741,6 +743,7 @@ void ParDlg::EnableField(int nn, bool state) {
     break;
   case p_cmb: {
     TGComboBox *te = (TGComboBox*) pp->field;
+    //cout << "enable3: " << te->GetName() << " " << te->GetTitle() << endl;
     te->SetEnabled(state);
   }
     break;
@@ -754,7 +757,34 @@ void ParDlg::EnableField(int nn, bool state) {
 void ParDlg::AllEnabled(bool state) {
 
   for (UInt_t i=0;i<Plist.size();i++) {
+    // pmap* pp = &Plist[i];
+    // TGFrame *te = (TGFrame*) pp->field;
+    // cout << te << endl;
+    // if (te)
+    //   cout << "enable: " << te->GetName() << endl;
     EnableField(i,state);
+  }
+}
+
+void ParDlg::SelectEnabled(bool state, const char* text) {
+
+  for (UInt_t i=0;i<Plist.size();i++) {
+
+     pmap* pp = &Plist[i];
+     switch (pp->type) {
+     case p_inum:
+     case p_fnum:
+     case p_txt: {
+       TGTextEntry *te = (TGTextEntry*) pp->field;
+       //cout << "enable3: " << te->GetName() << " " << te->GetTitle() << endl;
+       if (TString(te->GetName()).Contains(text)) {
+	 //cout << "enable1: " << te->GetName() << " " << te->GetTitle() << endl;
+	 te->SetEnabled(state);
+       }
+     }
+       break;
+     default: ;
+     } //switch
   }
 }
 
@@ -1023,57 +1053,6 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
 }
 
-/*
-void ParParDlg::AddLine_opt(TGCompositeFrame* frame, int width, void *x1, void *x2, 
-		      const char* tip1, const char* tip2, const char* label,
-		      TGNumberFormat::EStyle style, 
-			 //TGNumberFormat::EAttribute attr, 
-		      double min, double max)
-{
-  //double zz;
-  int id;
-
-  TGHorizontalFrame* fHor = new TGHorizontalFrame(frame, 10, 10);
-  frame->AddFrame(fHor, fL1);
-
-  TGNumberFormat::ELimit limits = TGNumberFormat::kNELNoLimits;
-  if (max!=0) {
-    limits = TGNumberFormat::kNELLimitMinMax;
-  }
-
-  id = Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(fHor, 0, 0, id, style, 
-					   TGNumberFormat::kNEAAnyNumber,
-			     limits,min,max);
-  DoMap(fNum1->GetNumberEntry(),x1,p_fnum,0);
-  fNum1->GetNumberEntry()->SetToolTipText(tip1);
-  fNum1->SetWidth(width);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this, "DoNum()");
-  fHor->AddFrame(fNum1, fL3);
-
-  if (x2!=NULL) {
-    id = Plist.size()+1;
-    TGNumberEntry* fNum2 = new TGNumberEntry(fHor, 0, 0, id, style, 
-					     TGNumberFormat::kNEAAnyNumber,
-					     limits,min,max);
-    DoMap(fNum2->GetNumberEntry(),x2,p_fnum,0);
-    fNum2->GetNumberEntry()->SetToolTipText(tip2);
-    fNum2->SetWidth(width);
-    fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this, "DoNum()");
-    fHor->AddFrame(fNum2, fL1);
-  }
-  else {
-    TGLabel* fskip = new TGLabel(fHor, "");
-    fskip->SetWidth(width);
-    fHor->AddFrame(fskip, fL3);
-  }
-  
-  TGLabel* fLabel = new TGLabel(fHor, label);
-  fHor->AddFrame(fLabel, fL3);
-
-}
-*/
-
 void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
 		      const char* tip1, const char* tip2, const char* label,
 		      TGNumberFormat::EStyle style1, 
@@ -1277,56 +1256,6 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Bool_t *b1,
   hfr1->AddFrame(fLabel,fL8);
 
 }
-
-/*
-void ParParDlg::Update() {
-
-  for (std::vector<pmap>::iterator pp = Plist.begin();
-       pp != Plist.end(); ++pp) {
-    //cout << (int) pp->type << endl;
-    switch (pp->type) {
-    case p_inum: {
-      TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      te->SetNumber(*(Int_t*) pp->data);
-    }
-      break;
-    case p_fnum: {
-      TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      te->SetNumber(*(Float_t*) pp->data);
-    }
-      break;
-    case p_chk: {
-      TGCheckButton *te = (TGCheckButton*) pp->field;
-      Bool_t bb = *(Bool_t*) pp->data;
-      te->SetState((EButtonState) bb);
-      TString str = TString(te->GetName());
-      if (str.Contains("write",TString::kIgnoreCase)) {
-	TGTextButton *but = (TGTextButton*) (pp+1)->field;
-	TGTextEntry *te2 = (TGTextEntry*) (pp+2)->field;	
-	te2->SetEnabled(bb);
-	but->SetEnabled(bb);
-      }
-    }
-      break;
-    case p_cmb: {
-      TGComboBox *te = (TGComboBox*) pp->field;
-      te->Select(*(ChDef*) pp->data,false);
-    }
-      break;
-    case p_txt: {
-      TGTextEntry *te = (TGTextEntry*) pp->field;
-      te->SetText((char*) pp->data);
-    }
-      break;
-    case p_open:
-      break;
-    default:
-      cout << "unknown pp->type: " << pp->type << endl;
-    } //switch
-  } //for
-
-}
-*/
 
 void ParParDlg::DoCheck() {
 
@@ -1845,6 +1774,9 @@ void CrsParDlg::AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
 			   TGNumberFormat::kNEAAnyNumber,
 			   limits,min,max);
 
+  char ss[100];
+  sprintf(ss,"%s%d",name,id);
+  fNum->SetName(ss);
   // if (apar == &cpar.preWr[1]) {
   //   cout << "prewr[0]: " << id << " " << fNum->GetNumLimits() << " " << min << " " << max << endl;
   // }

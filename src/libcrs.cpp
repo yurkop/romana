@@ -463,6 +463,8 @@ CRS::CRS() {
 
   //ev_max=2*opt.ev_min;
 
+  mean_event.Make_Mean_Event();
+
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     type_ch[i]=255;
   }
@@ -1399,8 +1401,6 @@ void CRS::DoExit()
 
 void CRS::DoReset() {
 
-  //mean_event.Make_Mean_Event();
-
   cout << "DoReset1: " << b_stop << endl;
 
   if (!b_stop) return;
@@ -1848,7 +1848,7 @@ void CRS::Show(bool force) {
   if (tm2-tm1>opt.tsleep || force) {
     tm1=tm2;
 
-    cout << "Show: " << endl;
+    //cout << "Show: " << endl;
 
     //cout << "show... " << info.fMemTotal << " " << info.fMemFree << " " << info.fMemUsed << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
 
@@ -1977,7 +1977,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     }
     else if (frmt==2) {
 
-      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
 	// cout << "32: ERROR Nsamp: "
 	//      << " " << (ipp->Counter & 0x0F)
 	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
@@ -1999,7 +1999,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     }
     else if (frmt==3) {
 
-      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
 	// cout << "32: ERROR Nsamp: "
 	//      << " " << (ipp->Counter & 0x0F)
 	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
@@ -2157,7 +2157,7 @@ void CRS::Decode2(UChar_t* buffer, int length) {
       ipp->Counter=data;
     }
     else if (frmt==5) {
-      if ((int)ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
 	// cout << "2: Nsamp error: " << ipp->sData.size()
 	//      << " " << (int) ch << " " << (int) ipp->Chan
 	//      << " " << idx2

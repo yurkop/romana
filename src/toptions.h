@@ -18,13 +18,13 @@ class Coptions: public TObject {
   // parameters of the crs32 or crs2 module
 
   //Int_t chtype[MAX_CH+ADDCH]; //channel type
-  Int_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
-  Int_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
-  Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
-  Int_t durWr[MAX_CH+ADDCH]; // total length N = 1…32763 (internally - multiple of 4)
-  Int_t kderiv[MAX_CH+ADDCH]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
+  UInt_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
+  UInt_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
+  UInt_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
+  UInt_t durWr[MAX_CH+ADDCH]; // total length N = 1…32763 (internally - multiple of 4)
+  UInt_t kderiv[MAX_CH+ADDCH]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t threshold[MAX_CH+ADDCH]; // T = –2048 .. +2047
-  Int_t adcGain[MAX_CH+ADDCH]; // G = 0..12
+  UInt_t adcGain[MAX_CH+ADDCH]; // G = 0..12
   Bool_t acdc[MAX_CH+ADDCH]; // AC-1; DC-0
   Bool_t inv[MAX_CH+ADDCH]; //0 - no inversion; 1 - inversion (individual)
   // 0 - only triggered channel is written; 
