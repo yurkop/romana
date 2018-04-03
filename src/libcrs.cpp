@@ -1524,10 +1524,17 @@ void CRS::DoFopen(char* oname, int popt) {
   else if (TString(ext).EqualTo(".gz",TString::kIgnoreCase)) {
     tp=0;
   }
+  else if (TString(ext).EqualTo(".raw",TString::kIgnoreCase)) {
+    tp=0;
+  }
+  //else if (TString(ext).EqualTo(".dec",TString::kIgnoreCase)) {
+  //tp=0;
+  //}
   else {
     cout << "Unknown file type (extension): " << Fname << endl;
     if (f_read) gzclose(f_read);
     f_read=0;
+    return;
   }
 
   if (f_read) gzclose(f_read);

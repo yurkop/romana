@@ -75,6 +75,8 @@ char pr_name[180];
 char maintitle[180];
 char rootname[180]="";
 
+struct stat statbuffer;
+const char* msg_exists = "Output file already exists. It will be overwritten.\nPress OK if you want to continue?";
 
 
 MyMainFrame *myM;
@@ -401,7 +403,7 @@ int main(int argc, char **argv)
     //cout << "batch99: " << endl;
 
     SplitFilename (string(fname),dir,name,ext);
-    dir.append("save/");
+    dir.append("root/");
 #ifdef LINUX
     mkdir(dir.c_str(),0755);
 #else
@@ -480,6 +482,12 @@ void SplitFilename (string str, string &folder, string &name, string &ext)
 void saveroot(const char *name) {
 
   TFile * tf = new TFile(name,"RECREATE");
+
+  if (!tf->IsOpen()) {
+    cout << "Can't open file: " << name << endl;
+    return;
+  }
+  //cout << "saveroot11: " << name << " " << tf << " " << tf->IsOpen() << endl;
 
   int col;
 
@@ -1176,37 +1184,20 @@ void MainFrame::DoOpen() {
 
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
 
-  //int fType;
-  //cout << "fstart" << endl;
-  //new MFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
-  //cout << "fstop" << endl;
-
   if (fi.fFilename != NULL) {
-    //printf("Open file: %s (dir: %s)\n", fi.fFilename, fi.fIniDir);
-    //dir = fi.fIniDir;
-
     crs->DoFopen(fi.fFilename,1);//1 - read toptions
 
     parpar->Update();
     crspar->Update();
     chanpar->Update();
 
-    /*
-    strcpy(fname,fi.fFilename);
-    printf("TGFile: %s\n",fname);
-
-    strcpy(maintitle,pr_name);
-    strcat(maintitle," ");
-    strcat(maintitle,fname);
-
-    SetWindowName(maintitle);
-    cnst_prev=0;
-    Buffer->NewFile();
-    fBar->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
-    UpdateStatus();
-    */
-
   }
+
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
 
 }
 
@@ -1342,12 +1333,9 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 
   //printf("TGFile:\n");
 
-  new TGFileDialog(gClient->GetRoot(), this, nn, &fi);
+  new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
 
   if (fi.fFilename != NULL) {
-    //printf("Open file: %s (dir: %s)\n", fi.fFilename, fi.fIniDir);
-    //dir = fi.fIniDir;
-
     strcpy(pname,fi.fFilename);
     printf("TGFile: %s\n",pname);
 
@@ -1366,33 +1354,35 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
       crspar->Update();
       chanpar->Update();
 
-      //delete fPar;
-      //fPar = new MParDlg(gClient->GetRoot(), fMain, "Parameters");
-      //fPar->Map();
-      //if (fChan!=NULL) {
-      //delete fChan;
-      //fChan = new MChanDlg(gClient->GetRoot(), fMain, "Channels");
-      //fChan->Map();
-      //}
     }
-    else {
-      //saveinit(pname);
-#ifdef LINUX
-      if (chdir(startdir)) {}
-#else
-      _chdir(startdir);
-#endif
-      gzFile ff = gzopen(pname,"wb");
-      if (ff) {
-	crs->SaveParGz(ff);
-	gzclose(ff);
+    else { //Save pars
+      Int_t retval=kMBOk;
+      if (!stat(fi.fFilename, &statbuffer)) {
+	new TGMsgBox(gClient->GetRoot(), this,
+		     "File exists",
+		     msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
       }
-      else {
-	cout << "Can't open file: " << pname << endl;
+
+      if (retval == kMBOk) {
+	//saveinit(pname);
+	gzFile ff = gzopen(pname,"wb");
+	if (ff) {
+	  crs->SaveParGz(ff);
+	  gzclose(ff);
+	}
+	else {
+	  cout << "Can't open file: " << pname << endl;
+	}
       }
-    }
+    } //else (save Pars)
     //newfile();
   }
+
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
 
 }
 
@@ -1487,6 +1477,12 @@ void MainFrame::DoReadRoot() {
     //DoDraw();
 
   }
+
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
 
 }
 
@@ -1642,14 +1638,14 @@ void MainFrame::DoSave() {
 
   SplitFilename (string(fname),dir,name,ext);
 
-  dir.append("save/");
+  dir.append("root/");
 #ifdef LINUX
   mkdir(dir.c_str(),0755);
 #else
   _mkdir(dir.c_str());
 #endif
 
-  s_name = dir;
+  //s_name = dir;
   s_name.append(name);
   s_name.append(".root");
 
@@ -1657,20 +1653,39 @@ void MainFrame::DoSave() {
   //strcpy(s_name,name);
   //strcat(s_name,".root");
 
+  //cout << "saveroot: " << dir << " " << s_name << endl;
+  
   fi.fFileTypes = dnd_types;
   fi.fIniDir    = StrDup(dir.c_str());
   fi.fFilename  = StrDup(s_name.c_str());
 
+  cout << "saveroot0: " << endl;
   //TGFileDialog *gfsave = 
-  new TGFileDialog(gClient->GetRoot(), this, kFDSave, &fi);
+  new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
 
-  //cout << gfsave << endl;
+  if (fi.fFilename) {
+    Int_t retval=kMBOk;
+    if (!stat(fi.fFilename, &statbuffer)) {
+      new TGMsgBox(gClient->GetRoot(), this,
+		   "File exists",
+		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
+    }
 
-  if (fi.fFilename == NULL) {
-    return;
+    //cout << "saveroot2: " << fi.fFilename << endl;
+    cout << "saveroot1: " << endl;
+
+    if (retval == kMBOk) {
+      cout << "saveroot2: " << endl;
+      saveroot(fi.fFilename);
+      cout << "saveroot3: " << endl;
+    }
   }
 
-  saveroot(fi.fFilename);
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
 
 }
 
@@ -1875,12 +1890,10 @@ bool MainFrame::TestFile() {
   //EMsgBoxIcon icontype = kMBIconQuestion;
   //EMsgBoxIcon icontype = kMBIconAsterisk;
   //Int_t buttons = kMBOk|kMBCancel;
-  const char* msg_exists = "Output file already exists.\nIt will be overwritten.\nPress OK if you want to continue?";
 
-  struct stat buffer;
-
-  if ((opt.raw_write && !stat(opt.fname_raw, &buffer)) ||
-      (opt.dec_write && !stat(opt.fname_dec, &buffer))) {
+  if ((opt.raw_write && !stat(opt.fname_raw, &statbuffer)) ||
+      (opt.dec_write && !stat(opt.fname_dec, &statbuffer)) ||
+      (opt.root_write && !stat(opt.fname_root, &statbuffer))) {
     Int_t retval;
     //new ColorMsgBox(gClient->GetRoot(), this,
     new TGMsgBox(gClient->GetRoot(), this,

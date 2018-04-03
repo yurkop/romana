@@ -484,7 +484,7 @@ void ParDlg::SetTxt(pmap pp, const char* txt) {
 void ParDlg::DoTxt() {
 
   const char *r_ext[] = {".raw",".dec",".root"};
-  const int len[] = {4,4,5};
+  //const int len[] = {4,4,5};
   string dir, name, ext;
 
   TGTextEntry *te = (TGTextEntry*) gTQSender;
@@ -514,8 +514,10 @@ void ParDlg::DoTxt() {
       ss.append(r_ext[i2]);
     }
 
+    int pos = te->GetCursorPosition();
     te->SetText(ss.c_str(),false);
-    te->SetCursorPosition(ss.length()-len[i2]);
+    //te->SetCursorPosition(ss.length()-len[i2]);
+    te->SetCursorPosition(pos);
     //cout << ss.length() << endl;
   }
 
