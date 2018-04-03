@@ -29,8 +29,11 @@ HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
   //memcpy(cut_index,cuts,sizeof(cut_index));
   cut_index = cuts;
   //cout << "index: " << (void*) cuts << " " << (void*) cut_index << endl;
-  SetName(hist->GetName());
   SetTitle(dname);
+  if (hist)
+    SetName(hist->GetName());
+  else
+    SetName(dname);
   memset(h_cuts,0,sizeof(h_cuts));
   //list_cuts = new TList();
   //list_h_cuts = new TList();
@@ -108,6 +111,7 @@ HClass::HClass()
   //Make_hist();
   map_list=NULL;
   hist_list=NULL;
+  dir_list=NULL;
 }
 
 HClass::~HClass()
@@ -138,6 +142,9 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
   char name2[100];
   char title2[100];
 
+  // HMap* dmap = new HMap(dname,NULL,NULL,NULL,NULL);
+  // dir_list->Add(dmap);
+
   for (int i=0;i<MAX_CH;i++) {
     //sprintf(name,"ampl_%02d",i);
     //sprintf(title,"ampl_%02d;Channel;Counts",i);
@@ -162,6 +169,9 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
 
   char name2[100];
   char title2[100];
+
+  // HMap* dmap = new HMap(dname,NULL,NULL,NULL,NULL);
+  // dir_list->Add(dmap);
 
   for (int i=0;i<MAX_CH;i++) {
     NameTitle(name2,title2,i,0,name,title);
@@ -188,6 +198,9 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
 		     Char_t *cuts) {
 
   if (!bb) return;
+
+  // HMap* dmap = new HMap(dname,NULL,NULL,NULL,NULL);
+  // dir_list->Add(dmap);
 
   char name2[100];
   char title2[100];
@@ -333,6 +346,16 @@ void HClass::Make_hist() {
   map_list->SetOwner(true);
 
   //int cc=0;
+
+  //HMap* dmap = new HMap("WORK",NULL,NULL,NULL,NULL);
+  //dir_list->Add(dmap);
+
+  // for (int cc=0;cc<opt.ncuts;cc++) {
+  //   char cutname[100];
+  //   sprintf(cutname,"WORK_cut%d",cc+1);
+  //   dmap = new HMap(cutname,NULL,NULL,NULL,NULL);
+  //   dir_list->Add(dmap);
+  // }
 
   Make_1d("Amplitude","ampl",";Channel;Counts",m_ampl,opt.amp_bins,
   	  opt.amp_min,opt.amp_max,opt.b_amp,opt.s_amp,opt.w_amp,opt.cut_amp);

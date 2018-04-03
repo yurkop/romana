@@ -2,6 +2,7 @@
 #include "toptions.h"
 #include <TClass.h>
 #include <TSystem.h>
+#include <cstdlib>
 
 using namespace std;
 

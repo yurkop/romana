@@ -69,6 +69,7 @@ class HClass {
 
   TList* map_list;
   TList* hist_list;
+  TList* dir_list;
 
   Long64_t T_prev[MAX_CH];
 

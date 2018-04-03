@@ -407,7 +407,6 @@ void EventClass::Fill1d(Bool_t first, HMap* map, Float_t x) {
 
 void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
 
-  return;
   //HMap* map = hcl->m_pulse[n];
   int ch = pls->Chan;
   
@@ -424,10 +423,19 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
       cout << "Pulse_Mean: resize: " << (int) pls->Chan
 	   << " " << map->hst->GetNbinsX() << endl;     
     }
+
+    TH1F* hh = (TH1F*) map->hst;
+    Float_t* arr = hh->GetArray();
+    int nent=map->hst->GetEntries();
     for (UInt_t j=0;j<cpar.durWr[ch];j++) {
+      Float_t val = arr[j+1]*nent+pls->sData[j];
+      arr[j+1]=val/(nent+1);
       //map->hst->SetBinContent(j+1,pls->sData[j]/pls->Counter);
-      map->hst->AddBinContent(j+1,pls->sData[j]);
+      //map->hst->AddBinContent(j+1,pls->sData[j]);
     }
+    map->hst->SetEntries(nent+1);
+    // cout << "Pulse_Mean: " << (int) pls->Chan << " "
+    // 	 << map->hst->GetEntries() << endl;  
   } //if first
 
   else if (*(map->wrk)) {
@@ -507,9 +515,9 @@ void EventClass::FillHist(Bool_t first) {
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
 
-    // if (opt.b_pulse) {
-    //   Fill_Mean_Pulse(first,hcl->m_pulse[ch],&pulses[i]);
-    // }
+    if (opt.b_pulse) {
+      Fill_Mean_Pulse(first,hcl->m_pulse[ch],&pulses[i]);
+    }
 
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
       peak_type* pk = &pulses[i].Peaks[j];

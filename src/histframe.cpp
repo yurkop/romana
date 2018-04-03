@@ -408,7 +408,10 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
     fListTree->CheckItem(item,*map->chk);
   }
   else {
-    item=fListTree->AddItem(parent, string, open, closed, true);
+    //cout << "Item: " << string << endl;
+    HMap* map = new HMap(string,NULL,NULL,NULL,NULL);
+    hcl->dir_list->Add(map);
+    item=fListTree->AddItem(parent, string, map, open, closed, true);
     item->SetDNDTarget(kTRUE);
   }
   return item;
@@ -430,22 +433,33 @@ void HistFrame::Make_Ltree() {
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir=0;
   TGListTreeItem *item=0;
+  HMap* map;
   //TGListTreeItem *item;
   //int col[MAXCUTS];
   //memset(col,2,sizeof(col));
 
   //YKYKYK hcl->Make_cuts();
 
+  if (hcl->dir_list)
+    delete hcl->dir_list;
+  hcl->dir_list = new TList();
+  hcl->dir_list->SetName("dir_list");
+  hcl->dir_list->SetOwner(true);
+
   //fListTree->AddRoot("Histograms");
+  //map = new HMap("WORK",NULL,NULL,NULL,NULL);
+  //hcl->dir_list->Add(map);
   iWork = Item_Ltree(iroot, "WORK",0,0,0);
   for (int cc=0;cc<opt.ncuts;cc++) {
     sprintf(cutname,"WORK_cut%d",cc+1);
+    //map = new HMap(cutname,NULL,NULL,NULL,NULL);
+    //hcl->dir_list->Add(map);
     iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
   }
 
   next.Reset();
   while ( (obj=(TObject*)next()) ) {
-    HMap* map = (HMap*) obj;
+    map = (HMap*) obj;
     TString title = TString(map->GetTitle());
     //cout << "Title: " << title << " " << endl;
     if (!fListTree->FindChildByName(0,title)) {
@@ -476,6 +490,11 @@ void HistFrame::Make_Ltree() {
 
   }
 
+  // TIter next2(hcl->dir_list);
+  // TObject* obj2=0;
+  // while ( (obj2=(TObject*)next2()) ) {
+  //   cout << "Make_Ltree: " << obj2->GetName() << endl;
+  // }
 
   //fill fCutTree
   for (int i=0;i<opt.ncuts;i++) {
@@ -671,7 +690,24 @@ void HistFrame::Clone_Hist(HMap* map) {
 
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
-  //cout << "DoCheck: " << obj << " " << check << endl;
+  TGListTreeItem *item = 0;
+
+  item = (TGListTreeItem*) obj;
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+
+  cout << "DoCheck: " << idir << " " << obj->GetName() << " " << check << endl;
+
+  while (idir) {
+    if (!TString(idir->GetText()).Contains("WORK")) {
+      if ( (item=fListTree->FindChildByName(idir,obj->GetName())) ) {
+	fListTree->CheckItem(item,check);
+      }
+    }
+    idir = idir->GetNextSibling();
+  }
+
+
+
   /*
   if (!obj) {
     TGListTreeItem *idir = fListTree->GetFirstItem();
@@ -1240,6 +1276,8 @@ void HistFrame::Update()
     //   //hlist->Add((TObject*)idir->GetUserData());
     // }
     TGListTreeItem *item = idir->GetFirstChild();
+    // cout << "HiFrm:Update: " << ((HMap*) item->GetUserData())->GetName()
+    // 	 << endl;
     while (item) {
       if (item->GetUserData()) {
 	HMap* map = (HMap*) item->GetUserData();
