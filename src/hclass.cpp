@@ -181,6 +181,7 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
     Float_t bins = 1;
 
     int nn=bins*(max-min);
+    //cout << "Hist: " << i << " " << nn << " " << min << " " << max << endl;
     TH1F* hh=new TH1F(name2,title2,nn,min,max);
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;

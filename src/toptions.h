@@ -20,7 +20,7 @@ class Coptions: public TObject {
   //Int_t chtype[MAX_CH+ADDCH]; //channel type
   UInt_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
   UInt_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
-  UInt_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
+  Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
   UInt_t durWr[MAX_CH+ADDCH]; // total length N = 1…32763 (internally - multiple of 4)
   UInt_t kderiv[MAX_CH+ADDCH]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t threshold[MAX_CH+ADDCH]; // T = –2048 .. +2047
