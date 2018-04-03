@@ -176,8 +176,8 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
   for (int i=0;i<MAX_CH;i++) {
     NameTitle(name2,title2,i,0,name,title);
 
-    Float_t min = 0;
-    Float_t max = cpar.durWr[i];
+    Float_t min = -cpar.preWr[i];
+    Float_t max = cpar.durWr[i]-cpar.preWr[i];
     Float_t bins = 1;
 
     int nn=bins*(max-min);

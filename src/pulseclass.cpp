@@ -405,6 +405,18 @@ void EventClass::Fill1d(Bool_t first, HMap* map, Float_t x) {
   }
 }
 
+void EventClass::Fill_Mean1(TH1F* hh, PulseClass* pls, UInt_t nbins) {
+  Float_t* arr = hh->GetArray();
+  int nent=hh->GetEntries();
+  for (UInt_t j=0;j<nbins;j++) {
+    Float_t val = arr[j+1]*nent+pls->sData[j];
+    arr[j+1]=val/(nent+1);
+  }
+  hh->SetEntries(nent+1);
+  // cout << "Pulse_Mean: " << (int) pls->Chan << " "
+  // 	 << map->hst->GetEntries() << endl;  
+}
+
 void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
 
   //HMap* map = hcl->m_pulse[n];
@@ -419,23 +431,14 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
   if (first) {
     //cout << "fill_mean: " << map->hst->GetName() << endl;
     if (map->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
-      map->hst->SetBins(cpar.durWr[ch],0,cpar.durWr[ch]);
+      map->hst->
+	SetBins(cpar.durWr[ch],-cpar.preWr[ch],cpar.durWr[ch]-cpar.preWr[ch]);
       cout << "Pulse_Mean: resize: " << (int) pls->Chan
 	   << " " << map->hst->GetNbinsX() << endl;     
     }
 
-    TH1F* hh = (TH1F*) map->hst;
-    Float_t* arr = hh->GetArray();
-    int nent=map->hst->GetEntries();
-    for (UInt_t j=0;j<cpar.durWr[ch];j++) {
-      Float_t val = arr[j+1]*nent+pls->sData[j];
-      arr[j+1]=val/(nent+1);
-      //map->hst->SetBinContent(j+1,pls->sData[j]/pls->Counter);
-      //map->hst->AddBinContent(j+1,pls->sData[j]);
-    }
-    map->hst->SetEntries(nent+1);
-    // cout << "Pulse_Mean: " << (int) pls->Chan << " "
-    // 	 << map->hst->GetEntries() << endl;  
+    Fill_Mean1((TH1F*)map->hst, pls, cpar.durWr[ch]);
+    
   } //if first
 
   else if (*(map->wrk)) {
@@ -445,14 +448,12 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
 	//cout << "Fill_Mean: " << Nevt << endl;
 
 	if (map->h_cuts[i]->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
-	  map->h_cuts[i]->hst->SetBins(cpar.durWr[ch],0,cpar.durWr[ch]);
-	}
-	for (UInt_t j=0;j<cpar.durWr[ch];j++) {
-	  //map->h_cuts[i]->hst->SetBinContent(j+1,pls->sData[j]/pls->Counter);
-	  map->h_cuts[i]->hst->AddBinContent(j+1,pls->sData[j]);
+	  map->h_cuts[i]->hst->
+	    SetBins(cpar.durWr[ch],-cpar.preWr[ch],cpar.durWr[ch]-cpar.preWr[ch]);
 	}
 
-	//map->h_cuts[i]->hst->Fill(x);
+	Fill_Mean1((TH1F*)map->h_cuts[i]->hst, pls, cpar.durWr[ch]);
+
       }
     }
   }
