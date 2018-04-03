@@ -463,7 +463,7 @@ CRS::CRS() {
 
   //ev_max=2*opt.ev_min;
 
-  mean_event.Make_Mean_Event();
+  //mean_event.Make_Mean_Event();
 
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     type_ch[i]=255;
@@ -1758,7 +1758,7 @@ void CRS::FAnalyze(bool nobatch) {
   trd_ana->Join();
   trd_ana->Delete();
 
-  //cout << "batch06: " << hcl->h_ampl[0][0]->Integral() << endl;
+  cout << "batch06: " << endl;
   //gSystem->Sleep(opt.tsleep);
   if (nobatch) {
     EvtFrm->Clear();
@@ -1810,7 +1810,7 @@ void CRS::DoNBuf(int nb) {
   //cout << "aaa2" << endl;
   trd_ana->Join();
   trd_ana->Delete();
-  //cout << "aaa3" << endl;
+  cout << "batch06a: " << endl;
 
   EvtFrm->Clear();
   EvtFrm->Pevents = &Levents;

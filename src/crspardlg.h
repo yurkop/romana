@@ -150,6 +150,7 @@ public:
   void AddOpt(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
   void DoCheck();
+  void DoCheck2();
   //void Update();
 
   ClassDef(ParParDlg, 0)

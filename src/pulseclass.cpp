@@ -255,6 +255,7 @@ EventClass::EventClass() {
   //Analyzed=false;
 }
 
+/*
 void EventClass::Make_Mean_Event() {
   for (int i=0;i<MAX_CH;i++) {
     PulseClass pp = PulseClass();
@@ -279,11 +280,17 @@ void EventClass::Pulse_Mean_Add(PulseClass *pls) {
   }
   PulseClass *pp = &pulses.at(pls->Chan);
 
-  if (pp->sData.size()!=cpar.durWr[pls->Chan]) {
+  if (pp->sData.size() != cpar.durWr[pls->Chan]) {
     pp->sData.resize(cpar.durWr[pls->Chan]);
-    cout << "Pulse_Mean_Add: resize: " << pp->sData.size() << endl;     
+    cout << "Pulse_Mean_Add: resize: " << (int) pls->Chan
+	 << " " << pp->sData.size() << endl;     
   }
 
+  if (pls->sData.size()  != cpar.durWr[pls->Chan]) {
+    cout << "Error: " << (int) pls->Chan << " " << pls->Counter
+	 << " " << pls->sData.size() << endl;
+    return;
+  }
   for (UInt_t j=0;j<cpar.durWr[pls->Chan];j++) {
     pp->sData[j]+=pls->sData[j];
   }
@@ -292,12 +299,12 @@ void EventClass::Pulse_Mean_Add(PulseClass *pls) {
   //cout << "Pulse_Mean_Add2: " << (int) pls->Chan << endl; 
 
 }
-
+*/
 void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 
-  if (opt.b_pulse) {
-    crs->mean_event.Pulse_Mean_Add(pls);
-  }
+  // if (opt.b_pulse) {
+  //   crs->mean_event.Pulse_Mean_Add(pls);
+  // }
   
   for (UInt_t i=0;i<pulses.size();i++) {
     if (pls->Chan == pulses[i].Chan &&
@@ -390,10 +397,58 @@ void EventClass::Fill1d(Bool_t first, HMap* map, Float_t x) {
   }
   else if (*(map->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
-      if (hcl->cut_flag[i+1])
-	map->h_cuts[i]->hst->Fill(x);      
+      if (hcl->cut_flag[i+1]) {
+	//cout << "Fill1d: " << Nevt << " " << x << endl;
+	map->h_cuts[i]->hst->Fill(x);
+      }
     }
   }
+}
+
+void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
+
+  return;
+  //HMap* map = hcl->m_pulse[n];
+  int ch = pls->Chan;
+  
+  if (pls->sData.size() < cpar.durWr[pls->Chan]) {
+    cout << "Error: " << (int) pls->Chan << " " << pls->Counter
+	 << " " << pls->sData.size() << endl;
+    return;
+  }
+
+  if (first) {
+    //cout << "fill_mean: " << map->hst->GetName() << endl;
+    if (map->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
+      map->hst->SetBins(cpar.durWr[ch],0,cpar.durWr[ch]);
+      cout << "Pulse_Mean: resize: " << (int) pls->Chan
+	   << " " << map->hst->GetNbinsX() << endl;     
+    }
+    for (UInt_t j=0;j<cpar.durWr[ch];j++) {
+      //map->hst->SetBinContent(j+1,pls->sData[j]/pls->Counter);
+      map->hst->AddBinContent(j+1,pls->sData[j]);
+    }
+  } //if first
+
+  else if (*(map->wrk)) {
+    for (int i=0;i<opt.ncuts;i++) {
+      if (hcl->cut_flag[i+1]) {
+
+	//cout << "Fill_Mean: " << Nevt << endl;
+
+	if (map->h_cuts[i]->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
+	  map->h_cuts[i]->hst->SetBins(cpar.durWr[ch],0,cpar.durWr[ch]);
+	}
+	for (UInt_t j=0;j<cpar.durWr[ch];j++) {
+	  //map->h_cuts[i]->hst->SetBinContent(j+1,pls->sData[j]/pls->Counter);
+	  map->h_cuts[i]->hst->AddBinContent(j+1,pls->sData[j]);
+	}
+
+	//map->h_cuts[i]->hst->Fill(x);
+      }
+    }
+  }
+
 }
 
 void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
@@ -451,6 +506,10 @@ void EventClass::FillHist(Bool_t first) {
 
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
+
+    // if (opt.b_pulse) {
+    //   Fill_Mean_Pulse(first,hcl->m_pulse[ch],&pulses[i]);
+    // }
 
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
       peak_type* pk = &pulses[i].Peaks[j];
@@ -536,7 +595,7 @@ void EventClass::FillHist(Bool_t first) {
 	  }
 	  hcl->T_prev[ch]=tm;
 	}
-      } // only for 1st peak
+      } // if (j==0) only for 1st peak
 
     } //for peaks...
 

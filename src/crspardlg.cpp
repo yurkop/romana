@@ -89,6 +89,7 @@ extern Coptions cpar;
 extern Toptions opt;
 extern int chanPresent;
 extern MyMainFrame *myM;
+extern HistFrame* HiFrm;
 
 // TGLayoutHints* fL0;
 // TGLayoutHints* fL1;
@@ -1241,7 +1242,7 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Bool_t *b1,
   sprintf(name,"b_pulse%d",id);
   chk_hist->SetName(name);
   DoMap(chk_hist,b1,p_chk,0);
-  chk_hist->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheck2()");
   hfr1->AddFrame(chk_hist,fL3);
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
@@ -1274,7 +1275,12 @@ void ParParDlg::DoCheck() {
     //cout << i << " " << te2->GetNumber() << endl;
     te2->SetState(state);
   }
-  
+  HiFrm->HiReset();
+}
+
+void ParParDlg::DoCheck2() {
+  DoChk();
+  HiFrm->HiReset();
 }
 
 //------ ChanParDlg -------

@@ -134,11 +134,12 @@ class EventClass { //event of pulses
  public:
   EventClass();
   virtual ~EventClass() {};
-  void Make_Mean_Event();
-  void Pulse_Mean_Add(PulseClass *newpulse);
+  //void Make_Mean_Event();
+  //void Pulse_Mean_Add(PulseClass *newpulse);
   void Pulse_Ana_Add(PulseClass *newpulse);
   void Fill_Time_Extend(HMap* map);
   void Fill1d(Bool_t first, HMap* map, Float_t x);
+  void Fill_Mean_Pulse(Bool_t first, HMap* map,  PulseClass* pp);
   void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);
   void FillHist(Bool_t first);
   void FillHist_old();
