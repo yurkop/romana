@@ -98,8 +98,13 @@ class Toptions: public TObject {
 
   //Bool_t chinv[MAX_CH+1];
 
-  Int_t sel_hdiv; //number of divisions in histframe
-  Int_t icheck; //first histogram to plot among checked
+  //Int_t sel_hdiv; //number of divisions in histframe
+
+  //histframe vars
+  Bool_t b_stack; // draw stack
+  Short_t xdiv; // ndiv on X
+  Short_t ydiv; // ndiv on Y
+  Short_t icheck; //first histogram to plot among checked
   
   Bool_t decode;
   Bool_t analyze;

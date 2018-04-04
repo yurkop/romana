@@ -39,8 +39,9 @@ class HistFrame: public TGCompositeFrame {
 
    TGCheckButton* chklog;
    TGCheckButton* chkgcuts;
-   static const int NR=7;
-   TGRadioButton *Rb[NR];
+   //static const int NR=7;
+   //TGRadioButton *Rb[NR];
+   TGRadioButton *Rb[2];
 
    TGTextEntry* tForm;
 
@@ -54,8 +55,8 @@ class HistFrame: public TGCompositeFrame {
    //TLine line;
 
    int ndiv;
-   int xdiv;
-   int ydiv;
+   //int xdiv;
+   //int ydiv;
    TObject *padmap[MAX_PADS];
 
  public:
@@ -72,7 +73,8 @@ class HistFrame: public TGCompositeFrame {
    void DoCheck(TObject* obj, Bool_t check);
    void DoLog();
    void DoKey(TGListTreeItem* entry, UInt_t keysym);
-   void SelectDiv(int nn);
+   //void SelectDiv(int nn);
+   void DoNum();
    void DoRadio();
    void DoButton();
    void AddCutG(TPolyLine *pl, TObject* hobj);
@@ -86,6 +88,7 @@ class HistFrame: public TGCompositeFrame {
    void HiReset();
    void Update();
    void DrawHist();
+   void DrawStack();
    void ReDraw();
    void DataDropped(TGListTreeItem *, TDNDData *data);
 

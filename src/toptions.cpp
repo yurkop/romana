@@ -146,6 +146,11 @@ Toptions::Toptions() {
   mult1=1;
   mult2=32;
 
+  xdiv=2;
+  ydiv=2;
+  b_stack=false;
+  icheck=0;
+
   seltab=0;
 
 

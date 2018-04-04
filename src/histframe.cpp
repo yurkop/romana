@@ -50,6 +50,9 @@ TGLayoutHints* fLay2 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
 TGLayoutHints* fLay3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,10,10,0,0);
 TGLayoutHints* fLay4 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,0,0,0,0);
 TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
+TGLayoutHints* fLay51 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,0,0,0);
+TGLayoutHints* fLay52 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
+TGLayoutHints* fLay53 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,2,0,0);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsTop,10,10,0,2);
 //TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
 TGLayoutHints* fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
@@ -176,11 +179,14 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   gline[0].SetLineColor(2);
   gline[1].SetLineColor(2);
 
- const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4","8x8"};
+  //const char* tRad[NR]={"1x1","2x2","3x2","4x2","4x4","8x4","8x8"};
 
-  xdiv=1;
-  ydiv=1;
-  ndiv=1;
+  //opt.xdiv=2;
+  //opt.ydiv=2;
+  // if (opt.b_stack)
+  //   ndiv=1;
+  // else
+  //   ndiv=opt.xdiv*opt.ydiv;
 
   hlist=new TList();
   //hlist2.clear();
@@ -201,8 +207,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGHorizontalFrame      *fHor1; //contains canvas and list of histograms
   TGHorizontalFrame      *fHor2; //contains buttons etc
 
-  TGVerticalFrame *fVer[NR];
-  TGLabel *flab[NR];
+  //TGVerticalFrame *fVer[NR];
+  //TGLabel *flab[NR];
 
   TGShutterItem *item;
   TGCompositeFrame *container;
@@ -296,22 +302,46 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //TGListTree* fListTree2 = new TGListTree(gCanvas, kHorizontalFrame);
 
-
-  for (int i=0;i<NR;i++) {
-    fVer[i] = new TGVerticalFrame(fHor2, 10, 10);
-    flab[i] = new TGLabel(fVer[i], tRad[i]);
-    Rb[i]= new TGRadioButton(fVer[i],"",i+1);
+  const char* rlab[2] = {"Stack","DX/DY:"};
+  for (int i=0;i<2;i++) {
+    Rb[i] = new TGRadioButton(fHor2,rlab[i],i+1);
+    fHor2->AddFrame(Rb[i], fLay5);
     Rb[i]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
-    fHor2->AddFrame(fVer[i], fLay3);
-    fVer[i]->AddFrame(Rb[i], fLay4);
-    fVer[i]->AddFrame(flab[i], fLay4);
   }
 
-  // cout << "1111c7" << endl;
-  // int sel = abs(opt.sel_hdiv)%NR;
-  // SelectDiv(sel);
-  // Rb[sel]->Clicked();
-  // cout << "1111c8" << endl;
+  int nn = (int) opt.b_stack;
+  Rb[1-nn]->SetState(kButtonDown);
+  Rb[nn]->SetState(kButtonUp);
+
+  //TGLabel* fLabel1 = new TGLabel(fHor2, "DX/DY:");
+  //TGLabel* fLabel2 = new TGLabel(fHor2, "DivY:");
+
+  TGNumberEntry* fNum[2];
+  int div[2] = {opt.xdiv,opt.ydiv};
+  for (int i=0;i<2;i++) {
+    fNum[i] = new TGNumberEntry(fHor2, div[i], 2, i+10,
+				TGNumberFormat::kNESInteger,
+				TGNumberFormat::kNEAAnyNumber,
+				TGNumberFormat::kNELLimitMinMax,
+				1,8);
+    fNum[i]->GetNumberEntry()->Connect("TextChanged(char*)", "HistFrame", this, "DoNum()");
+  }
+
+  fHor2->AddFrame(fNum[0], fLay51);
+  fHor2->AddFrame(fNum[1], fLay52);
+
+  cout << "histframe: " << opt.xdiv << endl;
+
+  // for (int i=0;i<NR;i++) {
+  //   fVer[i] = new TGVerticalFrame(fHor2, 10, 10);
+  //   flab[i] = new TGLabel(fVer[i], tRad[i]);
+  //   Rb[i]= new TGRadioButton(fVer[i],"",i+1);
+  //   Rb[i]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
+  //   fHor2->AddFrame(fVer[i], fLay8);
+  //   fVer[i]->AddFrame(Rb[i], fLay4);
+  //   fVer[i]->AddFrame(flab[i], fLay4);
+  // }
+
 
   but = new TGTextButton(fHor2," < ",1);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
@@ -403,7 +433,7 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
   TGListTreeItem *item;
   if (userData) {
     item=fListTree->AddItem(parent, string, userData, open, closed, true);
-    cout << "AddItem: " << item << endl;
+    //cout << "AddItem: " << item << endl;
     item->SetDNDSource(kTRUE);
     HMap* map = (HMap*) userData;
     fListTree->CheckItem(item,*map->chk);
@@ -611,22 +641,23 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
     else { //not work*
       // add items
       //cout << "nowork: " << item << endl;
-      TObject* hh = (TObject*) item->GetUserData();
-      strcpy(hname,hh->GetName());
-      const TGPicture *pic = item->GetPicture();
-      Item_Ltree(iWork, hh->GetName(), hh, pic, pic);
 
-      HMap* map = (HMap*) item->GetUserData();
-      *map->wrk=true;
+      TGListTreeItem *item2 =
+	fListTree->FindChildByData(iWork, item->GetUserData());
+      if (!item2) {
+	//cout << "Item2: " << item2 << endl;
 
-      hcl->Clone_Hist(map);
-      Clone_Ltree(map);
-      // for (int cc=0;cc<opt.ncuts;cc++) {
-      // 	sprintf(hname2,"%s_cut%d",hname,cc+1);
-      // 	hh = gROOT->FindObject(hname2);
-      // 	//cout << "cc: " << cc << " " << hname2 << " " << hh << endl;
-      // 	Item_Ltree(iWork_cut[cc], hh->GetName(), hh, pic, pic);
-      // }
+	TObject* hh = (TObject*) item->GetUserData();
+	strcpy(hname,hh->GetName());
+	const TGPicture *pic = item->GetPicture();
+	Item_Ltree(iWork, hh->GetName(), hh, pic, pic);
+
+	HMap* map = (HMap*) item->GetUserData();
+	*map->wrk=true;
+
+	hcl->Clone_Hist(map);
+	Clone_Ltree(map);
+      }
     }
   }
   
@@ -761,6 +792,7 @@ void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym) {
   cout << "key: " << entry << " " << keysym << endl;
 }
 
+/*
 void HistFrame::SelectDiv(int nn)
 {
   switch (nn) {
@@ -806,7 +838,9 @@ void HistFrame::SelectDiv(int nn)
   }
 
 }
+*/
 
+/*
 void HistFrame::DoRadio()
 {
   TGButton *btn = (TGButton *) gTQSender;
@@ -830,6 +864,47 @@ void HistFrame::DoRadio()
 
   //SelectDiv(id);
 
+}
+*/
+
+void HistFrame::DoRadio()
+{
+  TGButton *btn = (TGButton *) gTQSender;
+  Int_t id = btn->WidgetId();
+
+  if (id==1) {
+    Rb[0]->SetState(kButtonDown);
+    Rb[1]->SetState(kButtonUp);
+    opt.b_stack=true;
+  }
+  else {
+    Rb[0]->SetState(kButtonUp);
+    Rb[1]->SetState(kButtonDown);
+    opt.b_stack=false;
+  }
+  
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
+}
+
+void HistFrame::DoNum()
+{
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  if (id==10) {
+    opt.xdiv=te->GetNumber();
+  }
+  else {
+    opt.ydiv=te->GetNumber();
+  }
+  
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
 }
 
 void HistFrame::DoButton()
@@ -1242,9 +1317,9 @@ void HistFrame::HiReset()
   */
   //cout << "update1" << endl;
 
-  int sel = abs(opt.sel_hdiv)%NR;
-  SelectDiv(sel);
-  Rb[sel]->Clicked();
+  // int sel = abs(opt.sel_hdiv)%NR;
+  // SelectDiv(sel);
+  // Rb[sel]->Clicked();
 
   Update();
 
@@ -1260,8 +1335,16 @@ void HistFrame::Update()
   //cout << "HiFrm::Update()" << endl;
 
   Hmut.Lock();
-  int sel = abs(opt.sel_hdiv)%NR;
-  SelectDiv(sel);
+
+  //xdiv=2;
+  //ydiv=2;
+  if (opt.b_stack)
+    ndiv=1;
+  else
+    ndiv=opt.xdiv*opt.ydiv;
+
+  //int sel = abs(opt.sel_hdiv)%NR;
+  //SelectDiv(sel);
   chklog->SetState((EButtonState) opt.b_logy);
   chkgcuts->SetState((EButtonState) opt.b_gcuts);
 
@@ -1330,14 +1413,21 @@ void HistFrame::Update()
   //cout << "HiFrm::Update()2" << endl;
 }
 
-void HistFrame::DrawHist()
-{
+void HistFrame::DrawStack() {
+  cout << "DrawStack: " << endl;
+}
+
+void HistFrame::DrawHist() {
   HMap* map;
 
   TCanvas *cv=fEc->GetCanvas();
   cv->Clear();
   memset(padmap,0,sizeof(padmap));
-  cv->Divide(xdiv,ydiv);
+  if (opt.b_stack)
+    cv->Divide(1,1);
+  else
+    cv->Divide(opt.xdiv,opt.ydiv);
+
   int nn=1;
   int ii=0;
   TIter next(hlist);
