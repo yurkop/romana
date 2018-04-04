@@ -78,7 +78,6 @@ public:
   void SetChk(pmap pp, Bool_t num);
   void SetCombo(pmap pp, Int_t num);
   void SetTxt(pmap pp, const char* txt);
-  void DoNum_SetBuf();
   void DoNum();
   void DoChk();
   void DoCombo();
@@ -118,6 +117,8 @@ protected:
   const char* label;
   //void *x1,*x2;
 
+  int id_usb;
+
   TGNumberFormat::EStyle k_int;
   TGNumberFormat::EStyle k_r0;
   TGNumberFormat::EStyle k_r1;
@@ -149,6 +150,7 @@ public:
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
+  void DoNum_SetBuf();
   void DoCheck();
   void DoCheck2();
   //void Update();

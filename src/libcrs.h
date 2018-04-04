@@ -115,7 +115,7 @@ RQ_OBJECT("CRS")
   struct libusb_transfer *transfer[MAXTRANS];
 
   //timeval t_start, t_stop;
-  Long64_t T_start; //start of the acuisition/analysis
+  //Long64_t T_start; //start of the acuisition/analysis
   //Float_t F_acq; //file acquisition time
   Long64_t totalbytes;
   Long64_t writtenbytes;
@@ -127,6 +127,8 @@ RQ_OBJECT("CRS")
   //double mb_rate;
   //double ev_rate;
   Int_t npulses2[MAX_CH]; //number of pulses per channel
+
+  bool b_usbbuf;
 
   bool batch;
   bool b_fstart; // 

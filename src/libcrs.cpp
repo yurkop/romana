@@ -160,7 +160,8 @@ static void cback(libusb_transfer *transfer) {
     crs->totalbytes+=transfer->actual_length;
     //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
     //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
-    opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
+    //opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
+    //cout << "T_acq: " << opt.T_acq << " " << crs->T_start << endl;
 
     stat_mut.UnLock();
   } //if (crs->b_acq) {
@@ -341,7 +342,7 @@ void *handle_ana(void* ptr) {
     else {
       gSystem->Sleep(10);
     }
-  } //while (!crs->b_stop)
+  } //while (!crs->b_run)
 
   if (opt.dec_write) {
     crs->Flush_Dec();
@@ -580,6 +581,7 @@ int CRS::Detect_device() {
   chanPresent=32;
   ver_po=0;
 
+  b_usbbuf=false;
   /*
     for (int i=0;i<ntrans;i++) {
     if (transfer[i]) {
@@ -712,7 +714,7 @@ int CRS::Detect_device() {
 
   cout << "module: " << module << " chanPresent: " << chanPresent << endl;
 
-  cpar.InitPar(module);
+  //cpar.InitPar(module);
 
   // for (int i=0;i<10000;i++) {
   //   Init_Transfer();
@@ -762,7 +764,7 @@ int CRS::SetPar() {
       AllParameters32();
   }
   else {
-    cout << "InitPar Error! No module found" << endl;
+    cout << "SetPar Error! No module found" << endl;
     return 3;
   }
 
@@ -781,7 +783,7 @@ void CRS::Free_Transfer() {
 
   //for (int i=0;i<ntrans;i++) {
   for (int i=0;i<MAXTRANS;i++) {
-    cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
+    //cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
     //int res = libusb_cancel_transfer(transfer[i]);
     libusb_free_transfer(transfer[i]);
 
@@ -1240,6 +1242,13 @@ int CRS::DoStartStop() {
   }
   
   if (!b_acq) { //start
+    if (b_usbbuf) {
+      crs->Free_Transfer();
+      gSystem->Sleep(50);
+      crs->Init_Transfer();
+    }
+    b_usbbuf=false;
+
     DoReset();
 
     parpar->Update();
@@ -1281,7 +1290,7 @@ int CRS::DoStartStop() {
     //nsmp=0;
 
     opt.F_start = gSystem->Now();
-    T_start = opt.F_start;
+    //T_start = opt.F_start;
     if (opt.raw_write) {
       sprintf(raw_opt,"wb%d",opt.raw_compr);
 
@@ -1334,6 +1343,11 @@ int CRS::DoStartStop() {
       Show();
       gSystem->Sleep(10);   
       gSystem->ProcessEvents();
+      if (opt.Tstop && opt.T_acq>opt.Tstop) {
+	//cout << "Stop1!!!" << endl;
+	DoStartStop();
+	//cout << "Stop2!!!" << endl;
+      }
     }
 
     trd_ana->Join();
@@ -1349,7 +1363,7 @@ int CRS::DoStartStop() {
     gSystem->Sleep(10);   
     Show(true);
     cv->SetEditable(true);
-  }
+  } //start
   else { //stop
     buf_out[0]=4;
     b_acq=false;
@@ -1401,7 +1415,7 @@ void CRS::DoExit()
 
 void CRS::DoReset() {
 
-  cout << "DoReset1: " << b_stop << endl;
+  //cout << "DoReset1: " << b_stop << endl;
 
   if (!b_stop) return;
 
@@ -1625,7 +1639,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     BufToClass("Toptions",(char*) &opt, buf, sz);
 
   if (m1) {
-    T_start = opt.F_start;
+    //T_start = opt.F_start;
     if (mod==2) {
       Fmode=2;
       cout << "CRS2 File: " << Fname << " " << mod << endl;
@@ -1702,9 +1716,9 @@ int CRS::DoBuf() {
 	   << totalbytes/MB << endl;
     }
 
-    if (!b_stop) {
-      opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
-    }
+    //if (!b_stop) {
+    //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
+    //}
 
     return nbuffers;
   }
@@ -1765,7 +1779,7 @@ void CRS::FAnalyze(bool nobatch) {
   trd_ana->Join();
   trd_ana->Delete();
 
-  cout << "batch06: " << endl;
+  //cout << "batch06: " << endl;
   //gSystem->Sleep(opt.tsleep);
   if (nobatch) {
     EvtFrm->Clear();
@@ -1817,7 +1831,7 @@ void CRS::DoNBuf(int nb) {
   //cout << "aaa2" << endl;
   trd_ana->Join();
   trd_ana->Delete();
-  cout << "batch06a: " << endl;
+  //cout << "batch06a: " << endl;
 
   EvtFrm->Clear();
   EvtFrm->Pevents = &Levents;
@@ -2062,31 +2076,13 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     */
 
   //cout << "Decode32 3: " << Vpulses.size() << endl;
-  if (opt.analyze)
-    Make_Events();
+
+  Make_Events();
 
   if (Vpulses.size()>2)
     Vpulses.pop_front();
 
-  //cout << "Decode32 4: " << Vpulses.size() << endl;
-  /*
-  static TTimeStamp t1;
-  static TTimeStamp t2;
-  t2.Set();
-  double tt = t2.GetSec()-t1.GetSec()+
-    (t2.GetNanoSec()-t1.GetNanoSec())*1e-9;
-
-  if (myM && myM->fTab->GetCurrent()==HiFrm->ntab
-      && tt*1000>opt.tsleep) {
-    //HiFrm->DrawHist();      
-    HiFrm->ReDraw();
-    gSystem->ProcessEvents();
-    t1=t2;
-  }
-  */
-
-
-}
+} //decode32
 
 void CRS::Decode2(UChar_t* buffer, int length) {
 
@@ -2189,8 +2185,8 @@ void CRS::Decode2(UChar_t* buffer, int length) {
   //cout << "decode2a: " << idx2 << endl;
 
   //Fill_Tail(nvp);
-  if (opt.analyze)
-    Make_Events();
+
+  Make_Events();
 
   if (Vpulses.size()>2)
     Vpulses.pop_front();
@@ -2199,7 +2195,7 @@ void CRS::Decode2(UChar_t* buffer, int length) {
   //if (nvp>=ntrans) nvp=0;
   //nvp = (nvp+1)%ntrans;
 
-}
+} //decode2
 
 //-------------------------------
 
@@ -2445,8 +2441,7 @@ void CRS::Decode_adcm() {
 
   }
 
-  if (opt.analyze)
-    Make_Events();
+  Make_Events();
 
   if (Vpulses.size()>2)
     Vpulses.pop_front();
@@ -2552,6 +2547,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
     //if (Tstart64<0) {
     Tstart64 = pls->Tstamp64;
 
+    //cout << "TStart64: " << Tstart64 << endl;
     it=Levents.insert(Levents.end(),EventClass());
     it->Nevt=nevents;
     nevents++;
@@ -2754,6 +2750,38 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 */
 
 void CRS::Make_Events() {
+
+  if (!Levents.empty()) {
+    if (b_fana) //file analyzis
+      opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
+    else //acquisition
+      opt.T_acq = Levents.back().T*1e-9*period;
+  }
+
+  //cout << "Make_Events: T_acq: " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
+  
+  if (opt.Tstop && opt.T_acq>opt.Tstop) {
+    if (b_acq) {
+      //myM->DoStartStop();
+      //myM->fStart->Emit("Clicked()");
+      //myM->fStart->Clicked();
+    }
+    else if (b_fana) {
+      crs->b_fana=false;
+      crs->b_stop=true;
+    }
+    // crs->b_stop=true;
+    // crs->b_fana=false;
+    // crs->b_acq=false;
+    // crs->b_run=0;
+
+
+
+    //return;
+  }
+
+  if (!opt.analyze)
+    return;
 
   std::vector<PulseClass>::iterator pls;
 

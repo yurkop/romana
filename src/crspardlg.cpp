@@ -209,53 +209,6 @@ void ParDlg::DoNum() {
   
 }
 
-void ParDlg::DoNum_SetBuf() {
-
-  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
-  Int_t id = te->WidgetId();
-
-  pmap pp = Plist[id-1];
-
-  //cout << "DoNum_SetBuf: " << te->GetNumMax() << endl;
-  //cout << "DoNum: ";
-  //cout << *(Int_t*) pp.data << " ";
-  //cout << pp.data << " " << opt.bkg1[0] << " ";
-  //cout << (Int_t) pp.all << endl;
-
-  if (te->GetNumber() > te->GetNumMax()) {
-    cout << "value out of range" << endl;
-    return;
-  }
-
-  SetNum(pp,te->GetNumber());
-
-  if (te->GetNumMax() < 3000) { //this is USB buffer
-#ifdef CYUSB
-    if (crs->module && !crs->b_acq) {
-      crs->Free_Transfer();
-      gSystem->Sleep(50);
-      crs->Init_Transfer();
-    }
-#endif
-  }
-  else { //this is READ buffer
-    int bsize=opt.rbuf_size*1024;
-    int boffset=0;
-    if (crs->Fmode==1) {
-      bsize+=4096;
-      boffset+=4096;
-    }
-    crs->DoReset();
-    /*
-    if (crs->Fbuf2) delete[] crs->Fbuf2;
-    crs->Fbuf2 = new UChar_t[bsize];
-    crs->Fbuf = crs->Fbuf2+boffset;
-    memset(crs->Fbuf2,0,boffset);
-    */
-  }
-
-}
-
 void ParDlg::SetChk(pmap pp, Bool_t num) {
   if (pp.type==p_chk) {
       *(Bool_t*) pp.data = (Bool_t) num;
@@ -817,6 +770,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //TGNumberFormat::EAttribute k_nneg=TGNumberFormat::kNEANonNegative;
   //TGNumberFormat::EAttribute k_any=TGNumberFormat::kNEAAnyNumber;
 
+  id_usb=-1;
 
   fCanvas = new TGCanvas(this,w,h);
   AddFrame(fCanvas,fLexp);
@@ -938,8 +892,8 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   // 2 column, n rows
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
 
-  tip1= "Analysis start (in sec)";
-  tip2= "Analysis stop (in sec)";
+  tip1= "Analysis start (in sec) - only for analyzing files";
+  tip2= "Analysis stop (in sec) - only for analyzing files";
   label="Time limits";
   AddLine_opt(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0,k_r0);
 
@@ -953,6 +907,8 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   label="USB/READ buffer size";
   AddLine_opt(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,k_int,1,2048,
 	   1,20000,(char*) "DoNum_SetBuf()");
+  id_usb = Plist.size()-1;
+  cout << "usbbuf: " << id_usb << endl;
 
   tip1= "Maximal size of the event list:\nNumber of events available for viewing in the Events Tab";
   tip2= "Event lag:\nMaximal number of events which may come delayed from another channel";
@@ -1109,7 +1065,7 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
     fNum1->GetNumberEntry()->SetToolTipText(tip1);
     fNum1->SetWidth(width);
     //fNum1->Resize(width, fNum1->GetDefaultHeight());
-    fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this, connect);
+    fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParParDlg", this, connect);
     hfr1->AddFrame(fNum1,fL7);
   }
   else {
@@ -1134,7 +1090,7 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
     fNum2->GetNumberEntry()->SetToolTipText(tip2);
     fNum2->SetWidth(width);
     //fNum2->Resize(width, fNum2->GetDefaultHeight());
-    fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this, connect);
+    fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParParDlg", this, connect);
     hfr1->AddFrame(fNum2,fL7);
   }
   else {
@@ -1257,6 +1213,55 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Bool_t *b1,
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
   hfr1->AddFrame(fLabel,fL8);
+
+}
+
+void ParParDlg::DoNum_SetBuf() {
+
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  pmap pp = Plist[id-1];
+
+  //cout << "DoNum_SetBuf: " << te->GetNumMax() << " " << id << " " << id_usb << endl;
+  //cout << "DoNum: ";
+  //cout << *(Int_t*) pp.data << " ";
+  //cout << pp.data << " " << opt.bkg1[0] << " ";
+  //cout << (Int_t) pp.all << endl;
+
+  if (te->GetNumber() > te->GetNumMax()) {
+    cout << "value out of range" << endl;
+    return;
+  }
+
+  SetNum(pp,te->GetNumber());
+
+  //if (te->GetNumMax() < 3000) { //this is USB buffer
+  if (id==id_usb) { //this is USB buffer  
+#ifdef CYUSB
+    crs->b_usbbuf=true;
+    // if (crs->module && !crs->b_acq) {
+    //   crs->Free_Transfer();
+    //   gSystem->Sleep(50);
+    //   crs->Init_Transfer();
+    // }
+#endif
+  }
+  else { //this is READ buffer
+    int bsize=opt.rbuf_size*1024;
+    int boffset=0;
+    if (crs->Fmode==1) {
+      bsize+=4096;
+      boffset+=4096;
+    }
+    crs->DoReset();
+    /*
+    if (crs->Fbuf2) delete[] crs->Fbuf2;
+    crs->Fbuf2 = new UChar_t[bsize];
+    crs->Fbuf = crs->Fbuf2+boffset;
+    memset(crs->Fbuf2,0,boffset);
+    */
+  }
 
 }
 

@@ -403,6 +403,7 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
   TGListTreeItem *item;
   if (userData) {
     item=fListTree->AddItem(parent, string, userData, open, closed, true);
+    cout << "AddItem: " << item << endl;
     item->SetDNDSource(kTRUE);
     HMap* map = (HMap*) userData;
     fListTree->CheckItem(item,*map->chk);
@@ -573,7 +574,6 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 
   //cout << "DoClick: " << item->GetText() << " " << item->GetParent() << " " << but << endl;
 
-  //return;
   if (item->GetParent() && (but==2 || but==3)) {
     if (TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
       //remove items
@@ -607,8 +607,8 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	if (item2)
 	  fListTree->DeleteItem(item2);
       }
-    }
-    else {
+    } //work*
+    else { //not work*
       // add items
       //cout << "nowork: " << item << endl;
       TObject* hh = (TObject*) item->GetUserData();

@@ -65,7 +65,7 @@ ChanParDlg *chanpar;
 
 char* parname=(char*)"romana.par";;
 char* parname2=0;
-char* fname=0;
+char* datfname=0;
 
 
 
@@ -287,26 +287,23 @@ int main(int argc, char **argv)
 //     exit(0);
 // }
 
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(struct sigaction));
-    sigemptyset(&sa.sa_mask);
-    sa.sa_sigaction = segfault_c_handler;
-    sa.sa_flags   = SA_SIGINFO;
-    sigaction(SIGSEGV, &sa, NULL);
-
-
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(struct sigaction));
+  sigemptyset(&sa.sa_mask);
+  sa.sa_sigaction = segfault_c_handler;
+  sa.sa_flags   = SA_SIGINFO;
+  sigaction(SIGSEGV, &sa, NULL);
 
   // cout << "sizeof(TDatime): " << sizeof(TDatime) << endl;
   // cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
   // cout << "sizeof(opt): " << sizeof(opt) << endl;
   
-
-    
   hcl = new HClass();
   crs = new CRS();
-#ifdef CYUSB
-  crs->Detect_device();
-#endif
+
+// #ifdef CYUSB
+//   crs->Detect_device();
+// #endif
 
 #ifdef LINUX
   if (getcwd(startdir,100)) {}
@@ -314,7 +311,6 @@ int main(int argc, char **argv)
   _getcwd(startdir,100);
 #endif
   //cout << "startdir: " << startdir << endl;
-
 
   cout << "----------------------------------------------" << endl;
   cout << "Usage: ./romana.x [filename] [+parname] [-b]" << endl;
@@ -336,7 +332,7 @@ int main(int argc, char **argv)
     gzclose(ff);
   }
 
-    //process command line parameters
+  //process command line parameters
   if (argc > 1) {
     int argnn=1;
     while (argnn<argc) {
@@ -355,7 +351,7 @@ int main(int argc, char **argv)
 	parname2 = argv[argnn]+1;
       }
       else { //read file
-	fname = argv[argnn];
+	datfname = argv[argnn];
       }
       cout << "argnn: " << argnn << " " << argv[argnn] << " "
 	   << argv[argnn]+1 << " " << argc << endl;
@@ -377,8 +373,11 @@ int main(int argc, char **argv)
   }
 
 
-  if (fname) {
-    crs->DoFopen(fname,rdpar); //read file and parameters from it
+  if (datfname) {
+    crs->DoFopen(datfname,rdpar); //read file and parameters from it
+  }
+  else {
+    datfname=(char*)"";
   }
   
   //cout << "gStyle1: " << gStyle << endl;
@@ -402,7 +401,7 @@ int main(int argc, char **argv)
     //allevents();
     //cout << "batch99: " << endl;
 
-    SplitFilename (string(fname),dir,name,ext);
+    SplitFilename (string(datfname),dir,name,ext);
     dir.append("root/");
 #ifdef LINUX
     mkdir(dir.c_str(),0755);
@@ -419,6 +418,10 @@ int main(int argc, char **argv)
     return 0;
   }
 
+
+#ifdef CYUSB
+  crs->Detect_device();
+#endif
 
   TApplication theApp("App",&argc,argv);
   //example();
@@ -1143,19 +1146,39 @@ void MainFrame::DoStartStop() {
   //cout << "Dostartstop: " << gROOT->FindObject("Start") << endl;
 
 #ifdef CYUSB
-  if (crs->b_acq) {
+  if (crs->b_acq) { //STOP is pressed here
     fStart->ChangeBackground(fGreen);
     fStart->SetText("Start");
     //crs->b_stop=false;
     //crs->Show();
     crs->DoStartStop();
+
+    if (opt.root_write) {
+      saveroot(opt.fname_root);
+    }
+
   }
-  else {
+  else { // START is pressed here
     if (TestFile()) {
       //ParLock();
       fStart->ChangeBackground(fRed);
       fStart->SetText("Stop");
       crs->DoStartStop();
+      //cout << "Start7: " << endl;
+
+
+      fStart->ChangeBackground(fGreen);
+      fStart->SetText("Start");
+
+      crs->b_stop=true;
+      crs->b_fana=false;
+      crs->b_acq=false;
+      crs->b_run=0;
+
+      if (opt.root_write) {
+	saveroot(opt.fname_root);
+      }
+
     }
     //crs->b_stop=true;
   }
@@ -1216,6 +1239,11 @@ void MainFrame::DoAna() {
     gSystem->Sleep(100);
     fAna->ChangeBackground(fGreen);
     fAna->SetText(hAna);
+
+    if (opt.root_write) {
+      saveroot(opt.fname_root);
+    }
+
   }
   else { //start analysis
     if (TestFile()) {
@@ -1535,6 +1563,11 @@ void MainFrame::UpdateStatus() {
   char txt[100];
   //time_t tt = opt.F_start.GetSec();
 
+  //cout << "T_acq2: " << opt.T_acq << " " << crs->Tstart64 << endl;
+  // if (opt.Tstop && opt.T_acq>opt.Tstop) {
+  //   DoStartStop();
+  // }
+
   time_t tt = (opt.F_start+788907600000)*0.001;
   struct tm *ptm = localtime(&tt);
   strftime(txt,sizeof(txt),"%F %T",ptm);
@@ -1624,6 +1657,9 @@ void MainFrame::DoExit() {
 
 void MainFrame::DoSave() {
 
+  //cout << "Dosave: " << endl;
+  //cout << "Dosave: " << datfname << endl;
+
   if (!crs->b_stop) return;
 
   const char *dnd_types[] = {
@@ -1636,7 +1672,7 @@ void MainFrame::DoSave() {
   string s_name, dir, name, ext;
   TGFileInfo fi;
 
-  SplitFilename (string(fname),dir,name,ext);
+  SplitFilename (string(datfname),dir,name,ext);
 
   dir.append("root/");
 #ifdef LINUX
@@ -1653,13 +1689,10 @@ void MainFrame::DoSave() {
   //strcpy(s_name,name);
   //strcat(s_name,".root");
 
-  //cout << "saveroot: " << dir << " " << s_name << endl;
-  
   fi.fFileTypes = dnd_types;
   fi.fIniDir    = StrDup(dir.c_str());
   fi.fFilename  = StrDup(s_name.c_str());
 
-  cout << "saveroot0: " << endl;
   //TGFileDialog *gfsave = 
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
 
@@ -1671,13 +1704,8 @@ void MainFrame::DoSave() {
 		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
     }
 
-    //cout << "saveroot2: " << fi.fFilename << endl;
-    cout << "saveroot1: " << endl;
-
     if (retval == kMBOk) {
-      cout << "saveroot2: " << endl;
       saveroot(fi.fFilename);
-      cout << "saveroot3: " << endl;
     }
   }
 

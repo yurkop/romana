@@ -8,45 +8,30 @@ using namespace std;
 
 Coptions::Coptions() {
   //ver = TClass::GetClass("Coptions")->GetClassVersion();
-  for (int i=0;i<MAX_CH;i++) {
-    //chtype[i]=ch_other;
-    enabl[i]=true;
-  }
+  // for (int i=0;i<MAX_CH;i++) {
+  //   //chtype[i]=ch_other;
+  //   enabl[i]=true;
+  // }
+
+  InitPar();
+
 }
 
-void Coptions::InitPar(int module) {
+void Coptions::InitPar() {
 
-  if (module==2) {
-    for (int i=0;i<MAX_CH+ADDCH;i++) {
-      acdc[i]=false;
-      inv[i]=false;
-      smooth[i]=0;
-      deadTime[i]=1;
-      preWr[i]=100;
-      durWr[i]=200;
-      kderiv[i]=0;
-      threshold[i]=1500;
-      adcGain[i]=0;
-    }
-    forcewr=false;
+  for (int i=0;i<MAX_CH+ADDCH;i++) {
+    enabl[i]=true;
+    acdc[i]=false;
+    inv[i]=false;
+    smooth[i]=0;
+    deadTime[i]=1;
+    preWr[i]=100;
+    durWr[i]=200;
+    kderiv[i]=0;
+    threshold[i]=1500;
+    adcGain[i]=0;
   }
-  else if (module==32) {
-    for (int i=0;i<MAX_CH+ADDCH;i++) {
-      acdc[i]=false;
-      inv[i]=false;
-      smooth[i]=0;
-      deadTime[i]=1;
-      preWr[i]=100;
-      durWr[i]=200;
-      kderiv[i]=0;
-      threshold[i]=1500;
-      adcGain[i]=0;
-    }
-    forcewr=false;
-  }
-  else {
-    cout << "InitPar: wrong module: " << module << endl;
-  }
+  forcewr=false;
 
 }
 
