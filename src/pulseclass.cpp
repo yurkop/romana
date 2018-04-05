@@ -224,7 +224,7 @@ void PulseClass::PeakAna() {
     if (nbkg)
       bkg/=nbkg;
     else {
-      cout << "zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+      cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
     }
 
     int nn=0;
@@ -243,6 +243,7 @@ void PulseClass::PeakAna() {
       cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
     }
     pk->Area-=bkg;
+    pk->Area*=opt.emult[Chan];
 
   }
 
@@ -445,8 +446,6 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
     for (int i=0;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i+1]) {
 
-	//cout << "Fill_Mean: " << Nevt << endl;
-
 	if (map->h_cuts[i]->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
 	  map->h_cuts[i]->hst->
 	    SetBins(cpar.durWr[ch],-cpar.preWr[ch],cpar.durWr[ch]-cpar.preWr[ch]);
@@ -540,7 +539,7 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       if (opt.b_amp) {
-	Fill1d(first,hcl->m_ampl[ch],pk->Area*opt.emult[ch]);
+	Fill1d(first,hcl->m_ampl[ch],pk->Area);
       }
 
       if (opt.b_hei) {
@@ -580,11 +579,11 @@ void EventClass::FillHist(Bool_t first) {
 
 	if (opt.b_h2d) {
 	  if (ch==0) {
-	    amp[0]=pk->Area*opt.emult[ch];
+	    amp[0]=pk->Area;
 	    nn++;
 	  }
 	  if (ch==1) {
-	    amp[1]=pk->Area*opt.emult[ch];
+	    amp[1]=pk->Area;
 	    nn++;
 	  }
 	  if (nn==2) {

@@ -402,7 +402,7 @@ int main(int argc, char **argv)
     //cout << "batch99: " << endl;
 
     SplitFilename (string(datfname),dir,name,ext);
-    dir.append("root/");
+    dir.append("Root/");
 #ifdef LINUX
     mkdir(dir.c_str(),0755);
 #else
@@ -1462,7 +1462,7 @@ void MainFrame::DoReadRoot() {
     //rootname=new char[200];
 
     strcpy(rootname,fi.fFilename);
-    printf("xxxx TGFile: %s\n",rootname);
+    //printf("xxxx TGFile: %s\n",rootname);
 
     readpar_root(rootname);
     //reset();
@@ -1674,7 +1674,7 @@ void MainFrame::DoSave() {
 
   SplitFilename (string(datfname),dir,name,ext);
 
-  dir.append("root/");
+  dir.append("Root/");
 #ifdef LINUX
   mkdir(dir.c_str(),0755);
 #else

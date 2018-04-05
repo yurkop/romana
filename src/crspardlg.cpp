@@ -583,13 +583,24 @@ void ParDlg::UpdateField(int nn) {
       Float_t *dat = (Float_t*) pp->data;
       if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
       	cout << "FUpdMax: " << te->GetNumMax() << " " << *dat << endl;
-      	//*dat = te->GetNumMax();
+      	*dat = te->GetNumMax();
       }
       if (te->GetNumLimits()==lim && *dat < te->GetNumMin()) {
       	//cout << "FUpdMin: " << te->GetNumMin() << " " << *dat << endl;
       	*dat = te->GetNumMin();
       }
       te->SetNumber(*dat);
+
+      if (TString(te->GetName()).EqualTo("Tstop",TString::kIgnoreCase)) {
+	//bool ww = 
+	//cout << "Upd: " << te->GetName() << " " << nn << endl;
+	if (opt.Tstop) {
+	  te->ChangeBackground(gROOT->GetColor(kYellow)->GetPixel());
+	}
+	else {
+	  te->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
+	}
+      }
       //te->SetNumber(*(Float_t*) pp->data);
     }
       break;
@@ -771,6 +782,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //TGNumberFormat::EAttribute k_any=TGNumberFormat::kNEAAnyNumber;
 
   id_usb=-1;
+  //id_tstop=-1;
 
   fCanvas = new TGCanvas(this,w,h);
   AddFrame(fCanvas,fLexp);
@@ -893,9 +905,14 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
 
   tip1= "Analysis start (in sec) - only for analyzing files";
-  tip2= "Analysis stop (in sec) - only for analyzing files";
+  tip2= "Analysis stop (in sec)";
   label="Time limits";
   AddLine_opt(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0,k_r0);
+
+  TGTextEntry *te = (TGTextEntry*) Plist.back().field;
+  te->SetName("Tstop");
+  //cout << "tstop: " << te->GetName() << endl;
+  //id_tstop = Plist.size();
 
   tip1= "";
   tip2= "Delay between drawing events (in msec)";
@@ -908,7 +925,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   AddLine_opt(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,k_int,1,2048,
 	   1,20000,(char*) "DoNum_SetBuf()");
   id_usb = Plist.size()-1;
-  cout << "usbbuf: " << id_usb << endl;
+  //cout << "usbbuf: " << id_usb << endl;
 
   tip1= "Maximal size of the event list:\nNumber of events available for viewing in the Events Tab";
   tip2= "Event lag:\nMaximal number of events which may come delayed from another channel";
@@ -1214,6 +1231,21 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Bool_t *b1,
   //fLabel->SetToolTipText(tip);
   hfr1->AddFrame(fLabel,fL8);
 
+}
+
+void ParParDlg::DoNum() {
+  ParDlg::DoNum();
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  //Int_t id = te->WidgetId();
+  //cout << "Donum: " << id << " " << te->GetName() << endl;
+  if (TString(te->GetName()).EqualTo("Tstop",TString::kIgnoreCase)) {
+    if (opt.Tstop) {
+      te->ChangeBackground(gROOT->GetColor(kYellow)->GetPixel());
+    }
+    else {
+      te->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
+    }
+  }
 }
 
 void ParParDlg::DoNum_SetBuf() {

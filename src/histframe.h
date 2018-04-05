@@ -36,6 +36,7 @@ class HistFrame: public TGCompositeFrame {
    TGListTreeItem         *iWork;
    TGListTreeItem         *iWork_cut[MAXCUTS];
    TList* hlist;
+   THStack* hstack;
 
    TGCheckButton* chklog;
    TGCheckButton* chkgcuts;
@@ -90,7 +91,7 @@ class HistFrame: public TGCompositeFrame {
    void DrawHist();
    void DrawStack();
    void ReDraw();
-   void DataDropped(TGListTreeItem *, TDNDData *data);
+   //void DataDropped(TGListTreeItem *, TDNDData *data);
 
    ClassDef(HistFrame, 0)
 };

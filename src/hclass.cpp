@@ -21,6 +21,14 @@ extern HistFrame* EvtFrm;
 
 //------------------------------
 
+HMap::HMap() {
+  hst = 0;
+  chk = 0;
+  wrk = 0;
+  cut_index = 0;
+  memset(h_cuts,0,sizeof(h_cuts));
+}
+
 HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
 	   Char_t *cuts) {
   hst = hist;

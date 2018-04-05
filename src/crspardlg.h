@@ -118,6 +118,7 @@ protected:
   //void *x1,*x2;
 
   int id_usb;
+  //int id_tstop;
 
   TGNumberFormat::EStyle k_int;
   TGNumberFormat::EStyle k_r0;
@@ -150,6 +151,7 @@ public:
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
+  void DoNum();
   void DoNum_SetBuf();
   void DoCheck();
   void DoCheck2();

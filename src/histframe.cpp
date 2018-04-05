@@ -23,6 +23,9 @@ int Ch_Alpha_X[8]={25,29,26,30,27,31,28,32};
 int Ch_Alpha_Y[8]={24,20,23,19,22,18,21,17};
 */
 
+const short nhcols=16;
+const short hcols[nhcols] = {1,2,3,4,5,6,7,22,33,41,46,38,30,24,29,40};
+
 extern Toptions opt;
 //extern Coptions cpar;
 extern MyMainFrame *myM;
@@ -189,6 +192,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //   ndiv=opt.xdiv*opt.ydiv;
 
   hlist=new TList();
+  hstack=new THStack();
   //hlist2.clear();
 
   //Hmut = new TMutex();
@@ -294,8 +298,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   Make_Ltree();
   //cout << "make_ltree2: " << endl;
 
-  fListTree->Connect("DataDropped(TGListTreeItem*, TDNDData*)", "HistFrame",
-                    this, "DataDropped(TGListTreeItem*,TDNDData*)");
+  // fListTree->Connect("DataDropped(TGListTreeItem*, TDNDData*)", "HistFrame",
+  //                   this, "DataDropped(TGListTreeItem*,TDNDData*)");
 
   //fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
   //		     this,"DoKey(TGListTreeItem*, UInt_t)");
@@ -308,10 +312,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fHor2->AddFrame(Rb[i], fLay5);
     Rb[i]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
   }
-
-  int nn = (int) opt.b_stack;
-  Rb[1-nn]->SetState(kButtonDown);
-  Rb[nn]->SetState(kButtonUp);
 
   //TGLabel* fLabel1 = new TGLabel(fHor2, "DX/DY:");
   //TGLabel* fLabel2 = new TGLabel(fHor2, "DivY:");
@@ -431,19 +431,23 @@ void NameTitle(char* name, char* title, int i, int cc,
 TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open, const TGPicture *closed) {
 
   TGListTreeItem *item;
-  if (userData) {
+  if (userData) { //single item
     item=fListTree->AddItem(parent, string, userData, open, closed, true);
     //cout << "AddItem: " << item << endl;
-    item->SetDNDSource(kTRUE);
+    //item->SetDNDSource(kTRUE);
     HMap* map = (HMap*) userData;
     fListTree->CheckItem(item,*map->chk);
+    if (parent &&
+	TString(parent->GetText()).Contains("work",TString::kIgnoreCase)) {
+      fListTree->CheckItem(item,true);      
+    }
   }
-  else {
+  else { //folder
     //cout << "Item: " << string << endl;
     HMap* map = new HMap(string,NULL,NULL,NULL,NULL);
     hcl->dir_list->Add(map);
     item=fListTree->AddItem(parent, string, map, open, closed, true);
-    item->SetDNDTarget(kTRUE);
+    //item->SetDNDTarget(kTRUE);
   }
   return item;
 
@@ -721,42 +725,53 @@ void HistFrame::Clone_Hist(HMap* map) {
 
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
-  TGListTreeItem *item = 0;
+  HMap* map;
 
-  item = (TGListTreeItem*) obj;
-  TGListTreeItem *idir = fListTree->GetFirstItem();
+  TGListTreeItem *item = fListTree->GetFirstItem();
+  item = fListTree->FindItemByObj(item,obj);
 
-  cout << "DoCheck: " << idir << " " << obj->GetName() << " " << check << endl;
+  // cout << "DoCheck: " << obj << " " << item << " " << obj->GetName() << " " << obj->GetTitle() << endl;
+  // if (item) {
+  //   cout << "DoCheck: " << item->GetText() << endl;
+  //   cout << "DoCheck: " << item->GetParent() << endl;
+  //   cout << "DoCheck: " << item->GetUserData() << " " << check << endl;
+  // }
 
-  while (idir) {
-    if (!TString(idir->GetText()).Contains("WORK")) {
-      if ( (item=fListTree->FindChildByName(idir,obj->GetName())) ) {
-	fListTree->CheckItem(item,check);
+  if (item) {
+    if (item->GetParent()) { //single item
+      if (!TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) { //not in work* folder
+	map = (HMap*) item->GetUserData();
+	if (map) {
+	  *map->chk = item->IsChecked();
+	}
       }
     }
-    idir = idir->GetNextSibling();
-  }
-
-
-
-  /*
-  if (!obj) {
-    TGListTreeItem *idir = fListTree->GetFirstItem();
-    while (idir) {
-      cout << "Dir: " << idir->GetText()<< " " << idir->IsChecked() << endl;
-      // TGListTreeItem *item = idir->GetFirstChild();
-      // while (item) {
-      // 	cout << item->GetText()<< endl;
-      // 	item = item->GetNextSibling();
-      // }    
-      idir = idir->GetNextSibling();
+    else { //folder
+      if (!TString(item->GetText()).Contains("work",TString::kIgnoreCase)) { //not work* folder
+	TGListTreeItem *item2 = item->GetFirstChild();
+	while (item2) {
+	  map = (HMap*) item2->GetUserData();
+	  if (map) {
+	    *map->chk = item->IsChecked();
+	  }
+	  item2 = item2->GetNextSibling();
+	}
+      }
     }
-    
   }
-  else {
-    cout << "item1: " << obj->GetName() << endl;
-  }
-  */
+
+  //YK - don't know why this is needed
+
+  // while (idir) {
+  //   if (!TString(idir->GetText()).Contains("WORK")) {
+  //     if ( (item=fListTree->FindChildByName(idir,obj->GetName())) ) {
+  // 	fListTree->CheckItem(item,check);
+  //     }
+  //   }
+  //   idir = idir->GetNextSibling();
+  // }
+
+
 
   if (crs->b_stop)
     Update();
@@ -791,81 +806,6 @@ void HistFrame::ShowCutG()
 void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym) {
   cout << "key: " << entry << " " << keysym << endl;
 }
-
-/*
-void HistFrame::SelectDiv(int nn)
-{
-  switch (nn) {
-  case 0:
-    ndiv=1;
-    xdiv=1;
-    ydiv=1;
-    break;
-  case 1:
-    ndiv=4;
-    xdiv=2;
-    ydiv=2;
-    break;
-  case 2:
-    ndiv=6;
-    xdiv=3;
-    ydiv=2;
-    break;
-  case 3:
-    ndiv=8;
-    xdiv=4;
-    ydiv=2;
-    break;
-  case 4:
-    ndiv=16;
-    xdiv=4;
-    ydiv=4;
-    break;
-  case 5:
-    ndiv=32;
-    xdiv=8;
-    ydiv=4;
-    break;
-  case 6:
-    ndiv=64;
-    xdiv=8;
-    ydiv=8;
-    break;
-  default:
-    ndiv=1;
-    xdiv=1;
-    ydiv=1;
-  }
-
-}
-*/
-
-/*
-void HistFrame::DoRadio()
-{
-  TGButton *btn = (TGButton *) gTQSender;
-  Int_t id = btn->WidgetId()-1;
-
-  //int prev = (id+NR-1)%NR;
-  //cout << "doradio: " << id << endl;
-
-  for (int i=0;i<NR;i++) {
-    if (i==id)
-      Rb[i]->SetState(kButtonDown);
-    else
-      Rb[i]->SetState(kButtonUp);
-  }
-
-  opt.sel_hdiv=id;
-  if (crs->b_stop)
-    Update();
-  else
-    changed=true;
-
-  //SelectDiv(id);
-
-}
-*/
 
 void HistFrame::DoRadio()
 {
@@ -909,6 +849,9 @@ void HistFrame::DoNum()
 
 void HistFrame::DoButton()
 {
+  if (opt.b_stack)
+    return;
+
   TGButton *btn = (TGButton *) gTQSender;
   Int_t id = btn->WidgetId()-1;
 
@@ -939,6 +882,9 @@ void HistFrame::DoButton()
 }
 
 void HistFrame::AddCutG(TPolyLine *pl, TObject* hobj) {
+
+  if (opt.b_stack)
+    return;
 
   // check if the histogram exists
   if (!hobj) {
@@ -1030,7 +976,7 @@ void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
   }
   TCutG* gcut;
 
-  //cout << "CutClick: " << item->GetText() << " " << item->GetUserData() << " " << item->GetParent() << " " << but << endl;
+  cout << "CutClick: " << item->GetText() << " " << item->GetUserData() << " " << item->GetParent() << " " << but << endl;
 
   gcut = (TCutG*) item->GetUserData();
   if (gcut) {
@@ -1038,19 +984,15 @@ void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
     ss.ReplaceAll("cut","");
     //char cc = ss.Atoi();
     int icut = ss.Atoi();
-    cout << gcut->GetName() << " " << ss << " " << icut << endl;
+    cout << "cutclick2: " << gcut->GetName() << " " << gcut->GetTitle() << " " << ss << " " << icut << endl;
     HMap *map = (HMap*) hcl->map_list->FindObject(gcut->GetTitle());
+    //HMap *map = (HMap*) hcl->map_list->FindObject(gcut->GetName());
+    cout << "map: " << map << " " << gcut->GetName() << endl;
     //clear cut from cut_index
     if (map) {
       Char_t cp[MAXCUTS];
       memcpy(cp,map->cut_index,sizeof(cp));
       memset(map->cut_index,0,sizeof(cp));
-      //TString s2 = TString(map->cut_index);
-      
-      //cout << map->cut_index << endl;
-      //s2.ReplaceAll(cc,"");
-
-      //cout << s2 << endl;
       int j=0;
       for (int i=0;i<MAXCUTS;i++) {
       	if (cp[i]==0) {
@@ -1061,13 +1003,6 @@ void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
 	  j++;
       	}
       }
-
-      // for (int i=0;i<MAXCUTS;i++) {
-      // 	if (cp[i]==0) {
-      // 	  break;
-      // 	}
-      // 	cout << "index: " << i << " " << (int) cp[i] << " " << (int)map->cut_index[i] << endl;
-      // }
     }
 
     fCutTree->DeleteChildren(item);
@@ -1338,6 +1273,10 @@ void HistFrame::Update()
 
   //xdiv=2;
   //ydiv=2;
+  int n2 = (int) opt.b_stack;
+  Rb[1-n2]->SetState(kButtonDown);
+  Rb[n2]->SetState(kButtonUp);
+
   if (opt.b_stack)
     ndiv=1;
   else
@@ -1352,21 +1291,80 @@ void HistFrame::Update()
 
   //Hmut.UnLock();
   //return;
+
+  if (opt.b_stack) {
+    DrawStack();
+  }
+  else {
+    DrawHist();
+  }
+  
+  //hlist->Print();
+
+  Hmut.UnLock();
+  //cout << "hist_list: " << endl;
+  //hcl->hist_list->ls();
+  //cout << "hist_list: " << hcl->hist_list << " " << hcl->hist_list->GetSize() << endl;
+  //cout << "HiFrm::Update()2" << endl;
+}
+
+void HistFrame::DrawStack() {
+
+  //create hstack
+  delete hstack;
+  hstack=new THStack();
+  //hstack->GetHists()->Clear();
+  int cc=0;
   TGListTreeItem *idir = fListTree->GetFirstItem();
-  while (idir) {
-    // if (idir->IsChecked() && idir->GetUserData()) {
-    //   hlist->Add(((HMap*)idir->GetUserData())->hst);
-    //   //hlist->Add((TObject*)idir->GetUserData());
-    // }
+  while (TString(idir->GetText()).Contains("WORK")) {
+    //cout << "Work: " << idir->GetText() << endl;
     TGListTreeItem *item = idir->GetFirstChild();
-    // cout << "HiFrm:Update: " << ((HMap*) item->GetUserData())->GetName()
-    // 	 << endl;
     while (item) {
       if (item->GetUserData()) {
-	HMap* map = (HMap*) item->GetUserData();
-	if (!TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
-	  *map->chk = item->IsChecked();
+	if (item->IsChecked()) {
+	  HMap* map=(HMap*) item->GetUserData();
+	  char name[100];
+	  TH1 *hh = (TH1*) map->hst->Clone();
+	  sprintf(name,"%s ",hh->GetName());
+	  hh->SetName(name);
+	  hh->SetLineColor(hcols[cc%nhcols]);
+	  //cout << "cols: " << hcols[cc%nhcols] << endl;
+	  if (hh->GetDimension()==1) {
+	    hstack->Add(hh);
+	    cc++;
+	  }
+	  //hlist->Add((TObject*)item->GetUserData());
 	}
+      }
+      item = item->GetNextSibling();
+    }
+    idir = idir->GetNextSibling();
+  }
+
+  TCanvas *cv=fEc->GetCanvas();
+  cv->Clear();
+  cv->Divide(1,1);
+  cv->SetLogy(opt.b_logy);
+  hstack->Draw("nostack");
+  cv->BuildLegend(0.65,0.75,0.95,0.95);
+  cv->Update();
+
+}
+
+void HistFrame::DrawHist() {
+
+  //create hlist
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  while (idir) {
+    TGListTreeItem *item = idir->GetFirstChild();
+    while (item) {
+      if (item->GetUserData()) {
+	//YK - don't know why this is needed
+
+	// HMap* map = (HMap*) item->GetUserData();
+	// if (!TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
+	//   *map->chk = item->IsChecked();
+	// }
 	if (item->IsChecked()) {
 	  hlist->Add((TObject*)item->GetUserData());
 	}
@@ -1381,43 +1379,7 @@ void HistFrame::Update()
   if (opt.icheck < 0)
     opt.icheck=0;
 
-  // TString* ss[1000000];
-  // for (int i=0;i<1000000;i++) {
-  //   ss[i] = new TString("asdasdasdf");
-  // }
-  // for (int i=0;i<1000000;i++) {
-  //   delete ss[i];
-  // }
-
-  DrawHist();
-  
-  TCanvas* cv=fEc->GetCanvas();
-  if (in_gcut) {
-    np_gcut=0;
-    cv->SetCrosshair(true);
-    for (int i=1;i<=ndiv;i++) {
-      TPad* pad = (TPad*) cv->GetPad(i);
-      if (pad)
-	pad->AddExec("dynamic","DynamicExec()");
-    }
-  }
-  else {
-    cv->SetCrosshair(false);
-  }
-  //hlist->Print();
-
-  Hmut.UnLock();
-  //cout << "hist_list: " << endl;
-  //hcl->hist_list->ls();
-  //cout << "hist_list: " << hcl->hist_list << " " << hcl->hist_list->GetSize() << endl;
-  //cout << "HiFrm::Update()2" << endl;
-}
-
-void HistFrame::DrawStack() {
-  cout << "DrawStack: " << endl;
-}
-
-void HistFrame::DrawHist() {
+  //draw hists
   HMap* map;
 
   TCanvas *cv=fEc->GetCanvas();
@@ -1438,17 +1400,11 @@ void HistFrame::DrawHist() {
       map=(HMap*) obj;
       TH1 *hh = map->hst;
       if (hh->GetDimension()==2) {
-	if (opt.b_logy)
-	  gPad->SetLogz(1);
-	else
-	  gPad->SetLogz(0);
+	gPad->SetLogz(opt.b_logy);
 	hh->Draw("zcol");
       }
       else {
-	if (opt.b_logy)
-	  gPad->SetLogy(1);
-	else
-	  gPad->SetLogy(0);
+	gPad->SetLogy(opt.b_logy);
 	hh->Draw();
       }
       padmap[nn-1]=obj;
@@ -1460,6 +1416,11 @@ void HistFrame::DrawHist() {
 
 	int icut=0;
 	bool found=false;
+	cout << "cut_index: " << hh->GetName() << ": ";
+	for (int j=0;j<MAXCUTS;j++) {
+	  cout << (int) map->cut_index[j] << " ";
+	}
+	cout << endl;
 	for (int j=0;j<MAXCUTS;j++) {
 
 	  icut=map->cut_index[j];
@@ -1468,7 +1429,7 @@ void HistFrame::DrawHist() {
 
 	  if (hcl->cutG[icut-1]) {
 	    found=true;
-	    //cout << "pcuts: " << icut << " " << opt.pcuts[icut-1] << endl;
+	    //cout << "pcuts: " << icut << " " << opt.pcuts[icut-1] << " " << opt.ncuts << endl;
 	    if (opt.pcuts[icut-1]==2) {
 	      cline.SetLineColor(hcl->cutG[icut-1]->GetLineColor());
 	      gPad->Update();
@@ -1500,6 +1461,22 @@ void HistFrame::DrawHist() {
     ii++;
   }
   cv->Update();
+
+  // make cuts if selected
+  //TCanvas* cv=fEc->GetCanvas();
+  if (in_gcut) {
+    np_gcut=0;
+    cv->SetCrosshair(true);
+    for (int i=1;i<=ndiv;i++) {
+      TPad* pad = (TPad*) cv->GetPad(i);
+      if (pad)
+	pad->AddExec("dynamic","DynamicExec()");
+    }
+  }
+  else {
+    cv->SetCrosshair(false);
+  }
+  
 }
 
 /*
@@ -1530,7 +1507,7 @@ void HistFrame::ReDraw()
 
   TCanvas *cv=fEc->GetCanvas();
 
-  if (changed || started) {
+  if (changed || started || opt.b_stack) {
     //fEc->GetCanvas()->Draw();
     //fEc->GetCanvas()->Update();
     //cout << "changed" << endl;
@@ -1547,18 +1524,13 @@ void HistFrame::ReDraw()
 
     //fEc->GetCanvas()->Draw();
 
-
-
-
-
     for (int i=0;i<ndiv;i++) {
       cv->cd(i+1);
       //gPad->Draw();
+      //cout << "Modified1: " << i << endl;
       gPad->Modified(1);
       //gPad->Update();
     }
-
-
 
     //cout << "unchanged3" << endl;
     fEc->GetCanvas()->Update();
@@ -1567,7 +1539,7 @@ void HistFrame::ReDraw()
 
 }
 
-void HistFrame::DataDropped(TGListTreeItem *, TDNDData *data)
-{
-  cout << "YK dropped" << endl;
-}
+// void HistFrame::DataDropped(TGListTreeItem *, TDNDData *data)
+// {
+//   cout << "YK dropped" << endl;
+// }

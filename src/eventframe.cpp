@@ -301,7 +301,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - amplitude;\n[2] - time (sec);\n[3] - Tstamp;\n[4] - tof;\n[5] - multiplicity";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - amplitude (area);\n[2] - time (sec);\n[3] - Tstamp;\n[4] - tof;\n[5] - multiplicity";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);;
   tEnt->SetWidth(100);

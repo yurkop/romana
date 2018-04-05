@@ -13,6 +13,7 @@ class HMap: public TNamed {
 
  public:
 
+  HMap();
   HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
        Char_t *cuts);
   ~HMap();
