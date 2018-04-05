@@ -60,11 +60,14 @@ class HClass {
   HMap* m_pulse[MAX_CH]; // period
 
   TCutG* cutG[MAXCUTS];
+  //Name: cut[i]
+  //Title: histogram name on which this cut is made
+  //nr of points: 1 - formula; 2 - 1d; >2 - 2d
   Double_t cut_flag[MAXCUTS+1]; //starts from 1, not from 0
   char cuttitle[MAXCUTS][99];
   int cutcolor[MAXCUTS];
   TFormula* cform[MAXCUTS+1]; //starts from 1, not from 0
-  bool b_formula;
+  bool b_formula; //at least one cut formula exists
 
   //HMap *cutmap[MAXCUTS];
 

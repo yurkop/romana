@@ -100,6 +100,7 @@ HClass::HClass()
     cutG[i]=0;
     sprintf(ss,"form%d",i+1);
     cform[i]=new TFormula(ss,"0");
+    strcpy(cuttitle[i],"");
     //cutmap[i]=0;
   }
 
@@ -279,6 +280,7 @@ void HClass::Make_cuts() {
   // }
 
   // loop through all maps
+  // для каждой гистограммы (map) находим cuts, которые заданы в ней
   TIter next(map_list);
   TObject* obj=0;
   while ( (obj=(TObject*)next()) ) {
@@ -306,29 +308,29 @@ void HClass::Make_cuts() {
 
   //cout << "color[0]: " << cutcolor[0] << endl;
   //make cuts
-  int b_res=0;
   for (int i=0;i<opt.ncuts;i++) {
     if (cutG[i]) delete cutG[i];
+    sprintf(cutname,"cut%d",i+1);
+
     if (opt.pcuts[i]==1) {
-      sprintf(cutname,"cut%d formula",i+1);
       b_formula=true;
       cform[i+1]->SetTitle(opt.cut_form[i]);
       cform[i+1]->Clear();
       int ires = cform[i+1]->Compile();
       if (ires) {//formula is not valid
-	b_res=1;
+	cform[i+1]->SetTitle("0");
+	cform[i+1]->Clear();
+	cform[i+1]->Compile();
+      }
+      else {
+	b_formula=true;
       }
     }
-    else {
-      sprintf(cutname,"cut%d %s",i+1,cuttitle[i]);
-    }
+
     cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
-    cutG[i]->SetTitle(opt.cut_form[i]);
+    cutG[i]->SetTitle(cuttitle[i]);
     cutG[i]->SetLineColor(cutcolor[i]);
     //cout << "make_cuts: " << i << " " << cutcolor[i] << " " << cutG[i]->GetLineColor() << endl;
-  }
-  if (b_res) {
-    b_formula=false;
   }
 }
 
@@ -353,18 +355,6 @@ void HClass::Make_hist() {
   map_list = new TList();
   map_list->SetName("map_list");
   map_list->SetOwner(true);
-
-  //int cc=0;
-
-  //HMap* dmap = new HMap("WORK",NULL,NULL,NULL,NULL);
-  //dir_list->Add(dmap);
-
-  // for (int cc=0;cc<opt.ncuts;cc++) {
-  //   char cutname[100];
-  //   sprintf(cutname,"WORK_cut%d",cc+1);
-  //   dmap = new HMap(cutname,NULL,NULL,NULL,NULL);
-  //   dir_list->Add(dmap);
-  // }
 
   Make_1d("Amplitude","ampl",";Channel;Counts",m_ampl,opt.amp_bins,
   	  opt.amp_min,opt.amp_max,opt.b_amp,opt.s_amp,opt.w_amp,opt.cut_amp);
