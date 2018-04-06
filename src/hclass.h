@@ -23,6 +23,7 @@ class HMap: public TNamed {
   TH1* hst;
   Bool_t* chk; //item is checked
   Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*)
+  UShort_t* bitwk; //bit mask - item is checked in the WORK* folder
   Char_t *cut_index; //список окон, заданных на этой гистограмме (hst)
   //TList* list_cuts; 
   HMap* h_cuts[MAXCUTS];

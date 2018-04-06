@@ -78,3 +78,6 @@ check opt.Tstop for data acquisition
 1. Disable некоторые параметры после старта acquisition
 2. Show cuts - показывает уже удаленные окна в легенде
 3. Навести порядок с gcuts - для формулы не должно быть точек; она не должна рисоваться в show; что есть GetName, GetTitle?
+
+06.04.18
+1. Добавить tooltips на все кнопки/поля

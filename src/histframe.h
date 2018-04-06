@@ -48,6 +48,7 @@ class HistFrame: public TGCompositeFrame {
 
    int ntab; //tab number where eventframe is placed
 
+   Bool_t wrk_check[MAXCUTS+1]; //is work* checked before deleting ltree
    Bool_t changed;
    Bool_t started;
    Bool_t in_gcut;

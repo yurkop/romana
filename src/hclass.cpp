@@ -25,6 +25,7 @@ HMap::HMap() {
   hst = 0;
   chk = 0;
   wrk = 0;
+  bitwk=0;
   cut_index = 0;
   memset(h_cuts,0,sizeof(h_cuts));
 }
@@ -68,6 +69,7 @@ HMap::HMap(const HMap& other) {
   hst = other.hst;
   chk = other.chk;
   wrk = other.wrk;
+  bitwk = other.bitwk;
   cut_index = other.cut_index;
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
@@ -82,6 +84,7 @@ HMap& HMap::operator=(const HMap& other) {
   hst = other.hst;
   chk = other.chk;
   wrk = other.wrk;
+  bitwk = other.bitwk;
   cut_index = other.cut_index;
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];

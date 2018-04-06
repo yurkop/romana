@@ -1422,12 +1422,13 @@ void CRS::DoReset() {
   b_fstart=false;
   opt.T_acq=0;
 
-  if (Fmode==1) {
-    Tstart64=-1;
-  }
-  else {
-    Tstart64=0;
-  }
+  // if (Fmode==1) {
+  //   Tstart64=-1;
+  // }
+  // else {
+  //   Tstart64=0;
+  // }
+  Tstart64=0;
 
   //cout << "Doreset: " << Fmode << " " << Tstart64 << endl;
 
@@ -1584,12 +1585,13 @@ void CRS::DoFopen(char* oname, int popt) {
     period=5;
   }
 
-  if (Fmode==1) {
-    Tstart64=-1;
-  }
-  else {
-    Tstart64=0;
-  }
+  // if (Fmode==1) {
+  //   Tstart64=-1;
+  // }
+  // else {
+  //   Tstart64=0;
+  // }
+  Tstart64=0;
 
   //list_min=opt.ev_max-opt.ev_min;
 
@@ -2751,12 +2753,18 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
 
 void CRS::Make_Events() {
 
-  if (!Levents.empty()) {
+  /*
+  if (Levents.empty()) {
+    opt.T_acq = 0;
+  }
+  //if (!Levents.empty()) {
+  else {
     if (b_fana) //file analyzis
       opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
     else //acquisition
       opt.T_acq = Levents.back().T*1e-9*period;
   }
+  */
 
   //cout << "Make_Events: T_acq: " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
   

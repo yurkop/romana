@@ -203,6 +203,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   changed=false;
   started=true;
+
+  memset(wrk_check,1,sizeof(wrk_check));
   //char ss[100];
 
 
@@ -260,7 +262,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
   fHor7->AddFrame(but, fLay6);
   
-  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [1] [2] [3] ... for other cuts in the formula\nExamples:\n [1] && [2] - cut1 \"and\" cut2\n [2] || [3] - cut2 \"or\" cut3";
+  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [1] [2] [3] ... for other cuts in the formula\nExamples:\n [1] && [2] - cut1 \"and\" cut2\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
 
   tForm    = new TGTextEntry(fHor7,"",8);;
   tForm->SetWidth(120);
@@ -433,17 +435,11 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
   TGListTreeItem *item;
   if (userData) { //single item
     item=fListTree->AddItem(parent, string, userData, open, closed, true);
-    //cout << "AddItem: " << item << endl;
     //item->SetDNDSource(kTRUE);
     HMap* map = (HMap*) userData;
     fListTree->CheckItem(item,*map->chk);
-    if (parent &&
-	TString(parent->GetText()).Contains("work",TString::kIgnoreCase)) {
-      fListTree->CheckItem(item,true);      
-    }
   }
   else { //folder
-    //cout << "Item: " << string << endl;
     HMap* map = new HMap(string,NULL,NULL,NULL,NULL);
     hcl->dir_list->Add(map);
     item=fListTree->AddItem(parent, string, map, open, closed, true);
@@ -481,22 +477,17 @@ void HistFrame::Make_Ltree() {
   hcl->dir_list->SetName("dir_list");
   hcl->dir_list->SetOwner(true);
 
-  //fListTree->AddRoot("Histograms");
-  //map = new HMap("WORK",NULL,NULL,NULL,NULL);
-  //hcl->dir_list->Add(map);
+
   iWork = Item_Ltree(iroot, "WORK",0,0,0);
   for (int cc=0;cc<opt.ncuts;cc++) {
     sprintf(cutname,"WORK_cut%d",cc+1);
-    //map = new HMap(cutname,NULL,NULL,NULL,NULL);
-    //hcl->dir_list->Add(map);
     iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
   }
-
+  
   next.Reset();
   while ( (obj=(TObject*)next()) ) {
     map = (HMap*) obj;
     TString title = TString(map->GetTitle());
-    //cout << "Title: " << title << " " << endl;
     if (!fListTree->FindChildByName(0,title)) {
       idir = Item_Ltree(iroot, title,0,0,0);
     }
@@ -505,7 +496,7 @@ void HistFrame::Make_Ltree() {
     else
       pic=pic1;
     Item_Ltree(idir, map->GetName(), map, pic, pic);
-    //cout << "map: " << map->hst->GetName() << " " << *map->wrk);
+
     if (*map->wrk) {
       Item_Ltree(iWork, map->GetName(), map, pic, pic);
 
@@ -525,6 +516,11 @@ void HistFrame::Make_Ltree() {
 
   }
 
+  fListTree->CheckAllChildren(iWork,wrk_check[0]);
+  for (int cc=0;cc<opt.ncuts;cc++) {
+    fListTree->CheckAllChildren(iWork_cut[cc],wrk_check[cc+1]);
+  }
+  
   // TIter next2(hcl->dir_list);
   // TObject* obj2=0;
   // while ( (obj2=(TObject*)next2()) ) {
@@ -569,7 +565,12 @@ void HistFrame::Clear_Ltree()
   TGListTreeItem *idir;
   //clear fListTree
   idir = fListTree->GetFirstItem();
+  int ii=0;
   while (idir) {
+    if (TString(idir->GetText()).Contains("work",TString::kIgnoreCase)) {
+      wrk_check[ii]=idir->IsChecked();
+      ii++;
+    }
     fListTree->DeleteChildren(idir);
     fListTree->DeleteItem(idir);
     idir = idir->GetNextSibling();
@@ -760,18 +761,13 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
     }
   }
 
-  //YK - don't know why this is needed
+  // TGListTreeItem *iwork = fListTree->GetFirstItem();
+  // cout << "check!: " << item->GetText() << " " << check << " " << iwork->IsChecked() << endl;
 
-  // while (idir) {
-  //   if (!TString(idir->GetText()).Contains("WORK")) {
-  //     if ( (item=fListTree->FindChildByName(idir,obj->GetName())) ) {
-  // 	fListTree->CheckItem(item,check);
-  //     }
-  //   }
-  //   idir = idir->GetNextSibling();
+  // HMap *map2 = (HMap*) hcl->map_list->FindObject(item->GetText());
+  // if (map2) {
+  //   cout << "map2: " << map2->GetName() << " " << *map2->chk << " " << opt.s_mtof[0] << endl;
   // }
-
-
 
   if (crs->b_stop)
     Update();
@@ -1102,7 +1098,7 @@ void HistFrame::AddFormula() {
 
 void HistFrame::ClearCutG()
 {
-  cout << "Clear_cuts: " << endl;
+  //cout << "Clear_cuts: " << endl;
 
   // clear cut_index for all histograms
   TIter next(hcl->map_list);
@@ -1416,11 +1412,11 @@ void HistFrame::DrawHist() {
 
 	int icut=0;
 	bool found=false;
-	cout << "cut_index: " << hh->GetName() << ": ";
-	for (int j=0;j<MAXCUTS;j++) {
-	  cout << (int) map->cut_index[j] << " ";
-	}
-	cout << endl;
+	// cout << "cut_index: " << hh->GetName() << ": ";
+	// for (int j=0;j<MAXCUTS;j++) {
+	//   cout << (int) map->cut_index[j] << " ";
+	// }
+	// cout << endl;
 	for (int j=0;j<MAXCUTS;j++) {
 
 	  icut=map->cut_index[j];

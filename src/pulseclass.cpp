@@ -366,7 +366,7 @@ void EventClass::Fill_Time_Extend(HMap* map) {
   if (opt.T_acq > max) {
     max*=2;
     if (opt.T_acq>max) {
-      cout << "Time leap is too large: " << this->Nevt << " " << opt.T_acq << " " << crs->Tstart64 << endl;
+      cout << "Time leap is too large: " << this->Nevt << " " << opt.T_acq << " " << max << " " << crs->Tstart64 << endl;
     }
     else {
       int nbin = hh->GetNbinsX()*2;
@@ -499,15 +499,24 @@ void EventClass::FillHist(Bool_t first) {
   //cout << "FillHist: " << this->Nevt << endl;
 
   if (first) {
-    //opt.T_acq=(T-crs->Tstart64)*DT;
+    opt.T_acq=(T-crs->Tstart64)*DT;
+
+    if (opt.Tstop && opt.T_acq > opt.Tstop) {
+      if (crs->b_fana) {
+	crs->b_stop=true;
+	crs->b_fana=false;
+	crs->b_run=0;
+      }
+      return;
+    }
 
     if (opt.ncuts)
       memset(hcl->cut_flag,0,sizeof(hcl->cut_flag));
   }
 
-  if (opt.Tstop && (T-crs->Tstart64)*DT > opt.Tstop) {
-    return;
-  }
+  // if (opt.Tstop && (T-crs->Tstart64)*DT > opt.Tstop) {
+  //   return;
+  // }
 
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
