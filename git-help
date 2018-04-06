@@ -1,5 +1,6 @@
 клонировать проект в текущую директорию:
-git clone https://github.com/yurkop/romana .
+#### bad ###   git clone https://github.com/yurkop/romana .
+git clone git@github.com:yurkop/romana.git .
 
 # проверить псевдонимы удаленных репозиториев:
 # git remote -v
