@@ -267,7 +267,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   tForm    = new TGTextEntry(fHor7,"",8);;
   tForm->SetWidth(120);
   tForm->SetToolTipText(ttip);
-  //tForm->Connect("TextChanged(char*)", "HistFrame", this, "DoFormula()");
+  tForm->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
   fHor7->AddFrame(tForm,fLay2);
 
   //container->AddFrame(new TGLabel(container, "--Histograms--"), fLay9);
@@ -456,10 +456,15 @@ void HistFrame::Make_Ltree() {
 
   char cutname[99];
   char name[99];
-  TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("marker25.xpm");
-  TGPicture *pic_xy = (TGPicture*) gClient->GetPicture("marker.xpm");
-  TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
-  TGPicture *pic2 = (TGPicture*) gClient->GetPicture("h2_t.xpm");
+  TGPicture *pic_1d = (TGPicture*) gClient->GetPicture("h1_t.xpm");
+  TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("h2_t.xpm");
+
+  TGPicture *pic_c2 = (TGPicture*) gClient->GetPicture("marker30.xpm");
+  TGPicture *pic_c1 = (TGPicture*) gClient->GetPicture("hor_arrow_cursor.png");
+  TGPicture *pic_f = (TGPicture*) gClient->GetPicture("cpp_src_t.xpm");
+
+  TGPicture *pic_xy = (TGPicture*) gClient->GetPicture("marker7.xpm");
+
   TGPicture *pic=0;
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir=0;
@@ -492,9 +497,10 @@ void HistFrame::Make_Ltree() {
       idir = Item_Ltree(iroot, title,0,0,0);
     }
     if (map->hst->InheritsFrom(TH2::Class()))
-      pic=pic2;
+      pic=pic_2d;
     else
-      pic=pic1;
+      pic=pic_1d;
+
     Item_Ltree(idir, map->GetName(), map, pic, pic);
 
     if (*map->wrk) {
@@ -531,15 +537,27 @@ void HistFrame::Make_Ltree() {
   for (int i=0;i<opt.ncuts;i++) {
     TCutG* gcut = hcl->cutG[i];
 
-    if (opt.pcuts[i]==2)
-      pic=pic1;
-    else
-      pic=pic2;
+    if (opt.pcuts[i]==1) //formula
+      pic=pic_f;
+    else if (opt.pcuts[i]==2) //1d
+      pic=pic_c1;
+    else //2d
+      pic=pic_c2;
 
-    item = fCutTree->AddItem(0, gcut->GetName(), gcut, pic_2d, pic_2d, false);
-    fCutTree->AddItem(item, gcut->GetTitle(), pic, pic, false);
-    for (int i=0;i<gcut->GetN();i++) {
-      sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
+    
+    if (gcut->GetN() > 1) {
+      sprintf(name,"%s %s",gcut->GetName(),gcut->GetTitle());
+      item = fCutTree->AddItem(0, name, gcut, pic, pic, false);
+      //fCutTree->AddItem(item, gcut->GetTitle(), pic, pic, false);
+      for (int i=0;i<gcut->GetN();i++) {
+	sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
+	fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
+      }
+    }
+    else {
+      sprintf(name,"%s %s",gcut->GetName(),"formula");
+      item = fCutTree->AddItem(0, name, gcut, pic, pic, false);
+      sprintf(name,"%s",opt.cut_form[i]);
       fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
     }
     //cout << "AddCutg: " << i+1 << " " << gcut->GetName() << " " << opt.pcuts[i] << endl;

@@ -205,7 +205,7 @@ class Toptions: public TObject {
   Float_t gcut[MAXCUTS][2][MAX_PCUTS]; //20 cuts; xy; 10 points
 
   char formula[36];
-  char cut_form[MAXCUTS][16];
+  char cut_form[MAXCUTS][24];
 
  public:
   //void InitPar(Int_t module);

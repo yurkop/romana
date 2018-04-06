@@ -81,3 +81,4 @@ check opt.Tstop for data acquisition
 
 06.04.18
 1. Добавить tooltips на все кнопки/поля
+2. Что случается при удалении cuts ?

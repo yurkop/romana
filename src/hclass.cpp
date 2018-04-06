@@ -313,7 +313,7 @@ void HClass::Make_cuts() {
   //make cuts
   for (int i=0;i<opt.ncuts;i++) {
     if (cutG[i]) delete cutG[i];
-    sprintf(cutname,"cut%d",i+1);
+    sprintf(cutname,"[%d]",i+1);
 
     if (opt.pcuts[i]==1) {
       b_formula=true;
