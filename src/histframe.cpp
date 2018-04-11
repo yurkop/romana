@@ -990,57 +990,69 @@ void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
   }
   TCutG* gcut;
 
-  cout << "CutClick: " << item->GetText() << " " << item->GetUserData() << " " << item->GetParent() << " " << but << endl;
+  //cout << "CutClick: " << item->GetText() << " " << item->GetUserData() << " " << item->GetParent() << " " << but << endl;
 
   gcut = (TCutG*) item->GetUserData();
   if (gcut) {
     TString ss = TString(gcut->GetName());
-    ss.ReplaceAll("cut","");
+    //ss.ReplaceAll("cut","");
+    ss.ReplaceAll("[","");
+    ss.ReplaceAll("]","");
     //char cc = ss.Atoi();
     int icut = ss.Atoi();
     cout << "cutclick2: " << gcut->GetName() << " " << gcut->GetTitle() << " " << ss << " " << icut << endl;
+
+    if (icut<1 && icut >MAXCUTS) {
+      cout << "wrong cut number: " << icut << ". Consider clearing all cuts" << endl;
+      return;
+    }
+    icut--;
+
     HMap *map = (HMap*) hcl->map_list->FindObject(gcut->GetTitle());
     //HMap *map = (HMap*) hcl->map_list->FindObject(gcut->GetName());
-    cout << "map: " << map << " " << gcut->GetName() << endl;
     //clear cut from cut_index
     if (map) {
-      Char_t cp[MAXCUTS];
-      memcpy(cp,map->cut_index,sizeof(cp));
-      memset(map->cut_index,0,sizeof(cp));
-      int j=0;
-      for (int i=0;i<MAXCUTS;i++) {
-      	if (cp[i]==0) {
-      	  break;
-      	}
-      	if (cp[i]!=icut) {
-      	  map->cut_index[j]=cp[i];
-	  j++;
-      	}
-      }
+
+      cout << "map: " << map << " " << gcut->GetTitle() << " " << map->GetName() << endl;
+
+      map->cut_index[icut]=-1;
+      // Char_t cp[MAXCUTS];
+      // memcpy(cp,map->cut_index,sizeof(cp));
+      // memset(map->cut_index,0,sizeof(cp));
+      // int j=0;
+      // for (int i=0;i<MAXCUTS;i++) {
+      // 	if (cp[i]==0) {
+      // 	  break;
+      // 	}
+      // 	if (cp[i]!=icut) {
+      // 	  map->cut_index[j]=cp[i];
+      // 	  j++;
+      // 	}
+      // }
     }
 
     fCutTree->DeleteChildren(item);
     fCutTree->DeleteItem(item);
-    
-    memset(opt.pcuts,0,sizeof(opt.pcuts));
-    memset(opt.gcut,0,sizeof(opt.gcut));
 
-    opt.ncuts=0;
+    //memset(opt.pcuts,0,sizeof(opt.pcuts));
+    //memset(opt.gcut,0,sizeof(opt.gcut));
+    opt.pcuts[icut]=0;
+    memset(opt.gcut[icut],0,sizeof(opt.gcut[icut]));
 
-    int i=0;
-    item = fCutTree->GetFirstItem();
-    while (item) {
-      gcut = (TCutG*) item->GetUserData();
-      opt.pcuts[i]=gcut->GetN();
-      for (int j=0;j<gcut->GetN();j++) {
-	opt.gcut[i][0][j]=gcut->GetX()[j];
-	opt.gcut[i][1][j]=gcut->GetY()[j];
-      }
-      item = item->GetNextSibling();
-      i++;
-    }
-
-    opt.ncuts=i;
+    //opt.ncuts=0;
+    // int i=0;
+    // item = fCutTree->GetFirstItem();
+    // while (item) {
+    //   gcut = (TCutG*) item->GetUserData();
+    //   opt.pcuts[i]=gcut->GetN();
+    //   for (int j=0;j<gcut->GetN();j++) {
+    // 	opt.gcut[i][0][j]=gcut->GetX()[j];
+    // 	opt.gcut[i][1][j]=gcut->GetY()[j];
+    //   }
+    //   item = item->GetNextSibling();
+    //   i++;
+    // }
+    //opt.ncuts=i;
 
     Clear_Ltree();
     hcl->Make_cuts();
