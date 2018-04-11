@@ -9,6 +9,19 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
+// class hdef {
+//  public:
+//   hdef() {};
+//   virtual ~hdef() {};
+
+//   Float_t bins,min,max;
+//   Bool_t b;
+//   Bool_t c[MAX_CH];
+//   Bool_t w[MAX_CH];
+//   Char_t cut[MAX_CH*MAXCUTS];
+//   ClassDef(hdef, 1)
+// };
+
 class Coptions: public TObject {
  public:
   Coptions();
@@ -186,6 +199,8 @@ class Toptions: public TObject {
   Char_t cut_per[MAX_CH*MAXCUTS];
   Char_t cut_h2d[MAX_CH*MAXCUTS];
   Char_t cut_pulse[MAX_CH*MAXCUTS];
+
+  //hdef h_tof;
 
   Int_t start_ch;
   Float_t mtof_period;

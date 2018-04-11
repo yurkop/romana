@@ -21,6 +21,7 @@
 #pragma link C++ class HClass+;
 //#pragma link C++ class rpeak_type+;
 #pragma link C++ class vector<rpeak_type>+;
+//#pragma link C++ class hdef+;
 #pragma link C++ function DynamicExec;
 //#pragma link C++ global gStyle;
 //#pragma link C++ global gROOT;

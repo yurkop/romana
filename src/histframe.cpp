@@ -485,8 +485,10 @@ void HistFrame::Make_Ltree() {
 
   iWork = Item_Ltree(iroot, "WORK",0,0,0);
   for (int cc=0;cc<opt.ncuts;cc++) {
-    sprintf(cutname,"WORK_cut%d",cc+1);
-    iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
+    if (opt.pcuts[cc]) {
+      sprintf(cutname,"WORK_cut%d",cc+1);
+      iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
+    }
   }
   
   next.Reset();
@@ -524,7 +526,9 @@ void HistFrame::Make_Ltree() {
 
   fListTree->CheckAllChildren(iWork,wrk_check[0]);
   for (int cc=0;cc<opt.ncuts;cc++) {
-    fListTree->CheckAllChildren(iWork_cut[cc],wrk_check[cc+1]);
+    if (opt.pcuts[cc]) {
+      fListTree->CheckAllChildren(iWork_cut[cc],wrk_check[cc+1]);
+    }
   }
   
   // TIter next2(hcl->dir_list);
@@ -535,32 +539,36 @@ void HistFrame::Make_Ltree() {
 
   //fill fCutTree
   for (int i=0;i<opt.ncuts;i++) {
-    TCutG* gcut = hcl->cutG[i];
+    if (opt.pcuts[i]) {
+      TCutG* gcut = hcl->cutG[i];
 
-    if (opt.pcuts[i]==1) //formula
-      pic=pic_f;
-    else if (opt.pcuts[i]==2) //1d
-      pic=pic_c1;
-    else //2d
-      pic=pic_c2;
+      if (opt.pcuts[i]==1) //formula
+	pic=pic_f;
+      else if (opt.pcuts[i]==2) //1d
+	pic=pic_c1;
+      else //2d
+	pic=pic_c2;
 
-    
-    if (gcut->GetN() > 1) {
-      sprintf(name,"%s %s",gcut->GetName(),gcut->GetTitle());
-      item = fCutTree->AddItem(0, name, gcut, pic, pic, false);
-      //fCutTree->AddItem(item, gcut->GetTitle(), pic, pic, false);
-      for (int i=0;i<gcut->GetN();i++) {
-	sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
+      if (gcut->GetN() > 1) {
+	sprintf(name,"%s %s",gcut->GetName(),gcut->GetTitle());
+	item = fCutTree->AddItem(0, name, gcut, pic, pic, false);
+	//fCutTree->AddItem(item, gcut->GetTitle(), pic, pic, false);
+	for (int i=0;i<gcut->GetN();i++) {
+	  sprintf(name,"%0.2f; %0.2f",gcut->GetX()[i],gcut->GetY()[i]);
+	  fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
+	}
+      }
+      else {
+	sprintf(name,"%s %s",gcut->GetName(),"formula");
+	item = fCutTree->AddItem(0, name, gcut, pic, pic, false);
+	sprintf(name,"%s",opt.cut_form[i]);
 	fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
       }
+      //cout << "AddCutg: " << i+1 << " " << gcut->GetName() << " " << opt.pcuts[i] << endl;
     }
-    else {
-      sprintf(name,"%s %s",gcut->GetName(),"formula");
-      item = fCutTree->AddItem(0, name, gcut, pic, pic, false);
-      sprintf(name,"%s",opt.cut_form[i]);
-      fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
+    else { //if opt.pcuts[i]
+      
     }
-    //cout << "AddCutg: " << i+1 << " " << gcut->GetName() << " " << opt.pcuts[i] << endl;
   }
 
 }
@@ -1450,7 +1458,7 @@ void HistFrame::DrawHist() {
 	for (int j=0;j<MAXCUTS;j++) {
 
 	  icut=map->cut_index[j];
-	  if (icut<=0 || icut>=MAXCUTS)
+	  if (icut==0 || icut>=MAXCUTS)
 	    break;
 
 	  if (hcl->cutG[icut-1]) {

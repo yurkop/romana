@@ -107,6 +107,7 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer
   //buffer should exist and have sufficient size to allocate all data
 
+  //cout << "ClassToBuf: " << name << endl;
   TList* lst = TClass::GetClass(name)->GetListOfDataMembers();
   if (!lst) {
     cout <<"Class " << name << " doesn't exist" << endl;
@@ -136,8 +137,8 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
-    //if (debug&0x2)
-    //cout << "member: " << dm->GetName() << endl;
+    if (debug&0x2)
+      cout << "member: " << dm->GetName() << endl;
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -231,8 +232,8 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
     else {
-      //cout << "member not found: " << dm << " " << memname << " " 
-      //<< clname << " " << name << endl;
+      cout << "member not found: " << dm << " " << memname << " " 
+      << clname << " " << name << endl;
     }
 
   }
@@ -371,6 +372,8 @@ int main(int argc, char **argv)
     }
   }
 
+  //opt.h_tof.bins=17;
+  //cout << "tof_bins: " << opt.h_tof.bins << endl;
 
   if (datfname) {
     crs->DoFopen(datfname,rdpar); //read file and parameters from it
@@ -378,7 +381,7 @@ int main(int argc, char **argv)
   else {
     datfname=(char*)"";
   }
-  
+
   //cout << "gStyle1: " << gStyle << endl;
   //hcl->Make_hist();
   //cout << "gStyle2: " << gStyle << endl;
