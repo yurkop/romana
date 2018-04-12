@@ -49,6 +49,7 @@ HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
 }
 
 HMap::~HMap() {
+  //cout << "~hmap: " << GetName() << endl;
   delete hst;
   hst=0;
   //memset(cut_index,0,MAXCUTS);
@@ -128,7 +129,6 @@ HClass::HClass()
 
 HClass::~HClass()
 {
-
 }
 
 void NameTitle(char* name, char* title, int i, int cc, 

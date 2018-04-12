@@ -68,6 +68,7 @@ extern int chanPresent;
 
 //TCondition tcond1(0);
 
+void printhlist(int n);
 //static const char * program_name;
 
 /*
@@ -1436,41 +1437,19 @@ void CRS::DoReset() {
   //Offset64=0;
   //T_last_good=0;
   Pstamp64=P64_0;
-  //cout << "crs::reset: " << endl;
-  //cout << "crs::reset: " << (int) CRS::b_fana << endl;
-  //exit(1);
 
-  //b_acq=false;
-  //b_fana=false;
-  //b_stop=true;
-
-  //bstart=true;
-
-  //nvp=0;
   Levents.clear();
   //cout << "EvtFrm: " << EvtFrm << endl;
   if (EvtFrm) {
     EvtFrm->DoReset();
   }
-  //if (HiFrm) {
-  //HiFrm->DoReset();
-  //}
 
-  //n_ana=0;
   m_start=Levents.end();
   m_event=Levents.end();
 
   nevents=0;
   nevents2=0;
 
-  // if (opt.ev_max<=opt.ev_min) {
-  //   opt.ev_max=opt.ev_min*2;
-  // }
-  // list_min=opt.ev_max-opt.ev_min;
-
-  // for (int i=0;i<MAXTRANS;i++) {
-  //   Vpulses[i].clear();
-  // }
   Vpulses.clear();
 
   if (Fmode!=1) {
@@ -1495,19 +1474,17 @@ void CRS::DoReset() {
 
   idec=0;
 
+  printhlist(5);
   //cout << "f_read: " << f_read << endl;
   if (f_read)
     DoFopen(NULL,0);
   justopened=true;
 
+  printhlist(6);
   // parpar->Update();
   if (crspar) {
     crspar->ResetStatus();
   }
-  // chanpar->Update();
-
-  //gzrewind(f_raw);
-
   //if (HiFrm)
   //  cout << "DoReset2: " << HiFrm->h_time[1]->GetName() << endl;
 
@@ -1575,6 +1552,7 @@ void CRS::DoFopen(char* oname, int popt) {
     period=10;
   }
   else { //crs32 or crs2
+  printhlist(7);
     if (ReadParGz(f_read,Fname,1,1,popt)) {
       gzclose(f_read);
       f_read=0;
@@ -1583,6 +1561,7 @@ void CRS::DoFopen(char* oname, int popt) {
     bsize=opt.rbuf_size*1024;
     boffset=0;
     period=5;
+  printhlist(8);
   }
 
   // if (Fmode==1) {
@@ -1663,13 +1642,18 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
-  // for (int i=0;i<opt.ncuts;i++) {
-  //   char ss[64];
-  //   sprintf(ss,"cut%d",i+1);
-  //   hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
-  //   hcl->cutG[i]->SetLineColor(i+2);
-  // }
-  hcl->Make_cuts();
+  for (int i=0;i<opt.ncuts;i++) {
+    char ss[64];
+    sprintf(ss,"%d",i+1);
+    hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
+    hcl->cutG[i]->SetLineColor(i+2);
+  }
+
+  // printhlist(9);
+  // //HiFrm->Clear_Ltree();
+  // hcl->Make_cuts();
+  // //HiFrm->Make_Ltree();
+  // printhlist(10);
 
   cout << "ReadParGz2: " << sz << " " << pname << endl;
   return 0;

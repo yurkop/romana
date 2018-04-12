@@ -73,6 +73,19 @@ Bool_t MECanvas::HandleDNDDrop(TDNDData *data) {
 }
 */
 
+void printhlist(int n) {
+  if (!HiFrm) return;
+  if (!HiFrm->hlist) return;
+  cout << "printhlist+: " << n << endl;
+  TIter next(HiFrm->hlist);
+  TObject* obj;
+  while ( (obj=(TObject*)next()) ) {
+    HMap* map=(HMap*) obj;
+    cout << "hl map: " << map << endl;
+    cout << "hl name: " << map->GetName() << endl;
+  }
+  cout << "printhlist-: " << n << endl;
+}
 //------------------------------
 
 void DynamicExec()
@@ -578,13 +591,7 @@ void HistFrame::Delete_work_item(TGListTreeItem *item)
 void HistFrame::Clear_Ltree()
 {
   cout << "hlistclear: " << hlist << " " << hlist->GetSize() << endl;
-  TIter next(hlist);
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    HMap* map=(HMap*) obj;
-    cout << "hlist1: " << map << endl;
-    cout << "hlist2: " << map->GetName() << endl;
-  }
+  printhlist(1);
 
   hlist->Clear();
 
@@ -1170,6 +1177,7 @@ void HistFrame::HiReset()
 {
 
   cout << "HiReset1: " << endl;
+  printhlist(2);
   //return;
   
   if (!crs->b_stop) return;
@@ -1240,6 +1248,17 @@ void HistFrame::Update()
   //hcl->hist_list->ls();
   //cout << "hist_list: " << hcl->hist_list << " " << hcl->hist_list->GetSize() << endl;
   //cout << "HiFrm::Update()2" << endl;
+
+
+  // TIter next(hlist);
+  // TObject* obj;
+  // while ( (obj=(TObject*)next()) ) {
+  //   HMap* map=(HMap*) obj;
+  //   cout << "hlist_update: " << map << " " << map->GetName() << endl;
+  //   //cout << "hlist2: " << map->GetName() << endl;
+  // }
+
+
 }
 
 void HistFrame::DrawStack() {
@@ -1301,7 +1320,7 @@ void HistFrame::DrawHist() {
 	// }
 	if (item->IsChecked()) {
 	  hlist->Add((TObject*)item->GetUserData());
-	  //cout << "hlist1: " << item->GetText() << endl;
+	  cout << "hlist_add: " << item->GetUserData() << " " << item->GetText() << endl;
 	}
       }
       item = item->GetNextSibling();

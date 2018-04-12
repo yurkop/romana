@@ -102,6 +102,8 @@ void *handle_dum(void* ptr)
 }
 */
 
+void printhlist(int n);
+
 //-------------------------------------
 UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer
@@ -1529,6 +1531,7 @@ void MainFrame::DoReadRoot() {
 
 void MainFrame::DoReset() {
 
+  printhlist(4);
   /*
   opt.enabl[0]=false;
   int tmp,max;
@@ -1545,9 +1548,13 @@ void MainFrame::DoReset() {
   // if (HiFrm)
   //   cout << "DoReset_main: " << HiFrm->h_time[1]->GetName() << endl;
 
+  if (HiFrm)
+    cout << "DoReset_main: " << HiFrm->hlist->GetSize() << endl;
+
   if (!crs->b_stop) return;
 
   crs->DoReset();
+  printhlist(3);
   HiFrm->HiReset();
 
   parpar->Update();
