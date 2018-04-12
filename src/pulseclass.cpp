@@ -385,20 +385,18 @@ void EventClass::Fill1d(Bool_t first, HMap* map, Float_t x) {
     //cout << "fill: " << map->hst->GetName() << endl;
     map->hst->Fill(x);
     if (opt.ncuts) {
-      for (int i=0;i<MAXCUTS;i++) {
-	int icut=map->cut_index[i]-1;
-	if (icut<0)
-	  break;
-	//cout << "cut: " << i << " " << icut << " " << hcl->cutG[icut] << endl;
-	if (x>=hcl->cutG[icut]->GetX()[0] && x<hcl->cutG[icut]->GetX()[1]) {
-	  hcl->cut_flag[icut+1]=true;
+      for (int i=0;i<opt.ncuts;i++) {
+	if (getbit(*(map->cut_index),i)) {
+	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
+	    hcl->cut_flag[i]=1;
+	  }
 	}
       }
     }
   }
   else if (*(map->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
-      if (hcl->cut_flag[i+1]) {
+      if (hcl->cut_flag[i]) {
 	//cout << "Fill1d: " << Nevt << " " << x << endl;
 	map->h_cuts[i]->hst->Fill(x);
       }
@@ -444,7 +442,7 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
 
   else if (*(map->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
-      if (hcl->cut_flag[i+1]) {
+      if (hcl->cut_flag[i]) {
 
 	if (map->h_cuts[i]->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
 	  map->h_cuts[i]->hst->
@@ -464,19 +462,18 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
     map->hst->Fill(x,y);
     if (opt.ncuts) {
       for (int i=0;i<MAXCUTS;i++) {
-	int icut=map->cut_index[i]-1;
-	if (icut<0)
-	  break;
-	//cout << "cut: " << i << " " << icut << " " << hcl->cutG[icut] << endl;
-	if (hcl->cutG[icut]->IsInside(x,y)) {
-	  hcl->cut_flag[icut+1]=true;
+	if (getbit(*(map->cut_index),i)) {
+	  //cout << "cut: " << i << " " << icut << " " << hcl->cutG[icut] << endl;
+	  if (hcl->cutG[i]->IsInside(x,y)) {
+	    hcl->cut_flag[i]=1;
+	  }
 	}
       }
     }
   }
   else if (*(map->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
-      if (hcl->cut_flag[i+1])
+      if (hcl->cut_flag[i])
 	map->h_cuts[i]->hst->Fill(x,y);      
     }
   }
@@ -655,7 +652,7 @@ void EventClass::FillHist(Bool_t first) {
   if (first && hcl->b_formula) {
     for (int i=0;i<opt.ncuts;i++) {
       if (opt.pcuts[i]==1) {//formula
-	hcl->cut_flag[i+1]=hcl->cform[i+1]->EvalPar(0,hcl->cut_flag);
+	hcl->cut_flag[i]=hcl->cform[i]->EvalPar(0,hcl->cut_flag);
       }
       //cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i+1] << endl;
     }

@@ -34,6 +34,8 @@ void example();
 void saveroot(const char *name);
 void readroot(const char *name);
 short int bits(int n, int i1, int i2);
+Bool_t getbit(int n, int bit);
+void setbit(int &n, int bit, int set);
 
 //-----------------------------------------------
 class MainFrame : public TGMainFrame {

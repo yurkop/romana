@@ -15,7 +15,7 @@ class HMap: public TNamed {
 
   HMap();
   HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
-       Char_t *cuts);
+       Int_t *cuts);
   ~HMap();
   HMap(const HMap& other);
   HMap& operator=(const HMap& other);
@@ -24,7 +24,9 @@ class HMap: public TNamed {
   Bool_t* chk; //item is checked
   Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*)
   UShort_t* bitwk; //bit mask - item is checked in the WORK* folder
-  Char_t *cut_index; //список окон, заданных на этой гистограмме (hst)
+  Int_t *cut_index; //список окон, заданных на этой гистограмме (hst)
+  // bit mask: 1 - cut is here; 0 - cut is not here
+  // ----- wrong! значения cut_index[*] нумеруются с 1: cut_index[i] = cut+1;
   //TList* list_cuts; 
   HMap* h_cuts[MAXCUTS];
   //TList* list_h_cuts;
@@ -64,10 +66,10 @@ class HClass {
   //Name: cut[i]
   //Title: histogram name on which this cut is made
   //nr of points: 1 - formula; 2 - 1d; >2 - 2d
-  Double_t cut_flag[MAXCUTS+1]; //starts from 1, not from 0
+  Double_t cut_flag[MAXCUTS]; //признак срабатывания окна
   char cuttitle[MAXCUTS][99];
   int cutcolor[MAXCUTS];
-  TFormula* cform[MAXCUTS+1]; //starts from 1, not from 0
+  TFormula* cform[MAXCUTS]; //starts from 1, not from 0
   bool b_formula; //at least one cut formula exists
 
   //HMap *cutmap[MAXCUTS];
@@ -89,15 +91,15 @@ class HClass {
   void Make_1d(const char* dname, const char* name, const char* title,
 	       HMap* map[],// TH1F* hh[MAX_CH][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
-	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
+	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Int_t *cuts);
   void Make_1d_pulse(const char* dname, const char* name,
 		     const char* title, HMap* map[],
 		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
-		     Char_t *cuts);
+		     Int_t *cuts);
   void Make_2d(const char* dname, const char* name, const char* title,
 	       HMap* map[],// TH2F* hh[][MAXCUTS],
 	       Float_t bins, Float_t min, Float_t max,
-	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Char_t *cuts);
+	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Int_t *cuts);
   void Make_hist();
   void Clone_Hist(HMap* map);
   void Remove_Clones(HMap* map);

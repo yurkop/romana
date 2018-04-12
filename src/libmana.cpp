@@ -232,8 +232,8 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
     else {
-      cout << "member not found: " << dm << " " << memname << " " 
-      << clname << " " << name << endl;
+      //cout << "member not found: " << dm << " " << memname << " " 
+      //<< clname << " " << name << endl;
     }
 
   }
@@ -669,6 +669,17 @@ short int bits(int n, int i1, int i2)
   return r;
 }
 
+Bool_t getbit(int n, int bit) {
+  return n & (1<<bit);
+}
+void setbit(int &n, int bit, int set) {
+  if (set) {
+    n |= 1<<bit;
+  }
+  else {
+    n = n & ~(1<<bit);
+  }
+}
 /*
 //----- MFileDialog ----------------
 

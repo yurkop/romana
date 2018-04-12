@@ -80,7 +80,7 @@ class HistFrame: public TGCompositeFrame {
    void DoRadio();
    void DoButton();
    void AddCutG(TPolyLine *pl, TObject* hobj);
-   void MakeCutG(int icut, TPolyLine *pl, TObject* hobj);
+   void MakeCutG(TPolyLine *pl, TObject* hobj);
    void DoCutG();
    void AddFormula();
    //void DoFormula();

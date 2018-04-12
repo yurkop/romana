@@ -31,7 +31,7 @@ HMap::HMap() {
 }
 
 HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
-	   Char_t *cuts) {
+	   Int_t *cuts) {
   hst = hist;
   chk = s;
   wrk = w;
@@ -147,7 +147,7 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 		     HMap* map[],// TH1F* hh[MAX_CH][MAXCUTS],
 		     Float_t bins, Float_t min, Float_t max,
 		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
-		     Char_t *cuts) {
+		     Int_t *cuts) {
 
   if (!bb) return;
 
@@ -165,7 +165,7 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
     TH1F* hh=new TH1F(name2,title2,nn,min,max);
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
-    map[i] = new HMap(dname,hh,chk+i,wrk+i,cuts+i*MAXCUTS);
+    map[i] = new HMap(dname,hh,chk+i,wrk+i,cuts+i);
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
 
@@ -175,7 +175,7 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 void HClass::Make_1d_pulse(const char* dname, const char* name,
 			   const char* title, HMap* map[],
 			   Bool_t bb, Bool_t* chk, Bool_t* wrk,
-			   Char_t *cuts) {
+			   Int_t *cuts) {
 
   if (!bb) return;
 
@@ -197,7 +197,7 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
     TH1F* hh=new TH1F(name2,title2,nn,min,max);
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
-    map[i] = new HMap(dname,hh,chk+i,wrk+i,cuts+i*MAXCUTS);
+    map[i] = new HMap(dname,hh,chk+i,wrk+i,cuts+i);
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
 
@@ -208,7 +208,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
 		     HMap* map[],// TH2F* hh[][MAXCUTS],
 		     Float_t bins, Float_t min, Float_t max,
 		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
-		     Char_t *cuts) {
+		     Int_t *cuts) {
 
   if (!bb) return;
 
@@ -224,7 +224,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
   int nn=bins*(max-min);
   TH2F* hh=new TH2F(name2,title2,nn,min,max,nn,min,max);
 
-  map[0] = new HMap(dname,hh,chk+0,wrk+0,cuts+0*MAXCUTS);
+  map[0] = new HMap(dname,hh,chk+0,wrk+0,cuts+0);
   map_list->Add(map[0]);
   hist_list->Add(map[0]->hst);
 
@@ -286,21 +286,22 @@ void HClass::Make_cuts() {
 
   // loop through all maps
   // для каждой гистограммы (map) находим cuts, которые заданы в ней
+  //cout << "make_cuts1: " << endl;
   TIter next(map_list);
   TObject* obj=0;
   while ( (obj=(TObject*)next()) ) {
     HMap* map = (HMap*) obj;
 
     //determine cut titles and colors
-    for (int i=0;i<MAXCUTS;i++) {
-      int icut=map->cut_index[i];
-      if (icut==0) {
-    	break;
+    int icut=1;
+    for (int i=0;i<opt.ncuts;i++) {
+      if (getbit(*(map->cut_index),i)) {
+	cutcolor[i]=icut;
+	icut++;
+	//cutcolor[i]+=1;
+	sprintf(cuttitle[i],"%s",map->GetName());
+	//cout << "cutcolor: " << i << " " << cutcolor[icut-1] << " " << cuttitle[icut-1] << endl;
       }
-      cutcolor[icut-1]=i+2;
-      //cutcolor[i]+=1;
-      sprintf(cuttitle[icut-1],"%s",map->GetName());
-      //cout << "cutcolor: " << i << " " << cutcolor[icut-1] << " " << cuttitle[icut-1] << endl;
     }
 
     //clone histograms if map flag is set
@@ -314,30 +315,41 @@ void HClass::Make_cuts() {
   //cout << "color[0]: " << cutcolor[0] << endl;
   //make cuts
   for (int i=0;i<opt.ncuts;i++) {
-    if (cutG[i]) delete cutG[i];
+    //cout << "cuts1: " << i << endl;
+    if (cutG[i]) {
+      delete cutG[i];
+      cutG[i]=0;
+    }
     
-    sprintf(cutname,"[%d]",i+1);
+    //cout << "cuts2: " << opt.ncuts << " " << i << endl;
+    sprintf(cutname,"%d",i+1);
 
-    if (opt.pcuts[i]==1) {
-      b_formula=true;
-      cform[i+1]->SetTitle(opt.cut_form[i]);
-      cform[i+1]->Clear();
-      int ires = cform[i+1]->Compile();
-      if (ires) {//formula is not valid
-	cform[i+1]->SetTitle("0");
-	cform[i+1]->Clear();
-	cform[i+1]->Compile();
+    if (opt.pcuts[i]==1) { //formula
+      //cout << "cuts3: " << i << " " << cform[i] << " " << opt.cut_form[i] << endl;
+      //b_formula=true;
+      cform[i]->SetTitle(opt.cut_form[i]);
+      cform[i]->Clear();
+      int ires = cform[i]->Compile();
+      if (ires) {//formula is not valid -> set it to "always false"
+	cform[i]->SetTitle("0");
+	cform[i]->Clear();
+	cform[i]->Compile();
       }
-      else {
+      else { //formula is valid
 	b_formula=true;
       }
+      //cout << "cuts3a: " << i << endl;
     }
-
+    else { //normal cut (1d or 2d)
+      //cout << "cuts4: " << i << endl;
+      //cout << "make_cuts: " << opt.ncuts << " " << i << " " << cutcolor[i] << " " << cutG[i]->GetLineColor() << endl;
+    }
+    cout << "cutname: " << cutname << endl;
     cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
     cutG[i]->SetTitle(cuttitle[i]);
     cutG[i]->SetLineColor(cutcolor[i]);
-    //cout << "make_cuts: " << i << " " << cutcolor[i] << " " << cutG[i]->GetLineColor() << endl;
   }
+  //cout << "make_cuts2: " << endl;
 }
 
 void HClass::Make_hist() {
@@ -385,6 +397,7 @@ void HClass::Make_hist() {
   if (opt.ncuts)
     Make_cuts();
 
+  //cout << "make_cuts3: " << endl;
   //cout << "hist_list: " << m_ampl[0]->h_cuts[0]->hst << endl;
   //hist_list->ls();
   /*

@@ -1628,7 +1628,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   UShort_t mod;
   gzread(ff,&mod,sizeof(mod));
 
-  //cout << "Initial Fmode: " << Fmode << endl;
+  cout << "ReadParGz1 Fmode: " << Fmode << endl;
 
   gzread(ff,&sz,sizeof(sz));
 
@@ -1657,20 +1657,21 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     }
   }
 
-  cout << "ReadParGz: " << sz << " " << pname << endl;
+  //cout << "ReadParGz: " << sz << " " << pname << endl;
 
   if (Fmode!=1) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
-  for (int i=0;i<opt.ncuts;i++) {
-    char ss[64];
-    sprintf(ss,"cut%d",i+1);
-    hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
-    hcl->cutG[i]->SetLineColor(i+2);
-  }
+  // for (int i=0;i<opt.ncuts;i++) {
+  //   char ss[64];
+  //   sprintf(ss,"cut%d",i+1);
+  //   hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
+  //   hcl->cutG[i]->SetLineColor(i+2);
+  // }
+  hcl->Make_cuts();
 
-  //cout << "ReadParGz2: " << sz << " " << pname << endl;
+  cout << "ReadParGz2: " << sz << " " << pname << endl;
   return 0;
 }
 
