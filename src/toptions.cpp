@@ -4,6 +4,7 @@
 #include <TSystem.h>
 #include <cstdlib>
 
+extern Coptions cpar;
 using namespace std;
 
 Coptions::Coptions() {
@@ -21,15 +22,15 @@ void Coptions::InitPar() {
 
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     enabl[i]=true;
-    acdc[i]=false;
+    acdc[i]=true;
     inv[i]=false;
     smooth[i]=0;
     deadTime[i]=1;
     preWr[i]=100;
     durWr[i]=200;
-    kderiv[i]=0;
+    kderiv[i]=1;
     threshold[i]=1500;
-    adcGain[i]=0;
+    adcGain[i]=12;
   }
   forcewr=false;
 
@@ -120,10 +121,23 @@ void Coptions::GetPar(const char* name, int module, int i, Short_t type_ch, int 
 Toptions::Toptions() {
 
   //cout << "toptions" << endl;
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<MAX_CH+ADDCH;i++) {
     chtype[i]=ch_other;
-    nsmoo[i]=2;
     Mt[i]=true;
+    nsmoo[i]=2;
+    thresh[i]=cpar.threshold[i];
+
+    bkg1[i]=-100;
+    bkg2[i]=-10;
+    peak1[i]=10;
+    peak2[i]=100;
+    deadT[i]=100;
+    pile[i]=100;
+    timing[i]=0;
+    twin1[i]=99;
+    twin2[i]=99;
+
+    emult[i]=1;
   }
 
   raw_write=false;
