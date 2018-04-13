@@ -214,35 +214,36 @@ void PulseClass::PeakAna() {
     if (pk->P1>sz) {pk->P1=sz; pk->Type|=P_B1;}
     if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
 
-    Float_t bkg=0;
+    //Float_t bkg=0;
+    pk->Base=0;
     int nbkg=0;
     //background
     for (int j=pk->B1;j<=pk->B2;j++) {
-      bkg+=sData[j];
+      pk->Base+=sData[j];
       nbkg++;
     }
     if (nbkg)
-      bkg/=nbkg;
+      pk->Base/=nbkg;
     else {
       cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
     }
 
     int nn=0;
     //peak Area & Height
-    pk->Area=0;
+    pk->Area0=0;
     pk->Height=0;
     for (int j=pk->P1;j<=pk->P2;j++) {
-      pk->Area+=sData[j];
+      pk->Area0+=sData[j];
       if (sData[j]>pk->Height) pk->Height = sData[j];
       nn++;
     }
     if (nn) {
-      pk->Area/=nn;
+      pk->Area0/=nn;
     }
     else {
       cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
     }
-    pk->Area-=bkg;
+    pk->Area=pk->Area0-pk->Base;
     pk->Area*=opt.emult[Chan];
 
   }
@@ -518,7 +519,7 @@ void EventClass::FillHist(Bool_t first) {
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
 
-    if (opt.b_pulse) {
+    if (opt.h_pulse.b) {
       Fill_Mean_Pulse(first,hcl->m_pulse[ch],&pulses[i]);
     }
 
@@ -538,28 +539,40 @@ void EventClass::FillHist(Bool_t first) {
 	}
       }
 
-      if (opt.b_time) {
+      if (opt.h_time.b) {
 	if (first)
 	  Fill_Time_Extend(hcl->m_time[ch]);
 	Fill1d(first,hcl->m_time[ch],opt.T_acq);
       }
 
-      if (opt.b_amp) {
+      if (opt.h_amp.b) {
 	Fill1d(first,hcl->m_ampl[ch],pk->Area);
       }
 
-      if (opt.b_hei) {
+      if (opt.h_amp0.b) {
+	Fill1d(first,hcl->m_amp0[ch],pk->Area0);
+      }
+
+      if (opt.h_base.b) {
+	Fill1d(first,hcl->m_base[ch],pk->Base);
+      }
+
+      if (opt.h_amp_base.b) {
+	Fill2d(first,hcl->m_amp_base[ch],pk->Area,pk->Base);
+      }
+
+      if (opt.h_hei.b) {
 	Fill1d(first,hcl->m_height[ch],pk->Height);
       }
 
-      if (opt.b_tof) {
+      if (opt.h_tof.b) {
 	double dt = pulses[i].Tstamp64 - T;
 	tt = pk->Time - crs->Pre[ch] - T0 + dt;
 	Fill1d(first,hcl->m_tof[ch],tt*crs->period);
       }
 
       if (j==0) { //only for the first peak
-	if (opt.b_mtof) {
+	if (opt.h_mtof.b) {
 	  if (ch==opt.start_ch) {
 	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Pos;
 	  }
@@ -583,7 +596,7 @@ void EventClass::FillHist(Bool_t first) {
 	  } //if last pulse
 	} //if b_mtof
 
-	if (opt.b_h2d) {
+	if (opt.h_a0a1.b) {
 	  if (ch==0) {
 	    amp[0]=pk->Area;
 	    nn++;
@@ -593,12 +606,12 @@ void EventClass::FillHist(Bool_t first) {
 	    nn++;
 	  }
 	  if (nn==2) {
-	    Fill2d(first,hcl->m_2d[0],amp[0],amp[1]);
+	    Fill2d(first,hcl->m_a0a1[0],amp[0],amp[1]);
 	    nn++;
 	  }
 	}
 
-	if (opt.b_per) {
+	if (opt.h_per.b) {
 	  tm = pulses[i].Tstamp64 + pk->Pos;
 	  if (hcl->T_prev[ch]) {
 	    tt = (tm - hcl->T_prev[ch])*0.001*crs->period; //convert to mks

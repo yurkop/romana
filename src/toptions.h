@@ -9,21 +9,23 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-// class hdef {
-//  public:
-//   hdef() {};
-//   virtual ~hdef() {};
+//------------------------------------
+class Hdef {
+public:
+  Hdef();
+  virtual ~Hdef() {};
 
-//   Float_t bins,min,max;
-//   Bool_t b;
-//   Bool_t c[MAX_CH];
-//   Bool_t w[MAX_CH];
-//   Char_t cut[MAX_CH*MAXCUTS];
-//   ClassDef(hdef, 1)
-// };
+  Float_t bins,min,max,bins2;
+  Bool_t b;
+  Bool_t c[MAX_CH];
+  Bool_t w[MAX_CH];
+  Int_t cut[MAX_CH];
+  ClassDef(Hdef, 1)
+};
+//------------------------------------
 
 class Coptions: public TObject {
- public:
+public:
   Coptions();
   virtual ~Coptions() {};
 
@@ -44,10 +46,8 @@ class Coptions: public TObject {
   // 1 - both channels are written with any trigger
   Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
   Bool_t forcewr; //only for crs2
-  //ChDef chtype[MAX_CH+ADDCH]; //channel type
-  //----------------------------------------------
 
- public:
+public:
   void InitPar();
   void GetPar(const char* name, Int_t module, Int_t i, Short_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
@@ -57,7 +57,7 @@ class Coptions: public TObject {
 //------------------------------------
 
 class Toptions: public TObject {
- public:
+public:
   Toptions();
   virtual ~Toptions() {};
 
@@ -144,61 +144,61 @@ class Toptions: public TObject {
 
   Int_t seltab;
 
-  Float_t time_min,time_max;
-  Float_t tof_min,tof_max;
-  Float_t mtof_min,mtof_max;
-  Float_t amp_min,amp_max;
-  Float_t hei_min,hei_max;
-  Float_t per_min,per_max;
-  Float_t h2d_min,h2d_max;
+  // Float_t time_min,time_max;
+  // Float_t tof_min,tof_max;
+  // Float_t mtof_min,mtof_max;
+  // Float_t amp_min,amp_max;
+  // Float_t hei_min,hei_max;
+  // Float_t per_min,per_max;
+  // Float_t h2d_min,h2d_max;
 
-  Float_t time_bins;
-  Float_t tof_bins;
-  Float_t mtof_bins;
-  Float_t amp_bins;
-  Float_t hei_bins;
-  Float_t per_bins;
-  Float_t h2d_bins;
+  // Float_t time_bins;
+  // Float_t tof_bins;
+  // Float_t mtof_bins;
+  // Float_t amp_bins;
+  // Float_t hei_bins;
+  // Float_t per_bins;
+  // Float_t h2d_bins;
 
-  //b-flags: - create histograms and analyze them
-  Bool_t b_time;
-  Bool_t b_tof;
-  Bool_t b_mtof;
-  Bool_t b_amp;
-  Bool_t b_hei;
-  Bool_t b_per;
-  Bool_t b_h2d;
-  Bool_t b_pulse;
+  // //b-flags: - create histograms and analyze them
+  // Bool_t b_time;
+  // Bool_t b_tof;
+  // Bool_t b_mtof;
+  // Bool_t b_amp;
+  // Bool_t b_hei;
+  // Bool_t b_per;
+  // Bool_t b_h2d;
+  // Bool_t b_pulse;
 
-  //s-flags: Show (check) histograms in fListTree
-  Bool_t s_time[MAX_CH];
-  Bool_t s_tof[MAX_CH];
-  Bool_t s_mtof[MAX_CH];
-  Bool_t s_amp[MAX_CH];
-  Bool_t s_hei[MAX_CH];
-  Bool_t s_per[MAX_CH];
-  Bool_t s_h2d[MAX_CH];
-  Bool_t s_pulse[MAX_CH];
+  // //s-flags: Show (check) histograms in fListTree
+  // Bool_t s_time[MAX_CH];
+  // Bool_t s_tof[MAX_CH];
+  // Bool_t s_mtof[MAX_CH];
+  // Bool_t s_amp[MAX_CH];
+  // Bool_t s_hei[MAX_CH];
+  // Bool_t s_per[MAX_CH];
+  // Bool_t s_h2d[MAX_CH];
+  // Bool_t s_pulse[MAX_CH];
 
-  //w-flags: Put histograms in WORK* folders
-  Bool_t w_time[MAX_CH];
-  Bool_t w_tof[MAX_CH];
-  Bool_t w_mtof[MAX_CH];
-  Bool_t w_amp[MAX_CH];
-  Bool_t w_hei[MAX_CH];
-  Bool_t w_per[MAX_CH];
-  Bool_t w_h2d[MAX_CH];
-  Bool_t w_pulse[MAX_CH];
+  // //w-flags: Put histograms in WORK* folders
+  // Bool_t w_time[MAX_CH];
+  // Bool_t w_tof[MAX_CH];
+  // Bool_t w_mtof[MAX_CH];
+  // Bool_t w_amp[MAX_CH];
+  // Bool_t w_hei[MAX_CH];
+  // Bool_t w_per[MAX_CH];
+  // Bool_t w_h2d[MAX_CH];
+  // Bool_t w_pulse[MAX_CH];
 
-  //index of cuts (bit mask)
-  Int_t  cut_time[MAX_CH];
-  Int_t   cut_tof[MAX_CH];
-  Int_t  cut_mtof[MAX_CH];
-  Int_t   cut_amp[MAX_CH];
-  Int_t   cut_hei[MAX_CH];
-  Int_t   cut_per[MAX_CH];
-  Int_t   cut_h2d[MAX_CH];
-  Int_t cut_pulse[MAX_CH];
+  // //index of cuts (bit mask)
+  // Int_t  cut_time[MAX_CH];
+  // Int_t   cut_tof[MAX_CH];
+  // Int_t  cut_mtof[MAX_CH];
+  // Int_t   cut_amp[MAX_CH];
+  // Int_t   cut_hei[MAX_CH];
+  // Int_t   cut_per[MAX_CH];
+  // Int_t   cut_h2d[MAX_CH];
+  // Int_t cut_pulse[MAX_CH];
 
   // Char_t cut_time[MAX_CH*MAXCUTS];
   // Char_t cut_tof[MAX_CH*MAXCUTS];
@@ -208,8 +208,6 @@ class Toptions: public TObject {
   // Char_t cut_per[MAX_CH*MAXCUTS];
   // Char_t cut_h2d[MAX_CH*MAXCUTS];
   // Char_t cut_pulse[MAX_CH*MAXCUTS];
-
-  //hdef h_tof;
 
   Int_t start_ch;
   Float_t mtof_period;
@@ -231,15 +229,46 @@ class Toptions: public TObject {
   char formula[36];
   char cut_form[MAXCUTS][24];
 
- public:
+  Hdef h_time;
+  Hdef h_amp;
+  Hdef h_amp0;
+  Hdef h_base;
+  Hdef h_hei;
+  Hdef h_tof;
+  Hdef h_mtof;
+  Hdef h_per;
+  Hdef h_pulse;
+
+  Hdef h_a0a1;
+  Hdef h_amp_base;
+public:
   //void InitPar(Int_t module);
 
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 108)
+  ClassDef(Toptions, 109)
 };
 
-ClassImp(Toptions)
+// class Hoptions {
+// public:
+//   Hoptions() {};
+//   virtual ~Hoptions() {};
+
+// public:
+
+//   Hdef h_time;
+//   Hdef h_amp;
+//   Hdef h_hei;
+//   Hdef h_tof;
+//   Hdef h_mtof;
+//   Hdef h_per;
+//   Hdef h_h2d;
+//   Hdef h_pulse;
+
+//   ClassDef(Hoptions, 1)
+// };
+
+//ClassImp(Toptions)
 
 #endif

@@ -82,7 +82,7 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
-int debug=0; //=1 or 2// for printing debug messages
+int debug=0; //=1 or 2 or 6// for printing debug messages
 
 //int *opt_id[MXNUM];
 
@@ -105,7 +105,7 @@ void *handle_dum(void* ptr)
 //void printhlist(int n);
 
 //-------------------------------------
-UShort_t ClassToBuf(const char* name, char* var, char* buf) {
+UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer
   //buffer should exist and have sufficient size to allocate all data
 
@@ -121,6 +121,7 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
 
   char cname[100];
   strcpy(cname,"class");
+
   len = strlen(cname)+1;
   memcpy(buf+sz,&len,sizeof(len));
   sz+=sizeof(len);
@@ -133,14 +134,30 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
   memcpy(buf+sz,name,len);
   sz+=len;
 
+  strcpy(cname,"var");
+  len = strlen(cname)+1;
+  memcpy(buf+sz,&len,sizeof(len));
+  sz+=sizeof(len);
+  memcpy(buf+sz,cname,len);
+  sz+=len;
+
+  len = strlen(varname)+1;
+  memcpy(buf+sz,&len,sizeof(len));
+  sz+=sizeof(len);
+  memcpy(buf+sz,varname,len);
+  sz+=len;
+
   if (debug&0x2)
     cout << "Save class: " << name << endl;
 
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
-    if (debug&0x2)
-      cout << "member: " << dm->GetName() << endl;
+    //if (debug&0x2) {
+    // if (!dm->GetDataType()) {
+    //   cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetClass()->GetName() << endl;
+    // }
+    //}
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -168,7 +185,7 @@ UShort_t ClassToBuf(const char* name, char* var, char* buf) {
 
 //------------------------------------
 
-void BufToClass(const char* name, char* var, char* buf, int size) {
+void BufToClass(const char* name, const char* varname, char* var, char* buf, int size) {
   //copies all data members from a buffer, size - size of the buffer
   //buffer should exist. Only data members with matching names are copied
 
@@ -187,9 +204,21 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
   //TIter nextd(lst);
   TDataMember *dm;
   char memname[100];
-  char clname[100];
+  char clname[100]; //class name
+  char vname[100]; //class var name
   const UShort_t mx=50000;
   char data[mx];
+
+  if (TString(name).EqualTo("Toptions",TString::kIgnoreCase)) {
+    strcpy(vname,"opt");
+  }
+  else if (TString(name).EqualTo("Coptions",TString::kIgnoreCase)) {
+    strcpy(vname,"cpar");
+  }
+  else {
+    strcpy(vname,"");
+  }
+
   while (sz<size) {
     memcpy(&len,buf+sz,sizeof(len));
     sz+=sizeof(len);
@@ -219,23 +248,37 @@ void BufToClass(const char* name, char* var, char* buf, int size) {
     if (strcmp(memname,"class")==0) {
       strcpy(clname,data);
       if (debug&0x2)
-	cout << "Read class: " << clname << endl;
+	if (strcmp(clname,name)==0) { //the same class
+	  cout << "Read class: " << clname << " " << name << endl;
+	}
       continue;
     }
 
-    dm = (TDataMember*) lst->FindObject(memname);
-    if (dm && strcmp(clname,name)==0) {
-      len2=dm->GetUnitSize();
-      for (int i=0;i<dm->GetArrayDim();i++) {
-	len2*=dm->GetMaxIndex(i);
-      }
+    if (strcmp(memname,"var")==0) {
+      strcpy(vname,data);
       if (debug&0x2)
-	cout << dm->GetName() << " " << len << " " << sz << endl;
-      memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
+	if (strcmp(vname,varname)==0) { //the same class
+	  cout << "Read var: " << vname << " " << varname << endl;
+	}
+      continue;
     }
-    else {
-      //cout << "member not found: " << dm << " " << memname << " " 
-      //<< clname << " " << name << endl;
+
+    if (!strcmp(clname,name) && !strcmp(vname,varname)) { //the same class & var
+      dm = (TDataMember*) lst->FindObject(memname);
+      if (dm) {
+	len2=dm->GetUnitSize();
+	for (int i=0;i<dm->GetArrayDim();i++) {
+	  len2*=dm->GetMaxIndex(i);
+	}
+	if (debug&0x4)
+	  cout << dm->GetName() << " " << len << " " << sz << endl;
+	memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
+      }
+      else {
+	if (debug&0x2)
+	  cout << "class member not found: " << dm << " " << memname << " " 
+	       << clname << " " << name << endl;
+      }
     }
 
   }
@@ -374,8 +417,9 @@ int main(int argc, char **argv)
     }
   }
 
-  //opt.h_tof.bins=17;
-  //cout << "tof_bins: " << opt.h_tof.bins << endl;
+  //cout << "class: " << TClass::GetClass("hdef")->GetNdata() << endl;
+  //cout << "tof_max: " << opt.h_tof.max << endl;
+  //opt.h_tof.max=100;
 
   if (datfname) {
     crs->DoFopen(datfname,rdpar); //read file and parameters from it
@@ -1440,30 +1484,6 @@ void MainFrame::DoReadRoot() {
     0,               0
   };
 
-
-
-
-
-  // hcl->hist_list->ls();
-  // TH1* h1;
-  // TH1* h2;
-  // //h1 = (TH1*) gROOT->FindObject("ampl_00_cut1");
-  // h1 = (TH1*) hcl->hist_list->FindObject("ampl_00_cut1");
-  // cout << "hist_list3: " << hcl->m_ampl[0]->h_cuts[0]->hst << endl;
-  // cout << "before: " << hcl->m_ampl[0]->h_cuts[0]->hst->GetName()
-  //      << " " << hcl->m_ampl[0]->h_cuts[0]->hst << " "
-  //      << h1->GetName() << " " << h1;
-  // if (h1) {
-  //   cout << " " << h1->Integral() << endl;
-  // }
-  // else {
-  //   cout << endl;
-  // }
-
-
-
-
-
   static TString dir(".");
   TGFileInfo fi;
   fi.fFileTypes = dnd_types;
@@ -1485,16 +1505,6 @@ void MainFrame::DoReadRoot() {
     //new_hist();
 
     readroot(rootname);
-
-    // h2 = (TH1*) hcl->hist_list->FindObject("ampl_00_cut1");
-    // cout << "after: " << h1 << " " << h2
-    // 	 << " " << hcl->m_ampl[0]->h_cuts[0]->hst;
-    // if (h2) {
-    //   cout << " " << h2->Integral() << endl;
-    // }
-    // else {
-    //   cout << endl;
-    // }
 
     parpar->Update();
     crspar->Update();

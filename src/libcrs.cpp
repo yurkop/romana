@@ -14,6 +14,7 @@
 #include <malloc.h>
 #include <TClass.h>
 #include <TCanvas.h>
+#include <TDataMember.h>
 
 //#include <TSemaphore.h>
 //TSemaphore sem;
@@ -1607,6 +1608,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   UShort_t mod;
   gzread(ff,&mod,sizeof(mod));
 
+  cout << "ReadParGz: " << pname << endl;
   //cout << "ReadParGz1 Fmode: " << Fmode << endl;
 
   gzread(ff,&sz,sizeof(sz));
@@ -1615,9 +1617,30 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   gzread(ff,buf,sz);
 
   if (p1) 
-    BufToClass("Coptions",(char*) &cpar, buf, sz);
-  if (p2)
-    BufToClass("Toptions",(char*) &opt, buf, sz);
+    BufToClass("Coptions","cpar",(char*) &cpar,buf,sz);
+  if (p2) {
+    BufToClass("Toptions","opt",(char*) &opt,buf,sz);
+
+    // BufToClass("Hdef","h_time", (char*) &opt.h_time  ,buf,sz);
+    // BufToClass("Hdef","h_amp",  (char*) &opt.h_amp   ,buf,sz);
+    // BufToClass("Hdef","h_hei",  (char*) &opt.h_hei   ,buf,sz);
+    // BufToClass("Hdef","h_tof",  (char*) &opt.h_tof   ,buf,sz);
+    // BufToClass("Hdef","h_mtof", (char*) &opt.h_mtof  ,buf,sz);
+    // BufToClass("Hdef","h_per",  (char*) &opt.h_per   ,buf,sz);
+    // BufToClass("Hdef","h_a0a1", (char*) &opt.h_a0a1  ,buf,sz);
+    // BufToClass("Hdef","h_pulse",(char*) &opt.h_pulse ,buf,sz);
+
+    TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
+    TIter nextd(lst);
+    TDataMember *dm;
+    char* popt = (char*)&opt;
+    while ((dm = (TDataMember *) nextd())) {
+      if (dm->GetDataType()==0 && TString(dm->GetName()).Contains("h_")) {
+	//cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetOffset() << " " << (void*)popt+dm->GetOffset() << " " << &opt << " " << &(opt.h_time) << endl;
+	BufToClass("Hdef",dm->GetName(),popt+dm->GetOffset(),buf,sz);
+      }
+    }
+  }
 
   if (m1) {
     //T_start = opt.F_start;
@@ -1668,8 +1691,29 @@ void CRS::SaveParGz(gzFile &ff) {
   char buf[100000];
   UShort_t sz=0;
 
-  sz+=ClassToBuf("Coptions",(char*) &cpar, buf+sz);
-  sz+=ClassToBuf("Toptions",(char*) &opt, buf+sz);
+  sz+=ClassToBuf("Coptions","cpar",(char*) &cpar, buf+sz);
+  sz+=ClassToBuf("Toptions","opt",(char*) &opt, buf+sz);
+
+  // sz+=ClassToBuf("Hdef","h_time", (char*) &opt.h_time  , buf+sz);
+  // sz+=ClassToBuf("Hdef","h_amp",  (char*) &opt.h_amp   , buf+sz);
+  // sz+=ClassToBuf("Hdef","h_hei",  (char*) &opt.h_hei   , buf+sz);
+  // sz+=ClassToBuf("Hdef","h_tof",  (char*) &opt.h_tof   , buf+sz);
+  // sz+=ClassToBuf("Hdef","h_mtof", (char*) &opt.h_mtof  , buf+sz);
+  // sz+=ClassToBuf("Hdef","h_per",  (char*) &opt.h_per   , buf+sz);
+  // sz+=ClassToBuf("Hdef","h_a0a1", (char*) &opt.h_a0a1  , buf+sz);
+  // sz+=ClassToBuf("Hdef","h_pulse",(char*) &opt.h_pulse , buf+sz);
+
+  TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
+  TIter nextd(lst);
+  TDataMember *dm;
+  char* popt = (char*)&opt;
+  while ((dm = (TDataMember *) nextd())) {
+    if (dm->GetDataType()==0 && TString(dm->GetName()).Contains("h_")) {
+      //cout << "member: " << dm->GetName() << " " << dm->GetDataType() << endl;
+      sz+=ClassToBuf("Hdef",dm->GetName(),popt+dm->GetOffset(),buf+sz);
+    }
+  }
+
 
   gzwrite(ff,&module,sizeof(module));
   gzwrite(ff,&sz,sizeof(sz));

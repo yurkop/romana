@@ -141,10 +141,14 @@ public:
 		   //TGNumberFormat::EAttribute attr, 
 		   double min1=0, double max1=0,
 		   double min2=0, double max2=0, char* connect=NULL);
-  void AddLine_hist(TGGroupFrame* frame, Bool_t* b1,
-		    Float_t *x1, Float_t *x2, Float_t *x3, 
+  void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
-  void AddLine_mean(TGGroupFrame* frame, Bool_t* b1,
+  void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
+		    const char* tip, const char* label);
+  // void AddLine_hist(TGGroupFrame* frame, Bool_t* b1,
+  // 		    Float_t *x1, Float_t *x2, Float_t *x3, 
+  // 		    const char* tip, const char* label);
+  void AddLine_mean(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
   void AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
 		char* opt_fname);

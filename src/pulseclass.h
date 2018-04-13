@@ -37,6 +37,8 @@ const UShort_t P_TAIL=1<<11; //tail
 
 class peak_type {
  public:
+  Float_t Base;
+  Float_t Area0;
   Float_t Area;
   Float_t Height;
   Float_t Width;

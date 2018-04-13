@@ -52,15 +52,18 @@ class HClass {
   // TH2F* h_2d[1];
 
   HMap* m_ampl[MAX_CH]; //amplitude - area of the peak
+  HMap* m_amp0[MAX_CH]; //amplitude - area of the peak w/o bkg
+  HMap* m_base[MAX_CH]; //amplitude - area of the peak w/o bkg
   HMap* m_height[MAX_CH]; //height of the peak
   HMap* m_time[MAX_CH]; // real time
   HMap* m_tof[MAX_CH]; // time of flight
   HMap* m_mtof[MAX_CH]; // time of flight
   HMap* m_per[MAX_CH]; // period
 
-  HMap* m_2d[1];
-
   HMap* m_pulse[MAX_CH]; // period
+
+  HMap* m_a0a1[1];
+  HMap* m_amp_base[MAX_CH];
 
   TCutG* cutG[MAXCUTS];
   //Name: cut[i]
@@ -89,17 +92,13 @@ class HClass {
 
    //void NameTitle();
   void Make_1d(const char* dname, const char* name, const char* title,
-	       HMap* map[],// TH1F* hh[MAX_CH][MAXCUTS],
-	       Float_t bins, Float_t min, Float_t max,
-	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Int_t *cuts);
+	       HMap* map[], Hdef* hd);
   void Make_1d_pulse(const char* dname, const char* name,
-		     const char* title, HMap* map[],
-		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
-		     Int_t *cuts);
+		     const char* title, HMap* map[], Hdef* hd);
   void Make_2d(const char* dname, const char* name, const char* title,
-	       HMap* map[],// TH2F* hh[][MAXCUTS],
-	       Float_t bins, Float_t min, Float_t max,
-	       Bool_t bb, Bool_t* sel, Bool_t* wrk, Int_t *cuts);
+   	       HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2);
+  void Make_a0a1(const char* dname, const char* name, const char* title,
+	       HMap* map[], Hdef* hd);
   void Make_hist();
   void Clone_Hist(HMap* map);
   void Remove_Clones(HMap* map);

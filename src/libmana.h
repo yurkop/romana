@@ -24,8 +24,8 @@ using namespace std;
 #include <TGFileDialog.h>
 #include "TGMsgBox.h"
 
-UShort_t ClassToBuf(const char* name, char* var, char* buf);
-void BufToClass(const char* name, char* var, char* buf, int size);
+UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf);
+void BufToClass(const char* name, const char* varname, char* var, char* buf, int size);
 
 void SplitFilename(string str, string &folder, string &name);
 void SplitFilename(string str, string &folder, string &name, string &ext);

@@ -107,9 +107,10 @@ TGLayoutHints* fL2a = new TGLayoutHints(kLHintsLeft | kLHintsBottom,0,0,5,0);
 TGLayoutHints* fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
 TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
 TGLayoutHints* fL5 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
-TGLayoutHints* fL6 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 2, 2);
+TGLayoutHints* fL6 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 0, 0);
 TGLayoutHints* fL7 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 11, 1, 1, 1);
 TGLayoutHints* fL8 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 1, 1, 1);
+TGLayoutHints* fL8a = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 1, 1, 0);
 TGLayoutHints* fLexp = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 
 using namespace std;
@@ -976,44 +977,63 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   //frame->AddFrame(fLabel, fL5);
 
 
-  TGGroupFrame* frame = new TGGroupFrame(frame2, "Histograms", kVerticalFrame);
+  TGGroupFrame* frame = new TGGroupFrame(frame2, "1D Histograms", kVerticalFrame);
   frame->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame2->AddFrame(frame, fL6);
 
    // 2 column, n rows
    //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
 
+
+
   tip1= "Total aqcuisition time, in seconds";
   label="Time";
-  AddLine_hist(frame,&opt.b_time,&opt.time_bins,&opt.time_min,&opt.time_max,tip1,label);
-
-  tip1= "Time of flight (relative to the starts - see Channels->St), in ns";
-  label="TOF";
-  AddLine_hist(frame,&opt.b_tof,&opt.tof_bins,&opt.tof_min,&opt.tof_max,tip1,label);
-
-  tip1= "Time of flight with multiplicity, in mks";
-  label="M_TOF";
-  AddLine_hist(frame,&opt.b_mtof,&opt.mtof_bins,&opt.mtof_min,&opt.mtof_max,tip1,label);
+  AddLine_hist(frame,&opt.h_time,tip1,label);
 
   tip1= "Amplitude or energy, calibrated (see Channels->EM for calibration)";
   label="Amplitude";
-  AddLine_hist(frame,&opt.b_amp,&opt.amp_bins,&opt.amp_min,&opt.amp_max,tip1,label);
+  AddLine_hist(frame,&opt.h_amp,tip1,label);
 
-  tip1= "Pulse height (in channels)";
+  tip1= "Amplitude w/o background, NOT calibrated";
+  label="Amp0";
+  AddLine_hist(frame,&opt.h_amp0,tip1,label);
+
+  tip1= "Base line";
+  label="Base";
+  AddLine_hist(frame,&opt.h_base,tip1,label);
+
+  tip1= "Maximal pulse height (in channels)";
   label="Height";
-  AddLine_hist(frame,&opt.b_hei,&opt.hei_bins,&opt.hei_min,&opt.hei_max,tip1,label);
+  AddLine_hist(frame,&opt.h_hei,tip1,label);
+
+  tip1= "Time of flight (relative to the starts - see Channels->St), in ns";
+  label="TOF";
+  AddLine_hist(frame,&opt.h_tof,tip1,label);
+
+  tip1= "Time of flight with multiplicity, in mks";
+  label="M_TOF";
+  AddLine_hist(frame,&opt.h_mtof,tip1,label);
 
   tip1= "Pulse period (distance between two consecutive pulses), in mks";
   label="Period";
-  AddLine_hist(frame,&opt.b_per,&opt.per_bins,&opt.per_min,&opt.per_max,tip1,label);
-
-  tip1= "2-dimensional histogram (ampl0-ampl1)";
-  label="h2d";
-  AddLine_hist(frame,&opt.b_h2d,&opt.h2d_bins,&opt.h2d_min,&opt.h2d_max,tip1,label);
+  AddLine_hist(frame,&opt.h_per,tip1,label);
 
   tip1= "Average pulse shapes for all channels";
   label="Mean_pulses";
-  AddLine_mean(frame,&opt.b_pulse,tip1,label);
+  AddLine_mean(frame,&opt.h_pulse,tip1,label);
+
+
+  frame = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
+  frame->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame2->AddFrame(frame, fL6);
+
+  tip1= "2-dimensional histogram (ampl0-ampl1)";
+  label="A0A1";
+  AddLine_hist(frame,&opt.h_a0a1,tip1,label);
+
+  tip1= "2-dimensional histogram (Amplitude-Base)";
+  label="Amp_Base";
+  AddLine_2d(frame,&opt.h_amp_base,tip1,label);
 
   /*
   tip1= "Bins per channel for Width";
@@ -1123,10 +1143,10 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 
 }
 
-void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
-			     Float_t *x1, Float_t *x2, Float_t *x3, 
-			 const char* tip, const char* label)
-{
+void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
+		  const char* tip, const char* label) {
+
+  double ww1=50;
   double ww=70;
   char name[20];
 
@@ -1145,7 +1165,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
   sprintf(name,"b_hist%d",id);
   chk_hist->SetName(name);
-  DoMap(chk_hist,b1,p_chk,0);
+  DoMap(chk_hist,&hd->b,p_chk,0);
   chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckHist()");
   hfr1->AddFrame(chk_hist,fL3);
   //id0=id;
@@ -1156,36 +1176,36 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
   TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 					   TGNumberFormat::kNEAAnyNumber,
 					   lim,0,1000);
-  DoMap(fNum1->GetNumberEntry(),x1,p_fnum,0);
-  fNum1->GetNumberEntry()->SetToolTipText("Number of Bins per channel");
-  fNum1->SetWidth(ww);
+  DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel");
+  fNum1->SetWidth(ww1);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				     "DoNum()");
-  hfr1->AddFrame(fNum1,fL8);
+  hfr1->AddFrame(fNum1,fL8a);
 
   //xlow
   id = Plist.size()+1;
   TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 					   TGNumberFormat::kNEAAnyNumber,
 					   nolim);
-  DoMap(fNum2->GetNumberEntry(),x2,p_fnum,0);
+  DoMap(fNum2->GetNumberEntry(),&hd->min,p_fnum,0);
   fNum2->GetNumberEntry()->SetToolTipText("Low edge");
   fNum2->SetWidth(ww);
   fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				     "DoNum()");
-  hfr1->AddFrame(fNum2,fL8);
+  hfr1->AddFrame(fNum2,fL8a);
 
   //xup
   id = Plist.size()+1;
   TGNumberEntry* fNum3 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 					   TGNumberFormat::kNEAAnyNumber,
 					   nolim);
-  DoMap(fNum3->GetNumberEntry(),x3,p_fnum,0);
+  DoMap(fNum3->GetNumberEntry(),&hd->max,p_fnum,0);
   fNum3->GetNumberEntry()->SetToolTipText("Upper edge");
   fNum3->SetWidth(ww);
   fNum3->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				     "DoNum()");
-  hfr1->AddFrame(fNum3,fL8);
+  hfr1->AddFrame(fNum3,fL8a);
 
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
@@ -1197,11 +1217,81 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
-  hfr1->AddFrame(fLabel,fL8);
+  hfr1->AddFrame(fLabel,fL8a);
 
 }
 
-void ParParDlg::AddLine_mean(TGGroupFrame* frame, Bool_t *b1,
+void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
+		  const char* tip, const char* label) {
+
+  double ww1=50;
+  double ww=90;
+  //char name[20];
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
+  //double zz;
+  int id;
+  //int id0;
+
+  //TGNumberFormat::ELimit nolim = TGNumberFormat::kNELNoLimits;
+  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
+
+  //checkbutton
+  id = Plist.size()+1;
+  TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
+  //sprintf(name,"b_hist%d",id);
+  //chk_hist->SetName(name);
+  DoMap(chk_hist,&hd->b,p_chk,0);
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
+  hfr1->AddFrame(chk_hist,fL3);
+  //id0=id;
+
+  //nbins (x-axis)
+  id = Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   lim,0,1000);
+  DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel on X-axis");
+  fNum1->SetWidth(ww1);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				     "DoNum()");
+  hfr1->AddFrame(fNum1,fL8a);
+
+  //nbins2 (y-axis)
+  id = Plist.size()+1;
+  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
+  					   TGNumberFormat::kNEAAnyNumber,
+  					   lim,0,1000);
+  DoMap(fNum1->GetNumberEntry(),&hd->bins2,p_fnum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel on Y-axis");
+  fNum1->SetWidth(ww1);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+  				     "DoNum()");
+  hfr1->AddFrame(fNum1,fL8a);
+
+  //hint
+  TGTextEntry* tt = new TGTextEntry(hfr1," ", 0);;
+  tt->SetToolTipText("Min Max are taken from the corresponding 1d histograms");
+  tt->SetWidth(ww);
+  hfr1->AddFrame(tt,fL8a);
+
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  //fLabel->SetWidth();
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText(tip);
+  fLabel->SetAlignment(kTextCenterY);
+
+  //TGLabel* fLabel = new TGLabel(hfr1, label);
+  //fLabel->SetToolTipText(tip);
+  hfr1->AddFrame(fLabel,fL8a);
+
+}
+
+void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,
 			 const char* tip, const char* label)
 {
   char name[20];
@@ -1216,7 +1306,7 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Bool_t *b1,
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
   sprintf(name,"b_pulse%d",id);
   chk_hist->SetName(name);
-  DoMap(chk_hist,b1,p_chk,0);
+  DoMap(chk_hist,&hd->b,p_chk,0);
   chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
   hfr1->AddFrame(chk_hist,fL3);
 

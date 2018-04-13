@@ -108,18 +108,6 @@ HClass::HClass()
     //cutmap[i]=0;
   }
 
-  // for (int cc=0;cc<MAXCUTS;cc++) {
-  //   for (int i=0;i<MAX_CH;i++) {
-  //     h_ampl[i][cc]=0;
-  //     h_height[i][cc]=0;
-  //     h_time[i][cc]=0;
-  //     h_tof[i][cc]=0;
-  //     h_mtof[i][cc]=0;
-  //     h_per[i][cc]=0;
-  //   }
-  //   h_2d[0][cc]=0;
-  // }
-
   wfalse=false;
   //Make_hist();
   map_list=NULL;
@@ -144,12 +132,9 @@ void NameTitle(char* name, char* title, int i, int cc,
 }
 
 void HClass::Make_1d(const char* dname, const char* name, const char* title,
-		     HMap* map[],// TH1F* hh[MAX_CH][MAXCUTS],
-		     Float_t bins, Float_t min, Float_t max,
-		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
-		     Int_t *cuts) {
+		     HMap* map[], Hdef* hd) {
 
-  if (!bb) return;
+  if (!hd->b) return;
 
   char name2[100];
   char title2[100];
@@ -161,11 +146,12 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
     //sprintf(name,"ampl_%02d",i);
     //sprintf(title,"ampl_%02d;Channel;Counts",i);
     NameTitle(name2,title2,i,0,name,title);
-    int nn=bins*(max-min);
-    TH1F* hh=new TH1F(name2,title2,nn,min,max);
+
+    int nn=hd->bins*(hd->max - hd->min);
+    TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
-    map[i] = new HMap(dname,hh,chk+i,wrk+i,cuts+i);
+    map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
 
@@ -173,11 +159,9 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 }
 
 void HClass::Make_1d_pulse(const char* dname, const char* name,
-			   const char* title, HMap* map[],
-			   Bool_t bb, Bool_t* chk, Bool_t* wrk,
-			   Int_t *cuts) {
+			   const char* title, HMap* map[], Hdef* hd) {
 
-  if (!bb) return;
+  if (!hd->b) return;
 
   char name2[100];
   char title2[100];
@@ -197,7 +181,7 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
     TH1F* hh=new TH1F(name2,title2,nn,min,max);
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
-    map[i] = new HMap(dname,hh,chk+i,wrk+i,cuts+i);
+    map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
 
@@ -205,15 +189,33 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
 }
 
 void HClass::Make_2d(const char* dname, const char* name, const char* title,
-		     HMap* map[],// TH2F* hh[][MAXCUTS],
-		     Float_t bins, Float_t min, Float_t max,
-		     Bool_t bb, Bool_t* chk, Bool_t* wrk,
-		     Int_t *cuts) {
+		     HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2) {
 
-  if (!bb) return;
+  if (!hd->b) return;
 
-  // HMap* dmap = new HMap(dname,NULL,NULL,NULL,NULL);
-  // dir_list->Add(dmap);
+  char name2[100];
+  char title2[100];
+
+  for (int i=0;i<MAX_CH;i++) {
+    //sprintf(name2,"%s",name);
+    //sprintf(title2,"%s%s",name,title);
+    NameTitle(name2,title2,i,0,name,title);
+
+    int n1=hd->bins*(hd1->max - hd1->min);
+    int n2=hd->bins2*(hd2->max - hd2->min);
+    TH2F* hh=new TH2F(name2,title2,n1,hd1->min,hd1->max,n2,hd1->min,hd2->max);
+
+    map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
+    map_list->Add(map[i]);
+    hist_list->Add(map[i]->hst);
+  }
+
+}
+
+void HClass::Make_a0a1(const char* dname, const char* name, const char* title,
+		     HMap* map[], Hdef* hd) {
+
+  if (!hd->b) return;
 
   char name2[100];
   char title2[100];
@@ -221,10 +223,10 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
   sprintf(name2,"%s",name);
   sprintf(title2,"%s%s",name,title);
 
-  int nn=bins*(max-min);
-  TH2F* hh=new TH2F(name2,title2,nn,min,max,nn,min,max);
+  int nn=hd->bins*(hd->max - hd->min);
+  TH2F* hh=new TH2F(name2,title2,nn,hd->min,hd->max,nn,hd->min,hd->max);
 
-  map[0] = new HMap(dname,hh,chk+0,wrk+0,cuts+0);
+  map[0] = new HMap(dname,hh,hd->c+0,hd->w+0,hd->cut+0);
   map_list->Add(map[0]);
   hist_list->Add(map[0]->hst);
 
@@ -296,7 +298,7 @@ void HClass::Make_cuts() {
     int icut=1;
     for (int i=0;i<opt.ncuts;i++) {
       if (getbit(*(map->cut_index),i)) {
-	cutcolor[i]=icut;
+	cutcolor[i]=icut+1;
 	icut++;
 	//cutcolor[i]+=1;
 	sprintf(cuttitle[i],"%s",map->GetName());
@@ -375,24 +377,19 @@ void HClass::Make_hist() {
   map_list->SetName("map_list");
   map_list->SetOwner(true);
 
-  Make_1d("Amplitude","ampl",";Channel;Counts",m_ampl,opt.amp_bins,
-  	  opt.amp_min,opt.amp_max,opt.b_amp,opt.s_amp,opt.w_amp,opt.cut_amp);
-  Make_1d("Height","height",";Channel;Counts",m_height,opt.hei_bins,
-  	  opt.hei_min,opt.hei_max,opt.b_hei,opt.s_hei,opt.w_hei,opt.cut_hei);
-  Make_1d("Time","time",";T(sec);Counts",m_time,opt.time_bins,
-  	  opt.time_min,opt.time_max,opt.b_time,opt.s_time,opt.w_time,opt.cut_time);
-  Make_1d("TOF","tof",";t(ns);Counts",m_tof,opt.tof_bins,
-  	  opt.tof_min,opt.tof_max,opt.b_tof,opt.s_tof,opt.w_tof,opt.cut_tof);
-  Make_1d("MTOF","mtof",";t(mks);Counts",m_mtof,opt.mtof_bins,
-  	  opt.mtof_min,opt.mtof_max,opt.b_mtof,opt.s_mtof,opt.w_mtof,opt.cut_mtof);
-  Make_1d("Period","period",";t(mks);Counts",m_per,opt.per_bins,
-  	  opt.per_min,opt.per_max,opt.b_per,opt.s_per,opt.w_per,opt.cut_per);
+  Make_1d("Time","time",";T(sec);Counts",m_time,&opt.h_time);
+  Make_1d("Amplitude","ampl",";Channel;Counts",m_ampl,&opt.h_amp);
+  Make_1d("Amp0","amp0",";Channel;Counts",m_amp0,&opt.h_amp0);
+  Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);
+  Make_1d("Height","height",";Channel;Counts",m_height,&opt.h_hei);
+  Make_1d("TOF","tof",";t(ns);Counts",m_tof,&opt.h_tof);
+  Make_1d("MTOF","mtof",";t(mks);Counts",m_mtof,&opt.h_mtof);
+  Make_1d("Period","period",";t(mks);Counts",m_per,&opt.h_per);
+  Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,&opt.h_pulse);
 
-  Make_2d("H2d","h2d",";Channel;Channel",m_2d,opt.h2d_bins,
-  	  opt.h2d_min,opt.h2d_max,opt.b_h2d,opt.s_h2d,opt.w_h2d,opt.cut_h2d);
+  Make_a0a1("A0A1","A0A1",";Channel;Channel",m_a0a1,&opt.h_a0a1);
+  Make_2d("Amp-Base","Amp-Base",";Channel;Channel",m_amp_base,&opt.h_amp_base,&opt.h_amp,&opt.h_base);
 
-  Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,
-  	  opt.b_pulse,opt.s_pulse,opt.w_pulse,opt.cut_pulse);
 
   b_formula=false;
   if (opt.ncuts)
