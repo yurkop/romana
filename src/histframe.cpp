@@ -73,19 +73,19 @@ Bool_t MECanvas::HandleDNDDrop(TDNDData *data) {
 }
 */
 
-void printhlist(int n) {
-  if (!HiFrm) return;
-  if (!HiFrm->hlist) return;
-  cout << "printhlist+: " << n << endl;
-  TIter next(HiFrm->hlist);
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    HMap* map=(HMap*) obj;
-    cout << "hl map: " << map << endl;
-    cout << "hl name: " << map->GetName() << endl;
-  }
-  cout << "printhlist-: " << n << endl;
-}
+// void printhlist(int n) {
+//   if (!HiFrm) return;
+//   if (!HiFrm->hlist) return;
+//   cout << "printhlist+: " << n << endl;
+//   TIter next(HiFrm->hlist);
+//   TObject* obj;
+//   while ( (obj=(TObject*)next()) ) {
+//     HMap* map=(HMap*) obj;
+//     cout << "hl map: " << map << endl;
+//     cout << "hl name: " << map->GetName() << endl;
+//   }
+//   cout << "printhlist-: " << n << endl;
+// }
 //------------------------------
 
 void DynamicExec()
@@ -310,15 +310,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
 
   //cout << "make_ltree1: " << endl;
-  Make_Ltree();
+  //Make_Ltree();
   //cout << "make_ltree2: " << endl;
-  // fListTree->Connect("DataDropped(TGListTreeItem*, TDNDData*)", "HistFrame",
-  //                   this, "DataDropped(TGListTreeItem*,TDNDData*)");
-
-  //fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
-  //		     this,"DoKey(TGListTreeItem*, UInt_t)");
-
-  //TGListTree* fListTree2 = new TGListTree(gCanvas, kHorizontalFrame);
 
   const char* rlab[2] = {"Stack","DX/DY:"};
   for (int i=0;i<2;i++) {
@@ -544,7 +537,7 @@ void HistFrame::Make_Ltree() {
     //cout << "Make_Ltree1: " << opt.ncuts << " " << i << " " << opt.pcuts[i] << endl;
     if (opt.pcuts[i]) {
       TCutG* gcut = hcl->cutG[i];
-      cout << "gcut: " << gcut << " " << gcut->GetName() << endl;
+      //cout << "gcut: " << gcut << " " << gcut->GetName() << endl;
 
       if (opt.pcuts[i]==1) //formula
 	pic=pic_f;
@@ -568,7 +561,7 @@ void HistFrame::Make_Ltree() {
 	sprintf(name,"%s",opt.cut_form[i]);
 	fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
       }
-      cout << "AddCutg: " << i+1 << " " << gcut->GetName() << " " << opt.pcuts[i] << endl;
+      //cout << "AddCutg: " << i+1 << " " << gcut->GetName() << " " << opt.pcuts[i] << endl;
     }
     else { //if opt.pcuts[i]
       
@@ -590,12 +583,12 @@ void HistFrame::Delete_work_item(TGListTreeItem *item)
 */
 void HistFrame::Clear_Ltree()
 {
-  cout << "hlistclear: " << hlist << " " << hlist->GetSize() << endl;
-  printhlist(1);
+  //cout << "hlistclear: " << hlist << " " << hlist->GetSize() << endl;
+  //printhlist(1);
 
   hlist->Clear();
 
-  cout << "clearltree: " << endl;
+  //cout << "clearltree: " << endl;
   TGListTreeItem *idir;
   //clear fListTree
   idir = fListTree->GetFirstItem();
@@ -610,7 +603,7 @@ void HistFrame::Clear_Ltree()
     idir = idir->GetNextSibling();
   }
 
-  cout << "clearcut: " << endl;
+  //cout << "clearcut: " << endl;
   //clear fCutTree
   idir = fCutTree->GetFirstItem();
   while (idir) {
@@ -927,11 +920,15 @@ void HistFrame::MakeCutG(TPolyLine *pl, TObject* hobj) {
       break;
     }
   }
-
-  if (icut<0 || icut>=MAXCUTS) {
-    cout << "Wrong icut: " << icut << endl;
+  if (icut<0) {
+    icut=opt.ncuts;
+    opt.ncuts++;
+  }
+  if (icut>=MAXCUTS) {
+    cout << "Too many cuts: " << icut << endl;
     return;
   }
+
   TGListTreeItem *idir = fListTree->GetFirstItem();
   if (strcmp(idir->GetText(),"WORK")) {
     cout << "first item is not WORK" << endl;
@@ -963,7 +960,6 @@ void HistFrame::MakeCutG(TPolyLine *pl, TObject* hobj) {
   }
 
   //hcl->cutmap[icut]=map;
-  opt.ncuts++;
 
   //cout << "make3: " << endl;
   //5. remake Ltree
@@ -1060,14 +1056,30 @@ void HistFrame::AddFormula() {
   }
   //formula is valid
   else {
+
+    int icut=-1;
+    for (int i=0;i<opt.ncuts;i++) {
+      if (opt.pcuts[i]==0) {
+	icut=i;
+	break;
+      }
+    }
+    if (icut<0) {
+      icut=opt.ncuts;
+      opt.ncuts++;
+    }
+    if (icut>=MAXCUTS) {
+      cout << "Too many cuts: " << icut << endl;
+      return;
+    }
+
     gClient->GetColorByName("white", color);
     tForm->SetBackgroundColor(color);
-    int icut = opt.ncuts;
     opt.pcuts[icut]=1;
     opt.gcut[icut][0][0]=0;
     opt.gcut[icut][1][0]=0;
     strcpy(opt.cut_form[icut],tForm->GetText());
-    opt.ncuts++;
+    //opt.ncuts++;
 
     Clear_Ltree();
     hcl->Make_cuts();
@@ -1176,8 +1188,8 @@ void HistFrame::DoPeaks()
 void HistFrame::HiReset()
 {
 
-  cout << "HiReset1: " << endl;
-  printhlist(2);
+  //cout << "HiReset1: " << endl;
+  //printhlist(2);
   //return;
   
   if (!crs->b_stop) return;
@@ -1189,20 +1201,20 @@ void HistFrame::HiReset()
   cv->Clear();
   //cv->SetEditable(false);
 
-  cout << "Make_hist():: " << endl;
+  //cout << "Make_hist():: " << endl;
   Clear_Ltree();
-  cout << "Make_hist2():: " << endl;
+  //cout << "Make_hist2():: " << endl;
   hcl->Make_hist();
-  cout << "Make_hist3():: " << endl;
+  //cout << "Make_hist3():: " << endl;
   Make_Ltree();
-  cout << "Make_hist()::2 " << endl;
+  //cout << "Make_hist()::2 " << endl;
 
   Update();
 
   cv->Draw();
   cv->Update();
 
-  cout << "HiReset2: " << endl;
+  //cout << "HiReset2: " << endl;
 }
 
 void HistFrame::Update()
@@ -1320,7 +1332,7 @@ void HistFrame::DrawHist() {
 	// }
 	if (item->IsChecked()) {
 	  hlist->Add((TObject*)item->GetUserData());
-	  cout << "hlist_add: " << item->GetUserData() << " " << item->GetText() << endl;
+	  //cout << "hlist_add: " << item->GetUserData() << " " << item->GetText() << endl;
 	}
       }
       item = item->GetNextSibling();

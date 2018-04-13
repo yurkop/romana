@@ -68,7 +68,7 @@ extern int chanPresent;
 
 //TCondition tcond1(0);
 
-void printhlist(int n);
+//void printhlist(int n);
 //static const char * program_name;
 
 /*
@@ -1474,13 +1474,13 @@ void CRS::DoReset() {
 
   idec=0;
 
-  printhlist(5);
+  //printhlist(5);
   //cout << "f_read: " << f_read << endl;
   if (f_read)
     DoFopen(NULL,0);
   justopened=true;
 
-  printhlist(6);
+  //printhlist(6);
   // parpar->Update();
   if (crspar) {
     crspar->ResetStatus();
@@ -1531,7 +1531,7 @@ void CRS::DoFopen(char* oname, int popt) {
 
   if (f_read) gzclose(f_read);
   f_read = gzopen(Fname,"rb");
-  cout << "f_read: " << f_read << endl;
+  //cout << "f_read: " << f_read << endl;
   if (!f_read) {
     Fmode=0;
     cout << "Can't open file: " << Fname << endl;
@@ -1552,7 +1552,7 @@ void CRS::DoFopen(char* oname, int popt) {
     period=10;
   }
   else { //crs32 or crs2
-  printhlist(7);
+    //printhlist(7);
     if (ReadParGz(f_read,Fname,1,1,popt)) {
       gzclose(f_read);
       f_read=0;
@@ -1561,7 +1561,7 @@ void CRS::DoFopen(char* oname, int popt) {
     bsize=opt.rbuf_size*1024;
     boffset=0;
     period=5;
-  printhlist(8);
+    //printhlist(8);
   }
 
   // if (Fmode==1) {
@@ -1607,7 +1607,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   UShort_t mod;
   gzread(ff,&mod,sizeof(mod));
 
-  cout << "ReadParGz1 Fmode: " << Fmode << endl;
+  //cout << "ReadParGz1 Fmode: " << Fmode << endl;
 
   gzread(ff,&sz,sizeof(sz));
 
@@ -1642,12 +1642,12 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
-  for (int i=0;i<opt.ncuts;i++) {
-    char ss[64];
-    sprintf(ss,"%d",i+1);
-    hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
-    hcl->cutG[i]->SetLineColor(i+2);
-  }
+  // for (int i=0;i<opt.ncuts;i++) {
+  //   char ss[64];
+  //   sprintf(ss,"%d",i+1);
+  //   hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
+  //   hcl->cutG[i]->SetLineColor(i+2);
+  // }
 
   // printhlist(9);
   // //HiFrm->Clear_Ltree();
@@ -1655,7 +1655,11 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   // //HiFrm->Make_Ltree();
   // printhlist(10);
 
-  cout << "ReadParGz2: " << sz << " " << pname << endl;
+  //cout << "ReadParGz2: " << sz << " " << pname << " " << HiFrm << endl;
+
+  if (HiFrm)
+    HiFrm->HiReset();
+
   return 0;
 }
 

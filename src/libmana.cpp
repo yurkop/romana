@@ -102,7 +102,7 @@ void *handle_dum(void* ptr)
 }
 */
 
-void printhlist(int n);
+//void printhlist(int n);
 
 //-------------------------------------
 UShort_t ClassToBuf(const char* name, char* var, char* buf) {
@@ -814,7 +814,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //const TGFont *font = gClient->GetFont("-*-arial-normal-r-*-*-20-*-*-*-*-*-*-*");
 
   //cout << "Font: " << font << endl;
-  font->Print();
+  //font->Print();
 
   if (!font)
     font = gClient->GetResourcePool()->GetDefaultFont();
@@ -835,7 +835,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fBluevio=TColor::RGB2Pixel(255,114,86);
 
-  cout << "fBluevio: " << fBluevio << " " << TColor::GetColor(fBluevio) << endl;
+  //cout << "fBluevio: " << fBluevio << " " << TColor::GetColor(fBluevio) << endl;
 
   //gROOT->GetListOfColors()->ls();
 
@@ -918,7 +918,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   int ntab=0;
 
-  cout << "tab1: " << endl;
+  //cout << "tab1: " << endl;
   TGCompositeFrame *tab1 = fTab->AddTab("Parameters");
   TGCompositeFrame* fr1 = new TGCompositeFrame(tab1, 10, 10, kHorizontalFrame);
   tab1->AddFrame(fr1, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
@@ -929,7 +929,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
-  cout << "tab2: " << endl;
+  //cout << "tab2: " << endl;
   TGCompositeFrame *tab2 = fTab->AddTab("DAQ");
   TGCompositeFrame* fr2 = new TGCompositeFrame(tab2, 10, 10, kHorizontalFrame);
   tab2->AddFrame(fr2, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
@@ -939,10 +939,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
 
-  cout << "tab2a: " << endl;
+  //cout << "tab2a: " << endl;
   crspar->Update();
 
-  cout << "tab3: " << endl;
+  //cout << "tab3: " << endl;
   
   TGCompositeFrame *tab3 = fTab->AddTab("Channels");
   TGCompositeFrame* fr3 = new TGCompositeFrame(tab3, 10, 10, kHorizontalFrame);
@@ -965,11 +965,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   HiFrm = new HistFrame(tab5, 800, 500,ntab);
+  //cout << "hifrm2: " << endl;
   HiFrm->HiReset();
   //HiFrm->Connect("Upd()","HistFrame",HiFrm,"Update()");
   tab5->AddFrame(HiFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   ntab++;
-  //cout << "hifrm2: " << endl;
+  //cout << "hifrm3: " << endl;
 
   if (crs->Fmode) {
     crspar->AllEnabled(false);
@@ -1531,7 +1532,7 @@ void MainFrame::DoReadRoot() {
 
 void MainFrame::DoReset() {
 
-  printhlist(4);
+  //printhlist(4);
   /*
   opt.enabl[0]=false;
   int tmp,max;
@@ -1554,7 +1555,7 @@ void MainFrame::DoReset() {
   if (!crs->b_stop) return;
 
   crs->DoReset();
-  printhlist(3);
+  //printhlist(3);
   HiFrm->HiReset();
 
   parpar->Update();
@@ -1751,26 +1752,24 @@ void MainFrame::DoTab(Int_t num) {
 
 
   if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
-    cout << "DoTab1: " << name << endl;
-    //cout << "Raw_wr: " << opt.raw_write << endl;
+    //cout << "DoTab1: " << name << endl;
     parpar->Update();
   }
   else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
-    cout << "DoTab2: " << name << endl;
-    //cout << "Raw_wr: " << opt.raw_write << endl;
+    //cout << "DoTab2: " << name << endl;
     crspar->Update();
   }
   else if (name.EqualTo("Channels",TString::kIgnoreCase)) {
-    cout << "DoTab3: " << name << endl;
+    //cout << "DoTab3: " << name << endl;
     chanpar->Update();
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
-    cout << "DoTab4: " << name << endl;
+    //cout << "DoTab4: " << name << endl;
     if (crs->b_stop)
       EvtFrm->DrawEvent2();
   }
   else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
-    cout << "DoTab5: " << name << endl;
+    //cout << "DoTab5: " << name << endl;
     if (!crs->b_acq)
       HiFrm->Update();
     //HiFrm->ReDraw();

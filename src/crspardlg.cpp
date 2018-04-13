@@ -1146,7 +1146,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Bool_t *b1,
   sprintf(name,"b_hist%d",id);
   chk_hist->SetName(name);
   DoMap(chk_hist,b1,p_chk,0);
-  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheck()");
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckHist()");
   hfr1->AddFrame(chk_hist,fL3);
   //id0=id;
 
@@ -1217,7 +1217,7 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Bool_t *b1,
   sprintf(name,"b_pulse%d",id);
   chk_hist->SetName(name);
   DoMap(chk_hist,b1,p_chk,0);
-  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheck2()");
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
   hfr1->AddFrame(chk_hist,fL3);
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
@@ -1297,14 +1297,14 @@ void ParParDlg::DoNum_SetBuf() {
 
 }
 
-void ParParDlg::DoCheck() {
+void ParParDlg::DoCheckHist() {
 
   TGCheckButton *te = (TGCheckButton*) gTQSender;
   Int_t id = te->WidgetId();
 
   DoChk();
 
-  //cout << "DoCheck: " << Plist.size() << " " << id << " " << opt.b_time << endl;
+  //cout << "DoCheckHist: " << Plist.size() << " " << id << " " << opt.b_time << endl;
 
   Bool_t state = (Bool_t) te->GetState();      
   pmap *pp;
@@ -1317,7 +1317,7 @@ void ParParDlg::DoCheck() {
   HiFrm->HiReset();
 }
 
-void ParParDlg::DoCheck2() {
+void ParParDlg::DoCheckPulse() {
   DoChk();
   HiFrm->HiReset();
 }

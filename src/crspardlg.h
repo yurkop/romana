@@ -153,8 +153,8 @@ public:
   void AddAna(TGCompositeFrame* frame);
   void DoNum();
   void DoNum_SetBuf();
-  void DoCheck();
-  void DoCheck2();
+  void DoCheckHist();
+  void DoCheckPulse();
   //void Update();
 
   ClassDef(ParParDlg, 0)

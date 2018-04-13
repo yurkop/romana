@@ -331,6 +331,7 @@ void HClass::Make_cuts() {
       cform[i]->Clear();
       int ires = cform[i]->Compile();
       if (ires) {//formula is not valid -> set it to "always false"
+	sprintf(opt.cut_form[i],"0");
 	cform[i]->SetTitle("0");
 	cform[i]->Clear();
 	cform[i]->Compile();
@@ -344,7 +345,7 @@ void HClass::Make_cuts() {
       //cout << "cuts4: " << i << endl;
       //cout << "make_cuts: " << opt.ncuts << " " << i << " " << cutcolor[i] << " " << cutG[i]->GetLineColor() << endl;
     }
-    cout << "cutname: " << cutname << endl;
+    //cout << "cutname: " << cutname << endl;
     cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
     cutG[i]->SetTitle(cuttitle[i]);
     cutG[i]->SetLineColor(cutcolor[i]);
