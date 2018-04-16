@@ -210,17 +210,19 @@ void *handle_ana(void* ptr) {
 
   //check if it's the beginning of the analysis -> then define crs->m_start
   //if (crs->m_start==crs->Levents.end()) {
-  //cout << "ana_start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
+  cout << "ana_start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
   if (crs->Levents.empty()) {
+    cout << "loop start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
     //need this loop to have at least one event in Levents
     while (crs->Levents.empty() && !crs->b_stop) {
       //cout << "a9: " << crs->Levents.empty() << " " << crs->b_stop << endl;
       gSystem->Sleep(10);
     }
     crs->m_start = crs->Levents.begin();
+    cout << "loop end: " << endl;
   }
 
-  //cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << " " << EvtFrm << endl;
+  cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << " " << EvtFrm << endl;
 
   int n2; //number of events to erase
   //m_event - first event which is not analyzed
@@ -303,7 +305,8 @@ void *handle_ana(void* ptr) {
 	  ++crs->nevents2;
 	  ++it;
 	  //++(crs->n_ana);
-	  //YK cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << " " << crs->nevents2 << endl;
+	  //YK
+	  //cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << " " << crs->nevents2 << endl;
 	}
 	else {
 	  it=crs->Levents.erase(it);
@@ -331,7 +334,8 @@ void *handle_ana(void* ptr) {
 	ii=0;
 	for (it=crs->Levents.begin(); it!=crs->m_start && ii<n2;) {
 	  it=crs->Levents.erase(it);
-	  //YK cout << "ana73: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
+	  //YK
+	  //cout << "ana73: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
 	  ++ii;
 	  //++it;
 	  //--(crs->n_ana);
@@ -2546,6 +2550,8 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   event_iter it_last;
   Long64_t dt;
 
+  //cout << "Event_Insert_Pulse: " << (int) pls->Chan << " " << pls->Counter << " " << pls->Tstamp64 << " " << (int) pls->ptype << endl;
+
   //if (pls->ptype & 0xF) { //P_NOSTART | P_NOSTOP | P_BADCH | P_BADTST
   //if (pls->ptype & 0x7) {
   if (pls->ptype) { //any bad pulse
@@ -2816,8 +2822,6 @@ void CRS::Make_Events() {
     // crs->b_acq=false;
     // crs->b_run=0;
 
-
-
     //return;
   }
 
@@ -2855,7 +2859,7 @@ void CRS::Make_Events() {
     //Print_Events();
   }
 
-  //cout << "Make_Events: " << &*Vpulses.rend() << " " << &*vv << " " << vv->size(); 
+  //cout << "Make_Events: " << &*Vpulses.rend() << " " << &*vv << " " << vv->size() << endl;
 
   //now insert all pulses from the current buffer, except last one
   //--vv;// = Vpulses+nvp;
