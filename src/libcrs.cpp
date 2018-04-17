@@ -1578,6 +1578,7 @@ void CRS::DoFopen(char* oname, int popt) {
     bsize=opt.rbuf_size*1024+4096;
     boffset=4096;
     period=10;
+    idx=0;
   }
   else { //crs32 or crs2
     //printhlist(7);
@@ -2136,29 +2137,8 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 } //decode32
 
 void CRS::Decode2(UChar_t* buffer, int length) {
-  /*
-  PulseClass *ipp;
 
   unsigned short* buf2 = (unsigned short*) buffer;
-  //int nbuf = *(int*) transfer->user_data;
-
-  pulse_vect *vv = new pulse_vect; //- current vector of pulses
-  Vpulses[nvp]=vv;
-  pulse_vect *vv2 = Vpulses[1-nvp]; //- vector of pulses from previous buffer
-
-  //if (vv2==Vpulses.rend()) { //this is start of the acqisition
-  if (vv2==NULL) { //this is start of the acqisition
-    vv->push_back(PulseClass());
-    npulses++;
-    ipp = &vv->back();
-    ipp->Chan = ((*buf2) & 0x8000)>>15;
-    ipp->ptype|=P_NOSTART; // first pulse is by default incomplete
-    //it will be reset if idx8==0 in the while loop
-  }
-  else {
-    ipp=&vv2->back();
-    // ipp points to the last pulse of the previous buffer
-  }
 
   unsigned short frmt;
   int idx2=0;
@@ -2184,23 +2164,11 @@ void CRS::Decode2(UChar_t* buffer, int length) {
     }
 
     if (frmt==0) {
-      //make new pulse only if this is not the first record.
-      //For the first record new pulse is already created at the beginning
-      //if (idx2) {
-      if (b_fstart) {
-	ipp->ptype&=~P_NOSTOP; //pulse has stop
-	//ipp->PrintPulse(1);
-	vv->push_back(PulseClass());
-	npulses++;
-	ipp = &vv->back();
-      }
-      else { //idx2==0 -> pulse has start
-	b_fstart=true;
-	ipp->ptype&=~P_NOSTART; // reset ptype, as this is a good pulse
-      }
+      ipp->ptype&=~P_NOSTOP; //pulse has stop
+      ipp = vv->insert(vv->end(),PulseClass());
+      npulses++;
       ipp->Chan = ch;
       ipp->Tstamp64=data;// - cpar.preWr[ch];
-
     }
     else if (frmt<4) {
       Long64_t t64 = data;
@@ -2236,11 +2204,14 @@ void CRS::Decode2(UChar_t* buffer, int length) {
 
   //Fill_Tail(nvp);
 
-  Make_Events();
+  if (vv->size()>2) {
+    Make_Events();
+    vv2->clear();
+    nvp = 1-nvp;
+    vv = Vpulses+nvp;
+    vv2 = Vpulses+1-nvp;
+  }
 
-  if (Vpulses.size()>2)
-    Vpulses.pop_front();
-  */
 } //decode2
 
 //-------------------------------
@@ -2266,7 +2237,7 @@ int CRS::Searchsync() {
 //-------------------------------------
 
 void CRS::Decode_adcm() {
-  /*
+
   //it is assumed that at the beginning of this procedure idx points
   //to the valid data (correct sync word and type)
 
@@ -2290,26 +2261,16 @@ void CRS::Decode_adcm() {
   //UShort_t nch; // channel number
   UShort_t id; // block id (=0,1,2)
 
-  PulseClass *ipp;
-
-  //std::vector<PulseClass> *vv = Vpulses+nvp; //current vector of pulses
-
-  pulse_vect pvect;
-  Vpulses.push_back(pvect);
-  list_pulse_reviter vv = Vpulses.rbegin(); //vv - current vector of pulses
-  list_pulse_reviter vv2 = vv; //vv2 - vector of pulses from previous buffer
-  ++vv2;
-
   //cout << "idx1: " << idx << " " << hex << rbuf4[idx] << dec << endl;
   
-  if (vv2==Vpulses.rend()) { //this is start of the acqisition
-    //-> search for the syncw
-    idx=0;
-    if (!Searchsync()){
-      cout << "sync word not found1" << endl;
-      return;
-    }
-  }
+  // if (vv2==Vpulses.rend()) { //this is start of the acqisition
+  //   //-> search for the syncw
+  //   idx=0;
+  //   if (!Searchsync()){
+  //     cout << "sync word not found1" << endl;
+  //     return;
+  //   }
+  // }
 
   // else {
   //   cout << "YK (not done yet...)" << endl;
@@ -2502,7 +2463,6 @@ void CRS::Decode_adcm() {
 
   //cout << "Offset64: " << nbuffers << " " << Offset64 << endl;
 
-*/
 } //Decode_adcm
 
 //-------------------------------------

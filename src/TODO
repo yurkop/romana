@@ -85,3 +85,6 @@ check opt.Tstop for data acquisition
 
 11/04
 1. hmap должен содержать имена всех гистограмм (в т.ч. несозданных). Должен быть флаг - создавать/использовать гистограмму или нет.
+
+18.04.18
+1. different times for 11bit and 16bit channels - use crs->period

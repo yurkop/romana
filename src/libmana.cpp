@@ -882,7 +882,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //cout << "fBluevio: " << fBluevio << " " << TColor::GetColor(fBluevio) << endl;
 
-  gROOT->GetListOfColors()->ls();
+  //gROOT->GetListOfColors()->ls();
 
   TGGroupFrame* fGr1 = new TGGroupFrame(vframe1, "Acquisition", kVerticalFrame);
   fGr1->SetTitlePos(TGGroupFrame::kCenter); // right aligned
