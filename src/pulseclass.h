@@ -123,6 +123,8 @@ class PulseClass {
   //ClassDef(PulseClass, 0)
 };
 
+typedef std::vector<PulseClass> pulse_vect;
+
 class EventClass { //event of pulses
 
  public:
@@ -139,7 +141,7 @@ class EventClass { //event of pulses
   virtual ~EventClass() {};
   //void Make_Mean_Event();
   //void Pulse_Mean_Add(PulseClass *newpulse);
-  void Pulse_Ana_Add(PulseClass *newpulse);
+  void Pulse_Ana_Add(pulse_vect::iterator pls);
   void Fill_Time_Extend(HMap* map);
   void Fill1d(Bool_t first, HMap* map, Float_t x);
   void Fill_Mean_Pulse(Bool_t first, HMap* map,  PulseClass* pls);

@@ -74,6 +74,7 @@ public:
   void DoStartStop();
 
   void DoOpen();
+  void DoClose();
   void DoAna();
   void DoRWinit(EFileDialogMode);
   void DoReadRoot();

@@ -22,7 +22,7 @@ typedef unsigned char byte;
 //typedef unsigned long long ULong64_t;
 //typedef long long Long64_t;
 
-typedef std::vector<PulseClass> pulse_vect;
+//typedef std::vector<PulseClass> pulse_vect;
 //typedef std::list<EventClass> event_list;
 
 //typedef std::list<event_list>::iterator event_list_iter;
@@ -59,7 +59,7 @@ RQ_OBJECT("CRS")
   gzFile f_raw;
   gzFile f_read;
   gzFile f_dec;
-  bool justopened;
+  bool juststarted;
   //TFile* f_dec;
 
   //TFile* f_tree;
@@ -79,7 +79,11 @@ RQ_OBJECT("CRS")
   // size of Vpulses can not be larger than 2
   // (contains current vector and previous vector)
   //std::list<pulse_vect> Vpulses;
-  std::array<pulse_vect,2> Vpulses;
+  pulse_vect Vpulses[2];
+  int nvp;
+  pulse_vect::iterator ipp; //pointer to the current pulse in decode*
+  pulse_vect *vv; //- vector of pulses from current
+  pulse_vect *vv2; //- vector of pulses from previous buffer
   
   //std::list<event_list> Levents; //list of events
   std::list<EventClass> Levents; //list of events
@@ -231,7 +235,9 @@ RQ_OBJECT("CRS")
 
   //void PEvent() { if (b_pevent) Emit("PEvent()"); } //*SIGNAL*
   //void SigEvent() { Emit("SigEvent()"); } //*SIGNAL*
-  void Event_Insert_Pulse(PulseClass* pulse);
+
+  //void Event_Insert_Pulse(PulseClass* pulse);
+  void Event_Insert_Pulse(pulse_vect::iterator pls);
   void Make_Events();
   void Select_Event(EventClass *evt);
   //void *Ana_Events(void* ptr);

@@ -878,10 +878,11 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gClient->GetColorByName("BlueViolet",fBluevio);
 
   fBluevio=TColor::RGB2Pixel(255,114,86);
+  Pixel_t fBlue = TColor::RGB2Pixel(135,92,231);;
 
   //cout << "fBluevio: " << fBluevio << " " << TColor::GetColor(fBluevio) << endl;
 
-  //gROOT->GetListOfColors()->ls();
+  gROOT->GetListOfColors()->ls();
 
   TGGroupFrame* fGr1 = new TGGroupFrame(vframe1, "Acquisition", kVerticalFrame);
   fGr1->SetTitlePos(TGGroupFrame::kCenter); // right aligned
@@ -925,6 +926,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fOpen->ChangeBackground(fBluevio);
   fOpen->Connect("Clicked()","MainFrame",this,"DoOpen()");
   fGr2->AddFrame(fOpen, l_But);
+
+  TGTextButton *fClose = new TGTextButton(fGr2,new TGHotString("&Close"));
+  fClose->SetFont(tfont,false);
+  fClose->Resize(butx,buty);
+  fClose->ChangeOptions(fClose->GetOptions() | kFixedSize);
+  fClose->ChangeBackground(fBlue);
+  fClose->Connect("Clicked()","MainFrame",this,"DoClose()");
+  fGr2->AddFrame(fClose, l_But);
 
   TGTextButton *fReset2 = new TGTextButton(fGr2,new TGHotString("&Reset"));
   fReset2->SetFont(tfont,false);
@@ -1281,6 +1290,30 @@ void MainFrame::DoOpen() {
 #else
   _chdir(startdir);
 #endif
+
+}
+
+void MainFrame::DoClose() {
+  cout << "DoClose: " << endl;
+
+  if (!crs->b_stop) return;
+
+  if (crs->f_read) {
+    gzclose(crs->f_read);
+    crs->f_read=0;
+  }
+  if (crs->Fbuf2) {
+    delete[] crs->Fbuf2;
+    crs->Fbuf2=0;
+    crs->Fbuf=0;
+  }
+
+  myM->SetTitle((char*)"");
+  crspar->AllEnabled(true);
+
+  parpar->Update();
+  crspar->Update();
+  chanpar->Update();
 
 }
 
@@ -1940,7 +1973,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
 bool MainFrame::TestFile() {
 
-  if (!crs->justopened) return true;
+  if (!crs->juststarted) return true;
 
   //EMsgBoxIcon icontype = kMBIconStop;
   //EMsgBoxIcon icontype = kMBIconExclamation;

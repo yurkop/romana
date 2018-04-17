@@ -302,7 +302,8 @@ void EventClass::Pulse_Mean_Add(PulseClass *pls) {
 
 }
 */
-void EventClass::Pulse_Ana_Add(PulseClass *pls) {
+//void EventClass::Pulse_Ana_Add(PulseClass *pls) {
+void EventClass::Pulse_Ana_Add(pulse_vect::iterator pls) {
 
   // if (opt.b_pulse) {
   //   crs->mean_event.Pulse_Mean_Add(pls);
