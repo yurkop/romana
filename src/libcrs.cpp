@@ -2114,7 +2114,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     //}
     */
 
-  //cout << "Decode32 3: " << Vpulses.size() << endl;
+  cout << "Decode32 3: " << Vpulses.size() << endl;
 
   Make_Events();
 
@@ -2550,7 +2550,7 @@ void CRS::Event_Insert_Pulse(PulseClass *pls) {
   event_iter it_last;
   Long64_t dt;
 
-  //cout << "Event_Insert_Pulse: " << (int) pls->Chan << " " << pls->Counter << " " << pls->Tstamp64 << " " << (int) pls->ptype << endl;
+  cout << "Event_Insert_Pulse: " << (int) pls->Chan << " " << pls->Counter << " " << pls->Tstamp64 << " " << (int) pls->ptype << endl;
 
   //if (pls->ptype & 0xF) { //P_NOSTART | P_NOSTOP | P_BADCH | P_BADTST
   //if (pls->ptype & 0x7) {
@@ -2805,7 +2805,7 @@ void CRS::Make_Events() {
   }
   */
 
-  //cout << "Make_Events: T_acq: " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
+  cout << "Make_Events: T_acq: " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
   
   if (opt.Tstop && opt.T_acq>opt.Tstop) {
     if (b_acq) {
@@ -2859,7 +2859,7 @@ void CRS::Make_Events() {
     //Print_Events();
   }
 
-  //cout << "Make_Events: " << &*Vpulses.rend() << " " << &*vv << " " << vv->size() << endl;
+  cout << "Make_Events: " << &*Vpulses.rend() << " " << &*vv << " " << vv->size() << endl;
 
   //now insert all pulses from the current buffer, except last one
   //--vv;// = Vpulses+nvp;
@@ -2868,6 +2868,8 @@ void CRS::Make_Events() {
 
   if (vv->size()<=1)
     return; //if vv contains 0 or 1 event, don't analyze it 
+
+  cout << "Make_Events2: " << endl;
 
   for (pls=vv->begin(); pls != --vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {

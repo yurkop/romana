@@ -78,8 +78,9 @@ RQ_OBJECT("CRS")
   //Vpulses - list of vectors of pulses for Decode*
   // size of Vpulses can not be larger than 2
   // (contains current vector and previous vector)
-  std::list<pulse_vect> Vpulses;
-
+  //std::list<pulse_vect> Vpulses;
+  std::array<pulse_vect,2> Vpulses;
+  
   //std::list<event_list> Levents; //list of events
   std::list<EventClass> Levents; //list of events
   //EventClass mean_event;
