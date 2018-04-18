@@ -244,7 +244,7 @@ void PulseClass::PeakAna() {
       cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
     }
     pk->Area=pk->Area0-pk->Base;
-    pk->Area*=opt.emult[Chan];
+    //pk->Area*=opt.emult[Chan];
 
   }
 
@@ -493,7 +493,7 @@ void EventClass::FillHist(Bool_t first) {
   Long64_t tm;
 
   int nn=0;
-  Float_t amp[2] = {0,0};
+  Float_t area[2] = {0,0};
 
   //cout << "FillHist: " << this->Nevt << endl;
 
@@ -546,20 +546,20 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_time[ch],opt.T_acq);
       }
 
-      if (opt.h_amp.b) {
-	Fill1d(first,hcl->m_ampl[ch],pk->Area);
+      if (opt.h_area.b) {
+	Fill1d(first,hcl->m_area[ch],pk->Area*opt.emult[ch]);
       }
 
-      if (opt.h_amp0.b) {
-	Fill1d(first,hcl->m_amp0[ch],pk->Area0);
+      if (opt.h_area0.b) {
+	Fill1d(first,hcl->m_area0[ch],pk->Area0*opt.emult[ch]);
       }
 
       if (opt.h_base.b) {
-	Fill1d(first,hcl->m_base[ch],pk->Base);
+	Fill1d(first,hcl->m_base[ch],pk->Base*opt.emult[ch]);
       }
 
-      if (opt.h_amp_base.b) {
-	Fill2d(first,hcl->m_amp_base[ch],pk->Area,pk->Base);
+      if (opt.h_area_base.b) {
+	Fill2d(first,hcl->m_area_base[ch],pk->Area*opt.emult[ch],pk->Base*opt.emult[ch]);
       }
 
       if (opt.h_hei.b) {
@@ -599,15 +599,15 @@ void EventClass::FillHist(Bool_t first) {
 
 	if (opt.h_a0a1.b) {
 	  if (ch==0) {
-	    amp[0]=pk->Area;
+	    area[0]=pk->Area;
 	    nn++;
 	  }
 	  if (ch==1) {
-	    amp[1]=pk->Area;
+	    area[1]=pk->Area;
 	    nn++;
 	  }
 	  if (nn==2) {
-	    Fill2d(first,hcl->m_a0a1[0],amp[0],amp[1]);
+	    Fill2d(first,hcl->m_a0a1[0],area[0]*opt.emult[ch],area[1]*opt.emult[ch]);
 	    nn++;
 	  }
 	}

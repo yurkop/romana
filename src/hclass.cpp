@@ -143,8 +143,6 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
   // dir_list->Add(dmap);
 
   for (int i=0;i<MAX_CH;i++) {
-    //sprintf(name,"ampl_%02d",i);
-    //sprintf(title,"ampl_%02d;Channel;Counts",i);
     NameTitle(name2,title2,i,0,name,title);
 
     int nn=hd->bins*(hd->max - hd->min);
@@ -203,7 +201,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
 
     int n1=hd->bins*(hd1->max - hd1->min);
     int n2=hd->bins2*(hd2->max - hd2->min);
-    TH2F* hh=new TH2F(name2,title2,n1,hd1->min,hd1->max,n2,hd1->min,hd2->max);
+    TH2F* hh=new TH2F(name2,title2,n1,hd1->min,hd1->max,n2,hd2->min,hd2->max);
 
     map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
     map_list->Add(map[i]);
@@ -378,8 +376,8 @@ void HClass::Make_hist() {
   map_list->SetOwner(true);
 
   Make_1d("Time","time",";T(sec);Counts",m_time,&opt.h_time);
-  Make_1d("Amplitude","ampl",";Channel;Counts",m_ampl,&opt.h_amp);
-  Make_1d("Amp0","amp0",";Channel;Counts",m_amp0,&opt.h_amp0);
+  Make_1d("Area","area",";Channel;Counts",m_area,&opt.h_area);
+  Make_1d("Area0","area0",";Channel;Counts",m_area0,&opt.h_area0);
   Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);
   Make_1d("Height","height",";Channel;Counts",m_height,&opt.h_hei);
   Make_1d("TOF","tof",";t(ns);Counts",m_tof,&opt.h_tof);
@@ -388,7 +386,7 @@ void HClass::Make_hist() {
   Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,&opt.h_pulse);
 
   Make_a0a1("A0A1","A0A1",";Channel;Channel",m_a0a1,&opt.h_a0a1);
-  Make_2d("Amp-Base","Amp-Base",";Channel;Channel",m_amp_base,&opt.h_amp_base,&opt.h_amp,&opt.h_base);
+  Make_2d("Area-Base","Area-Base",";Channel;Channel",m_area_base,&opt.h_area_base,&opt.h_area,&opt.h_base);
 
 
   b_formula=false;

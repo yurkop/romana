@@ -167,62 +167,6 @@ Toptions::Toptions() {
 
   seltab=0;
 
-
-  // time_max=time_bins=1;
-  // tof_max=tof_bins=1;
-  // mtof_max=mtof_bins=1;
-  // amp_max=amp_bins=1;
-  // hei_max=hei_bins=1;
-  // per_max=per_bins=1;
-  // h2d_max=h2d_bins=1;
-
-  // time_min=0;
-  // tof_min=0;
-  // mtof_min=0;
-  // amp_min=0;
-  // hei_min=0;
-  // per_min=0;
-  // h2d_min=0;
-
-  // b_time=true;
-  // b_tof=true;
-  // b_mtof=true;
-  // b_amp=true;
-  // b_hei=true;
-  // b_per=true;
-  // b_h2d=true;
-  // b_pulse=false;
-
-  // for (int i=0;i<MAX_CH;i++) {
-  //   s_time[i]=true;
-  //   s_tof[i]=true;
-  //   s_mtof[i]=true;
-  //   s_amp[i]=true;
-  //   s_hei[i]=true;
-  //   s_per[i]=true;
-  //   s_h2d[i]=true;
-  //   s_pulse[i]=true;
-
-  //   w_time[i]=false;
-  //   w_tof[i]=false;
-  //   w_mtof[i]=false;
-  //   w_amp[i]=false;
-  //   w_hei[i]=false;
-  //   w_per[i]=false;
-  //   w_h2d[i]=false;
-  //   w_pulse[i]=false;
-  // }
-
-  // memset(cut_time, 0, sizeof(cut_time));
-  // memset(cut_tof,  0, sizeof(cut_tof));
-  // memset(cut_mtof, 0, sizeof(cut_mtof));
-  // memset(cut_amp,  0, sizeof(cut_amp));
-  // memset(cut_hei,  0, sizeof(cut_hei));
-  // memset(cut_per,  0, sizeof(cut_per));
-  // memset(cut_h2d,  0, sizeof(cut_h2d));
-  // memset(cut_pulse,  0, sizeof(cut_pulse));
-
-
   num_events=100000;
   num_buf=100;
 

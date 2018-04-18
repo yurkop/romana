@@ -1649,15 +1649,6 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   if (p2) {
     BufToClass("Toptions","opt",(char*) &opt,buf,sz);
 
-    // BufToClass("Hdef","h_time", (char*) &opt.h_time  ,buf,sz);
-    // BufToClass("Hdef","h_amp",  (char*) &opt.h_amp   ,buf,sz);
-    // BufToClass("Hdef","h_hei",  (char*) &opt.h_hei   ,buf,sz);
-    // BufToClass("Hdef","h_tof",  (char*) &opt.h_tof   ,buf,sz);
-    // BufToClass("Hdef","h_mtof", (char*) &opt.h_mtof  ,buf,sz);
-    // BufToClass("Hdef","h_per",  (char*) &opt.h_per   ,buf,sz);
-    // BufToClass("Hdef","h_a0a1", (char*) &opt.h_a0a1  ,buf,sz);
-    // BufToClass("Hdef","h_pulse",(char*) &opt.h_pulse ,buf,sz);
-
     TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
     TIter nextd(lst);
     TDataMember *dm;
@@ -1721,15 +1712,6 @@ void CRS::SaveParGz(gzFile &ff) {
 
   sz+=ClassToBuf("Coptions","cpar",(char*) &cpar, buf+sz);
   sz+=ClassToBuf("Toptions","opt",(char*) &opt, buf+sz);
-
-  // sz+=ClassToBuf("Hdef","h_time", (char*) &opt.h_time  , buf+sz);
-  // sz+=ClassToBuf("Hdef","h_amp",  (char*) &opt.h_amp   , buf+sz);
-  // sz+=ClassToBuf("Hdef","h_hei",  (char*) &opt.h_hei   , buf+sz);
-  // sz+=ClassToBuf("Hdef","h_tof",  (char*) &opt.h_tof   , buf+sz);
-  // sz+=ClassToBuf("Hdef","h_mtof", (char*) &opt.h_mtof  , buf+sz);
-  // sz+=ClassToBuf("Hdef","h_per",  (char*) &opt.h_per   , buf+sz);
-  // sz+=ClassToBuf("Hdef","h_a0a1", (char*) &opt.h_a0a1  , buf+sz);
-  // sz+=ClassToBuf("Hdef","h_pulse",(char*) &opt.h_pulse , buf+sz);
 
   TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
   TIter nextd(lst);
@@ -2322,11 +2304,11 @@ void CRS::Decode_adcm() {
 	goto next;
       }
       if (lastfl) {
-	vv->push_back(PulseClass());
+	ipp = vv->insert(vv->end(),PulseClass());
+	//vv->push_back(PulseClass());
 	npulses++;
+	ipp->Chan=bits(header,18,25);
       }
-      ipp = &vv->back();
-      ipp->Chan=bits(header,18,25);
       lastfl=lflag;
 
       //nbits=bits(header,0,3);
@@ -2443,10 +2425,16 @@ void CRS::Decode_adcm() {
 
   }
 
-  Make_Events();
+  if (vv->size()>2) {
+    Make_Events();
+    vv2->clear();
+    nvp = 1-nvp;
+    vv = Vpulses+nvp;
+    vv2 = Vpulses+1-nvp;
+  }
 
-  if (Vpulses.size()>2)
-    Vpulses.pop_front();
+  // if (Vpulses.size()>2)
+  //   Vpulses.pop_front();
 
   int sz=(BufLength-idx);
   if (sz>1024) {

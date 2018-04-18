@@ -990,15 +990,15 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Time";
   AddLine_hist(frame,&opt.h_time,tip1,label);
 
-  tip1= "Amplitude or energy, calibrated (see Channels->EM for calibration)";
-  label="Amplitude";
-  AddLine_hist(frame,&opt.h_amp,tip1,label);
+  tip1= "Area of the pulse or energy, calibrated (see Channels->EM for calibration)";
+  label="Area";
+  AddLine_hist(frame,&opt.h_area,tip1,label);
 
-  tip1= "Amplitude w/o background, NOT calibrated";
-  label="Amp0";
-  AddLine_hist(frame,&opt.h_amp0,tip1,label);
+  tip1= "Area w/o background, calibrated (see Channels->EM for calibration)";
+  label="Area0";
+  AddLine_hist(frame,&opt.h_area0,tip1,label);
 
-  tip1= "Base line";
+  tip1= "Base line, calibrated (see Channels->EM for calibration)";
   label="Base";
   AddLine_hist(frame,&opt.h_base,tip1,label);
 
@@ -1027,13 +1027,13 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   frame->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame2->AddFrame(frame, fL6);
 
-  tip1= "2-dimensional histogram (ampl0-ampl1)";
+  tip1= "2-dimensional histogram (area0-area1), calibrated (see Channels->EM for calibration)";
   label="A0A1";
   AddLine_hist(frame,&opt.h_a0a1,tip1,label);
 
-  tip1= "2-dimensional histogram (Amplitude-Base)";
-  label="Amp_Base";
-  AddLine_2d(frame,&opt.h_amp_base,tip1,label);
+  tip1= "2-dimensional histogram (Area-Base)";
+  label="Area_Base";
+  AddLine_2d(frame,&opt.h_area_base,tip1,label);
 
   /*
   tip1= "Bins per channel for Width";
