@@ -797,6 +797,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 				100, 100, kVerticalFrame);
   fCanvas->SetContainer(fcont1);
 
+  /*
   //opt.chk_raw=true;
   //opt.chk_dec=false;
   AddWrite("Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
@@ -834,6 +835,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   AddWrite("Write root histograms",&opt.root_write,&opt.root_compr,opt.fname_root);
   id_write[2]=Plist.size();
   //cout << "root: " << Plist.size()+1 << endl;
+  */
 
   hor = new TGSplitFrame(fcont1,10,10);
   fcont1->AddFrame(hor,fLexp);
@@ -897,6 +899,9 @@ void ParParDlg::AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
   hframe2->AddFrame(tt,fL0);
   DoMap(tt,opt_fname,p_txt,0);
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+}
+
+void ParParDlg::AddOpt(TGCompositeFrame* frame) {
 }
 
 void ParParDlg::AddOpt(TGCompositeFrame* frame) {

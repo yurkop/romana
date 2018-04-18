@@ -152,6 +152,7 @@ public:
 		    const char* tip, const char* label);
   void AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
 		char* opt_fname);
+  void AddFiles(TGCompositeFrame* frame);
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
