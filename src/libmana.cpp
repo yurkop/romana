@@ -765,9 +765,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   */
 
 
-  hAna=new TGHotString("&Analyze");
-  hPause=new TGHotString("&Pause");
-
   //int nn=2;
   //double xx[nn];
   //double yy[nn];
@@ -944,7 +941,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
   fGr2->AddFrame(fReset2, l_But);
 
-  fAna = new TGTextButton(fGr2,hAna);
+  fAna = new TGTextButton(fGr2,"&Analyze");
   fAna->SetFont(tfont,false);
   fAna->Resize(butx,buty);
   fAna->ChangeOptions(fAna->GetOptions() | kFixedSize);
@@ -1330,8 +1327,9 @@ void MainFrame::DoAna() {
     crs->b_fana=false;
     crs->b_stop=true;
     gSystem->Sleep(100);
-    fAna->ChangeBackground(fGreen);
-    fAna->SetText(hAna);
+    //fAna->ChangeBackground(fGreen);
+    fAna->ChangeText("&Analyze");
+    //fAna->SetText(hAna);
 
     if (opt.root_write) {
       saveroot(opt.fname_root);
@@ -1341,17 +1339,17 @@ void MainFrame::DoAna() {
   else { //start analysis
     if (TestFile()) {
       //cout << "hAna: " << hAna->GetString() << " " << hPause->GetString() << endl;
-      //fAna->SetText(hPause);
-      fAna->SetText(new TGHotString("&Pause"));
-      fAna->ChangeBackground(fRed);
+      //fAna->SetText(new TGHotString("&Pause"));
+      fAna->ChangeText("P&ause");
+      //fAna->ChangeBackground(fRed);
       crs->b_fana=true;
       crs->b_stop=false;
 
       crs->FAnalyze(true);
 
-      //fAna->SetText(hAna));
-      fAna->SetText(new TGHotString("&Analyze"));
-      fAna->ChangeBackground(fGreen);
+      //fAna->SetText(new TGHotString("&Analyze"));
+      fAna->ChangeText("&Analyze");
+      //fAna->ChangeBackground(fGreen);
       crs->b_fana=false;
       crs->b_stop=true;
 
@@ -1397,7 +1395,7 @@ void MainFrame::DoNbuf() {
 
   if (crs->b_fana) { //analysis is running -> stop it
     fAna->ChangeBackground(fGreen);
-    fAna->SetText("Analyse");
+    fAna->SetText("&Analyse");
     fNb->ChangeBackground(fGreen);
     gSystem->Sleep(100);
     crs->b_fana=false;
@@ -1407,7 +1405,7 @@ void MainFrame::DoNbuf() {
     if (TestFile()) {
       //cout << "donbuf1" << endl;
       fAna->ChangeBackground(fRed);
-      fAna->SetText("Pause");
+      fAna->SetText("P&ause");
       fNb->ChangeBackground(fRed);
       crs->b_fana=true;
       crs->b_stop=false;
@@ -1416,7 +1414,7 @@ void MainFrame::DoNbuf() {
       //cout << "donbuf2" << endl;
       //DoNbuf();
       fAna->ChangeBackground(fGreen);
-      fAna->SetText("Analyse");
+      fAna->SetText("&Analyse");
       fNb->ChangeBackground(fGreen);
       crs->b_fana=false;
       crs->b_stop=true;
@@ -1592,8 +1590,8 @@ void MainFrame::DoReset() {
   // if (HiFrm)
   //   cout << "DoReset_main: " << HiFrm->h_time[1]->GetName() << endl;
 
-  if (HiFrm)
-    cout << "DoReset_main: " << HiFrm->hlist->GetSize() << endl;
+  //if (HiFrm)
+  //cout << "DoReset_main: " << HiFrm->hlist->GetSize() << endl;
 
   if (!crs->b_stop) return;
 

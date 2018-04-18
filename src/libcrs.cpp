@@ -210,19 +210,19 @@ void *handle_ana(void* ptr) {
 
   //check if it's the beginning of the analysis -> then define crs->m_start
   //if (crs->m_start==crs->Levents.end()) {
-  cout << "ana_start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
+  //cout << "ana_start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
   if (crs->Levents.empty()) {
-    cout << "loop start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
+    //cout << "loop start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
     //need this loop to have at least one event in Levents
     while (crs->Levents.empty() && !crs->b_stop) {
       //cout << "a9: " << crs->Levents.empty() << " " << crs->b_stop << endl;
       gSystem->Sleep(10);
     }
     crs->m_start = crs->Levents.begin();
-    cout << "loop end: " << endl;
+    //cout << "loop end: " << endl;
   }
 
-  cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << " " << EvtFrm << endl;
+  //cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << " " << EvtFrm << endl;
 
   int n2; //number of events to erase
   //m_event - first event which is not analyzed
@@ -1202,7 +1202,7 @@ void CRS::Command_crs(byte cmd, byte chan) {
 
 void CRS::AllParameters32()
 {
-  cout << "AllParameters32(): " << endl;
+  //cout << "AllParameters32(): " << endl;
 
   for (byte chan = 0; chan < chanPresent; chan++) {
     Command32(2,chan,0,(int)cpar.acdc[chan]);
@@ -1571,7 +1571,8 @@ void CRS::DoFopen(char* oname, int popt) {
     cout << "ADCM RAW File: " << Fname << endl;
     Fmode=1;
 
-    memset(Pre,0,sizeof(Pre));
+    cpar.InitPar(0);
+    //memset(Pre,0,sizeof(Pre));
     // for (int i=0;i<MAX_CH+ADDCH;i++) {
     //   cpar.preWr[i]=0;
     // }
@@ -1619,6 +1620,12 @@ void CRS::DoFopen(char* oname, int popt) {
 
   rbuf4 = (UInt_t*) Fbuf;
   rbuf2 = (UShort_t*) Fbuf;
+
+  if (tp) { //adcm raw - determine durwr
+    // cout << "durwr1: " << nvp << " " << vv2->size() << endl;
+    // DoBuf();
+    // cout << "durwr2: " << nvp << " " << vv2->size() << endl;
+  }
 
   if (myM) {
     myM->SetTitle(Fname);
@@ -2002,7 +2009,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     unsigned char ch = buffer[idx1+7];
     
     if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
-      cout << "32: Bad channel: " << (int) ch
+      cout << "dec32: Bad channel: " << (int) ch
 	   << " " << (int) ipp->Chan
 	   << " " << idx8 //<< " " << nvp
 	   << endl;
@@ -2220,6 +2227,7 @@ int CRS::Searchsync() {
 
 void CRS::Decode_adcm() {
 
+  //cout << "decode_adcm: " << endl;
   //it is assumed that at the beginning of this procedure idx points
   //to the valid data (correct sync word and type)
 
@@ -2304,6 +2312,7 @@ void CRS::Decode_adcm() {
 	goto next;
       }
       if (lastfl) {
+	//cout << "decode_adcm pulse: " << npulses << endl;
 	ipp = vv->insert(vv->end(),PulseClass());
 	//vv->push_back(PulseClass());
 	npulses++;

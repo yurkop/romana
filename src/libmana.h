@@ -52,8 +52,6 @@ class MainFrame : public TGMainFrame {
   TGTextButton *fAna;
   TGTextButton *fNb;
 
-  TGHotString* hAna;
-  TGHotString* hPause;
  public:
   //bool                   bRun;
   TGTab                *fTab;

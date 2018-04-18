@@ -14,23 +14,26 @@ Coptions::Coptions() {
   //   enabl[i]=true;
   // }
 
-  InitPar();
+  InitPar(1);
 
 }
 
-void Coptions::InitPar() {
+void Coptions::InitPar(int zero) {
 
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     enabl[i]=true;
     acdc[i]=true;
     inv[i]=false;
-    smooth[i]=0;
-    deadTime[i]=1;
-    preWr[i]=100;
-    durWr[i]=200;
-    kderiv[i]=1;
-    threshold[i]=1500;
-    adcGain[i]=12;
+    smooth[i]=0*zero;
+    deadTime[i]=1*zero;
+    preWr[i]=100*zero;
+    if (zero)
+      durWr[i]=200;
+    else
+      durWr[i]=1;
+    kderiv[i]=1*zero;
+    threshold[i]=1500*zero;
+    adcGain[i]=12*zero;
   }
   forcewr=false;
 
@@ -140,6 +143,10 @@ Toptions::Toptions() {
     emult[i]=1;
   }
 
+  // for (int i=MAX_CH;i<MAX_CH+ADDCH;i++) {
+  //   chtype[i]=ch_other;
+  // }
+
   raw_write=false;
   dec_write=false;
   root_write=false;
@@ -152,8 +159,8 @@ Toptions::Toptions() {
   memset(fname_dec,0,sizeof(fname_dec));
   memset(fname_root,0,sizeof(fname_root));
 
-  ev_min=5;
-  ev_max=10;
+  ev_min=10;
+  ev_max=1000;
 
   tgate=500;
   tveto=10;

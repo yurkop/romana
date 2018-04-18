@@ -423,22 +423,23 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
   //HMap* map = hcl->m_pulse[n];
   int ch = pls->Chan;
   
-  if (pls->sData.size() < cpar.durWr[pls->Chan]) {
-    cout << "Error: " << (int) pls->Chan << " " << pls->Counter
-	 << " " << pls->sData.size() << endl;
-    return;
-  }
+  // if (pls->sData.size() < cpar.durWr[pls->Chan]) {
+  //   cout << "Error: " << (int) pls->Chan << " " << pls->Counter
+  // 	 << " " << pls->sData.size() << endl;
+  //   return;
+  // }
 
   if (first) {
-    //cout << "fill_mean: " << map->hst->GetName() << endl;
-    if (map->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
+    //cout << "fill_mean: " << (int) ch << " " << map->hst->GetNbinsX() << " " << pls->sData.size() << endl;
+    int newsz = pls->sData.size();
+    if (map->hst->GetNbinsX() < newsz) {
       map->hst->
-	SetBins(cpar.durWr[ch],-cpar.preWr[ch],cpar.durWr[ch]-cpar.preWr[ch]);
-      cout << "Pulse_Mean: resize: " << (int) pls->Chan
-	   << " " << map->hst->GetNbinsX() << endl;     
+	SetBins(pls->sData.size(),-cpar.preWr[ch],newsz-cpar.preWr[ch]);
+      // cout << "Pulse_Mean: resize: " << (int) pls->Chan
+      // 	   << " " << map->hst->GetNbinsX() << endl;     
     }
 
-    Fill_Mean1((TH1F*)map->hst, pls, cpar.durWr[ch]);
+    Fill_Mean1((TH1F*)map->hst, pls, newsz);
     
   } //if first
 

@@ -484,10 +484,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     if (tfont) {
       fStat[i]->SetFont(tfont,false);
     }
-    //fStat[i]->SetState(false);
+    fStat[i]->SetState(false);
     fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kSunkenFrame);
 
-    
     st_lab[i]->SetState(false);
     //st_lab[i]->ChangeOptions(st_lab[i]->GetOptions()|kFixedWidth);
     st_lab[i]->ChangeOptions(kFixedWidth);
