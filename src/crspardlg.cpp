@@ -134,7 +134,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 }
 ParDlg::~ParDlg() {
   cout << "~ParDlg: " << this << endl;
-  this->CleanUp();
+  //CleanUp();
 }
 
 void ParDlg::DoMap(TGWidget* f, void* d, P_Def t, int all, void* d2) {
@@ -965,7 +965,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "";
   tip2= "Number of used channels";
   label="Number of channels";
-  AddLine_opt(fF6,ww,NULL,&opt.Nchan,tip1,tip2,label,k_int,k_int,1,MAX_CH);
+  AddLine_opt(fF6,ww,NULL,&opt.Nchan,tip1,tip2,label,k_int,k_int,1,MAX_CH,1,MAX_CH);
 
   tip1= "Analysis start (in sec) - only for analyzing files";
   tip2= "Analysis stop (in sec)";

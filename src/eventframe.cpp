@@ -168,19 +168,6 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //Frames.....
 
-  TGVerticalFrame        *fVer0; //contains canvas, Hslider, fHor1
-  TGVerticalFrame        *fVer_d; //contains deriv etc
-  TGVerticalFrame        *fVer_ch; //contains fHor_ch
-  TGHorizontalFrame      *fHor_ch; //contains fVer[..]
-  //TGVerticalFrame        *fVer[(MAX_CH-1)/16+1];
-  TGVerticalFrame        *fVer1;
-
-  TGHorizontalFrame      *fHor_but; //contains buttons
-  TGVerticalFrame        *fVer_st; //status etc //contains fHor_st + statusbar
-  TGHorizontalFrame      *fHor_st; //contains fVer_d, fVer_ch
-
-  TGVertical3DLine       *separator1;
-
   fVer0 = new TGVerticalFrame(this, 10, 10);
   AddFrame(fVer0, fLay1);
 
@@ -365,8 +352,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fChn[i] = NULL;
   }
 
-  fVer1 = new TGVerticalFrame(fHor_ch, 10, 10);
-  fHor_ch->AddFrame(fVer1, fLay1);
+  fVer_ch2 = new TGVerticalFrame(fHor_ch, 10, 10);
+  fHor_ch->AddFrame(fVer_ch2, fLay1);
 
   int ny = MAX_CH;
   if (ny>16) ny=16;
@@ -381,8 +368,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   
   for (int i=0;i<ny;i++) {
-    TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer1, 10, 10);
-    fVer1->AddFrame(fHor1, fLay6);
+    fHorCh[i] = new TGHorizontalFrame(fVer_ch2, 10, 10);
+    fVer_ch2->AddFrame(fHorCh[i], fLay6);
 
     for (int j=0;j<nclmn;j++) {
       int k=j*ny+i;
@@ -390,22 +377,17 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
       if (k<opt.Nchan) {
 	sprintf(ss,"%d",k);
 
-	//TGLabel* flab = new TGLabel(fHor1, ss);
-	//flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
-	//flab->SetWidth(16);
-	//fHor1->AddFrame(flab, fLay6);
-
-	fChn[k] = new TGCheckButton(fHor1," ", k);
+	fChn[k] = new TGCheckButton(fHorCh[i]," ", k);
 	fChn[k]->ChangeOptions(fChn[k]->GetOptions()|kFixedSize);
 	fChn[k]->SetWidth(16);
 	fChn[k]->SetHeight(20);
-	fHor1->AddFrame(fChn[k], fLay6);
+	fHorCh[i]->AddFrame(fChn[k], fLay6);
 	fChn[k]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
 
-	TGLabel* flab = new TGLabel(fHor1, ss);
+	TGLabel* flab = new TGLabel(fHorCh[i], ss);
 	flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
 	flab->SetWidth(16);
-	fHor1->AddFrame(flab, fLay6);
+	fHorCh[i]->AddFrame(flab, fLay6);
 
 	// int col=gROOT->GetColor(chcol[k])->GetPixel();
 	// int fcol=0;
@@ -432,8 +414,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     } //for j
   } //for i
 
-  TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer1, 10, 10);
-  fVer1->AddFrame(fHor1, fLay7);
+  TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer_ch2, 10, 10);
+  fVer_ch2->AddFrame(fHor1, fLay7);
 
   fChn[MAX_CH] = new TGCheckButton(fHor1, "all", MAX_CH);
   fHor1->AddFrame(fChn[MAX_CH], fLay6);
@@ -560,6 +542,11 @@ extern EventFrame* EvtFrm;
 // {
 //   delete this;
 // }
+
+void EventFrame::Rebuild() {
+  cout << "Event::Rebuild" << endl;
+  fVer_ch2->HideFrame(fHorCh[2]);
+}
 
 void EventFrame::DoReset() {
   Pevents = &Tevents;

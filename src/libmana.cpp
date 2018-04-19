@@ -968,7 +968,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fTab->Connect("Selected(Int_t)", "MainFrame", this, "DoTab(Int_t)");
 
 
-  fremake=false;
+  //fremake=false;
 
   //cout << "tab1: " << endl;
   tabfr[0] = fTab->AddTab("Parameters");
@@ -979,12 +979,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
 
-  parpar = new ParParDlg(tabfr[0], 600, 500);
-  parpar->Update();
-  tabfr[0]->AddFrame(parpar, Lay11);
+  //parpar = new ParParDlg(tabfr[0], 600, 500);
+  //parpar->Update();
+  //tabfr[0]->AddFrame(parpar, Lay11);
 
   MakeTabs();
-  fremake=true;
+  //fremake=true;
 
   //MakeTabs();
 
@@ -1171,40 +1171,37 @@ MainFrame::~MainFrame() {
   gApplication->Terminate(0);
 }
 
+void MainFrame::Rebuild() {
+
+  cout << "main::Rebuild: " << endl;
+
+  EvtFrm->Rebuild();
+  //tabfr[0]->Cleanup();
+  //tabfr[1]->Cleanup();
+  //tabfr[2]->Cleanup();
+  //tabfr[3]->Cleanup();
+  //tabfr[4]->Cleanup();
+
+}
+
 void MainFrame::MakeTabs() {
 
   int ntab=0;
 
-  cout << "tab0: " << endl;
+  //cout << "tab0: " << endl;
 
-  if (fremake) {
-    //tabfr[0]->Cleanup();
-    tabfr[1]->Cleanup();
-    tabfr[2]->Cleanup();
-    tabfr[3]->Cleanup();
-    tabfr[4]->Cleanup();
-
-    //delete parpar;
-    // delete crspar;
-    // delete chanpar;
-    // delete EvtFrm;
-    // delete HiFrm;
-    //return;
-  }
-  // else {
-  //   parpar = new ParParDlg(tabfr[0], 600, 500);
-  //   parpar->Update();
-  //   tabfr[0]->AddFrame(parpar, Lay11);
-  // }
+  parpar = new ParParDlg(tabfr[0], 600, 500);
+  parpar->Update();
+  tabfr[0]->AddFrame(parpar, Lay11);
   ntab++;
 
-  cout << "tab2: " << endl;
+  //cout << "tab2: " << endl;
   crspar = new CrsParDlg(tabfr[1], 600, 500);
   crspar->Make_crspar(tabfr[1], 600, 210);
   tabfr[1]->AddFrame(crspar, Lay12);
   ntab++;
   crspar->Update();
-  cout << "tab3: " << endl;
+  //cout << "tab3: " << endl;
 
   chanpar = new ChanParDlg(tabfr[2], 600, 500);
   chanpar->Make_chanpar(tabfr[2], 600, 210);
@@ -1626,14 +1623,15 @@ void MainFrame::DoReset() {
   crs->DoReset();
 
   if (local_nch!=opt.Nchan) {
-    MakeTabs();
+    Rebuild();
+    //MakeTabs();
   }
-  else {
+  //else {
     HiFrm->HiReset();
     parpar->Update();
     crspar->Update();
     chanpar->Update();
-  }
+    //}
 
   UpdateStatus();
 

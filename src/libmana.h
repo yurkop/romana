@@ -40,8 +40,8 @@ void setbit(int &n, int bit, int set);
 //-----------------------------------------------
 class MainFrame : public TGMainFrame {
 
-public:
-  TGMainFrame          *fMain;
+  //public:
+  //TGMainFrame          *fMain;
 public:
   TRootEmbeddedCanvas  *fEcanvas;
 
@@ -63,7 +63,7 @@ public:
   Pixel_t fCyan;
   Pixel_t fBluevio;
 
-  bool fremake;
+  //bool fremake;
   int local_nch;
   static const Int_t n_stat=9;
   TGTextEntry* fStat[n_stat];
@@ -73,6 +73,7 @@ public:
   virtual ~MainFrame();
 
   void MakeTabs();
+  void Rebuild();
   void SetTitle(char* fname);
   void DoStartStop();
 

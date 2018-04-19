@@ -28,103 +28,117 @@ protected:
   //ULong_t fcol[MAX_CH];
 
   //TGTransientFrame       *fMain;
-   TGVertical3DLine       *separator1;
-   TGHorizontalFrame      *fHor;
-   TGHorizontalFrame      *fHor2;
+  TGVertical3DLine       *separator1;
+  TGHorizontalFrame      *fHor;
+  TGHorizontalFrame      *fHor2;
 
-   //TGTextButton           *freset;
-   //TGTextButton           *f1buf;
-   //TGTextButton           *fNbuf;
-   TGTextButton           *fOne;
-   TGTextButton           *fNev;
-   TGTextButton           *fmOne;
-   TGTextButton           *fmNev;
-   TGTextButton           *fFirst;
-   TGTextButton           *fLast;
-   TGTextButton           *fChk1;
-   TGTextButton           *fChk2;
-   TGTextEntry            *tEnt;
+  TGVerticalFrame        *fVer0; //contains canvas, Hslider, fHor1
+  TGVerticalFrame        *fVer_d; //contains deriv etc
+  TGVerticalFrame        *fVer_ch; //contains fHor_ch
+  TGHorizontalFrame      *fHor_ch; //contains fVer[..]
+  //TGVerticalFrame        *fVer[(MAX_CH-1)/16+1];
+  TGVerticalFrame        *fVer_ch2;
+
+  TGHorizontalFrame      *fHor_but; //contains buttons
+  TGVerticalFrame        *fVer_st; //status etc //contains fHor_st + statusbar
+  TGHorizontalFrame      *fHor_st; //contains fVer_d, fVer_ch
+
+  TGHorizontalFrame      *fHorCh[16];
+
+  //TGTextButton           *freset;
+  //TGTextButton           *f1buf;
+  //TGTextButton           *fNbuf;
+  TGTextButton           *fOne;
+  TGTextButton           *fNev;
+  TGTextButton           *fmOne;
+  TGTextButton           *fmNev;
+  TGTextButton           *fFirst;
+  TGTextButton           *fLast;
+  TGTextButton           *fChk1;
+  TGTextButton           *fChk2;
+  TGTextEntry            *tEnt;
   
-   TGDoubleHSlider        *fHslider;
-   TGDoubleVSlider        *fVslider;
+  TGDoubleHSlider        *fHslider;
+  TGDoubleVSlider        *fVslider;
 
-   //TGLabel                *fLabel2;
+  //TGLabel                *fLabel2;
 
-   TGCheckButton          *fDeriv[3];
-   TGCheckButton          *fPeak[16];
-   TGCheckButton          *fChn[MAX_CH+1];
-   //TGRadioButton          *fChn[MAX_CH+1];
+  TGCheckButton          *fDeriv[3];
+  TGCheckButton          *fPeak[16];
+  TGCheckButton          *fChn[MAX_CH+1];
+  //TGRadioButton          *fChn[MAX_CH+1];
 
-   static const int        nstat=4;
-   TGTextEntry            *fStat[nstat];
-   //TGStatusBar            *fStat2[4];
+  static const int        nstat=4;
+  TGTextEntry            *fStat[nstat];
+  //TGStatusBar            *fStat2[4];
 
-   TFormula               *formula;
+  TFormula               *formula;
 
-   TGLayoutHints          *fLay1;
-   TGLayoutHints          *fLay2;
-   TGLayoutHints          *fLay3;
-   TGLayoutHints          *fLay4;
-   TGLayoutHints          *fLay5;
-   TGLayoutHints          *fLay6;
-   TGLayoutHints          *fLay7;
-   TGLayoutHints          *fLay8;
-   TGLayoutHints          *fLay9;
-   TGLayoutHints          *fLay16;
+  TGLayoutHints          *fLay1;
+  TGLayoutHints          *fLay2;
+  TGLayoutHints          *fLay3;
+  TGLayoutHints          *fLay4;
+  TGLayoutHints          *fLay5;
+  TGLayoutHints          *fLay6;
+  TGLayoutHints          *fLay7;
+  TGLayoutHints          *fLay8;
+  TGLayoutHints          *fLay9;
+  TGLayoutHints          *fLay16;
 
-
- public:
-   TRootEmbeddedCanvas    *fCanvas;
-
- public:
-
-   int ntab; //tab number where eventframe is placed
-   int ievent; //current event to be drawn
-   std::list<EventClass>::iterator d_event;
-   std::list<EventClass> Tevents; //local event list, consists of one element
-   // used for online monitoring
-   std::list<EventClass> *Pevents; //points either to Tevents or to crs->Levents
-   //EventClass *d_event; //current event to draw
-   int ndiv;
-   //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
-   //int NGr;
-   TH1F* fHist[3];
-   TGraph *Gr[3][MAX_CH];
-   double gx1[MAX_CH],gx2[MAX_CH],gy1[3][MAX_CH],gy2[3][MAX_CH];
-   double mx1,mx2,my1[3],my2[3];
-   //TH1F *histo[3][MAX_CH];
-   //double gx1,gx2,gy1[3],gy2[3];
-   //TH2F fPaint[3];
-   //THStack* hst[3];
-   //TMultiGraph* mgr[3];
-
-   //bool bprint;
-
-   //TThread *trd;
 
 public:
-   EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
-   virtual ~EventFrame();
+  TRootEmbeddedCanvas    *fCanvas;
 
-   void DoReset();
-   void FillGraph(int dr);
-   void SetRanges(int dr);
-   void DrawEvent2();
-   void DrawPeaks(int dr, PulseClass* pulse, double y1,double y2);
-   void DoGraph(int ndiv, int deriv);
-   void ReDraw();
-   void Plus1();
-   void Minus1();
-   void PlusN();
-   void MinusN();
-   void First();
-   void Last();
-   void DoCheckPoint();
-   void DoFormula();
-   void DoSlider();
-   void DoChkDeriv();
-   void DoChkPeak();
-   void DoPulseOff();
+public:
+
+  int ntab; //tab number where eventframe is placed
+  int ievent; //current event to be drawn
+  std::list<EventClass>::iterator d_event;
+  std::list<EventClass> Tevents; //local event list, consists of one element
+  // used for online monitoring
+  std::list<EventClass> *Pevents; //points either to Tevents or to crs->Levents
+  //EventClass *d_event; //current event to draw
+  int ndiv;
+  //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
+  //int NGr;
+  TH1F* fHist[3];
+  TGraph *Gr[3][MAX_CH];
+  double gx1[MAX_CH],gx2[MAX_CH],gy1[3][MAX_CH],gy2[3][MAX_CH];
+  double mx1,mx2,my1[3],my2[3];
+  //TH1F *histo[3][MAX_CH];
+  //double gx1,gx2,gy1[3],gy2[3];
+  //TH2F fPaint[3];
+  //THStack* hst[3];
+  //TMultiGraph* mgr[3];
+
+  //bool bprint;
+
+  //TThread *trd;
+
+public:
+  EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
+  virtual ~EventFrame();
+
+  void Rebuild();
+  void DoReset();
+  void FillGraph(int dr);
+  void SetRanges(int dr);
+  void DrawEvent2();
+  void DrawPeaks(int dr, PulseClass* pulse, double y1,double y2);
+  void DoGraph(int ndiv, int deriv);
+  void ReDraw();
+  void Plus1();
+  void Minus1();
+  void PlusN();
+  void MinusN();
+  void First();
+  void Last();
+  void DoCheckPoint();
+  void DoFormula();
+  void DoSlider();
+  void DoChkDeriv();
+  void DoChkPeak();
+  void DoPulseOff();
 
   ClassDef(EventFrame, 0)
 };
