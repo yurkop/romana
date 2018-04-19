@@ -88,7 +88,7 @@ Int_t combotype[nchtype];
 extern CRS* crs;
 extern Coptions cpar;
 extern Toptions opt;
-extern int chanPresent;
+//extern int chanPresent;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
 
@@ -131,6 +131,10 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
     tcol[i]=gROOT->GetColor(cc)->GetPixel();
   }
 
+}
+ParDlg::~ParDlg() {
+  cout << "~ParDlg: " << this << endl;
+  this->CleanUp();
 }
 
 void ParDlg::DoMap(TGWidget* f, void* d, P_Def t, int all, void* d2) {
@@ -183,7 +187,7 @@ void ParDlg::DoNum() {
     if (nfld) {
       int kk = (id-1)%nfld;
       //cout << "donum: " << kk << " " << te->GetNumber() << endl;
-      for (int i=0;i<chanPresent;i++) {
+      for (int i=0;i<opt.Nchan;i++) {
 	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
@@ -200,7 +204,7 @@ void ParDlg::DoNum() {
     }
     // int kk;
     // (nfld ? (kk=(id-1)%nfld) : (kk=0));
-    // for (int i=0;i<chanPresent;i++) {
+    // for (int i=0;i<opt.Nchan;i++) {
     //   if (pp.all==1 || opt.chtype[i]==pp.all-1) {
     // 	pmap p2 = Plist[i*nfld+kk];
     // 	SetNum(p2,te->GetNumber());
@@ -245,7 +249,7 @@ void ParDlg::DoChk() {
   if (pp.all>0) {
     if (nfld) {
       int kk = (id-1)%nfld;
-      for (int i=0;i<chanPresent;i++) {
+      for (int i=0;i<opt.Nchan;i++) {
 	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetChk(p2,te->GetState());
@@ -257,7 +261,7 @@ void ParDlg::DoChk() {
     }
     // int kk;
     // (nfld ? (kk=(id-1)%nfld) : (kk=0));
-    // for (int i=0;i<chanPresent;i++) {
+    // for (int i=0;i<opt.Nchan;i++) {
     //   if (pp.all==1 || opt.chtype[i]==pp.all-1) {
     // 	pmap p2 = Plist[i*nfld+kk];
     // 	SetChk(p2,te->GetState());
@@ -360,10 +364,10 @@ void ParDlg::DoCombo() {
 
   int nline = id/nfld;
 
-  if (nline < chanPresent) {
+  if (nline < opt.Nchan) {
     // cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
     // 	 << " " << nfld
-    // 	 << " " << sel << " " << (chanPresent+sel)*nfld
+    // 	 << " " << sel << " " << (opt.Nchan+sel)*nfld
     // 	 << endl;
     // cout << this << " " << crspar << " " << chanpar << endl;
 
@@ -387,7 +391,7 @@ void ParDlg::DoCombo() {
 
     // if (sel<ADDCH) {
     //   for (int j=1;j<nfld;j++) {
-    //     CopyField((chanPresent+sel)*nfld+j,id-1+j);
+    //     CopyField((opt.Nchan+sel)*nfld+j,id-1+j);
     //   }
     // }
   }
@@ -395,7 +399,7 @@ void ParDlg::DoCombo() {
   if (pp.all==1) {
     if (nfld) {
       int kk = (id-1)%nfld;
-      for (int i=0;i<chanPresent;i++) {
+      for (int i=0;i<opt.Nchan;i++) {
 	pmap p2 = Plist[i*nfld+kk];
 	SetCombo(p2,te->GetSelected());
 	TGComboBox *te2 = (TGComboBox*) p2.field;
@@ -406,14 +410,14 @@ void ParDlg::DoCombo() {
 
 	// if (sel<ADDCH) {
 	//   for (int j=1;j<nfld;j++) {
-	//     CopyField((chanPresent+sel)*nfld+j,i*nfld+kk+j);
+	//     CopyField((opt.Nchan+sel)*nfld+j,i*nfld+kk+j);
 	//   }
 	// }
       }
     }
     // int kk;
     // (nfld ? (kk=(id-1)%nfld) : (kk=0));
-    // for (int i=0;i<chanPresent;i++) {
+    // for (int i=0;i<opt.Nchan;i++) {
     //   pmap p2 = Plist[i*nfld+kk];
     //   SetCombo(p2,te->GetSelected());
     //   TGComboBox *te2 = (TGComboBox*) p2.field;
@@ -421,7 +425,7 @@ void ParDlg::DoCombo() {
 
     //   if (sel<ADDCH) {
     // 	for (int j=1;j<nfld;j++) {
-    // 	  CopyField((chanPresent+sel)*nfld+j,i*nfld+kk+j);
+    // 	  CopyField((opt.Nchan+sel)*nfld+j,i*nfld+kk+j);
     // 	}
     //   }
     // }
@@ -485,7 +489,7 @@ void ParDlg::DoTxt() {
   if (pp.all==1) {
     if (nfld) {
       int kk = (id-1)%nfld;
-      for (int i=0;i<chanPresent;i++) {
+      for (int i=0;i<opt.Nchan;i++) {
 	pmap p2 = Plist[i*nfld+kk];
 	SetTxt(p2,te->GetText());
 	TGTextEntry *te2 = (TGTextEntry*) p2.field;
@@ -494,7 +498,7 @@ void ParDlg::DoTxt() {
     }
     // int kk;
     // (nfld ? (kk=(id-1)%nfld) : (kk=0));
-    // for (int i=0;i<chanPresent;i++) {
+    // for (int i=0;i<opt.Nchan;i++) {
     //   pmap p2 = Plist[i*nfld+kk];
     //   SetTxt(p2,te->GetText());
     //   TGTextEntry *te2 = (TGTextEntry*) p2.field;
@@ -508,7 +512,7 @@ void ParDlg::CopyParLine(int sel, int line) {
   if (sel<ADDCH) {
     //cout << "copypar0: " << line << " " << sel << " " << nfld << " " << tcol[sel-1] << endl;
     for (int j=1;j<nfld;j++) {
-      CopyField((chanPresent+sel)*nfld+j,line*nfld+j);
+      CopyField((opt.Nchan+sel)*nfld+j,line*nfld+j);
     }
     //cout << "copypar1: " << line << " " << sel << " " << tcol[sel-1] << " "
     //<< clab[line] << " " << cframe[line] << endl;
@@ -656,7 +660,7 @@ void ParDlg::UpdateField(int nn) {
       int line = nn/nfld;
       int sel = *(ChDef*) pp->data;
       //cout << "cmb2: " << sel << " " << line << endl;
-      if (line<chanPresent) {
+      if (line<opt.Nchan) {
 	clab[line]->ChangeBackground(tcol[sel-1]);
 	cframe[line]->ChangeBackground(tcol[sel-1]);
       }
@@ -839,24 +843,25 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   hor = new TGSplitFrame(fcont1,10,10);
   fcont1->AddFrame(hor,fLexp);
-  hor->VSplit(380);
+  hor->VSplit(420);
   ver1 = hor->GetFirst();
   ver2 = hor->GetSecond();
 
   //ver1->ChangeOptions(ver1->GetOptions()|kFixedWidth);
 
+  AddFiles(ver1);
   AddOpt(ver1);
   AddAna(ver1);
   AddHist(ver2);
 
 }
 
-void ParParDlg::AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
-			 char* opt_fname) {
+void ParParDlg::AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
+			 Int_t* compr, char* opt_fname) {
   int id;
 
-  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fcont1,10,10);
-  fcont1->AddFrame(hframe1,fL1);
+  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(frame,10,10);
+  frame->AddFrame(hframe1,fL1);
 
   id = Plist.size()+1;
   TGCheckButton *fchk = new TGCheckButton(hframe1, txt, id);
@@ -888,20 +893,62 @@ void ParParDlg::AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
   DoMap(fbut,opt_fname,p_open,0);
   fbut->Connect("Clicked()", "ParDlg", this, "DoOpen()");
 
-  TGHorizontalFrame *hframe2 = new TGHorizontalFrame(fcont1,10,10);
-  fcont1->AddFrame(hframe2,fL1);
+  TGHorizontalFrame *hframe2 = new TGHorizontalFrame(frame,10,10);
+  frame->AddFrame(hframe2,fL1);
 
   //strcpy(opt.fname_raw,"raw32.gz");
   id = Plist.size()+1;
   TGTextEntry* tt = new TGTextEntry(hframe2,(char*)opt_fname, id);;
-  tt->SetWidth(590);
+  tt->SetDefaultSize(380,20);
+  tt->SetMaxLength(98);
+  //tt->SetWidth(590);
   //tt->SetState(false);
   hframe2->AddFrame(tt,fL0);
   DoMap(tt,opt_fname,p_txt,0);
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
 }
 
-void ParParDlg::AddOpt(TGCompositeFrame* frame) {
+void ParParDlg::AddFiles(TGCompositeFrame* frame) {
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Files", kVerticalFrame);
+  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame->AddFrame(fF6, fL6);
+
+  AddWrite(fF6,"Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
+  id_write[0]=Plist.size();
+  //cout << "raw: " << Plist.size()+1 << endl;
+
+  TGCheckButton *fchk;
+  int id;
+  char txt[99];
+  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
+  fF6->AddFrame(hframe1,fL1);
+
+  id = Plist.size()+1;
+  sprintf(txt,"Decode");
+  fchk = new TGCheckButton(hframe1, txt, id);
+  fchk->SetName(txt);
+  hframe1->AddFrame(fchk,fL3);
+  DoMap(fchk,&opt.decode,p_chk,0);
+  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+
+  id = Plist.size()+1;
+  sprintf(txt,"Analyze");
+  fchk = new TGCheckButton(hframe1, txt, id);
+  fchk->SetName(txt);
+  hframe1->AddFrame(fchk,fL3);
+  DoMap(fchk,&opt.analyze,p_chk,0);
+  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+
+  AddWrite(fF6,"Write decoded data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
+  id_write[1]=Plist.size();
+  //cout << "dec: " << Plist.size()+1 << endl;
+
+  AddWrite(fF6,"Write root histograms",&opt.root_write,&opt.root_compr,opt.fname_root);
+  id_write[2]=Plist.size();
+  //cout << "root: " << Plist.size()+1 << endl;
+
 }
 
 void ParParDlg::AddOpt(TGCompositeFrame* frame) {
@@ -914,6 +961,11 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
 
   // 2 column, n rows
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
+
+  tip1= "";
+  tip2= "Number of used channels";
+  label="Number of channels";
+  AddLine_opt(fF6,ww,NULL,&opt.Nchan,tip1,tip2,label,k_int,k_int,1,MAX_CH);
 
   tip1= "Analysis start (in sec) - only for analyzing files";
   tip2= "Analysis stop (in sec)";
@@ -966,14 +1018,14 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";
   label="Multiplicity (min, max)";
-  AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,k_int,1,MAX_CH,
-	   1,MAX_CH);
+  AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,k_int,
+	      1,opt.Nchan,1,opt.Nchan);
 
   tip1= "M_TOF period (mks) (ignored if set to zero)";
   tip2= "M_TOF start channel";
   label="M_TOF period / start channel";
   AddLine_opt(fF6,ww,&opt.mtof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
-	      0,1e9,0,MAX_CH-1);
+	      0,1e9,0,opt.Nchan-1);
 
   fF6->Resize();
 
@@ -1468,7 +1520,7 @@ void ChanParDlg::Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   AddHeader();
 
-  for (int i=0;i<chanPresent;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     AddLine_chan(i,fcont1);
   }
 
@@ -1712,7 +1764,7 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   */
 
-  for (int i=0;i<chanPresent;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     AddLine_crs(i,fcont1);
     //cout << "crs: addLine1: " << Plist.size() << endl; 
   }
@@ -1955,7 +2007,7 @@ void CrsParDlg::ResetStatus() {
 
   TGString txt="0";
 
-  for (int i=0;i<chanPresent;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
       fStat[i]->SetText(txt);
   }
 
@@ -1975,7 +2027,7 @@ void CrsParDlg::UpdateStatus() {
 
   //cout << "DT: " << dt << endl;
   if (dt>0) {
-    for (int i=0;i<chanPresent;i++) {
+    for (int i=0;i<opt.Nchan;i++) {
       //if (crs->npulses2[i]) {
 	rate = (crs->npulses2[i]-npulses3[i])/dt;
 	//if (rate>0) {

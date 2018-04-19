@@ -419,7 +419,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
 HistFrame::~HistFrame()
 {
-  cout << "~HistFrame()" << endl;
+  //cout << "~HistFrame()" << endl;
 }
 
 /*

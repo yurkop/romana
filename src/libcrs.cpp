@@ -65,7 +65,7 @@ volatile char astat[CRS::MAXTRANS];
 CRS* crs;
 extern Coptions cpar;
 extern Toptions opt;
-extern int chanPresent;
+int chanPresent;
 
 //TCondition tcond1(0);
 
@@ -705,7 +705,18 @@ int CRS::Detect_device() {
     module=32;
     int nplates= buf_in[3];
     chanPresent=nplates*4;
-    if (ver_po==2) {//версия ПО=2
+    if (ver_po==1) {//версия ПО=1
+      for (int i=0;i<nplates;i++) {
+	cout << "Channels(" << i << "):";
+	for (int j=0;j<4;j++) {
+	  type_ch[i*4+j]=0;
+	  cout << " " << type_ch[i*4+j];
+	}
+	cout << endl;
+	//cout << i << " " << sz << endl;
+      }
+    }
+    else {//версия ПО=2 или выше
       //chanPresent=4;
       sz = Command32(10,0,0,0);
       sz--;
@@ -2007,8 +2018,8 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     frmt = (frmt & 0xF0)>>4;
     data = buf8[idx8] & 0xFFFFFFFFFFFF;
     unsigned char ch = buffer[idx1+7];
-    
-    if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
+
+    if ((ch>=opt.Nchan) || (frmt && ch!=ipp->Chan)) {
       cout << "dec32: Bad channel: " << (int) ch
 	   << " " << (int) ipp->Chan
 	   << " " << idx8 //<< " " << nvp
@@ -2143,7 +2154,7 @@ void CRS::Decode2(UChar_t* buffer, int length) {
 
     //cout << "decode2: " << idx2 << " " << frmt << " " << (int) ch << " " << data << " " << (int) ipp->Chan << endl;
 
-    if ((ch>=chanPresent) || (frmt && ch!=ipp->Chan)) {
+    if ((ch>=opt.Nchan) || (frmt && ch!=ipp->Chan)) {
       cout << "2: Bad channel: " << (int) ch
 	   << " " << (int) ipp->Chan << endl;
       ipp->ptype|=P_BADCH;
@@ -2317,6 +2328,17 @@ void CRS::Decode_adcm() {
 	//vv->push_back(PulseClass());
 	npulses++;
 	ipp->Chan=bits(header,18,25);
+
+
+	if ((ipp->Chan>=opt.Nchan)) {
+	  cout << "adcm: Bad channel: " << (int) ipp->Chan
+	       << " " << idx //<< " " << nvp
+	       << endl;
+	  ipp->ptype|=P_BADCH;
+	  goto next;
+	}
+
+
       }
       lastfl=lflag;
 
@@ -2432,7 +2454,7 @@ void CRS::Decode_adcm() {
     // }
 
 
-  }
+  } //while
 
   if (vv->size()>2) {
     Make_Events();

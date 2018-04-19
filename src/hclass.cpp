@@ -8,6 +8,8 @@ extern CRS* crs;
 extern ParParDlg *parpar;
 extern Coptions cpar;
 
+//extern int chanPresent;
+
 extern ULong_t fGreen;
 extern ULong_t fRed;
 extern ULong_t fCyan;
@@ -142,7 +144,7 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
   // HMap* dmap = new HMap(dname,NULL,NULL,NULL,NULL);
   // dir_list->Add(dmap);
 
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     NameTitle(name2,title2,i,0,name,title);
 
     int nn=hd->bins*(hd->max - hd->min);
@@ -167,7 +169,7 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
   // HMap* dmap = new HMap(dname,NULL,NULL,NULL,NULL);
   // dir_list->Add(dmap);
 
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     NameTitle(name2,title2,i,0,name,title);
 
     Float_t min = -cpar.preWr[i];
@@ -194,7 +196,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
   char name2[100];
   char title2[100];
 
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     //sprintf(name2,"%s",name);
     //sprintf(title2,"%s%s",name,title);
     NameTitle(name2,title2,i,0,name,title);

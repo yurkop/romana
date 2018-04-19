@@ -14,7 +14,7 @@
 #include <TRandom.h>
 
 namespace EF {
-  Float_t RGB[MAX_CH][3] = 
+  Float_t RGB[32][3] = 
     {
       {0,0,0},//0
       {1,0,0},
@@ -76,6 +76,8 @@ extern MyMainFrame *myM;
 extern CRS* crs;
 extern ParParDlg *parpar;
 
+//extern int chanPresent;
+
 extern ULong_t fGreen;
 extern ULong_t fRed;
 extern ULong_t fCyan;
@@ -107,44 +109,22 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kHorizontalFrame)
 {
 
-  // ULong_t fcol;
-  // int nn=0;
-  // for (int i=0;i<255;i+=80)
-  //   for (int j=0;j<255;j+=80)
-  //     for (int k=0;k<255;k+=80) {
-  // 	if (nn>=MAX_CH)
-  // 	  break;
-  // 	fcol=TColor::RGB2Pixel(i,j,k);
-  // 	chcol[nn]=TColor::GetColor(fcol);
-  // 	cout << "chcol: " << nn << " " << chcol[nn] << " " << fcol << endl;
-  // 	nn++;
-  //     }
-
-  // chcol[0]=TColor::GetColor(TColor::RGB2Pixel(0,0,0));
-  // chcol[1]=TColor::GetColor(TColor::RGB2Pixel(255,0,0));
-  // chcol[2]=TColor::GetColor(TColor::RGB2Pixel(0,255,0));
-  // chcol[3]=TColor::GetColor(TColor::RGB2Pixel(0,0,255));
-  // chcol[4]=TColor::GetColor(TColor::RGB2Pixel(255,0,255));
-  // chcol[5]=TColor::GetColor(TColor::RGB2Pixel(0,255,255));
-
-  /*
-  gRandom->SetSeed(0);
-  for (int i=1;i<MAX_CH;i++) {
-    EF::RGB[i][0]=gRandom->Rndm();
-    EF::RGB[i][1]=gRandom->Rndm();
-    EF::RGB[i][2]=gRandom->Rndm();
-    printf("%2d {%0.2f,%0.2f,%0.2f},\n",i,EF::RGB[i][0],EF::RGB[i][1],EF::RGB[i][2]);
-  }
-  */  
-
+  Float_t rr[3];
   for (int i=0;i<MAX_CH;i++) {
-    chcol[i]=TColor::GetColor(TColor::RGB2Pixel(EF::RGB[i][0],EF::RGB[i][1],EF::RGB[i][2]));
+    for (int j=0;j<3;j++) {
+      rr[j]=EF::RGB[i%32][j];
+    }
+    //chcol[i]=TColor::GetColor(TColor::RGB2Pixel(EF::RGB[i][0],EF::RGB[i][1],EF::RGB[i][2]));
+    chcol[i]=TColor::GetColor(TColor::RGB2Pixel(rr[0],rr[1],rr[2]));
     gcol[i]=gROOT->GetColor(chcol[i])->GetPixel();
-    fcol[i]=0;
-    if (i==0 || i==3 || i==21 || i==25 || i==29)
-       fcol[i]=0xffffff;
-  }
+    // fcol[i]=0;
+    // if (i==0 || i==3 || i==21 || i==25 || i==29)
+    //    fcol[i]=0xffffff;
 
+    //cout << i << " " << gcol[i] << endl;
+
+  }
+  //exit(1);
 
   mk.SetMarkerStyle(3);
   mk.SetMarkerColor(2);
@@ -184,7 +164,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fLay8 = new TGLayoutHints(kLHintsExpandX,0,0,0,0);
   fLay9 = new TGLayoutHints(kLHintsExpandY,0,0,0,0);
 
-  fLay16 = new TGLayoutHints(kLHintsLeft,0,5,0,0);
+  //fLay16 = new TGLayoutHints(kLHintsLeft,0,2,0,0);
 
   //Frames.....
 
@@ -388,9 +368,18 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fVer1 = new TGVerticalFrame(fHor_ch, 10, 10);
   fHor_ch->AddFrame(fVer1, fLay1);
 
-  int nclmn=2;
-  int ny=(MAX_CH+1)/nclmn;
+  int ny = MAX_CH;
+  if (ny>16) ny=16;
 
+  int nclmn=(MAX_CH-1)/ny+1;
+
+  // for (int m=1;m<=64;m++) {
+  //   int nn=(m-1)/ny+1;
+  //   cout << m << " " << nn << endl;
+  // }
+  // exit(1);
+
+  
   for (int i=0;i<ny;i++) {
     TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer1, 10, 10);
     fVer1->AddFrame(fHor1, fLay6);
@@ -398,7 +387,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     for (int j=0;j<nclmn;j++) {
       int k=j*ny+i;
 
-      if (k<MAX_CH) {
+      if (k<opt.Nchan) {
 	sprintf(ss,"%d",k);
 
 	//TGLabel* flab = new TGLabel(fHor1, ss);
@@ -407,15 +396,16 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 	//fHor1->AddFrame(flab, fLay6);
 
 	fChn[k] = new TGCheckButton(fHor1," ", k);
-	fChn[k]->ChangeOptions(fChn[k]->GetOptions()|kFixedWidth);
-	fChn[k]->SetWidth(24);
+	fChn[k]->ChangeOptions(fChn[k]->GetOptions()|kFixedSize);
+	fChn[k]->SetWidth(16);
+	fChn[k]->SetHeight(20);
 	fHor1->AddFrame(fChn[k], fLay6);
 	fChn[k]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
 
 	TGLabel* flab = new TGLabel(fHor1, ss);
 	flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
-	flab->SetWidth(12);
-	fHor1->AddFrame(flab, fLay16);
+	flab->SetWidth(16);
+	fHor1->AddFrame(flab, fLay6);
 
 	// int col=gROOT->GetColor(chcol[k])->GetPixel();
 	// int fcol=0;
@@ -424,13 +414,18 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 	
 	//printf("Color: %d %d %x %x\n",k,chcol[k],col,fcol);
 
-	//flab->SetBackgroundColor(col);
-	//flab->SetForegroundColor(fcol);
+
+
+	//flab->SetBackgroundColor(gcol[k]);
+	//flab->SetForegroundColor(gcol[k]);
 	//fChn[k]->SetForegroundColor(fcol);
 
-	//fChn[k]->SetBackgroundColor(col);
-	//fChn[k]->SetForegroundColor(col);
+	fChn[k]->SetBackgroundColor(gcol[k]);
+	//fChn[k]->SetForegroundColor(gcol[k]);
 	//cout << "bkg: " << fChn[k]->GetBackground() << endl;
+
+
+
 	fChn[k]->SetState(kButtonDown);
 
       } //if
@@ -549,23 +544,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
 EventFrame::~EventFrame()
 {
-
-  //cout << "~Emut" << endl;
-  //delete Emut;
-  //delete Emut2;
-  //gSystem->Sleep(100);
-
-  //if (trd) {
-  //trd->Delete();
-  //}
-
-  //cout << "~trd" << endl;
-  //gSystem->Sleep(100);
-
-  cout << "~EventFrame()" << endl;
-  //fMain->DeleteWindow();
-
-  //myM->fEv=NULL;
+  //cout << "~EventFrame()" << endl;
 }
 
 
@@ -813,7 +792,7 @@ void EventFrame::DoPulseOff() {
   Int_t id = btn->WidgetId();
 
   if (id==MAX_CH) {
-    for (int i=0;i<MAX_CH;i++) {
+    for (int i=0;i<opt.Nchan;i++) {
       fChn[i]->SetState((EButtonState) fChn[id]->IsOn());
     }
   }
@@ -1012,7 +991,7 @@ void EventFrame::DrawEvent2() {
 
   markt[0]=gSystem->Now();
 
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     Pixel_t cc;
     if (mask&(one<<i)) {
       cc = gcol[i];

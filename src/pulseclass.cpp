@@ -12,7 +12,6 @@ extern HClass* hcl;
 extern MyMainFrame *myM;
 //extern HistFrame* HiFrm;
 extern Coptions cpar;
-extern int chanPresent;
 
 namespace PROF {
 
@@ -277,7 +276,7 @@ void EventClass::Make_Mean_Event() {
 void EventClass::Pulse_Mean_Add(PulseClass *pls) {
 
   //cout << "Pulse_Mean_Add1: " << pulses.size() << " " << (int) pls->Chan << endl; 
-  if (pls->Chan >=chanPresent) {
+  if (pls->Chan >=opt.Nchan) {
     cout << "Pulse_Mean_Add: wrong channel: " << (int) pls->Chan << endl; 
   }
   PulseClass *pp = &pulses.at(pls->Chan);
@@ -583,7 +582,7 @@ void EventClass::FillHist(Bool_t first) {
 	  }
 	  if (mult && (i==pulses.size()-1)) { //last pulse
 	    if (crs->Tstart0>0) {
-	      if (mult>=MAX_CH) mult=MAX_CH-1;
+	      if (mult>=opt.Nchan) mult=opt.Nchan-1;
 
 	      tm = pulses[i].Tstamp64 + pk->Pos;
 	      tt = (tm - crs->Tstart0)*0.001*crs->period;

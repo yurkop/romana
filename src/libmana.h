@@ -40,9 +40,9 @@ void setbit(int &n, int bit, int set);
 //-----------------------------------------------
 class MainFrame : public TGMainFrame {
 
- public:
+public:
   TGMainFrame          *fMain;
- public:
+public:
   TRootEmbeddedCanvas  *fEcanvas;
 
   TGMenuBar            *fMenuBar;     // main menu bar
@@ -52,15 +52,19 @@ class MainFrame : public TGMainFrame {
   TGTextButton *fAna;
   TGTextButton *fNb;
 
- public:
-  //bool                   bRun;
+  TGLayoutHints* Lay11;
+  TGLayoutHints* Lay12;
+
   TGTab                *fTab;
+  TGCompositeFrame     *tabfr[10];
 
   Pixel_t fGreen;
   Pixel_t fRed;
   Pixel_t fCyan;
   Pixel_t fBluevio;
 
+  bool fremake;
+  int local_nch;
   static const Int_t n_stat=9;
   TGTextEntry* fStat[n_stat];
 
@@ -68,6 +72,7 @@ public:
   MainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MainFrame();
 
+  void MakeTabs();
   void SetTitle(char* fname);
   void DoStartStop();
 
@@ -102,7 +107,7 @@ public:
 
 //--------------------------------------
 class MyMainFrame: public MainFrame {
- public:
+public:
   MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MyMainFrame();
   ClassDef(MyMainFrame, 0)
@@ -110,7 +115,7 @@ class MyMainFrame: public MainFrame {
 
 //--------------------------------------
 class ColorMsgBox: public TGTransientFrame {
- public:
+public:
   ColorMsgBox(const TGWindow *p, const TGWindow *main,
 	      const char *title, const char *msg, EMsgBoxIcon icon,
 	      Int_t buttons, Int_t *ret_code);

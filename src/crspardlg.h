@@ -70,7 +70,7 @@ public:
 
 public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~ParDlg() {};
+  virtual ~ParDlg();
 
   void DoMap(TGWidget *f, void *d, P_Def t, int all, void *d2=0);
 
@@ -150,8 +150,8 @@ public:
   // 		    const char* tip, const char* label);
   void AddLine_mean(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
-  void AddWrite(const char* txt, Bool_t* opt_chk, Int_t* compr,
-		char* opt_fname);
+  void AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
+		Int_t* compr, char* opt_fname);
   void AddFiles(TGCompositeFrame* frame);
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);

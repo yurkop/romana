@@ -51,7 +51,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Short_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 2)
+  ClassDef(Coptions, 3)
 };
 
 //------------------------------------
@@ -97,6 +97,7 @@ public:
   Long64_t F_start; //start of the acuisition
   Float_t T_acq; //duration of the acquisition / file (in seconds)
 
+  Int_t Nchan;
   Float_t Tstart,Tstop;
   Int_t tsleep;
   Int_t usb_size; //in kB
@@ -182,7 +183,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 109)
+  ClassDef(Toptions, 111)
 };
 
 //ClassImp(Toptions)

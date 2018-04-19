@@ -25,7 +25,7 @@ protected:
 
   Int_t chcol[MAX_CH];
   ULong_t gcol[MAX_CH];
-  ULong_t fcol[MAX_CH];
+  //ULong_t fcol[MAX_CH];
 
   //TGTransientFrame       *fMain;
    TGVertical3DLine       *separator1;

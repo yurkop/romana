@@ -50,7 +50,6 @@
 const double MB = 1024*1024;
 
 extern CRS* crs;
-int chanPresent;
 
 EventFrame* EvtFrm;
 HistFrame* HiFrm;
@@ -776,6 +775,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsTop,0,0,5,5);
   TGLayoutHints* lay2 = new TGLayoutHints(kLHintsLeft | kLHintsTop,1,1,1,1);
 
+  Lay11 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
+  Lay12 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,3,3);
   //bRun = false;
 
   fMenuBar = new TGMenuBar(this, 35, 50, kHorizontalFrame);
@@ -966,65 +967,35 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fTab->Connect("Selected(Int_t)", "MainFrame", this, "DoTab(Int_t)");
 
-  int ntab=0;
+
+  fremake=false;
 
   //cout << "tab1: " << endl;
-  TGCompositeFrame *tab1 = fTab->AddTab("Parameters");
-  TGCompositeFrame* fr1 = new TGCompositeFrame(tab1, 10, 10, kHorizontalFrame);
-  tab1->AddFrame(fr1, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
-  parpar = new ParParDlg(fr1, 600, 500);
+  tabfr[0] = fTab->AddTab("Parameters");
+  tabfr[1] = fTab->AddTab("DAQ");
+  tabfr[2] = fTab->AddTab("Channels");
+  tabfr[3] = fTab->AddTab("Events");
+  tabfr[4] = fTab->AddTab("Histograms");
+  //TGDockableFrame *tab4 = fTab->AddTab("Events");
+  //TGDockableFrame *tab4 = fTab->AddTab("Events");
+
+  parpar = new ParParDlg(tabfr[0], 600, 500);
   parpar->Update();
+  tabfr[0]->AddFrame(parpar, Lay11);
 
-  fr1->AddFrame(parpar, 
-		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-  ntab++;
+  MakeTabs();
+  fremake=true;
 
-  //cout << "tab2: " << endl;
-  TGCompositeFrame *tab2 = fTab->AddTab("DAQ");
-  TGCompositeFrame* fr2 = new TGCompositeFrame(tab2, 10, 10, kHorizontalFrame);
-  tab2->AddFrame(fr2, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
-  crspar = new CrsParDlg(fr2, 600, 500);
-  crspar->Make_crspar(fr2, 600, 210);
-  fr2->AddFrame(crspar,
-		new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-  ntab++;
-
-  //cout << "tab2a: " << endl;
-  crspar->Update();
-
-  //cout << "tab3: " << endl;
-  
-  TGCompositeFrame *tab3 = fTab->AddTab("Channels");
-  TGCompositeFrame* fr3 = new TGCompositeFrame(tab3, 10, 10, kHorizontalFrame);
-  tab3->AddFrame(fr3, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,2,2));
-
-  chanpar = new ChanParDlg(fr3, 600, 500);
-  chanpar->Make_chanpar(fr3, 600, 210);
-  fr3->AddFrame(chanpar, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-  ntab++;
-  chanpar->Update();
-
-
-  TGCompositeFrame *tab4 = fTab->AddTab("Events");
-  //TGDockableFrame *tab4 = fTab->AddTab("Events");
-  EvtFrm = new EventFrame(tab4, 600, 500,ntab);
-  tab4->AddFrame(EvtFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-  ntab++;
-
-  //cout << "hifrm1: " << endl;
-  TGCompositeFrame *tab5 = fTab->AddTab("Histograms");
-  //TGDockableFrame *tab4 = fTab->AddTab("Events");
-  HiFrm = new HistFrame(tab5, 800, 500,ntab);
-  //cout << "hifrm2: " << endl;
-  HiFrm->HiReset();
-  //HiFrm->Connect("Upd()","HistFrame",HiFrm,"Update()");
-  tab5->AddFrame(HiFrm, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-  ntab++;
-  //cout << "hifrm3: " << endl;
+  //MakeTabs();
 
   if (crs->Fmode) {
     crspar->AllEnabled(false);
   }
+
+
+  //cout << "hifrm3: " << endl;
+
+
   //TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
   //TGColorPick* tg = new TGColorPick(tab6);
   //tab6->AddFrame(tg, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,
@@ -1198,6 +1169,63 @@ MainFrame::~MainFrame() {
   //DoExit();
   //delete fMain;
   gApplication->Terminate(0);
+}
+
+void MainFrame::MakeTabs() {
+
+  int ntab=0;
+
+  cout << "tab0: " << endl;
+
+  if (fremake) {
+    //tabfr[0]->Cleanup();
+    tabfr[1]->Cleanup();
+    tabfr[2]->Cleanup();
+    tabfr[3]->Cleanup();
+    tabfr[4]->Cleanup();
+
+    //delete parpar;
+    // delete crspar;
+    // delete chanpar;
+    // delete EvtFrm;
+    // delete HiFrm;
+    //return;
+  }
+  // else {
+  //   parpar = new ParParDlg(tabfr[0], 600, 500);
+  //   parpar->Update();
+  //   tabfr[0]->AddFrame(parpar, Lay11);
+  // }
+  ntab++;
+
+  cout << "tab2: " << endl;
+  crspar = new CrsParDlg(tabfr[1], 600, 500);
+  crspar->Make_crspar(tabfr[1], 600, 210);
+  tabfr[1]->AddFrame(crspar, Lay12);
+  ntab++;
+  crspar->Update();
+  cout << "tab3: " << endl;
+
+  chanpar = new ChanParDlg(tabfr[2], 600, 500);
+  chanpar->Make_chanpar(tabfr[2], 600, 210);
+  tabfr[2]->AddFrame(chanpar, Lay12);
+  ntab++;
+  chanpar->Update();
+
+  EvtFrm = new EventFrame(tabfr[3], 600, 500,ntab);
+  tabfr[3]->AddFrame(EvtFrm, Lay11);
+  ntab++;
+
+  HiFrm = new HistFrame(tabfr[4], 800, 500,ntab);
+  HiFrm->HiReset();
+  tabfr[4]->AddFrame(HiFrm, Lay11);
+  ntab++;
+
+  local_nch=opt.Nchan;
+
+  // MapSubwindows();
+  // Resize(GetDefaultSize());
+  // MapWindow();
 }
 
 void MainFrame::SetTitle(char* fname) {
@@ -1596,20 +1624,18 @@ void MainFrame::DoReset() {
   if (!crs->b_stop) return;
 
   crs->DoReset();
-  //printhlist(3);
-  HiFrm->HiReset();
 
-  parpar->Update();
-  crspar->Update();
-  chanpar->Update();
+  if (local_nch!=opt.Nchan) {
+    MakeTabs();
+  }
+  else {
+    HiFrm->HiReset();
+    parpar->Update();
+    crspar->Update();
+    chanpar->Update();
+  }
 
-  //HiFrm->Update();
-
-  //Buffer->NewFile();
-
-  //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
   UpdateStatus();
-  //DoDraw();
 
 }
 

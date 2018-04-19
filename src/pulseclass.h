@@ -40,6 +40,10 @@ class peak_type {
   Float_t Base;
   Float_t Area0;
   Float_t Area;
+  Float_t Slope1;
+  Float_t Slope2;
+  Float_t Noise1;
+  Float_t Noise2;
   Float_t Height;
   Float_t Width;
   Float_t Time; //exact time relative to pulse start (from 1st deriv)
