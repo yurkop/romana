@@ -34,16 +34,22 @@ protected:
 
   TGVerticalFrame        *fVer0; //contains canvas, Hslider, fHor1
   TGVerticalFrame        *fVer_d; //contains deriv etc
-  TGVerticalFrame        *fVer_ch; //contains fHor_ch
-  TGHorizontalFrame      *fHor_ch; //contains fVer[..]
+  TGVerticalFrame        *fVer_ch; //contains fGroupCh
+
+  
+  //TGHorizontalFrame      *fHor_ch; //contains fVer[..]
   //TGVerticalFrame        *fVer[(MAX_CH-1)/16+1];
-  TGVerticalFrame        *fVer_ch2;
+  //TGVerticalFrame        *fVer_ch2;
 
   TGHorizontalFrame      *fHor_but; //contains buttons
   TGVerticalFrame        *fVer_st; //status etc //contains fHor_st + statusbar
   TGHorizontalFrame      *fHor_st; //contains fVer_d, fVer_ch
 
-  TGHorizontalFrame      *fHorCh[16];
+  TGGroupFrame           *fGroupCh; //contains channels: frCh[i]
+  TGHorizontalFrame      *frCh[MAX_CH+1];
+  TGCheckButton          *fDeriv[3];
+  TGCheckButton          *fPeak[16];
+  TGCheckButton          *fChn[MAX_CH+1];
 
   //TGTextButton           *freset;
   //TGTextButton           *f1buf;
@@ -63,9 +69,6 @@ protected:
 
   //TGLabel                *fLabel2;
 
-  TGCheckButton          *fDeriv[3];
-  TGCheckButton          *fPeak[16];
-  TGCheckButton          *fChn[MAX_CH+1];
   //TGRadioButton          *fChn[MAX_CH+1];
 
   static const int        nstat=4;
@@ -119,7 +122,9 @@ public:
   EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
   virtual ~EventFrame();
 
+  void ShPtr(int zz);
   void Rebuild();
+  void AddCh();
   void DoReset();
   void FillGraph(int dr);
   void SetRanges(int dr);

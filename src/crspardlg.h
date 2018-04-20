@@ -92,6 +92,7 @@ public:
   void AllEnabled(bool state);
   void SelectEnabled(bool state, const char* text);
   TGWidget *FindWidget(void* p);
+  void Rebuild();
 
   ClassDef(ParDlg, 0)
 };

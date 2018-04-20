@@ -10,6 +10,7 @@
 #include <TMutex.h>
 #include <TSystem.h>
 //#include <TROOT.h>
+#include <TGTableLayout.h>
 
 #include <TRandom.h>
 
@@ -75,6 +76,7 @@ extern MyMainFrame *myM;
 
 extern CRS* crs;
 extern ParParDlg *parpar;
+extern EventFrame* EvtFrm;
 
 //extern int chanPresent;
 
@@ -152,8 +154,6 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //cout << "EventFrame: " << p->GetName() << endl;
   
-  char ss[100];
-
   fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
   fLay2 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
   fLay3 = new TGLayoutHints(kLHintsExpandX,2,2,2,2);
@@ -297,7 +297,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[2] = new TGCheckButton(fVer_d, "Time", 2);
   //fPeak[3] = new TGCheckButton(fVer_d, "Time\"", 3);
   fPeak[3] = new TGCheckButton(fVer_d, "Wpeak", 3);
-  fPeak[4] = new TGCheckButton(fVer_d, "WBkgr", 4);
+  fPeak[4] = new TGCheckButton(fVer_d, "WBase", 4);
   fPeak[5] = new TGCheckButton(fVer_d, "WTime", 5);
   //fPeak[6] = new TGCheckButton(fVer_d, "BRight", 6);
   //fPeak[7] = new TGCheckButton(fVer_d, "TLeft", 7);
@@ -320,8 +320,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[1]->SetToolTipText("Peak Position (maximum in 1st derivative)");
   fPeak[2]->SetToolTipText("Exact time from 1st derivative");
   //fPeak[3]->SetToolTipText("Exact time from 2nd derivative");
-  fPeak[3]->SetToolTipText("Window for peak integration (left lower than right)");
-  fPeak[4]->SetToolTipText("Window for background integration (left lower than right)");
+  fPeak[3]->SetToolTipText("Window for peak integration");
+  fPeak[4]->SetToolTipText("Window for baseline integration");
   fPeak[5]->SetToolTipText("Window for time integration (left lower than right),\nplotted only in 1st derivative");
   // fPeak[3]->SetToolTipText("Left border of the peak integration");
   // fPeak[4]->SetToolTipText("Right border of the peak integration");
@@ -339,93 +339,17 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   }
 
 
-  fVer_ch = new TGVerticalFrame(fHor_st, 10, 10);
+  fVer_ch = new TGVerticalFrame(fHor_st);
   fHor_st->AddFrame(fVer_ch, fLay4);
 
-  TGLabel* fLabel2 = new TGLabel(fVer_ch, "  Channels        ");
-  fVer_ch->AddFrame(fLabel2, fLay4);
+  AddCh();
 
-  fHor_ch = new TGHorizontalFrame(fVer_ch, 10, 10);
-  fVer_ch->AddFrame(fHor_ch, fLay1);
-
-  for (int i=0;i<MAX_CH;i++) {
-    fChn[i] = NULL;
-  }
-
-  fVer_ch2 = new TGVerticalFrame(fHor_ch, 10, 10);
-  fHor_ch->AddFrame(fVer_ch2, fLay1);
-
-  int ny = MAX_CH;
-  if (ny>16) ny=16;
-
-  int nclmn=(MAX_CH-1)/ny+1;
-
-  // for (int m=1;m<=64;m++) {
-  //   int nn=(m-1)/ny+1;
-  //   cout << m << " " << nn << endl;
-  // }
-  // exit(1);
-
-  
-  for (int i=0;i<ny;i++) {
-    fHorCh[i] = new TGHorizontalFrame(fVer_ch2, 10, 10);
-    fVer_ch2->AddFrame(fHorCh[i], fLay6);
-
-    for (int j=0;j<nclmn;j++) {
-      int k=j*ny+i;
-
-      if (k<opt.Nchan) {
-	sprintf(ss,"%d",k);
-
-	fChn[k] = new TGCheckButton(fHorCh[i]," ", k);
-	fChn[k]->ChangeOptions(fChn[k]->GetOptions()|kFixedSize);
-	fChn[k]->SetWidth(16);
-	fChn[k]->SetHeight(20);
-	fHorCh[i]->AddFrame(fChn[k], fLay6);
-	fChn[k]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
-
-	TGLabel* flab = new TGLabel(fHorCh[i], ss);
-	flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
-	flab->SetWidth(16);
-	fHorCh[i]->AddFrame(flab, fLay6);
-
-	// int col=gROOT->GetColor(chcol[k])->GetPixel();
-	// int fcol=0;
-	// if (k==0 || k==3 || k==21 || k==25 || k==29)
-	//   fcol=0xffffff;
-	
-	//printf("Color: %d %d %x %x\n",k,chcol[k],col,fcol);
-
-
-
-	//flab->SetBackgroundColor(gcol[k]);
-	//flab->SetForegroundColor(gcol[k]);
-	//fChn[k]->SetForegroundColor(fcol);
-
-	fChn[k]->SetBackgroundColor(gcol[k]);
-	//fChn[k]->SetForegroundColor(gcol[k]);
-	//cout << "bkg: " << fChn[k]->GetBackground() << endl;
-
-
-
-	fChn[k]->SetState(kButtonDown);
-
-      } //if
-    } //for j
-  } //for i
-
-  TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer_ch2, 10, 10);
-  fVer_ch2->AddFrame(fHor1, fLay7);
-
+  TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer_ch, 10, 10);
+  fVer_ch->AddFrame(fHor1, fLay7);
   fChn[MAX_CH] = new TGCheckButton(fHor1, "all", MAX_CH);
   fHor1->AddFrame(fChn[MAX_CH], fLay6);
   fChn[MAX_CH]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
   fChn[MAX_CH]->SetState(kButtonDown);
-  //TGLabel* flab = new TGLabel(fHor1, "all");
-  //flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
-  //flab->SetWidth(16);
-  //fHor1->AddFrame(flab, fLay6);
-
 
   TGHorizontalFrame* fHor[nstat];
   TGTextEntry* st_lab[nstat];
@@ -530,8 +454,6 @@ EventFrame::~EventFrame()
 }
 
 
-extern EventFrame* EvtFrm;
-
 // void EventFrame::StartThread()
 // {
 //   trd = new TThread("trd", trd_handle, (void*) 0);
@@ -543,9 +465,195 @@ extern EventFrame* EvtFrm;
 //   delete this;
 // }
 
+
+
+
+
+
+
+
+// void EventFrame::Rebuild() {
+//   cout << "Event::Rebuild" << endl;
+
+//   fGroupCh->Cleanup();
+//   //delete fGroupCh;
+
+// }
+
+
+
+
+
+
+/*
+void EventFrame::AddCh() {
+  char ss[100];
+
+  fVer_ch = new TGVerticalFrame(fHor_st, 10, 10);
+  fHor_st->AddFrame(fVer_ch, fLay4);
+
+  TGLabel* fLabel2 = new TGLabel(fVer_ch, "  Channels        ");
+  fVer_ch->AddFrame(fLabel2, fLay4);
+
+  fHor_ch = new TGHorizontalFrame(fVer_ch, 10, 10);
+  fVer_ch->AddFrame(fHor_ch, fLay1);
+
+  for (int i=0;i<MAX_CH;i++) {
+    fChn[i] = NULL;
+  }
+
+  fVer_ch2 = new TGVerticalFrame(fHor_ch, 10, 10);
+  fHor_ch->AddFrame(fVer_ch2, fLay1);
+
+  int ny = MAX_CH;
+  if (ny>16) ny=16;
+
+  int nclmn=(MAX_CH-1)/ny+1;
+
+  // for (int m=1;m<=64;m++) {
+  //   int nn=(m-1)/ny+1;
+  //   cout << m << " " << nn << endl;
+  // }
+  // exit(1);
+
+  
+  for (int i=0;i<ny;i++) {
+    fHorCh[i] = new TGHorizontalFrame(fVer_ch2, 10, 10);
+    fVer_ch2->AddFrame(fHorCh[i], fLay6);
+
+    for (int j=0;j<nclmn;j++) {
+      int k=j*ny+i;
+
+      if (k<opt.Nchan) {
+	sprintf(ss,"%d",k);
+
+	fChn[k] = new TGCheckButton(fHorCh[i]," ", k);
+	fChn[k]->ChangeOptions(fChn[k]->GetOptions()|kFixedSize);
+	fChn[k]->SetWidth(16);
+	fChn[k]->SetHeight(20);
+	fHorCh[i]->AddFrame(fChn[k], fLay6);
+	fChn[k]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
+
+	TGLabel* flab = new TGLabel(fHorCh[i], ss);
+	flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
+	flab->SetWidth(16);
+	fHorCh[i]->AddFrame(flab, fLay6);
+
+	// int col=gROOT->GetColor(chcol[k])->GetPixel();
+	// int fcol=0;
+	// if (k==0 || k==3 || k==21 || k==25 || k==29)
+	//   fcol=0xffffff;
+	
+	//printf("Color: %d %d %x %x\n",k,chcol[k],col,fcol);
+
+
+
+	//flab->SetBackgroundColor(gcol[k]);
+	//flab->SetForegroundColor(gcol[k]);
+	//fChn[k]->SetForegroundColor(fcol);
+
+	fChn[k]->SetBackgroundColor(gcol[k]);
+	//fChn[k]->SetForegroundColor(gcol[k]);
+	//cout << "bkg: " << fChn[k]->GetBackground() << endl;
+
+
+
+	fChn[k]->SetState(kButtonDown);
+
+      } //if
+    } //for j
+  } //for i
+
+  TGHorizontalFrame* fHor1 = new TGHorizontalFrame(fVer_ch2, 10, 10);
+  fVer_ch2->AddFrame(fHor1, fLay7);
+
+  fChn[MAX_CH] = new TGCheckButton(fHor1, "all", MAX_CH);
+  fHor1->AddFrame(fChn[MAX_CH], fLay6);
+  fChn[MAX_CH]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
+  fChn[MAX_CH]->SetState(kButtonDown);
+  //TGLabel* flab = new TGLabel(fHor1, "all");
+  //flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
+  //flab->SetWidth(16);
+  //fHor1->AddFrame(flab, fLay6);
+
+}
+*/
+
+void EventFrame::AddCh() {
+  char ss[100];
+
+  //fGroupCh = new TGGroupFrame(fVer_ch, "Channels", kVerticalFrame);
+  fGroupCh = new TGGroupFrame(fVer_ch, "Channels");
+  fGroupCh->SetTitlePos(TGGroupFrame::kCenter); // centered
+  fVer_ch->AddFrame(fGroupCh, fLay4);
+
+  // 2 column, n rows
+  //fGroupCh->SetLayoutManager(new TGVerticalLayout(fGroupCh));
+  fGroupCh->SetLayoutManager(new TGMatrixLayout2(fGroupCh, 16, 0, 1));
+  //fGroupCh->SetLayoutManager(new TGTileLayout(fGroupCh, 5));
+  //fGroupCh->SetLayoutManager(new TGTableLayout(fGroupCh, 16, 0, kFALSE, 2, kLHintsLeft));
+
+  for (int i=0;i<MAX_CH;i++) {
+    frCh[i] = new TGHorizontalFrame(fGroupCh);
+    fGroupCh->AddFrame(frCh[i]);
+
+    sprintf(ss,"%d",i);
+    fChn[i] = new TGCheckButton(frCh[i],"", i);
+    fChn[i]->ChangeOptions(fChn[i]->GetOptions()|kFixedSize);
+    fChn[i]->SetWidth(16);
+    fChn[i]->SetHeight(20);
+    fChn[i]->SetBackgroundColor(gcol[i]);
+    fChn[i]->SetState(kButtonDown);
+
+    frCh[i]->AddFrame(fChn[i],fLay6);
+
+    TGLabel* flab = new TGLabel(frCh[i], ss);
+    flab->ChangeOptions(flab->GetOptions()|kFixedWidth);
+    flab->SetWidth(16);
+    frCh[i]->AddFrame(flab, fLay6);
+
+    fChn[i]->Connect("Clicked()","EventFrame",this,"DoPulseOff()");
+  }  
+
+  //fGroupCh->HideFrame(frCh[1]);
+  //ShPtr(1);
+
+}
+
 void EventFrame::Rebuild() {
-  cout << "Event::Rebuild" << endl;
-  fVer_ch2->HideFrame(fHorCh[2]);
+  //cout << "Event::Rebuild: " << opt.Nchan << endl;
+
+  //fGroupCh->RemoveAll();
+  //fGroupCh->Cleanup();
+
+  for (int i=0;i<MAX_CH;i++) {
+    //fGroupCh->AddFrame(frCh[i]);
+    if (i<opt.Nchan) {
+      fGroupCh->ShowFrame(frCh[i]);
+    }
+    else {
+      fGroupCh->HideFrame(frCh[i]);
+    }
+  }
+
+  //fGroupCh->HideFrame(frCh[1]);
+
+  //fGroupCh->MapSubwindows();
+  //fGroupCh->Resize(GetDefaultSize());
+  //fGroupCh->MapWindow();
+  //fGroupCh->Layout();
+}
+
+void EventFrame::ShPtr(int zz) {
+  //fGroupCh->HideFrame(frCh[1]);
+  TList* fList = fGroupCh->GetList();
+  TGFrameElement *ptr;
+  TIter next(fList);
+  int nn=0;
+  while ((ptr = (TGFrameElement *) next())) {
+    cout << zz << "Layout:" << nn << " " << ptr->fState << " " << kIsVisible << endl;
+    nn++;
+  }
 }
 
 void EventFrame::DoReset() {

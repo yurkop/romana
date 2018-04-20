@@ -54,7 +54,7 @@ const char* ttip1[ncrspar+1]={
 
 const int nchpar=19;
 const int tlen2[nchpar]={26,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,35,42,42};
-const char* tlab2[nchpar]={"Ch","Type","St","Mt","sS","Drv","Thr","Bkg1","Bkg2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
+const char* tlab2[nchpar]={"Ch","Type","St","Mt","sS","Drv","Thr","Base1","Base2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
 const char* ttip2[nchpar]={
   "Channel number",
   "Channel type",
@@ -63,8 +63,8 @@ const char* ttip2[nchpar]={
   "Software smoothing",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
-  "Background start, relative to peak Pos (negative)",
-  "Background end, relative to peak Pos (negative)",
+  "Baseline start, relative to peak Pos (negative)",
+  "Baseline end, relative to peak Pos (negative)",
   "Peak start, relative to peak Pos (usually negative)",
   "Peak end, relative to peak Pos (usually positive)",
   "Dead-time window \nsubsequent peaks within this window are ignored",
@@ -187,7 +187,7 @@ void ParDlg::DoNum() {
     if (nfld) {
       int kk = (id-1)%nfld;
       //cout << "donum: " << kk << " " << te->GetNumber() << endl;
-      for (int i=0;i<opt.Nchan;i++) {
+      for (int i=0;i<MAX_CH;i++) {
 	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
@@ -249,7 +249,7 @@ void ParDlg::DoChk() {
   if (pp.all>0) {
     if (nfld) {
       int kk = (id-1)%nfld;
-      for (int i=0;i<opt.Nchan;i++) {
+      for (int i=0;i<MAX_CH;i++) {
 	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetChk(p2,te->GetState());
@@ -364,7 +364,7 @@ void ParDlg::DoCombo() {
 
   int nline = id/nfld;
 
-  if (nline < opt.Nchan) {
+  if (nline < MAX_CH) {
     // cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
     // 	 << " " << nfld
     // 	 << " " << sel << " " << (opt.Nchan+sel)*nfld
@@ -399,7 +399,7 @@ void ParDlg::DoCombo() {
   if (pp.all==1) {
     if (nfld) {
       int kk = (id-1)%nfld;
-      for (int i=0;i<opt.Nchan;i++) {
+      for (int i=0;i<MAX_CH;i++) {
 	pmap p2 = Plist[i*nfld+kk];
 	SetCombo(p2,te->GetSelected());
 	TGComboBox *te2 = (TGComboBox*) p2.field;
@@ -489,7 +489,7 @@ void ParDlg::DoTxt() {
   if (pp.all==1) {
     if (nfld) {
       int kk = (id-1)%nfld;
-      for (int i=0;i<opt.Nchan;i++) {
+      for (int i=0;i<MAX_CH;i++) {
 	pmap p2 = Plist[i*nfld+kk];
 	SetTxt(p2,te->GetText());
 	TGTextEntry *te2 = (TGTextEntry*) p2.field;
@@ -512,7 +512,7 @@ void ParDlg::CopyParLine(int sel, int line) {
   if (sel<ADDCH) {
     //cout << "copypar0: " << line << " " << sel << " " << nfld << " " << tcol[sel-1] << endl;
     for (int j=1;j<nfld;j++) {
-      CopyField((opt.Nchan+sel)*nfld+j,line*nfld+j);
+      CopyField((MAX_CH+sel)*nfld+j,line*nfld+j);
     }
     //cout << "copypar1: " << line << " " << sel << " " << tcol[sel-1] << " "
     //<< clab[line] << " " << cframe[line] << endl;
@@ -660,7 +660,7 @@ void ParDlg::UpdateField(int nn) {
       int line = nn/nfld;
       int sel = *(ChDef*) pp->data;
       //cout << "cmb2: " << sel << " " << line << endl;
-      if (line<opt.Nchan) {
+      if (line<MAX_CH) {
 	clab[line]->ChangeBackground(tcol[sel-1]);
 	cframe[line]->ChangeBackground(tcol[sel-1]);
       }
@@ -776,6 +776,16 @@ TGWidget *ParDlg::FindWidget(void* p) {
   return 0;
 }
 
+void ParDlg::Rebuild() {
+  for (int i=0;i<MAX_CH;i++) {
+    if (i<opt.Nchan) {
+      fcont1->ShowFrame(cframe[i]);
+    }
+    else {
+      fcont1->HideFrame(cframe[i]);
+    }
+  }
+}
 
 //------ ParParDlg -------
 
@@ -1019,13 +1029,13 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   tip2= "Maximal multiplicity";
   label="Multiplicity (min, max)";
   AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,k_int,
-	      1,opt.Nchan,1,opt.Nchan);
+	      1,MAX_CH,1,MAX_CH);
 
   tip1= "M_TOF period (mks) (ignored if set to zero)";
   tip2= "M_TOF start channel";
   label="M_TOF period / start channel";
   AddLine_opt(fF6,ww,&opt.mtof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
-	      0,1e9,0,opt.Nchan-1);
+	      0,1e9,0,MAX_CH-1);
 
   fF6->Resize();
 
@@ -1520,7 +1530,7 @@ void ChanParDlg::Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   AddHeader();
 
-  for (int i=0;i<opt.Nchan;i++) {
+  for (int i=0;i<MAX_CH;i++) {
     AddLine_chan(i,fcont1);
   }
 
@@ -1764,7 +1774,7 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   */
 
-  for (int i=0;i<opt.Nchan;i++) {
+  for (int i=0;i<MAX_CH;i++) {
     AddLine_crs(i,fcont1);
     //cout << "crs: addLine1: " << Plist.size() << endl; 
   }

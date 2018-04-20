@@ -1525,7 +1525,7 @@ void CRS::DoReset() {
     crspar->ResetStatus();
   }
   //if (HiFrm)
-  //  cout << "DoReset2: " << HiFrm->h_time[1]->GetName() << endl;
+  //cout << "DoReset2: " << endl;
 
   rPeaks.clear();
   //CloseTree();

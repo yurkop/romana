@@ -86,8 +86,8 @@ int debug=0; //=1 or 2 or 6// for printing debug messages
 //int *opt_id[MXNUM];
 
 /*
-void *handle_dum(void* ptr)
-{
+  void *handle_dum(void* ptr)
+  {
 
   gSystem->Sleep(1000);
   cout << myM << endl;
@@ -98,7 +98,7 @@ void *handle_dum(void* ptr)
 
   return NULL;
 
-}
+  }
 */
 
 //void printhlist(int n);
@@ -325,11 +325,11 @@ int main(int argc, char **argv)
 
 
 
-// void segfault_sigaction(int signal, siginfo_t *si, void *arg)
-// {
-//     printf("Caught segfault at address %p\n", si->si_addr);
-//     exit(0);
-// }
+  // void segfault_sigaction(int signal, siginfo_t *si, void *arg)
+  // {
+  //     printf("Caught segfault at address %p\n", si->si_addr);
+  //     exit(0);
+  // }
 
   struct sigaction sa;
   memset(&sa, 0, sizeof(struct sigaction));
@@ -345,9 +345,9 @@ int main(int argc, char **argv)
   hcl = new HClass();
   crs = new CRS();
 
-// #ifdef CYUSB
-//   crs->Detect_device();
-// #endif
+  // #ifdef CYUSB
+  //   crs->Detect_device();
+  // #endif
 
 #ifdef LINUX
   if (getcwd(startdir,100)) {}
@@ -670,14 +670,14 @@ void readpar_root(const char* pname)
 }
 
 /*
-void savepar_root(const char* pname)
-{
+  void savepar_root(const char* pname)
+  {
 
-#ifdef LINUX
+  #ifdef LINUX
   if (chdir(startdir)) {}
-#else
+  #else
   _chdir(startdir);
-#endif
+  #endif
 
   TFile *f2 = new TFile(pname,"RECREATE");
 
@@ -687,7 +687,7 @@ void savepar_root(const char* pname)
   f2->Close();
   delete f2;
 
-}
+  }
 */
 
 void swap_bytes(unsigned short* buf)
@@ -755,12 +755,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   
 
   /*
-   fDNDTypeList = new Atom_t[3];
-   fDNDTypeList[0] = gVirtualX->InternAtom("application/root", kFALSE);
-   fDNDTypeList[1] = gVirtualX->InternAtom("text/uri-list", kFALSE);
-   fDNDTypeList[2] = 0;
-   if (gDNDManager) delete gDNDManager;
-   gDNDManager = new TGDNDManager(this, fDNDTypeList);
+    fDNDTypeList = new Atom_t[3];
+    fDNDTypeList[0] = gVirtualX->InternAtom("application/root", kFALSE);
+    fDNDTypeList[1] = gVirtualX->InternAtom("text/uri-list", kFALSE);
+    fDNDTypeList[2] = 0;
+    if (gDNDManager) delete gDNDManager;
+    gDNDManager = new TGDNDManager(this, fDNDTypeList);
   */
 
 
@@ -813,14 +813,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		     new TGLayoutHints(kLHintsTop|kLHintsLeft,0, 4, 0, 0));
 
   /*
-  fMenuBar->AddPopup("&Options", fMenuOptions, 
-		     new TGLayoutHints(kLHintsTop|kLHintsLeft));
+    fMenuBar->AddPopup("&Options", fMenuOptions, 
+    new TGLayoutHints(kLHintsTop|kLHintsLeft));
 
-  fMenuBar->AddPopup("Histograms", fMenuHist, 
-		     new TGLayoutHints(kLHintsTop|kLHintsLeft));
+    fMenuBar->AddPopup("Histograms", fMenuHist, 
+    new TGLayoutHints(kLHintsTop|kLHintsLeft));
 
-  fMenuBar->AddPopup("Analysis", fMenuAna, 
-		     new TGLayoutHints(kLHintsTop|kLHintsLeft));
+    fMenuBar->AddPopup("Analysis", fMenuAna, 
+    new TGLayoutHints(kLHintsTop|kLHintsLeft));
   */
   
   fMenuBar->AddPopup("&Help", fMenuHelp,
@@ -1054,13 +1054,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //gClient->GetResourcePool()->GetStatusFont()->Print();
   /*
 
-  font = pool->GetFont("*helvetica*", -11);
-  font->Print();
-  tfont = 0;
+    font = pool->GetFont("*helvetica*", -11);
+    font->Print();
+    tfont = 0;
 
-  if (font) {
+    if (font) {
     tfont = font->GetFontStruct();
-  }
+    }
   */
 
   TGLayoutHints* fL11 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
@@ -1134,12 +1134,18 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   SetTitle(crs->Fname);
   //SetWMSizeHints(800,600,10000,10000,1,1);
 
+  //Rebuild();
   // Map all subwindows of main frame
+  //ChangeOptions(GetOptions()|kFitWidth|kFitHeight);
+
   MapSubwindows();
   // Initialize the layout algorithm
-  Resize(GetDefaultSize());
+  Rebuild();
+  //Resize(GetDefaultSize());
   // Map main frame
   MapWindow();
+
+  //Rebuild();
 
   Move(-100,-100);
 
@@ -1173,14 +1179,13 @@ MainFrame::~MainFrame() {
 
 void MainFrame::Rebuild() {
 
-  cout << "main::Rebuild: " << endl;
+  //cout << "main::Rebuild: " << endl;
 
   EvtFrm->Rebuild();
-  //tabfr[0]->Cleanup();
-  //tabfr[1]->Cleanup();
-  //tabfr[2]->Cleanup();
-  //tabfr[3]->Cleanup();
-  //tabfr[4]->Cleanup();
+  crspar->Rebuild();
+  chanpar->Rebuild();
+  Resize(GetDefaultSize());
+  Layout();
 
 }
 
@@ -1600,16 +1605,16 @@ void MainFrame::DoReset() {
 
   //printhlist(4);
   /*
-  opt.enabl[0]=false;
-  int tmp,max;
-  opt.GetPar("thresh",crs->module,0,tmp,tmp,max);
-  //cout << "Off: " << (int) chan << " " << max << endl;
-  crs->Command2(4,0,0,0);
-  crs->Command32(2,0,6,0);
-  crs->Command32(2,0,7,max);
-  crs->Command2(3,0,0,0);
+    opt.enabl[0]=false;
+    int tmp,max;
+    opt.GetPar("thresh",crs->module,0,tmp,tmp,max);
+    //cout << "Off: " << (int) chan << " " << max << endl;
+    crs->Command2(4,0,0,0);
+    crs->Command32(2,0,6,0);
+    crs->Command32(2,0,7,max);
+    crs->Command2(3,0,0,0);
 
-  return;
+    return;
   */
   
   // if (HiFrm)
@@ -1624,14 +1629,20 @@ void MainFrame::DoReset() {
 
   if (local_nch!=opt.Nchan) {
     Rebuild();
-    //MakeTabs();
+
+    //Resize(GetDefaultSize());
+    //MapSubwindows();
+    //MapWindow();  
+    //Layout();
+    local_nch=opt.Nchan;
   }
+
   //else {
-    HiFrm->HiReset();
-    parpar->Update();
-    crspar->Update();
-    chanpar->Update();
-    //}
+  HiFrm->HiReset();
+  parpar->Update();
+  crspar->Update();
+  chanpar->Update();
+  //}
 
   UpdateStatus();
 
@@ -1688,15 +1699,15 @@ void MainFrame::UpdateStatus() {
   //cout << txt << endl;
   //return;
   /*
-  fBar1->SetText(txt,0);
-  fBar1->SetText(TGString::Format("%0.2f",opt.T_acq),1);
-  fBar1->SetText(TGString::Format("%lld",crs->nevents),2);
-  fBar1->SetText(TGString::Format("%lld",crs->nevents2),3);
-  fBar1->SetText(TGString::Format("%lld",crs->npulses),4);
-  fBar1->SetText(TGString::Format("%lld",crs->nbuffers),5);
-  fBar1->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),6);
-  fBar1->SetText(TGString::Format("%0.2f",crs->mb_rate),7);
-  fBar1->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),8);
+    fBar1->SetText(txt,0);
+    fBar1->SetText(TGString::Format("%0.2f",opt.T_acq),1);
+    fBar1->SetText(TGString::Format("%lld",crs->nevents),2);
+    fBar1->SetText(TGString::Format("%lld",crs->nevents2),3);
+    fBar1->SetText(TGString::Format("%lld",crs->npulses),4);
+    fBar1->SetText(TGString::Format("%lld",crs->nbuffers),5);
+    fBar1->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),6);
+    fBar1->SetText(TGString::Format("%0.2f",crs->mb_rate),7);
+    fBar1->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),8);
   */
   //cout << "Updatestatus2: " << endl;
 
@@ -1955,9 +1966,9 @@ void MainFrame::HandleMenu(Int_t menu_id)
   case M_FILE_BROWSE:
     new TBrowser();
     break;
-  // case M_FILE_NEWCANVAS:
-  //   gROOT->MakeDefCanvas();
-  //   break;
+    // case M_FILE_NEWCANVAS:
+    //   gROOT->MakeDefCanvas();
+    //   break;
 
     //case M_PARAM:
     //if (fPar!=NULL) {
@@ -2047,13 +2058,13 @@ bool MainFrame::TestFile() {
 //______________________________________________________________________________
 
 /*
-void example() {
+  void example() {
   // Popup the GUI...
 
   //gSystem->Sleep(1000);
   //HiFrm->Update();
   //myM->Move(-100,-100);
-}
+  }
 */
 
 /*
@@ -2097,11 +2108,11 @@ void pointer_test() {
 }
 //-------------------------
 ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
-	    const char *title, const char *msg, EMsgBoxIcon icon,
-	    Int_t buttons, Int_t *ret_code)
+			 const char *title, const char *msg, EMsgBoxIcon icon,
+			 Int_t buttons, Int_t *ret_code)
   : TGTransientFrame(p, main, 10, 10)
 {
-   UInt_t width, height;
+  UInt_t width, height;
 
   Pixel_t fBluevio;
   fBluevio=TColor::RGB2Pixel(255,114,86);
@@ -2111,7 +2122,7 @@ ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
   TGLayoutHints* fL1 = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 3, 3, 0, 0);
   TGLayoutHints* fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
   TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterY | kLHintsLeft | kLHintsExpandX,
-                           4, 2, 2, 2);
+					 4, 2, 2, 2);
  
   TGHorizontalFrame* fButtonFrame = new TGHorizontalFrame(this, 100, 20, kFixedWidth);
   AddFrame(fButtonFrame, fL2);
@@ -2145,7 +2156,7 @@ ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
 
   Resize(width, height);
 
-   // position relative to the parent's window
+  // position relative to the parent's window
 
   CenterOnParent();
 
@@ -2173,4 +2184,147 @@ ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
 //-------------------------
 ColorMsgBox::~ColorMsgBox()
 {
+}
+
+
+//------------------------------
+
+TGMatrixLayout2::TGMatrixLayout2(TGCompositeFrame *main, UInt_t r, UInt_t c,
+				 Int_t s, Int_t h)
+{
+  // TGMatrixLayout2 constructor.
+
+  fMain    = main;
+  fList    = fMain->GetList();
+  fSep     = s;
+  fHints   = h;
+  fRows    = r;
+  fColumns = c;
+}
+
+//______________________________________________________________________________
+void TGMatrixLayout2::Layout()
+{
+  // Make a matrix layout of all frames in the list.
+  //cout << "MatrixLayout1: " << endl;
+
+
+  TGFrameElement *ptr;
+  TGDimension csize, maxsize(0,0);
+  Int_t bw = fMain->GetBorderWidth();
+  Int_t x = fSep+2, y = fSep + bw;
+  UInt_t rowcount = fRows, colcount = fColumns;
+  fModified = kFALSE;
+
+  TIter next(fList);
+  while ((ptr = (TGFrameElement *) next())) {
+    if (ptr->fState & kIsVisible) {
+      csize = ptr->fFrame->GetDefaultSize();
+      maxsize.fWidth  = TMath::Max(maxsize.fWidth, csize.fWidth);
+      maxsize.fHeight = TMath::Max(maxsize.fHeight, csize.fHeight);
+    }
+  }
+
+  next.Reset();
+  int nn=0;
+  while ((ptr = (TGFrameElement *) next())) {
+    //cout << "Layout11: " << nn << " " << ptr->fState << " " << kIsVisible << endl;
+    if (ptr->fState & kIsVisible) {
+      nn++;
+      //cout << "Layout12: " << nn << " " << x << " " << y << endl;
+      //ptr->fFrame->Move(x, y);
+      ptr->fFrame->MoveResize(x, y, csize.fWidth, csize.fHeight);
+      fModified = fModified || (ptr->fFrame->GetX() != x) || 
+	(ptr->fFrame->GetY() != y);
+
+      ptr->fFrame->Layout();
+
+      if (fColumns == 0) {
+	y += maxsize.fHeight + fSep;
+	rowcount--;
+	if (rowcount <= 0) {
+	  rowcount = fRows;
+	  y = fSep + bw; x += maxsize.fWidth + fSep;
+	}
+      } else if (fRows == 0) {
+	x += maxsize.fWidth + fSep;
+	colcount--;
+	if (colcount <= 0) {
+	  colcount = fColumns;
+	  x = fSep; y += maxsize.fHeight + fSep;
+	}
+      } else {
+	x += maxsize.fWidth + fSep;
+	colcount--;
+	if (colcount <= 0) {
+	  rowcount--;
+	  if (rowcount <= 0) return;
+	  else {
+	    colcount = fColumns;
+	    x = fSep; y += maxsize.fHeight + fSep;
+	  }
+	}
+      }
+    }
+  }
+  //cout << "MatrixLayout2: " << nn << endl;
+
+}
+
+//______________________________________________________________________________
+TGDimension TGMatrixLayout2::GetDefaultSize() const
+{
+  // Return default dimension of the matrix layout.
+
+
+  TGFrameElement *ptr;
+  TGDimension     size, csize, maxsize(0,0);
+  Int_t           count = 0;
+  Int_t           bw = fMain->GetBorderWidth();
+
+  TIter next(fList);
+  while ((ptr = (TGFrameElement *) next())) {
+    if (ptr->fState & kIsVisible) {
+      count++;
+      csize = ptr->fFrame->GetDefaultSize();
+      maxsize.fWidth  = TMath::Max(maxsize.fWidth, csize.fWidth);
+      maxsize.fHeight = TMath::Max(maxsize.fHeight, csize.fHeight);
+    }
+  }
+  Int_t rows=0;
+  Int_t cols=0;
+
+  if (fRows == 0) {
+    rows = (count % fColumns) ? (count / fColumns + 1) : (count / fColumns);
+    size.fWidth  = fColumns * (maxsize.fWidth + fSep) + fSep;
+    size.fHeight = rows * (maxsize.fHeight + fSep) + fSep + bw;
+  } else if (fColumns == 0) {
+    cols = (count % fRows) ? (count / fRows + 1) : (count / fRows);
+    size.fWidth  = cols * (maxsize.fWidth + fSep) + fSep;
+    size.fHeight = fRows * (maxsize.fHeight + fSep) + fSep + bw;
+  } else {
+    size.fWidth  = fColumns * (maxsize.fWidth + fSep) + fSep;
+    size.fHeight = fRows * (maxsize.fHeight + fSep) + fSep + bw;
+  }
+
+  size.fWidth+=5;
+  size.fHeight+=10;
+  // int sz2 = fRows * (maxsize.fHeight + fSep) + fSep + bw;
+  // cout << "GetDefaultSize: " << size.fWidth << " " << size.fHeight
+  //      << " " << count << " " << rows << " " << cols
+  //      << " " << sz2 << " " << fSep << " " << bw << endl;
+  return size;
+}
+// __________________________________________________________________________
+void TGMatrixLayout2::SavePrimitive(ostream &out, Option_t *)
+{
+
+  // Save matrix layout manager as a C++ statement(s) on output stream
+
+  out << "new TGMatrixLayout2(" << fMain->GetName() << ","
+      << fRows << ","
+      << fColumns << ","
+      << fSep << ","
+      << fHints <<")";
+
 }

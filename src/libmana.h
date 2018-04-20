@@ -124,4 +124,30 @@ public:
   //ClassDef(ColorMsgBox, 0)
 };
 
+//////////////////////////////////////////////////////////////////////////
+class TGMatrixLayout2 : public TGLayoutManager {
+
+private:
+   TGMatrixLayout2(const TGMatrixLayout2&);
+   TGMatrixLayout2& operator=(const TGMatrixLayout2&);
+
+protected:
+   TGCompositeFrame *fMain;      // container frame
+   TList            *fList;      // list of frames to arrange
+
+public:
+   Int_t   fSep;                      // interval between frames
+   Int_t   fHints;                    // layout hints (currently not used)
+   UInt_t  fRows;                     // number of rows
+   UInt_t  fColumns;                  // number of columns
+
+   TGMatrixLayout2(TGCompositeFrame *main, UInt_t r, UInt_t c, Int_t s=0, Int_t h=0);
+
+   virtual void Layout();
+   virtual TGDimension GetDefaultSize() const;
+   virtual void SavePrimitive(ostream &out, Option_t * = "");
+
+   ClassDef(TGMatrixLayout2,0)  // Matrix layout manager
+};
+
 #endif
