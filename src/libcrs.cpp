@@ -1753,9 +1753,9 @@ void CRS::SaveParGz(gzFile &ff) {
 
 int CRS::DoBuf() {
 
-  //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
+  cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
-  //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
+  cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
   if (BufLength>0) {
     crs->totalbytes+=BufLength;
 
@@ -2318,7 +2318,7 @@ void CRS::Decode_adcm() {
       lflag=bits(header,6,6);
       nsamp=bits(header,7,17);
       if (nsamp+8!=rLen) {
-	cout << "wrong BufLength: " << idx << " " << nsamp << " " << rLen << endl;
+	//cout << "wrong BufLength: " << idx << " " << nsamp << " " << rLen << endl;
 	//idx=idnext;
 	goto next;
       }
@@ -2675,7 +2675,7 @@ void CRS::Make_Events() {
   //insert last pulse from "previous" vector vv2
   if (vv2->size()) {
     if (pls->ptype) { //any bad pulse
-      cout << "bad pulse: " << (int) pls->ptype << " " << (int) pls->Chan
+      cout << "bad pulse3: " << (int) pls->ptype << " " << (int) pls->Chan
 	   << " " << pls->Counter << " " << pls->Tstamp64 << endl;
     }
     else
