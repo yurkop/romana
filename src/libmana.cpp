@@ -481,7 +481,9 @@ int main(int argc, char **argv)
 
   //EvtFrm->StartThread();
   //gClient->GetColorByName("yellow", yellow);
+  //cout << "Init end2" << endl;
   theApp.Run();
+  //cout << "Init end3" << endl;
   //return 0;
 
   //fclose(fp);
@@ -1145,6 +1147,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // Map main frame
   MapWindow();
 
+  //cout << "Init end" << endl;
   //Rebuild();
 
   Move(-100,-100);

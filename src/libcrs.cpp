@@ -360,6 +360,163 @@ void *handle_ana(void* ptr) {
     
 }
 
+void ana2(int nbuf) {
+  // when the event list (Levents) becomes larger than ev_min,
+  // starts analysing the events (fillhist);
+  // when it becomes larger than ev_max, starts erasing the events
+
+  std::list<EventClass>::iterator it;
+
+  int n2; //number of events to erase
+  //m_event - first event which is not analyzed
+
+  int ii=0; //temporary variable
+
+
+
+
+  int res=0;
+  for (int i=0;i<nbuf;i++) {
+    res = crs->DoBuf();
+
+
+
+    
+    if (!res || crs->b_stop)
+      break;
+  }
+
+
+
+
+  while (crs->b_run) {
+
+    //gSystem->Sleep(100);
+
+    // //aviod exhausting all memory
+    // gSystem->GetMemInfo(&info);
+    // if (unchecked && info.fMemFree<300) {
+    //   opt.ev_max = crs->Levents.size()*0.005; //was sz*0.005;
+    //   opt.ev_max*=100;
+    //   if (opt.ev_max < 500) opt.ev_max=500;
+    //   cout << "ev_max updated: " << opt.ev_max << endl;
+    //   unchecked=false;
+    // }
+
+    if (opt.ev_min>=opt.ev_max) {
+      opt.ev_min=opt.ev_max/2;
+    }
+
+    if (crs->b_run==2) { //analyze all events, then stop
+      crs->m_event=crs->Levents.end();
+      crs->b_run=0;
+    }
+    else { //analyze normally
+      ii=0;
+      for (it=--crs->Levents.end(); it!=crs->m_start && ii<opt.ev_min; --it) {
+	++ii;
+      }
+      crs->m_event=it;
+    }
+
+    //cout << "st: " << ii << " " << std::distance(crs->m_start,crs->m_event) << " " << crs->m_event->Nevt << " " << crs->m_start->Nevt << endl;
+    
+    if (crs->m_event!=crs->m_start) { //there are some events to analyze
+      
+      //goto skip;
+
+      if (EvtFrm) {
+	// fill Tevents for EvtFrm::DrawEvent2
+	EvtFrm->Tevents.clear();
+	if (crs->m_event!=crs->Levents.end()) {
+	  EvtFrm->Tevents.push_back(*crs->m_event);
+	}
+	EvtFrm->d_event=EvtFrm->Pevents->begin();
+      }
+
+
+      //skip:
+      // cout << "ana: " << std::distance(crs->m_start,crs->m_event)
+      // 	   << " " << std::distance(crs->m_event,crs->Levents.end()) << endl;
+
+      // analyze events up to m_event
+      for (it=crs->m_start; it!=crs->m_event;) {
+	//if (it->Nevt>100000) {
+	// cout << "ana7: " << it->Nevt << " " << std::distance(it,crs->m_event)
+	//      << " " << crs->b_stop << " " << it->pulses.size()
+	//      << endl;
+	  //exit(0);
+	  //}
+	if (//!crs->b_stop &&
+	    it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
+
+	  it->FillHist(true);
+	  it->FillHist(false);
+	  //it->FillHist_old();
+	  if (opt.dec_write) {
+	    crs->Fill_Dec(&(*it));
+	  }
+
+
+	  //it->Analyzed=true;
+	  ++crs->nevents2;
+	  ++it;
+	  //++(crs->n_ana);
+	  //YK
+	  //cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << " " << crs->nevents2 << endl;
+	}
+	else {
+	  it=crs->Levents.erase(it);
+	  // if (it!=crs->m_event)
+	  //   cout << "ana72: " << it->Nevt
+	  // 	 << " " << std::distance(it,crs->m_event)
+	  // 	 << " " << std::distance(it,crs->Levents.end())
+	  // 	 << " " << &*it
+	  // 	 << " " << &*crs->m_event
+	  // 	 << " " << &*crs->Levents.end()
+	  // 	 << endl;
+	}
+      }
+
+      // cout << "ana2: " << std::distance(crs->m_start,crs->m_event) << endl;
+
+      // m_start now points to the first event which is not analyzed yet
+      crs->m_start=crs->m_event;
+
+      //cout << "ana2a: " << std::distance(crs->m_start,crs->m_event) << endl;
+
+      // erase events if the list is too long
+      n2 = crs->Levents.size()-opt.ev_max;
+      if (n2>0) {
+	ii=0;
+	for (it=crs->Levents.begin(); it!=crs->m_start && ii<n2;) {
+	  it=crs->Levents.erase(it);
+	  //YK
+	  //cout << "ana73: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
+	  ++ii;
+	  //++it;
+	  //--(crs->n_ana);
+	}
+      }
+
+      //cout << "ana3: " << std::distance(crs->m_start,crs->m_event) << endl;
+
+    } // if (n1>0)
+    else {
+      gSystem->Sleep(10);
+    }
+  } //while (!crs->b_run)
+
+  if (opt.dec_write) {
+    crs->Flush_Dec();
+  }
+
+  //cout << "end_ana: " << endl;
+
+  return 0;
+    
+}
+
 CRS::CRS() {
 
   /*
