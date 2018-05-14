@@ -82,19 +82,16 @@ RQ_OBJECT("CRS")
   pulse_vect Vpulses[2];
   int nvp;
   pulse_vect::iterator ipp; //pointer to the current pulse in decode*
-  pulse_vect *vv; //- vector of pulses from current
+  pulse_vect *vv; //- vector of pulses from current buffer
   pulse_vect *vv2; //- vector of pulses from previous buffer
   
   //std::list<event_list> Levents; //list of events
   std::list<EventClass> Levents; //list of events
   //EventClass mean_event;
 
-  // n_ana - number of events which are already analyzed, but not erased,
-  // starting from "start"
-  //int n_ana;
-
   std::list<EventClass>::iterator m_start;
   std::list<EventClass>::iterator m_event;
+  // анализируем данные от m_start до m_event  
   //new events can be inserted only after m_event (up to Levents.end())
   //m_event points to the first event, which is not yet analyzed
   //it is safe to fill events starting from this element
@@ -230,6 +227,9 @@ RQ_OBJECT("CRS")
 
   int Searchsync();
   void Decode_adcm();
+
+  void Ana_start();
+  void Ana2(bool all);
 
   //void PrintPulse(int udata, bool pdata=false);
 
