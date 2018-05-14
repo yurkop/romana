@@ -384,11 +384,8 @@ void CRS::Ana2(bool all) {
 
   // analyze events from m_start to m_event
   while (crs->m_event!=m_end) {
-    //for (it=crs->m_event; it!=crs->m_end;) {
-    //for (int i=0; i<sz-opt.ev_min; ++i) {
-
-    if (//!crs->b_stop &&
-	crs->m_event->pulses.size()>=opt.mult1 && crs->m_event->pulses.size()<=opt.mult2) {
+    if (crs->m_event->pulses.size()>=opt.mult1 &&
+	crs->m_event->pulses.size()<=opt.mult2) {
 
       crs->m_event->FillHist(true);
       crs->m_event->FillHist(false);
@@ -396,7 +393,6 @@ void CRS::Ana2(bool all) {
       if (opt.dec_write) {
 	crs->Fill_Dec(&(*crs->m_event));
       }
-
 
       //crs->m_event->Analyzed=true;
       ++crs->nevents2;
