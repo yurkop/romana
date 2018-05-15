@@ -440,7 +440,7 @@ int main(int argc, char **argv)
     crs->b_fana=true;
     crs->b_stop=false;
 
-    crs->FAnalyze(false);
+    crs->FAnalyze2(false);
 
     crs->b_fana=false;
     crs->b_stop=true;
@@ -1378,7 +1378,7 @@ void MainFrame::DoAna() {
       crs->b_fana=true;
       crs->b_stop=false;
 
-      crs->FAnalyze(true);
+      crs->FAnalyze2(true);
 
       //fAna->SetText(new TGHotString("&Analyze"));
       fAna->ChangeText("&Analyze");

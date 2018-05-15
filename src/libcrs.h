@@ -216,6 +216,7 @@ RQ_OBJECT("CRS")
 
   //void DoFAna();
   void FAnalyze(bool nobatch);
+  void FAnalyze2(bool nobatch);
   int DoBuf();
   void DoNBuf(int nb);
   void Show(bool force=false);
