@@ -2625,7 +2625,12 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
 	 << (int) pls->ptype << endl;
     return;
   }
-  
+
+  if (pls->Chan==3 || pls->Chan==4) {
+    cout << "ch3 or ch4: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
+	 << (int) pls->ptype << endl;
+  }
+
   npulses2[pls->Chan]++;
 
   if (opt.nsmoo[pls->Chan]) {
