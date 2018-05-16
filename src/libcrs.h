@@ -129,6 +129,7 @@ RQ_OBJECT("CRS")
   //double mb_rate;
   //double ev_rate;
   Int_t npulses2[MAX_CH]; //number of pulses per channel
+  Int_t npulses_bad[MAX_CH]; //number of bad pulses per channel
 
   bool b_usbbuf;
 
@@ -202,6 +203,8 @@ RQ_OBJECT("CRS")
   void AllParameters32(); // load all parameters
   void AllParameters2(); // load all parameters
   int DoStartStop(); // start-stop acquisition
+  void ProcessCrs(); // new process events in dostartstop
+  void ProcessCrs_old(); // old process events in dostartstop
 #endif
 
 
@@ -219,6 +222,7 @@ RQ_OBJECT("CRS")
   void FAnalyze2(bool nobatch);
   int DoBuf();
   void DoNBuf(int nb);
+  void DoNBuf2(int nb);
   void Show(bool force=false);
 
   //void AllParameters32_old(); // load all parameters
@@ -230,7 +234,7 @@ RQ_OBJECT("CRS")
   void Decode_adcm();
 
   void Ana_start();
-  void Ana2(bool all);
+  void Ana2(int all);
 
   //void PrintPulse(int udata, bool pdata=false);
 

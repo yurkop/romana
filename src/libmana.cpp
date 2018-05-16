@@ -1410,7 +1410,7 @@ void MainFrame::Do1buf() {
   if (TestFile()) {
     crs->b_fana=true;
     crs->b_stop=false;
-    crs->DoNBuf(1);
+    crs->DoNBuf2(1);
     crs->b_fana=false;
     crs->b_stop=true;
   }  
@@ -1436,22 +1436,17 @@ void MainFrame::DoNbuf() {
   }
   else { //start analysis of n buffers
     if (TestFile()) {
-      //cout << "donbuf1" << endl;
       fAna->ChangeBackground(fRed);
       fAna->SetText("P&ause");
       fNb->ChangeBackground(fRed);
       crs->b_fana=true;
       crs->b_stop=false;
-      crs->DoNBuf(opt.num_buf);
-      //gSystem->Sleep(1000);
-      //cout << "donbuf2" << endl;
-      //DoNbuf();
+      crs->DoNBuf2(opt.num_buf);
       fAna->ChangeBackground(fGreen);
       fAna->SetText("&Analyse");
       fNb->ChangeBackground(fGreen);
       crs->b_fana=false;
       crs->b_stop=true;
-      //cout << "donbuf3" << endl;
     }
   }
 

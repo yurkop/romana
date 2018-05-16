@@ -198,6 +198,7 @@ class CrsParDlg: public ChanParDlg {
 public:
 
   TGTextEntry *fStat[MAX_CH+1];
+  TGTextEntry *fStatBad[MAX_CH+1];
 
 public:
   CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h);

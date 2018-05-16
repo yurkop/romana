@@ -23,7 +23,7 @@
 
 //TMutex Emut3;
 TMutex stat_mut;
-//TMutex ana_mut;
+TMutex ana_mut;
 
 const int BFMAX=999999999;
 
@@ -155,6 +155,10 @@ static void cback(libusb_transfer *transfer) {
       crs->nbuffers++;
 
     } //if (transfer->actual_length) {
+
+    
+    crs->Ana2(0);
+
 
     libusb_submit_transfer(transfer);
 
@@ -366,13 +370,21 @@ void CRS::Ana_start() {
   }
 }
 
-void CRS::Ana2(bool all) {
+void CRS::Ana2(int all) {
   // вызываем ana2 после каждого cback или DoBuf
   // Входные данные: Levents, не меняется во время работы ana2
   // (нет параллельных потоков)
-  // анализируем данные от m_start до m_event
+  // если all==0 ->
+  // анализируем данные от m_event до Levents.end()-opt.ev_min
+  // если all!=0 ->
+  // анализируем данные от m_event до Levents.end()
 
-  if (Levents.empty()) return;
+  ana_mut.Lock();
+  //if (Levents.empty()) {
+  if ((int) Levents.size()<=opt.ev_min) {
+    ana_mut.UnLock();
+    return;
+  }
 
   if (m_event==Levents.end()) {
     m_event=Levents.begin();
@@ -381,9 +393,13 @@ void CRS::Ana2(bool all) {
   std::list<EventClass>::iterator it;
   std::list<EventClass>::iterator m_end = Levents.end();
 
+  //cout << "m_end: " << &*m_end << endl;
+
   if (!all) { //analyze up to ev_min events
     std::advance (m_end,-opt.ev_min);
   }
+
+  //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
 
   // analyze events from m_start to m_event
   while (m_event!=m_end) {
@@ -401,13 +417,16 @@ void CRS::Ana2(bool all) {
       ++nevents2;
       ++m_event;
       //YK
-	  //cout << "ana71: " << m_event->Nevt << " " << std::distance(m_event,m_event) << " " << nevents2 << endl;
+      //cout << "ana71: " << m_event->Nevt << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_event,m_end) << " " << nevents2 << endl;
     }
     else {
+      //cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
       m_event=Levents.erase(m_event);
     }
   }
   //m_event=it;
+
+  //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
 
   // erase events if the list is too long
   int n2 = Levents.size()-opt.ev_max;
@@ -422,12 +441,30 @@ void CRS::Ana2(bool all) {
     }
   }
 
+  //cout << "Levents3: " << Levents.size() << " " << nevents << endl;
+
   if (opt.dec_write) {
     Flush_Dec();
   }
 
-  //cout << "end_ana2: " << endl;
 
+  //cout << "Levents4: " << Levents.size() << " " << nevents << endl;
+
+  // fill Tevents for EvtFrm::DrawEvent2
+  if (EvtFrm) {
+    EvtFrm->Tevents.clear();
+    if (m_event!=Levents.end()) {
+      EvtFrm->Tevents.push_back(*m_event);
+    }
+    else if (!Levents.empty()) {
+      EvtFrm->Tevents.push_back(Levents.back());     
+    }
+    EvtFrm->d_event=EvtFrm->Pevents->begin();
+  }
+  
+  //cout << "Levents5: " << Levents.size() << " " << nevents << endl;
+
+  ana_mut.UnLock();
 } //ana2
 
 CRS::CRS() {
@@ -1434,25 +1471,16 @@ int CRS::DoStartStop() {
     TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
     cv->SetEditable(false);
 
-    b_run=1;
-    TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
-    trd_ana->Run();
 
-    Command2(3,0,0,0);
 
-    while (!crs->b_stop) {
-      Show();
-      gSystem->Sleep(10);   
-      gSystem->ProcessEvents();
-      if (opt.Tstop && opt.T_acq>opt.Tstop) {
-	//cout << "Stop1!!!" << endl;
-	DoStartStop();
-	//cout << "Stop2!!!" << endl;
-      }
-    }
 
-    trd_ana->Join();
-    trd_ana->Delete();
+
+    ProcessCrs();
+    //ProcessCrs_old();
+
+
+
+
 
     //cout << "startstop1: " << endl;
     EvtFrm->Clear();
@@ -1485,6 +1513,45 @@ int CRS::DoStartStop() {
 
   return 0;
 
+}
+
+void CRS::ProcessCrs() {
+  b_run=1;
+  Ana_start();
+  Command2(3,0,0,0);
+  while (!crs->b_stop) {
+    Show();
+    gSystem->Sleep(10);   
+    gSystem->ProcessEvents();
+    if (opt.Tstop && opt.T_acq>opt.Tstop) {
+      //cout << "Stop1!!!" << endl;
+      DoStartStop();
+      //cout << "Stop2!!!" << endl;
+    }
+  }
+  Ana2(1);
+}
+
+void CRS::ProcessCrs_old() {
+  b_run=1;
+  TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
+  trd_ana->Run();
+
+  Command2(3,0,0,0);
+
+  while (!crs->b_stop) {
+    Show();
+    gSystem->Sleep(10);   
+    gSystem->ProcessEvents();
+    if (opt.Tstop && opt.T_acq>opt.Tstop) {
+      //cout << "Stop1!!!" << endl;
+      DoStartStop();
+      //cout << "Stop2!!!" << endl;
+    }
+  }
+
+  trd_ana->Join();
+  trd_ana->Delete();
 }
 
 #endif //CYUSB
@@ -1568,6 +1635,7 @@ void CRS::DoReset() {
   npulses=0;
   nbuffers=0;
   memset(npulses2,0,sizeof(npulses2));
+  memset(npulses_bad,0,sizeof(npulses_bad));
 
   //npulses=0;
   npulses_buf=0;
@@ -1823,9 +1891,13 @@ void CRS::SaveParGz(gzFile &ff) {
 
 int CRS::DoBuf() {
 
-  cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
+  //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
-  cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
+
+  //nbuffers++;
+  //return nbuffers;
+
+  //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
   if (BufLength>0) {
     crs->totalbytes+=BufLength;
 
@@ -1939,10 +2011,6 @@ void CRS::FAnalyze2(bool nobatch) {
   }
   juststarted=false;
 
-  //cout << "batch01: " << endl;
-
-  //static int nmax=BFMAX-1;
-
   if (nobatch) {
     EvtFrm->Clear();
     EvtFrm->Pevents = &EvtFrm->Tevents;
@@ -1956,27 +2024,14 @@ void CRS::FAnalyze2(bool nobatch) {
   Ana_start();
   int res;
   while ((res=crs->DoBuf()) && crs->b_fana) {
-    Ana2(false);
-    gSystem->ProcessEvents();
+    Ana2(0);
+    if (nobatch) {
+      Show();
+      gSystem->ProcessEvents();
+    }
   }
-  Ana2(true);
+  Ana2(1);
 
-
-  
-
-
-
-
-  // if (nobatch) {
-  //   while (!crs->b_stop) {
-  //     Show();
-  //     gSystem->Sleep(10);   
-  //     gSystem->ProcessEvents();
-  //   }
-  // }
-
-  //cout << "batch06: " << endl;
-  //gSystem->Sleep(opt.tsleep);
   if (nobatch) {
     EvtFrm->Clear();
     EvtFrm->Pevents = &Levents;
@@ -2028,6 +2083,48 @@ void CRS::DoNBuf(int nb) {
   trd_ana->Join();
   trd_ana->Delete();
   //cout << "batch06a: " << endl;
+
+  EvtFrm->Clear();
+  EvtFrm->Pevents = &Levents;
+  EvtFrm->d_event=--EvtFrm->Pevents->end();
+
+  //gSystem->Sleep(opt.tsleep);   
+  gSystem->Sleep(10);   
+  Show(true);
+
+  cv->SetEditable(true);
+}
+
+void CRS::DoNBuf2(int nb) {
+
+  if (gzeof(f_read)) {
+    cout << "Enf of file: " << endl;
+    return;
+  }
+
+  if (juststarted && opt.dec_write) {
+    Reset_Dec();
+  }
+  juststarted=false;
+
+  EvtFrm->Clear();
+  EvtFrm->Pevents = &EvtFrm->Tevents;
+
+  TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
+  cv->SetEditable(false);
+
+
+  Ana_start();
+  int res;
+  int i=1;
+  while ((res=crs->DoBuf()) && crs->b_fana && i<nb) {
+    Ana2(0);
+    Show();
+    gSystem->ProcessEvents();
+    ++i;
+  }
+  Ana2(1);
+
 
   EvtFrm->Clear();
   EvtFrm->Pevents = &Levents;
@@ -2671,8 +2768,9 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
   //if (pls->ptype & 0xF) { //P_NOSTART | P_NOSTOP | P_BADCH | P_BADTST
   //if (pls->ptype & 0x7) {
   if (pls->ptype) { //any bad pulse
-    cout << "bad pulse: " << (int) pls->ptype << " " << (int) pls->Chan
-	 << " " << pls->Counter << " " << pls->Tstamp64 << endl;
+    // cout << "bad pulse: " << (int) pls->ptype << " " << (int) pls->Chan
+    // 	 << " " << pls->Counter << " " << pls->Tstamp64 << endl;
+    npulses_bad[pls->Chan]++;
     return;
   }
   
@@ -2686,11 +2784,11 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
   //pls->PrintPulse(0);
   //}
 
-  if (pls->ptype & 0x7) {
-    cout << "bad pulse2: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
-	 << (int) pls->ptype << endl;
-    return;
-  }
+  // if (pls->ptype & 0x7) {
+  //   cout << "bad pulse2: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
+  // 	 << (int) pls->ptype << endl;
+  //   return;
+  // }
 
   // if (pls->Chan==3 || pls->Chan==4) {
   //   cout << "ch3 or ch4: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
@@ -2812,12 +2910,12 @@ void CRS::Make_Events() {
   pulse_vect::iterator pls = --vv2->end();
   //insert last pulse from "previous" vector vv2
   if (vv2->size()) {
-    if (pls->ptype) { //any bad pulse
-      cout << "bad pulse3: " << (int) pls->ptype << " " << (int) pls->Chan
-	   << " " << pls->Counter << " " << pls->Tstamp64 << endl;
-    }
-    else
-      Event_Insert_Pulse(pls);
+    // if (pls->ptype) { //any bad pulse
+    //   cout << "bad pulse3: " << (int) pls->ptype << " " << (int) pls->Chan
+    // 	   << " " << pls->Counter << " " << pls->Tstamp64 << endl;
+    // }
+    // else
+    Event_Insert_Pulse(pls);
   }
 
   //cout << "Make_Events: " << &*vv << " " << vv->size() << endl;

@@ -32,10 +32,10 @@ extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern ChanParDlg *chanpar;
 
-const int ncrspar=12;
+const int ncrspar=13;
 
-const int tlen1[ncrspar+1]={26,60,24,25,24,21,45,40,40,25,36,45,75};
-const char* tlab1[ncrspar+1]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Drv","Thr","Pulse/sec"};
+const int tlen1[ncrspar+1]={26,60,24,25,24,21,45,40,40,25,36,45,75,80};
+const char* tlab1[ncrspar+1]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Drv","Thr","Pulse/sec","BadPulse"};
 const char* ttip1[ncrspar+1]={
   "Channel number",
   "Channel type",
@@ -49,7 +49,8 @@ const char* ttip1[ncrspar+1]={
   "Additional Gain",
   "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
-  "Pulse rate"
+  "Pulse rate",
+  "Number of Bad pulses"
 };
 
 const int nchpar=19;
@@ -996,7 +997,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip2= "Size of the READ buffer in kilobytes (as large as possible for faster speed)";
   label="USB/READ buffer size";
   AddLine_opt(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,k_int,1,2048,
-	   1,20000,(char*) "DoNum_SetBuf()");
+	   1,1e5,(char*) "DoNum_SetBuf()");
   id_usb = Plist.size()-1;
   //cout << "usbbuf: " << id_usb << endl;
 
@@ -1951,7 +1952,6 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
 
   if (i<=MAX_CH) {
     fStat[i] = new TGTextEntry(cframe[i], "");
-    //fStat[i] = new TGLabel(cframe[i], "");
     fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedSize|kSunkenFrame);
 
     fStat[i]->SetState(false);
@@ -1968,6 +1968,21 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     //fStat[i]->Draw3DCorner(kFALSE);
     //fbar[i]->DrawBorder();
     cframe[i]->AddFrame(fStat[i],fL8);
+  }
+  kk++;
+
+  if (i<=MAX_CH) {
+    fStatBad[i] = new TGTextEntry(cframe[i], "");
+    fStatBad[i]->ChangeOptions(fStatBad[i]->GetOptions()|kFixedSize|kSunkenFrame);
+
+    fStatBad[i]->SetState(false);
+    fStatBad[i]->SetToolTipText(ttip1[kk]);
+
+    fStatBad[i]->Resize(70,20);
+    int col=gROOT->GetColor(19)->GetPixel();
+    fStatBad[i]->SetBackgroundColor(col);
+    fStatBad[i]->SetText(0);
+    cframe[i]->AddFrame(fStatBad[i],fL8);
   }
 
 
@@ -2019,14 +2034,17 @@ void CrsParDlg::ResetStatus() {
 
   for (int i=0;i<opt.Nchan;i++) {
       fStat[i]->SetText(txt);
+      fStatBad[i]->SetText(txt);
   }
 
   fStat[MAX_CH]->SetText(txt);
+  fStatBad[MAX_CH]->SetText(txt);
 
 }
 void CrsParDlg::UpdateStatus() {
 
   static Long64_t allpulses;
+  static Long64_t allbad;
   static Int_t npulses3[MAX_CH];
   static double t1;
   double rate;
@@ -2036,27 +2054,33 @@ void CrsParDlg::UpdateStatus() {
   double dt = opt.T_acq - t1;
 
   //cout << "DT: " << dt << endl;
+  allbad=0;
   if (dt>0) {
     for (int i=0;i<opt.Nchan;i++) {
       //if (crs->npulses2[i]) {
-	rate = (crs->npulses2[i]-npulses3[i])/dt;
+      rate = (crs->npulses2[i]-npulses3[i])/dt;
 	//if (rate>0) {
-	  txt.Form("%0.0f",rate);
-	  fStat[i]->SetText(txt);
+      txt.Form("%0.0f",rate);
+      fStat[i]->SetText(txt);
+      txt.Form("%d",crs->npulses_bad[i]);
+      fStatBad[i]->SetText(txt);
 	  //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
 	  //}
-	npulses3[i]=crs->npulses2[i];
+      npulses3[i]=crs->npulses2[i];
+      allbad+=crs->npulses_bad[i];
 	//}
     }
     //if (crs->npulses) {
-      rate = (crs->npulses-allpulses)/dt;
-      //if (rate>0) {
-	txt.Form("%0.0f",rate);
-	fStat[MAX_CH]->SetText(txt);
-	//cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
-	//}
-      allpulses=crs->npulses;
-      //}
+    rate = (crs->npulses-allpulses)/dt;
+    //if (rate>0) {
+    txt.Form("%0.0f",rate);
+    fStat[MAX_CH]->SetText(txt);
+    txt.Form("%lld",allbad);
+    fStatBad[MAX_CH]->SetText(txt);
+    //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
+    //}
+    allpulses=crs->npulses;
+    //}
   }
   t1=opt.T_acq;
 
