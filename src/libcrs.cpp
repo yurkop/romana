@@ -1633,6 +1633,7 @@ void CRS::DoReset() {
   ipp->ptype|=P_NOSTART;
 
   if (Fmode!=1) {
+    //cout << "Pre!!!" << endl;
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
@@ -1725,6 +1726,8 @@ void CRS::DoFopen(char* oname, int popt) {
     Fmode=1;
 
     cpar.InitPar(0);
+    memcpy(&Pre,&cpar.preWr,sizeof(Pre));
+
     //memset(Pre,0,sizeof(Pre));
     // for (int i=0;i<MAX_CH+ADDCH;i++) {
     //   cpar.preWr[i]=0;
@@ -2795,8 +2798,10 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
   // }
 
   // if (pls->Chan==3 || pls->Chan==4) {
+  //   static Long64_t t64[MAX_CH];
   //   cout << "ch3 or ch4: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
-  // 	 << (int) pls->ptype << endl;
+  // 	 << pls->Tstamp64-t64[3] << " " << pls->Tstamp64-t64[4] << endl;
+  //   t64[pls->Chan]=pls->Tstamp64;
   // }
 
   npulses2[pls->Chan]++;

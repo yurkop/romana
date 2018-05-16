@@ -485,6 +485,7 @@ void EventClass::FillHist(Bool_t first) {
   double DT = crs->period*1e-9;
   //int ch[MAX_CH];
   Double_t tt;
+  //Double_t tt2;
   //Double_t max,max2;
   //int nbin;
 
@@ -586,11 +587,16 @@ void EventClass::FillHist(Bool_t first) {
 
 	      tm = pulses[i].Tstamp64 + pk->Pos;
 	      tt = (tm - crs->Tstart0)*0.001*crs->period;
+	      //tt2=tt;
+	      //cout << "mtof1: " << tt << " " << tt2 << " " << opt.mtof_period << endl;
 	      if (opt.mtof_period>0.01 && tt>opt.mtof_period) {
-		crs->Tstart0+=opt.mtof_period;
+		crs->Tstart0+=1000*opt.mtof_period;
 		tt = (tm - crs->Tstart0)*0.001*crs->period;
 	      }
 
+	      // if (tt!=tt2) {
+	      // 	cout << "mtof2: " << tt << " " << tt2 << " " << opt.mtof_period << endl;
+	      // }
 	      Fill1d(first,hcl->m_mtof[mult],tt);
 	      Fill1d(first,hcl->m_mtof[0],tt);
 	    }
