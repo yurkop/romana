@@ -1518,6 +1518,10 @@ int CRS::DoStartStop() {
 void CRS::ProcessCrs() {
   b_run=1;
   Ana_start();
+  if (module==32) {
+    Command32(8,0,0,0);
+    Command32(9,0,0,0);    
+  }
   Command2(3,0,0,0);
   while (!crs->b_stop) {
     Show();
