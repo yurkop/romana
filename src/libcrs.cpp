@@ -1379,11 +1379,11 @@ int CRS::DoStartStop() {
   }
   
   if (!b_acq) { //start
-    if (b_usbbuf) {
+    //if (b_usbbuf) {
       crs->Free_Transfer();
       gSystem->Sleep(50);
       crs->Init_Transfer();
-    }
+      //}
     b_usbbuf=false;
 
     DoReset();
