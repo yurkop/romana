@@ -68,10 +68,10 @@ char* datfname=0;
 
 
 
-char startdir[180];
-char pr_name[180];
-char maintitle[180];
-char rootname[180]="";
+char startdir[200];
+char pr_name[200];
+char maintitle[200];
+char rootname[200]="";
 
 struct stat statbuffer;
 const char* msg_exists = "Output file already exists. It will be overwritten.\nPress OK if you want to continue?";
@@ -350,9 +350,12 @@ int main(int argc, char **argv)
   // #endif
 
 #ifdef LINUX
-  if (getcwd(startdir,100)) {}
+  if (getcwd(startdir,150)) {
+    strcat(startdir,"/");
+  }
 #else
-  _getcwd(startdir,100);
+  _getcwd(startdir,150);
+  strcat(startdir,"\\");
 #endif
   //cout << "startdir: " << startdir << endl;
 
@@ -427,12 +430,19 @@ int main(int argc, char **argv)
     datfname=(char*)"";
   }
 
+  //cout << "strlen: " << strlen(datfname) << endl;
   //cout << "gStyle1: " << gStyle << endl;
   //hcl->Make_hist();
   //cout << "gStyle2: " << gStyle << endl;
 
   EvtFrm = 0;
   if (crs->batch) {
+    if (strlen(datfname)==0)
+      return 0;
+
+    SplitFilename (string(datfname),dir,name,ext);
+    dir = TString(startdir);
+    //cout << "Root_dir: " << dir << endl;
 
     hcl->Make_hist();
     //cout << "batch0: " << endl;
@@ -448,7 +458,6 @@ int main(int argc, char **argv)
     //allevents();
     //cout << "batch99: " << endl;
 
-    SplitFilename (string(datfname),dir,name,ext);
     dir.append("Root/");
 #ifdef LINUX
     mkdir(dir.c_str(),0755);
@@ -1767,14 +1776,15 @@ void MainFrame::DoSave() {
   string s_name, dir, name, ext;
   TGFileInfo fi;
 
-  SplitFilename (string(datfname),dir,name,ext);
+  s_name = string();
 
-  dir.append("Root/");
-#ifdef LINUX
-  mkdir(dir.c_str(),0755);
-#else
-  _mkdir(dir.c_str());
-#endif
+//   SplitFilename (string(datfname),dir,name,ext);
+//   dir.append("Root/");
+// #ifdef LINUX
+//   mkdir(dir.c_str(),0755);
+// #else
+//   _mkdir(dir.c_str());
+// #endif
 
   //s_name = dir;
   s_name.append(name);

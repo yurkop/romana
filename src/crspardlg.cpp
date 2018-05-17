@@ -54,7 +54,7 @@ const char* ttip1[ncrspar+1]={
 };
 
 const int nchpar=19;
-const int tlen2[nchpar]={26,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,35,42,42};
+const int tlen2[nchpar]={26,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,42,42,42};
 const char* tlab2[nchpar]={"Ch","Type","St","Mt","sS","Drv","Thr","Base1","Base2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
 const char* ttip2[nchpar]={
   "Channel number",
@@ -163,7 +163,7 @@ void ParDlg::SetNum(pmap pp, Double_t num) {
     //cout << "setpar2: " << *(Int_t*) pp.data << endl;
   }
   else {
-    cout << "(DoNum) Wrong type: " << pp.type << endl;
+    cout << "(SetNum) Wrong type: " << pp.type << endl;
   }
 }
 
@@ -174,16 +174,16 @@ void ParDlg::DoNum() {
 
   pmap pp = Plist[id-1];
 
-  // cout << "DoNum: ";
+  // cout << "DoNum: " << id << " ";
   // cout << *(Int_t*) pp.data << " ";
   // cout << pp.data << " " << opt.bkg1[0] << " ";
   // cout << (Int_t) pp.all << endl;
 
   //cout << "Donum: " << te->GetName() << endl;
-  //return;
   
   SetNum(pp,te->GetNumber());
 
+  //return;
   if (pp.all>0) {
     if (nfld) {
       int kk = (id-1)%nfld;
@@ -203,16 +203,6 @@ void ParDlg::DoNum() {
 	}
       }
     }
-    // int kk;
-    // (nfld ? (kk=(id-1)%nfld) : (kk=0));
-    // for (int i=0;i<opt.Nchan;i++) {
-    //   if (pp.all==1 || opt.chtype[i]==pp.all-1) {
-    // 	pmap p2 = Plist[i*nfld+kk];
-    // 	SetNum(p2,te->GetNumber());
-    // 	TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
-    // 	te2->SetNumber(te->GetNumber());
-    //   }
-    // }
   }
 
   //cout << "Donum2: " << te->GetName() << endl;
@@ -1738,6 +1728,7 @@ void ChanParDlg::DoNum() {
 CrsParDlg::CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :ChanParDlg(p,w,h)
 {
+  trig=0;
 }
 
 void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
@@ -2087,7 +2078,9 @@ void CrsParDlg::UpdateStatus() {
 }
 
 void CrsParDlg::DoNum() {
+  trig++;
   ParDlg::DoNum();
+  trig--;
 
   //cout << "CrsParDlg::DoNum()" << endl;
 #ifdef CYUSB
@@ -2095,14 +2088,14 @@ void CrsParDlg::DoNum() {
   Int_t id = te->WidgetId();
   pmap pp = Plist[id-1];
 
-  //cout << "ch_donum: " << pp.data2 << endl;
+  //cout << "ch_donum: " << id << " " << pp.data2 << " " << trig << endl;
 
   //printf("cmd77: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
-  if (pp.cmd && crs->b_acq) {
+  if (pp.cmd && crs->b_acq && !trig) {
     crs->Command2(4,0,0,0);
     //printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
-    //crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
-    crs->Command_crs(pp.cmd,pp.chan);
+    //crs->Command_crs(pp.cmd,pp.chan);
+    crs->SetPar();
     crs->Command2(3,0,0,0);
   }
 #endif
@@ -2110,7 +2103,9 @@ void CrsParDlg::DoNum() {
 }
 
 void CrsParDlg::DoCheck() {
+  trig++;
   ParDlg::DoChk();
+  trig--;
 
 #ifdef CYUSB
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
@@ -2118,11 +2113,11 @@ void CrsParDlg::DoCheck() {
   pmap pp = Plist[id-1];
 
   //printf("chk77: %d %d %d\n",pp.cmd,pp.chan,*(Bool_t*)pp.data);
-  if (pp.cmd && crs->b_acq) {
+  if (pp.cmd && crs->b_acq && !trig) {
     crs->Command2(4,0,0,0);
     //printf("chk: %d %d %d\n",pp.cmd,pp.chan,*(Bool_t*)pp.data);
-    //crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
-    crs->Command_crs(pp.cmd,pp.chan);
+    //crs->Command_crs(pp.cmd,pp.chan);
+    crs->SetPar();
     crs->Command2(3,0,0,0);
   }
 #endif
