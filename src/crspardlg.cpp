@@ -302,6 +302,9 @@ void ParDlg::DoOpen() {
 
   const char *dnd_types[] = {
     "all files",     "*",
+    ".raw files",     "*.raw",
+    ".dec files",     "*.dec",
+    ".root files",     "*.root",
     ".gz files",     "*.gz",
     0,               0
   };

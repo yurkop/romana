@@ -1673,7 +1673,8 @@ void MainFrame::UpdateStatus() {
   // }
 
   time_t tt = (opt.F_start+788907600000)*0.001;
-  struct tm *ptm = localtime(&tt);
+  //struct tm *ptm = localtime(&tt);
+  struct tm *ptm = gmtime(&tt);
   strftime(txt,sizeof(txt),"%F %T",ptm);
 
   double dt = opt.T_acq - t1;
