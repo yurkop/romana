@@ -42,16 +42,16 @@ class HClass {
 
  public:
 
-  HMap* m_area[MAX_CH]; //area of the peak
-  HMap* m_area0[MAX_CH]; //area of the peak w/o bkg
-  HMap* m_base[MAX_CH]; //base - background
-  HMap* m_height[MAX_CH]; //height of the peak
-  HMap* m_time[MAX_CH]; // real time
-  HMap* m_tof[MAX_CH]; // time of flight
-  HMap* m_mtof[MAX_CH]; // time of flight
-  HMap* m_per[MAX_CH]; // period
+  HMap* m_area[MAX_CH+1]; //area of the peak
+  HMap* m_area0[MAX_CH+1]; //area of the peak w/o bkg
+  HMap* m_base[MAX_CH+1]; //base - background
+  HMap* m_height[MAX_CH+1]; //height of the peak
+  HMap* m_time[MAX_CH+1]; // real time
+  HMap* m_tof[MAX_CH+1]; // time of flight
+  HMap* m_mtof[MAX_CH+1]; // time of flight
+  HMap* m_per[MAX_CH+1]; // period
 
-  HMap* m_pulse[MAX_CH]; // period
+  HMap* m_pulse[MAX_CH]; // pulse shape
 
   HMap* m_a0a1[1];
   HMap* m_area_base[MAX_CH];

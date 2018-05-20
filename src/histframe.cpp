@@ -225,6 +225,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   TGHorizontalFrame      *fHor1; //contains canvas and list of histograms
   TGHorizontalFrame      *fHor2; //contains buttons etc
+  TGHorizontalFrame      *fHor3; //for cuts
 
   //TGVerticalFrame *fVer[NR];
   //TGLabel *flab[NR];
@@ -266,6 +267,42 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //fHor1->AddFrame(fV2, fLay7);
   //clab = new TGLabel(fV1, "--Cuts--");
   //fV1->AddFrame(clab, fLay4);
+
+  // for (int i=0;i<50;i++) {
+  //   gCanvas2->AddFrame(new TGLabel(gCanvas2, "sdfsdf"), fLay2);
+  // }
+  
+
+
+
+
+  fHor3 = new TGHorizontalFrame(container, 10, 10);
+  container->AddFrame(fHor3, fLay2);
+
+  //fHor3->AddFrame(new TGLabel(fHor3, "Cuts:"), fLay5);
+
+  but = new TGTextButton(fHor3,"Add",1);
+  but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  fHor3->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor3,"Cancel",2);
+  but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  fHor3->AddFrame(but, fLay5);
+
+  //but = new TGTextButton(fHor3,"Show",3);
+  //but->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
+  //fHor3->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor3,"Clear",4);
+  but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
+  fHor3->AddFrame(but, fLay5);
+
+
+
+
+
+
+
 
   container->AddFrame(new TGLabel(container, "--Formula--"), fLay2);
   TGHorizontalFrame *fHor7 = new TGHorizontalFrame(container, 10, 10);
@@ -388,6 +425,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
   fHor2->AddFrame(but, fLay5);
 
+  /*
   fHor2->AddFrame(new TGLabel(fHor2, "Cuts:"), fLay5);
 
   but = new TGTextButton(fHor2,"Add",1);
@@ -405,9 +443,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but = new TGTextButton(fHor2,"Clear",4);
   but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
   fHor2->AddFrame(but, fLay5);
+  */
 
   //TGCheckButton* chk;
-  chkgcuts = new TGCheckButton(fHor2,"Show",5);
+  chkgcuts = new TGCheckButton(fHor2,"Cuts",5);
   chkgcuts->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
   fHor2->AddFrame(chkgcuts, fLay5);
 

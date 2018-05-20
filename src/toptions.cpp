@@ -126,7 +126,7 @@ Toptions::Toptions() {
   //cout << "toptions" << endl;
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     chtype[i]=ch_other;
-    Mt[i]=true;
+    Mrk[i]=true;
     nsmoo[i]=2;
     thresh[i]=cpar.threshold[i];
 

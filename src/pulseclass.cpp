@@ -578,7 +578,7 @@ void EventClass::FillHist(Bool_t first) {
 	  if (ch==opt.start_ch) {
 	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Pos;
 	  }
-	  if (opt.Mt[ch]) {
+	  if (opt.Mrk[ch]) {
 	    mult++;
 	  }
 	  if (mult && (i==pulses.size()-1)) { //last pulse

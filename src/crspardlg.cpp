@@ -55,12 +55,12 @@ const char* ttip1[ncrspar+1]={
 
 const int nchpar=19;
 const int tlen2[nchpar]={26,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,42,42,42};
-const char* tlab2[nchpar]={"Ch","Type","St","Mt","sS","Drv","Thr","Base1","Base2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","ELim1","Elim2"};
+const char* tlab2[nchpar]={"Ch","Type","St","*","sS","Drv","Thr","Base1","Base2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","Elim1","Elim2"};
 const char* ttip2[nchpar]={
   "Channel number",
   "Channel type",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
-  "Mtof channel - use this channel for mtof spectra",
+  "Marked channel - use this channel for making integral spectra\n as well as Mtof spectra",
   "Software smoothing",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
@@ -1636,7 +1636,7 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
 
   id = Plist.size()+1;
   TGCheckButton *fmt = new TGCheckButton(cframe[i], "", id);
-  DoMap(fmt,&opt.Mt[i],p_chk,all,0,0);
+  DoMap(fmt,&opt.Mrk[i],p_chk,all,0,0);
   fmt->Connect("Clicked()", "ParDlg", this, "DoChk()");
   fmt->SetToolTipText(ttip2[kk]);
   cframe[i]->AddFrame(fmt,fL3);

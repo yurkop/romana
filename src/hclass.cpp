@@ -146,16 +146,20 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 
   for (int i=0;i<opt.Nchan;i++) {
     NameTitle(name2,title2,i,0,name,title);
-
     int nn=hd->bins*(hd->max - hd->min);
     TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-
-    //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
     map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
-
   }
+
+  sprintf(name2,"%s_i",name);
+  sprintf(title2,"%s_i%s",name,title);
+  int nn=hd->bins*(hd->max - hd->min);
+  TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
+  map[MAX_CH] = new HMap(dname,hh,hd->c+MAX_CH,hd->w+MAX_CH,hd->cut+MAX_CH);
+  map_list->Add(map[MAX_CH]);
+  hist_list->Add(map[MAX_CH]->hst);
 }
 
 void HClass::Make_1d_pulse(const char* dname, const char* name,
