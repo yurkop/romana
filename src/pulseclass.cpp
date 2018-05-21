@@ -390,7 +390,7 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
 	if (getbit(*(map[ch]->cut_index),i)) {
 	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
 	    hcl->cut_flag[i]=1;
-	    cout << "Cut: " << Nevt << " " << i << " " << ch << " " << x << endl;
+	    //cout << "Cut: " << Nevt << " " << i << " " << ch << " " << x << endl;
 	  }
 	}
       }
@@ -506,7 +506,7 @@ void EventClass::FillHist(Bool_t first) {
   if (first) {
     opt.T_acq=(T-crs->Tstart64)*DT;
 
-    if (opt.Tstop && opt.T_acq > opt.Tstop) {
+    if (opt.Tstop && (opt.T_acq > opt.Tstop || opt.T_acq < opt.Tstart)) {
       if (crs->b_fana) {
 	crs->b_stop=true;
 	crs->b_fana=false;
@@ -535,15 +535,20 @@ void EventClass::FillHist(Bool_t first) {
 
       if (first) {
 	if (opt.dec_write) {
-	  crs->rP.Area   = pk->Area;
-	  crs->rP.Height = pk->Height;
+	  crs->rP.Area   = pk->Area  ;
+	  //crs->rP.Height = pk->Height;
 	  crs->rP.Width  = pk->Width ;
 	  crs->rP.Time   = pk->Time  ;
-	  crs->rP.Ch     = ch    ;
+	  crs->rP.Ch     = ch        ;
 	  crs->rP.Type   = pk->Type  ;
 
 	  crs->rPeaks.push_back(crs->rP);
 	}
+      }
+
+      if (opt.elim2[ch]>0 &&
+	  (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
+	continue;
       }
 
       if (opt.h_time.b) {
@@ -680,7 +685,7 @@ void EventClass::FillHist(Bool_t first) {
       if (opt.pcuts[i]==1) {//formula
 	hcl->cut_flag[i]=hcl->cform[i]->EvalPar(0,hcl->cut_flag);
       }
-      cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i] << endl;
+      //cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i] << endl;
     }
   }
 

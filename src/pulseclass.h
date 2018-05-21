@@ -72,7 +72,7 @@ class peak_type {
 #pragma pack (push, 1)
 struct rpeak_type {
   Float_t Area;
-  Float_t Height;
+  //Float_t Height;
   Float_t Width;
   Float_t Time; //exact time relative to pulse start (from 1st deriv)
   UChar_t Ch; //Channel number

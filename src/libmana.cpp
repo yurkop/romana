@@ -360,9 +360,10 @@ int main(int argc, char **argv)
   //cout << "startdir: " << startdir << endl;
 
   cout << "----------------------------------------------" << endl;
-  cout << "Usage: ./romana.x [filename] [+parname] [-b]" << endl;
+  cout << "Usage: ./romana.x [filename] [+parname] [-p parname] [-b]" << endl;
   cout << "filename - read data and parameters from filename" << endl;
-  cout << "+parname - read parameters from parname, parameters of filename are ignored" << endl;
+  cout << "+parname or" << endl;
+  cout << "-p parname - read parameters from parname, parameters of filename are ignored" << endl;
   cout << "-b - analyze file in batch mode (without gui) and exit" << endl;
   cout << "----------------------------------------------" << endl;
 
@@ -383,12 +384,23 @@ int main(int argc, char **argv)
   if (argc > 1) {
     int argnn=1;
     while (argnn<argc) {
+      // cout << "argnn: " << argc << " " << argnn << " " << argv[argnn] << " "
+      // 	   << argv[argnn]+1 << endl;
       char cc = argv[argnn][0];
       if (cc=='-') { //control character
 	char pp = argv[argnn][1];
 	switch (pp) {
 	case 'b':
+	case 'B':
 	  crs->batch=true;
+	  break;
+	case 'p':
+	case 'P':
+	  argnn++;
+	  //cout << argnn+1 << " " << argc << endl;
+	  if (argnn<argc) {
+	    parname2 = argv[argnn];
+	  }
 	  break;
 	default:
 	  break;
@@ -400,11 +412,13 @@ int main(int argc, char **argv)
       else { //read file
 	datfname = argv[argnn];
       }
-      cout << "argnn: " << argnn << " " << argv[argnn] << " "
-	   << argv[argnn]+1 << " " << argc << endl;
       argnn++;
     }
   }
+
+  //if (parname2) cout << "parname2: " << parname2 << endl;
+  //if (datfname) cout << "datfname: " << datfname << endl;
+  //exit(1);
 
   int rdpar=1;
   if (parname2) {
@@ -1998,8 +2012,8 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
   case M_HELP:
 
-    strcpy(command,"sevince ");
-    strcat(command,"help.pdf &");
+    strcpy(command,"xdg-open ");
+    strcat(command,"src/help.pdf");
     status = system( command );
     if (status == -1) {
       cout << "Return value of system(command): " << status << endl;

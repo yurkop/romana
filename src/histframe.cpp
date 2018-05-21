@@ -685,23 +685,18 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 
     item2 = item->GetFirstChild();
     while (item2) {
-      cout << "dell: " << item2->GetText() << endl;
+      //cout << "dell: " << item2->GetText() << endl;
       HMap* map = (HMap*) item2->GetUserData();
       *map->wrk=false;
-      fListTree->DeleteItem(item2);
       hcl->Remove_Clones(map);
-
-      // for (int cc=0;cc<opt.ncuts;cc++) {
-      // 	sprintf(hname2,"%s_cut%d",hname,cc);
-      // 	TGListTreeItem* item3 =
-      // 	  fListTree->FindChildByName(iWork_cut[cc],hname2);
-      // 	if (item3)
-      // 	  fListTree->DeleteItem(item3);
-      // }
-
       item2 = item2->GetNextSibling();
     }
     
+    fListTree->DeleteChildren(iWork);
+    for (int cc=0;cc<opt.ncuts;cc++) {
+      fListTree->DeleteChildren(iWork_cut[cc]);
+    }
+
   }
 
   if (item->GetParent() && (but==2 || but==3)) {
