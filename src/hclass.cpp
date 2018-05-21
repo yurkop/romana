@@ -123,14 +123,14 @@ HClass::~HClass()
 
 void NameTitle(char* name, char* title, int i, int cc, 
 			  const char* nm, const char* axis) {
-  if (cc) {
-    sprintf(name,"%s_%02d_cut%d",nm,i,cc);
-    sprintf(title,"%s_%02d_cut%d%s_cut%d",nm,i,cc,axis,cc);
-  }
-  else {
+  // if (cc) {
+  //   sprintf(name,"%s_%02d_cut%d",nm,i,cc);
+  //   sprintf(title,"%s_%02d_cut%d%s_cut%d",nm,i,cc,axis,cc);
+  // }
+  // else {
     sprintf(name,"%s_%02d",nm,i);
     sprintf(title,"%s_%02d%s",nm,i,axis);
-  }
+    //}
 }
 
 void HClass::Make_1d(const char* dname, const char* name, const char* title,
@@ -153,8 +153,8 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
     hist_list->Add(map[i]->hst);
   }
 
-  sprintf(name2,"%s_i",name);
-  sprintf(title2,"%s_i%s",name,title);
+  sprintf(name2,"%s_all",name);
+  sprintf(title2,"%s_all%s",name,title);
   int nn=hd->bins*(hd->max - hd->min);
   TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
   map[MAX_CH] = new HMap(dname,hh,hd->c+MAX_CH,hd->w+MAX_CH,hd->cut+MAX_CH);
@@ -245,9 +245,9 @@ void HClass::Clone_Hist(HMap* map) {
     TH1* h0 = (TH1*) map->hst;
     for (int i=0;i<opt.ncuts;i++) {
       if (opt.pcuts[i]) {
-	sprintf(cutname,"WORK_cut%d",i+1);
-	sprintf(name,"%s_cut%d",h0->GetName(),i+1);
-	sprintf(htitle,"%s_cut%d",h0->GetTitle(),i+1);
+	sprintf(cutname,"WORK_cut%d",i);
+	sprintf(name,"%s_cut%d",h0->GetName(),i);
+	sprintf(htitle,"%s_cut%d",h0->GetTitle(),i);
 	TH1* hcut = (TH1*) h0->Clone();
 	//////TH1* hcut = new TH1(*h0);
 	//////TH1F* hcut = new TH1F("a","a",100,0,100);
@@ -328,7 +328,7 @@ void HClass::Make_cuts() {
     }
     
     //cout << "cuts2: " << opt.ncuts << " " << i << endl;
-    sprintf(cutname,"%d",i+1);
+    sprintf(cutname,"%d",i);
 
     if (opt.pcuts[i]==1) { //formula
       //cout << "cuts3: " << i << " " << cform[i] << " " << opt.cut_form[i] << endl;
@@ -351,7 +351,7 @@ void HClass::Make_cuts() {
       //cout << "cuts4: " << i << endl;
       //cout << "make_cuts: " << opt.ncuts << " " << i << " " << cutcolor[i] << " " << cutG[i]->GetLineColor() << endl;
     }
-    //cout << "cutname: " << cutname << endl;
+    //cout << "cutname: " << i << " " << cutname << " " << cuttitle[i] << endl;
     cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
     cutG[i]->SetTitle(cuttitle[i]);
     cutG[i]->SetLineColor(cutcolor[i]);

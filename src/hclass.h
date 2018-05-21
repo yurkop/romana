@@ -25,8 +25,10 @@ class HMap: public TNamed {
   Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*)
   UShort_t* bitwk; //bit mask - item is checked in the WORK* folder
   Int_t *cut_index; //список окон, заданных на этой гистограмме (hst)
-  // bit mask: 1 - cut is here; 0 - cut is not here
-  // ----- wrong! значения cut_index[*] нумеруются с 1: cut_index[i] = cut+1;
+  // положение бита в этой маске соответствует номеру соответствующего окна
+  // максимальная размерность: 32 бита, значит число окон
+  // не может быть больше 32
+  // bit mask: 1 - cut is in this histogram; 0 - cut is not here
   //TList* list_cuts; 
   HMap* h_cuts[MAXCUTS];
   //TList* list_h_cuts;

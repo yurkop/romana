@@ -153,6 +153,7 @@ public:
 
   //Int_t b_osc,b_leg,b_logy,b_time;
   Bool_t b_logy;
+  Bool_t b_stat;
   Bool_t b_gcuts;
   Bool_t b_deriv[3];
   Bool_t b_peak[16];

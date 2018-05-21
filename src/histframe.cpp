@@ -312,7 +312,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
   fHor7->AddFrame(but, fLay6);
   
-  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [1] [2] [3] ... for other cuts in the formula\nExamples:\n [1] && [2] - cut1 \"and\" cut2\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
+  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
 
   tForm    = new TGTextEntry(fHor7,"",8);;
   tForm->SetWidth(120);
@@ -408,6 +408,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   chklog->Connect("Clicked()", "HistFrame", this, "DoLog()");
   fHor2->AddFrame(chklog, fLay5);
 
+  chkstat = new TGCheckButton(fHor2,"Stat",12);
+  chkstat->Connect("Clicked()", "HistFrame", this, "DoStat()");
+  fHor2->AddFrame(chkstat, fLay5);
+
   /*
    // control horizontal position of the text
   TGButtonGroup *cuts = new TGButtonGroup(fHor2, "Horizontal Position",kChildFrame|kHorizontalFrame);
@@ -420,10 +424,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
    //horizontal->Connect("Pressed(Int_t)", "ButtonWindow", this, "DoHPosition(Int_t)");
    fHor2->AddFrame(cuts, fLay5);
   */
-
-  but = new TGTextButton(fHor2,"Peaks",4);
-  but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
-  fHor2->AddFrame(but, fLay5);
 
   /*
   fHor2->AddFrame(new TGLabel(fHor2, "Cuts:"), fLay5);
@@ -449,6 +449,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   chkgcuts = new TGCheckButton(fHor2,"Cuts",5);
   chkgcuts->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
   fHor2->AddFrame(chkgcuts, fLay5);
+
+  but = new TGTextButton(fHor2,"Peaks",4);
+  but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
+  fHor2->AddFrame(but, fLay5);
 
   //DoReset();
 
@@ -531,7 +535,7 @@ void HistFrame::Make_Ltree() {
   iWork = Item_Ltree(iroot, "WORK",0,0,0);
   for (int cc=0;cc<opt.ncuts;cc++) {
     if (opt.pcuts[cc]) {
-      sprintf(cutname,"WORK_cut%d",cc+1);
+      sprintf(cutname,"WORK_cut%d",cc);
       iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
     }
   }
@@ -674,7 +678,31 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
   char hname2[100]; 
   TGListTreeItem* item2;
 
-  //cout << "DoClick: " << item->GetText() << " " << item->GetParent() << " " << but << endl;
+
+   //clear all work* if middle button is clicked on WORK
+  if (but==2 && TString(item->GetText()).EqualTo("work",TString::kIgnoreCase)) {
+    cout << "DoClick: " << item->GetText() << " " << item->GetParent() << " " << but << endl;
+
+    item2 = item->GetFirstChild();
+    while (item2) {
+      cout << "dell: " << item2->GetText() << endl;
+      HMap* map = (HMap*) item2->GetUserData();
+      *map->wrk=false;
+      fListTree->DeleteItem(item2);
+      hcl->Remove_Clones(map);
+
+      // for (int cc=0;cc<opt.ncuts;cc++) {
+      // 	sprintf(hname2,"%s_cut%d",hname,cc);
+      // 	TGListTreeItem* item3 =
+      // 	  fListTree->FindChildByName(iWork_cut[cc],hname2);
+      // 	if (item3)
+      // 	  fListTree->DeleteItem(item3);
+      // }
+
+      item2 = item2->GetNextSibling();
+    }
+    
+  }
 
   if (item->GetParent() && (but==2 || but==3)) {
     if (TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
@@ -703,7 +731,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 
       //cout << "work2: " << item << endl;
       for (int cc=0;cc<opt.ncuts;cc++) {
-	sprintf(hname2,"%s_cut%d",hname,cc+1);
+	sprintf(hname2,"%s_cut%d",hname,cc);
 	item2 = fListTree->FindChildByName(iWork_cut[cc],hname2);
 	//cout << "cc: " << cc << " " << hname2 << " " << item2 << endl;
 	if (item2)
@@ -731,7 +759,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	Clone_Ltree(map);
       }
     }
-  }
+  } //if (item->GetParent() && (but==2 || but==3))
   
   if (crs->b_stop)
     Update();
@@ -819,6 +847,18 @@ void HistFrame::DoLog()
   TGCheckButton *te = (TGCheckButton*) gTQSender;
 
   opt.b_logy = (Bool_t)te->GetState();
+  
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
+}
+
+void HistFrame::DoStat()
+{
+  TGCheckButton *te = (TGCheckButton*) gTQSender;
+
+  opt.b_stat = (Bool_t)te->GetState();
   
   if (crs->b_stop)
     Update();
@@ -1030,11 +1070,11 @@ void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
     int icut = ss.Atoi();
     //cout << "cutclick2: " << gcut->GetName() << " " << gcut->GetTitle() << " " << ss << " " << icut << endl;
 
-    if (icut<1 && icut >MAXCUTS) {
+    if (icut<0 && icut >=MAXCUTS) {
       cout << "wrong cut number: " << icut << ". Consider clearing all cuts" << endl;
       return;
     }
-    icut--;
+    //icut--;
 
     HMap *map = (HMap*) hcl->map_list->FindObject(gcut->GetTitle());
     //clear cut from cut_index
@@ -1264,6 +1304,9 @@ void HistFrame::Update()
 
   Hmut.Lock();
 
+  gStyle->SetOptStat(opt.b_stat);
+  
+
   //xdiv=2;
   //ydiv=2;
   int n2 = (int) opt.b_stack;
@@ -1278,6 +1321,7 @@ void HistFrame::Update()
   //int sel = abs(opt.sel_hdiv)%NR;
   //SelectDiv(sel);
   chklog->SetState((EButtonState) opt.b_logy);
+  chkstat->SetState((EButtonState) opt.b_stat);
   chkgcuts->SetState((EButtonState) opt.b_gcuts);
 
   hlist->Clear();
@@ -1387,6 +1431,8 @@ void HistFrame::DrawHist() {
   //draw hists
   HMap* map;
 
+  //cout << "Drawstat: " << gStyle->GetOptStat() << endl;
+
   TCanvas *cv=fEc->GetCanvas();
   cv->Clear();
   memset(padmap,0,sizeof(padmap));
@@ -1404,6 +1450,7 @@ void HistFrame::DrawHist() {
       cv->cd(nn);
       map=(HMap*) obj;
       TH1 *hh = map->hst;
+      hh->UseCurrentStyle();
       if (hh->GetDimension()==2) {
 	gPad->SetLogz(opt.b_logy);
 	hh->Draw("zcol");
@@ -1443,6 +1490,12 @@ void HistFrame::DrawHist() {
 		  Double_t xx;
 		  Double_t y1 = gPad->GetUymin();
 		  Double_t y2 = gPad->GetUymax();
+
+		  if (gPad->GetLogy()) {
+		    y1=pow(10,y1);
+		    y2=pow(10,y2);
+		  }
+		  //cout << "y1y2: " << gPad->GetLogy() << " " << y1 << " " << y2 << endl;
 
 		  xx = hcl->cutG[j]->GetX()[0];
 		  cline.DrawLine(xx,y1,xx,y2);

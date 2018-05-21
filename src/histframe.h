@@ -39,6 +39,7 @@ class HistFrame: public TGCompositeFrame {
    THStack* hstack;
 
    TGCheckButton* chklog;
+   TGCheckButton* chkstat;
    TGCheckButton* chkgcuts;
    //static const int NR=7;
    //TGRadioButton *Rb[NR];
@@ -74,6 +75,7 @@ class HistFrame: public TGCompositeFrame {
    void CutClick(TGListTreeItem* item,Int_t but);
    void DoCheck(TObject* obj, Bool_t check);
    void DoLog();
+   void DoStat();
    void DoKey(TGListTreeItem* entry, UInt_t keysym);
    //void SelectDiv(int nn);
    void DoNum();

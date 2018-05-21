@@ -381,27 +381,32 @@ void EventClass::Fill_Time_Extend(HMap* map) {
   }
 }
 
-void EventClass::Fill1d(Bool_t first, HMap* map, Float_t x) {
+void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   if (first) {
     //cout << "fill: " << map->hst->GetName() << endl;
-    map->hst->Fill(x);
+    map[ch]->hst->Fill(x);
     if (opt.ncuts) {
       for (int i=0;i<opt.ncuts;i++) {
-	if (getbit(*(map->cut_index),i)) {
+	if (getbit(*(map[ch]->cut_index),i)) {
 	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
 	    hcl->cut_flag[i]=1;
+	    cout << "Cut: " << Nevt << " " << i << " " << ch << " " << x << endl;
 	  }
 	}
       }
     }
   }
-  else if (*(map->wrk)) {
+  else if (*(map[ch]->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
 	//cout << "Fill1d: " << Nevt << " " << x << endl;
-	map->h_cuts[i]->hst->Fill(x);
+	map[ch]->h_cuts[i]->hst->Fill(x);
       }
     }
+  }
+
+  if (opt.Mrk[ch] && ch<MAX_CH) {
+    Fill1d(first,map,MAX_CH,x);
   }
 }
 
@@ -542,21 +547,22 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       if (opt.h_time.b) {
-	if (first)
+	if (first) {
 	  Fill_Time_Extend(hcl->m_time[ch]);
-	Fill1d(first,hcl->m_time[ch],opt.T_acq);
+	}
+	Fill1d(first,hcl->m_time,ch,opt.T_acq);
       }
 
       if (opt.h_area.b) {
-	Fill1d(first,hcl->m_area[ch],pk->Area*opt.emult[ch]);
+	Fill1d(first,hcl->m_area,ch,pk->Area*opt.emult[ch]);
       }
 
       if (opt.h_area0.b) {
-	Fill1d(first,hcl->m_area0[ch],pk->Area0*opt.emult[ch]);
+	Fill1d(first,hcl->m_area0,ch,pk->Area0*opt.emult[ch]);
       }
 
       if (opt.h_base.b) {
-	Fill1d(first,hcl->m_base[ch],pk->Base*opt.emult[ch]);
+	Fill1d(first,hcl->m_base,ch,pk->Base*opt.emult[ch]);
       }
 
       if (opt.h_area_base.b) {
@@ -564,13 +570,13 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       if (opt.h_hei.b) {
-	Fill1d(first,hcl->m_height[ch],pk->Height);
+	Fill1d(first,hcl->m_height,ch,pk->Height);
       }
 
       if (opt.h_tof.b) {
 	double dt = pulses[i].Tstamp64 - T;
 	tt = pk->Time - crs->Pre[ch] - T0 + dt;
-	Fill1d(first,hcl->m_tof[ch],tt*crs->period);
+	Fill1d(first,hcl->m_tof,ch,tt*crs->period);
       }
 
       if (j==0) { //only for the first peak
@@ -597,8 +603,8 @@ void EventClass::FillHist(Bool_t first) {
 	      // if (tt!=tt2) {
 	      // 	cout << "mtof2: " << tt << " " << tt2 << " " << opt.mtof_period << endl;
 	      // }
-	      Fill1d(first,hcl->m_mtof[mult],tt);
-	      Fill1d(first,hcl->m_mtof[0],tt);
+	      Fill1d(first,hcl->m_mtof,mult,tt);
+	      Fill1d(first,hcl->m_mtof,0,tt);
 	    }
 	  } //if last pulse
 	} //if b_mtof
@@ -622,7 +628,7 @@ void EventClass::FillHist(Bool_t first) {
 	  tm = pulses[i].Tstamp64 + pk->Pos;
 	  if (hcl->T_prev[ch]) {
 	    tt = (tm - hcl->T_prev[ch])*0.001*crs->period; //convert to mks
-	    Fill1d(first,hcl->m_per[ch],tt);
+	    Fill1d(first,hcl->m_per,ch,tt);
 	  }
 	  hcl->T_prev[ch]=tm;
 	}
@@ -674,7 +680,7 @@ void EventClass::FillHist(Bool_t first) {
       if (opt.pcuts[i]==1) {//formula
 	hcl->cut_flag[i]=hcl->cform[i]->EvalPar(0,hcl->cut_flag);
       }
-      //cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i+1] << endl;
+      cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i] << endl;
     }
   }
 
