@@ -147,6 +147,8 @@ public:
 
   Int_t start_ch;
   Float_t mtof_period;
+  Float_t Flpath;
+  Float_t TofZero;
 
   Int_t num_events;
   Int_t num_buf; //number of buffers to analyze in DoNbuf
@@ -173,6 +175,7 @@ public:
   Hdef h_hei;
   Hdef h_tof;
   Hdef h_mtof;
+  Hdef h_etof;
   Hdef h_per;
   Hdef h_pulse;
 

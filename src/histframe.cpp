@@ -61,6 +61,7 @@ TGLayoutHints* fLay53 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,2,0,0);
 TGLayoutHints* fLay6 = new TGLayoutHints(kLHintsLeft,0,0,0,0);
 TGLayoutHints* fLay7 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,3,0,0,0);
 TGLayoutHints* fLay8 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,0,0,0,0);
+TGLayoutHints* fLay8a = new TGLayoutHints(kLHintsExpandX,0,0,0,0);
 TGLayoutHints* fLay9 = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
 
 //------------------------------
@@ -227,6 +228,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGHorizontalFrame      *fHor2; //contains buttons etc
   TGHorizontalFrame      *fHor3; //for cuts
 
+  TGVerticalFrame        *fVer0; //canvas && hslider
+
   //TGVerticalFrame *fVer[NR];
   //TGLabel *flab[NR];
 
@@ -241,8 +244,27 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor2 = new TGHorizontalFrame(this, 10, 10);
   AddFrame(fHor2, fLay2);
 
-  fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
-  fHor1->AddFrame(fEc, fLay1);
+  fVer0 = new TGVerticalFrame(fHor1, 10, 10);
+  fHor1->AddFrame(fVer0, fLay1);
+
+  //fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
+  //fHor1->AddFrame(fEc, fLay1);
+  fEc = new TRootEmbeddedCanvas("Hcanvas", fVer0, 10, 10);
+  fVer0->AddFrame(fEc, fLay1);
+
+  fHslider = new TGDoubleHSlider(fVer0, 10, kDoubleScaleBoth,0);
+  fHslider->SetRange(0,1);
+  fHslider->SetPosition(0,1);
+  fVer0->AddFrame(fHslider, fLay8a);
+  fHslider->Connect("PositionChanged()", "HistFrame", 
+   		    this, "DoSlider()");
+
+  // fVslider = new TGDoubleVSlider(fHor1, 40, kDoubleScaleBoth,1);
+  // fVslider->SetRange(0,1);
+  // fVslider->SetPosition(0,1);
+  // fHor1->AddFrame(fVslider, fLay8);
+  // // fVslider->Connect("PositionChanged()", "EventFrame", 
+  // // 		    this, "DoSlider()");
 
   //TGVerticalFrame *fV1 = new TGVerticalFrame(fHor1, 10,10);
   //fHor1->AddFrame(fV1, fLay7);
@@ -298,22 +320,17 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor3->AddFrame(but, fLay5);
 
 
-
-
-
-
-
+  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
 
   container->AddFrame(new TGLabel(container, "--Formula--"), fLay2);
   TGHorizontalFrame *fHor7 = new TGHorizontalFrame(container, 10, 10);
   container->AddFrame(fHor7, fLay9);
 
-  but = new TGTextButton(fHor7,"Add",7);
+  but = new TGTextButton(fHor7,"Form",7);
   but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
+  but->SetToolTipText(ttip);
   fHor7->AddFrame(but, fLay6);
   
-  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
-
   tForm    = new TGTextEntry(fHor7,"",8);;
   tForm->SetWidth(120);
   tForm->SetToolTipText(ttip);
@@ -951,6 +968,16 @@ void HistFrame::DoButton()
 
 }
 
+void HistFrame::DoSlider() {
+
+  //printf("DosLider: %d\n",nEvents);
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
+
+}
+
 void HistFrame::AddCutG(TPolyLine *pl, TObject* hobj) {
 
   if (opt.b_stack)
@@ -1113,7 +1140,7 @@ void HistFrame::DoCutG() {
   }
 
   Update();
-  return;
+  //return;
   
 }
 
@@ -1388,6 +1415,21 @@ void HistFrame::DrawStack() {
   cv->Clear();
   cv->Divide(1,1);
   cv->SetLogy(opt.b_logy);
+
+
+  hstack->Draw("nostack");
+	Float_t h1,h2;
+	fHslider->GetPosition(h1,h2);
+	double x1=hstack->GetXaxis()->GetXmin();
+	double x2=hstack->GetXaxis()->GetXmax();
+	double rr = x2-x1;
+	double a1 = x1+rr*h1;
+	double a2 = x1+rr*h2;
+
+	hstack->GetXaxis()->SetRangeUser(a1,a2);
+
+
+
   hstack->Draw("nostack");
   cv->BuildLegend(0.65,0.75,0.95,0.95);
   cv->Update();
@@ -1452,6 +1494,16 @@ void HistFrame::DrawHist() {
       }
       else {
 	gPad->SetLogy(opt.b_logy);
+
+	Float_t h1,h2;
+	fHslider->GetPosition(h1,h2);
+	double x1=hh->GetXaxis()->GetXmin();
+	double x2=hh->GetXaxis()->GetXmax();
+	double rr = x2-x1;
+	double a1 = x1+rr*h1;
+	double a2 = x1+rr*h2;
+
+	hh->GetXaxis()->SetRangeUser(a1,a2);
 	hh->Draw();
       }
       padmap[nn-1]=obj;

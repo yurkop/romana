@@ -386,8 +386,9 @@ void HClass::Make_hist() {
   Make_1d("Area0","area0",";Channel;Counts",m_area0,&opt.h_area0);
   Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);
   Make_1d("Height","height",";Channel;Counts",m_height,&opt.h_hei);
-  Make_1d("TOF","tof",";t(ns);Counts",m_tof,&opt.h_tof);
-  Make_1d("MTOF","mtof",";t(mks);Counts",m_mtof,&opt.h_mtof);
+  Make_1d("Tof","tof",";t(ns);Counts",m_tof,&opt.h_tof);
+  Make_1d("Mtof","mtof",";t(mks);Counts",m_mtof,&opt.h_mtof);
+  Make_1d("Etof","etof",";Energy(eV);Counts",m_etof,&opt.h_etof);
   Make_1d("Period","period",";t(mks);Counts",m_per,&opt.h_per);
   Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,&opt.h_pulse);
 

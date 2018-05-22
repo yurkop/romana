@@ -1025,11 +1025,17 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,k_int,
 	      1,MAX_CH,1,MAX_CH);
 
-  tip1= "M_TOF period (mks) (ignored if set to zero)";
-  tip2= "M_TOF start channel";
-  label="M_TOF period / start channel";
+  tip1= "Mtof period (mks) (ignored if set to zero)";
+  tip2= "Mtof start channel";
+  label="Mtof period / start channel";
   AddLine_opt(fF6,ww,&opt.mtof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
 	      0,1e9,0,MAX_CH-1);
+
+  tip1= "Mtof Flight path (in meters) for Mtof-Energy conversion";
+  tip2= "Mtof Time offset (in mks) for Mtof-Energy conversion";
+  label="Mtof Flpath / MTOF Zero";
+  AddLine_opt(fF6,ww,&opt.Flpath,&opt.TofZero,tip1,tip2,label,k_r3,k_r3,
+	      0,1e9,-1e9,1e9);
 
   fF6->Resize();
 
@@ -1073,12 +1079,16 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   AddLine_hist(frame,&opt.h_hei,tip1,label);
 
   tip1= "Time of flight (relative to the starts - see Channels->St), in ns";
-  label="TOF";
+  label="Tof";
   AddLine_hist(frame,&opt.h_tof,tip1,label);
 
   tip1= "Time of flight with multiplicity, in mks";
-  label="M_TOF";
+  label="Mtof";
   AddLine_hist(frame,&opt.h_mtof,tip1,label);
+
+  tip1= "Neutron energy from MTOF, in eV";
+  label="Etof";
+  AddLine_hist(frame,&opt.h_etof,tip1,label);
 
   tip1= "Pulse period (distance between two consecutive pulses), in mks";
   label="Period";

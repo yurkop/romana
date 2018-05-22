@@ -178,7 +178,7 @@ RQ_OBJECT("CRS")
 
   //ULong64_t istamp64; //temporary tstamp64
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
-  Long64_t Tstart0; //Tstamp of the m_tof start pulses
+  Long64_t Tstart0; //Tstamp of the mtof start pulses
 
   //Long64_t rTime; //Tstamp of decoded event
   //Char_t rState; //State of decoded event

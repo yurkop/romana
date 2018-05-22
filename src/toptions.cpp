@@ -186,6 +186,8 @@ Toptions::Toptions() {
 
   start_ch=0;
   mtof_period=0;
+  Flpath=10;
+  TofZero=0;
 
   Tstart=0;
   Tstop=0;

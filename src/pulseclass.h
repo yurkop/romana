@@ -23,8 +23,8 @@ const UShort_t P_PILE1=1<<0; //fisrt puleup pulse
 const UShort_t P_PILE2=1<<1; //subsequent puleup pulse
 const UShort_t P_B1=1<<2; //bad left side (opt.peak1 is out of range)
 const UShort_t P_B2=1<<3; //bad right side (opt.peak2 is out of range)
-const UShort_t P_B11=1<<4; //bad left side in timing (T3 is out of range)
-const UShort_t P_B22=1<<5; //bad right side in timing (T4 is out of range)
+const UShort_t P_B11=1<<4; //bad left or right side in timing (T3 is out of range)
+//const UShort_t P_B22=1<<5; //bad right side in timing (T4 is out of range)
 //const UShort_t P_B111=1<<6; //bad left size in timing
 
 

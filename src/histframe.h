@@ -30,6 +30,11 @@ class HistFrame: public TGCompositeFrame {
   TGCanvas               *gCanvas; //hist Gcanvas
   TGCanvas               *gCanvas2; //cuts Gcanvas
    TRootEmbeddedCanvas    *fEc;
+
+   TGDoubleHSlider        *fHslider;
+   //TGDoubleVSlider        *fVslider;
+
+
    TGListTree             *fListTree;    // list tree with histograms
    TGListTree             *fCutTree;    // list tree with histograms
 
@@ -81,6 +86,7 @@ class HistFrame: public TGCompositeFrame {
    void DoNum();
    void DoRadio();
    void DoButton();
+   void DoSlider();
    void AddCutG(TPolyLine *pl, TObject* hobj);
    void MakeCutG(TPolyLine *pl, TObject* hobj);
    void DoCutG();
