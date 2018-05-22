@@ -619,31 +619,7 @@ void EventClass::FillHist(Bool_t first) {
 	      }
 	    }
 	  } //if last pulse
-	} //if (opt.h_mtof.b)
-
-	if (opt.h_etof.b) {
-	  if (ch==opt.start_ch) {
-	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Pos;
-	  }
-	  if (opt.Mrk[ch]) {
-	    mult++;
-	  }
-	  if (mult && (i==pulses.size()-1)) { //last pulse
-	    if (crs->Tstart0>0) {
-	      if (mult>=opt.Nchan) mult=opt.Nchan-1;
-
-	      tm = pulses[i].Tstamp64 + pk->Pos;
-	      tt = (tm - crs->Tstart0)*0.001*crs->period;
-	      if (opt.mtof_period>0.01 && tt>opt.mtof_period) {
-		crs->Tstart0+=1000*opt.mtof_period;
-		tt = (tm - crs->Tstart0)*0.001*crs->period;
-	      }
-
-	      Fill1d(first,hcl->m_mtof,mult,tt);
-	      Fill1d(first,hcl->m_mtof,0,tt);
-	    }
-	  } //if last pulse
-	} //if (opt.h_etof.b)
+	} //if (opt.h_mtof.b || opt.h_etof.b)
 
 	if (opt.h_a0a1.b) {
 	  if (ch==0) {
