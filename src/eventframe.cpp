@@ -777,7 +777,9 @@ void EventFrame::DoCheckPoint() {
 	for (UInt_t j=0;j<d_event->pulses[i].Peaks.size();j++) {
 	  peak_type* pk = &d_event->pulses[i].Peaks[j];
 	  par[1]=pk->Area;
-	  par[4]=pk->Time;
+	  double dt = d_event->pulses[i].Tstamp64 - d_event->T;
+	  double tt = pk->Time - crs->Pre[ch] - d_event->T0 + dt;
+	  par[4]=tt*crs->period;
 	  res = formula->EvalPar(0,par);
 	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->T << " " << res << endl;
 	  if (res) {

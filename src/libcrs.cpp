@@ -2036,6 +2036,12 @@ void CRS::FAnalyze2(bool nobatch) {
       Show();
       gSystem->ProcessEvents();
     }
+    if (nbuffers%10==0) {
+      //cout << "nbuf%10: " << nbuffers << endl;
+      if (batch || opt.root_write) {
+	saveroot(opt.fname_root);
+      }
+    }
   }
   Ana2(1);
 

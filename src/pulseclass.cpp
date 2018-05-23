@@ -42,7 +42,11 @@ void PulseClass::FindPeaks() {
   // always K-th derivative (D) is used
   // T1 - D>0, D(-1)<=0 (left zero-crossing of D)
   // T2 - D<=0, d(-1)>0 (right zero-crossing of D)
-  // Pos - Maximum between T1 and T2
+  // Pos - threshold crossing, later Pos is redefined as Time+0.5
+  //(from exact time)
+  // Pos2 - Maximum between T1 and T2
+
+
   /*
   // peak is the first maximum in deriv, above the threshold
   // if deadtime=0 - next peak is searched only after deriv crosses zero
@@ -86,7 +90,7 @@ void PulseClass::FindPeaks() {
     else { //in_peak
       if (D[j]>jmax) {//maximum of D -> peak position
 	jmax=D[j];
-	pk->Pos=j;
+	pk->Pos2=j;
 	//printf("in_peak: %lld %d %d %d %0.1f %0.1f\n",crs->nevents,Chan,j,kk,D[j],jmax);
 	// peakpos[Npeaks]=jmax=j-1;
 	// Npeaks++;
@@ -155,11 +159,13 @@ void PulseClass::PeakAna() {
     //int t4; //end window for timing
 
     if (opt.timing[Chan]==0) 
-      tt=pk->Pos; //0->reference is Pos (maximum in 1st deriv)
+      tt=pk->Pos; //0->reference is Pos (threshold crossing)
     else if (opt.timing[Chan]==1)
       tt=pk->T1; //1->reference is T1 (Left zero crossing of 1st drv)
-    else //if (opt.timing[Chan]==2)
+    else if (opt.timing[Chan]==2)
       tt=pk->T2; //2->reference is T2 (Right zero crossing of 1st drv)
+    else
+      tt=pk->Pos2; //3->reference is Pos (maximum in 1st deriv)
 
     if (opt.twin1[Chan] == 99)
       pk->T3=pk->T1;

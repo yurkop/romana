@@ -457,6 +457,16 @@ int main(int argc, char **argv)
     SplitFilename (string(datfname),dir,name,ext);
     dir = TString(startdir);
     //cout << "Root_dir: " << dir << endl;
+    dir.append("Root/");
+#ifdef LINUX
+    mkdir(dir.c_str(),0755);
+#else
+    _mkdir(dir.c_str());
+#endif
+    s_name = dir;
+    s_name.append(name);
+    s_name.append(".root");
+    strcpy(opt.fname_root,s_name.c_str());
 
     hcl->Make_hist();
     //cout << "batch0: " << endl;
@@ -472,18 +482,8 @@ int main(int argc, char **argv)
     //allevents();
     //cout << "batch99: " << endl;
 
-    dir.append("Root/");
-#ifdef LINUX
-    mkdir(dir.c_str(),0755);
-#else
-    _mkdir(dir.c_str());
-#endif
-    s_name = dir;
-    s_name.append(name);
-    s_name.append(".root");
-
-    cout << s_name << endl;
-    saveroot(s_name.c_str());
+    cout << opt.fname_root << endl;
+    saveroot(opt.fname_root);
 
     return 0;
   }
@@ -1783,6 +1783,7 @@ void MainFrame::DoSave() {
 
   const char *dnd_types[] = {
     "root files",     "*.root",
+    "all files",      "*",
     0,               0
   };
 
