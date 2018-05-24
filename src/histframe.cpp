@@ -12,6 +12,7 @@
 #include <TGShutter.h>
 //#include <TROOT.h>
 #include <TRandom.h>
+#include <TMath.h>
 
 TLine gline[2];
 TLine cline;
