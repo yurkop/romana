@@ -42,6 +42,7 @@
 
 #include <TDataMember.h>
 #include "TThread.h"
+#include "TImage.h"
 
 //#include <TGColorDialog.h>
 
@@ -813,6 +814,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Read ROOT file", M_READROOT);
   fMenuFile->AddEntry("Save ROOT file", M_SAVEROOT);
+  fMenuFile->AddSeparator();
+  fMenuFile->AddEntry("Export...", M_EXPORT);
   fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Browser\tCtrl+B", M_FILE_BROWSE);
   //fMenuFile->AddEntry("New Canvas\tCtrl+N", M_FILE_NEWCANVAS);
@@ -1622,6 +1625,54 @@ void MainFrame::DoReadRoot() {
 
 }
 
+void MainFrame::Export() {
+  const char *dnd_types[] = {
+    "pdf files",     "*.pdf",
+    "png files",     "*.png",
+    "jpg files",     "*.jpg",
+    "gif files",     "*.gif",
+    "all files",     "*",
+    0,               0
+  };
+
+  //TString name = TString(fTab->GetCurrentTab()->GetString());
+  //if (name.EqualTo("DAQ",TString::kIgnoreCase))
+
+  TCanvas* cv=0;
+  TString name = TString(fTab->GetCurrentTab()->GetString());
+  if (name.EqualTo("Events",TString::kIgnoreCase)) {
+    cv=EvtFrm->fCanvas->GetCanvas();
+  }
+  else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
+    cv=HiFrm->fEc->GetCanvas();
+  }
+  else {
+    return;
+  }
+
+  TGFileInfo fi;
+  fi.fFileTypes = dnd_types;
+  //fi.fIniDir    = StrDup(".");
+  new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
+
+  if (fi.fFilename) {
+    Int_t retval=kMBOk;
+    if (!stat(fi.fFilename, &statbuffer)) {
+      new TGMsgBox(gClient->GetRoot(), this,
+		   "File exists",
+		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
+    }
+
+    if (retval == kMBOk) {
+      cout << "OK: " << fi.fFilename <<  " " << TImage::GetImageFileTypeFromFilename(fi.fFilename) << endl;
+      //TGCompositeFrame*	frame = fTab->GetCurrentContainer();
+      //frame->SaveAs(fi.fFilename);
+      cv->SaveAs(fi.fFilename);
+    }
+  }
+  
+}
+
 void MainFrame::DoReset() {
 
   //printhlist(4);
@@ -1989,6 +2040,9 @@ void MainFrame::HandleMenu(Int_t menu_id)
     break;
   case M_FILE_BROWSE:
     new TBrowser();
+    break;
+  case M_EXPORT:
+    Export();
     break;
     // case M_FILE_NEWCANVAS:
     //   gROOT->MakeDefCanvas();

@@ -82,6 +82,8 @@ public:
   void DoAna();
   void DoRWinit(EFileDialogMode);
   void DoReadRoot();
+  void Export();
+  void Export();
   void DoReset();
   void DoSave();
   void DoExit();

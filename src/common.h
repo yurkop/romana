@@ -68,6 +68,7 @@ enum MENU_COM {
   M_READROOT,
   M_SAVEROOT,
   M_FILE_BROWSE,
+  M_EXPORT,
   M_FILE_EXIT,
   M_HELP,
 };
