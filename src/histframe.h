@@ -43,6 +43,7 @@ class HistFrame: public TGCompositeFrame {
    TList* hlist;
    THStack* hstack;
 
+   TGCheckButton* chknorm;
    TGCheckButton* chklog;
    TGCheckButton* chkstat;
    TGCheckButton* chkgcuts;
@@ -79,6 +80,7 @@ class HistFrame: public TGCompositeFrame {
    void DoClick(TGListTreeItem* item,Int_t but);
    void CutClick(TGListTreeItem* item,Int_t but);
    void DoCheck(TObject* obj, Bool_t check);
+   void DoNorm();
    void DoLog();
    void DoStat();
    void DoKey(TGListTreeItem* entry, UInt_t keysym);

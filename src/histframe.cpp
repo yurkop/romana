@@ -367,15 +367,33 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //Make_Ltree();
   //cout << "make_ltree2: " << endl;
 
-  const char* rlab[2] = {"Stack","DX/DY:"};
-  for (int i=0;i<2;i++) {
-    Rb[i] = new TGRadioButton(fHor2,rlab[i],i+1);
-    fHor2->AddFrame(Rb[i], fLay5);
-    Rb[i]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
-  }
+  const char* rlab[2] = {"Stack/N","X/Y:"};
+  Rb[0] = new TGRadioButton(fHor2,rlab[0],1);
+  fHor2->AddFrame(Rb[0], fLay51);
+  Rb[0]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
+  Rb[0]->SetToolTipText("Draw all histograms in WORK* folders as a stack");
+  
+  chknorm = new TGCheckButton(fHor2,"",11);
+  chknorm->Connect("Clicked()", "HistFrame", this, "DoNorm()");
+  fHor2->AddFrame(chknorm, fLay51);
+  chknorm->SetToolTipText("Normalize stacked histograms");
 
+  Rb[1] = new TGRadioButton(fHor2,rlab[1],2);
+  fHor2->AddFrame(Rb[1], fLay5);
+  Rb[1]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
+  Rb[1]->SetToolTipText("Draw histograms in separate subwindows");
+
+  // for (int i=0;i<2;i++) {
+  //   Rb[i] = new TGRadioButton(fHor2,rlab[i],i+1);
+  //   fHor2->AddFrame(Rb[i], fLay5);
+  //   Rb[i]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
+  // }
+
+  
   //TGLabel* fLabel1 = new TGLabel(fHor2, "DX/DY:");
   //TGLabel* fLabel2 = new TGLabel(fHor2, "DivY:");
+
+  const char* ttip2[] = {"Horizontal divisions","Vertical divisions"};
 
   TGNumberEntry* fNum[2];
   int div[2] = {opt.xdiv,opt.ydiv};
@@ -386,6 +404,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 				TGNumberFormat::kNELLimitMinMax,
 				1,8);
     fNum[i]->GetNumberEntry()->Connect("TextChanged(char*)", "HistFrame", this, "DoNum()");
+    fNum[i]->GetNumberEntry()->SetToolTipText(ttip2[i]);
   }
 
   fHor2->AddFrame(fNum[0], fLay51);
@@ -407,27 +426,33 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but = new TGTextButton(fHor2," < ",1);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
   fHor2->AddFrame(but, fLay5);
+  but->SetToolTipText("One histogram backward");
 
   but = new TGTextButton(fHor2," > ",2);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
   fHor2->AddFrame(but, fLay5);
+  but->SetToolTipText("One histogram forward");
 
   but = new TGTextButton(fHor2," << ",3);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
   fHor2->AddFrame(but, fLay5);
+  but->SetToolTipText("N histograms backward");
 
   but = new TGTextButton(fHor2," >> ",4);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
   fHor2->AddFrame(but, fLay5);
+  but->SetToolTipText("N histograms forward");
 
   //TGCheckButton* chk;
   chklog = new TGCheckButton(fHor2,"Log",11);
   chklog->Connect("Clicked()", "HistFrame", this, "DoLog()");
   fHor2->AddFrame(chklog, fLay5);
+  chklog->SetToolTipText("Log scale");
 
   chkstat = new TGCheckButton(fHor2,"Stat",12);
   chkstat->Connect("Clicked()", "HistFrame", this, "DoStat()");
   fHor2->AddFrame(chkstat, fLay5);
+  chkstat->SetToolTipText("Show stats");
 
   /*
    // control horizontal position of the text
@@ -466,10 +491,12 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   chkgcuts = new TGCheckButton(fHor2,"Cuts",5);
   chkgcuts->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
   fHor2->AddFrame(chkgcuts, fLay5);
+  chkgcuts->SetToolTipText("Draw cuts");
 
   but = new TGTextButton(fHor2,"Peaks",4);
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
   fHor2->AddFrame(but, fLay5);
+  but->SetToolTipText("Find peaks in all visible windows (works only in X/Y mode");
 
   //DoReset();
 
@@ -848,6 +875,18 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
   //   cout << "map2: " << map2->GetName() << " " << *map2->chk << " " << opt.s_mtof[0] << endl;
   // }
 
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
+}
+
+void HistFrame::DoNorm()
+{
+  TGCheckButton *te = (TGCheckButton*) gTQSender;
+
+  opt.b_norm = (Bool_t)te->GetState();
+  
   if (crs->b_stop)
     Update();
   else
@@ -1397,9 +1436,9 @@ void HistFrame::DrawStack() {
 	  TH1 *hh = (TH1*) map->hst->Clone();
 	  sprintf(name,"%s ",hh->GetName());
 	  hh->SetName(name);
-	  hh->SetLineColor(hcols[cc%nhcols]);
 	  //cout << "cols: " << hcols[cc%nhcols] << endl;
 	  if (hh->GetDimension()==1) {
+	    hh->SetLineColor(hcols[cc%nhcols]);
 	    hstack->Add(hh);
 	    cc++;
 	  }
@@ -1418,19 +1457,30 @@ void HistFrame::DrawStack() {
 
 
   hstack->Draw("nostack");
-	Float_t h1,h2;
-	fHslider->GetPosition(h1,h2);
-	double x1=hstack->GetXaxis()->GetXmin();
-	double x2=hstack->GetXaxis()->GetXmax();
-	double rr = x2-x1;
-	double a1 = x1+rr*h1;
-	double a2 = x1+rr*h2;
 
-	hstack->GetXaxis()->SetRangeUser(a1,a2);
+  Float_t h1,h2;
+  fHslider->GetPosition(h1,h2);
+  double x1=hstack->GetXaxis()->GetXmin();
+  double x2=hstack->GetXaxis()->GetXmax();
+  double rr = x2-x1;
+  double a1 = x1+rr*h1;
+  double a2 = x1+rr*h2;
 
-
-
+  hstack->GetXaxis()->SetRangeUser(a1,a2);
   hstack->Draw("nostack");
+
+  if (opt.b_norm) {
+    TIter next(hstack->GetHists());
+    TObject* obj;
+    while ( (obj=(TObject*)next()) ) {
+      TH1* hh=(TH1*) obj;
+      double sc = hh->GetNbinsX()/hh->Integral();
+      hh->Scale(sc);
+    }
+    //cout << "DrawStack: " << endl;
+    hstack->Draw("nostack");  
+  }
+
   cv->BuildLegend(0.65,0.75,0.95,0.95);
   cv->Update();
 
@@ -1539,8 +1589,8 @@ void HistFrame::DrawHist() {
 		  Double_t y2 = gPad->GetUymax();
 
 		  if (gPad->GetLogy()) {
-		    y1=pow(10,y1);
-		    y2=pow(10,y2);
+		    y1=std::pow(10,y1);
+		    y2=std::pow(10,y2);
 		  }
 		  //cout << "y1y2: " << gPad->GetLogy() << " " << y1 << " " << y2 << endl;
 

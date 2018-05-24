@@ -116,6 +116,7 @@ public:
 
   //histframe vars
   Bool_t b_stack; // draw stack
+  Bool_t b_norm; // normalize histograms in the stack
   Short_t xdiv; // ndiv on X
   Short_t ydiv; // ndiv on Y
   Short_t icheck; //first histogram to plot among checked
@@ -187,7 +188,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 111)
+  ClassDef(Toptions, 112)
 };
 
 //ClassImp(Toptions)
