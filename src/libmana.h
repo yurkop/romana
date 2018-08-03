@@ -87,6 +87,7 @@ public:
   void DoReset();
   void DoSave();
   void DoExit();
+  void DoResetUSB();
   //void DoStop();
   void Do1buf();
   void DoNbuf();

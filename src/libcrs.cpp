@@ -1862,6 +1862,10 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   //cout << "ReadParGz2: " << sz << " " << pname << " " << HiFrm << endl;
 
+  opt.raw_write=false;
+  opt.dec_write=false;
+  opt.root_write=false;
+
   if (HiFrm)
     HiFrm->HiReset();
 

@@ -691,6 +691,10 @@ void readpar_root(const char* pname)
   cpar.Read("Coptions");
   opt.Read("Toptions");
 
+  opt.raw_write=false;
+  opt.dec_write=false;
+  opt.root_write=false;
+
   f2->Close();
   delete f2;
 }
@@ -818,6 +822,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->AddEntry("Export...", M_EXPORT);
   fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Browser\tCtrl+B", M_FILE_BROWSE);
+  fMenuFile->AddEntry("Reset USB", M_RESET_USB);
   //fMenuFile->AddEntry("New Canvas\tCtrl+N", M_FILE_NEWCANVAS);
 
   //fMenuFile->AddEntry("&Open...", M_FILE_OPEN);
@@ -1794,6 +1799,18 @@ void MainFrame::UpdateStatus() {
 //   printf("test %d\n",opt.num_buf);
 // }
 
+void MainFrame::DoResetUSB() {
+  if (!crs->b_stop)
+    return;
+  if (crs->module==32) {
+    cout << "Reset USB" << endl;
+    crs->Command32(7,0,0,0); //reset usb command
+  }
+  else {
+    cout << "Module not found" << endl;
+  }  
+}
+
 void MainFrame::DoExit() {
   //int i;
   //double it[4];
@@ -2040,6 +2057,9 @@ void MainFrame::HandleMenu(Int_t menu_id)
     break;
   case M_FILE_BROWSE:
     new TBrowser();
+    break;
+  case M_RESET_USB:
+    DoResetUSB();
     break;
   case M_EXPORT:
     Export();
