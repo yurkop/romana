@@ -60,7 +60,7 @@ const char* ttip2[nchpar]={
   "Channel number",
   "Channel type",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
-  "Marked channel - use this channel for making integral spectra\n as well as Mtof spectra",
+  "Marked channel - use this channel for making integral spectra\n and Mtof spectra",
   "Software smoothing",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
@@ -79,8 +79,8 @@ const char* ttip2[nchpar]={
 };
 
 
-const char* types[ADDCH+1]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
-			    "NIM","Other",""};
+const char* types[ADDCH+2]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
+			    "NIM","Other","Copy",""};
 
 //-----------
 const int nchtype=9;
@@ -360,34 +360,26 @@ void ParDlg::DoCombo() {
 
   if (nline < MAX_CH) {
     // cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
-    // 	 << " " << nfld
+    // 	 << " " << nfld << " " << *(Int_t*) pp.data
     // 	 << " " << sel << " " << (opt.Nchan+sel)*nfld
     // 	 << endl;
     // cout << this << " " << crspar << " " << chanpar << endl;
 
-    //cout << "combo1: " << endl;
-    SetCombo(pp,sel);
-    //cout << "combo2: " << sel << " " << nline << endl;
+    if (sel==ADDCH+1) {
+      int old=*(Int_t*) pp.data;
 
+      crspar->CopyParLine(-old,nline);
+      chanpar->CopyParLine(-old,nline);
+
+
+      te->Select(old);
+      return;
+    }
+
+    SetCombo(pp,sel);
     crspar->CopyParLine(sel,nline);
-    //cout << "combo3: " << endl;
     chanpar->CopyParLine(sel,nline);
 
-    //cout << "combo4: " << endl;
-
-
-
-    //crspar->cframe[nline]->SetBackgroundColor(tcol[sel-1]);
-    //crspar->clab[nline]->SetBackgroundColor(tcol[sel-1]);
-    //chanpar->cframe[nline]->SetBackgroundColor(tcol[sel-1]);
-    //chanpar->clab[nline]->SetBackgroundColor(tcol[sel-1]);
-
-
-    // if (sel<ADDCH) {
-    //   for (int j=1;j<nfld;j++) {
-    //     CopyField((opt.Nchan+sel)*nfld+j,id-1+j);
-    //   }
-    // }
   }
 
   if (pp.all==1) {
@@ -503,18 +495,21 @@ void ParDlg::DoTxt() {
 }
 
 void ParDlg::CopyParLine(int sel, int line) {
-  if (sel<ADDCH) {
-    //cout << "copypar0: " << line << " " << sel << " " << nfld << " " << tcol[sel-1] << endl;
+  if (sel<0) { //inverse copy - from current ch to group
+    //cout << "CopyParLine: " << line << " " << MAX_CH-sel << endl;
+    //return;
+    for (int j=1;j<nfld;j++) {
+      CopyField(line*nfld+j,(MAX_CH-sel)*nfld+j);
+    }
+  }
+  else if (sel<ADDCH) { //normal copy from group to current ch
     for (int j=1;j<nfld;j++) {
       CopyField((MAX_CH+sel)*nfld+j,line*nfld+j);
     }
-    //cout << "copypar1: " << line << " " << sel << " " << tcol[sel-1] << " "
-    //<< clab[line] << " " << cframe[line] << endl;
     clab[line]->ChangeBackground(tcol[sel-1]);
     cframe[line]->ChangeBackground(tcol[sel-1]);
-    //cout << "copypar2: " << line << " " << sel << " " << tcol[sel-1] << endl;
   }
-  if (sel==ADDCH) { //other
+  else if (sel==ADDCH) { //other - just change color
     clab[line]->ChangeBackground(tcol[sel-1]);
     cframe[line]->ChangeBackground(tcol[sel-1]);
   }
@@ -1619,6 +1614,9 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
   fCombo->Resize(tlen2[1], 20);
 
   if (i==MAX_CH) {
+    fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
+  }
+  else {
     fCombo->AddEntry(types[ADDCH], ADDCH+1);
   }
 
@@ -1892,6 +1890,9 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   fCombo->Resize(tlen1[1], 20);
 
   if (i==MAX_CH) {
+    fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
+  }
+  else {
     fCombo->AddEntry(types[ADDCH], ADDCH+1);
   }
 
