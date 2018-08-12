@@ -37,6 +37,7 @@ public:
   UInt_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
   Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
   UInt_t durWr[MAX_CH+ADDCH]; // total length N = 1…32763 (internally - multiple of 4)
+  UInt_t trg[MAX_CH+ADDCH]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
   UInt_t kderiv[MAX_CH+ADDCH]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t threshold[MAX_CH+ADDCH]; // T = –2048 .. +2047
   UInt_t adcGain[MAX_CH+ADDCH]; // G = 0..12

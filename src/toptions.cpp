@@ -31,6 +31,7 @@ void Coptions::InitPar(int zero) {
       durWr[i]=200;
     else
       durWr[i]=1;
+    trg[i]=1;
     kderiv[i]=1*zero;
     threshold[i]=1500*zero;
     adcGain[i]=12*zero;
@@ -44,75 +45,175 @@ void Coptions::GetPar(const char* name, int module, int i, Short_t type_ch, int 
   min=0;
   max=0;
 
-  if (!strcmp(name,"smooth")) {
-    par = smooth[i];
-    min = 0;
-    max=10;
-  }
-  else if (!strcmp(name,"dt")) {
-    par = deadTime[i];
-    min = 1;
-    max=16383;
-  }
-  else if (!strcmp(name,"pre")) {
-    par = preWr[i];
-    min = 0;
-    if (module==32) {
+  //CRS-2 ------------------------------------
+  if (module==2) {
+    if (!strcmp(name,"smooth")) {
+      par = smooth[i];
+      min = 0;
+      max=10;
+    }
+    else if (!strcmp(name,"dt")) {
+      par = deadTime[i];
+      min = 1;
+      max=16383;
+    }
+    else if (!strcmp(name,"pre")) {
+      par = preWr[i];
+      min = 0;
+      max=8184;
+    }
+    else if (!strcmp(name,"len")) {
+      par = durWr[i];
+      min = 1;
+      max=16379;
+    }
+    else if (!strcmp(name,"trig")) {
+      par = trg[i];
+      min = 1;
+      max=1;
+    }
+    else if (!strcmp(name,"deriv")) {
+      par = kderiv[i];
+      min = 0;
+      max=1023;
+    }
+    else if (!strcmp(name,"thresh")) {
+      par = threshold[i];
+      min = -2048;
+      max = 2047;
+    }
+    else if (!strcmp(name,"gain")) {
+      par = adcGain[i];
+      min = 5;
+      max=12;
+    }
+    else {
+      cout << "GetPar: wrong name: " << name << " " << i << endl;
+      exit(-1);
+    }
+  }//CRS-2
+  //CRS-32, firmware<=2 --------------------------
+  else if (module==32) {
+    if (!strcmp(name,"smooth")) {
+      par = smooth[i];
+      min = 0;
+      max=10;
+    }
+    else if (!strcmp(name,"dt")) {
+      par = deadTime[i];
+      min = 1;
+      max=16383;
+    }
+    else if (!strcmp(name,"pre")) {
+      par = preWr[i];
+      min = 0;
       if (type_ch==0)
 	max=4094;
       else if (type_ch==1)
 	max=4093;
     }
-    else if (module==2) {
-      max=8184;
-    }
-    else {
-      max=4093;
-      //cout << "GetPar: wrong channel: " << name << " " << module << " " << i << " " << type_ch << endl;
-      //exit(-1);
-    }
-  }
-  else if (!strcmp(name,"len")) {
-    par = durWr[i];
-    min = 1;
-    if (module==32) {
+    else if (!strcmp(name,"len")) {
+      par = durWr[i];
+      min = 1;
       max=32763;
     }
-    else if (module==2) {
-      max=16379;
+    else if (!strcmp(name,"trig")) {
+      par = trg[i];
+      min = 1;
+      max=1;
     }
-  }
-  else if (!strcmp(name,"deriv")) {
-    par = kderiv[i];
-    min = 0;
-    max=1023;
-  }
-  else if (!strcmp(name,"thresh")) {
-    par = threshold[i];
-    if (type_ch==1) {
-      min = -65536;
-      max= 65535;
+    else if (!strcmp(name,"deriv")) {
+      par = kderiv[i];
+      min = 0;
+      max=1023;
+    }
+    else if (!strcmp(name,"thresh")) {
+      par = threshold[i];
+      if (type_ch==1) {
+	min = -65536;
+	max= 65535;
+      }
+      else {
+	min = -2048;
+	max = 2047;
+      }
+    }
+    else if (!strcmp(name,"gain")) {
+      par = adcGain[i];
+      if (type_ch==1) {
+	min = 0;
+	max=3;
+      }
+      else {
+	min = 5;
+	max=12;
+      }
     }
     else {
-      min = -2048;
-      max = 2047;
+      cout << "GetPar: wrong name: " << name << " " << i << endl;
+      exit(-1);
     }
   }
-  else if (!strcmp(name,"gain")) {
-    par = adcGain[i];
-    if (type_ch==1) {
+  //CRS-33 [CRS-32, firmware>=3] --------------------------
+  else if (module==33) {
+    if (!strcmp(name,"smooth")) {
+      par = smooth[i];
+      min = 0;
+      max=9;
+    }
+    else if (!strcmp(name,"dt")) {
+      par = deadTime[i];
+      min = 1;
+      max=16383;
+    }
+    else if (!strcmp(name,"pre")) {
+      par = preWr[i];
+      min = -1024;
+      max=1024;
+    }
+    else if (!strcmp(name,"len")) {
+      par = durWr[i];
+      min = 1;
+      max=4068;
+    }
+    else if (!strcmp(name,"trig")) {
+      par = trg[i];
       min = 0;
       max=3;
     }
+    else if (!strcmp(name,"deriv")) {
+      par = kderiv[i];
+      min = 1;
+      max=1023;
+    }
+    else if (!strcmp(name,"thresh")) {
+      par = threshold[i];
+      if (type_ch==1) {
+	min = -65536;
+	max= 65535;
+      }
+      else {
+	min = -2048;
+	max = 2047;
+      }
+    }
+    else if (!strcmp(name,"gain")) {
+      par = adcGain[i];
+      if (type_ch==1) {
+	min = 0;
+	max=3;
+      }
+      else {
+	min = 5;
+	max=12;
+      }
+    }
     else {
-      min = 5;
-      max=12;
+      cout << "GetPar: wrong name: " << name << " " << i << endl;
+      exit(-1);
     }
   }
-  else {
-    cout << "GetPar: wrong name: " << name << " " << i << endl;
-    exit(-1);
-  }
+
 
   if (type_ch==255) {
     min = -65536;

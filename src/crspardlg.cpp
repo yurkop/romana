@@ -32,10 +32,10 @@ extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern ChanParDlg *chanpar;
 
-const int ncrspar=13;
+const int ncrspar=14;
 
-const int tlen1[ncrspar+1]={26,60,24,25,24,21,45,40,40,25,36,45,75,80};
-const char* tlab1[ncrspar+1]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Drv","Thr","Pulse/sec","BadPulse"};
+const int tlen1[ncrspar+1]={26,60,24,25,24,21,45,40,40,25,25,36,45,75,80};
+const char* tlab1[ncrspar+1]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Trg","Drv","Thr","Pulse/sec","BadPulse"};
 const char* ttip1[ncrspar+1]={
   "Channel number",
   "Channel type",
@@ -47,7 +47,8 @@ const char* ttip1[ncrspar+1]={
   "Number of samples before the trigger",
   "Total length of the pulse in samples",
   "Additional Gain",
-  "0 - trigger on the pulse; Drv>0 - trigger on differential S(i) - S(i-Drv)",
+  "Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative",
+  "Parameter of derivative: S(i) - S(i-Drv). 0 means trigger on the signal.",
   "Trigger threshold",
   "Pulse rate",
   "Number of Bad pulses"
@@ -1813,6 +1814,9 @@ void CrsParDlg::AddHeader() {
   TGTextEntry* tt[ncrspar+1];
 
   for (int i=0;i<=ncrspar;i++) {
+    if (!strcmp(tlab1[i],"Trg") && crs->module!=33) {
+      continue;
+    }
     tt[i]=new TGTextEntry(head_frame, tlab1[i]);
     tt[i]->SetWidth(tlen1[i]);
     tt[i]->SetState(false);
@@ -1951,6 +1955,12 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     AddNum1(i,kk++,1,cframe[i],"gain"  ,&cpar.adcGain[i]);
   else
     AddNum1(i,kk++,all,cframe[i],"gain"  ,&cpar.adcGain[i]);
+
+  if (crs->module>=33)
+    AddNum1(i,kk++,all,cframe[i],"trig" ,&cpar.trg[i]);
+  else
+    kk++;
+
   AddNum1(i,kk++,all,cframe[i],"deriv" ,&cpar.kderiv[i],&opt.kdrv[i]);
   AddNum1(i,kk++,all,cframe[i],"thresh",&cpar.threshold[i],&opt.thresh[i]);
 

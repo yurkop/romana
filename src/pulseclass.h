@@ -113,6 +113,12 @@ class PulseClass {
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
   //short *Data; //raw pulse data
 
+  Float_t Bg; //Background
+  Float_t Ar; //Area
+  Float_t Ht; //Height
+  Float_t Tm; //Time
+  Float_t Wd; //Width
+
   //bool Analyzed; //true if pulse is already analyzed
  public:
   PulseClass();// {};

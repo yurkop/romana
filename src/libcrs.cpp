@@ -136,8 +136,9 @@ static void cback(libusb_transfer *transfer) {
 	if (crs->module==2) {
 	  crs->Decode2(transfer->buffer,transfer->actual_length);
 	}
-	else if (crs->module==32) {
-	  crs->Decode32(transfer->buffer,transfer->actual_length);
+	else if (crs->module>=32) {
+	  //crs->Decode32(transfer->buffer,transfer->actual_length);
+	  crs->Decode33(transfer->buffer,transfer->actual_length);
 	}
       }
       if (opt.raw_write) {
@@ -790,10 +791,11 @@ int CRS::Detect_device() {
   sz = Command32(1,0,0,0);
 
   cout << "Info: " << sz << endl;
-  cout << "Device code: " << int(buf_in[0]) << endl;
-  cout << "Serial Nr: " << int(buf_in[1]) << endl;
-  cout << "Number of working plates: " << int(buf_in[2]) << endl;
-  cout << "Firmware version: " << int(buf_in[3]) << endl;
+  cout << "Device code: " << int(buf_in[1]) << endl;
+  cout << "Serial Nr: " << int(buf_in[2]) << endl;
+  cout << "Number of working plates: " << int(buf_in[3]) << endl;
+  cout << "Firmware version: " << int(buf_in[4]) << endl;
+  //cout << "PO version: " << int(buf_in[4]) << endl;
 
   //for (int i=0;i<sz;i++) {
   //cout << int(buf_in[i]) << " ";
@@ -836,16 +838,10 @@ int CRS::Detect_device() {
 	cout << endl;
 	sz--;
 	//cout << i << " " << sz << endl;
+	if (ver_po>=3) {//версия ПО=3 или выше
+	  module=33;
+	}
       }
-      //cout << "nplates: " << nplates << " " << sz << endl;
-      //exit(0);
-      //for (int i=0;i<MAX_CH;i++) {
-      //cout << " " << chtype[i];
-      //}
-      //for (int i=sz-1;i>=0;i--) {
-      //cout << " " << int(buf_in[i]);
-      //}
-      //cout << endl;
     }
   }
 
@@ -899,6 +895,12 @@ int CRS::SetPar() {
     //   AllParameters32_old();
     // else
       AllParameters32();
+  }
+  else if (module==33) {
+    // if (ver_po==1)
+    //   AllParameters32_old();
+    // else
+      AllParameters33();
   }
   else {
     cout << "SetPar Error! No module found" << endl;
@@ -1235,6 +1237,7 @@ int CRS::Command2(byte cmd, byte ch, byte type, int par) {
   return len_in;
 }
 
+/*
 void CRS::Command_crs(byte cmd, byte chan) {
 
   if (module==32) {
@@ -1314,6 +1317,31 @@ void CRS::Command_crs(byte cmd, byte chan) {
       Command2(2,chan,4,(int)cpar.threshold[chan]);
       break;
     }
+  }
+
+}
+*/
+
+void CRS::AllParameters33()
+{
+  //cout << "AllParameters32(): " << endl;
+
+  for (byte chan = 0; chan < chanPresent; chan++) {
+    Command32(2,chan,0,(int)cpar.acdc[chan]);
+    Command32(2,chan,1,(int)cpar.inv[chan]);
+    Command32(2,chan,2,(int)cpar.smooth[chan]);
+    Command32(2,chan,3,(int)cpar.deadTime[chan]);
+    Command32(2,chan,4,(int)cpar.preWr[chan]);
+    Command32(2,chan,5,(int)cpar.durWr[chan]);
+    Command32(2,chan,6,(int)cpar.kderiv[chan]);
+    Command32(2,chan,7,(int)cpar.threshold[chan]);
+    Command32(2,chan,8,(int)cpar.adcGain[chan]);
+    // new commands
+    Command32(2,chan,9,0); //delay
+    //Command32(2,chan,10,0); //test signal
+    Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
+    Command32(2,chan,12,(int) cpar.trg[chan]); //enabled
+    //Command32(2,chan,11,1); //enabled
   }
 
 }
@@ -1518,7 +1546,7 @@ int CRS::DoStartStop() {
 void CRS::ProcessCrs() {
   b_run=1;
   Ana_start();
-  if (module==32) {
+  if (module>=32) {
     Command32(8,0,0,0);
     Command32(9,0,0,0);    
   }
@@ -1913,8 +1941,9 @@ int CRS::DoBuf() {
     crs->totalbytes+=BufLength;
 
     if (opt.decode) {
-      if (Fmode==32) {
-	Decode32(Fbuf,BufLength);
+      if (Fmode>=32) {
+	//Decode32(Fbuf,BufLength);
+	Decode33(Fbuf,BufLength);
       }
       else if (Fmode==2) {
 	Decode2(Fbuf,BufLength);
@@ -2382,6 +2411,171 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   }
 
 } //decode32
+
+void CRS::Decode33(UChar_t *buffer, int length) {
+
+  ULong64_t* buf8 = (ULong64_t*) buffer;
+
+  unsigned short frmt;
+  int idx8=0;
+  int idx1=0;
+  ULong64_t data;
+  Int_t zzz; // temporary var. to convert signed nbit var. to signed 32bit int
+  Long64_t lll; //Long temporary var.
+  int nnn=0; //counter for frmt4 and frmt5
+  Double_t QX=0,QY=0,RX,RY;
+
+  while (idx1<length) {
+    frmt = buffer[idx1+6];
+    //YKYKYK!!!! do something with cnt - ???
+    //int cnt = frmt & 0x0F;
+    frmt = (frmt & 0xF0)>>4;
+    data = buf8[idx8] & 0xFFFFFFFFFFFF;
+    unsigned char ch = buffer[idx1+7];
+
+    if ((ch>=opt.Nchan) || (frmt && ch!=ipp->Chan)) {
+      cout << "dec32: Bad channel: " << (int) ch
+	   << " " << (int) ipp->Chan
+	   << " " << idx8 //<< " " << nvp
+	   << endl;
+      ipp->ptype|=P_BADCH;
+
+      idx8++;
+      idx1=idx8*8;
+      continue;
+    }
+
+    if (frmt==0) {
+      ipp->ptype&=~P_NOSTOP; //pulse has stop
+      ipp = vv->insert(vv->end(),PulseClass());
+      npulses++;
+      ipp->Chan=ch;
+      ipp->Tstamp64=data;// - cpar.preWr[ch];
+    }
+    else if (frmt==1) {
+      ipp->State = buffer[idx1+5];
+      ipp->Counter = data & 0xFFFFFFFFFF;
+      nnn=0;
+      // if (buffer[idx1+5]) {
+      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipp->State << " " << data << " " << buf8[idx8] << endl;
+      // }
+    }
+    else if (frmt==2) {
+
+      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+	// cout << "32: ERROR Nsamp: "
+	//      << " " << (ipp->Counter & 0x0F)
+	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
+	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << idx8 //<< " " << transfer->actual_length
+	//      << endl;
+	ipp->ptype|=P_BADSZ;
+      }
+      //else {
+      for (int i=0;i<4;i++) {
+
+	zzz = data & 0xFFF;
+	ipp->sData.push_back((zzz<<20)>>20);
+	//ipp->sData[ipp->Nsamp++]=(zzz<<20)>>20;
+	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
+	data>>=12;
+      }
+      //}
+    }
+    else if (frmt==3) {
+
+      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+	// cout << "33: ERROR Nsamp: "
+	//      << " " << (ipp->Counter & 0x0F)
+	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
+	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << idx8 //<< " " << transfer->actual_length
+	//      << endl;
+	ipp->ptype|=P_BADSZ;
+      }
+      //else {
+      for (int i=0;i<3;i++) {
+
+	zzz = data & 0xFFFF;
+	ipp->sData.push_back((zzz<<16)>>16);
+	//ipp->sData[ipp->Nsamp++]=(zzz<<20)>>20;
+	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
+	data>>=16;
+      }
+      //}
+    }
+    else if (frmt==4) {
+      switch (nnn) {
+      case 0:
+	//area
+	zzz = data & 0xFFFFFF;
+	ipp->Ar=((zzz<<8)>>8);
+	data>>=24;
+	//bkg
+	zzz = data & 0xFFFFFF;
+	ipp->Bg=((zzz<<8)>>8);
+	break;
+      case 1:
+	//QX
+	lll = data & 0xFFFFFFFFF;
+	QX=((lll<<28)>>28);
+	data>>=36;
+	//height
+	zzz = data & 0xFFF;
+	ipp->Ht=((zzz<<20)>>20);
+	break;
+      case 2:
+	//QY
+	lll = data & 0xFFFFFFFFF;
+	QY=((lll<<28)>>28);
+	break;
+      case 3:
+	//RX
+	zzz = data & 0xFFFFF;
+	RX=((zzz<<12)>>12);
+	data>>=32;
+	//RY
+	zzz = data & 0xFFFFF;
+	RY=((zzz<<12)>>12);
+
+	if (RX!=0)
+	  ipp->Tm=QX/RX;
+	else
+	  ipp->Tm=0;
+
+	if (RX!=0)
+	  ipp->Wd=QY/RY;
+	else
+	  ipp->Wd=0;
+
+	break;
+      default:
+	;
+      }
+      // cout << "frmt: " << ipp->Counter << " " << frmt << " "
+      // 	   << nnn << " " << data << endl;
+      nnn++;
+    }
+    else if (frmt==5) {
+      //cout << "frmt: " << ipp->Counter << " " << frmt << " " << data << endl;
+    }
+    else {
+      cout << "bad frmt: " << frmt << endl;
+    }
+
+    idx8++;
+    idx1=idx8*8;
+  }
+
+  if (vv->size()>2) {
+    Make_Events();
+    vv2->clear();
+    nvp = 1-nvp;
+    vv = Vpulses+nvp;
+    vv2 = Vpulses+1-nvp;
+  }
+
+} //decode33
 
 void CRS::Decode2(UChar_t* buffer, int length) {
 

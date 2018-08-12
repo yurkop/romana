@@ -199,7 +199,8 @@ RQ_OBJECT("CRS")
   int Command32_old(byte cmd, byte ch, byte type, int par);
   int Command32(byte cmd, byte ch, byte type, int par);
   int Command2(byte cmd, byte ch, byte type, int par);
-  void Command_crs(byte cmd, byte chan);
+  //void Command_crs(byte cmd, byte chan);
+  void AllParameters33(); // load all parameters
   void AllParameters32(); // load all parameters
   void AllParameters2(); // load all parameters
   int DoStartStop(); // start-stop acquisition
@@ -227,6 +228,7 @@ RQ_OBJECT("CRS")
 
   //void AllParameters32_old(); // load all parameters
   void Decode32(UChar_t* buffer, int length);
+  void Decode33(UChar_t* buffer, int length);
 
   void Decode2(UChar_t* buffer, int length);
 

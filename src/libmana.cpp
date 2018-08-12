@@ -1006,7 +1006,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //cout << "tab1: " << endl;
   tabfr[0] = fTab->AddTab("Parameters");
   tabfr[1] = fTab->AddTab("DAQ");
-  tabfr[2] = fTab->AddTab("Channels");
+  tabfr[2] = fTab->AddTab("Analysis");
+  //tabfr[2] = fTab->AddTab("Channels");
   tabfr[3] = fTab->AddTab("Events");
   tabfr[4] = fTab->AddTab("Histograms");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
@@ -1802,7 +1803,7 @@ void MainFrame::UpdateStatus() {
 void MainFrame::DoResetUSB() {
   if (!crs->b_stop)
     return;
-  if (crs->module==32) {
+  if (crs->module>=32) {
     cout << "Reset USB" << endl;
     crs->Command32(7,0,0,0); //reset usb command
   }
