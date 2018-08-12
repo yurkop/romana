@@ -198,6 +198,7 @@ RQ_OBJECT("CRS")
   int Init_Transfer();
   int Command32_old(byte cmd, byte ch, byte type, int par);
   int Command32(byte cmd, byte ch, byte type, int par);
+  void Check32(byte cmd, byte ch, int &a1, int &a2, int min, int max);
   int Command2(byte cmd, byte ch, byte type, int par);
   //void Command_crs(byte cmd, byte chan);
   void AllParameters33(); // load all parameters

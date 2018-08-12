@@ -54,9 +54,9 @@ const char* ttip1[ncrspar+1]={
   "Number of Bad pulses"
 };
 
-const int nchpar=19;
-const int tlen2[nchpar]={26,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,42,42,42};
-const char* tlab2[nchpar]={"Ch","Type","St","*","sS","Drv","Thr","Base1","Base2","Peak1","Peak2","dT","Pile","Tm","T1","T2","EM","Elim1","Elim2"};
+const int nchpar=21;
+const int tlen2[nchpar]={26,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,35,35,42,42,42};
+const char* tlab2[nchpar]={"Ch","Type","St","*","sS","Drv","Thr","Base1","Base2","Peak1","Peak2","dT","Pile","Tm","T1","T2","W1","W2","EM","Elim1","Elim2"};
 const char* ttip2[nchpar]={
   "Channel number",
   "Channel type",
@@ -74,6 +74,8 @@ const char* ttip2[nchpar]={
   "Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
   "Timing window start, included (usually negative, if 99 - use T1)",
   "Timing window end, excluded (usually positive, if 99 - use T2)",
+  "Width window start",
+  "Width window end",
   "Energy multiplier",
   "Low energy limit (not working yet)",
   "High energy limit (not working yet)"
@@ -1656,15 +1658,17 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
   AddNum2(i,kk++,all,cframe[i],&opt.nsmoo[i],0,99,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.kdrv[i],1,999,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.thresh[i],0,9999,p_inum);
-  AddNum2(i,kk++,all,cframe[i],&opt.bkg1[i],-4999,999,p_inum);
-  AddNum2(i,kk++,all,cframe[i],&opt.bkg2[i],-999,999,p_inum);
-  AddNum2(i,kk++,all,cframe[i],&opt.peak1[i],-999,16500,p_inum);
-  AddNum2(i,kk++,all,cframe[i],&opt.peak2[i],-999,16500,p_inum);
+  AddNum2(i,kk++,all,cframe[i],&opt.bkg1[i],-999,3070,p_inum);
+  AddNum2(i,kk++,all,cframe[i],&opt.bkg2[i],-999,3070,p_inum);
+  AddNum2(i,kk++,all,cframe[i],&opt.peak1[i],-999,3070,p_inum);
+  AddNum2(i,kk++,all,cframe[i],&opt.peak2[i],-999,3070,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.deadT[i],0,9999,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.pile[i],0,9999,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.timing[i],0,3,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.twin1[i],-99,99,p_inum);
   AddNum2(i,kk++,all,cframe[i],&opt.twin2[i],-99,99,p_inum);
+  AddNum2(i,kk++,all,cframe[i],&opt.wwin1[i],-999,3070,p_inum);
+  AddNum2(i,kk++,all,cframe[i],&opt.wwin2[i],-999,3070,p_inum);
 
   AddNum2(i,kk++,all,cframe[i],&opt.emult[i],0,99999,p_fnum);
   AddNum2(i,kk++,all,cframe[i],&opt.elim1[i],0,99999,p_fnum);

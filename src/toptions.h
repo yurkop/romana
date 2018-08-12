@@ -79,6 +79,8 @@ public:
   Int_t timing[MAX_CH+ADDCH];
   Int_t twin1[MAX_CH+ADDCH];
   Int_t twin2[MAX_CH+ADDCH];
+  Int_t wwin1[MAX_CH+ADDCH];
+  Int_t wwin2[MAX_CH+ADDCH];
 
   Float_t emult[MAX_CH+ADDCH];
   Float_t elim1[MAX_CH+ADDCH];

@@ -1321,27 +1321,50 @@ void CRS::Command_crs(byte cmd, byte chan) {
 
 }
 */
+void CRS::Check32(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
+  int len = a2-a1+1;
+  if (len>max) {
+    len=max;
+    a2=a1+max-1;
+  }
+  if (len<min) {
+    len=min;
+    a2=a1+min-1;
+  }
+  Command32(2,ch,cmd,a1); //enabled
+  Command32(2,ch,cmd+1,a2); //enabled
+}
 
 void CRS::AllParameters33()
 {
   //cout << "AllParameters32(): " << endl;
 
   for (byte chan = 0; chan < chanPresent; chan++) {
-    Command32(2,chan,0,(int)cpar.acdc[chan]);
-    Command32(2,chan,1,(int)cpar.inv[chan]);
-    Command32(2,chan,2,(int)cpar.smooth[chan]);
-    Command32(2,chan,3,(int)cpar.deadTime[chan]);
-    Command32(2,chan,4,(int)cpar.preWr[chan]);
-    Command32(2,chan,5,(int)cpar.durWr[chan]);
-    Command32(2,chan,6,(int)cpar.kderiv[chan]);
-    Command32(2,chan,7,(int)cpar.threshold[chan]);
-    Command32(2,chan,8,(int)cpar.adcGain[chan]);
-    // new commands
-    Command32(2,chan,9,0); //delay
-    //Command32(2,chan,10,0); //test signal
     Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
-    Command32(2,chan,12,(int) cpar.trg[chan]); //enabled
-    //Command32(2,chan,11,1); //enabled
+
+    if (cpar.enabl[chan]) {
+      Command32(2,chan,0,(int)cpar.acdc[chan]);
+      Command32(2,chan,1,(int)cpar.inv[chan]);
+      Command32(2,chan,2,(int)cpar.smooth[chan]);
+      Command32(2,chan,3,(int)cpar.deadTime[chan]);
+      Command32(2,chan,4,(int)cpar.preWr[chan]);
+      Command32(2,chan,5,(int)cpar.durWr[chan]);
+      Command32(2,chan,6,(int)cpar.kderiv[chan]);
+      Command32(2,chan,7,(int)cpar.threshold[chan]);
+      Command32(2,chan,8,(int)cpar.adcGain[chan]);
+      // new commands
+      Command32(2,chan,9,0); //delay
+      //Command32(2,chan,10,0); //test signal
+      Command32(2,chan,12,(int) cpar.trg[chan]); //enabled
+
+      Check32(13,chan,opt.bkg1[chan],opt.bkg2[chan],1,4095);
+      Check32(15,chan,opt.peak1[chan],opt.peak2[chan],1,4095);
+      Check32(17,chan,opt.peak1[chan],opt.peak2[chan],1,4095);
+      Check32(19,chan,opt.twin1[chan],opt.twin2[chan],1,4095);
+      Check32(21,chan,opt.wwin1[chan],opt.wwin2[chan],1,4095);
+
+    }
+
   }
 
 }
