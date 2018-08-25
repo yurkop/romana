@@ -491,9 +491,13 @@ int main(int argc, char **argv)
 
 
 #ifdef CYUSB
+  //if (crs->Fmode!=2) {
   crs->Detect_device();
+  //}
 #endif
 
+
+    //cout << "chanPresent: " << chanPresent << endl;
   TApplication theApp("App",&argc,argv);
   //example();
 
@@ -1022,21 +1026,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //MakeTabs();
 
-  if (crs->Fmode) {
+  if (crs->Fmode!=1) { //no CRS present
     crspar->AllEnabled(false);
-  }
 
-
-  //cout << "hifrm3: " << endl;
-
-
-  //TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
-  //TGColorPick* tg = new TGColorPick(tab6);
-  //tab6->AddFrame(tg, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,
-  //					     2,2,2,2));
-  //ntab++;
-
-  if (!crs->module) {
     //TGTabElement *tabdaq = fTab->GetTabTab("DAQ");
     //tabdaq->SetEnabled(false);
     fStart->SetEnabled(false);
@@ -1048,6 +1040,16 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     if (te) 
       te->SetEnabled(false);
   }
+
+
+  //cout << "hifrm3: " << endl;
+
+
+  //TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
+  //TGColorPick* tg = new TGColorPick(tab6);
+  //tab6->AddFrame(tg, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,
+  //					     2,2,2,2));
+  //ntab++;
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
   fGr2->AddFrame(hfr1, l_But);
@@ -1191,7 +1193,7 @@ MainFrame::~MainFrame() {
 
   //cout << "end: module: " << crs->module << endl;
 
-  if (crs->b_acq && crs->module) {
+  if (crs->b_acq && crs->Fmode==1) {
     DoStartStop();
     gSystem->Sleep(300);
   }
@@ -1249,7 +1251,7 @@ void MainFrame::MakeTabs() {
   ntab++;
   chanpar->Update();
 
-  EvtFrm = new EventFrame(tabfr[3], 600, 500,ntab);
+  EvtFrm = new EventFrame(tabfr[3], 620, 500,ntab);
   tabfr[3]->AddFrame(EvtFrm, Lay11);
   ntab++;
 
@@ -1801,15 +1803,18 @@ void MainFrame::UpdateStatus() {
 // }
 
 void MainFrame::DoResetUSB() {
+#ifdef CYUSB
   if (!crs->b_stop)
     return;
-  if (crs->module>=32) {
+  if (crs->Fmode==1 && crs->module>=32) {
     cout << "Reset USB" << endl;
     crs->Command32(7,0,0,0); //reset usb command
+    crs->Detect_device();
   }
   else {
-    cout << "Module not found" << endl;
+    cout << "Module not found or reset not possible" << endl;
   }  
+#endif
 }
 
 void MainFrame::DoExit() {

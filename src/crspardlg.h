@@ -161,7 +161,7 @@ public:
   void DoNum_SetBuf();
   void DoCheckHist();
   void DoCheckPulse();
-  //void Update();
+  void Update();
 
   ClassDef(ParParDlg, 0)
 };

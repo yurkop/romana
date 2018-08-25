@@ -704,11 +704,11 @@ int CRS::Detect_device() {
 
   int r;
 
-  module=0;
-  chanPresent=32;
+  //module=0;
+  //chanPresent=32;
   ver_po=0;
 
-  b_usbbuf=false;
+  //b_usbbuf=false;
   /*
     for (int i=0;i<ntrans;i++) {
     if (transfer[i]) {
@@ -722,6 +722,7 @@ int CRS::Detect_device() {
   //sleep(1000);
 
   r = cyusb_open();
+
   if ( r < 0 ) {
     printf("Error opening library\n");
     return 1;
@@ -806,6 +807,7 @@ int CRS::Detect_device() {
   if (buf_in[1]==3) { //serial Nr=3 -> crs2
     module=2;
     chanPresent=2;
+    opt.Nchan=2;
     for (int j=0;j<chanPresent;j++) {
       type_ch[j]=0;
     }
@@ -846,6 +848,9 @@ int CRS::Detect_device() {
   }
 
   cout << "module: " << module << " chanPresent: " << chanPresent << endl;
+
+  if (module>=2)
+    Fmode=1;
 
   //cpar.InitPar(module);
 
@@ -1321,18 +1326,20 @@ void CRS::Command_crs(byte cmd, byte chan) {
 
 }
 */
-void CRS::Check32(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
-  int len = a2-a1+1;
+void CRS::Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
+  int len = a2-a1;
   if (len>max) {
     len=max;
-    a2=a1+max-1;
+    a2=a1+max;
   }
   if (len<min) {
     len=min;
-    a2=a1+min-1;
+    a2=a1+min;
   }
-  Command32(2,ch,cmd,a1); //enabled
-  Command32(2,ch,cmd+1,a2); //enabled
+  Command32(2,ch,cmd,a1); //offset
+  Command32(2,ch,cmd+1,len); //length
+  //cout << "Check33: " << (int) ch << " " << (int) cmd << " " << a1
+  //<< " " << a2 << " " << len << endl;
 }
 
 void CRS::AllParameters33()
@@ -1347,7 +1354,7 @@ void CRS::AllParameters33()
       Command32(2,chan,1,(int)cpar.inv[chan]);
       Command32(2,chan,2,(int)cpar.smooth[chan]);
       Command32(2,chan,3,(int)cpar.deadTime[chan]);
-      Command32(2,chan,4,(int)cpar.preWr[chan]);
+      Command32(2,chan,4,(int)-cpar.preWr[chan]);
       Command32(2,chan,5,(int)cpar.durWr[chan]);
       Command32(2,chan,6,(int)cpar.kderiv[chan]);
       Command32(2,chan,7,(int)cpar.threshold[chan]);
@@ -1357,11 +1364,11 @@ void CRS::AllParameters33()
       //Command32(2,chan,10,0); //test signal
       Command32(2,chan,12,(int) cpar.trg[chan]); //enabled
 
-      Check32(13,chan,opt.bkg1[chan],opt.bkg2[chan],1,4095);
-      Check32(15,chan,opt.peak1[chan],opt.peak2[chan],1,4095);
-      Check32(17,chan,opt.peak1[chan],opt.peak2[chan],1,4095);
-      Check32(19,chan,opt.twin1[chan],opt.twin2[chan],1,4095);
-      Check32(21,chan,opt.wwin1[chan],opt.wwin2[chan],1,4095);
+      Check33(13,chan,opt.bkg1[chan],opt.bkg2[chan],1,4095);
+      Check33(15,chan,opt.peak1[chan],opt.peak2[chan],1,4095);
+      Check33(17,chan,opt.peak1[chan],opt.peak2[chan],1,4095);
+      Check33(19,chan,opt.twin1[chan],opt.twin2[chan],1,4095);
+      Check33(21,chan,opt.wwin1[chan],opt.wwin2[chan],1,4095);
 
     }
 
@@ -1435,7 +1442,7 @@ int CRS::DoStartStop() {
       gSystem->Sleep(50);
       crs->Init_Transfer();
       //}
-    b_usbbuf=false;
+      //b_usbbuf=false;
 
     DoReset();
     //juststarted=true; already set in doreset
@@ -1679,11 +1686,15 @@ void CRS::DoReset() {
   vv = Vpulses+nvp; //- vector of pulses from current
   vv2 = Vpulses+1-nvp; //- vector of pulses from previous buffer
   //create first pulse, which is always bad: Chan=254
-  ipp = Vpulses->insert(Vpulses->end(),PulseClass());
-  ipp->Chan=254;
-  ipp->ptype|=P_NOSTART;
+  //this pulse will be ignored in Event_insert_pulse
+  ipls = Vpulses->insert(Vpulses->end(),PulseClass());
+  ipls->Chan=254;
+  ipls->ptype|=P_NOSTART;
 
-  if (Fmode!=1) {
+  ipk=&dummy_peak; //peak points to the dummy_peak
+  QX=0;QY=0;RX=1;RY=1;
+
+  if (module!=1) {
     //cout << "Pre!!!" << endl;
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
@@ -1766,7 +1777,7 @@ void CRS::DoFopen(char* oname, int popt) {
   f_read = gzopen(Fname,"rb");
   //cout << "f_read: " << f_read << endl;
   if (!f_read) {
-    Fmode=0;
+    //Fmode=0;
     cout << "Can't open file: " << Fname << endl;
     f_read=0;
     return;
@@ -1774,7 +1785,8 @@ void CRS::DoFopen(char* oname, int popt) {
 
   if (tp) { //adcm raw
     cout << "ADCM RAW File: " << Fname << endl;
-    Fmode=1;
+    //Fmode=2;
+    module=1;
 
     cpar.InitPar(0);
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
@@ -1811,6 +1823,7 @@ void CRS::DoFopen(char* oname, int popt) {
 
   //list_min=opt.ev_max-opt.ev_min;
 
+  Fmode=2;
   opt.raw_write=false;
 
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
@@ -1843,7 +1856,7 @@ void CRS::DoFopen(char* oname, int popt) {
 }
 
 int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
-  //m1 - read Fmode (1/0); 1 - read from raw/dec file; 0 - read from par file
+  //m1 - read module (1/0); 1 - read from raw/dec file; 0 - read from par file
   //p1 - read cpar (1/0); p2 - read opt (1/0)
   UShort_t sz;
 
@@ -1878,23 +1891,23 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   if (m1) {
     //T_start = opt.F_start;
     if (mod==2) {
-      Fmode=2;
-      cout << "CRS2 File: " << Fname << " " << mod << endl;
+      module=2;
+      cout << "CRS2 File: " << Fname << " " << module << endl;
     }
-    else if (mod==32) {
-      Fmode=32;
-      cout << "CRS32 File: " << Fname << " " << mod << endl;
+    else if (mod>=32) {
+      module=mod;
+      cout << "CRS32 File: " << Fname << " " << module << endl;
     }
     else {
       Fmode=0;
-      cout << "Unknown file type: " << Fname << " " << Fmode << endl;
+      cout << "Unknown file type: " << Fname << " " << mod << endl;
       return 1;
     }
   }
 
   //cout << "ReadParGz: " << sz << " " << pname << endl;
 
-  if (Fmode!=1) {
+  if (module!=1) {
     memcpy(&Pre,&cpar.preWr,sizeof(Pre));
   }
 
@@ -1959,19 +1972,20 @@ int CRS::DoBuf() {
   //nbuffers++;
   //return nbuffers;
 
-  //cout << "gzread: " << Fmode << " " << nbuffers << " " << BufLength << endl;
+  // cout << "gzread: " << Fmode << " " << module << " "
+  //      << nbuffers << " " << BufLength << endl;
   if (BufLength>0) {
     crs->totalbytes+=BufLength;
 
     if (opt.decode) {
-      if (Fmode>=32) {
+      if (module>=32) {
 	//Decode32(Fbuf,BufLength);
 	Decode33(Fbuf,BufLength);
       }
-      else if (Fmode==2) {
+      else if (module==2) {
 	Decode2(Fbuf,BufLength);
       }
-      else if (Fmode==1) {
+      else if (module==1) {
 	BufLength/=sizeof(UInt_t);
 	Decode_adcm();
       }
@@ -2269,8 +2283,8 @@ void CRS::Show(bool force) {
 
 void CRS::Decode32(UChar_t *buffer, int length) {
 
-  //PulseClass *ipp;
-  //pulse_vect::iterator ipp;
+  //PulseClass *ipls;
+  //pulse_vect::iterator ipls;
 
   ULong64_t* buf8 = (ULong64_t*) buffer;
 
@@ -2292,16 +2306,16 @@ void CRS::Decode32(UChar_t *buffer, int length) {
   // if (juststarted) { //this is start of the acqisition
   //   juststarted=false;
   //   //vv->push_back(PulseClass());
-  //   //ipp = &vv->back();
-  //   ipp = vv->insert(vv->end(),PulseClass());
+  //   //ipls = &vv->back();
+  //   ipls = vv->insert(vv->end(),PulseClass());
   //   npulses++;
-  //   ipp->Chan = buffer[7];
-  //   ipp->ptype|=P_NOSTART; // first pulse is by default incomplete
+  //   ipls->Chan = buffer[7];
+  //   ipls->ptype|=P_NOSTART; // first pulse is by default incomplete
   //   //it will be reset if idx8==0 in the while loop
   // }
   // else {
-  //   ipp=&vv2->back();
-  //   // ipp points to the last pulse of the previous buffer
+  //   ipls=&vv2->back();
+  //   // ipls points to the last pulse of the previous buffer
   // }
 
   //cout << "Decode32 2: " << Vpulses.size() << endl;
@@ -2318,12 +2332,12 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     data = buf8[idx8] & 0xFFFFFFFFFFFF;
     unsigned char ch = buffer[idx1+7];
 
-    if ((ch>=opt.Nchan) || (frmt && ch!=ipp->Chan)) {
+    if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
       cout << "dec32: Bad channel: " << (int) ch
-	   << " " << (int) ipp->Chan
+	   << " " << (int) ipls->Chan
 	   << " " << idx8 //<< " " << nvp
 	   << endl;
-      ipp->ptype|=P_BADCH;
+      ipls->ptype|=P_BADCH;
 
       idx8++;
       idx1=idx8*8;
@@ -2331,36 +2345,36 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     }
 
     if (frmt==0) {
-      ipp->ptype&=~P_NOSTOP; //pulse has stop
-      ipp = vv->insert(vv->end(),PulseClass());
+      ipls->ptype&=~P_NOSTOP; //pulse has stop
+      ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
-      ipp->Chan=ch;
-      ipp->Tstamp64=data;// - cpar.preWr[ch];
+      ipls->Chan=ch;
+      ipls->Tstamp64=data;// - cpar.preWr[ch];
     }
     else if (frmt==1) {
-      ipp->State = buffer[idx1+5];
-      ipp->Counter = data & 0xFFFFFFFFFF;
+      ipls->State = buffer[idx1+5];
+      ipls->Counter = data & 0xFFFFFFFFFF;
       // if (buffer[idx1+5]) {
-      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipp->State << " " << data << " " << buf8[idx8] << endl;
+      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls->State << " " << data << " " << buf8[idx8] << endl;
       // }
     }
     else if (frmt==2) {
 
-      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+      if (ipls->sData.size()>=cpar.durWr[ipls->Chan]) {
 	// cout << "32: ERROR Nsamp: "
-	//      << " " << (ipp->Counter & 0x0F)
-	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
-	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << (ipls->Counter & 0x0F)
+	//      << " " << ipls->sData.size() << " " << cpar.durWr[ipls->Chan]
+	//      << " " << (int) ch << " " << (int) ipls->Chan
 	//      << " " << idx8 //<< " " << transfer->actual_length
 	//      << endl;
-	ipp->ptype|=P_BADSZ;
+	ipls->ptype|=P_BADSZ;
       }
       //else {
       for (int i=0;i<4;i++) {
 
 	int zzz = data & 0xFFF;
-	ipp->sData.push_back((zzz<<20)>>20);
-	//ipp->sData[ipp->Nsamp++]=(zzz<<20)>>20;
+	ipls->sData.push_back((zzz<<20)>>20);
+	//ipls->sData[ipls->Nsamp++]=(zzz<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=12;
       }
@@ -2368,21 +2382,21 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     }
     else if (frmt==3) {
 
-      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+      if (ipls->sData.size()>=cpar.durWr[ipls->Chan]) {
 	// cout << "32: ERROR Nsamp: "
-	//      << " " << (ipp->Counter & 0x0F)
-	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
-	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << (ipls->Counter & 0x0F)
+	//      << " " << ipls->sData.size() << " " << cpar.durWr[ipls->Chan]
+	//      << " " << (int) ch << " " << (int) ipls->Chan
 	//      << " " << idx8 //<< " " << transfer->actual_length
 	//      << endl;
-	ipp->ptype|=P_BADSZ;
+	ipls->ptype|=P_BADSZ;
       }
       //else {
       for (int i=0;i<3;i++) {
 
 	int zzz = data & 0xFFFF;
-	ipp->sData.push_back((zzz<<16)>>16);
-	//ipp->sData[ipp->Nsamp++]=(zzz<<20)>>20;
+	ipls->sData.push_back((zzz<<16)>>16);
+	//ipls->sData[ipls->Nsamp++]=(zzz<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=16;
       }
@@ -2445,8 +2459,9 @@ void CRS::Decode33(UChar_t *buffer, int length) {
   ULong64_t data;
   Int_t zzz; // temporary var. to convert signed nbit var. to signed 32bit int
   Long64_t lll; //Long temporary var.
-  int nnn=0; //counter for frmt4 and frmt5
-  Double_t QX=0,QY=0,RX,RY;
+  //int n_frm=0; //counter for frmt4 and frmt5
+  //Double_t QX=0,QY=0,RX,RY;
+  //peak_type *pk=&dummy_peak;
 
   while (idx1<length) {
     frmt = buffer[idx1+6];
@@ -2456,12 +2471,12 @@ void CRS::Decode33(UChar_t *buffer, int length) {
     data = buf8[idx8] & 0xFFFFFFFFFFFF;
     unsigned char ch = buffer[idx1+7];
 
-    if ((ch>=opt.Nchan) || (frmt && ch!=ipp->Chan)) {
+    if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
       cout << "dec32: Bad channel: " << (int) ch
-	   << " " << (int) ipp->Chan
+	   << " " << (int) ipls->Chan
 	   << " " << idx8 //<< " " << nvp
 	   << endl;
-      ipp->ptype|=P_BADCH;
+      ipls->ptype|=P_BADCH;
 
       idx8++;
       idx1=idx8*8;
@@ -2469,37 +2484,37 @@ void CRS::Decode33(UChar_t *buffer, int length) {
     }
 
     if (frmt==0) {
-      ipp->ptype&=~P_NOSTOP; //pulse has stop
-      ipp = vv->insert(vv->end(),PulseClass());
+      ipls->ptype&=~P_NOSTOP; //pulse has stop
+      ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
-      ipp->Chan=ch;
-      ipp->Tstamp64=data;// - cpar.preWr[ch];
+      ipls->Chan=ch;
+      ipls->Tstamp64=data;// - cpar.preWr[ch];
+      n_frm=0;
     }
     else if (frmt==1) {
-      ipp->State = buffer[idx1+5];
-      ipp->Counter = data & 0xFFFFFFFFFF;
-      nnn=0;
+      ipls->State = buffer[idx1+5];
+      ipls->Counter = data & 0xFFFFFFFFFF;
       // if (buffer[idx1+5]) {
-      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipp->State << " " << data << " " << buf8[idx8] << endl;
+      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls->State << " " << data << " " << buf8[idx8] << endl;
       // }
     }
     else if (frmt==2) {
 
-      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+      if (ipls->sData.size()>=cpar.durWr[ipls->Chan]) {
 	// cout << "32: ERROR Nsamp: "
-	//      << " " << (ipp->Counter & 0x0F)
-	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
-	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << (ipls->Counter & 0x0F)
+	//      << " " << ipls->sData.size() << " " << cpar.durWr[ipls->Chan]
+	//      << " " << (int) ch << " " << (int) ipls->Chan
 	//      << " " << idx8 //<< " " << transfer->actual_length
 	//      << endl;
-	ipp->ptype|=P_BADSZ;
+	ipls->ptype|=P_BADSZ;
       }
       //else {
       for (int i=0;i<4;i++) {
 
 	zzz = data & 0xFFF;
-	ipp->sData.push_back((zzz<<20)>>20);
-	//ipp->sData[ipp->Nsamp++]=(zzz<<20)>>20;
+	ipls->sData.push_back((zzz<<20)>>20);
+	//ipls->sData[ipls->Nsamp++]=(zzz<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=12;
       }
@@ -2507,80 +2522,104 @@ void CRS::Decode33(UChar_t *buffer, int length) {
     }
     else if (frmt==3) {
 
-      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
+      if (ipls->sData.size()>=cpar.durWr[ipls->Chan]) {
 	// cout << "33: ERROR Nsamp: "
-	//      << " " << (ipp->Counter & 0x0F)
-	//      << " " << ipp->sData.size() << " " << cpar.durWr[ipp->Chan]
-	//      << " " << (int) ch << " " << (int) ipp->Chan
+	//      << " " << (ipls->Counter & 0x0F)
+	//      << " " << ipls->sData.size() << " " << cpar.durWr[ipls->Chan]
+	//      << " " << (int) ch << " " << (int) ipls->Chan
 	//      << " " << idx8 //<< " " << transfer->actual_length
 	//      << endl;
-	ipp->ptype|=P_BADSZ;
+	ipls->ptype|=P_BADSZ;
       }
       //else {
       for (int i=0;i<3;i++) {
 
 	zzz = data & 0xFFFF;
-	ipp->sData.push_back((zzz<<16)>>16);
-	//ipp->sData[ipp->Nsamp++]=(zzz<<20)>>20;
+	ipls->sData.push_back((zzz<<16)>>16);
+	//ipls->sData[ipls->Nsamp++]=(zzz<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=16;
       }
       //}
     }
     else if (frmt==4) {
-      switch (nnn) {
-      case 0:
-	//area
-	zzz = data & 0xFFFFFF;
-	ipp->Ar=((zzz<<8)>>8);
-	data>>=24;
-	//bkg
-	zzz = data & 0xFFFFFF;
-	ipp->Bg=((zzz<<8)>>8);
-	break;
-      case 1:
-	//QX
-	lll = data & 0xFFFFFFFFF;
-	QX=((lll<<28)>>28);
-	data>>=36;
-	//height
-	zzz = data & 0xFFF;
-	ipp->Ht=((zzz<<20)>>20);
-	break;
-      case 2:
-	//QY
-	lll = data & 0xFFFFFFFFF;
-	QY=((lll<<28)>>28);
-	break;
-      case 3:
-	//RX
-	zzz = data & 0xFFFFF;
-	RX=((zzz<<12)>>12);
-	data>>=32;
-	//RY
-	zzz = data & 0xFFFFF;
-	RY=((zzz<<12)>>12);
+      if (opt.dsp[ipls->Chan]) {
+	if (ipls->Peaks.size()==0) {
+	  ipls->Peaks.push_back(peak_type());
+	  ipk=&ipls->Peaks[0];
+	}
+	switch (n_frm) {
+	case 0:
+	  //area
+	  zzz = data & 0xFFFFFF;
+	  //ipls->Ar=((zzz<<8)>>8);
+	  ipk->Area0=((zzz<<8)>>8);
+	  data>>=24;
+	  //bkg
+	  zzz = data & 0xFFFFFF;
+	  //ipls->Bg=((zzz<<8)>>8);
+	  ipk->Base=((zzz<<8)>>8);
+	  break;
+	case 1:
+	  //QX
+	  lll = data & 0xFFFFFFFFF;
+	  QX=((lll<<28)>>28);
+	  data>>=36;
+	  //height
+	  zzz = data & 0xFFF;
+	  //ipls->Ht=((zzz<<20)>>20);
+	  ipk->Height=((zzz<<20)>>20);
+	  break;
+	case 2:
+	  //QY
+	  lll = data & 0xFFFFFFFFF;
+	  QY=((lll<<28)>>28);
+	  break;
+	case 3:
+	  //RX
+	  zzz = data & 0xFFFFF;
+	  RX=((zzz<<12)>>12);
+	  data>>=24;
+	  //RY
+	  zzz = data & 0xFFFFF;
+	  RY=((zzz<<12)>>12);
 
-	if (RX!=0)
-	  ipp->Tm=QX/RX;
-	else
-	  ipp->Tm=0;
+	  if (RX!=0)
+	    //ipls->Tm=QX/RX;
+	    ipk->Time=QX/RX;
+	  else
+	    //ipls->Tm=0;
+	    ipk->Time=-999;
 
-	if (RX!=0)
-	  ipp->Wd=QY/RY;
-	else
-	  ipp->Wd=0;
+	  if (RY!=0)
+	    //ipls->Wd=QY/RY;
+	    ipk->Width=QY/RY;
+	  else
+	    //ipls->Wd=0;
+	    ipk->Width=-999;
 
-	break;
-      default:
-	;
-      }
-      // cout << "frmt: " << ipp->Counter << " " << frmt << " "
-      // 	   << nnn << " " << data << endl;
-      nnn++;
+	  //if (ipls->Peaks[0].Width==0 || ipls->Counter==25597) {
+
+	  // printf("Alp: %10lld %2d %8.1f %8.1f %8.1f %8.1f %8.1f\n",
+	  // 	   ipls->Counter,n_frm,ipls->Peaks[0].Base,ipls->Peaks[0].Area0,
+	  // 	   ipls->Peaks[0].Height,
+	  // 	   ipls->Peaks[0].Time,ipls->Peaks[0].Width);
+
+	  //}
+	  // cout << "frmt4: " << ipls->Counter << " " << n_frm
+	  //      << " " << ipls->Bg << " " << ipls->Ar << " " << ipls->Ht
+	  //      << " " << ipls->Tm << " " << ipls->Wd << " " << RX
+	  //      << " " << RY << endl;
+
+	  break;
+	default:
+	  ;
+	} //switch
+	n_frm++;
+      } //if (opt.dsp[ipls->Chan])
     }
     else if (frmt==5) {
-      //cout << "frmt: " << ipp->Counter << " " << frmt << " " << data << endl;
+      //cout << "frmt: " << ipls->Counter << " " << frmt << " " << data << endl;
     }
     else {
       cout << "bad frmt: " << frmt << endl;
@@ -2588,9 +2627,14 @@ void CRS::Decode33(UChar_t *buffer, int length) {
 
     idx8++;
     idx1=idx8*8;
-  }
+  } //while (idx1<length)
+
+  // cout << "decode33: " << frmt << " " << ipls->Counter << " "
+  //      << ipls->sData.size() << " " << n_frm << endl;
 
   if (vv->size()>2) {
+    // cout << "Make_events33: " << ipls->Counter << " " << ipls->sData.size()
+    // 	 << " " << (int) ipls->ptype << endl;
     Make_Events();
     vv2->clear();
     nvp = 1-nvp;
@@ -2616,42 +2660,42 @@ void CRS::Decode2(UChar_t* buffer, int length) {
     short data = uword & 0xFFF;
     unsigned char ch = (uword & 0x8000)>>15;
 
-    //cout << "decode2: " << idx2 << " " << frmt << " " << (int) ch << " " << data << " " << (int) ipp->Chan << endl;
+    //cout << "decode2: " << idx2 << " " << frmt << " " << (int) ch << " " << data << " " << (int) ipls->Chan << endl;
 
-    if ((ch>=opt.Nchan) || (frmt && ch!=ipp->Chan)) {
+    if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
       cout << "2: Bad channel: " << (int) ch
-	   << " " << (int) ipp->Chan << endl;
-      ipp->ptype|=P_BADCH;
+	   << " " << (int) ipls->Chan << endl;
+      ipls->ptype|=P_BADCH;
 
       idx2++;
       continue;
     }
 
     if (frmt==0) {
-      ipp->ptype&=~P_NOSTOP; //pulse has stop
-      ipp = vv->insert(vv->end(),PulseClass());
+      ipls->ptype&=~P_NOSTOP; //pulse has stop
+      ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
-      ipp->Chan = ch;
-      ipp->Tstamp64=data;// - cpar.preWr[ch];
+      ipls->Chan = ch;
+      ipls->Tstamp64=data;// - cpar.preWr[ch];
     }
     else if (frmt<4) {
       Long64_t t64 = data;
-      ipp->Tstamp64+= (t64 << (frmt*12));
+      ipls->Tstamp64+= (t64 << (frmt*12));
     }
     else if (frmt==4) {
-      ipp->Counter=data;
+      ipls->Counter=data;
     }
     else if (frmt==5) {
-      if (ipp->sData.size()>=cpar.durWr[ipp->Chan]) {
-	// cout << "2: Nsamp error: " << ipp->sData.size()
-	//      << " " << (int) ch << " " << (int) ipp->Chan
+      if (ipls->sData.size()>=cpar.durWr[ipls->Chan]) {
+	// cout << "2: Nsamp error: " << ipls->sData.size()
+	//      << " " << (int) ch << " " << (int) ipls->Chan
 	//      << " " << idx2
 	//      << endl;
-	ipp->ptype|=P_BADSZ;
+	ipls->ptype|=P_BADSZ;
       }
       //else {
-      //cout << "decode2a: " << idx2 << " " << ipp << " " << ipp->sData.size() << endl;
-      ipp->sData.push_back((data<<21)>>21);
+      //cout << "decode2a: " << idx2 << " " << ipls << " " << ipls->sData.size() << endl;
+      ipls->sData.push_back((data<<21)>>21);
       //cout << "decode2b: " << idx2 << endl;
       //}
     }
@@ -2788,17 +2832,17 @@ void CRS::Decode_adcm() {
       }
       if (lastfl) {
 	//cout << "decode_adcm pulse: " << npulses << endl;
-	ipp = vv->insert(vv->end(),PulseClass());
+	ipls = vv->insert(vv->end(),PulseClass());
 	//vv->push_back(PulseClass());
 	npulses++;
-	ipp->Chan=bits(header,18,25);
+	ipls->Chan=bits(header,18,25);
 
 
-	if ((ipp->Chan>=opt.Nchan)) {
-	  cout << "adcm: Bad channel: " << (int) ipp->Chan
+	if ((ipls->Chan>=opt.Nchan)) {
+	  cout << "adcm: Bad channel: " << (int) ipls->Chan
 	       << " " << idx //<< " " << nvp
 	       << endl;
-	  ipp->ptype|=P_BADCH;
+	  ipls->ptype|=P_BADCH;
 	  goto next;
 	}
 
@@ -2808,38 +2852,38 @@ void CRS::Decode_adcm() {
 
       //nbits=bits(header,0,3);
       //nw=bits(header,4,5);
-      ipp->Tstamp64 = rbuf4[idx+rLen-2];
-      ipp->Tstamp64 <<= 32;
-      ipp->Tstamp64 += rbuf4[idx+rLen-3];
-      //ipp->Tstamp64 = rbuf4[idx+rLen-3];
+      ipls->Tstamp64 = rbuf4[idx+rLen-2];
+      ipls->Tstamp64 <<= 32;
+      ipls->Tstamp64 += rbuf4[idx+rLen-3];
+      //ipls->Tstamp64 = rbuf4[idx+rLen-3];
 
 
-      // Long64_t t_orig = ipp->Tstamp64;
+      // Long64_t t_orig = ipls->Tstamp64;
       // static int ii;
       // ii++;
       // bool tst=false;
       // if (ii>257030 && ii<257060) tst=true;
       // // // test1 -> tstamp is bad for all events starting from 3
       // // if (ii>=3) {
-      // // 	ipp->Tstamp64-=109304694026798308;
+      // // 	ipls->Tstamp64-=109304694026798308;
       // // }
       // // // test2 -> tstamp is bad only for event 3
       // // if (ii==3) {
-      // // 	ipp->Tstamp64-=149304694026798308;
+      // // 	ipls->Tstamp64-=149304694026798308;
       // // }
 
 
 
       if (Pstamp64==P64_0) {
-	Pstamp64=ipp->Tstamp64;
+	Pstamp64=ipls->Tstamp64;
 	Offset64=0;
 	//cout << "Zero Offset64: " << Offset64 << endl;
       }
 
       if (Offset64)
-	ipp->Tstamp64-=Offset64;
+	ipls->Tstamp64-=Offset64;
 
-      Long64_t dt=ipp->Tstamp64-Pstamp64;
+      Long64_t dt=ipls->Tstamp64-Pstamp64;
       //10 or 20 sec = 2e9
       if (abs(dt) > 2000000000) { //bad event - ignore it
 
@@ -2848,29 +2892,29 @@ void CRS::Decode_adcm() {
 	  Offset64=0;
 
 	//cout << "Offset64: " << Offset64 << endl;
-	ipp->ptype|=P_BADTST;
+	ipls->ptype|=P_BADTST;
 
-	cout << "bad Tstamp: "<<dt<<" "<<ipp->Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
+	cout << "bad Tstamp: "<<dt<<" "<<ipls->Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
       }
       else {
-	Pstamp64=ipp->Tstamp64;
+	Pstamp64=ipls->Tstamp64;
       }
 
       // if (tst)
       // if (Offset64) {
-      // 	cout << "Tst: " << ii << " " << dt << " " << ipp->Tstamp64 << " " << Pstamp64 << " " << Offset64 << endl;
+      // 	cout << "Tst: " << ii << " " << dt << " " << ipls->Tstamp64 << " " << Pstamp64 << " " << Offset64 << endl;
       // }
 
       if (lflag)
-	ipp->ptype&=~P_NOSTOP; //pulse has stop
+	ipls->ptype&=~P_NOSTOP; //pulse has stop
 
       //Long64_t crc32 = rbuf4[idx+rLen-1];
 
 
       // cout << "Header: " << idx << " " << header << " "
-      // 	   << (int) ipp->Chan << " " << lflag << " "
+      // 	   << (int) ipls->Chan << " " << lflag << " "
       // 	   << nsamp << " " << rLen << " " << hex << header
-      // 	   << dec << " " << ipp->Tstamp64
+      // 	   << dec << " " << ipls->Tstamp64
       // 	   << dec << endl;
 
       // cout << "Header2: " << idx << " " << hex << rbuf4[idx] << " "
@@ -2880,19 +2924,19 @@ void CRS::Decode_adcm() {
       // 	   << dec << endl;
 
       static Float_t baseline=0;
-      if (ipp->sData.empty() && nsamp) {
+      if (ipls->sData.empty() && nsamp) {
 	baseline = rbuf2[idx*2+11];
       }
       for (int i=0;i<nsamp*2;i+=2) {
-	ipp->sData.push_back(rbuf2[idx*2+i+11]-baseline);
-	ipp->sData.push_back(rbuf2[idx*2+i+10]-baseline);
+	ipls->sData.push_back(rbuf2[idx*2+i+11]-baseline);
+	ipls->sData.push_back(rbuf2[idx*2+i+10]-baseline);
 	//cout << i << " " << rbuf2[idx*2+i+11] << endl;
 	//cout << i << " " << rbuf2[idx*2+i+10] << endl;
       }
 
-      // cout << "sData: " << ipp->Tstamp64 << endl;
-      // for (UInt_t i=0;i<ipp->sData.size();i++) {
-      // 	cout << i << " " << ipp->sData.at(i) << endl;
+      // cout << "sData: " << ipls->Tstamp64 << endl;
+      // for (UInt_t i=0;i<ipls->sData.size();i++) {
+      // 	cout << i << " " << ipls->sData.at(i) << endl;
       // }
       
     }
@@ -2954,12 +2998,12 @@ void CRS::Decode_adcm() {
 void CRS::PrintPulse(int udata, bool pdata) {
 
   printf("Pulse: %d %d %lld %d %lld %d %lld\n",
-	 udata,iBP,npulses,ipp->Chan,ipp->Counter,ipp->Nsamp,ipp->Tstamp64);
+	 udata,iBP,npulses,ipls->Chan,ipls->Counter,ipls->Nsamp,ipls->Tstamp64);
   //cout << endl;
 
   if (pdata) {
-    for (int i=0;i<ipp->Nsamp;i++) {
-      printf("%d %f\n",i,ipp->sData[i]);
+    for (int i=0;i<ipls->Nsamp;i++) {
+      printf("%d %f\n",i,ipls->sData[i]);
     }
   }
 
@@ -3004,10 +3048,15 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
   if (pls->ptype) { //any bad pulse
     // cout << "bad pulse: " << (int) pls->ptype << " " << (int) pls->Chan
     // 	 << " " << pls->Counter << " " << pls->Tstamp64 << endl;
-    npulses_bad[pls->Chan]++;
+    if (ipls->Chan<254)
+      npulses_bad[pls->Chan]++;
     return;
   }
-  
+
+  // if (pls->sData.size() != 100) { 
+  //   cout << "sData.size: " << pls->Counter << " " << pls->sData.size() << endl;
+  // }
+
   //const Long64_t ev1=36090;
   //const Long64_t ev2=37010;
 
@@ -3033,11 +3082,28 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
 
   npulses2[pls->Chan]++;
 
-  if (opt.nsmoo[pls->Chan]) {
-    pls->Smooth(opt.nsmoo[pls->Chan]);
+  // if (opt.nsmoo[pls->Chan] && !opt.dsp[pls->Chan]) {
+  //   pls->Smooth(opt.nsmoo[pls->Chan]);
+  // }
+  //cout << "module: " << module << endl;
+  if (module>=33) {
+    if (!opt.dsp[pls->Chan]) {
+      if (opt.nsmoo[pls->Chan]) {
+	pls->Smooth(opt.nsmoo[pls->Chan]);
+      }
+      pls->PeakAna33();
+    }
+    else {
+      if (opt.checkdsp) {
+	pls->PeakAna33();
+	pls->CheckDSP();
+      }
+    }
   }
-  pls->FindPeaks();
-  pls->PeakAna();
+  else {
+    pls->FindPeaks();
+    pls->PeakAna();
+  }
 
   if (Levents.empty()) {
     //if (Tstart64<0) {
@@ -3140,28 +3206,17 @@ void CRS::Make_Events() {
     //return;
   }
 
-  if (!opt.analyze)
-    return;
+  //if (!opt.analyze)
+  //return;
 
   pulse_vect::iterator pls = --vv2->end();
   //insert last pulse from "previous" vector vv2
   if (vv2->size()) {
-    // if (pls->ptype) { //any bad pulse
-    //   cout << "bad pulse3: " << (int) pls->ptype << " " << (int) pls->Chan
-    // 	   << " " << pls->Counter << " " << pls->Tstamp64 << endl;
-    // }
-    // else
     Event_Insert_Pulse(pls);
   }
 
-  //cout << "Make_Events: " << &*vv << " " << vv->size() << endl;
-
   //now insert all pulses from the current buffer, except last one
   //--vv;// = Vpulses+nvp;
-
-  //cout << " " << &*vv << " " << vv->size() << endl;
-
-  //cout << "Make_Events2: " << endl;
 
   for (pls=vv->begin(); pls != --vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {

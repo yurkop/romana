@@ -169,7 +169,7 @@ void Coptions::GetPar(const char* name, int module, int i, Short_t type_ch, int 
     else if (!strcmp(name,"pre")) {
       par = preWr[i];
       min = -1024;
-      max=1024;
+      max=1023;
     }
     else if (!strcmp(name,"len")) {
       par = durWr[i];
@@ -227,6 +227,8 @@ Toptions::Toptions() {
   //cout << "toptions" << endl;
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     chtype[i]=ch_other;
+    dsp[i]=false;
+    Start[i]=true;
     Mrk[i]=true;
     nsmoo[i]=2;
     thresh[i]=cpar.threshold[i];
@@ -279,7 +281,8 @@ Toptions::Toptions() {
   num_buf=100;
 
   decode=true;
-  analyze=true;
+  //analyze_or_dsp=true;
+  checkdsp=false;
 
   b_logy=false;
   b_stat=false;

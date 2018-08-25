@@ -67,7 +67,7 @@ RQ_OBJECT("CRS")
 
   char raw_opt[5];
   char dec_opt[5];
-  Short_t Fmode; //1 - adcm raw; 2- crs2; 32 - crs32
+  Short_t Fmode; //0 - do nothing; 1 - CRS module online; 2 - file analysis
   char Fname[255];
   UChar_t* Fbuf;
   UChar_t* Fbuf2;
@@ -80,11 +80,15 @@ RQ_OBJECT("CRS")
   // (contains current vector and previous vector)
   //std::list<pulse_vect> Vpulses;
   pulse_vect Vpulses[2];
-  int nvp;
-  pulse_vect::iterator ipp; //pointer to the current pulse in decode*
+  int nvp; //Vpulses index
   pulse_vect *vv; //- vector of pulses from current buffer
   pulse_vect *vv2; //- vector of pulses from previous buffer
-  
+
+  pulse_vect::iterator ipls; //pointer to the current pulse in decode*
+  peak_type *ipk; //pointer to the current peak in the current pulse;
+  Double_t QX,QY,RX,RY;
+  Int_t n_frm; //counter for frmt4 and frmt5
+
   //std::list<event_list> Levents; //list of events
   std::list<EventClass> Levents; //list of events
   //EventClass mean_event;
@@ -102,7 +106,9 @@ RQ_OBJECT("CRS")
   // 1 - after setting min. marker -> list can be cleaned if > ev_max
   // 2 - list is analyzed, but not cleaned (at the end of file etc)
 
-  Short_t module; //2 - crs2; 32 - crs32
+  Short_t module;
+  //1-ADCM raw, 2 - crs2; 32 - old crs32, 33 - new crs32 with dsp
+
   Short_t type_ch[MAX_CH+ADDCH];
   Short_t ver_po;
   Int_t period;
@@ -131,7 +137,7 @@ RQ_OBJECT("CRS")
   Int_t npulses2[MAX_CH]; //number of pulses per channel
   Int_t npulses_bad[MAX_CH]; //number of bad pulses per channel
 
-  bool b_usbbuf;
+  //bool b_usbbuf;
 
   bool batch;
   bool b_fstart; // 
@@ -185,6 +191,8 @@ RQ_OBJECT("CRS")
   rpeak_type rP;
   std::vector<rpeak_type> rPeaks;
 
+  peak_type dummy_peak;
+
   //--------functions---------
 
   //void Dummy_trd();
@@ -198,7 +206,7 @@ RQ_OBJECT("CRS")
   int Init_Transfer();
   int Command32_old(byte cmd, byte ch, byte type, int par);
   int Command32(byte cmd, byte ch, byte type, int par);
-  void Check32(byte cmd, byte ch, int &a1, int &a2, int min, int max);
+  void Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max);
   int Command2(byte cmd, byte ch, byte type, int par);
   //void Command_crs(byte cmd, byte chan);
   void AllParameters33(); // load all parameters

@@ -63,6 +63,7 @@ public:
   virtual ~Toptions() {};
 
   Int_t chtype[MAX_CH+ADDCH]; //channel type
+  Bool_t dsp[MAX_CH+ADDCH]; //true - use dsp for data analysis
   Bool_t Start[MAX_CH+ADDCH]; //
   Bool_t Mrk[MAX_CH+ADDCH]; // flag to use channel for mtof
   //UInt_t ch_flag[MAX_CH+ADDCH];
@@ -125,7 +126,8 @@ public:
   Short_t icheck; //first histogram to plot among checked
   
   Bool_t decode;
-  Bool_t analyze;
+  //Bool_t analyze_or_dsp; //true - raw analyze, false - use dsp
+  Bool_t checkdsp;
 
   Bool_t raw_write;
   Bool_t dec_write;

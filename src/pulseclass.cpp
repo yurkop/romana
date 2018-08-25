@@ -5,6 +5,17 @@
 #include "libmana.h"
 #include <iostream>
 
+#include "TSystem.h"
+
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
+
 //extern Coptions cpar;
 extern Toptions opt;
 extern CRS* crs;
@@ -44,7 +55,7 @@ void PulseClass::FindPeaks() {
   // T2 - D<=0, d(-1)>0 (right zero-crossing of D)
   // Pos - threshold crossing, later Pos is redefined as Time+0.5
   //(from exact time)
-  // Pos2 - Maximum between T1 and T2
+  // Pos2 - Maximum of D between T1 and T2
 
 
   /*
@@ -195,12 +206,15 @@ void PulseClass::PeakAna() {
     }
     if (sum>1e-5)
       pk->Time/=sum;
+    else
+      pk->Time=-999;
 
     //pk->Time+=cpar.preWr[Chan];
     //cout << "TTT: " << t3 << " " << t4 << " " << pk->Time << " " << pk->T2
     // << " " << kk << endl;
 
-    pk->Pos = pk->Time+0.5;
+    //pk->Pos = pk->Time+0.5;
+    pk->Pos = pk->Pos2;
 
     //cout << "pk: " << (int) Chan << " " << pk->T3 << " " << pk->T4 << " " << pk->Time << " " << pk->Pos << endl;
 
@@ -223,7 +237,7 @@ void PulseClass::PeakAna() {
     pk->Base=0;
     int nbkg=0;
     //background
-    for (int j=pk->B1;j<=pk->B2;j++) {
+    for (int j=pk->B1;j<pk->B2;j++) {
       pk->Base+=sData[j];
       nbkg++;
     }
@@ -237,7 +251,7 @@ void PulseClass::PeakAna() {
     //peak Area & Height
     pk->Area0=0;
     pk->Height=0;
-    for (int j=pk->P1;j<=pk->P2;j++) {
+    for (int j=pk->P1;j<pk->P2;j++) {
       pk->Area0+=sData[j];
       if (sData[j]>pk->Height) pk->Height = sData[j];
       nn++;
@@ -255,6 +269,166 @@ void PulseClass::PeakAna() {
 
   }
 
+}
+
+//-----------------------------
+
+void PulseClass::PeakAna33() {
+
+  //return;
+  Short_t T5; //left width window
+  Short_t T6; //right width window
+
+  Peaks.push_back(peak_type());
+  peak_type *pk = &Peaks.back();
+  pk->Pos=crs->Pre[Chan];
+
+  UInt_t kk=opt.kdrv[Chan];
+  if (kk<1 || kk>=sData.size()) kk=1;
+  int sz=sData.size()-1;
+    
+  Float_t sum;
+
+  pk->B1=pk->Pos+opt.bkg1[Chan];
+  pk->B2=pk->Pos+opt.bkg2[Chan];
+  pk->P1=pk->Pos+opt.peak1[Chan];
+  pk->P2=pk->Pos+opt.peak2[Chan];
+  pk->T3=pk->Pos+opt.twin1[Chan];
+  pk->T4=pk->Pos+opt.twin2[Chan];
+  T5=pk->Pos+opt.wwin1[Chan];
+  T6=pk->Pos+opt.wwin2[Chan];
+
+  if (pk->B1<0) pk->B1=0;
+  if (pk->B2<0) pk->B2=0;
+  if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
+  if (pk->P2<0) {pk->P2=0; pk->Type|=P_B2;}
+
+  if (pk->B1>sz) pk->B1=sz;
+  if (pk->B2>sz) pk->B2=sz;
+  if (pk->P1>sz) {pk->P1=sz; pk->Type|=P_B1;}
+  if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
+
+
+  if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
+  if (pk->T3>sz) {pk->T3=sz; pk->Type|=P_B11;}
+  if (pk->T4<(int)kk) {pk->T4=kk; pk->Type|=P_B11;}
+  if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B11;}
+
+  pk->Time=0;
+  sum=0;
+  for (int j=pk->T3;j<pk->T4;j++) {
+    Float_t dif=sData[j]-sData[j-kk];
+    pk->Time+=dif*j;
+    sum+=dif;
+    //nt++;
+  }
+  if (sum>1e-5)
+    pk->Time/=sum;
+  else
+    pk->Time=-999;
+
+  pk->Time-=pk->Pos;
+  //cout << "Time: " << pk->Time << " " << sum << " " << pk->T3 << " " << pk->T4 << endl;
+
+  if (T5<(int)kk) {T5=kk;}
+  if (T5>sz) {T5=sz;}
+  if (T6<(int)kk) {T6=kk;}
+  if (T6>sz) {T6=sz;}
+
+  pk->Width=0;
+  sum=0;
+  for (int j=T5;j<T6;j++) {
+    Float_t dif=sData[j]-sData[j-kk];
+    pk->Width+=dif*j;
+    sum+=dif;
+    //nt++;
+  }
+  if (sum>1e-5)
+    pk->Width/=sum;
+  else
+    pk->Width=-999;
+
+  pk->Width-=pk->Pos;
+
+
+  pk->Base=0;
+  int nbkg=0;
+  //background
+  //return;
+  for (int j=pk->B1;j<pk->B2;j++) {
+    pk->Base+=sData[j];
+    nbkg++;
+  }
+  // if (nbkg)
+  //   pk->Base/=nbkg;
+  // else {
+  //   cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+  // }
+
+  int nn=0;
+  //peak Area & Height
+  pk->Area0=0;
+  pk->Height=0;
+  for (int j=pk->P1;j<pk->P2;j++) {
+    pk->Area0+=sData[j];
+    if (sData[j]>pk->Height) pk->Height = sData[j];
+    nn++;
+  }
+  // if (nn) {
+  //   pk->Area0/=nn;
+  // }
+  // else {
+  //   cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
+  // }
+  pk->Area=pk->Area0-pk->Base;
+  // pk->Area*=opt.emult[Chan];
+  // pk->Area0*=opt.emult[Chan];
+  // pk->Base*=opt.emult[Chan];
+
+  // printf(ANSI_COLOR_RED
+  // 	 "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
+  // 	 Counter,Bg,Ar,Ht,Tm,Wd);
+  // printf(ANSI_COLOR_GREEN
+  // 	 "Kop: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
+  // 	 Counter,pk->Base,pk->Area0,pk->Height,pk->Time,Wd);
+
+} //PeakAna33()
+
+void PulseClass::CheckDSP() {
+  if (Peaks.size()!=2) {
+    cout <<"CheckDSP: Peaks.size()!=2" << Peaks.size() << endl;
+    return;
+  }
+  const int nn=5;
+  const Float_t eps=0.1;
+
+  Float_t cc[nn];
+  cc[0] = Peaks[0].Base - Peaks[1].Base;
+  cc[1] = Peaks[0].Area0 - Peaks[1].Area0;
+  cc[2] = Peaks[0].Height - Peaks[1].Height;
+  cc[3] = Peaks[0].Time - Peaks[1].Time;
+  cc[4] = Peaks[0].Width - Peaks[1].Width;
+
+  Bool_t bad=false;
+  for (int i=0;i<nn;i++) {
+    if (abs(cc[i])>eps)
+      bad=true;
+  }
+
+  if (bad) {
+    printf(ANSI_COLOR_YELLOW"Error!\n");
+    printf(ANSI_COLOR_RED
+	   "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
+	   Counter,Peaks[0].Base,Peaks[0].Area0,Peaks[0].Height,
+	   Peaks[0].Time,Peaks[0].Width);
+    printf(ANSI_COLOR_GREEN
+	   "Kop: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
+	   Counter,Peaks[1].Base,Peaks[1].Area0,Peaks[1].Height,
+	   Peaks[1].Time,Peaks[1].Width);
+  }
+  else {
+    //printf("%10lld OK\n",Counter);
+  }
 }
 
 EventClass::EventClass() {
@@ -514,6 +688,7 @@ void EventClass::FillHist(Bool_t first) {
 
   if (first) {
     opt.T_acq=(T-crs->Tstart64)*DT;
+    //cout << "T_acq: " << opt.T_acq << " " << T << endl;
 
     if (opt.Tstop && (opt.T_acq > opt.Tstop || opt.T_acq < opt.Tstart)) {
       if (crs->b_fana) {

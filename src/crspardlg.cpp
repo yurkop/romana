@@ -54,28 +54,29 @@ const char* ttip1[ncrspar+1]={
   "Number of Bad pulses"
 };
 
-const int nchpar=21;
-const int tlen2[nchpar]={26,60,24,24,25,32,40,40,40,42,42,35,35,20,35,35,35,35,42,42,42};
-const char* tlab2[nchpar]={"Ch","Type","St","*","sS","Drv","Thr","Base1","Base2","Peak1","Peak2","dT","Pile","Tm","T1","T2","W1","W2","EM","Elim1","Elim2"};
+const int nchpar=22;
+const int tlen2[nchpar]={26,60,24,24,24,25,32,40,40,40,42,42,35,35,20,35,35,35,35,42,42,42};
+const char* tlab2[nchpar]={"Ch","Type","dsp","St","*","sS","Drv","Thr","Base1","Base2","Peak1","Peak2","dT","Pile","Tm","T1","T2","W1","W2","EM","Elim1","Elim2"};
 const char* ttip2[nchpar]={
   "Channel number",
   "Channel type",
+  "Use Digital Signal Processing (DSP) data instead of raw data",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Marked channel - use this channel for making integral spectra\n and Mtof spectra",
   "Software smoothing",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
   "Baseline start, relative to peak Pos (negative)",
-  "Baseline end, relative to peak Pos (negative)",
+  "Baseline end, relative to peak Pos (negative), excluded",
   "Peak start, relative to peak Pos (usually negative)",
-  "Peak end, relative to peak Pos (usually positive)",
+  "Peak end, relative to peak Pos (usually positive), excluded",
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   "Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
   "Timing window start, included (usually negative, if 99 - use T1)",
   "Timing window end, excluded (usually positive, if 99 - use T2)",
   "Width window start",
-  "Width window end",
+  "Width window end, excluded",
   "Energy multiplier",
   "Low energy limit (not working yet)",
   "High energy limit (not working yet)"
@@ -929,17 +930,41 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   sprintf(txt,"Decode");
   fchk = new TGCheckButton(hframe1, txt, id);
   fchk->SetName(txt);
+  fchk->SetToolTipText("Decode raw data");
   hframe1->AddFrame(fchk,fL3);
   DoMap(fchk,&opt.decode,p_chk,0);
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
+  /*
   id = Plist.size()+1;
   sprintf(txt,"Analyze");
   fchk = new TGCheckButton(hframe1, txt, id);
   fchk->SetName(txt);
+  fchk->SetToolTipText("Analyze and use raw decoded data");
   hframe1->AddFrame(fchk,fL3);
   DoMap(fchk,&opt.analyze,p_chk,0);
+  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+
+  id = Plist.size()+1;
+  sprintf(txt,"DSP");
+  fchk = new TGCheckButton(hframe1, txt, id);
+  fchk->SetName(txt);
+  fchk->SetToolTipText("Use Digital Signal Processing data");
+  hframe1->AddFrame(fchk,fL3);
+  DoMap(fchk,&opt.dsp,p_chk,0);
+  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+  */
+
+  id = Plist.size()+1;
+  sprintf(txt,"CheckDSP");
+  fchk = new TGCheckButton(hframe1, txt, id);
+  fchk->SetName(txt);
+  fchk->SetToolTipText("Compare raw decoded data vs DSP data");
+  hframe1->AddFrame(fchk,fL3);
+  DoMap(fchk,&opt.checkdsp,p_chk,0);
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
@@ -1436,19 +1461,20 @@ void ParParDlg::DoNum_SetBuf() {
 
   //if (te->GetNumMax() < 3000) { //this is USB buffer
   if (id==id_usb) { //this is USB buffer  
-#ifdef CYUSB
-    crs->b_usbbuf=true;
+    //#ifdef CYUSB
+    //crs->b_usbbuf=true;
     // if (crs->module && !crs->b_acq) {
     //   crs->Free_Transfer();
     //   gSystem->Sleep(50);
     //   crs->Init_Transfer();
     // }
-#endif
+    //#endif
   }
   else { //this is READ buffer
     int bsize=opt.rbuf_size*1024;
     int boffset=0;
-    if (crs->Fmode==1) {
+    //if (crs->Fmode==1) {
+    if (crs->module==1) {
       bsize+=4096;
       boffset+=4096;
     }
@@ -1486,6 +1512,10 @@ void ParParDlg::DoCheckHist() {
 void ParParDlg::DoCheckPulse() {
   DoChk();
   HiFrm->HiReset();
+}
+
+void ParParDlg::Update() {
+  ParDlg::Update();
 }
 
 //------ ChanParDlg -------
@@ -1636,8 +1666,16 @@ void ChanParDlg::AddLine_chan(int i, TGCompositeFrame* fcont1) {
   }
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
-  id = Plist.size()+1;
 
+  id = Plist.size()+1;
+  TGCheckButton *fdsp = new TGCheckButton(cframe[i], "", id);
+  DoMap(fdsp,&opt.dsp[i],p_chk,all,0,0);
+  fdsp->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  fdsp->SetToolTipText(ttip2[kk]);
+  cframe[i]->AddFrame(fdsp,fL3);
+  kk++;
+
+  id = Plist.size()+1;
   TGCheckButton *fst = new TGCheckButton(cframe[i], "", id);
   DoMap(fst,&opt.Start[i],p_chk,all,0,0);
   fst->Connect("Clicked()", "ParDlg", this, "DoChk()");
@@ -1818,7 +1856,7 @@ void CrsParDlg::AddHeader() {
   TGTextEntry* tt[ncrspar+1];
 
   for (int i=0;i<=ncrspar;i++) {
-    if (!strcmp(tlab1[i],"Trg") && crs->module!=33) {
+    if (!strcmp(tlab1[i],"Trg") && crs->module<33) {
       continue;
     }
     tt[i]=new TGTextEntry(head_frame, tlab1[i]);

@@ -37,15 +37,15 @@ const UShort_t P_TAIL=1<<11; //tail
 
 class peak_type {
  public:
-  Float_t Base;
-  Float_t Area0;
-  Float_t Area;
+  Float_t Base; //baseline
+  Float_t Area0; //area+background
+  Float_t Area; //pure area (Area0-Base)
   Float_t Slope1;
   Float_t Slope2;
   Float_t Noise1;
   Float_t Noise2;
-  Float_t Height;
-  Float_t Width;
+  Float_t Height; //maximum of pulse in the same region as Area
+  Float_t Width; //peak width
   Float_t Time; //exact time relative to pulse start (from 1st deriv)
   //Float_t Time2; //exact time (from 2nd deriv)
   Short_t Pos; //position relative to pulse start (in samples)
@@ -113,11 +113,11 @@ class PulseClass {
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
   //short *Data; //raw pulse data
 
-  Float_t Bg; //Background
-  Float_t Ar; //Area
-  Float_t Ht; //Height
-  Float_t Tm; //Time
-  Float_t Wd; //Width
+  // Float_t Bg; //Background
+  // Float_t Ar; //Area
+  // Float_t Ht; //Height
+  // Float_t Tm; //Time
+  // Float_t Wd; //Width
 
   //bool Analyzed; //true if pulse is already analyzed
  public:
@@ -128,6 +128,8 @@ class PulseClass {
   void FindPeaks();
   //void FindPeaks(Float_t thresh, int deadtime);
   void PeakAna();
+  void PeakAna33();
+  void CheckDSP();
   void Smooth(int n);
   void PrintPulse(int pdata=0);
 
