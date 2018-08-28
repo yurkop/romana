@@ -14,6 +14,7 @@
 #include <RQ_OBJECT.h>
 //#include <TTree.h>
 #include <TFile.h>
+#include <TFormula.h>
 
 #include "pulseclass.h"
 #include "common.h"
@@ -191,6 +192,9 @@ RQ_OBJECT("CRS")
   rpeak_type rP;
   std::vector<rpeak_type> rPeaks;
 
+  bool b_maintrig; //true if maintrig is not empty
+  TFormula maintrig;
+
   peak_type dummy_peak;
 
   //--------functions---------
@@ -244,6 +248,7 @@ RQ_OBJECT("CRS")
   int Searchsync();
   void Decode_adcm();
 
+  int Set_Trigger();
   void Ana_start();
   void Ana2(int all);
 

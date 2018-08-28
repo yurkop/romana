@@ -127,6 +127,8 @@ protected:
   TGNumberFormat::EStyle k_r2;
   TGNumberFormat::EStyle k_r3;
 
+  TGTextEntry* tTrig;
+
 public:
   /*
     void AddLine3(TGCompositeFrame* frame, int width, void *x1, void *x2, 
@@ -143,8 +145,7 @@ public:
 		   double min1=0, double max1=0,
 		   double min2=0, double max2=0, char* connect=NULL);
   void AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
-		   const char* tip1, const char* label,
-		   char* connect);
+		   const char* tip1, const char* label);
   void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
   void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
@@ -165,6 +166,7 @@ public:
   void DoNum_SetBuf();
   void DoCheckHist();
   void DoCheckPulse();
+  void CheckFormula();
   void Update();
 
   ClassDef(ParParDlg, 0)

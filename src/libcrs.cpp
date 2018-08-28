@@ -372,12 +372,33 @@ void *handle_ana(void* ptr) {
     
 } //handle_ana
 
+int CRS::Set_Trigger() {
+  int len = strlen(opt.maintrig);
+  if (len==0) {
+    b_maintrig=false;
+    return 0;
+  }
+  else {
+    maintrig = TFormula("Trig",opt.maintrig);
+    int ires = maintrig.Compile();
+    if (ires) { //bad formula
+      b_maintrig=false;
+      return 1;
+    }
+    else {
+      crs->b_maintrig=true;
+      return 0;
+    }
+  }
+}
+
 void CRS::Ana_start() {
   //set initial variables for analysis
   //should be called before first call of ana2
   if (opt.ev_min>=opt.ev_max) {
     opt.ev_min=opt.ev_max/2;
   }
+  Set_Trigger();
 }
 
 void CRS::Ana2(int all) {

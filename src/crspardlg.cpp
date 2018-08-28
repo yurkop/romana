@@ -1066,11 +1066,10 @@ void ParParDlg::AddLogic(TGCompositeFrame* frame) {
 	      1,MAX_CH,1,MAX_CH);
 
 
-  char dummy[100];
-  tip1= "See Histograms->Cuts for making conditions\nUse arithmetic operations on existing cuts or leave it empty to record all events";
-  label="Main Trigger";
+  tip1= "This condition is used for selecting events which are written as decoded events\nSee Histograms->Cuts for making conditions\nUse arithmetic/logic operations on existing cuts or leave it empty to record all events\nPress Enter or Check button to check if the syntaxis is correct";
+  label="Main Trigger conditions";
   ww=150;
-  AddLine_txt(fF6,ww,dummy, tip1, label, "test");
+  AddLine_txt(fF6,ww,opt.maintrig, tip1, label);
 
 
   fF6->Resize();
@@ -1280,8 +1279,7 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 }
 
 void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
-			    const char* tip1, const char* label,
-			    char* connect)
+			    const char* tip1, const char* label)
 {
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
@@ -1290,19 +1288,19 @@ void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname,
   int id;
 
   id = Plist.size()+1;
-  TGTextEntry* tt = new TGTextEntry(hfr1,(char*)opt_fname, id);
-  tt->SetWidth(width);
-  tt->SetMaxLength(98);
+  tTrig = new TGTextEntry(hfr1,(char*)opt_fname, id);
+  tTrig->SetWidth(width);
+  tTrig->SetMaxLength(20);
 
+  DoMap(tTrig,opt_fname,p_txt,0);
+  tTrig->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+  tTrig->Connect("ReturnPressed()", "ParParDlg", this, "CheckFormula()");
 
-  //DoMap(tt,opt_fname,p_txt,0);
-  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
-
-  tt->SetToolTipText(tip1);
-  hfr1->AddFrame(tt,fL7);
+  tTrig->SetToolTipText(tip1);
+  hfr1->AddFrame(tTrig,fL7);
   
-  TGTextButton* but = new TGTextButton(hfr1,"OK",7);
-  but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
+  TGTextButton* but = new TGTextButton(hfr1,"Check",7);
+  but->Connect("Clicked()", "ParParDlg", this, "CheckFormula()");
   but->SetToolTipText(tip1);
   hfr1->AddFrame(but, fL6);
 
@@ -1581,6 +1579,22 @@ void ParParDlg::DoCheckHist() {
 void ParParDlg::DoCheckPulse() {
   DoChk();
   HiFrm->HiReset();
+}
+
+void ParParDlg::CheckFormula() {
+  //cout << "Check: " << opt.maintrig << endl;
+  Pixel_t color;
+
+  int ires = crs->Set_Trigger();
+  if (ires==1) {// bad formula
+    gClient->GetColorByName("red", color);
+    tTrig->SetBackgroundColor(color);
+  }
+  else { //good formula
+    gClient->GetColorByName("green", color);
+    tTrig->SetBackgroundColor(color);
+  }
+
 }
 
 void ParParDlg::Update() {
