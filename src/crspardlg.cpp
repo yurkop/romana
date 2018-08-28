@@ -31,6 +31,7 @@ namespace CP {
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern AnaParDlg *anapar;
+extern PikParDlg *pikpar;
 
 const int ncrspar=14;
 
@@ -386,6 +387,7 @@ void ParDlg::DoCombo() {
 
       crspar->CopyParLine(-old,nline);
       anapar->CopyParLine(-old,nline);
+      pikpar->CopyParLine(-old,nline);
 
 
       te->Select(old);
@@ -395,6 +397,7 @@ void ParDlg::DoCombo() {
     SetCombo(pp,sel);
     crspar->CopyParLine(sel,nline);
     anapar->CopyParLine(sel,nline);
+    pikpar->CopyParLine(sel,nline);
 
   }
 
@@ -409,6 +412,7 @@ void ParDlg::DoCombo() {
 
 	crspar->CopyParLine(sel,i);
 	anapar->CopyParLine(sel,i);
+	pikpar->CopyParLine(sel,i);
 
 	// if (sel<ADDCH) {
 	//   for (int j=1;j<nfld;j++) {
@@ -866,6 +870,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   AddFiles(ver1);
   AddOpt(ver1);
+  AddLogic(ver1);
   AddAna(ver1);
   AddHist(ver2);
 
@@ -913,7 +918,7 @@ void ParParDlg::AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 
   //strcpy(opt.fname_raw,"raw32.gz");
   id = Plist.size()+1;
-  TGTextEntry* tt = new TGTextEntry(hframe2,(char*)opt_fname, id);;
+  TGTextEntry* tt = new TGTextEntry(hframe2,(char*)opt_fname, id);
   tt->SetDefaultSize(380,20);
   tt->SetMaxLength(98);
   //tt->SetWidth(590);
@@ -1038,11 +1043,11 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
 
 }
 
-void ParParDlg::AddAna(TGCompositeFrame* frame) {
+void ParParDlg::AddLogic(TGCompositeFrame* frame) {
   
   int ww=70;
 
-  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Analysis", kVerticalFrame);
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Event Logic", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, fL6);
 
@@ -1059,6 +1064,26 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   label="Multiplicity (min, max)";
   AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,k_int,
 	      1,MAX_CH,1,MAX_CH);
+
+
+  char dummy[100];
+  tip1= "See Histograms->Cuts for making conditions\nUse arithmetic operations on existing cuts or leave it empty to record all events";
+  label="Main Trigger";
+  ww=150;
+  AddLine_txt(fF6,ww,dummy, tip1, label, "test");
+
+
+  fF6->Resize();
+
+}
+
+void ParParDlg::AddAna(TGCompositeFrame* frame) {
+  
+  int ww=70;
+
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "MTOF Analysis", kVerticalFrame);
+  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame->AddFrame(fF6, fL6);
 
   tip1= "Mtof period (mks) (ignored if set to zero)";
   tip2= "Mtof start channel";
@@ -1254,6 +1279,38 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 
 }
 
+void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
+			    const char* tip1, const char* label,
+			    char* connect)
+{
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
+  int id;
+
+  id = Plist.size()+1;
+  TGTextEntry* tt = new TGTextEntry(hfr1,(char*)opt_fname, id);
+  tt->SetWidth(width);
+  tt->SetMaxLength(98);
+
+
+  //DoMap(tt,opt_fname,p_txt,0);
+  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+
+  tt->SetToolTipText(tip1);
+  hfr1->AddFrame(tt,fL7);
+  
+  TGTextButton* but = new TGTextButton(hfr1,"OK",7);
+  but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
+  but->SetToolTipText(tip1);
+  hfr1->AddFrame(but, fL6);
+
+  TGLabel* fLabel = new TGLabel(hfr1, label);
+  hfr1->AddFrame(fLabel,fL7);
+
+}
+
 void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 		  const char* tip, const char* label) {
 
@@ -1385,7 +1442,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 
   //hint
   TGLabel* tt = new TGLabel(hfr1,"");
-  //TGTextEntry* tt = new TGTextEntry(hfr1," ", 0);;
+  //TGTextEntry* tt = new TGTextEntry(hfr1," ", 0);
   //tt->SetToolTipText("Min Max are taken from the corresponding 1d histograms");
   tt->ChangeOptions(tt->GetOptions()|kFixedWidth);
   tt->SetWidth(ww);

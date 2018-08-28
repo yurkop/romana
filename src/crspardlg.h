@@ -142,6 +142,9 @@ public:
 		   //TGNumberFormat::EAttribute attr, 
 		   double min1=0, double max1=0,
 		   double min2=0, double max2=0, char* connect=NULL);
+  void AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
+		   const char* tip1, const char* label,
+		   char* connect);
   void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
   void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
@@ -156,6 +159,7 @@ public:
   void AddFiles(TGCompositeFrame* frame);
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
+  void AddLogic(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
   void DoParNum();
   void DoNum_SetBuf();

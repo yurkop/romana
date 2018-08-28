@@ -1223,6 +1223,7 @@ void MainFrame::Rebuild() {
   EvtFrm->Rebuild();
   crspar->Rebuild();
   anapar->Rebuild();
+  pikpar->Rebuild();
   Resize(GetDefaultSize());
   Layout();
 
@@ -1354,6 +1355,7 @@ void MainFrame::DoOpen() {
     parpar->Update();
     crspar->Update();
     anapar->Update();
+    pikpar->Update();
 
   }
 
@@ -1386,6 +1388,7 @@ void MainFrame::DoClose() {
   parpar->Update();
   crspar->Update();
   anapar->Update();
+  pikpar->Update();
 
 }
 
@@ -1542,6 +1545,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
       parpar->Update();
       crspar->Update();
       anapar->Update();
+      pikpar->Update();
 
     }
     else { //Save pars
@@ -1610,6 +1614,7 @@ void MainFrame::DoReadRoot() {
     parpar->Update();
     crspar->Update();
     anapar->Update();
+    pikpar->Update();
     HiFrm->Update();
 
     //nevent=opt.Nevt;
@@ -1730,6 +1735,7 @@ void MainFrame::DoReset() {
   parpar->Update();
   crspar->Update();
   anapar->Update();
+  pikpar->Update();
   //}
 
   UpdateStatus();
@@ -1941,9 +1947,13 @@ void MainFrame::DoTab(Int_t num) {
     //cout << "DoTab2: " << name << endl;
     crspar->Update();
   }
-  else if (name.EqualTo("Channels",TString::kIgnoreCase)) {
+  else if (name.EqualTo("Analysis",TString::kIgnoreCase)) {
     //cout << "DoTab3: " << name << endl;
     anapar->Update();
+  }
+  else if (name.EqualTo("Peaks",TString::kIgnoreCase)) {
+    //cout << "DoTab3: " << name << endl;
+    pikpar->Update();
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
     //cout << "DoTab4: " << name << endl;

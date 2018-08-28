@@ -38,6 +38,8 @@ extern HClass* hcl;
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern AnaParDlg *anapar;
+extern PikParDlg *pikpar;
+
 extern int debug; // for printing debug messages
 
 const double MB = 1024*1024;
@@ -1457,6 +1459,7 @@ int CRS::DoStartStop() {
     parpar->Update();
     crspar->Update();
     anapar->Update();
+    pikpar->Update();
 
     //EvtFrm->Levents = &Levents;
     EvtFrm->Clear();
@@ -1987,7 +1990,7 @@ int CRS::DoBuf() {
   //return nbuffers;
 
   // cout << "gzread: " << Fmode << " " << module << " "
-  //      << nbuffers << " " << BufLength << endl;
+  //      << nbuffers << " " << BufLength << " " << ttm[0] << endl;
 
 
   if (BufLength>0) {
