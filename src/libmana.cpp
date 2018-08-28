@@ -58,7 +58,8 @@ HClass* hcl;
 
 ParParDlg *parpar;
 CrsParDlg *crspar;
-ChanParDlg *chanpar;
+AnaParDlg *anapar;
+PikParDlg *pikpar;
 
 //const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
@@ -1011,9 +1012,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   tabfr[0] = fTab->AddTab("Parameters");
   tabfr[1] = fTab->AddTab("DAQ");
   tabfr[2] = fTab->AddTab("Analysis");
+  tabfr[3] = fTab->AddTab("Peaks");
   //tabfr[2] = fTab->AddTab("Channels");
-  tabfr[3] = fTab->AddTab("Events");
-  tabfr[4] = fTab->AddTab("Histograms");
+  tabfr[4] = fTab->AddTab("Events");
+  tabfr[5] = fTab->AddTab("Histograms/Cuts");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
 
@@ -1220,7 +1222,7 @@ void MainFrame::Rebuild() {
 
   EvtFrm->Rebuild();
   crspar->Rebuild();
-  chanpar->Rebuild();
+  anapar->Rebuild();
   Resize(GetDefaultSize());
   Layout();
 
@@ -1245,19 +1247,25 @@ void MainFrame::MakeTabs() {
   crspar->Update();
   //cout << "tab3: " << endl;
 
-  chanpar = new ChanParDlg(tabfr[2], 600, 500);
-  chanpar->Make_chanpar(tabfr[2], 600, 210);
-  tabfr[2]->AddFrame(chanpar, Lay12);
+  anapar = new AnaParDlg(tabfr[2], 600, 500);
+  anapar->Make_AnaPar(tabfr[2], 600, 210);
+  tabfr[2]->AddFrame(anapar, Lay12);
   ntab++;
-  chanpar->Update();
+  anapar->Update();
 
-  EvtFrm = new EventFrame(tabfr[3], 620, 500,ntab);
-  tabfr[3]->AddFrame(EvtFrm, Lay11);
+  pikpar = new PikParDlg(tabfr[3], 600, 500);
+  pikpar->Make_PikPar(tabfr[3], 600, 210);
+  tabfr[3]->AddFrame(pikpar, Lay12);
+  ntab++;
+  pikpar->Update();
+
+  EvtFrm = new EventFrame(tabfr[4], 620, 500,ntab);
+  tabfr[4]->AddFrame(EvtFrm, Lay11);
   ntab++;
 
-  HiFrm = new HistFrame(tabfr[4], 800, 500,ntab);
+  HiFrm = new HistFrame(tabfr[5], 800, 500,ntab);
   HiFrm->HiReset();
-  tabfr[4]->AddFrame(HiFrm, Lay11);
+  tabfr[5]->AddFrame(HiFrm, Lay11);
   ntab++;
 
   local_nch=opt.Nchan;
@@ -1345,7 +1353,7 @@ void MainFrame::DoOpen() {
 
     parpar->Update();
     crspar->Update();
-    chanpar->Update();
+    anapar->Update();
 
   }
 
@@ -1377,7 +1385,7 @@ void MainFrame::DoClose() {
 
   parpar->Update();
   crspar->Update();
-  chanpar->Update();
+  anapar->Update();
 
 }
 
@@ -1533,7 +1541,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 
       parpar->Update();
       crspar->Update();
-      chanpar->Update();
+      anapar->Update();
 
     }
     else { //Save pars
@@ -1601,7 +1609,7 @@ void MainFrame::DoReadRoot() {
 
     parpar->Update();
     crspar->Update();
-    chanpar->Update();
+    anapar->Update();
     HiFrm->Update();
 
     //nevent=opt.Nevt;
@@ -1721,7 +1729,7 @@ void MainFrame::DoReset() {
   HiFrm->HiReset();
   parpar->Update();
   crspar->Update();
-  chanpar->Update();
+  anapar->Update();
   //}
 
   UpdateStatus();
@@ -1935,7 +1943,7 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("Channels",TString::kIgnoreCase)) {
     //cout << "DoTab3: " << name << endl;
-    chanpar->Update();
+    anapar->Update();
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
     //cout << "DoTab4: " << name << endl;

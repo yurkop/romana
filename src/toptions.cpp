@@ -230,6 +230,8 @@ Toptions::Toptions() {
     dsp[i]=false;
     Start[i]=true;
     Mrk[i]=true;
+    for (int j=0;j<NGRP;j++)
+      Grp[i][j]=false;
     nsmoo[i]=2;
     thresh[i]=cpar.threshold[i];
 
@@ -327,7 +329,7 @@ Hdef::Hdef() {
   min=0;
   max=100;
   b=true;
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<MAX_CH+NGRP;i++) {
     c[i]=true;
     w[i]=false;
     cut[i]=0;

@@ -37,7 +37,7 @@ extern HistFrame* HiFrm;
 extern HClass* hcl;
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
-extern ChanParDlg *chanpar;
+extern AnaParDlg *anapar;
 extern int debug; // for printing debug messages
 
 const double MB = 1024*1024;
@@ -66,6 +66,13 @@ CRS* crs;
 extern Coptions cpar;
 extern Toptions opt;
 int chanPresent;
+
+
+TTimeStamp tt1[10];
+TTimeStamp tt2[10];
+double ttm[10];
+double dif;
+
 
 //TCondition tcond1(0);
 
@@ -365,7 +372,7 @@ void *handle_ana(void* ptr) {
 
 void CRS::Ana_start() {
   //set initial variables for analysis
-  //should be called befor first call of ana2
+  //should be called before first call of ana2
   if (opt.ev_min>=opt.ev_max) {
     opt.ev_min=opt.ev_max/2;
   }
@@ -1449,7 +1456,7 @@ int CRS::DoStartStop() {
 
     parpar->Update();
     crspar->Update();
-    chanpar->Update();
+    anapar->Update();
 
     //EvtFrm->Levents = &Levents;
     EvtFrm->Clear();
@@ -1703,6 +1710,8 @@ void CRS::DoReset() {
   nbuffers=0;
   memset(npulses2,0,sizeof(npulses2));
   memset(npulses_bad,0,sizeof(npulses_bad));
+
+  memset(ttm,0,sizeof(ttm));
 
   //npulses=0;
   npulses_buf=0;
@@ -1967,15 +1976,24 @@ void CRS::SaveParGz(gzFile &ff) {
 int CRS::DoBuf() {
 
   //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
+  tt1[0].Set();
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
+  tt2[0].Set();
+  dif = tt2[0].GetSec()-tt1[0].GetSec()+
+  (tt2[0].GetNanoSec()-tt1[0].GetNanoSec())*1e-9;
+  ttm[0]+=dif;
 
   //nbuffers++;
   //return nbuffers;
 
   // cout << "gzread: " << Fmode << " " << module << " "
   //      << nbuffers << " " << BufLength << endl;
+
+
   if (BufLength>0) {
     crs->totalbytes+=BufLength;
+
+    tt1[1].Set();
 
     if (opt.decode) {
       if (module>=32) {
@@ -1990,6 +2008,11 @@ int CRS::DoBuf() {
 	Decode_adcm();
       }
     }
+
+    tt2[1].Set();
+    dif = tt2[1].GetSec()-tt1[1].GetSec()+
+      (tt2[1].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
+    ttm[1]+=dif;
 
     nbuffers++;
 
@@ -2009,7 +2032,6 @@ int CRS::DoBuf() {
     //myM->DoAna();
     return 0;
   }
-
 
 }
 
@@ -2100,8 +2122,20 @@ void CRS::FAnalyze2(bool nobatch) {
 
   Ana_start();
   int res;
+  tt1[3].Set();
   while ((res=crs->DoBuf()) && crs->b_fana) {
+    tt1[2].Set();
     Ana2(0);
+
+    tt2[2].Set();
+    dif = tt2[2].GetSec()-tt1[2].GetSec()+
+      (tt2[2].GetNanoSec()-tt1[2].GetNanoSec())*1e-9;
+    ttm[2]+=dif;
+
+    ttm[3] = tt2[2].GetSec()-tt1[3].GetSec()+
+      (tt2[2].GetNanoSec()-tt1[3].GetNanoSec())*1e-9;
+    //ttm[3]+=dif;
+
     if (nobatch) {
       Show();
       gSystem->ProcessEvents();
@@ -2274,6 +2308,11 @@ void CRS::Show(bool force) {
     }
 
     myM->UpdateStatus();
+    cout << "Times: " << opt.T_acq;
+    for (int i=0;i<4;i++) {
+      cout << " " << ttm[i];
+    }
+    cout << endl;
 
   }
   //}

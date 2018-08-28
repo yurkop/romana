@@ -157,7 +157,7 @@ public:
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
-  void DoNum();
+  void DoParNum();
   void DoNum_SetBuf();
   void DoCheckHist();
   void DoCheckPulse();
@@ -178,16 +178,11 @@ public:
   ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ChanParDlg() {};
 
-  void Make_chanpar(const TGWindow *p,UInt_t w,UInt_t h);
-
-  void AddHeader();
-  void AddLine_chan(int i, TGCompositeFrame* fcont1);
-  void AddNum2(int i, int kk, int all, TGHorizontalFrame *hframe1,
+  void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       void* apar, double min, double max, P_Def ptype);
-  void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan,
+  void DoChanMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan,
 	     void* d2=0);
-  void DoNum();
-  //void DoCheck();
+  void DoChanNum();
 
   ClassDef(ChanParDlg, 0)
 };
@@ -207,14 +202,45 @@ public:
   void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
   void AddHeader();
   void AddLine_crs(int i, TGCompositeFrame* fcont1);
-  void AddNum1(int i, int kk, int all, TGHorizontalFrame *hframe1,
+  void AddNumCrs(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       const char* name, void* apar, void* apar2=0);
   void ResetStatus();
   void UpdateStatus();
-  void DoNum();
+  void DoCrsNum();
   void DoCheck();
 
   ClassDef(CrsParDlg, 0)
+};
+
+//-----------------------------------------------
+class AnaParDlg: public ChanParDlg {
+
+public:
+  AnaParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~AnaParDlg() {};
+
+  void Make_AnaPar(const TGWindow *p,UInt_t w,UInt_t h);
+
+  void AddHeader();
+  void AddLine_Ana(int i, TGCompositeFrame* fcont1);
+  //void DoChanNum();
+
+  ClassDef(AnaParDlg, 0)
+};
+
+//-----------------------------------------------
+class PikParDlg: public ChanParDlg {
+
+public:
+  PikParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~PikParDlg() {};
+
+  void Make_PikPar(const TGWindow *p,UInt_t w,UInt_t h);
+
+  void AddHeader();
+  void AddLine_Pik(int i, TGCompositeFrame* fcont1);
+
+  ClassDef(PikParDlg, 0)
 };
 
 #endif

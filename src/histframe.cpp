@@ -190,6 +190,7 @@ void DynamicExec()
   
 }
 
+//----- HistFrame ----------------
 HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
@@ -234,8 +235,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //TGVerticalFrame *fVer[NR];
   //TGLabel *flab[NR];
 
-  TGShutterItem *item;
-  TGCompositeFrame *container;
+  //TGShutterItem *item;
+  //TGCompositeFrame *container;
 
   TGTextButton* but;
 
@@ -270,6 +271,30 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //TGVerticalFrame *fV1 = new TGVerticalFrame(fHor1, 10,10);
   //fHor1->AddFrame(fV1, fLay7);
 
+
+
+
+
+
+
+  TGTab* fTab = new TGTab(fHor1);
+  fHor1->AddFrame(fTab, fLay7);
+  //fHor1->AddFrame(fTab, new TGLayoutHints(kLHintsCenterX|kLHintsTop,0,0,0,0));
+  TGCompositeFrame* tab1 = fTab->AddTab(" Histograms ");
+  TGCompositeFrame* tab2 = fTab->AddTab(" Cuts ");
+  gCanvas = new TGCanvas(tab1, 150, 100);
+  tab1->AddFrame(gCanvas, fLay8);
+  gCanvas2 = new TGCanvas(tab2, 150, 100);
+  tab2->AddFrame(gCanvas2, fLay8);
+  //container = tab2;
+
+
+
+
+
+
+
+  /*
   TGShutter* fShutter = new TGShutter(fHor1);
   fShutter->SetDefaultSize(150,10);
   fHor1->AddFrame(fShutter, fLay7);
@@ -285,6 +310,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fShutter->AddItem(item);
   gCanvas2 = new TGCanvas(container, 150, 100);
   container->AddFrame(gCanvas2, fLay8);
+  */
+
+
+
 
   //TGVerticalFrame *fV2 = new TGVerticalFrame(fHor1, 10, 10);
   //fHor1->AddFrame(fV2, fLay7);
@@ -296,56 +325,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   // }
   
 
-
-
-
-  fHor3 = new TGHorizontalFrame(container, 10, 10);
-  container->AddFrame(fHor3, fLay2);
-
-  //fHor3->AddFrame(new TGLabel(fHor3, "Cuts:"), fLay5);
-
-  but = new TGTextButton(fHor3,"Add",1);
-  but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
-  fHor3->AddFrame(but, fLay5);
-
-  but = new TGTextButton(fHor3,"Cancel",2);
-  but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
-  fHor3->AddFrame(but, fLay5);
-
-  //but = new TGTextButton(fHor3,"Show",3);
-  //but->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
-  //fHor3->AddFrame(but, fLay5);
-
-  but = new TGTextButton(fHor3,"Clear",4);
-  but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
-  fHor3->AddFrame(but, fLay5);
-
-
-  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
-
-  container->AddFrame(new TGLabel(container, "--Formula--"), fLay2);
-  TGHorizontalFrame *fHor7 = new TGHorizontalFrame(container, 10, 10);
-  container->AddFrame(fHor7, fLay9);
-
-  but = new TGTextButton(fHor7,"Form",7);
-  but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
-  but->SetToolTipText(ttip);
-  fHor7->AddFrame(but, fLay6);
-  
-  tForm    = new TGTextEntry(fHor7,"",8);;
-  tForm->SetWidth(120);
-  tForm->SetToolTipText(ttip);
-  tForm->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
-  fHor7->AddFrame(tForm,fLay2);
-
-  //container->AddFrame(new TGLabel(container, "--Histograms--"), fLay9);
-  //gCanvas->AddFrame(new TGLabel(gCanvas, "--Histograms--"), fLay5);
-  //TGCanvas *gCanvas2 = new TGCanvas(fV1, 150, 150);
-  //fV1->AddFrame(gCanvas2, fLay8);
-
-
-  //fListTree=NULL;
-  //if (fListTree) delete fListTree;
 
   fListTree = new TGListTree(gCanvas, kVerticalFrame);
   fListTree->SetCheckMode(TGListTree::kRecursive);
@@ -367,6 +346,62 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //cout << "make_ltree1: " << endl;
   //Make_Ltree();
   //cout << "make_ltree2: " << endl;
+
+
+
+
+
+  fHor3 = new TGHorizontalFrame(tab2, 10, 10);
+  tab2->AddFrame(fHor3, fLay2);
+
+  //fHor3->AddFrame(new TGLabel(fHor3, "Cuts:"), fLay5);
+
+  but = new TGTextButton(fHor3,"Add",1);
+  but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  fHor3->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor3,"Cancel",2);
+  but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  fHor3->AddFrame(but, fLay5);
+
+  //but = new TGTextButton(fHor3,"Show",3);
+  //but->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
+  //fHor3->AddFrame(but, fLay5);
+
+  but = new TGTextButton(fHor3,"Clear",4);
+  but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
+  fHor3->AddFrame(but, fLay5);
+
+  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
+
+  tab2->AddFrame(new TGLabel(tab2, "--Formula--"), fLay2);
+  TGHorizontalFrame *fHor7 = new TGHorizontalFrame(tab2, 10, 10);
+  tab2->AddFrame(fHor7, fLay9);
+
+  but = new TGTextButton(fHor7,"Form",7);
+  but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
+  but->SetToolTipText(ttip);
+  fHor7->AddFrame(but, fLay6);
+  
+  tForm    = new TGTextEntry(fHor7,"",8);;
+  tForm->SetWidth(110);
+  tForm->SetToolTipText(ttip);
+  tForm->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
+  fHor7->AddFrame(tForm,fLay2);
+
+
+
+
+
+
+  //tab2->AddFrame(new TGLabel(tab2, "--Histograms--"), fLay9);
+  //gCanvas->AddFrame(new TGLabel(gCanvas, "--Histograms--"), fLay5);
+  //TGCanvas *gCanvas2 = new TGCanvas(fV1, 150, 150);
+  //fV1->AddFrame(gCanvas2, fLay8);
+
+
+  //fListTree=NULL;
+  //if (fListTree) delete fListTree;
 
   const char* rlab[2] = {"Stack/N","X/Y:"};
   Rb[0] = new TGRadioButton(fHor2,rlab[0],1);

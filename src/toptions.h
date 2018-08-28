@@ -17,9 +17,9 @@ public:
 
   Float_t bins,min,max,bins2;
   Bool_t b;
-  Bool_t c[MAX_CH+1];
-  Bool_t w[MAX_CH+1];
-  Int_t cut[MAX_CH+1];
+  Bool_t c[MAX_CH+NGRP];
+  Bool_t w[MAX_CH+NGRP];
+  Int_t cut[MAX_CH+NGRP];
   ClassDef(Hdef, 1)
 };
 //------------------------------------
@@ -66,6 +66,7 @@ public:
   Bool_t dsp[MAX_CH+ADDCH]; //true - use dsp for data analysis
   Bool_t Start[MAX_CH+ADDCH]; //
   Bool_t Mrk[MAX_CH+ADDCH]; // flag to use channel for mtof
+  Bool_t Grp[MAX_CH+ADDCH][NGRP]; // flag to use channel for mtof
   //UInt_t ch_flag[MAX_CH+ADDCH];
   Int_t nsmoo[MAX_CH+ADDCH]; //software smoothing 0..100
   Int_t kdrv[MAX_CH+ADDCH]; //K=0 - trigger on the signal; k!=0 - on derivative

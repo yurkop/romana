@@ -23,6 +23,7 @@ const int dstep = 10;
 
 const int MAX_CH=64; //max number of channels
 const int ADDCH=9; //nai, bgo, si1, si2, stlb, demon, hpge, NIM, other
+const int NGRP=3; //number of groups of channels
 
 const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to nr-1 of bits in hmap::bitwk; 
 const int MAX_PCUTS=11; //maximal number of points in cutG

@@ -26,87 +26,93 @@ void DynamicExec();
 //-----------------------------------------------
 class HistFrame: public TGCompositeFrame {
 
- public:
+public:
   TGCanvas               *gCanvas; //hist Gcanvas
   TGCanvas               *gCanvas2; //cuts Gcanvas
-   TRootEmbeddedCanvas    *fEc;
+  TRootEmbeddedCanvas    *fEc;
 
-   TGDoubleHSlider        *fHslider;
-   //TGDoubleVSlider        *fVslider;
+  TGHorizontalFrame      *fHor1; //contains canvas and list of histograms
+  TGHorizontalFrame      *fHor2; //contains buttons etc
+  TGHorizontalFrame      *fHor3; //for cuts
+  TGVerticalFrame        *fVer0; //canvas && hslider
 
 
-   TGListTree             *fListTree;    // list tree with histograms
-   TGListTree             *fCutTree;    // list tree with histograms
 
-   TGListTreeItem         *iWork;
-   TGListTreeItem         *iWork_cut[MAXCUTS];
-   TList* hlist;
-   THStack* hstack;
+  TGDoubleHSlider        *fHslider;
+  //TGDoubleVSlider        *fVslider;
 
-   TGCheckButton* chknorm;
-   TGCheckButton* chklog;
-   TGCheckButton* chkstat;
-   TGCheckButton* chkgcuts;
-   //static const int NR=7;
-   //TGRadioButton *Rb[NR];
-   TGRadioButton *Rb[2];
 
-   TGTextEntry* tForm;
+  TGListTree             *fListTree;    // list tree with histograms
+  TGListTree             *fCutTree;    // list tree with histograms
 
-   int ntab; //tab number where eventframe is placed
+  TGListTreeItem         *iWork;
+  TGListTreeItem         *iWork_cut[MAXCUTS];
+  TList* hlist;
+  THStack* hstack;
 
-   Bool_t wrk_check[MAXCUTS+1]; //is work* checked before deleting ltree
-   Bool_t changed;
-   Bool_t started;
-   Bool_t in_gcut;
-   int np_gcut; //number of points in gcut
+  TGCheckButton* chknorm;
+  TGCheckButton* chklog;
+  TGCheckButton* chkstat;
+  TGCheckButton* chkgcuts;
+  //static const int NR=7;
+  //TGRadioButton *Rb[NR];
+  TGRadioButton *Rb[2];
 
-   //TLine line;
+  TGTextEntry* tForm;
 
-   int ndiv;
-   //int xdiv;
-   //int ydiv;
-   TObject *padmap[MAX_PADS];
+  int ntab; //tab number where eventframe is placed
 
- public:
-   HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
-   virtual ~HistFrame();
+  Bool_t wrk_check[MAXCUTS+1]; //is work* checked before deleting ltree
+  Bool_t changed;
+  Bool_t started;
+  Bool_t in_gcut;
+  int np_gcut; //number of points in gcut
 
-   TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
-   void Make_Ltree();
-   void Clear_Ltree();
-   TGListTreeItem* FindItem(TGListTree* lTree, const char* name);
-   void Clone_Ltree(HMap* hmap);
-   void DoClick(TGListTreeItem* item,Int_t but);
-   void CutClick(TGListTreeItem* item,Int_t but);
-   void DoCheck(TObject* obj, Bool_t check);
-   void DoNorm();
-   void DoLog();
-   void DoStat();
-   void DoKey(TGListTreeItem* entry, UInt_t keysym);
-   //void SelectDiv(int nn);
-   void DoNum();
-   void DoRadio();
-   void DoButton();
-   void DoSlider();
-   void AddCutG(TPolyLine *pl, TObject* hobj);
-   void MakeCutG(TPolyLine *pl, TObject* hobj);
-   void DoCutG();
-   void AddFormula();
-   //void DoFormula();
-   void ShowCutG();
-   void ClearCutG();
-   void DoPeaks();
-   void HiReset();
-   void Update();
-   void DrawHist();
-   void DrawStack();
-   void ReDraw();
-   //void DataDropped(TGListTreeItem *, TDNDData *data);
+  //TLine line;
 
-   ClassDef(HistFrame, 0)
+  int ndiv;
+  //int xdiv;
+  //int ydiv;
+  TObject *padmap[MAX_PADS];
+
+public:
+  HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
+  virtual ~HistFrame();
+
+  TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
+  void Make_Ltree();
+  void Clear_Ltree();
+  TGListTreeItem* FindItem(TGListTree* lTree, const char* name);
+  void Clone_Ltree(HMap* hmap);
+  void DoClick(TGListTreeItem* item,Int_t but);
+  void CutClick(TGListTreeItem* item,Int_t but);
+  void DoCheck(TObject* obj, Bool_t check);
+  void DoNorm();
+  void DoLog();
+  void DoStat();
+  void DoKey(TGListTreeItem* entry, UInt_t keysym);
+  //void SelectDiv(int nn);
+  void DoNum();
+  void DoRadio();
+  void DoButton();
+  void DoSlider();
+  void AddCutG(TPolyLine *pl, TObject* hobj);
+  void MakeCutG(TPolyLine *pl, TObject* hobj);
+  void DoCutG();
+  void AddFormula();
+  //void DoFormula();
+  void ShowCutG();
+  void ClearCutG();
+  void DoPeaks();
+  void HiReset();
+  void Update();
+  void DrawHist();
+  void DrawStack();
+  void ReDraw();
+  //void DataDropped(TGListTreeItem *, TDNDData *data);
+
+  ClassDef(HistFrame, 0)
 };
-
 
 void *trd_handle(void* ptr);
 

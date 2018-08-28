@@ -64,7 +64,10 @@ void PulseClass::FindPeaks() {
   // if deadtime!=0 - next peak is searched after 
   // N=deadtime samples from the previous peak
   */
-  
+
+  if (sData.size()<2)
+    return;
+
   UInt_t kk=opt.kdrv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
@@ -78,7 +81,7 @@ void PulseClass::FindPeaks() {
   Float_t jmax=0;
   //int pp0=0; //temporary T1
 
-  //D[0]=0;
+  D[0]=0;
   UInt_t j;
   for (j=kk;j<sData.size();j++) {
     D[j]=sData[j]-sData[j-kk];
@@ -96,6 +99,7 @@ void PulseClass::FindPeaks() {
 	}
 	jmax=D[j];
 	pk->Pos=j;
+	pk->Pos2=j;
       }
     }
     else { //in_peak
@@ -156,11 +160,11 @@ void PulseClass::FindPeaks() {
 
 void PulseClass::PeakAna() {
 
+  int sz=sData.size()-1;
+
   for (UInt_t i=0;i<Peaks.size();i++) {
     peak_type *pk = &Peaks[i];
-
-    int sz=sData.size()-1;
-    
+  
     //peak time & position
     //int nt=0;
     Float_t sum=0;
@@ -176,7 +180,7 @@ void PulseClass::PeakAna() {
     else if (opt.timing[Chan]==2)
       tt=pk->T2; //2->reference is T2 (Right zero crossing of 1st drv)
     else
-      tt=pk->Pos2; //3->reference is Pos (maximum in 1st deriv)
+      tt=pk->Pos2; //3->reference is Pos2 (maximum in 1st deriv)
 
     if (opt.twin1[Chan] == 99)
       pk->T3=pk->T1;
@@ -223,6 +227,10 @@ void PulseClass::PeakAna() {
     pk->P1=pk->Pos+opt.peak1[Chan];
     pk->P2=pk->Pos+opt.peak2[Chan];
 
+    // if (Counter==150) {
+    //   cout << "E150: " << Counter << " " << Tstamp64 << " " << pk->B1 << " " << pk->B2 << " " << pk->Pos << " " << pk->Pos2 << " " << pk->P1 << " " << pk->P2 << endl;
+    // }
+
     if (pk->B1<0) pk->B1=0;
     if (pk->B2<0) pk->B2=0;
     if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
@@ -244,7 +252,8 @@ void PulseClass::PeakAna() {
     if (nbkg)
       pk->Base/=nbkg;
     else {
-      cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+      pk->Base=-999999;
+      //cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << Counter << " " << Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
     }
 
     int nn=0;
@@ -258,11 +267,14 @@ void PulseClass::PeakAna() {
     }
     if (nn) {
       pk->Area0/=nn;
+      pk->Area=pk->Area0-pk->Base;
     }
     else {
-      cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
+      pk->Area0=-999999;
+      pk->Area=-9999999;
+      //cout << "zero Area: " << Counter << " " << Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
     }
-    pk->Area=pk->Area0-pk->Base;
+
     pk->Area*=opt.emult[Chan];
     pk->Area0*=opt.emult[Chan];
     pk->Base*=opt.emult[Chan];
@@ -274,6 +286,9 @@ void PulseClass::PeakAna() {
 //-----------------------------
 
 void PulseClass::PeakAna33() {
+
+  if (sData.size()<2)
+    return;
 
   //return;
   Short_t T5; //left width window

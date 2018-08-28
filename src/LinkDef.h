@@ -6,6 +6,8 @@
 #pragma link C++ class ParParDlg+;
 #pragma link C++ class ChanParDlg+;
 #pragma link C++ class CrsParDlg+;
+#pragma link C++ class AnaParDlg+;
+#pragma link C++ class PikParDlg+;
 #pragma link C++ class CRS+;
 #pragma link C++ class HMap+;
 #pragma link C++ class HClass+;
