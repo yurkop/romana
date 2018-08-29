@@ -69,7 +69,7 @@ const char* mgr_name[3] = {"pulse","1deriv","2deriv"};
 const char* mgr_title[3] = {"pulse;samples","1 deriv;samples",
 			    "2 deriv;samples"};
 
-//extern Coptions cpar;
+extern Coptions cpar;
 extern Toptions opt;
 extern MyMainFrame *myM;
 //extern BufClass* Buffer;
@@ -77,8 +77,6 @@ extern MyMainFrame *myM;
 extern CRS* crs;
 extern ParParDlg *parpar;
 extern EventFrame* EvtFrm;
-
-//extern int chanPresent;
 
 extern ULong_t fGreen;
 extern ULong_t fRed;
@@ -778,7 +776,8 @@ void EventFrame::DoCheckPoint() {
 	  peak_type* pk = &d_event->pulses[i].Peaks[j];
 	  par[1]=pk->Area;
 	  double dt = d_event->pulses[i].Tstamp64 - d_event->T;
-	  double tt = pk->Time - crs->Pre[ch] - d_event->T0 + dt;
+	  //double tt = pk->Time - crs->Pre[ch] - d_event->T0 + dt;
+	  double tt = pk->Time - cpar.preWr[ch] - d_event->T0 + dt;
 	  par[4]=tt*crs->period;
 	  res = formula->EvalPar(0,par);
 	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->T << " " << res << endl;
@@ -914,7 +913,8 @@ void EventFrame::FillGraph(int dr) {
     Gr[dr][i]->SetLineColor(chcol[ch[i]]);
     Gr[dr][i]->SetMarkerColor(chcol[ch[i]]);
 
-    double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch[i]];
+    //double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch[i]];
+    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch[i]];
     // cout << "dt: " << (int) pulse->Chan << " " << dt << " "
     // 	 << ch[i] << " " << pulse->Tstamp64 << " "
     // 	 << d_event->T << " " << crs->Pre[ch[i]] << endl;
@@ -1162,7 +1162,8 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
-    double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch];
+    //double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch];
+    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];

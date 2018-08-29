@@ -498,7 +498,6 @@ int main(int argc, char **argv)
 #endif
 
 
-    //cout << "chanPresent: " << chanPresent << endl;
   TApplication theApp("App",&argc,argv);
   //example();
 

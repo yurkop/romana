@@ -54,7 +54,7 @@ RQ_OBJECT("CRS")
   //--------variables---------
 
   int MAXTRANS2; //real maxtrans, depends on usb_size
-  Int_t Pre[MAX_CH+ADDCH]; // pre-length for the analysys
+  //Int_t Pre[MAX_CH+ADDCH]; // pre-length for the analysys
   //Pre = opt.preWr for crs2/32; Pre=0 for adcm
   
   gzFile f_raw;

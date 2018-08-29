@@ -296,7 +296,8 @@ void PulseClass::PeakAna33() {
 
   Peaks.push_back(peak_type());
   peak_type *pk = &Peaks.back();
-  pk->Pos=crs->Pre[Chan];
+  //pk->Pos=crs->Pre[Chan];
+  pk->Pos=cpar.preWr[Chan];
 
   UInt_t kk=opt.kdrv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
@@ -534,9 +535,9 @@ void EventClass::Pulse_Ana_Add(pulse_vect::iterator pls) {
       Float_t dt = pls->Tstamp64 - T;
 
       peak_type *pk = &pls->Peaks.front();
-      Float_t T2 = pk->Time - crs->Pre[pls->Chan] + dt;
+      //Float_t T2 = pk->Time - crs->Pre[pls->Chan] + dt;
       //Float_t T2 = pk->Time - cpar.preWr[pls->Chan] + dt;
-      //Float_t T2 = pk->Time + dt;
+      Float_t T2 = pk->Time + dt;
 
       if (T2<T0) {
 	T0=T2;
@@ -779,7 +780,9 @@ void EventClass::FillHist(Bool_t first) {
 
       if (opt.h_tof.b) {
 	double dt = pulses[i].Tstamp64 - T;
-	tt = pk->Time - crs->Pre[ch] - T0 + dt;
+	//tt = pk->Time - crs->Pre[ch] - T0 + dt;
+	//tt = pk->Time - cpar.preWr[ch] - T0 + dt;
+	tt = pk->Time - T0 + dt;
 	Fill1d(first,hcl->m_tof,ch,tt*crs->period);
       }
 

@@ -8,8 +8,6 @@ extern CRS* crs;
 extern ParParDlg *parpar;
 extern Coptions cpar;
 
-//extern int chanPresent;
-
 extern ULong_t fGreen;
 extern ULong_t fRed;
 extern ULong_t fCyan;

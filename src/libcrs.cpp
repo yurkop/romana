@@ -67,7 +67,7 @@ volatile char astat[CRS::MAXTRANS];
 CRS* crs;
 extern Coptions cpar;
 extern Toptions opt;
-int chanPresent;
+int chan_in_module;
 
 
 TTimeStamp tt1[10];
@@ -628,7 +628,7 @@ CRS::CRS() {
   }
 
   MAXTRANS2=MAXTRANS;
-  memset(Pre,0,sizeof(Pre));
+  //memset(Pre,0,sizeof(Pre));
 
   for (int i=0;i<MAXTRANS;i++)
     cond[i]=new TCondition(0);
@@ -677,7 +677,7 @@ CRS::CRS() {
   // b_fana=false;
   // bstart=true;
 
-  chanPresent=MAX_CH;
+  chan_in_module=MAX_CH;
 
   ntrans=MAXTRANS;
   //opt.usb_size=1024*1024;
@@ -735,7 +735,7 @@ int CRS::Detect_device() {
   int r;
 
   //module=0;
-  //chanPresent=32;
+  //chan_in_module=32;
   ver_po=0;
 
   //b_usbbuf=false;
@@ -836,16 +836,16 @@ int CRS::Detect_device() {
 
   if (buf_in[1]==3) { //serial Nr=3 -> crs2
     module=2;
-    chanPresent=2;
+    chan_in_module=2;
     opt.Nchan=2;
-    for (int j=0;j<chanPresent;j++) {
+    for (int j=0;j<chan_in_module;j++) {
       type_ch[j]=0;
     }
   }
   else { //crs32
     module=32;
     int nplates= buf_in[3];
-    chanPresent=nplates*4;
+    chan_in_module=nplates*4;
     if (ver_po==1) {//версия ПО=1
       for (int i=0;i<nplates;i++) {
 	cout << "Channels(" << i << "):";
@@ -858,7 +858,7 @@ int CRS::Detect_device() {
       }
     }
     else {//версия ПО=2 или выше
-      //chanPresent=4;
+      //chan_in_module=4;
       sz = Command32(10,0,0,0);
       sz--;
       for (int i=0;i<nplates;i++) {
@@ -877,7 +877,7 @@ int CRS::Detect_device() {
     }
   }
 
-  cout << "module: " << module << " chanPresent: " << chanPresent << endl;
+  cout << "module: " << module << " chan_in_module: " << chan_in_module << endl;
 
   if (module>=2)
     Fmode=1;
@@ -1376,7 +1376,7 @@ void CRS::AllParameters33()
 {
   //cout << "AllParameters32(): " << endl;
 
-  for (byte chan = 0; chan < chanPresent; chan++) {
+  for (byte chan = 0; chan < chan_in_module; chan++) {
     Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
 
     if (cpar.enabl[chan]) {
@@ -1410,7 +1410,7 @@ void CRS::AllParameters32()
 {
   //cout << "AllParameters32(): " << endl;
 
-  for (byte chan = 0; chan < chanPresent; chan++) {
+  for (byte chan = 0; chan < chan_in_module; chan++) {
     Command32(2,chan,0,(int)cpar.acdc[chan]);
     Command32(2,chan,1,(int)cpar.inv[chan]);
     Command32(2,chan,2,(int)cpar.smooth[chan]);
@@ -1432,7 +1432,7 @@ void CRS::AllParameters32()
 void CRS::AllParameters2()
 {
 
-  for (byte chan = 0; chan < chanPresent; chan++) {
+  for (byte chan = 0; chan < chan_in_module; chan++) {
     Command2(2,chan,0,(int)cpar.adcGain[chan]);
     Command2(2,chan,1,(int)cpar.inv[chan]);
     Command2(2,chan,2,(int)cpar.smooth[chan]);
@@ -1725,10 +1725,10 @@ void CRS::DoReset() {
   ipk=&dummy_peak; //peak points to the dummy_peak
   QX=0;QY=0;RX=1;RY=1;
 
-  if (module!=1) {
-    //cout << "Pre!!!" << endl;
-    memcpy(&Pre,&cpar.preWr,sizeof(Pre));
-  }
+  // if (module!=1) {
+  //   //cout << "Pre!!!" << endl;
+  //   memcpy(&Pre,&cpar.preWr,sizeof(Pre));
+  // }
 
   npulses=0;
   nbuffers=0;
@@ -1822,12 +1822,8 @@ void CRS::DoFopen(char* oname, int popt) {
     module=1;
 
     cpar.InitPar(0);
-    memcpy(&Pre,&cpar.preWr,sizeof(Pre));
+    //memcpy(&Pre,&cpar.preWr,sizeof(Pre));
 
-    //memset(Pre,0,sizeof(Pre));
-    // for (int i=0;i<MAX_CH+ADDCH;i++) {
-    //   cpar.preWr[i]=0;
-    // }
     bsize=opt.rbuf_size*1024+4096;
     boffset=4096;
     period=10;
@@ -1940,9 +1936,9 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   //cout << "ReadParGz: " << sz << " " << pname << endl;
 
-  if (module!=1) {
-    memcpy(&Pre,&cpar.preWr,sizeof(Pre));
-  }
+  // if (module!=1) {
+  //   memcpy(&Pre,&cpar.preWr,sizeof(Pre));
+  // }
 
   // for (int i=0;i<opt.ncuts;i++) {
   //   char ss[64];

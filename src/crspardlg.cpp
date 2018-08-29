@@ -106,7 +106,6 @@ Int_t combotype[nchtype];
 extern CRS* crs;
 extern Coptions cpar;
 extern Toptions opt;
-//extern int chanPresent;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
 
@@ -385,10 +384,12 @@ void ParDlg::DoCombo() {
     if (sel==ADDCH+1) {
       int old=*(Int_t*) pp.data;
 
-      crspar->CopyParLine(-old,nline);
-      anapar->CopyParLine(-old,nline);
-      pikpar->CopyParLine(-old,nline);
-
+      if (old!=ADDCH) {
+	//cout << "Copy: " << sel << " " << old << " " << nline << endl;
+	crspar->CopyParLine(-old,nline);
+	anapar->CopyParLine(-old,nline);
+	pikpar->CopyParLine(-old,nline);
+      }
 
       te->Select(old);
       return;
@@ -1288,7 +1289,7 @@ void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname,
   int id;
 
   id = Plist.size()+1;
-  tTrig = new TGTextEntry(hfr1,(char*)opt_fname, id);
+  tTrig = new TGTextEntry(hfr1, opt_fname, id);
   tTrig->SetWidth(width);
   tTrig->SetMaxLength(20);
 
