@@ -55,9 +55,9 @@ const char* ttip1[ncrspar+1]={
   "Number of Bad pulses"
 };
 
-const int n_apar=14;
-const int tlen2[n_apar]={26,60,24,24,24,25,32,40,35,35,20,42,42,42};
-const char* tlab2[n_apar]={"Ch","Type","dsp","St","Mt","sS","Drv","Thr","dT","Pile","Tm","EM","Elim1","Elim2"};
+const int n_apar=15;
+const int tlen2[n_apar]={26,60,24,24,24,25,35,32,40,35,35,20,42,42,42};
+const char* tlab2[n_apar]={"Ch","Type","dsp","St","Mt","sS","Delay","Drv","Thr","dT","Pile","Tm","EM","Elim1","Elim2"};
 const char* ttip2[n_apar]={
   "Channel number",
   "Channel type",
@@ -65,6 +65,7 @@ const char* ttip2[n_apar]={
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Marked channel - use this channel for making Mtof spectra",
   "Software smoothing",
+  "Time delay in samples (can be negative or positive)",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
   "Dead-time window \nsubsequent peaks within this window are ignored",
@@ -2278,6 +2279,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   ttip7 = (char**) ttip2;
 
   AddNumChan(i,kk++,all,cframe[i],&opt.nsmoo[i],0,99,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.delay[i],-999,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.kdrv[i],1,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.thresh[i],0,9999,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-999,3070,p_inum);

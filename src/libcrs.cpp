@@ -2408,7 +2408,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
       ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls->Chan=ch;
-      ipls->Tstamp64=data;// - cpar.preWr[ch];
+      ipls->Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
     }
     else if (frmt==1) {
       ipls->State = buffer[idx1+5];
@@ -2547,7 +2547,7 @@ void CRS::Decode33(UChar_t *buffer, int length) {
       ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls->Chan=ch;
-      ipls->Tstamp64=data;// - cpar.preWr[ch];
+      ipls->Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
       n_frm=0;
     }
     else if (frmt==1) {
@@ -2735,7 +2735,7 @@ void CRS::Decode2(UChar_t* buffer, int length) {
       ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls->Chan = ch;
-      ipls->Tstamp64=data;// - cpar.preWr[ch];
+      ipls->Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
     }
     else if (frmt<4) {
       Long64_t t64 = data;
@@ -2913,7 +2913,7 @@ void CRS::Decode_adcm() {
       //nw=bits(header,4,5);
       ipls->Tstamp64 = rbuf4[idx+rLen-2];
       ipls->Tstamp64 <<= 32;
-      ipls->Tstamp64 += rbuf4[idx+rLen-3];
+      ipls->Tstamp64 += rbuf4[idx+rLen-3]+opt.delay[ipls->Chan];
       //ipls->Tstamp64 = rbuf4[idx+rLen-3];
 
 

@@ -235,6 +235,7 @@ Toptions::Toptions() {
     nsmoo[i]=2;
     thresh[i]=cpar.threshold[i];
 
+    delay[i]=0;
     bkg1[i]=-100;
     bkg2[i]=-10;
     peak1[i]=10;

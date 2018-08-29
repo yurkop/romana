@@ -777,10 +777,10 @@ void EventFrame::DoCheckPoint() {
 	  par[1]=pk->Area;
 	  double dt = d_event->pulses[i].Tstamp64 - d_event->T;
 	  //double tt = pk->Time - crs->Pre[ch] - d_event->T0 + dt;
-	  double tt = pk->Time - cpar.preWr[ch] - d_event->T0 + dt;
+	  double tt = pk->Time - d_event->T0 + dt;
 	  par[4]=tt*crs->period;
 	  res = formula->EvalPar(0,par);
-	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->T << " " << res << endl;
+	  cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->T << " " << " " << par[4] << " " << res << endl;
 	  if (res) {
 	    //d_event = d_event;
 	    DrawEvent2();
@@ -1164,15 +1164,16 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   if (fChn[ch]->IsOn()) {
     //double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch];
     double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
+    //double dt=pulse->Tstamp64 - d_event->T;
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];
-      //cout << "drawpeak: " << (int) pulse->Chan << " " << pk->Pos << endl;
+      //cout << "drawpeak: " << (int) pulse->Chan << " " << pk->Pos << " " << pk->Time << " " << dt << endl;
 
       if (fPeak[1]->IsOn()) // Pos
 	doXline(pk->Pos+dt,y1,y2-dy*0.3,2,1);
       if (fPeak[2]->IsOn()) // Time
-	doXline(pk->Time+dt,y2-dy*0.2,y2,3,1);
+	doXline(pk->Time+dt+cpar.preWr[ch],y2-dy*0.2,y2,3,1);
       if (dr==0 && fPeak[3]->IsOn()) { // Wpeak
 	doXline(pk->P1+dt,y1,y2-dy*0.2,4,2);
 	doXline(pk->P2+dt,y1,y2-dy*0.1,4,2);

@@ -213,9 +213,9 @@ void PulseClass::PeakAna() {
     else
       pk->Time=-999;
 
-    //pk->Time+=cpar.preWr[Chan];
-    //cout << "TTT: " << t3 << " " << t4 << " " << pk->Time << " " << pk->T2
-    // << " " << kk << endl;
+    pk->Time-=cpar.preWr[Chan];
+    //cout << "TTT: " << Tstamp64 << " " << pk->Time << " " << pk->T2
+    //<< " " << kk << endl;
 
     //pk->Pos = pk->Time+0.5;
     pk->Pos = pk->Pos2;
@@ -525,7 +525,7 @@ void EventClass::Pulse_Ana_Add(pulse_vect::iterator pls) {
   }
   else if (pls->Tstamp64 < T) { //event exists & new pulse is earlier
     // -> correct T and T0
-    if (T0<99998)
+    if (T0<99998) //if T0 already exists, just adjust it
       T0+= T - pls->Tstamp64;
     T=pls->Tstamp64;
   }
@@ -542,7 +542,8 @@ void EventClass::Pulse_Ana_Add(pulse_vect::iterator pls) {
       if (T2<T0) {
 	T0=T2;
       }
-      // cout << "Peak: " << (int) pls->Chan << " " << pk->Time << " " 
+      // cout << "Peak: " << Nevt << " " << (int) pls->Chan
+      // 	   << " " << pk->Time << " " 
       // 	   << pk->Pos << " " << T0 << " " << T2 << " " << dt << " "
       // 	   << T << endl;
     }
