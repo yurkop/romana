@@ -385,7 +385,9 @@ void ParDlg::DoCombo() {
     if (sel==ADDCH+1) {
       int old=*(Int_t*) pp.data;
 
-      if (old!=ADDCH) {
+      //if (old!=ADDCH) {
+      const char* name = te->GetListBox()->GetEntry(old)->GetTitle();
+      if (!TString(name).EqualTo("other",TString::kIgnoreCase)) {
 	//cout << "Copy: " << sel << " " << old << " " << nline << endl;
 	crspar->CopyParLine(-old,nline);
 	anapar->CopyParLine(-old,nline);

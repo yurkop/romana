@@ -347,7 +347,9 @@ void HClass::Make_cuts() {
       //b_formula=true;
       cform[i]->SetTitle(opt.cut_form[i]);
       cform[i]->Clear();
+      //cout << "Compile1: " << endl;
       int ires = cform[i]->Compile();
+      //cout << "Compile2: " << endl;
       if (ires) {//formula is not valid -> set it to "always false"
 	sprintf(opt.cut_form[i],"0");
 	cform[i]->SetTitle("0");

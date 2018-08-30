@@ -33,7 +33,7 @@ void Coptions::InitPar(int zero) {
       durWr[i]=1;
     trg[i]=1;
     kderiv[i]=1*zero;
-    threshold[i]=1500*zero;
+    threshold[i]=50*zero;
     adcGain[i]=12*zero;
   }
   forcewr=false;
@@ -226,7 +226,7 @@ Toptions::Toptions() {
 
   //cout << "toptions" << endl;
   for (int i=0;i<MAX_CH+ADDCH;i++) {
-    chtype[i]=ch_other;
+    chtype[i]=ch_NIM;
     dsp[i]=false;
     Start[i]=true;
     Mrk[i]=true;
@@ -236,15 +236,15 @@ Toptions::Toptions() {
     thresh[i]=cpar.threshold[i];
 
     delay[i]=0;
-    bkg1[i]=-100;
-    bkg2[i]=-10;
-    peak1[i]=10;
-    peak2[i]=100;
+    bkg1[i]=-10;
+    bkg2[i]=-5;
+    peak1[i]=5;
+    peak2[i]=30;
     deadT[i]=100;
     pile[i]=100;
-    timing[i]=0;
-    twin1[i]=99;
-    twin2[i]=99;
+    timing[i]=3;
+    twin1[i]=-5;
+    twin2[i]=5;
 
     emult[i]=1;
   }
@@ -329,7 +329,7 @@ Hdef::Hdef() {
   bins=1;
   bins2=1;
   min=0;
-  max=100;
+  max=1000;
   b=true;
   for (int i=0;i<MAX_CH+NGRP;i++) {
     c[i]=true;

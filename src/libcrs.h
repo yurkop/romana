@@ -197,6 +197,7 @@ RQ_OBJECT("CRS")
 
   peak_type dummy_peak;
 
+  Int_t b_len[MAX_CH],p_len[MAX_CH]; //length of window for bkg and peak integration in DSP
   //--------functions---------
 
   //void Dummy_trd();

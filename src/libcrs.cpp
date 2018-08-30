@@ -34,7 +34,7 @@ using namespace std;
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
-extern HClass* hcl;
+//extern HClass* hcl;
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern AnaParDlg *anapar;
@@ -399,6 +399,10 @@ void CRS::Ana_start() {
     opt.ev_min=opt.ev_max/2;
   }
   Set_Trigger();
+  for (int i=0;i<MAX_CH;i++) {
+    b_len[i] = opt.bkg2[i]-opt.bkg1[i];
+    p_len[i] = opt.peak2[i]-opt.peak1[i];
+  }
 }
 
 void CRS::Ana2(int all) {
@@ -2613,11 +2617,19 @@ void CRS::Decode33(UChar_t *buffer, int length) {
 	  zzz = data & 0xFFFFFF;
 	  //ipls->Ar=((zzz<<8)>>8);
 	  ipk->Area0=((zzz<<8)>>8);
+	  ipk->Area0/=p_len[ipls->Chan];
 	  data>>=24;
 	  //bkg
 	  zzz = data & 0xFFFFFF;
 	  //ipls->Bg=((zzz<<8)>>8);
 	  ipk->Base=((zzz<<8)>>8);
+	  ipk->Base/=b_len[ipls->Chan];
+
+	  ipk->Area=ipk->Area0 - ipk->Base;
+	  ipk->Area*=opt.emult[ipls->Chan];
+	  ipk->Area0*=opt.emult[ipls->Chan];
+	  ipk->Base*=opt.emult[ipls->Chan];
+
 	  break;
 	case 1:
 	  //QX

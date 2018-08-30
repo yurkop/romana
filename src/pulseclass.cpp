@@ -375,11 +375,14 @@ void PulseClass::PeakAna33() {
     pk->Base+=sData[j];
     nbkg++;
   }
-  // if (nbkg)
-  //   pk->Base/=nbkg;
-  // else {
-  //   cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
-  // }
+
+  //cout << "Bkg: " << nbkg << " " << opt.bkg2[Chan]-opt.bkg1[Chan] << endl;
+
+  if (nbkg)
+    pk->Base/=nbkg;
+  else {
+    cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+  }
 
   int nn=0;
   //peak Area & Height
@@ -390,16 +393,16 @@ void PulseClass::PeakAna33() {
     if (sData[j]>pk->Height) pk->Height = sData[j];
     nn++;
   }
-  // if (nn) {
-  //   pk->Area0/=nn;
-  // }
-  // else {
-  //   cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
-  // }
-  pk->Area=pk->Area0-pk->Base;
-  // pk->Area*=opt.emult[Chan];
-  // pk->Area0*=opt.emult[Chan];
-  // pk->Base*=opt.emult[Chan];
+  if (nn) {
+    pk->Area0/=nn;
+  }
+  else {
+    cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
+  }
+  pk->Area=pk->Area0 - pk->Base;
+  pk->Area*=opt.emult[Chan];
+  pk->Area0*=opt.emult[Chan];
+  pk->Base*=opt.emult[Chan];
 
   // printf(ANSI_COLOR_RED
   // 	 "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
@@ -445,6 +448,9 @@ void PulseClass::CheckDSP() {
   else {
     //printf("%10lld OK\n",Counter);
   }
+
+  Peaks.pop_back();
+  
 }
 
 EventClass::EventClass() {

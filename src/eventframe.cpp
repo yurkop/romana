@@ -430,7 +430,12 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     }
   }  
 
-  formula = new TFormula("formula",opt.formula);
+  //cout << "Compile1: " << opt.formula << endl;
+  //strcpy(opt.formula,"0");
+  //formula = new TFormula("formula",opt.formula);
+  formula = new TFormula();
+  formula->SetName("evtformula");
+  //cout << "Compile2: " << formula->GetName() << endl;
 
   //mgr[0]=new TMultiGraph();
   //mgr[1]=new TMultiGraph();
