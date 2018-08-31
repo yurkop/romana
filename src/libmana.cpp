@@ -1110,7 +1110,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   const int fwid=120;
 
-  const char* txtlab[n_stat] = {"Start","AcqTime","Events","Ev/sec","Events2","Buffers","MB in","MB/sec","MB out"};
+  const char* txtlab[n_stat] = {"Start","AcqTime","Events","Ev/sec","Events2","Buffers","MB in","MB/sec","Raw MB out","Dec MB out"};
 
   const char* st_tip[n_stat] = {
     "Acquisition start",
@@ -1121,8 +1121,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     "Total number of events analyzed",
     "Number of buffers received",
     "Megabytes received",
-    "Megabytes per second",
-    "Megabytes saved"
+    "Received megabytes per second",
+    "Raw megabytes saved",
+    "Decoded megabytes saved"
   };
 
   TGTextEntry* fLab[n_stat];
@@ -1766,7 +1767,7 @@ void MainFrame::UpdateStatus() {
   double dt = opt.T_acq - t1;
 
   if (dt>0.1) {
-    mb_rate = (crs->totalbytes-bytes1)/MB/dt;
+    mb_rate = (crs->inputbytes-bytes1)/MB/dt;
     ev_rate = (crs->nevents-nevents1)/dt;
   }
   else {
@@ -1774,7 +1775,7 @@ void MainFrame::UpdateStatus() {
     ev_rate=0;
   }
 
-  bytes1=crs->totalbytes;
+  bytes1=crs->inputbytes;
   nevents1=crs->nevents;
   t1=opt.T_acq;
 
@@ -1786,9 +1787,10 @@ void MainFrame::UpdateStatus() {
   fStat[ii++]->SetText(TGString::Format("%0.3f",ev_rate),kFALSE);
   fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents2),kFALSE);
   fStat[ii++]->SetText(TGString::Format("%lld",crs->nbuffers),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),kFALSE);
   fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->decbytes/MB),kFALSE);
 
   //cout << txt << endl;
   //return;
@@ -1799,9 +1801,9 @@ void MainFrame::UpdateStatus() {
     fBar1->SetText(TGString::Format("%lld",crs->nevents2),3);
     fBar1->SetText(TGString::Format("%lld",crs->npulses),4);
     fBar1->SetText(TGString::Format("%lld",crs->nbuffers),5);
-    fBar1->SetText(TGString::Format("%0.2f",crs->totalbytes/MB),6);
+    fBar1->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),6);
     fBar1->SetText(TGString::Format("%0.2f",crs->mb_rate),7);
-    fBar1->SetText(TGString::Format("%0.2f",crs->writtenbytes/MB),8);
+    fBar1->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),8);
   */
   //cout << "Updatestatus2: " << endl;
 

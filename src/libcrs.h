@@ -37,6 +37,17 @@ typedef std::list<EventClass>::reverse_iterator event_reviter;
 
 //using namespace std;
 
+#pragma pack (push, 1)
+struct rpeak_type73 {
+  Float_t Area;
+  //Float_t Height;
+  Float_t Width;
+  Float_t Time; //exact time relative to pulse start (from 1st deriv)
+  UChar_t Ch; //Channel number
+  //UChar_t Type; //peak type
+};
+#pragma pack (pop)
+
 //---------------------------
 class CRS {
 
@@ -126,8 +137,9 @@ RQ_OBJECT("CRS")
   //timeval t_start, t_stop;
   //Long64_t T_start; //start of the acuisition/analysis
   //Float_t F_acq; //file acquisition time
-  Long64_t totalbytes;
-  Long64_t writtenbytes;
+  Long64_t inputbytes;
+  Long64_t rawbytes;
+  Long64_t decbytes;
   Long64_t npulses; //total number of pulses (zero at Reset (Start button))
   UInt_t npulses_buf; //pulses in the current buffer
   Long64_t nevents; //total number of events (zero at Reset (Start button))
@@ -189,8 +201,8 @@ RQ_OBJECT("CRS")
 
   //Long64_t rTime; //Tstamp of decoded event
   //Char_t rState; //State of decoded event
-  rpeak_type rP;
-  std::vector<rpeak_type> rPeaks;
+  rpeak_type73 rP;
+  std::vector<rpeak_type73> rPeaks;
 
   bool b_maintrig; //true if maintrig is not empty
   TFormula maintrig;
@@ -267,7 +279,7 @@ RQ_OBJECT("CRS")
   //void NewTree();
   //void CloseTree();
   void Reset_Dec();
-  void Fill_Dec(EventClass* evt);
+  void Fill_Dec73(EventClass* evt);
   void Flush_Dec();
 
   void Print_Pulses();

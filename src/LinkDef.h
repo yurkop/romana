@@ -12,7 +12,7 @@
 #pragma link C++ class HMap+;
 #pragma link C++ class HClass+;
 //#pragma link C++ class rpeak_type+;
-#pragma link C++ class vector<rpeak_type>+;
+//#pragma link C++ class vector<rpeak_type73>+;
 #pragma link C++ class Hdef+;
 #pragma link C++ class Coptions+;
 #pragma link C++ class Toptions+;

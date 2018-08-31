@@ -163,7 +163,7 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 
   for (int j=0;j<NGRP;j++) {
     sprintf(name2,"%s_g%d",name,j+1);
-    sprintf(title2,"%s_d%d%s",name,j+1,title);
+    sprintf(title2,"%s_g%d%s",name,j+1,title);
     int nn=hd->bins*(hd->max - hd->min);
     TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
     map[MAX_CH+j] = new HMap(dname,hh,hd->c+MAX_CH+j,hd->w+MAX_CH+j,

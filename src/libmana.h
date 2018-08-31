@@ -65,7 +65,7 @@ public:
 
   //bool fremake;
   int local_nch;
-  static const Int_t n_stat=9;
+  static const Int_t n_stat=10;
   TGTextEntry* fStat[n_stat];
 
 public:

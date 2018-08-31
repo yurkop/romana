@@ -229,7 +229,7 @@ Toptions::Toptions() {
     chtype[i]=ch_NIM;
     dsp[i]=false;
     Start[i]=true;
-    Mrk[i]=true;
+    Mrk[i]=false;
     for (int j=0;j<NGRP;j++)
       Grp[i][j]=false;
     nsmoo[i]=2;

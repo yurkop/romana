@@ -610,8 +610,13 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
     }
   }
 
-  if (opt.Mrk[ch] && ch<MAX_CH) {
-    Fill1d(first,map,MAX_CH,x);
+  // if (opt.Mrk[ch] && ch<MAX_CH) {
+  //   Fill1d(first,map,MAX_CH,x);
+  // }
+  for (int j=0;j<NGRP;j++) {
+    if (opt.Grp[ch][j] && ch<MAX_CH) {
+      Fill1d(first,map,MAX_CH+j,x);
+    }
   }
 }
 
@@ -740,18 +745,18 @@ void EventClass::FillHist(Bool_t first) {
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
       peak_type* pk = &pulses[i].Peaks[j];
 
-      if (first) {
-	if (opt.dec_write) {
-	  crs->rP.Area   = pk->Area  ;
-	  //crs->rP.Height = pk->Height;
-	  crs->rP.Width  = pk->Width ;
-	  crs->rP.Time   = pk->Time  ;
-	  crs->rP.Ch     = ch        ;
-	  crs->rP.Type   = pk->Type  ;
+      // if (first) {
+      // 	if (opt.dec_write) {
+      // 	  crs->rP.Area   = pk->Area  ;
+      // 	  //crs->rP.Height = pk->Height;
+      // 	  crs->rP.Width  = pk->Width ;
+      // 	  crs->rP.Time   = pk->Time  ;
+      // 	  crs->rP.Ch     = ch        ;
+      // 	  crs->rP.Type   = pk->Type  ;
 
-	  crs->rPeaks.push_back(crs->rP);
-	}
-      }
+      // 	  crs->rPeaks.push_back(crs->rP);
+      // 	}
+      // }
 
       if (opt.elim2[ch]>0 &&
 	  (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {

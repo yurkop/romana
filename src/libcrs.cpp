@@ -155,7 +155,7 @@ static void cback(libusb_transfer *transfer) {
 	if (crs->f_raw) {
 	  int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
 	  gzclose(crs->f_raw);
-	  crs->writtenbytes+=res;
+	  crs->rawbytes+=res;
 	}
 	else {
 	  cout << "Can't open file: " << opt.fname_raw << endl;
@@ -173,7 +173,7 @@ static void cback(libusb_transfer *transfer) {
     libusb_submit_transfer(transfer);
 
     stat_mut.Lock();
-    crs->totalbytes+=transfer->actual_length;
+    crs->inputbytes+=transfer->actual_length;
     //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
     //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
     //opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
@@ -311,7 +311,7 @@ void *handle_ana(void* ptr) {
 	  it->FillHist(false);
 	  //it->FillHist_old();
 	  if (opt.dec_write) {
-	    crs->Fill_Dec(&(*it));
+	    crs->Fill_Dec73(&(*it));
 	  }
 
 
@@ -445,7 +445,7 @@ void CRS::Ana2(int all) {
       m_event->FillHist(false);
       //it->FillHist_old();
       if (opt.dec_write) {
-	Fill_Dec(&(*m_event));
+	Fill_Dec73(&(*m_event));
       }
 
       //m_event->Analyzed=true;
@@ -1509,8 +1509,8 @@ int CRS::DoStartStop() {
     b_stop=false;
     b_fstart=false;
     //bstart=true;
-    //totalbytes=0;
-    //writtenbytes=0;
+    //inputbytes=0;
+    //rawbytes=0;
     //b_pevent=true;
     
     //npulses=0;
@@ -1744,8 +1744,9 @@ void CRS::DoReset() {
   //npulses=0;
   npulses_buf=0;
 
-  totalbytes=0;
-  writtenbytes=0;
+  inputbytes=0;
+  rawbytes=0;
+  decbytes=0;
 
   //MAX_LAG=opt.event_buf/2;
 
@@ -2015,7 +2016,7 @@ int CRS::DoBuf() {
 
 
   if (BufLength>0) {
-    crs->totalbytes+=BufLength;
+    crs->inputbytes+=BufLength;
 
     tt1[1].Set();
 
@@ -2042,7 +2043,7 @@ int CRS::DoBuf() {
 
     if (batch) {
       cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
-	   << totalbytes/MB << endl;
+	   << inputbytes/MB << endl;
     }
 
     //if (!b_stop) {
@@ -3345,9 +3346,23 @@ void CRS::Reset_Dec() {
   sprintf(dec_opt,"ab%d",opt.dec_compr);
 }
 
-void CRS::Fill_Dec(EventClass* evt) {
+void CRS::Fill_Dec73(EventClass* evt) {
 
-  UShort_t sz = 3 + sizeof(Long64_t) + rPeaks.size()*sizeof(rpeak_type);
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    //int ch = evt->pulses[i].Chan;
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+      rP.Area   = pk->Area       ;
+      //rP.Width  = pk->Width      ;
+      rP.Time   = pk->Time       ;
+      rP.Ch     = evt->pulses[i].Chan ;
+      //rP.Type   = pk->Type       ;
+      rPeaks.push_back(crs->rP)  ;      
+    }
+  }
+
+
+  UShort_t sz = 3 + sizeof(Long64_t) + rPeaks.size()*sizeof(rpeak_type73);
   if (idec+sz >= DECSIZE) {
     Flush_Dec();
   }
@@ -3362,9 +3377,9 @@ void CRS::Fill_Dec(EventClass* evt) {
   *buf8 = tt;
   idec+=sizeof(Long64_t);
   for (UInt_t i=0; i<rPeaks.size(); i++) {
-    rpeak_type* buf = (rpeak_type*) (DecBuf+idec);
-    memcpy(buf,&rPeaks[i],sizeof(rpeak_type));
-    idec+=sizeof(rpeak_type);
+    rpeak_type73* buf = (rpeak_type73*) (DecBuf+idec);
+    memcpy(buf,&rPeaks[i],sizeof(rpeak_type73));
+    idec+=sizeof(rpeak_type73);
   }
   rPeaks.clear();
 
@@ -3389,6 +3404,7 @@ void CRS::Flush_Dec() {
 	 << res << " " << idec << endl;
   }
   idec=0;
+  decbytes+=res;
 
   gzclose(f_dec);
   f_dec=0;

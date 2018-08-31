@@ -24,17 +24,16 @@ class HMap: public TNamed {
   Bool_t* chk; //item is checked
   Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*)
   UShort_t* bitwk; //bit mask - item is checked in the WORK* folder
-  Int_t *cut_index; //список окон, заданных на этой гистограмме (hst)
+  Int_t *cut_index; //список окон (cuts), заданных на этой гистограмме (hst)
   // положение бита в этой маске соответствует номеру соответствующего окна
   // максимальная размерность: 32 бита, значит число окон
   // не может быть больше 32
   // bit mask: 1 - cut is in this histogram; 0 - cut is not here
-  //TList* list_cuts; 
   HMap* h_cuts[MAXCUTS];
-  //TList* list_h_cuts;
   //список копий этой гистограммы (map), которые будут
-  //заполняться при попадании события в какое-то окно
+  //заполняться при попадании события в какое-то окно/cut [i]
   //(не обязательно в этой гистограмме)
+  //и будут храниться в папке WORK_cut[i]
 
   ClassDef(HMap, 0)
 };
