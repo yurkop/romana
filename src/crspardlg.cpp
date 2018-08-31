@@ -1590,7 +1590,11 @@ void ParParDlg::CheckFormula() {
   Pixel_t color;
 
   int ires = crs->Set_Trigger();
-  if (ires==1) {// bad formula
+  if (ires==0) {// no formula
+    gClient->GetColorByName("white", color);
+    tTrig->SetBackgroundColor(color);
+  }
+  else if (ires==1) {// bad formula
     gClient->GetColorByName("red", color);
     tTrig->SetBackgroundColor(color);
   }

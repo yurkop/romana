@@ -387,7 +387,7 @@ int CRS::Set_Trigger() {
     }
     else {
       crs->b_maintrig=true;
-      return 0;
+      return 2;
     }
   }
 }
@@ -1378,7 +1378,10 @@ void CRS::Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
 
 void CRS::AllParameters33()
 {
-  //cout << "AllParameters32(): " << endl;
+  cout << "AllParameters33(): " << endl;
+
+  //enable start channel by default
+  Command32(2,255,11,1); //enabled
 
   for (byte chan = 0; chan < chan_in_module; chan++) {
     Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
@@ -1773,6 +1776,8 @@ void CRS::DoReset() {
   rPeaks.clear();
   //CloseTree();
 
+  Set_Trigger();  
+
 }
 
 void CRS::DoFopen(char* oname, int popt) {
@@ -1960,9 +1965,11 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   //cout << "ReadParGz2: " << sz << " " << pname << " " << HiFrm << endl;
 
+  Set_Trigger();
+
   opt.raw_write=false;
   opt.dec_write=false;
-  opt.root_write=false;
+  //opt.root_write=false;
 
   if (HiFrm)
     HiFrm->HiReset();
@@ -2536,7 +2543,7 @@ void CRS::Decode33(UChar_t *buffer, int length) {
     unsigned char ch = buffer[idx1+7];
 
     if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
-      cout << "dec32: Bad channel: " << (int) ch
+      cout << "dec33: Bad channel: " << (int) ch
 	   << " " << (int) ipls->Chan
 	   << " " << idx8 //<< " " << nvp
 	   << endl;

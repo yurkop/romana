@@ -204,7 +204,8 @@ RQ_OBJECT("CRS")
   rpeak_type73 rP;
   std::vector<rpeak_type73> rPeaks;
 
-  bool b_maintrig; //true if maintrig is not empty
+  bool b_maintrig; //true if maintrig (formula) is not empty
+  bool cut_main; //main trigger - set for each event in fillhist
   TFormula maintrig;
 
   peak_type dummy_peak;

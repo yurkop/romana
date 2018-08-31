@@ -608,6 +608,10 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
 	map[ch]->h_cuts[i]->hst->Fill(x);
       }
     }
+    if (crs->cut_main) {
+      //cout << "Fill1d: " << Nevt << " " << x << endl;
+      map[ch]->h_MT->hst->Fill(x);
+    }
   }
 
   // if (opt.Mrk[ch] && ch<MAX_CH) {
@@ -898,12 +902,17 @@ void EventClass::FillHist(Bool_t first) {
     }
   */
 
-  if (first && hcl->b_formula) {
-    for (int i=0;i<opt.ncuts;i++) {
-      if (opt.pcuts[i]==1) {//formula
-	hcl->cut_flag[i]=hcl->cform[i]->EvalPar(0,hcl->cut_flag);
+  if (first) {
+    if (hcl->b_formula) {
+      for (int i=0;i<opt.ncuts;i++) {
+	if (opt.pcuts[i]==1) {//formula
+	  hcl->cut_flag[i]=hcl->cform[i]->EvalPar(0,hcl->cut_flag);
+	}
+	//cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i] << endl;
       }
-      //cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i] << endl;
+    }
+    if (crs->b_maintrig) {
+      crs->cut_main = crs->maintrig.EvalPar(0,hcl->cut_flag);
     }
   }
 

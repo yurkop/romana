@@ -47,6 +47,7 @@ public:
 
   TGListTreeItem         *iWork;
   TGListTreeItem         *iWork_cut[MAXCUTS];
+  TGListTreeItem         *iWork_MT;
   TList* hlist;
   THStack* hstack;
 
@@ -63,6 +64,8 @@ public:
   int ntab; //tab number where eventframe is placed
 
   Bool_t wrk_check[MAXCUTS+1]; //is work* checked before deleting ltree
+  //work,work_cut[MAXCUTS]
+  Bool_t wrk_check_MT; //is work_MT checked before deleting ltree
   Bool_t changed;
   Bool_t started;
   Bool_t in_gcut;

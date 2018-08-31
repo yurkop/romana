@@ -28,6 +28,7 @@ HMap::HMap() {
   bitwk=0;
   cut_index = 0;
   memset(h_cuts,0,sizeof(h_cuts));
+  h_MT=0;
 }
 
 HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
@@ -44,6 +45,7 @@ HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
   else
     SetName(dname);
   memset(h_cuts,0,sizeof(h_cuts));
+  h_MT=0;
   //list_cuts = new TList();
   //list_h_cuts = new TList();
 }
@@ -61,6 +63,12 @@ HMap::~HMap() {
       h_cuts[i]=0;
     }
   }
+  if (h_MT) {
+    delete h_MT->hst;
+    h_MT->hst=0;
+    delete h_MT;
+    h_MT=0;
+  }
   //delete list_cuts;
   //delete list_h_cuts;
   //list_h_cuts=0;
@@ -75,6 +83,7 @@ HMap::HMap(const HMap& other) {
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
   }
+  h_MT=other.h_MT;
   //list_cuts = (TList*) other.list_cuts->Clone();
   //list_h_cuts = (TList*) other.list_h_cuts->Clone();
 }
@@ -90,6 +99,7 @@ HMap& HMap::operator=(const HMap& other) {
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
   }
+  h_MT=other.h_MT;
   //list_cuts = (TList*) other.list_cuts->Clone();
   //list_h_cuts = (TList*) other.list_h_cuts->Clone();
   return *this;
@@ -252,6 +262,7 @@ void HClass::Clone_Hist(HMap* map) {
   char cutname[99];
   char name[99],htitle[99];
   // clone map->hist as many times as there are cuts; put it in map->h_cuts[i]
+  //do the same with MT
 
   //if (*map->wrk) {
     TH1* h0 = (TH1*) map->hst;
@@ -261,8 +272,6 @@ void HClass::Clone_Hist(HMap* map) {
 	sprintf(name,"%s_cut%d",h0->GetName(),i);
 	sprintf(htitle,"%s_cut%d",h0->GetTitle(),i);
 	TH1* hcut = (TH1*) h0->Clone();
-	//////TH1* hcut = new TH1(*h0);
-	//////TH1F* hcut = new TH1F("a","a",100,0,100);
 	hcut->Reset();
 	hcut->SetNameTitle(name,htitle);
 	//cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
@@ -272,6 +281,21 @@ void HClass::Clone_Hist(HMap* map) {
 	// add this map to the list h_cuts
 	map->h_cuts[i]=mcut;
       }
+    }
+
+    if (crs->b_maintrig) {
+      sprintf(cutname,"WORK_MT");
+      sprintf(name,"%s_MT",h0->GetName());
+      sprintf(htitle,"%s_MT",h0->GetTitle());
+      TH1* hcut = (TH1*) h0->Clone();
+      hcut->Reset();
+      hcut->SetNameTitle(name,htitle);
+      //cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
+      hist_list->Add(hcut);
+      HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
+
+      // add this map to the list h_cuts
+      map->h_MT=mcut;
     }
     //}
 }
@@ -292,6 +316,15 @@ void HClass::Remove_Clones(HMap* map) {
     else
       break;
   }
+
+  HMap* mcut = map->h_MT;
+  if (mcut) {
+    TH1* hcut = map->h_MT->hst;
+    hist_list->Remove(hcut);
+    delete mcut;
+    map->h_MT=0;
+  }
+  
 }
 
 void HClass::Make_cuts() {
