@@ -140,15 +140,10 @@ static void cback(libusb_transfer *transfer) {
 
   if (crs->b_acq) {
 
-    if (transfer->actual_length) {
+   tt1[1].Set();
+   if (transfer->actual_length) {
       if (opt.decode) {
-	if (crs->module==2) {
-	  crs->Decode2(transfer->buffer,transfer->actual_length);
-	}
-	else if (crs->module>=32) {
-	  //crs->Decode32(transfer->buffer,transfer->actual_length);
-	  crs->Decode33(transfer->buffer,transfer->actual_length);
-	}
+	crs->Decode_any(transfer->buffer,transfer->actual_length);
       }
       if (opt.raw_write) {
 	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
@@ -164,11 +159,24 @@ static void cback(libusb_transfer *transfer) {
 
       crs->nbuffers++;
 
-    } //if (transfer->actual_length) {
+   } //if (transfer->actual_length) {
+   tt2[1].Set();
+   dif = tt2[1].GetSec()-tt1[1].GetSec()+
+     (tt2[1].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
+   ttm[0]+=dif;
 
     
-    crs->Ana2(0);
+    tt1[2].Set();
 
+    //crs->Ana2(0);
+
+    tt2[2].Set();
+    dif = tt2[2].GetSec()-tt1[2].GetSec()+
+      (tt2[2].GetNanoSec()-tt1[2].GetNanoSec())*1e-9;
+    ttm[2]+=dif;
+
+    ttm[3] = tt2[2].GetSec()-tt1[3].GetSec()+
+      (tt2[2].GetNanoSec()-tt1[3].GetNanoSec())*1e-9;
 
     libusb_submit_transfer(transfer);
 
@@ -1614,6 +1622,7 @@ int CRS::DoStartStop() {
 void CRS::ProcessCrs() {
   b_run=1;
   Ana_start();
+  tt1[3].Set();
   if (module>=32) {
     Command32(8,0,0,0);
     Command32(9,0,0,0);    
@@ -1877,8 +1886,8 @@ void CRS::DoFopen(char* oname, int popt) {
   Fbuf = Fbuf2+boffset;
   memset(Fbuf2,0,boffset);
 
-  rbuf4 = (UInt_t*) Fbuf;
-  rbuf2 = (UShort_t*) Fbuf;
+  //rbuf4 = (UInt_t*) Fbuf;
+  //rbuf2 = (UShort_t*) Fbuf;
 
   if (tp) { //adcm raw - determine durwr
     // cout << "durwr1: " << nvp << " " << vv2->size() << endl;
@@ -2012,11 +2021,8 @@ int CRS::DoBuf() {
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
   tt2[0].Set();
   dif = tt2[0].GetSec()-tt1[0].GetSec()+
-  (tt2[0].GetNanoSec()-tt1[0].GetNanoSec())*1e-9;
+    (tt2[0].GetNanoSec()-tt1[0].GetNanoSec())*1e-9;
   ttm[0]+=dif;
-
-  //nbuffers++;
-  //return nbuffers;
 
   // cout << "gzread: " << Fmode << " " << module << " "
   //      << nbuffers << " " << BufLength << " " << ttm[0] << endl;
@@ -2028,17 +2034,7 @@ int CRS::DoBuf() {
     tt1[1].Set();
 
     if (opt.decode) {
-      if (module>=32) {
-	//Decode32(Fbuf,BufLength);
-	Decode33(Fbuf,BufLength);
-      }
-      else if (module==2) {
-	Decode2(Fbuf,BufLength);
-      }
-      else if (module==1) {
-	BufLength/=sizeof(UInt_t);
-	Decode_adcm();
-      }
+      Decode_any(Fbuf,BufLength);
     }
 
     tt2[1].Set();
@@ -2157,7 +2153,7 @@ void CRS::FAnalyze2(bool nobatch) {
   tt1[3].Set();
   while ((res=crs->DoBuf()) && crs->b_fana) {
     tt1[2].Set();
-    Ana2(0);
+    //Ana2(0);
 
     tt2[2].Set();
     dif = tt2[2].GetSec()-tt1[2].GetSec()+
@@ -2267,7 +2263,7 @@ void CRS::DoNBuf2(int nb) {
   int res;
   int i=1;
   while ((res=crs->DoBuf()) && crs->b_fana && i<nb) {
-    Ana2(0);
+    //Ana2(0);
     Show();
     gSystem->ProcessEvents();
     ++i;
@@ -2350,6 +2346,34 @@ void CRS::Show(bool force) {
   //}
 
   //cout << "Show end" << endl;
+}
+
+void CRS::Decode_any(UChar_t *buffer, int length) {
+
+  if (module>=32) {
+    //Decode32(Fbuf,BufLength);
+    Decode33(buffer,length);
+  }
+  else if (module==2) {
+    Decode2(buffer,length);
+  }
+  else if (module==1) {
+    Decode_adcm(buffer,length/sizeof(UInt_t));
+  }
+
+
+  if (vv->size()>2) {
+    // cout << "Make_events33: " << ipls->Counter << " " << ipls->sData.size()
+    // 	 << " " << (int) ipls->ptype << endl;
+    Make_Events();
+    vv2->clear();
+    nvp = 1-nvp;
+    vv = Vpulses+nvp;
+    vv2 = Vpulses+1-nvp;
+  }
+
+  crs->Ana2(0);
+  
 }
 
 void CRS::Decode32(UChar_t *buffer, int length) {
@@ -2509,14 +2533,6 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     */
 
   //cout << "Decode32 3: " << endl;
-
-  if (vv->size()>2) {
-    Make_Events();
-    vv2->clear();
-    nvp = 1-nvp;
-    vv = Vpulses+nvp;
-    vv2 = Vpulses+1-nvp;
-  }
 
 } //decode32
 
@@ -2711,16 +2727,6 @@ void CRS::Decode33(UChar_t *buffer, int length) {
   // cout << "decode33: " << frmt << " " << ipls->Counter << " "
   //      << ipls->sData.size() << " " << n_frm << endl;
 
-  if (vv->size()>2) {
-    // cout << "Make_events33: " << ipls->Counter << " " << ipls->sData.size()
-    // 	 << " " << (int) ipls->ptype << endl;
-    Make_Events();
-    vv2->clear();
-    nvp = 1-nvp;
-    vv = Vpulses+nvp;
-    vv2 = Vpulses+1-nvp;
-  }
-
 } //decode33
 
 void CRS::Decode2(UChar_t* buffer, int length) {
@@ -2791,27 +2797,22 @@ void CRS::Decode2(UChar_t* buffer, int length) {
 
   //Fill_Tail(nvp);
 
-  if (vv->size()>2) {
-    Make_Events();
-    vv2->clear();
-    nvp = 1-nvp;
-    vv = Vpulses+nvp;
-    vv2 = Vpulses+1-nvp;
-  }
-
 } //decode2
 
 //-------------------------------
 
-int CRS::Searchsync() {
+int CRS::Searchsync(UChar_t* buffer, int length) {
   //returns 0 if syncw is not found; otherwise len (length of the m-link frame)
 
-  for (;idx<BufLength;idx++)
+  UInt_t* rbuf4 = (UInt_t*) buffer;
+  UShort_t* rbuf2 = (UShort_t*) buffer;
+
+  for (;idx<length;idx++)
     if (rbuf4[idx] == 0x2a500100) {
       rLen = rbuf2[idx*2+3];
       idnext=idx+rLen;
       if (rLen>511)
-	cout << "Bad BufLength: " << idx << " " << idnext << " "
+	cout << "Bad length: " << idx << " " << idnext << " "
 	     << rLen << endl;
       else {
 	return rLen;
@@ -2823,7 +2824,7 @@ int CRS::Searchsync() {
 
 //-------------------------------------
 
-void CRS::Decode_adcm() {
+void CRS::Decode_adcm(UChar_t* buffer, int length) {
 
   //cout << "decode_adcm: " << endl;
   //it is assumed that at the beginning of this procedure idx points
@@ -2849,42 +2850,20 @@ void CRS::Decode_adcm() {
   //UShort_t nch; // channel number
   UShort_t id; // block id (=0,1,2)
 
+  UInt_t* rbuf4 = (UInt_t*) buffer;
+  UShort_t* rbuf2 = (UShort_t*) buffer;
+
   //cout << "idx1: " << idx << " " << hex << rbuf4[idx] << dec << endl;
-  
-  // if (vv2==Vpulses.rend()) { //this is start of the acqisition
-  //   //-> search for the syncw
-  //   idx=0;
-  //   if (!Searchsync()){
-  //     cout << "sync word not found1" << endl;
-  //     return;
-  //   }
-  // }
 
-  // else {
-  //   cout << "YK (not done yet...)" << endl;
-  //   // what's below should be rewritten...
-  //   for (idx=0;idx<BufLength;idx++)
-  //     if (rbuf4[idx] == 0x2a500100) {
-  // 	rLen = rbuf2[idx*2+3];
-  // 	idnext=idx+rLen;
-  // 	if (rLen>511)
-  // 	  cout << "Bad BufLength: " << idnext << " " << rLen << endl;
-  // 	else {
-  //      	  break;
-  // 	}
-  //     }
-  // }
-
-
-  //now idnext points to the next syncw (which may be larger than BufLength)
-  while (idx+1 < BufLength) {
+  //now idnext points to the next syncw (which may be larger than length)
+  while (idx+1 < length) {
     //rLen (~rbuf[idx+1]) should be inside buf
 
     //at this point idx points to a valid syncw and idnext is also withing FBuf
 
     if (rbuf4[idx] != 0x2a500100) {
       cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
-      if (!Searchsync()){
+      if (!Searchsync(buffer,length)){
 	cout << "sync word not found (YK: do something here...)" << endl;
 	break;
       }
@@ -2893,7 +2872,7 @@ void CRS::Decode_adcm() {
       rLen = rbuf2[idx*2+3];
       idnext=idx+rLen;
     }
-    if (idnext>BufLength)
+    if (idnext>length)
       break;
 
     header = rbuf4[idx+3];
@@ -2905,7 +2884,7 @@ void CRS::Decode_adcm() {
       lflag=bits(header,6,6);
       nsamp=bits(header,7,17);
       if (nsamp+8!=rLen) {
-	//cout << "wrong BufLength: " << idx << " " << nsamp << " " << rLen << endl;
+	//cout << "wrong length: " << idx << " " << nsamp << " " << rLen << endl;
 	//idx=idnext;
 	goto next;
       }
@@ -3043,18 +3022,10 @@ void CRS::Decode_adcm() {
 
   } //while
 
-  if (vv->size()>2) {
-    Make_Events();
-    vv2->clear();
-    nvp = 1-nvp;
-    vv = Vpulses+nvp;
-    vv2 = Vpulses+1-nvp;
-  }
-
   // if (Vpulses.size()>2)
   //   Vpulses.pop_front();
 
-  int sz=(BufLength-idx);
+  int sz=(length-idx);
   if (sz>1024) {
     cout << "Bad adcm file. Frame size too large: " << sz << " " << idx << endl;
     exit(-1);
@@ -3064,7 +3035,7 @@ void CRS::Decode_adcm() {
   idx=-sz;
 
   // cout << "idnext: " << idx2 << " " << idx << " " << idnext << " "
-  //      << BufLength << " " << hex << rbuf4[idx2] << " " << rbuf4[idx]
+  //      << length << " " << hex << rbuf4[idx2] << " " << rbuf4[idx]
   //      << dec << endl;
 
   //cout << "Offset64: " << nbuffers << " " << Offset64 << endl;

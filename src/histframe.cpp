@@ -840,6 +840,12 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	    fListTree->DeleteItem(item2);
 	}
       }
+      if (crs->b_maintrig) {
+	sprintf(hname2,"%s_MT",hname);
+	item2 = fListTree->FindChildByName(iWork_MT,hname2);
+	if (item2)
+	  fListTree->DeleteItem(item2);
+      }
       //cout << "work3: " << item << " " << hname << endl;
     } //work*
     else { //not work*
@@ -1460,6 +1466,7 @@ void HistFrame::Update()
   //cout << "HiFrm::Update()2a" << endl;
   //hlist->ls();
   hlist->Clear();
+  //cout << "HiFrm::Update()2b" << endl;
 
   //Hmut.UnLock();
   //return;
@@ -1487,6 +1494,7 @@ void HistFrame::Update()
   //   //cout << "hlist2: " << map->GetName() << endl;
   // }
 
+  //cout << "HiFrm::Update()3" << endl;
 
 }
 
@@ -1561,6 +1569,7 @@ void HistFrame::DrawStack() {
 
 void HistFrame::DrawHist() {
 
+  //cout << "DrawHist1:" << endl;
   //create hlist
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
@@ -1601,11 +1610,13 @@ void HistFrame::DrawHist() {
   else
     cv->Divide(opt.xdiv,opt.ydiv);
 
+  //cout << "DrawHist2: " << hlist->GetSize() << endl;
   int nn=1;
   int ii=0;
   TIter next(hlist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
+    //cout << "DrawHist22: " << obj << endl;
     if (ii>=opt.icheck) {
       cv->cd(nn);
       map=(HMap*) obj;
@@ -1636,23 +1647,12 @@ void HistFrame::DrawHist() {
 	TLegend leg = TLegend(0.7,0.8,0.99,0.99);
 	leg.SetMargin(0.5);
 
-	//int icut=0;
 	bool found=false;
-	// cout << "cut_index: " << hh->GetName() << ": ";
-	// for (int j=0;j<MAXCUTS;j++) {
-	//   cout << (int) map->cut_index[j] << " ";
-	// }
-	// cout << endl;
 	for (int j=0;j<opt.ncuts;j++) {
-
-	  //icut=map->cut_index[j];
-	  //if (icut==0 || icut>=MAXCUTS)
-	  //break;
 
 	  if (getbit(*(map->cut_index),j)) {
 	    if (hcl->cutG[j]) {
 	      found=true;
-	      //cout << "pcuts: " << icut << " " << opt.pcuts[icut-1] << " " << opt.ncuts << endl;
 	      if (opt.pcuts[j]>1) { //not formula
 		if (opt.pcuts[j]==2) {
 		  cline.SetLineColor(hcl->cutG[j]->GetLineColor());
@@ -1665,13 +1665,11 @@ void HistFrame::DrawHist() {
 		    y1=std::pow(10,y1);
 		    y2=std::pow(10,y2);
 		  }
-		  //cout << "y1y2: " << gPad->GetLogy() << " " << y1 << " " << y2 << endl;
 
 		  xx = hcl->cutG[j]->GetX()[0];
 		  cline.DrawLine(xx,y1,xx,y2);
 		  xx = hcl->cutG[j]->GetX()[1];
 		  cline.DrawLine(xx,y1,xx,y2);
-		  //cout << "cline: " << xx << " " << y2 << " " << hcl->cutG[icut-1]->GetLineColor() << endl;
 		}
 		else {
 		  hcl->cutG[j]->Draw("same");

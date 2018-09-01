@@ -175,8 +175,8 @@ RQ_OBJECT("CRS")
   int BufLength; //length of the read buffer
   int idnext; //next expected idx pointing to new syncw
   int lastfl; //transient last fragment flag
-  UInt_t* rbuf4; //only for decode_adcm
-  UShort_t* rbuf2; //only for decode_adcm
+  //UInt_t* rbuf4; //only for decode_adcm
+  //UShort_t* rbuf2; //only for decode_adcm
   
   //for crs32...
   //ULong64_t *buf8; //buffer for 8-byte words
@@ -254,13 +254,14 @@ RQ_OBJECT("CRS")
   void Show(bool force=false);
 
   //void AllParameters32_old(); // load all parameters
+  void Decode_any(UChar_t* buffer, int length);
+
   void Decode32(UChar_t* buffer, int length);
   void Decode33(UChar_t* buffer, int length);
-
   void Decode2(UChar_t* buffer, int length);
+  void Decode_adcm(UChar_t* buffer, int length);
 
-  int Searchsync();
-  void Decode_adcm();
+  int Searchsync(UChar_t* buffer, int length);
 
   int Set_Trigger();
   void Ana_start();
