@@ -394,6 +394,10 @@ void CRS::Ana_start() {
     b_len[i] = opt.bkg2[i]-opt.bkg1[i];
     p_len[i] = opt.peak2[i]-opt.peak1[i];
   }
+  //cout << "Command_start: " << endl;
+  gzFile ff = gzopen("tmp.par","wb");
+  SaveParGz(ff);
+  gzclose(ff);
 }
 
 void CRS::Ana2(int all) {

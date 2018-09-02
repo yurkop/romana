@@ -2098,6 +2098,10 @@ void CrsParDlg::DoCrsNum() {
     //printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
     //crs->Command_crs(pp.cmd,pp.chan);
     crs->SetPar();
+    //cout << "Command_start: " << endl;
+    gzFile ff = gzopen("tmp.par","wb");
+    crs->SaveParGz(ff);
+    gzclose(ff);
     crs->Command2(3,0,0,0);
   }
 #endif
