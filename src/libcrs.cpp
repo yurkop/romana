@@ -140,7 +140,6 @@ static void cback(libusb_transfer *transfer) {
 
   if (crs->b_acq) {
 
-   tt1[1].Set();
    if (transfer->actual_length) {
       if (opt.decode) {
 	crs->Decode_any(transfer->buffer,transfer->actual_length);
@@ -160,24 +159,8 @@ static void cback(libusb_transfer *transfer) {
       crs->nbuffers++;
 
    } //if (transfer->actual_length) {
-   tt2[1].Set();
-   dif = tt2[1].GetSec()-tt1[1].GetSec()+
-     (tt2[1].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
-   ttm[0]+=dif;
 
     
-    tt1[2].Set();
-
-    //crs->Ana2(0);
-
-    tt2[2].Set();
-    dif = tt2[2].GetSec()-tt1[2].GetSec()+
-      (tt2[2].GetNanoSec()-tt1[2].GetNanoSec())*1e-9;
-    ttm[2]+=dif;
-
-    ttm[3] = tt2[2].GetSec()-tt1[3].GetSec()+
-      (tt2[2].GetNanoSec()-tt1[3].GetNanoSec())*1e-9;
-
     libusb_submit_transfer(transfer);
 
     stat_mut.Lock();
@@ -1622,7 +1605,7 @@ int CRS::DoStartStop() {
 void CRS::ProcessCrs() {
   b_run=1;
   Ana_start();
-  tt1[3].Set();
+  //tt1[3].Set();
   if (module>=32) {
     Command32(8,0,0,0);
     Command32(9,0,0,0);    
@@ -2017,12 +2000,7 @@ void CRS::SaveParGz(gzFile &ff) {
 int CRS::DoBuf() {
 
   //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
-  tt1[0].Set();
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
-  tt2[0].Set();
-  dif = tt2[0].GetSec()-tt1[0].GetSec()+
-    (tt2[0].GetNanoSec()-tt1[0].GetNanoSec())*1e-9;
-  ttm[0]+=dif;
 
   // cout << "gzread: " << Fmode << " " << module << " "
   //      << nbuffers << " " << BufLength << " " << ttm[0] << endl;
@@ -2031,16 +2009,9 @@ int CRS::DoBuf() {
   if (BufLength>0) {
     crs->inputbytes+=BufLength;
 
-    tt1[1].Set();
-
     if (opt.decode) {
       Decode_any(Fbuf,BufLength);
     }
-
-    tt2[1].Set();
-    dif = tt2[1].GetSec()-tt1[1].GetSec()+
-      (tt2[1].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
-    ttm[1]+=dif;
 
     nbuffers++;
 
@@ -2150,20 +2121,7 @@ void CRS::FAnalyze2(bool nobatch) {
 
   Ana_start();
   int res;
-  tt1[3].Set();
   while ((res=crs->DoBuf()) && crs->b_fana) {
-    tt1[2].Set();
-    //Ana2(0);
-
-    tt2[2].Set();
-    dif = tt2[2].GetSec()-tt1[2].GetSec()+
-      (tt2[2].GetNanoSec()-tt1[2].GetNanoSec())*1e-9;
-    ttm[2]+=dif;
-
-    ttm[3] = tt2[2].GetSec()-tt1[3].GetSec()+
-      (tt2[2].GetNanoSec()-tt1[3].GetNanoSec())*1e-9;
-    //ttm[3]+=dif;
-
     if (nobatch) {
       Show();
       gSystem->ProcessEvents();
@@ -2337,7 +2295,7 @@ void CRS::Show(bool force) {
 
     myM->UpdateStatus();
     cout << "Times: " << opt.T_acq;
-    for (int i=0;i<4;i++) {
+    for (int i=0;i<5;i++) {
       cout << " " << ttm[i];
     }
     cout << endl;
@@ -2349,6 +2307,8 @@ void CRS::Show(bool force) {
 }
 
 void CRS::Decode_any(UChar_t *buffer, int length) {
+  //-----decode
+  tt1[1].Set();
 
   if (module>=32) {
     //Decode32(Fbuf,BufLength);
@@ -2361,6 +2321,13 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
     Decode_adcm(buffer,length/sizeof(UInt_t));
   }
 
+  tt2[1].Set();
+  dif = tt2[1].GetSec()-tt1[1].GetSec()+
+    (tt2[1].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
+  ttm[1]+=dif;
+
+  //-----Make_events
+  tt1[2].Set();
 
   if (vv->size()>2) {
     // cout << "Make_events33: " << ipls->Counter << " " << ipls->sData.size()
@@ -2372,8 +2339,25 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
     vv2 = Vpulses+1-nvp;
   }
 
+  tt2[2].Set();
+  dif = tt2[2].GetSec()-tt1[2].GetSec()+
+    (tt2[2].GetNanoSec()-tt1[2].GetNanoSec())*1e-9;
+  ttm[2]+=dif;
+
+  //-----Analyze
+  tt1[3].Set();
+
   crs->Ana2(0);
   
+  tt2[3].Set();
+  dif = tt2[3].GetSec()-tt1[3].GetSec()+
+    (tt2[3].GetNanoSec()-tt1[3].GetNanoSec())*1e-9;
+  ttm[3]+=dif;
+
+  dif = tt2[3].GetSec()-tt1[1].GetSec()+
+    (tt2[3].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
+  ttm[4]+=dif;
+
 }
 
 void CRS::Decode32(UChar_t *buffer, int length) {

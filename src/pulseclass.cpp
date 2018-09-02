@@ -590,6 +590,11 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   if (first) {
     //cout << "fill: " << map->hst->GetName() << endl;
     map[ch]->hst->Fill(x);
+    // cout << "xx: " << x << endl;
+    // if (x>map[ch]->hst->GetXaxis()->GetXmin() &&
+    // 	x<map[ch]->hst->GetXaxis()->GetXmax()) {
+    //   map[ch]->hst->AddBinContent(x);
+    // }
     if (opt.ncuts) {
       for (int i=0;i<opt.ncuts;i++) {
 	if (getbit(*(map[ch]->cut_index),i)) {
@@ -606,11 +611,19 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
       if (hcl->cut_flag[i]) {
 	//cout << "Fill1d: " << Nevt << " " << x << endl;
 	map[ch]->h_cuts[i]->hst->Fill(x);
+	// if (x>=map[ch]->h_cuts[i]->hst->GetXaxis()->GetXmin() &&
+	//     x<map[ch]->h_cuts[i]->hst->GetXaxis()->GetXmax()) {
+	//   map[ch]->h_cuts[i]->hst->AddBinContent(x);
+	// }
       }
     }
     if (crs->cut_main) {
       //cout << "Fill1d: " << Nevt << " " << x << endl;
       map[ch]->h_MT->hst->Fill(x);
+      // if (x>=map[ch]->h_MT->hst->GetXaxis()->GetXmin() &&
+      // 	  x<map[ch]->h_MT->hst->GetXaxis()->GetXmax()) {
+      // 	map[ch]->h_MT->hst->AddBinContent(x);
+      // }
     }
   }
 
