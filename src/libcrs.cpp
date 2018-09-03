@@ -70,11 +70,12 @@ extern Toptions opt;
 int chan_in_module;
 
 
+#ifdef TIMES
 TTimeStamp tt1[10];
 TTimeStamp tt2[10];
 double ttm[10];
 double dif;
-
+#endif
 
 //TCondition tcond1(0);
 
@@ -1738,7 +1739,9 @@ void CRS::DoReset() {
   memset(npulses2,0,sizeof(npulses2));
   memset(npulses_bad,0,sizeof(npulses_bad));
 
+#ifdef TIMES
   memset(ttm,0,sizeof(ttm));
+#endif
 
   //npulses=0;
   npulses_buf=0;
@@ -2004,7 +2007,17 @@ void CRS::SaveParGz(gzFile &ff) {
 int CRS::DoBuf() {
 
   //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
+#ifdef TIMES
+  tt1[0].Set();
+#endif
   BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
+
+#ifdef TIMES
+  tt2[0].Set();
+  dif = tt2[0].GetSec()-tt1[0].GetSec()+
+    (tt2[0].GetNanoSec()-tt1[0].GetNanoSec())*1e-9;
+  ttm[0]+=dif;
+#endif
 
   // cout << "gzread: " << Fmode << " " << module << " "
   //      << nbuffers << " " << BufLength << " " << ttm[0] << endl;
@@ -2298,11 +2311,14 @@ void CRS::Show(bool force) {
     }
 
     myM->UpdateStatus();
-    cout << "Times: " << opt.T_acq;
-    for (int i=0;i<5;i++) {
-      cout << " " << ttm[i];
-    }
-    cout << endl;
+#ifdef TIMES
+    printf("T_acq: %0.2f Read: %0.2f Dec: %0.2f Make: %0.2f Ana: %0.2f Tot: %0.2f\n",opt.T_acq,ttm[0],ttm[1],ttm[2],ttm[3],ttm[4]);
+#endif
+    // cout << "Times: " << opt.T_acq;
+    // for (int i=0;i<5;i++) {
+    //   cout << " " << ttm[i];
+    // }
+    // cout << endl;
 
   }
   //}
@@ -2312,8 +2328,9 @@ void CRS::Show(bool force) {
 
 void CRS::Decode_any(UChar_t *buffer, int length) {
   //-----decode
+#ifdef TIMES
   tt1[1].Set();
-
+#endif
   if (module>=32) {
     //Decode32(Fbuf,BufLength);
     Decode33(buffer,length);
@@ -2325,6 +2342,7 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
     Decode_adcm(buffer,length/sizeof(UInt_t));
   }
 
+#ifdef TIMES
   tt2[1].Set();
   dif = tt2[1].GetSec()-tt1[1].GetSec()+
     (tt2[1].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
@@ -2332,6 +2350,7 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
 
   //-----Make_events
   tt1[2].Set();
+#endif
 
   if (vv->size()>2) {
     // cout << "Make_events33: " << ipls->Counter << " " << ipls->sData.size()
@@ -2343,6 +2362,7 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
     vv2 = Vpulses+1-nvp;
   }
 
+#ifdef TIMES
   tt2[2].Set();
   dif = tt2[2].GetSec()-tt1[2].GetSec()+
     (tt2[2].GetNanoSec()-tt1[2].GetNanoSec())*1e-9;
@@ -2350,9 +2370,11 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
 
   //-----Analyze
   tt1[3].Set();
+#endif
 
   crs->Ana2(0);
   
+#ifdef TIMES
   tt2[3].Set();
   dif = tt2[3].GetSec()-tt1[3].GetSec()+
     (tt2[3].GetNanoSec()-tt1[3].GetNanoSec())*1e-9;
@@ -2361,6 +2383,7 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
   dif = tt2[3].GetSec()-tt1[1].GetSec()+
     (tt2[3].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
   ttm[4]+=dif;
+#endif
 
 }
 
@@ -2429,6 +2452,11 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 
     if (frmt==0) {
       ipls->ptype&=~P_NOSTOP; //pulse has stop
+
+      //analyze pulse
+      ipls->FindPeaks();
+      ipls->PeakAna();
+
       ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls->Chan=ch;
@@ -2560,6 +2588,23 @@ void CRS::Decode33(UChar_t *buffer, int length) {
 
     if (frmt==0) {
       ipls->ptype&=~P_NOSTOP; //pulse has stop
+
+
+      //analyze pulse
+      if (!opt.dsp[ipls->Chan]) {
+	if (opt.nsmoo[ipls->Chan]) {
+	  ipls->Smooth(opt.nsmoo[ipls->Chan]);
+	}
+	ipls->PeakAna33();
+      }
+      else {
+	if (opt.checkdsp) {
+	  ipls->PeakAna33();
+	  ipls->CheckDSP();
+	}
+      }
+
+      
       ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls->Chan=ch;
@@ -2746,6 +2791,13 @@ void CRS::Decode2(UChar_t* buffer, int length) {
 
     if (frmt==0) {
       ipls->ptype&=~P_NOSTOP; //pulse has stop
+
+
+      //analyze pulse
+      ipls->FindPeaks();
+      ipls->PeakAna();
+
+
       ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls->Chan = ch;
@@ -2868,7 +2920,7 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
     if (id==1) {
       cout << "adcm: id==1. What a luck, counters!: " << id << " " << npulses << endl;
     }
-    else {
+    else { //id!=1
       lflag=bits(header,6,6);
       nsamp=bits(header,7,17);
       if (nsamp+8!=rLen) {
@@ -2951,9 +3003,6 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
       // 	cout << "Tst: " << ii << " " << dt << " " << ipls->Tstamp64 << " " << Pstamp64 << " " << Offset64 << endl;
       // }
 
-      if (lflag)
-	ipls->ptype&=~P_NOSTOP; //pulse has stop
-
       //Long64_t crc32 = rbuf4[idx+rLen-1];
 
 
@@ -2985,7 +3034,15 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
       // 	cout << i << " " << ipls->sData.at(i) << endl;
       // }
       
-    }
+      if (lflag) {
+	ipls->ptype&=~P_NOSTOP; //pulse has stop
+
+	//analyze pulse
+	ipls->FindPeaks();
+	ipls->PeakAna();
+      }
+
+    } //id!=1
 
     //cout << "idnext: " << idx << " " << idnext << endl;
     //AnaMLinkFrame();
@@ -3124,6 +3181,9 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
   //   pls->Smooth(opt.nsmoo[pls->Chan]);
   // }
   //cout << "module: " << module << endl;
+
+
+  /*
   if (module>=33) {
     if (!opt.dsp[pls->Chan]) {
       if (opt.nsmoo[pls->Chan]) {
@@ -3142,6 +3202,9 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
     pls->FindPeaks();
     pls->PeakAna();
   }
+  */
+
+
 
   if (Levents.empty()) {
     //if (Tstart64<0) {

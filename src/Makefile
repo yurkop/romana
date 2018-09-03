@@ -1,3 +1,4 @@
+# make TIMES=1 to compile with TIMES option
 # make DEBUG=1 to compile with debug option
 SRC_D = src
 OBJ_D = obj
@@ -13,6 +14,10 @@ LFS=$(shell getconf LFS_CFLAGS)
 
 ifdef DEBUG
   CPPFLAGS += -g
+endif
+
+ifdef TIMES
+  CPPFLAGS += -D TIMES=1
 endif
 
 CPPFLAGS += $(LFS) -MD -MP -D LINUX=1 -I. #-I$(LIB_D)
