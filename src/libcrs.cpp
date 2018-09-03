@@ -141,7 +141,9 @@ static void cback(libusb_transfer *transfer) {
 
   if (crs->b_acq) {
 
-   if (transfer->actual_length) {
+    libusb_submit_transfer(transfer);
+
+    if (transfer->actual_length) {
       if (opt.decode) {
 	crs->Decode_any(transfer->buffer,transfer->actual_length);
       }
@@ -159,10 +161,10 @@ static void cback(libusb_transfer *transfer) {
 
       crs->nbuffers++;
 
-   } //if (transfer->actual_length) {
+    } //if (transfer->actual_length) {
 
     
-    libusb_submit_transfer(transfer);
+    //libusb_submit_transfer(transfer);
 
     stat_mut.Lock();
     crs->inputbytes+=transfer->actual_length;
