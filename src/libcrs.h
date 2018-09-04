@@ -81,8 +81,6 @@ RQ_OBJECT("CRS")
   char dec_opt[5];
   Short_t Fmode; //0 - do nothing; 1 - CRS module online; 2 - file analysis
   char Fname[255];
-  UChar_t* Fbuf;
-  UChar_t* Fbuf2;
 
   UChar_t* DecBuf;
   Int_t idec; //index of DecBuf;
@@ -91,15 +89,15 @@ RQ_OBJECT("CRS")
   // size of Vpulses can not be larger than 2
   // (contains current vector and previous vector)
   //std::list<pulse_vect> Vpulses;
-  pulse_vect Vpulses[2];
+  pulse_vect Vpulses[MAXTRANS];
   int nvp; //Vpulses index
-  pulse_vect *vv; //- vector of pulses from current buffer
-  pulse_vect *vv2; //- vector of pulses from previous buffer
+  //pulse_vect *vv; //- vector of pulses from current buffer
+  //pulse_vect *vv2; //- vector of pulses from previous buffer
 
-  pulse_vect::iterator ipls; //pointer to the current pulse in decode*
-  peak_type *ipk; //pointer to the current peak in the current pulse;
-  Double_t QX,QY,RX,RY;
-  Int_t n_frm; //counter for frmt4 and frmt5
+  //pulse_vect::iterator ipls; //pointer to the current pulse in decode*
+  //peak_type *ipk; //pointer to the current peak in the current pulse;
+  //Double_t QX,QY,RX,RY;
+  //Int_t n_frm; //counter for frmt4 and frmt5
 
   //std::list<event_list> Levents; //list of events
   std::list<EventClass> Levents; //list of events
@@ -125,14 +123,19 @@ RQ_OBJECT("CRS")
   Short_t ver_po;
   Int_t period;
 
-  int ntrans; //number of "simultaneous" transfers
-
   //buffers for sending parameters...
   byte buf_out[64];
   byte buf_in[64];
 
+  int ntrans; //number of "simultaneous" transfers
+
+  int buf_off[MAXTRANS];
+  int buf_len[MAXTRANS];
+  unsigned char *buftr2[MAXTRANS];
   unsigned char *buftr[MAXTRANS];
   struct libusb_transfer *transfer[MAXTRANS];
+  UChar_t* Fbuf[MAXTRANS];
+  UChar_t* Fbuf2[MAXTRANS];
 
   //timeval t_start, t_stop;
   //Long64_t T_start; //start of the acuisition/analysis
@@ -254,12 +257,14 @@ RQ_OBJECT("CRS")
   void Show(bool force=false);
 
   //void AllParameters32_old(); // load all parameters
-  void Decode_any(UChar_t* buffer, int length);
+  void Decode_any(UChar_t* buffer, int length, int itr);
 
-  void Decode32(UChar_t* buffer, int length);
-  void Decode33(UChar_t* buffer, int length);
-  void Decode2(UChar_t* buffer, int length);
-  void Decode_adcm(UChar_t* buffer, int length);
+  void MoveLastEven(UChar_t* buffer, int length, int itr);
+  void Decode33(UChar_t* buffer, int length, int itr);
+  //void Decode32(UChar_t* buffer, int length);
+  //void Decode33(UChar_t* buffer, int length, int ivp, int ivp2);
+  //void Decode2(UChar_t* buffer, int length);
+  //void Decode_adcm(UChar_t* buffer, int length);
 
   int Searchsync(UChar_t* buffer, int length);
 

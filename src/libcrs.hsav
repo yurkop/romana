@@ -91,10 +91,10 @@ RQ_OBJECT("CRS")
   // size of Vpulses can not be larger than 2
   // (contains current vector and previous vector)
   //std::list<pulse_vect> Vpulses;
-  pulse_vect Vpulses[MAXTRANS];
+  pulse_vect Vpulses[2];
   int nvp; //Vpulses index
-  //pulse_vect *vv; //- vector of pulses from current buffer
-  //pulse_vect *vv2; //- vector of pulses from previous buffer
+  pulse_vect *vv; //- vector of pulses from current buffer
+  pulse_vect *vv2; //- vector of pulses from previous buffer
 
   pulse_vect::iterator ipls; //pointer to the current pulse in decode*
   peak_type *ipk; //pointer to the current peak in the current pulse;

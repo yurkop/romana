@@ -654,9 +654,6 @@ CRS::CRS() {
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
 
-  Fbuf=NULL;
-  Fbuf2=0;
-
   DecBuf=new UChar_t[DECSIZE]; //1 MB
 
   // if (Fbuf2)
@@ -686,7 +683,11 @@ CRS::CRS() {
 
   for (int i=0;i<MAXTRANS;i++) {
     transfer[i] =NULL;
+    buftr2[i]=NULL;
     buftr[i]=NULL;
+
+    Fbuf[i]=NULL;
+    Fbuf2[i]=NULL;
   }
 
   //cout << "creating threads... " << endl;
@@ -970,8 +971,9 @@ void CRS::Free_Transfer() {
   }
 
   for (int i=0;i<MAXTRANS;i++) {
-    if (buftr[i]) {
-      delete[] buftr[i];
+    if (buftr2[i]) {
+      delete[] buftr2[i];
+      buftr2[i]=NULL;
       buftr[i]=NULL;
     }
   }
@@ -1023,8 +1025,9 @@ int CRS::Init_Transfer() {
     //if (buftr[i]) {
     //delete[] buftr[i];
     //}
-    buftr[i] = new unsigned char[opt.usb_size*1024];
-    memset(buftr[i],0,sizeof(unsigned char)*opt.usb_size*1024);
+    buftr2[i] = new unsigned char[opt.usb_size*1024+1024*1024];
+    buftr[i] = buftr2[i]+1024*1024;
+    memset(buftr2[i],0,sizeof(unsigned char)*opt.usb_size*1024+1024*1024);
   }
 
   //cout << "---Init_Transfer 3---" << endl;
@@ -1077,8 +1080,9 @@ int CRS::Init_Transfer() {
       //cout << "free: " << i << endl;
       //libusb_free_transfer(transfer[i]);
       cout << "delete: " << i << endl;
-      if (buftr[i])
-	delete[] buftr[i];
+      if (buftr2[i])
+	delete[] buftr2[i];
+      buftr2[i]=NULL;
       buftr[i]=NULL;
     }
     return 2;
@@ -1717,19 +1721,21 @@ void CRS::DoReset() {
   nevents2=0;
 
   //Vpulses.clear();
-  Vpulses[0].clear();
-  Vpulses[1].clear();
+  for (int i=0;i<MAXTRANS;i++)
+    Vpulses[i].clear();
+  //Vpulses[1].clear();
   nvp=0;
-  vv = Vpulses+nvp; //- vector of pulses from current
-  vv2 = Vpulses+1-nvp; //- vector of pulses from previous buffer
+
+  //vv = Vpulses+nvp; //- vector of pulses from current
+  //vv2 = Vpulses+1-nvp; //- vector of pulses from previous buffer
   //create first pulse, which is always bad: Chan=254
   //this pulse will be ignored in Event_insert_pulse
-  ipls = Vpulses->insert(Vpulses->end(),PulseClass());
+  pulse_vect::iterator ipls = Vpulses->insert(Vpulses->end(),PulseClass());
   ipls->Chan=254;
   ipls->ptype|=P_NOSTART;
 
-  ipk=&dummy_peak; //peak points to the dummy_peak
-  QX=0;QY=0;RX=1;RY=1;
+  //ipk=&dummy_peak; //peak points to the dummy_peak
+  //QX=0;QY=0;RX=1;RY=1;
 
   // if (module!=1) {
   //   //cout << "Pre!!!" << endl;
@@ -2338,10 +2344,10 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
     Decode33(buffer,length);
   }
   else if (module==2) {
-    Decode2(buffer,length);
+    //Decode2(buffer,length);
   }
   else if (module==1) {
-    Decode_adcm(buffer,length/sizeof(UInt_t));
+    //Decode_adcm(buffer,length/sizeof(UInt_t));
   }
 
 #ifdef TIMES
@@ -2354,14 +2360,10 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
   tt1[2].Set();
 #endif
 
-  if (vv->size()>2) {
+  if (Vpulses[nvp].size()>2) {
     // cout << "Make_events33: " << ipls->Counter << " " << ipls->sData.size()
     // 	 << " " << (int) ipls->ptype << endl;
     Make_Events();
-    vv2->clear();
-    nvp = 1-nvp;
-    vv = Vpulses+nvp;
-    vv2 = Vpulses+1-nvp;
   }
 
 #ifdef TIMES
@@ -2389,42 +2391,35 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
 
 }
 
+void CRS::MoveLastEvent(int itr, int length) {
+  //itr - current transfer/buffer
+  int itr2 = (itr+1)%ntrans; //next transfer/buffer
+  //int idx1=length-8; // current index in the buffer (in 1-byte words)
+
+  unsigned char *buf = buftr[itr];
+  unsigned char frmt;
+  int sz=0;
+
+  for (int i=0;i<length;i+=8) {
+    frmt = (buf[length-2-i] & 0xF0);
+    if (frmt==0) {
+      cout << "Last event found: " << itr << " " << i << " " << (int) buf[i] << endl;
+      memcpy(buftr[itr2]-i,buftr[itr]+length-i,i);
+      buf_off[itr2]=-i;
+      buf_len[itr]=length-i;
+    }
+  }
+  cout << "Error: no last event: " << itr << endl;
+
+}
+
+/*
 void CRS::Decode32(UChar_t *buffer, int length) {
 
   //PulseClass *ipls;
   //pulse_vect::iterator ipls;
 
   ULong64_t* buf8 = (ULong64_t*) buffer;
-
-
-  // if (vv2!=Vpulses.rend()) { //this is not start of the acqisition
-  //   cout << "aa: " << vv->size() << " " << vv2->size() << endl;
-  //   for (UInt_t i=0;i<vv2->size();i++) {
-  //     PulseClass *pls = &vv2->at(i);
-  //     cout << "XXXX: " << i << " " << pls << " " << pls->Tstamp64 << " "
-  // 	   << " " << pls->Counter << " " << (int) pls->ptype
-  // 	   << " " << pls->sData.size() << " " << (int) pls->Chan
-  // 	   << endl;
-  //   }
-  // }
-  
-  // cout << "Decode32 1: " << Vpulses.size() << " " << &*vv2
-  //      << " " << &*Vpulses.rend() << endl;
-
-  // if (juststarted) { //this is start of the acqisition
-  //   juststarted=false;
-  //   //vv->push_back(PulseClass());
-  //   //ipls = &vv->back();
-  //   ipls = vv->insert(vv->end(),PulseClass());
-  //   npulses++;
-  //   ipls->Chan = buffer[7];
-  //   ipls->ptype|=P_NOSTART; // first pulse is by default incomplete
-  //   //it will be reset if idx8==0 in the while loop
-  // }
-  // else {
-  //   ipls=&vv2->back();
-  //   // ipls points to the last pulse of the previous buffer
-  // }
 
   //cout << "Decode32 2: " << Vpulses.size() << endl;
   unsigned short frmt;
@@ -2467,9 +2462,6 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     else if (frmt==1) {
       ipls->State = buffer[idx1+5];
       ipls->Counter = data & 0xFFFFFFFFFF;
-      // if (buffer[idx1+5]) {
-      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls->State << " " << data << " " << buf8[idx8] << endl;
-      // }
     }
     else if (frmt==2) {
 
@@ -2487,8 +2479,6 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 
 	int zzz = data & 0xFFF;
 	ipls->sData.push_back((zzz<<20)>>20);
-	//ipls->sData[ipls->Nsamp++]=(zzz<<20)>>20;
-	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=12;
       }
       //}
@@ -2509,8 +2499,6 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 
 	int zzz = data & 0xFFFF;
 	ipls->sData.push_back((zzz<<16)>>16);
-	//ipls->sData[ipls->Nsamp++]=(zzz<<20)>>20;
-	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=16;
       }
       //}
@@ -2523,52 +2511,30 @@ void CRS::Decode32(UChar_t *buffer, int length) {
     idx1=idx8*8;
   }
 
-  /*
-  //if (crs->nbuffers>=52 && crs->nbuffers<=54) {
-  cout << "buf: " << crs->nbuffers << " " << Vpulses.size() << " " << vv->size() << " " << endl;
-
-  if (vv2!=Vpulses.rend()) { //this is not start of the acqisition
-    //PulseClass *pls2 = &vv2->at(0);
-    //cout << "bbb: " << &vv2->at(0) << " " << pls2 << " " << vv2->size() << endl;
-
-    for (UInt_t i=0;i<vv2->size();i++) {
-      PulseClass *pls = &vv2->at(i);
-      cout << "prev: " << i << " " << pls << " " << pls->Tstamp64 << " "
-      	   << " " << pls->Counter << " " << (int) pls->ptype
-      	   << " " << pls->sData.size() << " " << (int) pls->Chan
-      	   << endl;
-    }
-  }
-  
-  for (UInt_t i=0;i<vv->size();i++) {
-      PulseClass *pls = &vv->at(i);
-      cout << "VECT: " << i << " " << pls->Tstamp64 << " "
-	   << " " << pls->Counter << " " << (int) pls->ptype
-	   << " " << pls->sData.size() << " " << (int) pls->Chan
-	   << endl;
-    }
-    //}
-    */
-
-  //cout << "Decode32 3: " << endl;
-
 } //decode32
+*/
 
-void CRS::Decode33(UChar_t *buffer, int length) {
+void CRS::Decode33(int itr) {//UChar_t *buffer, int length, int ivp, int ivp2) {
+  //itr - number of transfer
 
-  ULong64_t* buf8 = (ULong64_t*) buffer;
+  ULong64_t* buf8 = (ULong64_t*) buftr[itr];
+
+  int idx1=buf_off[itr]; // current index in the buffer (in 1-byte words)
+  int idx8=idx1/8; // current index in the buffer (in 8-byte words) 
 
   unsigned short frmt;
-  int idx8=0;
-  int idx1=0;
   ULong64_t data;
   Int_t zzz; // temporary var. to convert signed nbit var. to signed 32bit int
   Long64_t lll; //Long temporary var.
   //int n_frm=0; //counter for frmt4 and frmt5
+  peak_type *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
   //Double_t QX=0,QY=0,RX,RY;
   //peak_type *pk=&dummy_peak;
 
-  while (idx1<length) {
+  pulse_vect *vv = Vpulses+itr;
+  pulse_vect::iterator ipls=--(Vpulses[ivp2].end());
+
+  while (idx1<buf_len[itr]) {
     frmt = buffer[idx1+6];
     //YKYKYK!!!! do something with cnt - ???
     //int cnt = frmt & 0x0F;
@@ -2764,6 +2730,7 @@ void CRS::Decode33(UChar_t *buffer, int length) {
 
 } //decode33
 
+/*
 void CRS::Decode2(UChar_t* buffer, int length) {
 
   unsigned short* buf2 = (unsigned short*) buffer;
@@ -2779,8 +2746,6 @@ void CRS::Decode2(UChar_t* buffer, int length) {
     frmt = (uword & 0x7000)>>12;
     short data = uword & 0xFFF;
     unsigned char ch = (uword & 0x8000)>>15;
-
-    //cout << "decode2: " << idx2 << " " << frmt << " " << (int) ch << " " << data << " " << (int) ipls->Chan << endl;
 
     if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
       cout << "2: Bad channel: " << (int) ch
@@ -2827,19 +2792,11 @@ void CRS::Decode2(UChar_t* buffer, int length) {
       //}
     }
 
-    //cout << "decode2a: " << idx2 << endl;
-
     idx2++;
   }
 
-  //return;
-  //cond[nbuf]->Signal();
-
-  //cout << "decode2a: " << idx2 << endl;
-
-  //Fill_Tail(nvp);
-
 } //decode2
+*/
 
 //-------------------------------
 
@@ -2865,7 +2822,7 @@ int CRS::Searchsync(UChar_t* buffer, int length) {
 }
 
 //-------------------------------------
-
+/*
 void CRS::Decode_adcm(UChar_t* buffer, int length) {
 
   //cout << "decode_adcm: " << endl;
@@ -2957,23 +2914,6 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
       ipls->Tstamp64 += rbuf4[idx+rLen-3]+opt.delay[ipls->Chan];
       //ipls->Tstamp64 = rbuf4[idx+rLen-3];
 
-
-      // Long64_t t_orig = ipls->Tstamp64;
-      // static int ii;
-      // ii++;
-      // bool tst=false;
-      // if (ii>257030 && ii<257060) tst=true;
-      // // // test1 -> tstamp is bad for all events starting from 3
-      // // if (ii>=3) {
-      // // 	ipls->Tstamp64-=109304694026798308;
-      // // }
-      // // // test2 -> tstamp is bad only for event 3
-      // // if (ii==3) {
-      // // 	ipls->Tstamp64-=149304694026798308;
-      // // }
-
-
-
       if (Pstamp64==P64_0) {
 	Pstamp64=ipls->Tstamp64;
 	Offset64=0;
@@ -3000,26 +2940,6 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
 	Pstamp64=ipls->Tstamp64;
       }
 
-      // if (tst)
-      // if (Offset64) {
-      // 	cout << "Tst: " << ii << " " << dt << " " << ipls->Tstamp64 << " " << Pstamp64 << " " << Offset64 << endl;
-      // }
-
-      //Long64_t crc32 = rbuf4[idx+rLen-1];
-
-
-      // cout << "Header: " << idx << " " << header << " "
-      // 	   << (int) ipls->Chan << " " << lflag << " "
-      // 	   << nsamp << " " << rLen << " " << hex << header
-      // 	   << dec << " " << ipls->Tstamp64
-      // 	   << dec << endl;
-
-      // cout << "Header2: " << idx << " " << hex << rbuf4[idx] << " "
-      // 	   << rbuf4[idx+3] << " " << rbuf4[idx+5] << " "
-      // 	   << "65:" << rbuf4[idx+65] << " " << rbuf4[idx+66] << " "
-      // 	   << rbuf4[idx+67] << " " << rbuf4[idx+68]
-      // 	   << dec << endl;
-
       static Float_t baseline=0;
       if (ipls->sData.empty() && nsamp) {
 	baseline = rbuf2[idx*2+11];
@@ -3031,11 +2951,6 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
 	//cout << i << " " << rbuf2[idx*2+i+10] << endl;
       }
 
-      // cout << "sData: " << ipls->Tstamp64 << endl;
-      // for (UInt_t i=0;i<ipls->sData.size();i++) {
-      // 	cout << i << " " << ipls->sData.at(i) << endl;
-      // }
-      
       if (lflag) {
 	ipls->ptype&=~P_NOSTOP; //pulse has stop
 
@@ -3052,21 +2967,6 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
   next:
     idx=idnext;
 
-
-
-    // if (rbuf4[idx] != 0x2a500100) {
-    //   cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
-    //   if (!Searchsync()){
-    // 	cout << "sync word not found (YK: do something here...)" << endl;
-    // 	break;
-    //   }
-    // }
-    // else {
-    //   rLen = rbuf2[idx*2+3];
-    //   idnext=idx+rLen;
-    // }
-
-
   } //while
 
   // if (Vpulses.size()>2)
@@ -3081,13 +2981,8 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
   //int idx2=idx;
   idx=-sz;
 
-  // cout << "idnext: " << idx2 << " " << idx << " " << idnext << " "
-  //      << length << " " << hex << rbuf4[idx2] << " " << rbuf4[idx]
-  //      << dec << endl;
-
-  //cout << "Offset64: " << nbuffers << " " << Offset64 << endl;
-
 } //Decode_adcm
+*/
 
 //-------------------------------------
 
@@ -3312,22 +3207,26 @@ void CRS::Make_Events() {
   //if (!opt.analyze)
   //return;
 
-  pulse_vect::iterator pls = --vv2->end();
-  //insert last pulse from "previous" vector vv2
-  if (vv2->size()) {
+    //insert last pulse from "previous" vector vv2
+  int nvp2 = (nvp+1)%ntrans;
+  if (Vpulses[nvp2].size()) {
+    pulse_vect::iterator pls = --(Vpulses[nvp2].end());
     Event_Insert_Pulse(pls);
   }
+  Vpulses[nvp2].clear();
 
   //now insert all pulses from the current buffer, except last one
   //--vv;// = Vpulses+nvp;
 
+  pulse_vect *vv = Vpulses+nvp;
   for (pls=vv->begin(); pls != --vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {
       Event_Insert_Pulse(pls);
       //Print_Events();
     }
   }
-
+  nvp=nvp2;
+  
   //Print_Events();
   //Select_Event(firstevent);
 

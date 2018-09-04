@@ -1717,13 +1717,11 @@ void CRS::DoReset() {
   nevents2=0;
 
   //Vpulses.clear();
-  for (int i=0;i<MAXTRANS;i++)
-    Vpulses[i].clear();
-  //Vpulses[1].clear();
+  Vpulses[0].clear();
+  Vpulses[1].clear();
   nvp=0;
-
-  //vv = Vpulses+nvp; //- vector of pulses from current
-  //vv2 = Vpulses+1-nvp; //- vector of pulses from previous buffer
+  vv = Vpulses+nvp; //- vector of pulses from current
+  vv2 = Vpulses+1-nvp; //- vector of pulses from previous buffer
   //create first pulse, which is always bad: Chan=254
   //this pulse will be ignored in Event_insert_pulse
   ipls = Vpulses->insert(Vpulses->end(),PulseClass());
@@ -2356,11 +2354,6 @@ void CRS::Decode_any(UChar_t *buffer, int length) {
   tt1[2].Set();
 #endif
 
-  int ivp=nvp;
-  pulse_vect *vv = Vpulses+ivp;
-  ivp--;
-  ivp=ivp%ntrans;
-  pulse_vect *vv2 = Vpulses+ivp;
   if (vv->size()>2) {
     // cout << "Make_events33: " << ipls->Counter << " " << ipls->sData.size()
     // 	 << " " << (int) ipls->ptype << endl;
