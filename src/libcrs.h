@@ -129,6 +129,8 @@ RQ_OBJECT("CRS")
 
   int ntrans; //number of "simultaneous" transfers
 
+  int ibuf;//index of Fbuf[*]
+
   int buf_off[MAXTRANS];
   int buf_len[MAXTRANS];
   unsigned char *buftr2[MAXTRANS];

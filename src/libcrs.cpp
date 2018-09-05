@@ -1876,13 +1876,17 @@ void CRS::DoFopen(char* oname, int popt) {
 
   //cout << "Fopen2: " << (void*) Fbuf2 << " " << bsize << " " << boffset << endl;
 
-  if (Fbuf2) {
-    delete[] Fbuf2;
+  for (int i=0;i<MAXTRANS;i++) {
+    if (Fbuf2[i]) {
+      delete[] Fbuf2[i];
+    }
+    Fbuf2[i] = new UChar_t[bsize];
+    Fbuf[i] = Fbuf2[i]+boffset;
+    memset(Fbuf2[i],0,boffset);
   }
+  ibuf=0;
+
   //cout << "Fopen3: " << (void*) Fbuf2 << " " << bsize << endl;
-  Fbuf2 = new UChar_t[bsize];
-  Fbuf = Fbuf2+boffset;
-  memset(Fbuf2,0,boffset);
 
   //rbuf4 = (UInt_t*) Fbuf;
   //rbuf2 = (UShort_t*) Fbuf;
@@ -2018,7 +2022,7 @@ int CRS::DoBuf() {
 #ifdef TIMES
   tt1[0].Set();
 #endif
-  BufLength=gzread(f_read,Fbuf,opt.rbuf_size*1024);
+  BufLength=gzread(f_read,Fbuf[ibuf],opt.rbuf_size*1024);
 
 #ifdef TIMES
   tt2[0].Set();
