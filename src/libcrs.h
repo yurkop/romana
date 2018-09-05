@@ -214,6 +214,7 @@ RQ_OBJECT("CRS")
   TFormula maintrig;
 
   peak_type dummy_peak;
+  PulseClass dummy_pulse;
 
   Int_t b_len[MAX_CH],p_len[MAX_CH]; //length of window for bkg and peak integration in DSP
   //--------functions---------
@@ -259,10 +260,10 @@ RQ_OBJECT("CRS")
   void Show(bool force=false);
 
   //void AllParameters32_old(); // load all parameters
-  void Decode_any(UChar_t* buffer, int length, int itr);
+  void Decode_any(UChar_t** buffer, int length, int itr);
 
-  void MoveLastEven(UChar_t* buffer, int length, int itr);
-  void Decode33(UChar_t* buffer, int length, int itr);
+  void MoveLastEvent(UChar_t** buffer, int &length, int itr);
+  void Decode33(UChar_t** buffer, int length, int itr);
   //void Decode32(UChar_t* buffer, int length);
   //void Decode33(UChar_t* buffer, int length, int ivp, int ivp2);
   //void Decode2(UChar_t* buffer, int length);
@@ -291,7 +292,7 @@ RQ_OBJECT("CRS")
   void Fill_Dec73(EventClass* evt);
   void Flush_Dec();
 
-  void Print_Pulses();
+  //void Print_Pulses();
   void Print_Events();
   ClassDef(CRS, 0)
 };

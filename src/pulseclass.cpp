@@ -38,7 +38,8 @@ namespace PROF {
 using namespace std;
 
 PulseClass::PulseClass() {
-  ptype=P_NOSTOP;
+  //ptype=P_NOSTOP;
+  ptype=0;
   //Nsamp=0;
   //Npeaks=0;
   //Analyzed=false;

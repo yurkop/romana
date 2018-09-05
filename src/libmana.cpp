@@ -1376,10 +1376,12 @@ void MainFrame::DoClose() {
     gzclose(crs->f_read);
     crs->f_read=0;
   }
-  if (crs->Fbuf2) {
-    delete[] crs->Fbuf2;
-    crs->Fbuf2=0;
-    crs->Fbuf=0;
+  for (int i=0;i<crs->MAXTRANS;i++) {
+    if (crs->Fbuf2[i]) {
+      delete[] crs->Fbuf2[i];
+    }
+    crs->Fbuf2[i]=0;
+    crs->Fbuf[i]=0;
   }
 
   myM->SetTitle((char*)"");

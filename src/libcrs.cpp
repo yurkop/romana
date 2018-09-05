@@ -145,8 +145,8 @@ static void cback(libusb_transfer *transfer) {
 
     if (transfer->actual_length) {
       if (opt.decode) {
-	int itr = *(int*) transfer[i]->user_data;
-	crs->Decode_any(buftr,transfer->actual_length,itr);
+	int itr = *(int*) transfer->user_data;
+	crs->Decode_any(crs->buftr,transfer->actual_length,itr);
       }
       if (opt.raw_write) {
 	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
@@ -2342,14 +2342,14 @@ void CRS::Show(bool force) {
   //cout << "Show end" << endl;
 }
 
-void CRS::Decode_any(UChar_t *buffer, int length, int itr) {
+void CRS::Decode_any(UChar_t** buffer, int length, int itr) {
   //-----decode
 #ifdef TIMES
   tt1[1].Set();
 #endif
   if (module>=32) {
     //Decode32(Fbuf,BufLength);
-    Decode33(buffer,length);
+    Decode33(buffer,length,itr);
   }
   else if (module==2) {
     //Decode2(buffer,length);
@@ -2399,22 +2399,22 @@ void CRS::Decode_any(UChar_t *buffer, int length, int itr) {
 
 }
 
-void CRS::MoveLastEvent(int itr, int length) {
+void CRS::MoveLastEvent(UChar_t** buffer, int &length, int itr) {
   //itr - current transfer/buffer
   int itr2 = (itr+1)%ntrans; //next transfer/buffer
   //int idx1=length-8; // current index in the buffer (in 1-byte words)
 
-  unsigned char *buf = buftr[itr];
+  unsigned char *buf = buffer[itr];
   unsigned char frmt;
-  int sz=0;
+  //int sz=0;
 
   for (int i=0;i<length;i+=8) {
     frmt = (buf[length-2-i] & 0xF0);
     if (frmt==0) {
       cout << "Last event found: " << itr << " " << i << " " << (int) buf[i] << endl;
-      memcpy(buftr[itr2]-i,buftr[itr]+length-i,i);
+      memcpy(buffer[itr2]-i,buffer[itr]+length-i,i);
       buf_off[itr2]=-i;
-      buf_len[itr]=length-i;
+      length=length-i;
     }
   }
   cout << "Error: no last event: " << itr << endl;
@@ -2522,73 +2522,80 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 } //decode32
 */
 
-void CRS::Decode33(UChar_t* buffer, int length, int itr) {
+void CRS::Decode33(UChar_t** buffer, int length, int itr) {
   //itr - number of transfer or Fbuf
 
   ULong64_t* buf8 = (ULong64_t*) buffer[itr];
+  UChar_t* buf1 = buffer[itr];
 
   int idx1=buf_off[itr]; // current index in the buffer (in 1-byte words)
-  int idx8=idx1/8; // current index in the buffer (in 8-byte words) 
+  //int idx8=idx1/8; // current index in the buffer (in 8-byte words) 
 
   unsigned short frmt;
   ULong64_t data;
   Int_t zzz; // temporary var. to convert signed nbit var. to signed 32bit int
   Long64_t lll; //Long temporary var.
-  //int n_frm=0; //counter for frmt4 and frmt5
+  int n_frm=0; //counter for frmt4 and frmt5
   peak_type *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
-  //Double_t QX=0,QY=0,RX,RY;
+  Double_t QX=0,QY=0,RX,RY;
   //peak_type *pk=&dummy_peak;
 
   pulse_vect *vv = Vpulses+itr;
-  pulse_vect::iterator ipls=--(Vpulses[ivp2].end());
+  PulseClass* ipls=&dummy_pulse;
 
-  while (idx1<buf_len[itr]) {
-    frmt = buffer[idx1+6];
+  while (idx1<length) {
+    frmt = buf1[idx1+6];
     //YKYKYK!!!! do something with cnt - ???
     //int cnt = frmt & 0x0F;
     frmt = (frmt & 0xF0)>>4;
-    data = buf8[idx8] & 0xFFFFFFFFFFFF;
-    unsigned char ch = buffer[idx1+7];
+    data = buf8[idx1*8] & 0xFFFFFFFFFFFF;
+    unsigned char ch = buf1[idx1+7];
 
-    if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
+    if (frmt && vv->empty()) {
+      cout << "dec33: bad buf start: " << (int) ch << " " << frmt << endl;
+    }
+    else if ((ch>=opt.Nchan) ||
+	     (frmt && ch!=ipls->Chan)) {
       cout << "dec33: Bad channel: " << (int) ch
 	   << " " << (int) ipls->Chan
-	   << " " << idx8 //<< " " << nvp
+	   << " " << idx1 //<< " " << nvp
 	   << endl;
       ipls->ptype|=P_BADCH;
 
-      idx8++;
-      idx1=idx8*8;
+      //idx8++;
+      idx1+=8;
       continue;
     }
 
     if (frmt==0) {
-      ipls->ptype&=~P_NOSTOP; //pulse has stop
+      //ipls->ptype&=~P_NOSTOP; //pulse has stop
 
-
-      //analyze pulse
-      if (!opt.dsp[ipls->Chan]) {
-	if (opt.nsmoo[ipls->Chan]) {
-	  ipls->Smooth(opt.nsmoo[ipls->Chan]);
-	}
-	ipls->PeakAna33();
-      }
-      else {
-	if (opt.checkdsp) {
+      //analyze previous pulse
+      if (!vv->empty()) {
+	if (!opt.dsp[ipls->Chan]) {
+	  if (opt.nsmoo[ipls->Chan]) {
+	    ipls->Smooth(opt.nsmoo[ipls->Chan]);
+	  }
 	  ipls->PeakAna33();
-	  ipls->CheckDSP();
+	}
+	else {
+	  if (opt.checkdsp) {
+	    ipls->PeakAna33();
+	    ipls->CheckDSP();
+	  }
 	}
       }
 
-      
-      ipls = vv->insert(vv->end(),PulseClass());
+      vv->push_back(PulseClass());
+      ipls=&vv->back();
+      //ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls->Chan=ch;
       ipls->Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
       n_frm=0;
     }
     else if (frmt==1) {
-      ipls->State = buffer[idx1+5];
+      ipls->State = buf1[idx1+5];
       ipls->Counter = data & 0xFFFFFFFFFF;
       // if (buffer[idx1+5]) {
       // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls->State << " " << data << " " << buf8[idx8] << endl;
@@ -2729,8 +2736,8 @@ void CRS::Decode33(UChar_t* buffer, int length, int itr) {
       cout << "bad frmt: " << frmt << endl;
     }
 
-    idx8++;
-    idx1=idx8*8;
+    //idx8++;
+    idx1+=8;
   } //while (idx1<length)
 
   // cout << "decode33: " << frmt << " " << ipls->Counter << " "
@@ -3010,6 +3017,7 @@ void CRS::PrintPulse(int udata, bool pdata) {
 }
 */
 
+/*
 void CRS::Print_Pulses() {
   //std::vector<PulseClass> *vv = Vpulses+nvp;
   //list_pulse_reviter vv = Vpulses.rbegin();
@@ -3021,6 +3029,7 @@ void CRS::Print_Pulses() {
   cout << endl;
 
 }
+*/
 
 void CRS::Print_Events() {
   int nn=0;
