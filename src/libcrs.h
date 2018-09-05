@@ -29,8 +29,8 @@ typedef unsigned char byte;
 //typedef std::list<event_list>::iterator event_list_iter;
 //typedef std::list<event_list>::reverse_iterator event_list_reviter;
 
-typedef std::list<pulse_vect>::iterator list_pulse_iter;
-typedef std::list<pulse_vect>::reverse_iterator list_pulse_reviter;
+//typedef std::list<pulse_vect>::iterator list_pulse_iter;
+//typedef std::list<pulse_vect>::reverse_iterator list_pulse_reviter;
 
 typedef std::list<EventClass>::iterator event_iter;
 typedef std::list<EventClass>::reverse_iterator event_reviter;

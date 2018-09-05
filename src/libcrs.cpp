@@ -145,7 +145,8 @@ static void cback(libusb_transfer *transfer) {
 
     if (transfer->actual_length) {
       if (opt.decode) {
-	crs->Decode_any(transfer->buffer,transfer->actual_length);
+	int itr = *(int*) transfer[i]->user_data;
+	crs->Decode_any(buftr,transfer->actual_length,itr);
       }
       if (opt.raw_write) {
 	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
@@ -396,6 +397,9 @@ void CRS::Ana_start() {
   for (int i=0;i<MAX_CH;i++) {
     b_len[i] = opt.bkg2[i]-opt.bkg1[i];
     p_len[i] = opt.peak2[i]-opt.peak1[i];
+  }
+  for (int i=0;i<MAXTRANS;i++) {
+    buf_off[i]=0;
   }
   //cout << "Command_start: " << endl;
   gzFile ff = gzopen("tmp.par","wb");
@@ -2039,7 +2043,7 @@ int CRS::DoBuf() {
     crs->inputbytes+=BufLength;
 
     if (opt.decode) {
-      Decode_any(Fbuf,BufLength);
+      Decode_any(Fbuf,BufLength,ibuf);
     }
 
     nbuffers++;
@@ -2338,7 +2342,7 @@ void CRS::Show(bool force) {
   //cout << "Show end" << endl;
 }
 
-void CRS::Decode_any(UChar_t *buffer, int length) {
+void CRS::Decode_any(UChar_t *buffer, int length, int itr) {
   //-----decode
 #ifdef TIMES
   tt1[1].Set();
@@ -2518,10 +2522,10 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 } //decode32
 */
 
-void CRS::Decode33(int itr) {//UChar_t *buffer, int length, int ivp, int ivp2) {
-  //itr - number of transfer
+void CRS::Decode33(UChar_t* buffer, int length, int itr) {
+  //itr - number of transfer or Fbuf
 
-  ULong64_t* buf8 = (ULong64_t*) buftr[itr];
+  ULong64_t* buf8 = (ULong64_t*) buffer[itr];
 
   int idx1=buf_off[itr]; // current index in the buffer (in 1-byte words)
   int idx8=idx1/8; // current index in the buffer (in 8-byte words) 
