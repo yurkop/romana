@@ -49,6 +49,7 @@ const double MB = 1024*1024;
 //bool bstart=true;
 //bool btest=false;
 
+int event_thread_run;//=1;
 //pthread_t tid1;
 TThread* trd_crs;
 //TThread* trd_stat;
@@ -58,7 +59,16 @@ TThread* trd_crs;
 
 const Long64_t P64_0=-123456789123456789;
 
-int event_thread_run;//=1;
+
+
+
+int decode_thread_run;
+TThread* trd_dec[CRS::MAXTRANS];
+TCondition dec_cond[CRS::MAXTRANS];
+int dec_check[CRS::MAXTRANS];
+
+//int make_event_thread_run;
+//int ana2_thread_run;
 
 //UInt_t list_min=100;
 
@@ -127,6 +137,16 @@ void *ballast(void* xxx) {
 }
 */
 
+void *handle_decode(void *ctx) {
+  int itr = *(int*) ctx; 
+  while (decode_thread_run) {
+    while(!dec_check[itr])
+      dec_cond->Wait();
+
+  }
+  return NULL;
+}
+
 static void cback(libusb_transfer *transfer) {
 
   //static TTimeStamp t1;
@@ -146,6 +166,7 @@ static void cback(libusb_transfer *transfer) {
     if (transfer->actual_length) {
       if (opt.decode) {
 	int itr = *(int*) transfer->user_data;
+	cout << "Decode: " << itr << " " << transfer->actual_length << endl;
 	crs->Decode_any(crs->buftr,transfer->actual_length,itr);
       }
       if (opt.raw_write) {
@@ -1622,6 +1643,8 @@ int CRS::DoStartStop() {
 void CRS::ProcessCrs() {
   b_run=1;
   Ana_start();
+
+  decode_thread_run=1;
   //tt1[3].Set();
   if (module>=32) {
     Command32(8,0,0,0);
