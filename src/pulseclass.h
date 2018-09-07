@@ -77,6 +77,7 @@ const unsigned char P_BADCH=4;
 const unsigned char P_BADTST=8;
 const unsigned char P_BADSZ=16;
 const unsigned char P_BADCNT=32;
+const unsigned char P_BADPULSE=128;
 //-----------------------------------------------
 
 // Pulse is a signal registered in physical channel Chan

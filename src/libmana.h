@@ -24,6 +24,8 @@ using namespace std;
 #include <TGFileDialog.h>
 #include "TGMsgBox.h"
 
+void debug_mess(bool cond, const char* mess, double par1, int par2=-9999);
+
 UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf);
 void BufToClass(const char* name, const char* varname, char* var, char* buf, int size);
 

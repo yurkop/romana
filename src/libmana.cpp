@@ -105,6 +105,15 @@ int debug=0; //=1 or 2 or 6// for printing debug messages
 
 //void printhlist(int n);
 
+void debug_mess(bool cond, const char* mess, double par1, int par2) {
+  if (cond) {
+    cout << mess << par1;
+    if (par2!=-9999)
+      cout << " " << par2;
+    cout << endl;
+  }
+}
+
 //-------------------------------------
 UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer

@@ -288,6 +288,10 @@ void PulseClass::PeakAna() {
 
 void PulseClass::PeakAna33() {
 
+  int sz=sData.size();
+  Int_t kk=opt.kdrv[Chan];
+  if (kk<1 || kk>=sz-1) kk=1;
+    
   if (sData.size()<2)
     return;
 
@@ -300,10 +304,6 @@ void PulseClass::PeakAna33() {
   //pk->Pos=crs->Pre[Chan];
   pk->Pos=cpar.preWr[Chan];
 
-  UInt_t kk=opt.kdrv[Chan];
-  if (kk<1 || kk>=sData.size()) kk=1;
-  int sz=sData.size()-1;
-    
   Float_t sum;
 
   pk->B1=pk->Pos+opt.bkg1[Chan];
@@ -316,27 +316,29 @@ void PulseClass::PeakAna33() {
   T6=pk->Pos+opt.wwin2[Chan];
 
   if (pk->B1<0) pk->B1=0;
-  if (pk->B2<0) pk->B2=0;
+  if (pk->B2<0) pk->B2=1;
   if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
-  if (pk->P2<0) {pk->P2=0; pk->Type|=P_B2;}
+  if (pk->P2<0) {pk->P2=1; pk->Type|=P_B2;}
 
-  if (pk->B1>sz) pk->B1=sz;
+  if (pk->B1>=sz) pk->B1=sz-1;
   if (pk->B2>sz) pk->B2=sz;
-  if (pk->P1>sz) {pk->P1=sz; pk->Type|=P_B1;}
+  if (pk->P1>=sz) {pk->P1=sz-1; pk->Type|=P_B1;}
   if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
 
 
-  if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
-  if (pk->T3>sz) {pk->T3=sz; pk->Type|=P_B11;}
-  if (pk->T4<(int)kk) {pk->T4=kk; pk->Type|=P_B11;}
-  if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B11;}
+  // if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
+  // if (pk->T3>sz) {pk->T3=sz; pk->Type|=P_B11;}
+  // if (pk->T4<(int)kk) {pk->T4=kk; pk->Type|=P_B11;}
+  // if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B11;}
 
   pk->Time=0;
   sum=0;
   for (int j=pk->T3;j<pk->T4;j++) {
-    Float_t dif=sData[j]-sData[j-kk];
-    pk->Time+=dif*j;
-    sum+=dif;
+    if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
+      Float_t dif=sData[j]-sData[j-kk];
+      pk->Time+=dif*j;
+      sum+=dif;
+    }
     //nt++;
   }
   if (sum>1e-5)
@@ -347,17 +349,19 @@ void PulseClass::PeakAna33() {
   pk->Time-=pk->Pos;
   //cout << "Time: " << pk->Time << " " << sum << " " << pk->T3 << " " << pk->T4 << endl;
 
-  if (T5<(int)kk) {T5=kk;}
-  if (T5>sz) {T5=sz;}
-  if (T6<(int)kk) {T6=kk;}
-  if (T6>sz) {T6=sz;}
+  // if (T5<(int)kk) {T5=kk;}
+  // if (T5>sz) {T5=sz;}
+  // if (T6<(int)kk) {T6=kk;}
+  // if (T6>sz) {T6=sz;}
 
   pk->Width=0;
   sum=0;
   for (int j=T5;j<T6;j++) {
-    Float_t dif=sData[j]-sData[j-kk];
-    pk->Width+=dif*j;
-    sum+=dif;
+    if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
+      Float_t dif=sData[j]-sData[j-kk];
+      pk->Width+=dif*j;
+      sum+=dif;
+    }
     //nt++;
   }
   if (sum>1e-5)

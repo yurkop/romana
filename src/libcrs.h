@@ -90,7 +90,7 @@ RQ_OBJECT("CRS")
   // (contains current vector and previous vector)
   //std::list<pulse_vect> Vpulses;
   pulse_vect Vpulses[MAXTRANS];
-  int nvp; //Vpulses index
+  //int nvp; //Vpulses index
   //pulse_vect *vv; //- vector of pulses from current buffer
   //pulse_vect *vv2; //- vector of pulses from previous buffer
 
@@ -282,7 +282,7 @@ RQ_OBJECT("CRS")
 
   //void Event_Insert_Pulse(PulseClass* pulse);
   void Event_Insert_Pulse(pulse_vect::iterator pls);
-  void Make_Events();
+  void Make_Events(int itr);
   void Select_Event(EventClass *evt);
   //void *Ana_Events(void* ptr);
 

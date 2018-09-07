@@ -398,9 +398,6 @@ void CRS::Ana_start() {
     b_len[i] = opt.bkg2[i]-opt.bkg1[i];
     p_len[i] = opt.peak2[i]-opt.peak1[i];
   }
-  for (int i=0;i<MAXTRANS;i++) {
-    buf_off[i]=0;
-  }
   //cout << "Command_start: " << endl;
   gzFile ff = gzopen("tmp.par","wb");
   SaveParGz(ff);
@@ -628,6 +625,8 @@ CRS::CRS() {
   //ev_max=2*opt.ev_min;
 
   //mean_event.Make_Mean_Event();
+
+  dummy_pulse.ptype=P_BADPULSE;
 
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     type_ch[i]=255;
@@ -1564,7 +1563,10 @@ int CRS::DoStartStop() {
       // sprintf(dec_opt,"ab%d",opt.dec_compr);
     }   
 
-    nvp=0;
+    for (int i=0;i<MAXTRANS;i++) {
+      buf_off[i]=0;
+    }
+    //nvp=0;
     //Levents.clear();
 
     cout << "Acquisition started" << endl;
@@ -1728,15 +1730,16 @@ void CRS::DoReset() {
   for (int i=0;i<MAXTRANS;i++)
     Vpulses[i].clear();
   //Vpulses[1].clear();
-  nvp=0;
+  //nvp=0;
 
   //vv = Vpulses+nvp; //- vector of pulses from current
   //vv2 = Vpulses+1-nvp; //- vector of pulses from previous buffer
   //create first pulse, which is always bad: Chan=254
   //this pulse will be ignored in Event_insert_pulse
-  pulse_vect::iterator ipls = Vpulses->insert(Vpulses->end(),PulseClass());
-  ipls->Chan=254;
-  ipls->ptype|=P_NOSTART;
+
+  //pulse_vect::iterator ipls = Vpulses->insert(Vpulses->end(),PulseClass());
+  //ipls->Chan=254;
+  //ipls->ptype|=P_NOSTART;
 
   //ipk=&dummy_peak; //peak points to the dummy_peak
   //QX=0;QY=0;RX=1;RY=1;
@@ -1845,8 +1848,8 @@ void CRS::DoFopen(char* oname, int popt) {
     cpar.InitPar(0);
     //memcpy(&Pre,&cpar.preWr,sizeof(Pre));
 
-    bsize=opt.rbuf_size*1024+4096;
-    boffset=4096;
+    // bsize=opt.rbuf_size*1024+4096;
+    // boffset=4096;
     period=10;
     idx=0;
   }
@@ -1857,12 +1860,14 @@ void CRS::DoFopen(char* oname, int popt) {
       f_read=0;
       return;
     }
-    bsize=opt.rbuf_size*1024;
-    boffset=0;
+    // bsize=opt.rbuf_size*1024;
+    // boffset=0;
     period=5;
     //printhlist(8);
   }
 
+  boffset=1024*1024;
+  bsize=opt.rbuf_size*1024+boffset;
   // if (Fmode==1) {
   //   Tstart64=-1;
   // }
@@ -1887,8 +1892,11 @@ void CRS::DoFopen(char* oname, int popt) {
     Fbuf2[i] = new UChar_t[bsize];
     Fbuf[i] = Fbuf2[i]+boffset;
     memset(Fbuf2[i],0,boffset);
+    //cout << "Fbuf2: " << i << " " << bsize << " " << boffset << endl;
+    buf_off[i]=0;
   }
   ibuf=0;
+  //nvp=0;
 
   //cout << "Fopen3: " << (void*) Fbuf2 << " " << bsize << endl;
 
@@ -2042,11 +2050,19 @@ int CRS::DoBuf() {
   if (BufLength>0) {
     crs->inputbytes+=BufLength;
 
+    // for (int i=0;i<MAXTRANS;i++) {
+    //   cout << "buf_off1: " << i << " " << buf_off[i] << endl;
+    // }
+
     if (opt.decode) {
       Decode_any(Fbuf,BufLength,ibuf);
     }
-
+    ibuf = (ibuf+1)%ntrans;
     nbuffers++;
+
+    // for (int i=0;i<MAXTRANS;i++) {
+    //   cout << "buf_off2: " << i << " " << buf_off[i] << endl;
+    // }
 
     if (batch) {
       cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
@@ -2348,6 +2364,7 @@ void CRS::Decode_any(UChar_t** buffer, int length, int itr) {
   tt1[1].Set();
 #endif
   if (module>=32) {
+    MoveLastEvent(buffer,length,itr);
     //Decode32(Fbuf,BufLength);
     Decode33(buffer,length,itr);
   }
@@ -2368,10 +2385,9 @@ void CRS::Decode_any(UChar_t** buffer, int length, int itr) {
   tt1[2].Set();
 #endif
 
-  if (Vpulses[nvp].size()>2) {
-    // cout << "Make_events33: " << ipls->Counter << " " << ipls->sData.size()
-    // 	 << " " << (int) ipls->ptype << endl;
-    Make_Events();
+  if (Vpulses[itr].size()>2) {
+    //cout << "Make_events33: " <<endl;
+    Make_Events(itr);
   }
 
 #ifdef TIMES
@@ -2384,7 +2400,9 @@ void CRS::Decode_any(UChar_t** buffer, int length, int itr) {
   tt1[3].Set();
 #endif
 
+  //cout << "Ana21: " << endl;
   crs->Ana2(0);
+  //cout << "Ana22: " << endl;
   
 #ifdef TIMES
   tt2[3].Set();
@@ -2410,11 +2428,31 @@ void CRS::MoveLastEvent(UChar_t** buffer, int &length, int itr) {
 
   for (int i=0;i<length;i+=8) {
     frmt = (buf[length-2-i] & 0xF0);
+    //cout << "frmt: " << (int) (frmt/16) << " " << " " << (int) frmt << " " << i << " " << length-2-i << endl;
     if (frmt==0) {
-      cout << "Last event found: " << itr << " " << i << " " << (int) buf[i] << endl;
+      i+=8;
+
       memcpy(buffer[itr2]-i,buffer[itr]+length-i,i);
+
+      // for (int j=-10;j<10;j++) {
+      // 	frmt = *(buffer[itr]+j*8+length-i-8+6);
+      // 	unsigned char frmt2 = *(buffer[itr2]+j*8-i-8+6);;
+      // 	cout << "j1: " << j << " " << (int) (frmt) << " " << (int) (frmt2) << endl;
+      // }
+
+      // //int i8=i/8;
+      // ULong64_t* buf8_1 = (ULong64_t*) (buffer[itr]+length-i);
+      // ULong64_t* buf8_2 = (ULong64_t*) (buffer[itr2]-i);
+
+      // for (int j=-10;j<10;j++) {
+      // 	cout << "j3: " << j << " " << hex << buf8_1[j] << " " << buf8_2[j] << dec << endl;
+      // }
+
       buf_off[itr2]=-i;
       length=length-i;
+      //cout << "Last event found: " << itr << " " << itr2 << " " << i << " " << length << " " << buf_off[itr2] << endl;
+
+      return;
     }
   }
   cout << "Error: no last event: " << itr << endl;
@@ -2543,16 +2581,21 @@ void CRS::Decode33(UChar_t** buffer, int length, int itr) {
   pulse_vect *vv = Vpulses+itr;
   PulseClass* ipls=&dummy_pulse;
 
+  //cout << "Decode33: " << itr << " " << buf_off[itr] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
+
   while (idx1<length) {
+    //debug_mess(idx1>16500,"DDDD0: ",idx1,buf1[idx1]);
     frmt = buf1[idx1+6];
     //YKYKYK!!!! do something with cnt - ???
     //int cnt = frmt & 0x0F;
     frmt = (frmt & 0xF0)>>4;
-    data = buf8[idx1*8] & 0xFFFFFFFFFFFF;
+    data = buf8[idx1/8] & 0xFFFFFFFFFFFF;
     unsigned char ch = buf1[idx1+7];
 
     if (frmt && vv->empty()) {
-      cout << "dec33: bad buf start: " << (int) ch << " " << frmt << endl;
+      cout << "dec33: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
+      idx1+=8;
+      continue;
     }
     else if ((ch>=opt.Nchan) ||
 	     (frmt && ch!=ipls->Chan)) {
@@ -2571,7 +2614,7 @@ void CRS::Decode33(UChar_t** buffer, int length, int itr) {
       //ipls->ptype&=~P_NOSTOP; //pulse has stop
 
       //analyze previous pulse
-      if (!vv->empty()) {
+      if (ipls->ptype==0) {
 	if (!opt.dsp[ipls->Chan]) {
 	  if (opt.nsmoo[ipls->Chan]) {
 	    ipls->Smooth(opt.nsmoo[ipls->Chan]);
@@ -2597,6 +2640,7 @@ void CRS::Decode33(UChar_t** buffer, int length, int itr) {
     else if (frmt==1) {
       ipls->State = buf1[idx1+5];
       ipls->Counter = data & 0xFFFFFFFFFF;
+      //cout << "Counter: " << ipls->Counter << " " << (int) ipls->Chan << endl;
       // if (buffer[idx1+5]) {
       // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls->State << " " << data << " " << buf8[idx8] << endl;
       // }
@@ -2740,8 +2784,8 @@ void CRS::Decode33(UChar_t** buffer, int length, int itr) {
     idx1+=8;
   } //while (idx1<length)
 
-  // cout << "decode33: " << frmt << " " << ipls->Counter << " "
-  //      << ipls->sData.size() << " " << n_frm << endl;
+  //cout << "decode33: " << idx1 << " " << frmt << " " << ipls->Counter << " "
+  //   << ipls->sData.size() << " " << n_frm << endl;
 
 } //decode33
 
@@ -3057,7 +3101,7 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
   if (pls->ptype) { //any bad pulse
     // cout << "bad pulse: " << (int) pls->ptype << " " << (int) pls->Chan
     // 	 << " " << pls->Counter << " " << pls->Tstamp64 << endl;
-    if (ipls->Chan<254)
+    if (pls->Chan<254)
       npulses_bad[pls->Chan]++;
     return;
   }
@@ -3199,10 +3243,12 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
 
 }
 
-void CRS::Make_Events() {
+void CRS::Make_Events(int itr) {
 
   //cout << "Make_Events: T_acq: " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
   
+  pulse_vect::iterator pls;
+
   if (opt.Tstop && opt.T_acq>opt.Tstop) {
     if (b_acq) {
       //myM->DoStartStop();
@@ -3224,26 +3270,31 @@ void CRS::Make_Events() {
   //if (!opt.analyze)
   //return;
 
-    //insert last pulse from "previous" vector vv2
+  /*
+  //insert last pulse from "previous" vector vv2
   int nvp2 = (nvp+1)%ntrans;
   if (Vpulses[nvp2].size()) {
     pulse_vect::iterator pls = --(Vpulses[nvp2].end());
     Event_Insert_Pulse(pls);
   }
   Vpulses[nvp2].clear();
+  */
 
   //now insert all pulses from the current buffer, except last one
   //--vv;// = Vpulses+nvp;
 
-  pulse_vect *vv = Vpulses+nvp;
-  for (pls=vv->begin(); pls != --vv->end(); ++pls) {
+  pulse_vect *vv = Vpulses+itr;
+  //for (pls=vv->begin(); pls != --vv->end(); ++pls) {
+  for (pls=vv->begin(); pls != vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {
       Event_Insert_Pulse(pls);
       //Print_Events();
     }
   }
-  nvp=nvp2;
-  
+  Vpulses[itr].clear();
+
+  //nvp=(nvp+1)%ntrans;
+
   //Print_Events();
   //Select_Event(firstevent);
 
