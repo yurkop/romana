@@ -133,8 +133,8 @@ RQ_OBJECT("CRS")
 
   int buf_off[MAXTRANS];
   int buf_len[MAXTRANS];
-  unsigned char *buftr2[MAXTRANS];
-  unsigned char *buftr[MAXTRANS];
+  //unsigned char *buftr2[MAXTRANS];
+  //unsigned char *buftr[MAXTRANS];
   struct libusb_transfer *transfer[MAXTRANS];
   UChar_t* Fbuf[MAXTRANS];
   UChar_t* Fbuf2[MAXTRANS];
@@ -260,10 +260,14 @@ RQ_OBJECT("CRS")
   void Show(bool force=false);
 
   //void AllParameters32_old(); // load all parameters
-  void Decode_any(UChar_t** buffer, int length, int itr);
+  //void Decode_any(UChar_t** buffer, int length, int itr);
 
-  void MoveLastEvent(UChar_t** buffer, int &length, int itr);
-  void Decode33(UChar_t** buffer, int length, int itr);
+  void Decode_any_MT(int itr);
+
+  void Decode_any(int itr);
+  void MoveLastEvent(int itr);
+  void Decode33(int itr);
+
   //void Decode32(UChar_t* buffer, int length);
   //void Decode33(UChar_t* buffer, int length, int ivp, int ivp2);
   //void Decode2(UChar_t* buffer, int length);

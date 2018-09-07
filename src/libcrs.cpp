@@ -67,6 +67,9 @@ TThread* trd_dec[CRS::MAXTRANS];
 TCondition dec_cond[CRS::MAXTRANS];
 int dec_check[CRS::MAXTRANS];
 
+TCondition ev_cond[CRS::MAXTRANS];
+int ev_check[CRS::MAXTRANS];
+
 //int make_event_thread_run;
 //int ana2_thread_run;
 
@@ -141,7 +144,19 @@ void *handle_decode(void *ctx) {
   int itr = *(int*) ctx; 
   while (decode_thread_run) {
     while(!dec_check[itr])
-      dec_cond->Wait();
+      dec_cond[itr]->Wait();
+
+    if (module>=32) {
+      MoveLastEvent(itr);
+      //Decode32(Fbuf,BufLength);
+      Decode33(itr);
+    }
+    else if (module==2) {
+      //Decode2(buffer,length);
+    }
+    else if (module==1) {
+      //Decode_adcm(buffer,length/sizeof(UInt_t));
+    }
 
   }
   return NULL;
@@ -166,8 +181,8 @@ static void cback(libusb_transfer *transfer) {
     if (transfer->actual_length) {
       if (opt.decode) {
 	int itr = *(int*) transfer->user_data;
-	cout << "Decode: " << itr << " " << transfer->actual_length << endl;
-	crs->Decode_any(crs->buftr,transfer->actual_length,itr);
+	crs->buf_len[itr]=transfer->actual_length;
+	crs->Decode_any(itr);
       }
       if (opt.raw_write) {
 	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
@@ -707,9 +722,6 @@ CRS::CRS() {
 
   for (int i=0;i<MAXTRANS;i++) {
     transfer[i] =NULL;
-    buftr2[i]=NULL;
-    buftr[i]=NULL;
-
     Fbuf[i]=NULL;
     Fbuf2[i]=NULL;
   }
@@ -995,10 +1007,10 @@ void CRS::Free_Transfer() {
   }
 
   for (int i=0;i<MAXTRANS;i++) {
-    if (buftr2[i]) {
-      delete[] buftr2[i];
-      buftr2[i]=NULL;
-      buftr[i]=NULL;
+    if (Fbuf2[i]) {
+      delete[] Fbuf2[i];
+      Fbuf2[i]=NULL;
+      Fbuf[i]=NULL;
     }
   }
   gSystem->Sleep(50);
@@ -1046,12 +1058,12 @@ int CRS::Init_Transfer() {
   //cout << "cyusb_reset: " << r << endl;
 
   for (int i=0;i<MAXTRANS;i++) {
-    //if (buftr[i]) {
-    //delete[] buftr[i];
+    //if (Fbuf[i]) {
+    //delete[] Fbuf[i];
     //}
-    buftr2[i] = new unsigned char[opt.usb_size*1024+1024*1024];
-    buftr[i] = buftr2[i]+1024*1024;
-    memset(buftr2[i],0,sizeof(unsigned char)*opt.usb_size*1024+1024*1024);
+    Fbuf2[i] = new unsigned char[opt.usb_size*1024+1024*1024];
+    Fbuf[i] = Fbuf2[i]+1024*1024;
+    memset(Fbuf2[i],0,sizeof(unsigned char)*opt.usb_size*1024+1024*1024);
   }
 
   //cout << "---Init_Transfer 3---" << endl;
@@ -1063,7 +1075,7 @@ int CRS::Init_Transfer() {
     int* ntr = new int;
     (*ntr) = i;
 
-    libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], opt.usb_size*1024, cback, ntr, 0);
+    libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, Fbuf[i], opt.usb_size*1024, cback, ntr, 0);
 
     /*
     int res;
@@ -1104,10 +1116,10 @@ int CRS::Init_Transfer() {
       //cout << "free: " << i << endl;
       //libusb_free_transfer(transfer[i]);
       cout << "delete: " << i << endl;
-      if (buftr2[i])
-	delete[] buftr2[i];
-      buftr2[i]=NULL;
-      buftr[i]=NULL;
+      if (Fbuf2[i])
+	delete[] Fbuf2[i];
+      Fbuf2[i]=NULL;
+      Fbuf[i]=NULL;
     }
     return 2;
   }
@@ -2078,7 +2090,8 @@ int CRS::DoBuf() {
     // }
 
     if (opt.decode) {
-      Decode_any(Fbuf,BufLength,ibuf);
+      buf_len[ibuf]=BufLength;
+      Decode_any(ibuf);
     }
     ibuf = (ibuf+1)%ntrans;
     nbuffers++;
@@ -2381,15 +2394,46 @@ void CRS::Show(bool force) {
   //cout << "Show end" << endl;
 }
 
-void CRS::Decode_any(UChar_t** buffer, int length, int itr) {
+void CRS::Decode_any_MT(int itr) {
   //-----decode
+  cout << "Decode: " << itr << " " << buf_len[itr] << endl;
+  if (module>=32) {
+    MoveLastEvent(itr);
+    //Decode32(Fbuf,BufLength);
+    Decode33(itr);
+  }
+  else if (module==2) {
+    //Decode2(buffer,length);
+  }
+  else if (module==1) {
+    //Decode_adcm(buffer,length/sizeof(UInt_t));
+  }
+
+  //-----Make_events
+
+  if (Vpulses[itr].size()>2) {
+    //cout << "Make_events33: " <<endl;
+    Make_Events(itr);
+  }
+
+  //-----Analyze
+
+  //cout << "Ana21: " << endl;
+  crs->Ana2(0);
+  //cout << "Ana22: " << endl;
+  
+}
+
+void CRS::Decode_any(int itr) {
+  //-----decode
+  cout << "Decode: " << itr << " " << buf_len[itr] << endl;
 #ifdef TIMES
   tt1[1].Set();
 #endif
   if (module>=32) {
-    MoveLastEvent(buffer,length,itr);
+    MoveLastEvent(itr);
     //Decode32(Fbuf,BufLength);
-    Decode33(buffer,length,itr);
+    Decode33(itr);
   }
   else if (module==2) {
     //Decode2(buffer,length);
@@ -2440,22 +2484,22 @@ void CRS::Decode_any(UChar_t** buffer, int length, int itr) {
 
 }
 
-void CRS::MoveLastEvent(UChar_t** buffer, int &length, int itr) {
+void CRS::MoveLastEvent(int itr) {
   //itr - current transfer/buffer
   int itr2 = (itr+1)%ntrans; //next transfer/buffer
   //int idx1=length-8; // current index in the buffer (in 1-byte words)
 
-  unsigned char *buf = buffer[itr];
+  unsigned char *buf = Fbuf[itr];
   unsigned char frmt;
   //int sz=0;
 
-  for (int i=0;i<length;i+=8) {
-    frmt = (buf[length-2-i] & 0xF0);
+  for (int i=0;i<buf_len[itr];i+=8) {
+    frmt = (buf[buf_len[itr]-2-i] & 0xF0);
     //cout << "frmt: " << (int) (frmt/16) << " " << " " << (int) frmt << " " << i << " " << length-2-i << endl;
     if (frmt==0) {
       i+=8;
 
-      memcpy(buffer[itr2]-i,buffer[itr]+length-i,i);
+      memcpy(Fbuf[itr2]-i,Fbuf[itr]+buf_len[itr]-i,i);
 
       // for (int j=-10;j<10;j++) {
       // 	frmt = *(buffer[itr]+j*8+length-i-8+6);
@@ -2472,7 +2516,7 @@ void CRS::MoveLastEvent(UChar_t** buffer, int &length, int itr) {
       // }
 
       buf_off[itr2]=-i;
-      length=length-i;
+      buf_len[itr]-=i;
       //cout << "Last event found: " << itr << " " << itr2 << " " << i << " " << length << " " << buf_off[itr2] << endl;
 
       return;
@@ -2583,11 +2627,11 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 } //decode32
 */
 
-void CRS::Decode33(UChar_t** buffer, int length, int itr) {
+void CRS::Decode33(int itr) {
   //itr - number of transfer or Fbuf
 
-  ULong64_t* buf8 = (ULong64_t*) buffer[itr];
-  UChar_t* buf1 = buffer[itr];
+  ULong64_t* buf8 = (ULong64_t*) Fbuf[itr];
+  UChar_t* buf1 = Fbuf[itr];
 
   int idx1=buf_off[itr]; // current index in the buffer (in 1-byte words)
   //int idx8=idx1/8; // current index in the buffer (in 8-byte words) 
@@ -2606,7 +2650,7 @@ void CRS::Decode33(UChar_t** buffer, int length, int itr) {
 
   //cout << "Decode33: " << itr << " " << buf_off[itr] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
 
-  while (idx1<length) {
+  while (idx1<buf_len[itr]) {
     //debug_mess(idx1>16500,"DDDD0: ",idx1,buf1[idx1]);
     frmt = buf1[idx1+6];
     //YKYKYK!!!! do something with cnt - ???
@@ -2805,7 +2849,7 @@ void CRS::Decode33(UChar_t** buffer, int length, int itr) {
 
     //idx8++;
     idx1+=8;
-  } //while (idx1<length)
+  } //while (idx1<buf_len)
 
   //cout << "decode33: " << idx1 << " " << frmt << " " << ipls->Counter << " "
   //   << ipls->sData.size() << " " << n_frm << endl;
