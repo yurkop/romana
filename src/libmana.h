@@ -51,6 +51,7 @@ public:
   TGPopupMenu          *fMenuFile;    // "File" popup menu entry
   TGPopupMenu          *fMenuHelp;    // "Help" popup menu entry
   TGTextButton *fStart;
+  TGTextButton *fReset;
   TGTextButton *fAna;
   TGTextButton *fNb;
 

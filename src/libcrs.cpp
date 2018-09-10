@@ -27,7 +27,7 @@ TMutex ana_mut;
 
 const int BFMAX=999999999;
 
-TCondition* cond[CRS::MAXTRANS];
+//TCondition* cond[CRS::MAXTRANS];
 
 using namespace std;
 
@@ -60,15 +60,20 @@ TThread* trd_crs;
 const Long64_t P64_0=-123456789123456789;
 
 
-
+int MT=1;
 
 int decode_thread_run;
 TThread* trd_dec[CRS::MAXTRANS];
 TCondition dec_cond[CRS::MAXTRANS];
 int dec_check[CRS::MAXTRANS];
+int dec_nr[CRS::MAXTRANS];
 
-TCondition ev_cond[CRS::MAXTRANS];
-int ev_check[CRS::MAXTRANS];
+TCondition evt_cond;
+int evt_check;
+
+TThread* trd_ev;
+TCondition ev_cond;
+int ev_check;
 
 //int make_event_thread_run;
 //int ana2_thread_run;
@@ -141,23 +146,43 @@ void *ballast(void* xxx) {
 */
 
 void *handle_decode(void *ctx) {
-  int itr = *(int*) ctx; 
+  int itr = *(int*) ctx;
+
+  cout << "Decode thread started: " << itr << endl;
   while (decode_thread_run) {
     while(!dec_check[itr])
-      dec_cond[itr]->Wait();
+      dec_cond[itr].Wait();
 
-    if (module>=32) {
-      MoveLastEvent(itr);
+    cout << "handle_decode: " << itr << " " << dec_check[itr] << endl;
+    dec_check[itr]=0;
+    if (crs->module>=32) {
+      crs->MoveLastEvent(itr);
       //Decode32(Fbuf,BufLength);
-      Decode33(itr);
+      crs->Decode33(itr);
     }
-    else if (module==2) {
+    else if (crs->module==2) {
       //Decode2(buffer,length);
     }
-    else if (module==1) {
+    else if (crs->module==1) {
       //Decode_adcm(buffer,length/sizeof(UInt_t));
     }
 
+    evt_check=1;
+    evt_cond.Signal();
+
+  }
+  return NULL;
+}
+
+void *handle_ev(void *ctx) {
+  int nvp=0;
+  cout << "Event thread started: " << endl;
+  while (decode_thread_run) {
+    while(!evt_check)
+      evt_cond.Wait();
+
+    cout << "mkevent: " << endl;
+    evt_check=0;
   }
   return NULL;
 }
@@ -438,6 +463,25 @@ void CRS::Ana_start() {
   gzFile ff = gzopen("tmp.par","wb");
   SaveParGz(ff);
   gzclose(ff);
+
+
+  if (MT) {
+    decode_thread_run=1;
+    evt_check=0;
+
+    trd_ev = new TThread("trd_ev", handle_ev, (void*) 0);
+    trd_ev->Run();
+
+    for (int i=0;i<ntrans;i++) {
+      dec_check[i]=0;
+      char ss[50];
+      sprintf(ss,"trd_dec%d",i);
+      dec_nr[i] = i;
+      trd_dec[i] = new TThread(ss, handle_decode, (void*) &dec_nr[i]);
+      trd_dec[i]->Run();
+    }
+  }
+
 }
 
 void CRS::Ana2(int all) {
@@ -670,9 +714,6 @@ CRS::CRS() {
 
   MAXTRANS2=MAXTRANS;
   //memset(Pre,0,sizeof(Pre));
-
-  for (int i=0;i<MAXTRANS;i++)
-    cond[i]=new TCondition(0);
 
   Fmode=0;
   period=5;
@@ -1706,9 +1747,11 @@ void CRS::DoExit()
 
   event_thread_run=0;
 #ifdef CYUSB
-  cyusb_close();
-  if (trd_crs) {
-    trd_crs->Delete();
+  if (Fmode==1) {
+    cyusb_close();
+    if (trd_crs) {
+      trd_crs->Delete();
+    }
   }
 #endif
   //if (trd_stat) {
@@ -2091,7 +2134,12 @@ int CRS::DoBuf() {
 
     if (opt.decode) {
       buf_len[ibuf]=BufLength;
-      Decode_any(ibuf);
+      if (MT) {
+	Decode_any_MT(ibuf);
+      }
+      else {
+	Decode_any(ibuf);
+      }
     }
     ibuf = (ibuf+1)%ntrans;
     nbuffers++;
@@ -2396,32 +2444,11 @@ void CRS::Show(bool force) {
 
 void CRS::Decode_any_MT(int itr) {
   //-----decode
-  cout << "Decode: " << itr << " " << buf_len[itr] << endl;
-  if (module>=32) {
-    MoveLastEvent(itr);
-    //Decode32(Fbuf,BufLength);
-    Decode33(itr);
-  }
-  else if (module==2) {
-    //Decode2(buffer,length);
-  }
-  else if (module==1) {
-    //Decode_adcm(buffer,length/sizeof(UInt_t));
-  }
+  cout << "Decode_MT: " << itr << " " << buf_len[itr] << endl;
 
-  //-----Make_events
+  dec_check[itr]=1;
+  dec_cond[itr].Signal();
 
-  if (Vpulses[itr].size()>2) {
-    //cout << "Make_events33: " <<endl;
-    Make_Events(itr);
-  }
-
-  //-----Analyze
-
-  //cout << "Ana21: " << endl;
-  crs->Ana2(0);
-  //cout << "Ana22: " << endl;
-  
 }
 
 void CRS::Decode_any(int itr) {

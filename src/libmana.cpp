@@ -501,9 +501,9 @@ int main(int argc, char **argv)
 
 
 #ifdef CYUSB
-  //if (crs->Fmode!=2) {
-  crs->Detect_device();
-  //}
+  if (crs->Fmode!=2) {
+    crs->Detect_device();
+  }
 #endif
 
 
@@ -945,7 +945,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fStart->Connect("Clicked()","MainFrame",this,"DoStartStop()");
   fGr1->AddFrame(fStart, l_But);
 
-  TGTextButton *fReset = new TGTextButton(fGr1,"Reset");
+  fReset = new TGTextButton(fGr1,"Reset");
   fReset->SetFont(tfont,false);
 
   fReset->SetTextJustify(kTextCenterX);
@@ -1400,6 +1400,20 @@ void MainFrame::DoClose() {
   crspar->Update();
   anapar->Update();
   pikpar->Update();
+
+  crs->Detect_device();
+  if (crs->Fmode==1) { //CRS is present
+    crspar->AllEnabled(true);
+
+    fStart->SetEnabled(true);
+    fReset->SetEnabled(true);
+
+    //opt.raw_write=false;
+    //parpar->Update();
+    TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
+    if (te) 
+      te->SetEnabled(true);
+  }
 
 }
 
