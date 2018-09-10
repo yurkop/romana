@@ -103,8 +103,12 @@ RQ_OBJECT("CRS")
   std::list<EventClass> Levents; //list of events
   //EventClass mean_event;
 
-  std::list<EventClass>::iterator m_start;
-  std::list<EventClass>::iterator m_event;
+  ///////##std::list<EventClass>::iterator m_start;
+
+
+  //std::list<EventClass>::iterator m_event;
+
+
   // анализируем данные от m_start до m_event  
   //new events can be inserted only after m_event (up to Levents.end())
   //m_event points to the first event, which is not yet analyzed
@@ -238,7 +242,7 @@ RQ_OBJECT("CRS")
   void AllParameters2(); // load all parameters
   int DoStartStop(); // start-stop acquisition
   void ProcessCrs(); // new process events in dostartstop
-  void ProcessCrs_old(); // old process events in dostartstop
+  //void ProcessCrs_old(); // old process events in dostartstop
 #endif
 
 
@@ -252,10 +256,10 @@ RQ_OBJECT("CRS")
   void SaveParGz(gzFile &ff);
 
   //void DoFAna();
-  void FAnalyze(bool nobatch);
+  //void FAnalyze(bool nobatch);
   void FAnalyze2(bool nobatch);
   int DoBuf();
-  void DoNBuf(int nb);
+  //void DoNBuf(int nb);
   void DoNBuf2(int nb);
   void Show(bool force=false);
 

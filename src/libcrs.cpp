@@ -59,21 +59,30 @@ TThread* trd_crs;
 
 const Long64_t P64_0=-123456789123456789;
 
+std::list<EventClass>::iterator m_event;
 
 int MT=1;
 
 int decode_thread_run;
+int dec_nr[CRS::MAXTRANS];
+
 TThread* trd_dec[CRS::MAXTRANS];
 TCondition dec_cond[CRS::MAXTRANS];
 int dec_check[CRS::MAXTRANS];
-int dec_nr[CRS::MAXTRANS];
 
-TCondition evt_cond;
-int evt_check;
+int ana_all;
+TThread* trd_ana;
+TCondition ana_cond;
+int ana_check;
 
-TThread* trd_ev;
-TCondition ev_cond;
-int ev_check;
+
+
+//TCondition evt_cond;
+//int evt_check;
+
+//TThread* trd_ev;
+//TCondition ev_cond;
+//int ev_check;
 
 //int make_event_thread_run;
 //int ana2_thread_run;
@@ -153,8 +162,11 @@ void *handle_decode(void *ctx) {
     while(!dec_check[itr])
       dec_cond[itr].Wait();
 
-    cout << "handle_decode: " << itr << " " << dec_check[itr] << endl;
     dec_check[itr]=0;
+    if (!decode_thread_run) {
+      break;
+    }
+    cout << "handle_decode: " << itr << " " << dec_check[itr] << endl;
     if (crs->module>=32) {
       crs->MoveLastEvent(itr);
       //Decode32(Fbuf,BufLength);
@@ -167,25 +179,153 @@ void *handle_decode(void *ctx) {
       //Decode_adcm(buffer,length/sizeof(UInt_t));
     }
 
-    evt_check=1;
-    evt_cond.Signal();
+    //evt_check=1;
+    //evt_cond.Signal();
 
+    if (crs->Vpulses[itr].size()>2) {
+      //cout << "Make_events33: " <<endl;
+      crs->Make_Events(itr);
+    }
+
+    if ((int) crs->Levents.size()>opt.ev_min) {
+      ana_check=1;
+      ana_cond.Signal();
+    }
   }
+  cout << "Decode thread deleted: " << itr << endl;
   return NULL;
 }
 
-void *handle_ev(void *ctx) {
-  int nvp=0;
-  cout << "Event thread started: " << endl;
+void *handle_ana(void *ctx) {
+  cout << "Ana thread started: " << endl;
   while (decode_thread_run) {
-    while(!evt_check)
-      evt_cond.Wait();
+    while(!ana_check)
+      ana_cond.Wait();
 
-    cout << "mkevent: " << endl;
-    evt_check=0;
+    //copied from Ana2...
+
+    ana_check=0;
+    // if (!decode_thread_run) {
+    //   break;
+    // }
+
+
+    // вызываем ana2 после каждого cback или DoBuf
+    // Входные данные: Levents, не меняется во время работы ana2
+    // (нет параллельных потоков)
+    // если ana_all==0 ->
+    // анализируем данные от m_event до Levents.end()-opt.ev_min
+    // если ana_all!=0 ->
+    // анализируем данные от m_event до Levents.end()
+
+    ana_mut.Lock();
+    //if (Levents.empty()) {
+    if ((int) crs->Levents.size()<=opt.ev_min) {
+      ana_mut.UnLock();
+      continue;
+    }
+
+    if (m_event==crs->Levents.end()) {
+      m_event=crs->Levents.begin();
+    }
+
+    std::list<EventClass>::iterator it;
+    std::list<EventClass>::iterator m_end = crs->Levents.end();
+
+    cout << "Ana2: m_end: " << &*m_end << " " << ana_all << endl;
+
+    if (!ana_all) { //analyze up to ev_min events
+      std::advance (m_end,-opt.ev_min);
+    }
+
+    //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
+
+    // analyze events from m_start to m_event
+    while (m_event!=m_end) {
+      if (m_event->pulses.size()>=opt.mult1 &&
+	  m_event->pulses.size()<=opt.mult2) {
+
+	m_event->FillHist(true);
+	m_event->FillHist(false);
+	//it->FillHist_old();
+	if (opt.dec_write) {
+	  crs->Fill_Dec73(&(*m_event));
+	}
+
+	//m_event->Analyzed=true;
+	++crs->nevents2;
+	++m_event;
+	//YK
+	//cout << "ana71: " << m_event->Nevt << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_event,m_end) << " " << nevents2 << endl;
+      }
+      else {
+	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
+	m_event=crs->Levents.erase(m_event);
+      }
+    }
+    //m_event=it;
+
+    //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
+
+    // erase events if the list is too long
+    int n2 = crs->Levents.size()-opt.ev_max;
+    if (n2>0) {
+      int ii=0;
+      for (it=crs->Levents.begin(); it!=m_event && ii<n2;) {
+	it=crs->Levents.erase(it);
+	//YK
+	//cout << "ana73: " << it->Nevt << " " << std::distance(it,m_event) << endl;
+	++ii;
+	//++it;
+      }
+    }
+
+    //cout << "Levents3: " << crs->Levents.size() << " " << nevents << endl;
+
+    if (opt.dec_write) {
+      crs->Flush_Dec();
+    }
+
+
+    //cout << "Levents4: " << crs->Levents.size() << " " << nevents << endl;
+
+    // fill Tevents for EvtFrm::DrawEvent2
+    if (EvtFrm) {
+      EvtFrm->Tevents.clear();
+      if (m_event!=crs->Levents.end()) {
+	EvtFrm->Tevents.push_back(*m_event);
+      }
+      else if (!crs->Levents.empty()) {
+	EvtFrm->Tevents.push_back(crs->Levents.back());     
+      }
+      EvtFrm->d_event=EvtFrm->Pevents->begin();
+    }
+  
+    //cout << "Levents5: " << Levents.size() << " " << nevents << endl;
+
+    ana_mut.UnLock();
+
+
+
+
+
   }
+  cout << "Ana thread deleted: " << endl;
   return NULL;
-}
+} //handle_ana
+
+// void *handle_ev(void *ctx) {
+//   int nvp=0;
+//   cout << "Event thread started: " << endl;
+//   while (decode_thread_run) {
+//     while(!evt_check)
+//       evt_cond.Wait();
+
+//     cout << "mkevent: " << endl;
+//     evt_check=0;
+//   }
+//   return NULL;
+// }
 
 static void cback(libusb_transfer *transfer) {
 
@@ -244,6 +384,7 @@ static void cback(libusb_transfer *transfer) {
 
 #endif //CYUSB
 
+/*
 void *handle_buf(void *ctx)
 {
 
@@ -270,11 +411,15 @@ void *handle_buf(void *ctx)
   crs->b_stop=true;
   return NULL;
 }
+*/
 
-void *handle_ana(void* ptr) {
+/*
+void *handle_old_ana(void* ptr) {
   // when the event list (Levents) becomes larger than ev_min,
   // starts analysing the events (fillhist);
   // when it becomes larger than ev_max, starts erasing the events
+
+  int delete_old_ana;
 
   std::list<EventClass>::iterator it;
 
@@ -292,7 +437,7 @@ void *handle_ana(void* ptr) {
     //cout << "loop end: " << endl;
   }
 
-  //cout << "handle_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << " " << EvtFrm << endl;
+  //cout << "handle_old_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << " " << EvtFrm << endl;
 
   int n2; //number of events to erase
   //m_event - first event which is not analyzed
@@ -426,7 +571,8 @@ void *handle_ana(void* ptr) {
 
   return 0;
     
-} //handle_ana
+} //handle_old_ana
+*/
 
 int CRS::Set_Trigger() {
   int len = strlen(opt.maintrig);
@@ -467,10 +613,11 @@ void CRS::Ana_start() {
 
   if (MT) {
     decode_thread_run=1;
-    evt_check=0;
 
-    trd_ev = new TThread("trd_ev", handle_ev, (void*) 0);
-    trd_ev->Run();
+    ana_all=0;
+    ana_check=0;
+    trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
+    trd_ana->Run();
 
     for (int i=0;i<ntrans;i++) {
       dec_check[i]=0;
@@ -507,7 +654,7 @@ void CRS::Ana2(int all) {
   std::list<EventClass>::iterator it;
   std::list<EventClass>::iterator m_end = Levents.end();
 
-  //cout << "m_end: " << &*m_end << endl;
+  cout << "Ana2: m_end: " << &*m_end << endl;
 
   if (!all) { //analyze up to ev_min events
     std::advance (m_end,-opt.ev_min);
@@ -1714,9 +1861,27 @@ void CRS::ProcessCrs() {
       //cout << "Stop2!!!" << endl;
     }
   }
-  Ana2(1);
+  if (MT) {
+    cout << "delete threads... :" << endl;
+    decode_thread_run=0;    
+    for (int i=0;i<ntrans;i++) {
+      dec_check[i]=1;
+      dec_cond[i].Signal();
+      trd_dec[i]->Join();
+      trd_dec[i]->Delete();
+    }
+    ana_all=1;
+    ana_check=1;
+    ana_cond.Signal();
+    trd_ana->Join();
+    trd_ana->Delete();
+  }
+  else {
+    Ana2(1);
+  }
 }
 
+/*
 void CRS::ProcessCrs_old() {
   b_run=1;
   TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
@@ -1738,6 +1903,7 @@ void CRS::ProcessCrs_old() {
   trd_ana->Join();
   trd_ana->Delete();
 }
+*/
 
 #endif //CYUSB
 
@@ -1798,7 +1964,7 @@ void CRS::DoReset() {
     EvtFrm->DoReset();
   }
 
-  m_start=Levents.end();
+  //m_start=Levents.end();
   m_event=Levents.end();
 
   nevents=0;
@@ -2166,7 +2332,7 @@ int CRS::DoBuf() {
   }
 
 }
-
+/*
 void CRS::FAnalyze(bool nobatch) {
 
   if (gzeof(f_read)) {
@@ -2228,7 +2394,7 @@ void CRS::FAnalyze(bool nobatch) {
     cv->SetEditable(true);
   }
 }
-
+*/
 void CRS::FAnalyze2(bool nobatch) {
 
   if (gzeof(f_read)) {
@@ -2266,7 +2432,24 @@ void CRS::FAnalyze2(bool nobatch) {
       }
     }
   }
-  Ana2(1);
+  if (MT) {
+    cout << "delete threads... :" << endl;
+    decode_thread_run=0;    
+    for (int i=0;i<ntrans;i++) {
+      dec_check[i]=1;
+      dec_cond[i].Signal();
+      trd_dec[i]->Join();
+      trd_dec[i]->Delete();
+    }
+    ana_all=1;
+    ana_check=1;
+    ana_cond.Signal();
+    trd_ana->Join();
+    trd_ana->Delete();
+  }
+  else {
+    Ana2(1);
+  }
 
   if (nobatch) {
     EvtFrm->Clear();
@@ -2280,6 +2463,7 @@ void CRS::FAnalyze2(bool nobatch) {
   }
 }
 
+/*
 void CRS::DoNBuf(int nb) {
 
   if (gzeof(f_read)) {
@@ -2330,6 +2514,7 @@ void CRS::DoNBuf(int nb) {
 
   cv->SetEditable(true);
 }
+*/
 
 void CRS::DoNBuf2(int nb) {
 
@@ -2359,7 +2544,24 @@ void CRS::DoNBuf2(int nb) {
     gSystem->ProcessEvents();
     ++i;
   }
-  Ana2(1);
+  if (MT) {
+    cout << "delete threads... :" << endl;
+    decode_thread_run=0;    
+    for (int i=0;i<ntrans;i++) {
+      dec_check[i]=1;
+      dec_cond[i].Signal();
+      trd_dec[i]->Join();
+      trd_dec[i]->Delete();
+    }
+    ana_all=1;
+    ana_check=1;
+    ana_cond.Signal();
+    trd_ana->Join();
+    trd_ana->Delete();
+  }
+  else {
+    Ana2(1);
+  }
 
 
   EvtFrm->Clear();
