@@ -76,7 +76,7 @@ char maintitle[200];
 char rootname[200]="";
 
 struct stat statbuffer;
-const char* msg_exists = "Output file already exists. It will be overwritten.\nPress OK if you want to continue?";
+const char* msg_exists = "Output file already exists.\nPress OK to overwrite it";
 
 
 MyMainFrame *myM;

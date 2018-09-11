@@ -27,8 +27,6 @@ TMutex ana_mut;
 
 const int BFMAX=999999999;
 
-//TCondition* cond[CRS::MAXTRANS];
-
 using namespace std;
 
 extern EventFrame* EvtFrm;
@@ -69,6 +67,10 @@ int dec_nr[CRS::MAXTRANS];
 TThread* trd_dec[CRS::MAXTRANS];
 TCondition dec_cond[CRS::MAXTRANS];
 int dec_check[CRS::MAXTRANS];
+int dec_finished[CRS::MAXTRANS];
+
+
+TThread* trd_mkev;
 
 int ana_all;
 TThread* trd_ana;
@@ -162,11 +164,16 @@ void *handle_decode(void *ctx) {
     while(!dec_check[itr])
       dec_cond[itr].Wait();
 
+    cout << "dec_working: " << itr << endl;
+    while(dec_finished[itr]) {
+      cout << "dec_sleeping: " << itr << endl;
+      gSystem->Sleep(1);
+    }
+
     dec_check[itr]=0;
     if (!decode_thread_run) {
       break;
     }
-    cout << "handle_decode: " << itr << " " << dec_check[itr] << endl;
     if (crs->module>=32) {
       crs->MoveLastEvent(itr);
       //Decode32(Fbuf,BufLength);
@@ -182,17 +189,52 @@ void *handle_decode(void *ctx) {
     //evt_check=1;
     //evt_cond.Signal();
 
-    if (crs->Vpulses[itr].size()>2) {
-      //cout << "Make_events33: " <<endl;
-      crs->Make_Events(itr);
+    dec_finished[itr]=1;
+
+    // cout << "handle_decode: " << itr << " " << dec_check[itr]
+    // 	 << " " << crs->Vpulses[itr].size() << endl;
+
+    // if (crs->Vpulses[itr].size()>2) {
+    //   //cout << "Make_events33: " <<endl;
+    //   crs->Make_Events(itr);
+    // }
+
+    // if ((int) crs->Levents.size()>opt.ev_min) {
+    //   ana_check=1;
+    //   ana_cond.Signal();
+    // }
+  }
+  cout << "Decode thread deleted: " << itr << endl;
+  return NULL;
+}
+
+void *handle_mkev(void *ctx) {
+  cout << "Mkev thread started: " << endl;
+  int ntr=0;
+  while (decode_thread_run) {
+
+    while(!dec_finished[ntr])
+      gSystem->Sleep(1);
+
+    if (!decode_thread_run) {
+      break;
     }
 
+    //if (crs->Vpulses[ntr].size()>2) {
+    //cout << "Make_events33: " << ntr << endl;
+    crs->Make_Events(ntr);
+      //}
+
+    dec_finished[ntr]=0;
+    ntr=(ntr+1)%crs->ntrans;
+    
     if ((int) crs->Levents.size()>opt.ev_min) {
       ana_check=1;
       ana_cond.Signal();
     }
+
   }
-  cout << "Decode thread deleted: " << itr << endl;
+  cout << "Mkev thread deleted: " << endl;
   return NULL;
 }
 
@@ -232,7 +274,7 @@ void *handle_ana(void *ctx) {
     std::list<EventClass>::iterator it;
     std::list<EventClass>::iterator m_end = crs->Levents.end();
 
-    cout << "Ana2: m_end: " << &*m_end << " " << ana_all << endl;
+    //cout << "Ana2: " << crs->Levents.size() << " " << ana_all << endl;
 
     if (!ana_all) { //analyze up to ev_min events
       std::advance (m_end,-opt.ev_min);
@@ -614,21 +656,29 @@ void CRS::Ana_start() {
   if (MT) {
     decode_thread_run=1;
 
-    ana_all=0;
-    ana_check=0;
-    trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
-    trd_ana->Run();
-
     for (int i=0;i<ntrans;i++) {
       dec_check[i]=0;
+      dec_finished[i]=0;
       char ss[50];
       sprintf(ss,"trd_dec%d",i);
       dec_nr[i] = i;
       trd_dec[i] = new TThread(ss, handle_decode, (void*) &dec_nr[i]);
       trd_dec[i]->Run();
     }
+
+    ana_all=0;
+    ana_check=0;
+
+    trd_mkev = new TThread("trd_mkev", handle_mkev, (void*) 0);
+    trd_mkev->Run();
+
+    trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
+    trd_ana->Run();
+
+    gSystem->Sleep(100);
   }
 
+  cout << "Ana_start finished..." << endl;
 }
 
 void CRS::Ana2(int all) {
@@ -2545,6 +2595,7 @@ void CRS::DoNBuf2(int nb) {
     ++i;
   }
   if (MT) {
+    gSystem->Sleep(100);
     cout << "delete threads... :" << endl;
     decode_thread_run=0;    
     for (int i=0;i<ntrans;i++) {
@@ -2552,7 +2603,12 @@ void CRS::DoNBuf2(int nb) {
       dec_cond[i].Signal();
       trd_dec[i]->Join();
       trd_dec[i]->Delete();
+      dec_finished[i]=1;
     }
+
+    trd_mkev->Join();
+    trd_mkev->Delete();
+
     ana_all=1;
     ana_check=1;
     ana_cond.Signal();
@@ -2646,7 +2702,7 @@ void CRS::Show(bool force) {
 
 void CRS::Decode_any_MT(int itr) {
   //-----decode
-  cout << "Decode_MT: " << itr << " " << buf_len[itr] << endl;
+  //cout << "Decode_MT: " << itr << " " << buf_len[itr] << endl;
 
   dec_check[itr]=1;
   dec_cond[itr].Signal();
