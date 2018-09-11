@@ -138,7 +138,7 @@ RQ_OBJECT("CRS")
   int buf_off[MAXTRANS];
   int buf_len[MAXTRANS];
   //unsigned char *buftr2[MAXTRANS];
-  //unsigned char *buftr[MAXTRANS];
+  unsigned char *buftr[MAXTRANS];
   struct libusb_transfer *transfer[MAXTRANS];
   UChar_t* Fbuf[MAXTRANS];
   UChar_t* Fbuf2[MAXTRANS];
