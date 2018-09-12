@@ -59,7 +59,9 @@ const Long64_t P64_0=-123456789123456789;
 
 std::list<EventClass>::iterator m_event;
 
-int MT=0;
+int MT=1;
+
+int gl_itr;
 
 int decode_thread_run;
 int dec_nr[CRS::MAXTRANS];
@@ -381,67 +383,57 @@ static void cback(libusb_transfer *transfer) {
 
   crs->npulses_buf=0;
 
-  if (crs->b_acq) {
+  if (transfer->actual_length) {
+    if (opt.decode) {
 
-    libusb_submit_transfer(transfer);
 
-    if (transfer->actual_length) {
-      if (opt.decode) {
-
-	/*
-	int itr = *(int*) transfer->user_data;
-	memcpy(crs->Fbuf[itr],transfer->buffer,transfer->actual_length);
-	crs->buf_len[itr]=transfer->actual_length;
-	if (MT) {
-	  crs->Decode_any_MT(itr);
-	}
-	else {
-	  crs->Decode_any(itr);
-	}
-	*/
-
-	//int itr = *(int*) transfer->user_data;
-	int new_len=crs->buf_len[crs->ibuf]+transfer->actual_length;
-	if (new_len<=opt.rbuf_size*1024) {
-	  memcpy(crs->Fbuf[crs->ibuf]+crs->buf_len[crs->ibuf],transfer->buffer,
-		 transfer->actual_length);
-	  crs->buf_len[crs->ibuf]=new_len;
-	}
-	else {
-	  if (MT) {
-	    crs->Decode_any_MT(crs->ibuf);
-	  }
-	  else {
-	    crs->Decode_any(crs->ibuf);
-	  }
-	  crs->ibuf=(crs->ibuf+1)%crs->ntrans;
-	  //buf_len[crs->ibuf]=0;
-	  memcpy(crs->Fbuf[crs->ibuf],transfer->buffer,
-		 transfer->actual_length);
-	  crs->buf_len[crs->ibuf]=transfer->actual_length;
-	}
-	  //crs->buf_len[itr]=transfer->actual_length;
-	//crs->Decode_any(itr);
-	
+      int itr = *(int*) transfer->user_data;
+      memcpy(crs->Fbuf[itr],transfer->buffer,transfer->actual_length);
+      crs->buf_len[itr]=transfer->actual_length;
+      if (MT) {
+	crs->Decode_any_MT(itr);
       }
-      if (opt.raw_write) {
-	crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
-	if (crs->f_raw) {
-	  int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
-	  gzclose(crs->f_raw);
-	  crs->rawbytes+=res;
-	}
-	else {
-	  cout << "Can't open file: " << opt.fname_raw << endl;
-	}
+      else {
+	crs->Decode_any(itr);
       }
 
-      crs->nbuffers++;
 
-    } //if (transfer->actual_length) {
+      /*
+      //int itr = *(int*) transfer->user_data;
+      int new_len=crs->buf_len[crs->ibuf]+transfer->actual_length;
+      if (new_len<=opt.rbuf_size*1024) {
+      memcpy(crs->Fbuf[crs->ibuf]+crs->buf_len[crs->ibuf],transfer->buffer,
+      transfer->actual_length);
+      crs->buf_len[crs->ibuf]=new_len;
+      }
+      else {
+      if (MT) {
+      crs->Decode_any_MT(crs->ibuf);
+      }
+      else {
+      crs->Decode_any(crs->ibuf);
+      }
+      crs->ibuf=(crs->ibuf+1)%crs->ntrans;
+      //buf_len[crs->ibuf]=0;
+      memcpy(crs->Fbuf[crs->ibuf],transfer->buffer,
+      transfer->actual_length);
+      crs->buf_len[crs->ibuf]=transfer->actual_length;
+      }
+      */
+    }
+    // if (opt.raw_write) {
+    //   crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
+    //   if (crs->f_raw) {
+    // 	int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
+    // 	gzclose(crs->f_raw);
+    // 	crs->rawbytes+=res;
+    //   }
+    //   else {
+    // 	cout << "Can't open file: " << opt.fname_raw << endl;
+    //   }
+    // }
 
-    
-    //libusb_submit_transfer(transfer);
+    crs->nbuffers++;
 
     stat_mut.Lock();
     crs->inputbytes+=transfer->actual_length;
@@ -451,7 +443,13 @@ static void cback(libusb_transfer *transfer) {
     //cout << "T_acq: " << opt.T_acq << " " << crs->T_start << endl;
 
     stat_mut.UnLock();
-  } //if (crs->b_acq) {
+
+  } //if (transfer->actual_length) {
+
+    
+  if (crs->b_acq) {
+    libusb_submit_transfer(transfer);
+  }
 
   //crs->nvp = (crs->nvp+1)%crs->ntrans;
   
@@ -1194,19 +1192,6 @@ int CRS::Detect_device() {
     Fmode=1;
 
   //cpar.InitPar(module);
-
-  // for (int i=0;i<10000;i++) {
-  //   Init_Transfer();
-  //   Free_Transfer();
-  // }
-
-
-  //Init_Transfer();
-  //Free_Transfer();
-  //Init_Transfer();
-  //Init_Transfer();
-  //Init_Transfer();
-
 
   /*
   Init_Transfer();
@@ -2243,6 +2228,7 @@ void CRS::DoFopen(char* oname, int popt) {
     buf_off[i]=0;
   }
   ibuf=0;
+  gl_itr=0;
   //nvp=0;
 
   //cout << "Fopen3: " << (void*) Fbuf2 << " " << bsize << endl;
@@ -2381,6 +2367,52 @@ int CRS::DoBuf() {
 #ifdef TIMES
   tt1[0].Set();
 #endif
+
+  transfer[gl_itr]->actual_length=gzread(f_read,transfer[gl_itr]->buffer,opt.usb_size*1024);
+  int* ttt = (int*) transfer[gl_itr]->user_data;
+  *ttt=gl_itr;
+
+#ifdef TIMES
+  tt2[0].Set();
+  dif = tt2[0].GetSec()-tt1[0].GetSec()+
+    (tt2[0].GetNanoSec()-tt1[0].GetNanoSec())*1e-9;
+  ttm[0]+=dif;
+#endif
+
+  // cout << "gzread: " << Fmode << " " << module << " "
+  //      << nbuffers << " " << BufLength << " " << ttm[0] << endl;
+
+
+  cback(transfer[gl_itr]);
+  gl_itr = (gl_itr+1)%ntrans;
+
+  
+  if (BufLength>0) {
+
+    if (batch) {
+      cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
+	   << inputbytes/MB << endl;
+    }
+
+    //if (!b_stop) {
+    //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
+    //}
+
+    return nbuffers;
+  }
+  else {
+    return 0;
+  }
+
+}
+
+/*
+int CRS::DoBuf_old() {
+
+  //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
+#ifdef TIMES
+  tt1[0].Set();
+#endif
   BufLength=gzread(f_read,Fbuf[ibuf],opt.rbuf_size*1024);
 
 #ifdef TIMES
@@ -2397,10 +2429,6 @@ int CRS::DoBuf() {
   if (BufLength>0) {
     crs->inputbytes+=BufLength;
 
-    // for (int i=0;i<MAXTRANS;i++) {
-    //   cout << "buf_off1: " << i << " " << buf_off[i] << endl;
-    // }
-
     if (opt.decode) {
       buf_len[ibuf]=BufLength;
       if (MT) {
@@ -2412,10 +2440,6 @@ int CRS::DoBuf() {
     }
     ibuf = (ibuf+1)%ntrans;
     nbuffers++;
-
-    // for (int i=0;i<MAXTRANS;i++) {
-    //   cout << "buf_off2: " << i << " " << buf_off[i] << endl;
-    // }
 
     if (batch) {
       cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
@@ -2429,12 +2453,12 @@ int CRS::DoBuf() {
     return nbuffers;
   }
   else {
-    //b_fana=true;
-    //myM->DoAna();
     return 0;
   }
 
 }
+*/
+
 /*
 void CRS::FAnalyze(bool nobatch) {
 
