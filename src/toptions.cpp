@@ -168,13 +168,23 @@ void Coptions::GetPar(const char* name, int module, int i, Short_t type_ch, int 
     }
     else if (!strcmp(name,"pre")) {
       par = preWr[i];
-      min = -1024;
-      max=1023;
+      min =-1024;
+      if (type_ch==1) {
+	max=511;
+      }
+      else {
+	max=1023;
+      }
     }
     else if (!strcmp(name,"len")) {
       par = durWr[i];
       min = 1;
-      max=4068;
+      if (type_ch==1) {
+	max=3048;
+      }
+      else {
+	max=4068;
+      }
     }
     else if (!strcmp(name,"trig")) {
       par = trg[i];

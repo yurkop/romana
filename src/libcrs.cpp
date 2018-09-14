@@ -59,7 +59,7 @@ const Long64_t P64_0=-123456789123456789;
 
 std::list<EventClass>::iterator m_event;
 
-int MT=1;
+int MT=0;
 
 int gl_itr;
 
@@ -3006,7 +3006,8 @@ void CRS::Decode33(int itr) {
 
   unsigned short frmt;
   ULong64_t data;
-  Int_t zzz; // temporary var. to convert signed nbit var. to signed 32bit int
+  Short_t sss; // temporary var. to convert signed nbit var. to signed 16bit int
+  Int_t iii; // temporary var. to convert signed nbit var. to signed 32bit int
   Long64_t lll; //Long temporary var.
   int n_frm=0; //counter for frmt4 and frmt5
   peak_type *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
@@ -3094,9 +3095,9 @@ void CRS::Decode33(int itr) {
       //else {
       for (int i=0;i<4;i++) {
 
-	zzz = data & 0xFFF;
-	ipls->sData.push_back((zzz<<20)>>20);
-	//ipls->sData[ipls->Nsamp++]=(zzz<<20)>>20;
+	iii = data & 0xFFF;
+	ipls->sData.push_back((iii<<20)>>20);
+	//ipls->sData[ipls->Nsamp++]=(iii<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=12;
       }
@@ -3116,9 +3117,9 @@ void CRS::Decode33(int itr) {
       //else {
       for (int i=0;i<3;i++) {
 
-	zzz = data & 0xFFFF;
-	ipls->sData.push_back((zzz<<16)>>16);
-	//ipls->sData[ipls->Nsamp++]=(zzz<<20)>>20;
+	iii = data & 0xFFFF;
+	ipls->sData.push_back((iii<<16)>>16);
+	//ipls->sData[ipls->Nsamp++]=(iii<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=16;
       }
@@ -3131,17 +3132,15 @@ void CRS::Decode33(int itr) {
 	  ipk=&ipls->Peaks[0];
 	}
 	switch (n_frm) {
-	case 0:
+	case 0: //C – [24]; A – [24]
 	  //area
-	  zzz = data & 0xFFFFFF;
-	  //ipls->Ar=((zzz<<8)>>8);
-	  ipk->Area0=((zzz<<8)>>8);
+	  iii = data & 0xFFFFFF;
+	  ipk->Area0=((iii<<8)>>8);
 	  ipk->Area0/=p_len[ipls->Chan];
 	  data>>=24;
 	  //bkg
-	  zzz = data & 0xFFFFFF;
-	  //ipls->Bg=((zzz<<8)>>8);
-	  ipk->Base=((zzz<<8)>>8);
+	  iii = data & 0xFFFFFF;
+	  ipk->Base=((iii<<8)>>8);
 	  ipk->Base/=b_len[ipls->Chan];
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
@@ -3150,42 +3149,35 @@ void CRS::Decode33(int itr) {
 	  ipk->Base*=opt.emult[ipls->Chan];
 
 	  break;
-	case 1:
-	  //QX
+	case 1: //H – [12]; QX – [36]
 	  lll = data & 0xFFFFFFFFF;
 	  QX=((lll<<28)>>28);
 	  data>>=36;
 	  //height
-	  zzz = data & 0xFFF;
-	  //ipls->Ht=((zzz<<20)>>20);
-	  ipk->Height=((zzz<<20)>>20);
+	  iii = data & 0xFFF;
+	  ipk->Height=((iii<<20)>>20);
 	  break;
-	case 2:
-	  //QY
+	case 2: //QY – [36]
 	  lll = data & 0xFFFFFFFFF;
 	  QY=((lll<<28)>>28);
 	  break;
-	case 3:
+	case 3: //RY – [20]; RX – [20]
 	  //RX
-	  zzz = data & 0xFFFFF;
-	  RX=((zzz<<12)>>12);
+	  iii = data & 0xFFFFF;
+	  RX=((iii<<12)>>12);
 	  data>>=24;
 	  //RY
-	  zzz = data & 0xFFFFF;
-	  RY=((zzz<<12)>>12);
+	  iii = data & 0xFFFFF;
+	  RY=((iii<<12)>>12);
 
 	  if (RX!=0)
-	    //ipls->Tm=QX/RX;
 	    ipk->Time=QX/RX;
 	  else
-	    //ipls->Tm=0;
 	    ipk->Time=-999;
 
 	  if (RY!=0)
-	    //ipls->Wd=QY/RY;
 	    ipk->Width=QY/RY;
 	  else
-	    //ipls->Wd=0;
 	    ipk->Width=-999;
 
 	  //if (ipls->Peaks[0].Width==0 || ipls->Counter==25597) {
@@ -3209,7 +3201,80 @@ void CRS::Decode33(int itr) {
       } //if (opt.dsp[ipls->Chan])
     }
     else if (frmt==5) {
-      //cout << "frmt: " << ipls->Counter << " " << frmt << " " << data << endl;
+      if (opt.dsp[ipls->Chan]) {
+	if (ipls->Peaks.size()==0) {
+	  ipls->Peaks.push_back(peak_type());
+	  ipk=&ipls->Peaks[0];
+	}
+	switch (n_frm) {
+	case 0: //C – [28]; H – [16]
+	  //height
+	  sss = data & 0xFFFF;
+	  ipk->Height=sss;
+	  data>>=16;
+	  //bkg
+	  iii = data & 0xFFFFFFF;
+	  ipk->Base=((iii<<4)>>4);
+	  ipk->Base/=b_len[ipls->Chan];
+	case 1: //A – [28]
+	  //area
+	  iii = data & 0xFFFFFFF;
+	  ipk->Area0=((iii<<4)>>4);
+	  ipk->Area0/=p_len[ipls->Chan];
+
+	  ipk->Area=ipk->Area0 - ipk->Base;
+	  ipk->Area*=opt.emult[ipls->Chan];
+	  ipk->Area0*=opt.emult[ipls->Chan];
+	  ipk->Base*=opt.emult[ipls->Chan];
+	  break;
+	case 2: //A – [28]
+	  //QX
+	  lll = data & 0xFFFFFFFFFF;
+	  QX=((lll<<24)>>24);
+	  break;
+	case 3: //QY – [40]
+	  //QY
+	  lll = data & 0xFFFFFFFFFF;
+	  QY=((lll<<24)>>24);
+	  break;
+	case 4: //RY – [24]; RX – [24]
+	  //RX
+	  iii = data & 0xFFFFFF;
+	  RX=((iii<<8)>>8);
+	  data>>=24;
+	  //RY
+	  iii = data & 0xFFFFFF;
+	  RY=((iii<<8)>>8);
+
+	  if (RX!=0)
+	    ipk->Time=QX/RX;
+	  else
+	    ipk->Time=-999;
+
+	  if (RY!=0)
+	    ipk->Width=QY/RY;
+	  else
+	    ipk->Width=-999;
+
+	  //if (ipls->Peaks[0].Width==0 || ipls->Counter==25597) {
+
+	  // printf("Alp: %10lld %2d %8.1f %8.1f %8.1f %8.1f %8.1f\n",
+	  // 	   ipls->Counter,n_frm,ipls->Peaks[0].Base,ipls->Peaks[0].Area0,
+	  // 	   ipls->Peaks[0].Height,
+	  // 	   ipls->Peaks[0].Time,ipls->Peaks[0].Width);
+
+	  //}
+	  // cout << "frmt4: " << ipls->Counter << " " << n_frm
+	  //      << " " << ipls->Bg << " " << ipls->Ar << " " << ipls->Ht
+	  //      << " " << ipls->Tm << " " << ipls->Wd << " " << RX
+	  //      << " " << RY << endl;
+
+	  break;
+	default:
+	  ;
+	} //switch
+	n_frm++;
+      } //if (opt.dsp[ipls->Chan])
     }
     else {
       cout << "bad frmt: " << frmt << endl;
