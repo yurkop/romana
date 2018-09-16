@@ -25,6 +25,8 @@
 TMutex stat_mut;
 TMutex ana_mut;
 
+TMutex cmut;
+
 const int BFMAX=999999999;
 
 using namespace std;
@@ -59,9 +61,15 @@ const Long64_t P64_0=-123456789123456789;
 
 std::list<EventClass>::iterator m_event;
 
-int MT=0;
+int MT=1;
 
-int gl_itr;
+//const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
+const Long64_t GLBSIZE=1024*1024*1024; //1024 MB
+
+UChar_t* GLBuf;
+
+int gl_ibuf;
+int gl_ntrd=8; //number of decode threads (and also sub-buffers)
 
 int decode_thread_run;
 int dec_nr[CRS::MAXTRANS];
@@ -73,6 +81,9 @@ int dec_finished[CRS::MAXTRANS];
 
 
 TThread* trd_mkev;
+//TCondition mkev_cond[CRS::MAXTRANS];
+//int mkev_check[CRS::MAXTRANS];
+
 
 int ana_all;
 TThread* trd_ana;
@@ -159,27 +170,34 @@ void *ballast(void* xxx) {
 */
 
 void *handle_decode(void *ctx) {
-  int itr = *(int*) ctx;
+  int ibuf = *(int*) ctx;
 
-  cout << "Decode thread started: " << itr << endl;
+  cmut.Lock();
+  cout << "Decode thread started: " << ibuf << " " << dec_finished[ibuf] << endl;
+  cmut.UnLock();
   while (decode_thread_run) {
-    while(!dec_check[itr])
-      dec_cond[itr].Wait();
 
-    cout << "dec_working: " << itr << endl;
-    while(dec_finished[itr]) {
-      cout << "dec_sleeping: " << itr << endl;
-      gSystem->Sleep(1);
-    }
+    while(!dec_check[ibuf])
+      dec_cond[ibuf].Wait();
 
-    dec_check[itr]=0;
+    dec_check[ibuf]=0;
+
+    //cmut.Lock();
+    //cout << "dec_working: " << ibuf << endl;
+    //cmut.UnLock();
+
+    // while(dec_finished[ibuf]) {
+    //   cout << "dec_sleeping: " << ibuf << endl;
+    //   gSystem->Sleep(1);
+    // }
+
     if (!decode_thread_run) {
       break;
     }
     if (crs->module>=32) {
-      crs->MoveLastEvent(itr);
+      crs->FindLastEvent(ibuf);
       //Decode32(Fbuf,BufLength);
-      crs->Decode33(itr);
+      crs->Decode33(ibuf);
     }
     else if (crs->module==2) {
       //Decode2(buffer,length);
@@ -191,14 +209,18 @@ void *handle_decode(void *ctx) {
     //evt_check=1;
     //evt_cond.Signal();
 
-    dec_finished[itr]=1;
+    dec_finished[ibuf]=1;
 
-    // cout << "handle_decode: " << itr << " " << dec_check[itr]
-    // 	 << " " << crs->Vpulses[itr].size() << endl;
+    //mkev_check[ibuf]=1;
+    //mkev_cond[ibuf].Signal();
 
-    // if (crs->Vpulses[itr].size()>2) {
+
+    // cout << "handle_decode: " << ibuf << " " << dec_check[ibuf]
+    // 	 << " " << crs->Vpulses[ibuf].size() << endl;
+
+    // if (crs->Vpulses[ibuf].size()>2) {
     //   //cout << "Make_events33: " <<endl;
-    //   crs->Make_Events(itr);
+    //   crs->Make_Events(ibuf);
     // }
 
     // if ((int) crs->Levents.size()>opt.ev_min) {
@@ -206,29 +228,37 @@ void *handle_decode(void *ctx) {
     //   ana_cond.Signal();
     // }
   }
-  cout << "Decode thread deleted: " << itr << endl;
+  cmut.Lock();
+  cout << "Decode thread deleted: " << ibuf << endl;
+  cmut.UnLock();
   return NULL;
 }
 
 void *handle_mkev(void *ctx) {
+  cmut.Lock();
   cout << "Mkev thread started: " << endl;
-  int ntr=0;
+  cmut.UnLock();
+  int ibuf=gl_ibuf;
   while (decode_thread_run) {
 
-    while(!dec_finished[ntr])
+    while(!dec_finished[ibuf])
       gSystem->Sleep(1);
+
+    //while(!mkev_check[ibuf])
+    //mkev_cond[ibuf].Wait();
+    //mkev_check[ibuf]=0;
 
     if (!decode_thread_run) {
       break;
     }
 
-    //if (crs->Vpulses[ntr].size()>2) {
-    //cout << "Make_events33: " << ntr << endl;
-    crs->Make_Events(ntr);
+    //if (crs->Vpulses[ibuf].size()>2) {
+    crs->Make_Events(ibuf);
       //}
+    cout << "Make_events33: " << ibuf << " " << crs->Levents.size() << endl;
 
-    dec_finished[ntr]=0;
-    ntr=(ntr+1)%crs->ntrans;
+    dec_finished[ibuf]=0;
+    ibuf=(ibuf+1)%gl_ntrd;
     
     if ((int) crs->Levents.size()>opt.ev_min) {
       ana_check=1;
@@ -236,12 +266,19 @@ void *handle_mkev(void *ctx) {
     }
 
   }
+  cmut.Lock();
   cout << "Mkev thread deleted: " << endl;
+  cmut.UnLock();
   return NULL;
 }
 
 void *handle_ana(void *ctx) {
+
+  //return 0;
+
+  cmut.Lock();
   cout << "Ana thread started: " << endl;
+  cmut.UnLock();
   while (decode_thread_run) {
     while(!ana_check)
       ana_cond.Wait();
@@ -269,16 +306,17 @@ void *handle_ana(void *ctx) {
       continue;
     }
 
-    if (m_event==crs->Levents.end()) {
-      m_event=crs->Levents.begin();
-    }
-
     std::list<EventClass>::iterator it;
     std::list<EventClass>::iterator m_end = crs->Levents.end();
 
+    cmut.Lock();
     cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
+    cmut.UnLock();
 
     if (!ana_all) { //analyze up to ev_min events
+      if (m_event==crs->Levents.end()) {
+	m_event=crs->Levents.begin();
+      }
       std::advance (m_end,-opt.ev_min);
     }
 
@@ -354,7 +392,9 @@ void *handle_ana(void *ctx) {
 
 
   }
+  cmut.Lock();
   cout << "Ana thread deleted: " << endl;
+  cmut.UnLock();
   return NULL;
 } //handle_ana
 
@@ -386,9 +426,9 @@ static void cback(libusb_transfer *transfer) {
   if (transfer->actual_length) {
     if (opt.decode) {
 
-
+      /* YKYKYK
       int itr = *(int*) transfer->user_data;
-      memcpy(crs->Fbuf[itr],transfer->buffer,transfer->actual_length);
+      //memcpy(crs->Fbuf[itr],transfer->buffer,transfer->actual_length);
       crs->buf_len[itr]=transfer->actual_length;
       if (MT) {
 	crs->Decode_any_MT(itr);
@@ -396,7 +436,7 @@ static void cback(libusb_transfer *transfer) {
       else {
 	crs->Decode_any(itr);
       }
-
+      */
 
       /*
       //int itr = *(int*) transfer->user_data;
@@ -687,7 +727,7 @@ void CRS::Ana_start() {
   if (MT) {
     decode_thread_run=1;
 
-    for (int i=0;i<ntrans;i++) {
+    for (int i=0;i<gl_ntrd;i++) {
       dec_check[i]=0;
       dec_finished[i]=0;
       char ss[50];
@@ -695,13 +735,15 @@ void CRS::Ana_start() {
       dec_nr[i] = i;
       trd_dec[i] = new TThread(ss, handle_decode, (void*) &dec_nr[i]);
       trd_dec[i]->Run();
-    }
 
-    ana_all=0;
-    ana_check=0;
+      //mkev_check[i]=0;
+    }
 
     trd_mkev = new TThread("trd_mkev", handle_mkev, (void*) 0);
     trd_mkev->Run();
+
+    ana_all=0;
+    ana_check=0;
 
     trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
     trd_ana->Run();
@@ -728,23 +770,25 @@ void CRS::Ana2(int all) {
     return;
   }
 
-  if (m_event==Levents.end()) {
-    m_event=Levents.begin();
-  }
-
   std::list<EventClass>::iterator it;
   std::list<EventClass>::iterator m_end = Levents.end();
 
-  cout << "Ana2: m_end: " << &*m_end << endl;
+  cout << "Ana2: " << Levents.size() << endl;
 
   if (!all) { //analyze up to ev_min events
+    if (m_event==Levents.end()) {
+      m_event=Levents.begin();
+    }
     std::advance (m_end,-opt.ev_min);
   }
 
   //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
 
+  int nnn=0;
+
   // analyze events from m_start to m_event
   while (m_event!=m_end) {
+    nnn++;
     if (m_event->pulses.size()>=opt.mult1 &&
 	m_event->pulses.size()<=opt.mult2) {
 
@@ -767,6 +811,8 @@ void CRS::Ana2(int all) {
     }
   }
   //m_event=it;
+
+  cout << "Analyzed: " << nnn << endl;
 
   //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
 
@@ -934,6 +980,9 @@ CRS::CRS() {
 
   //mean_event.Make_Mean_Event();
 
+  GLBuf = NULL;//new UChar_t[GLBSIZE];
+  //memset(GLBuf,0,GLBSIZE);
+
   dummy_pulse.ptype=P_BADPULSE;
 
   for (int i=0;i<MAX_CH+ADDCH;i++) {
@@ -964,11 +1013,6 @@ CRS::CRS() {
 
   DecBuf=new UChar_t[DECSIZE]; //1 MB
 
-  // if (Fbuf2)
-  //   cout << "Fbuf2: " << Fbuf2 << endl;
-  // else
-  //   cout << "Fbuf3: " << Fbuf2 << endl;
-  
   strcpy(Fname," ");
   DoReset();
 
@@ -992,8 +1036,7 @@ CRS::CRS() {
   for (int i=0;i<MAXTRANS;i++) {
     transfer[i] =NULL;
     buftr[i]=NULL;
-    Fbuf[i]=NULL;
-    Fbuf2[i]=NULL;
+    //Fbuf[i]=NULL;
   }
 
   //cout << "creating threads... " << endl;
@@ -1027,6 +1070,7 @@ CRS::~CRS() {
   DoExit();
   cout << "~CRS()" << endl;
   delete[] DecBuf;
+  delete[] GLBuf;
 
 }
 
@@ -1262,13 +1306,7 @@ void CRS::Free_Transfer() {
   }
 
   for (int i=0;i<MAXTRANS;i++) {
-    if (Fbuf2[i]) {
-      delete[] Fbuf2[i];
-      Fbuf2[i]=NULL;
-      Fbuf[i]=NULL;
-    }
     if (buftr[i]) {
-      delete[] buftr[i];
       buftr[i]=NULL;
     }
   }
@@ -1321,15 +1359,9 @@ int CRS::Init_Transfer() {
   }
       
   for (int i=0;i<MAXTRANS;i++) {
-    //if (Fbuf[i]) {
-    //delete[] Fbuf[i];
-    //}
-    buftr[i] = new unsigned char[opt.usb_size*1024];
-    memset(buftr[i],0,sizeof(unsigned char)*opt.usb_size*1024);
-
-    Fbuf2[i] = new unsigned char[opt.rbuf_size*1024+1024*1024];
-    Fbuf[i] = Fbuf2[i]+1024*1024;
-    memset(Fbuf2[i],0,sizeof(unsigned char)*opt.rbuf_size*1024+1024*1024);
+    //buftr[i] = new unsigned char[opt.usb_size*1024];
+    buftr[i] = GLBuf+opt.usb_size*1024*i;
+    //memset(buftr[i],0,sizeof(unsigned char)*opt.usb_size*1024);
   }
 
   //cout << "---Init_Transfer 3---" << endl;
@@ -1383,13 +1415,9 @@ int CRS::Init_Transfer() {
       //cout << "free: " << i << endl;
       //libusb_free_transfer(transfer[i]);
       cout << "delete: " << i << endl;
-      if (buftr[i])
-      	delete[] buftr[i];
-      buftr[i]=NULL;
-      if (Fbuf2[i])
-	delete[] Fbuf2[i];
-      Fbuf2[i]=NULL;
-      Fbuf[i]=NULL;
+      if (buftr[i]) {
+	buftr[i]=NULL;
+      }
     }
     return 2;
   }
@@ -1866,9 +1894,9 @@ int CRS::DoStartStop() {
       // sprintf(dec_opt,"ab%d",opt.dec_compr);
     }   
 
-    for (int i=0;i<MAXTRANS;i++) {
-      buf_off[i]=0;
-    }
+    // for (int i=0;i<MAXTRANS;i++) {
+    //   buf_off[i]=0;
+    // }
     //nvp=0;
     //Levents.clear();
 
@@ -1878,8 +1906,7 @@ int CRS::DoStartStop() {
     TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
     cv->SetEditable(false);
 
-    ibuf=0;
-
+    InitBuf();
 
 
     ProcessCrs();
@@ -1943,30 +1970,9 @@ void CRS::ProcessCrs() {
       //cout << "Stop2!!!" << endl;
     }
   }
-  if (MT) {
-    gSystem->Sleep(100);
-    cout << "delete threads... :" << endl;
-    decode_thread_run=0;    
-    for (int i=0;i<ntrans;i++) {
-      dec_check[i]=1;
-      dec_cond[i].Signal();
-      trd_dec[i]->Join();
-      trd_dec[i]->Delete();
-      dec_finished[i]=1;
-    }
 
-    trd_mkev->Join();
-    trd_mkev->Delete();
+  EndAna(1);
 
-    ana_all=1;
-    ana_check=1;
-    ana_cond.Signal();
-    trd_ana->Join();
-    trd_ana->Delete();
-  }
-  else {
-    Ana2(1);
-  }
 }
 
 /*
@@ -2129,13 +2135,13 @@ void CRS::DoReset() {
 void CRS::DoFopen(char* oname, int popt) {
   //popt: 1 - read opt from file; 0 - don't read opt from file
   int tp=0; //1 - adcm raw; 0 - crs2/32
-  int bsize;
-  int boffset;
+  //int bsize;
+  //int boffset;
 
   if (oname)
     strcpy(Fname,oname);
 
-  // cout << "DoFopen: " << Fname << endl;
+  cout << "DoFopen: " << Fname << endl;
   // if (TString(Fname).EqualTo(" ",TString::kIgnoreCase)) {
   //   return;
   // }
@@ -2198,8 +2204,8 @@ void CRS::DoFopen(char* oname, int popt) {
     //printhlist(8);
   }
 
-  boffset=1024*1024;
-  bsize=opt.rbuf_size*1024+boffset;
+  //boffset=1024*1024;
+  //bsize=opt.rbuf_size*1024+boffset;
   // if (Fmode==1) {
   //   Tstart64=-1;
   // }
@@ -2215,26 +2221,12 @@ void CRS::DoFopen(char* oname, int popt) {
 
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
 
-  //cout << "Fopen2: " << (void*) Fbuf2 << " " << bsize << " " << boffset << endl;
+  //ibuf=0;
 
-  for (int i=0;i<MAXTRANS;i++) {
-    if (Fbuf2[i]) {
-      delete[] Fbuf2[i];
-    }
-    Fbuf2[i] = new UChar_t[bsize];
-    Fbuf[i] = Fbuf2[i]+boffset;
-    memset(Fbuf2[i],0,boffset);
-    //cout << "Fbuf2: " << i << " " << bsize << " " << boffset << endl;
-    buf_off[i]=0;
-  }
-  ibuf=0;
-  gl_itr=0;
+  cout << "Dofopen1: " << endl;
+  InitBuf();
+  cout << "Dofopen2: " << endl;
   //nvp=0;
-
-  //cout << "Fopen3: " << (void*) Fbuf2 << " " << bsize << endl;
-
-  //rbuf4 = (UInt_t*) Fbuf;
-  //rbuf2 = (UShort_t*) Fbuf;
 
   if (tp) { //adcm raw - determine durwr
     // cout << "durwr1: " << nvp << " " << vv2->size() << endl;
@@ -2361,6 +2353,7 @@ void CRS::SaveParGz(gzFile &ff) {
 
 }
 
+/*
 int CRS::DoBuf() {
 
   //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
@@ -2368,9 +2361,12 @@ int CRS::DoBuf() {
   tt1[0].Set();
 #endif
 
-  transfer[gl_itr]->actual_length=gzread(f_read,transfer[gl_itr]->buffer,opt.usb_size*1024);
-  int* ttt = (int*) transfer[gl_itr]->user_data;
-  *ttt=gl_itr;
+  //YKYKYKYK transfer[gl_itr]->actual_length=gzread(f_read,transfer[gl_itr]->buffer,opt.usb_size*1024);
+  //YKYKYKint * ttt = (int*) transfer[gl_itr]->user_data;
+  //YKYKYK *ttt=gl_itr;
+
+  
+  int length = gzread(f_read,GLBuftransfer[gl_itr]->buffer,opt.usb_size*1024);
 
 #ifdef TIMES
   tt2[0].Set();
@@ -2383,8 +2379,8 @@ int CRS::DoBuf() {
   //      << nbuffers << " " << BufLength << " " << ttm[0] << endl;
 
 
-  cback(transfer[gl_itr]);
-  gl_itr = (gl_itr+1)%ntrans;
+  //YKYKYK cback(transfer[gl_itr]);
+  //YKYKYK gl_itr = (gl_itr+1)%ntrans;
 
   
   if (BufLength>0) {
@@ -2405,15 +2401,19 @@ int CRS::DoBuf() {
   }
 
 }
+*/
 
-/*
-int CRS::DoBuf_old() {
+int CRS::DoBuf() {
 
   //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
 #ifdef TIMES
   tt1[0].Set();
 #endif
-  BufLength=gzread(f_read,Fbuf[ibuf],opt.rbuf_size*1024);
+
+  int length=gzread(f_read,GLBuf+b_start[gl_ibuf],opt.rbuf_size*1024);
+  b_end[gl_ibuf]=b_start[gl_ibuf]+length;
+  int gl_ibuf2 = (gl_ibuf+1)%gl_ntrd;
+  b_start[gl_ibuf2]=b_end[gl_ibuf];
 
 #ifdef TIMES
   tt2[0].Set();
@@ -2422,23 +2422,23 @@ int CRS::DoBuf_old() {
   ttm[0]+=dif;
 #endif
 
-  // cout << "gzread: " << Fmode << " " << module << " "
-  //      << nbuffers << " " << BufLength << " " << ttm[0] << endl;
+  cout << "gzread: " << Fmode << " " << module << " "
+        << nbuffers << " " << length << endl;
 
 
-  if (BufLength>0) {
-    crs->inputbytes+=BufLength;
+  if (length>0) {
+    crs->inputbytes+=length;
 
     if (opt.decode) {
-      buf_len[ibuf]=BufLength;
+      //buf_len[ibuf]=BufLength;
       if (MT) {
-	Decode_any_MT(ibuf);
+	Decode_any_MT(gl_ibuf);
       }
       else {
-	Decode_any(ibuf);
+	Decode_any(gl_ibuf);
       }
     }
-    ibuf = (ibuf+1)%ntrans;
+    gl_ibuf = gl_ibuf2;
     nbuffers++;
 
     if (batch) {
@@ -2457,7 +2457,6 @@ int CRS::DoBuf_old() {
   }
 
 }
-*/
 
 /*
 void CRS::FAnalyze(bool nobatch) {
@@ -2522,10 +2521,69 @@ void CRS::FAnalyze(bool nobatch) {
   }
 }
 */
+
+void CRS::InitBuf() {
+  gl_ibuf=0;
+  memset(b_start,0,sizeof(b_start));
+  memset(b_end,0,sizeof(b_start));
+
+  if (GLBuf) {
+    delete[] GLBuf;
+  }
+  GLBuf = new UChar_t[opt.rbuf_size*1024*gl_ntrd];
+  memset(GLBuf,0,opt.rbuf_size*1024*gl_ntrd);
+
+  if (Fmode==1) { //module
+    for (int i=0;i<ntrans;i++) {
+      buftr[i] = GLBuf+opt.usb_size*1024*i;
+      if (transfer[i])
+	transfer[i]->buffer = buftr[i];
+    }
+  }
+  else { //file analysis
+    for (int i=0;i<gl_ntrd;i++) {
+      buftr[i] = GLBuf+opt.rbuf_size*1024*i;
+    }
+  }
+
+}
+
+void CRS::EndAna(int all) {
+  if (MT) {
+    cout << "delete threads... ";
+    gSystem->Sleep(1000);
+    decode_thread_run=0;    
+    for (int i=0;i<gl_ntrd;i++) {
+      dec_check[i]=1;
+      dec_cond[i].Signal();
+      trd_dec[i]->Join();
+      trd_dec[i]->Delete();
+      dec_finished[i]=1;
+    }
+
+    trd_mkev->Join();
+    trd_mkev->Delete();
+
+    ana_all=all;
+    ana_check=1;
+    ana_cond.Signal();
+    trd_ana->Join();
+    trd_ana->Delete();
+    cout << "done" << endl;
+  }
+  else {
+    if (all) {
+      Ana2(1);
+    }
+  }
+}
+
 void CRS::FAnalyze2(bool nobatch) {
 
   if (gzeof(f_read)) {
     cout << "Enf of file: " << endl;
+    Ana2(1);
+    Show();
     return;
   }
   TCanvas *cv=0;
@@ -2559,30 +2617,8 @@ void CRS::FAnalyze2(bool nobatch) {
       }
     }
   }
-  if (MT) {
-    gSystem->Sleep(100);
-    cout << "delete threads... :" << endl;
-    decode_thread_run=0;    
-    for (int i=0;i<ntrans;i++) {
-      dec_check[i]=1;
-      dec_cond[i].Signal();
-      trd_dec[i]->Join();
-      trd_dec[i]->Delete();
-      dec_finished[i]=1;
-    }
 
-    trd_mkev->Join();
-    trd_mkev->Delete();
-
-    ana_all=1;
-    ana_check=1;
-    ana_cond.Signal();
-    trd_ana->Join();
-    trd_ana->Delete();
-  }
-  else {
-    Ana2(1);
-  }
+  EndAna(1);
 
   if (nobatch) {
     EvtFrm->Clear();
@@ -2677,31 +2713,8 @@ void CRS::DoNBuf2(int nb) {
     gSystem->ProcessEvents();
     ++i;
   }
-  if (MT) {
-    gSystem->Sleep(100);
-    cout << "delete threads... :" << endl;
-    decode_thread_run=0;    
-    for (int i=0;i<ntrans;i++) {
-      dec_check[i]=1;
-      dec_cond[i].Signal();
-      trd_dec[i]->Join();
-      trd_dec[i]->Delete();
-      dec_finished[i]=1;
-    }
 
-    trd_mkev->Join();
-    trd_mkev->Delete();
-
-    ana_all=1;
-    ana_check=1;
-    ana_cond.Signal();
-    trd_ana->Join();
-    trd_ana->Delete();
-  }
-  else {
-    Ana2(1);
-  }
-
+  EndAna(0);
 
   EvtFrm->Clear();
   EvtFrm->Pevents = &Levents;
@@ -2783,25 +2796,27 @@ void CRS::Show(bool force) {
   //cout << "Show end" << endl;
 }
 
-void CRS::Decode_any_MT(int itr) {
+void CRS::Decode_any_MT(int ibuf) {
   //-----decode
-  //cout << "Decode_MT: " << itr << " " << buf_len[itr] << endl;
+  //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
+  //cout << "Decode_MT: " << ibuf << endl;
 
-  dec_check[itr]=1;
-  dec_cond[itr].Signal();
+  dec_check[ibuf]=1;
+  dec_cond[ibuf].Signal();
 
 }
 
-void CRS::Decode_any(int itr) {
+void CRS::Decode_any(int ibuf) {
   //-----decode
-  cout << "Decode_MT: " << itr << " " << buf_len[itr] << endl;
+  //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
+  cout << "Decode_any: " << ibuf << endl;
 #ifdef TIMES
   tt1[1].Set();
 #endif
   if (module>=32) {
-    MoveLastEvent(itr);
+    FindLastEvent(ibuf);
     //Decode32(Fbuf,BufLength);
-    Decode33(itr);
+    Decode33(ibuf);
   }
   else if (module==2) {
     //Decode2(buffer,length);
@@ -2820,9 +2835,9 @@ void CRS::Decode_any(int itr) {
   tt1[2].Set();
 #endif
 
-  if (Vpulses[itr].size()>2) {
+  if (Vpulses[ibuf].size()>2) {
     //cout << "Make_events33: " <<endl;
-    Make_Events(itr);
+    Make_Events(ibuf);
   }
 
 #ifdef TIMES
@@ -2835,9 +2850,7 @@ void CRS::Decode_any(int itr) {
   tt1[3].Set();
 #endif
 
-  //cout << "Ana21: " << endl;
   crs->Ana2(0);
-  //cout << "Ana22: " << endl;
   
 #ifdef TIMES
   tt2[3].Set();
@@ -2852,45 +2865,64 @@ void CRS::Decode_any(int itr) {
 
 }
 
-void CRS::MoveLastEvent(int itr) {
-  //itr - current transfer/buffer
-  int itr2 = (itr+1)%ntrans; //next transfer/buffer
+void CRS::FindLastEvent(int ibuf) {
+  //ibuf - current sub-buffer
+  //int ibuf2 = (ibuf+1)%gl_ntrd; //next transfer/buffer
+
   //int idx1=length-8; // current index in the buffer (in 1-byte words)
 
-  unsigned char *buf = Fbuf[itr];
+  //unsigned char *buf = Fbuf[];
   unsigned char frmt;
   //int sz=0;
 
-  for (int i=0;i<buf_len[itr];i+=8) {
-    frmt = (buf[buf_len[itr]-2-i] & 0xF0);
+  for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
+    //find frmt==0 -> this is the start of a pulse
+    frmt = (GLBuf[i+6] & 0xF0);
     //cout << "frmt: " << (int) (frmt/16) << " " << " " << (int) frmt << " " << i << " " << length-2-i << endl;
     if (frmt==0) {
-      i+=8;
 
-      memcpy(Fbuf[itr2]-i,Fbuf[itr]+buf_len[itr]-i,i);
+      b_end[ibuf]=i;
+      //b_start[ibuf2]=i;
+      //int idx1 = b_start[ibuf2];
+      //frmt = GLBuf[idx1+6];
+      //frmt = (frmt & 0xF0)>>4;
+
+
+      // cout << "FindLastEvent: " << ibuf << " " << i << " " << (int) frmt << endl;
+      // for (int j=0;j<gl_ntrd;j++) {
+      // 	cout << "bb: " << j << " " << b_start[j] << " " << b_end[j] << endl;
+      // }
+
+      return;
+
+
+
+
+      //i+=8;
+      //memcpy(Fbuf[ibuf2]-i,Fbuf[ibuf]+buf_len[ibuf]-i,i);
 
       // for (int j=-10;j<10;j++) {
-      // 	frmt = *(buffer[itr]+j*8+length-i-8+6);
-      // 	unsigned char frmt2 = *(buffer[itr2]+j*8-i-8+6);;
+      // 	frmt = *(buffer[ibuf]+j*8+length-i-8+6);
+      // 	unsigned char frmt2 = *(buffer[ibuf2]+j*8-i-8+6);;
       // 	cout << "j1: " << j << " " << (int) (frmt) << " " << (int) (frmt2) << endl;
       // }
 
       // //int i8=i/8;
-      // ULong64_t* buf8_1 = (ULong64_t*) (buffer[itr]+length-i);
-      // ULong64_t* buf8_2 = (ULong64_t*) (buffer[itr2]-i);
+      // ULong64_t* buf8_1 = (ULong64_t*) (buffer[ibuf]+length-i);
+      // ULong64_t* buf8_2 = (ULong64_t*) (buffer[ibuf2]-i);
 
       // for (int j=-10;j<10;j++) {
       // 	cout << "j3: " << j << " " << hex << buf8_1[j] << " " << buf8_2[j] << dec << endl;
       // }
 
-      buf_off[itr2]=-i;
-      buf_len[itr]-=i;
-      //cout << "Last event found: " << itr << " " << itr2 << " " << i << " " << length << " " << buf_off[itr2] << endl;
+      //buf_off[ibuf2]=-i;
+      //buf_len[ibuf]-=i;
+      //cout << "Last event found: " << ibuf << " " << ibuf2 << " " << i << " " << length << " " << buf_off[ibuf2] << endl;
 
-      return;
+      //return;
     }
   }
-  cout << "Error: no last event: " << itr << endl;
+  cout << "Error: no last event: " << ibuf << endl;
 
 }
 
@@ -2995,14 +3027,16 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 } //decode32
 */
 
-void CRS::Decode33(int itr) {
-  //itr - number of transfer or Fbuf
+void CRS::Decode33(int ibuf) {
+  //ibuf - current sub-buffer
 
-  ULong64_t* buf8 = (ULong64_t*) Fbuf[itr];
-  UChar_t* buf1 = Fbuf[itr];
+  ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
+  //UChar_t* buf1 = Fbuf[ibuf];
 
-  int idx1=buf_off[itr]; // current index in the buffer (in 1-byte words)
-  //int idx8=idx1/8; // current index in the buffer (in 8-byte words) 
+  //int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  int idx1=b_end[(ibuf+gl_ntrd-1)%gl_ntrd]; // current index in the buffer (in 1-byte words)
+
+  cout << "Decode33: " << ibuf << " " << idx1 << endl;
 
   unsigned short frmt;
   ULong64_t data;
@@ -3014,19 +3048,19 @@ void CRS::Decode33(int itr) {
   Double_t QX=0,QY=0,RX,RY;
   //peak_type *pk=&dummy_peak;
 
-  pulse_vect *vv = Vpulses+itr;
+  pulse_vect *vv = Vpulses+ibuf;
   PulseClass* ipls=&dummy_pulse;
 
-  //cout << "Decode33: " << itr << " " << buf_off[itr] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
+  //cout << "Decode33: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
 
-  while (idx1<buf_len[itr]) {
+  while (idx1<b_end[ibuf]) {
     //debug_mess(idx1>16500,"DDDD0: ",idx1,buf1[idx1]);
-    frmt = buf1[idx1+6];
+    frmt = GLBuf[idx1+6];
     //YKYKYK!!!! do something with cnt - ???
     //int cnt = frmt & 0x0F;
     frmt = (frmt & 0xF0)>>4;
     data = buf8[idx1/8] & 0xFFFFFFFFFFFF;
-    unsigned char ch = buf1[idx1+7];
+    unsigned char ch = GLBuf[idx1+7];
 
     if (frmt && vv->empty()) {
       cout << "dec33: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
@@ -3074,7 +3108,7 @@ void CRS::Decode33(int itr) {
       n_frm=0;
     }
     else if (frmt==1) {
-      ipls->State = buf1[idx1+5];
+      ipls->State = GLBuf[idx1+5];
       ipls->Counter = data & 0xFFFFFFFFFF;
       //cout << "Counter: " << ipls->Counter << " " << (int) ipls->Chan << endl;
       // if (buffer[idx1+5]) {
@@ -3284,7 +3318,7 @@ void CRS::Decode33(int itr) {
     idx1+=8;
   } //while (idx1<buf_len)
 
-  //buf_len[itr]=0;
+  //buf_len[ibuf]=0;
 
   //cout << "decode33: " << idx1 << " " << frmt << " " << ipls->Counter << " "
   //   << ipls->sData.size() << " " << n_frm << endl;
@@ -3745,7 +3779,7 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
 
 }
 
-void CRS::Make_Events(int itr) {
+void CRS::Make_Events(int ibuf) {
 
   //cout << "Make_Events: T_acq: " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
   
@@ -3785,7 +3819,7 @@ void CRS::Make_Events(int itr) {
   //now insert all pulses from the current buffer, except last one
   //--vv;// = Vpulses+nvp;
 
-  pulse_vect *vv = Vpulses+itr;
+  pulse_vect *vv = Vpulses+ibuf;
   //for (pls=vv->begin(); pls != --vv->end(); ++pls) {
   for (pls=vv->begin(); pls != vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {
@@ -3793,7 +3827,7 @@ void CRS::Make_Events(int itr) {
       //Print_Events();
     }
   }
-  Vpulses[itr].clear();
+  Vpulses[ibuf].clear();
 
   //nvp=(nvp+1)%ntrans;
 

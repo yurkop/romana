@@ -1385,13 +1385,9 @@ void MainFrame::DoClose() {
     gzclose(crs->f_read);
     crs->f_read=0;
   }
-  for (int i=0;i<crs->MAXTRANS;i++) {
-    if (crs->Fbuf2[i]) {
-      delete[] crs->Fbuf2[i];
-    }
-    crs->Fbuf2[i]=0;
-    crs->Fbuf[i]=0;
-  }
+  // for (int i=0;i<crs->MAXTRANS;i++) {
+  //   crs->Fbuf[i]=0;
+  // }
 
   myM->SetTitle((char*)"");
   crspar->AllEnabled(true);
@@ -1804,8 +1800,9 @@ void MainFrame::UpdateStatus() {
   nevents1=crs->nevents;
   t1=opt.T_acq;
 
-
   fStat[ii++]->SetText(txt,kFALSE);
+
+  //exit(1);
   //fStat[ii++]->SetText(TGString::Format("%0.1f",crs->F_acq),1);
   fStat[ii++]->SetText(TGString::Format("%0.1f",opt.T_acq),1);
   fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents),kFALSE);

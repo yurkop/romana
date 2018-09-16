@@ -133,15 +133,17 @@ RQ_OBJECT("CRS")
 
   int ntrans; //number of "simultaneous" transfers
 
-  int ibuf;//index of Fbuf[*]
+  //int ibuf;//index of Fbuf[*]
 
-  int buf_off[MAXTRANS];
-  int buf_len[MAXTRANS];
+  int b_start[MAXTRANS]; //start of local buffer(part of GLBuf), included
+  int b_end[MAXTRANS]; //end of local buffer(part of GLBuf), excluded
+  //int buf_off[MAXTRANS];
+  //int buf_len[MAXTRANS];
   //unsigned char *buftr2[MAXTRANS];
   unsigned char *buftr[MAXTRANS];
   struct libusb_transfer *transfer[MAXTRANS];
-  UChar_t* Fbuf[MAXTRANS];
-  UChar_t* Fbuf2[MAXTRANS];
+  //UChar_t* Fbuf[MAXTRANS];
+  //UChar_t* Fbuf2[MAXTRANS];
 
   //timeval t_start, t_stop;
   //Long64_t T_start; //start of the acuisition/analysis
@@ -181,7 +183,7 @@ RQ_OBJECT("CRS")
   //for adcm
   int idx; //index for Decode_adcm (in 32bit words, rbuf4)
   int rLen; // length of one m-link frame
-  int BufLength; //length of the read buffer
+  //int BufLength; //length of the read buffer
   int idnext; //next expected idx pointing to new syncw
   int lastfl; //transient last fragment flag
   //UInt_t* rbuf4; //only for decode_adcm
@@ -257,6 +259,8 @@ RQ_OBJECT("CRS")
 
   //void DoFAna();
   //void FAnalyze(bool nobatch);
+  void InitBuf();
+  void EndAna(int all);
   void FAnalyze2(bool nobatch);
   int DoBuf();
   //void DoNBuf(int nb);
@@ -266,11 +270,11 @@ RQ_OBJECT("CRS")
   //void AllParameters32_old(); // load all parameters
   //void Decode_any(UChar_t** buffer, int length, int itr);
 
-  void Decode_any_MT(int itr);
+  void Decode_any_MT(int ibuf);
 
-  void Decode_any(int itr);
-  void MoveLastEvent(int itr);
-  void Decode33(int itr);
+  void Decode_any(int ibuf);
+  void FindLastEvent(int ibuf);
+  void Decode33(int ibuf);
 
   //void Decode32(UChar_t* buffer, int length);
   //void Decode33(UChar_t* buffer, int length, int ivp, int ivp2);
@@ -290,7 +294,7 @@ RQ_OBJECT("CRS")
 
   //void Event_Insert_Pulse(PulseClass* pulse);
   void Event_Insert_Pulse(pulse_vect::iterator pls);
-  void Make_Events(int itr);
+  void Make_Events(int ibuf);
   void Select_Event(EventClass *evt);
   //void *Ana_Events(void* ptr);
 

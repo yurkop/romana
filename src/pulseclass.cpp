@@ -209,8 +209,9 @@ void PulseClass::PeakAna() {
       sum+=dif;
       //nt++;
     }
-    if (sum>1e-5)
+    if (abs(sum)>1e-5) {
       pk->Time/=sum;
+    }
     else
       pk->Time=-999;
 
@@ -288,6 +289,8 @@ void PulseClass::PeakAna() {
 
 void PulseClass::PeakAna33() {
 
+  //cout << "Peakana33: " << Peaks.size() << endl;
+
   int sz=sData.size();
   Int_t kk=opt.kdrv[Chan];
   if (kk<1 || kk>=sz-1) kk=1;
@@ -341,8 +344,11 @@ void PulseClass::PeakAna33() {
     }
     //nt++;
   }
-  if (sum>1e-5)
+  if (abs(sum)>1e-5) {
+    //cout << "PeakAna33: " << pk->Time << " " << sum << endl;
     pk->Time/=sum;
+    //pk->Time+=1;
+  }
   else
     pk->Time=-999;
 
@@ -364,7 +370,7 @@ void PulseClass::PeakAna33() {
     }
     //nt++;
   }
-  if (sum>1e-5)
+  if (abs(sum)>1e-5)
     pk->Width/=sum;
   else
     pk->Width=-999;
@@ -420,7 +426,8 @@ void PulseClass::PeakAna33() {
 
 void PulseClass::CheckDSP() {
   if (Peaks.size()!=2) {
-    cout <<"CheckDSP: Peaks.size()!=2" << Peaks.size() << endl;
+    cout <<"CheckDSP: Peaks.size()!=2: " << Peaks.size()
+	 << " " << Counter << endl;
     return;
   }
   const int nn=5;
