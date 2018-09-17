@@ -61,12 +61,19 @@ const Long64_t P64_0=-123456789123456789;
 
 std::list<EventClass>::iterator m_event;
 
-int MT=1;
+int MT=0;
 
 //const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
 const Long64_t GLBSIZE=1024*1024*1024; //1024 MB
 
+int gl_sz;
+int gl_off;
 UChar_t* GLBuf;
+UChar_t* GLBuf2;
+
+int b_start[CRS::MAXTRANS]; //start of local buffer(part of GLBuf), included
+int b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
+int b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
 
 int gl_ibuf;
 int gl_ntrd=8; //number of decode threads (and also sub-buffers)
@@ -195,7 +202,9 @@ void *handle_decode(void *ctx) {
       break;
     }
     if (crs->module>=32) {
-      crs->FindLastEvent(ibuf);
+      if (ibuf!=gl_ntrd-1) {
+	crs->FindLastEvent(ibuf);
+      }
       //Decode32(Fbuf,BufLength);
       crs->Decode33(ibuf);
     }
@@ -411,7 +420,7 @@ void *handle_ana(void *ctx) {
 //   return NULL;
 // }
 
-static void cback(libusb_transfer *transfer) {
+static void cback(libusb_transfer *trans) {
 
   //static TTimeStamp t1;
 
@@ -421,29 +430,38 @@ static void cback(libusb_transfer *transfer) {
   //TTimeStamp t2;
   //t2.Set();
 
-  crs->npulses_buf=0;
+  //crs->npulses_buf=0;
 
-  if (transfer->actual_length) {
+  if (trans->actual_length) {
     if (opt.decode) {
 
-      /* YKYKYK
-      int itr = *(int*) transfer->user_data;
-      //memcpy(crs->Fbuf[itr],transfer->buffer,transfer->actual_length);
-      crs->buf_len[itr]=transfer->actual_length;
-      if (MT) {
-	crs->Decode_any_MT(itr);
+
+      int itr = *(int*) trans->user_data;
+      int itr0 = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
+      //memcpy(crs->Fbuf[itr],trans->buffer,trans->actual_length);
+      //crs->buf_len[itr]=trans->actual_length;
+
+      b_end[gl_ibuf]=b_fill[gl_ibuf]+trans->actual_length;
+      int next_len = b_end[gl_ibuf]+opt.usb_size*1024;
+      if (next_len>=opt.rbuf_size*1024) {
+	crs->AnaBuf();
+	// if (MT) {
+	//   crs->Decode_any_MT(itr);
+	// }
+	// else {
+	//   crs->Decode_any(itr);
+	// }
       }
-      else {
-	crs->Decode_any(itr);
-      }
-      */
+
+      trans->buffer=crs->transfer[itr0]->buffer + opt.usb_size*1024;
+
 
       /*
-      //int itr = *(int*) transfer->user_data;
-      int new_len=crs->buf_len[crs->ibuf]+transfer->actual_length;
+      //int itr = *(int*) trans->user_data;
+      int new_len=crs->buf_len[crs->ibuf]+trans->actual_length;
       if (new_len<=opt.rbuf_size*1024) {
-      memcpy(crs->Fbuf[crs->ibuf]+crs->buf_len[crs->ibuf],transfer->buffer,
-      transfer->actual_length);
+      memcpy(crs->Fbuf[crs->ibuf]+crs->buf_len[crs->ibuf],trans->buffer,
+      trans->actual_length);
       crs->buf_len[crs->ibuf]=new_len;
       }
       else {
@@ -455,28 +473,29 @@ static void cback(libusb_transfer *transfer) {
       }
       crs->ibuf=(crs->ibuf+1)%crs->ntrans;
       //buf_len[crs->ibuf]=0;
-      memcpy(crs->Fbuf[crs->ibuf],transfer->buffer,
-      transfer->actual_length);
-      crs->buf_len[crs->ibuf]=transfer->actual_length;
+      memcpy(crs->Fbuf[crs->ibuf],trans->buffer,
+      trans->actual_length);
+      crs->buf_len[crs->ibuf]=trans->actual_length;
       }
       */
     }
-    // if (opt.raw_write) {
-    //   crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
-    //   if (crs->f_raw) {
-    // 	int res=gzwrite(crs->f_raw,transfer->buffer,transfer->actual_length);
-    // 	gzclose(crs->f_raw);
-    // 	crs->rawbytes+=res;
-    //   }
-    //   else {
-    // 	cout << "Can't open file: " << opt.fname_raw << endl;
-    //   }
-    // }
+
+    if (opt.raw_write) {
+      crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
+      if (crs->f_raw) {
+    	int res=gzwrite(crs->f_raw,trans->buffer,trans->actual_length);
+    	gzclose(crs->f_raw);
+    	crs->rawbytes+=res;
+      }
+      else {
+    	cout << "Can't open file: " << opt.fname_raw << endl;
+      }
+    }
 
     crs->nbuffers++;
 
     stat_mut.Lock();
-    crs->inputbytes+=transfer->actual_length;
+    crs->inputbytes+=trans->actual_length;
     //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
     //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
     //opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
@@ -484,11 +503,11 @@ static void cback(libusb_transfer *transfer) {
 
     stat_mut.UnLock();
 
-  } //if (transfer->actual_length) {
+  } //if (trans->actual_length) {
 
     
   if (crs->b_acq) {
-    libusb_submit_transfer(transfer);
+    libusb_submit_transfer(trans);
   }
 
   //crs->nvp = (crs->nvp+1)%crs->ntrans;
@@ -751,7 +770,7 @@ void CRS::Ana_start() {
     gSystem->Sleep(100);
   }
 
-  cout << "Ana_start finished..." << endl;
+  //cout << "Ana_start finished..." << endl;
 }
 
 void CRS::Ana2(int all) {
@@ -773,7 +792,7 @@ void CRS::Ana2(int all) {
   std::list<EventClass>::iterator it;
   std::list<EventClass>::iterator m_end = Levents.end();
 
-  cout << "Ana2: " << Levents.size() << endl;
+  //cout << "Ana2: " << Levents.size() << endl;
 
   if (!all) { //analyze up to ev_min events
     if (m_event==Levents.end()) {
@@ -980,6 +999,7 @@ CRS::CRS() {
 
   //mean_event.Make_Mean_Event();
 
+  GLBuf2 = NULL;//new UChar_t[GLBSIZE];
   GLBuf = NULL;//new UChar_t[GLBSIZE];
   //memset(GLBuf,0,GLBSIZE);
 
@@ -1070,7 +1090,7 @@ CRS::~CRS() {
   DoExit();
   cout << "~CRS()" << endl;
   delete[] DecBuf;
-  delete[] GLBuf;
+  delete[] GLBuf2;
 
 }
 
@@ -2097,7 +2117,7 @@ void CRS::DoReset() {
 #endif
 
   //npulses=0;
-  npulses_buf=0;
+  //npulses_buf=0;
 
   inputbytes=0;
   rawbytes=0;
@@ -2403,17 +2423,24 @@ int CRS::DoBuf() {
 }
 */
 
-int CRS::DoBuf() {
+void CRS::AnaBuf() {
 
-  //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
-#ifdef TIMES
-  tt1[0].Set();
-#endif
-
-  int length=gzread(f_read,GLBuf+b_start[gl_ibuf],opt.rbuf_size*1024);
-  b_end[gl_ibuf]=b_start[gl_ibuf]+length;
-  int gl_ibuf2 = (gl_ibuf+1)%gl_ntrd;
-  b_start[gl_ibuf2]=b_end[gl_ibuf];
+  int gl_ibuf2 = gl_ibuf+1;
+  if (gl_ibuf2==gl_ntrd) { //last buffer in ring, jump to zero
+    int end0 = b_end[gl_ibuf];
+    FindLastEvent(gl_ibuf);
+    int sz = end0 - b_end[gl_ibuf];
+    memcpy(GLBuf-sz,GLBuf+b_end[gl_ibuf],sz);
+    // cout << "Move: " << gl_ibuf << " " << sz << " " << end0
+    // 	 << " " << b_end[gl_ibuf] << " " << gl_sz << endl;
+    gl_ibuf2=0;
+    b_start[gl_ibuf2]=-sz;
+    b_fill[gl_ibuf2]=0;
+  }
+  else { //normal buffer
+    b_start[gl_ibuf2]=b_end[gl_ibuf];
+    b_fill[gl_ibuf2]=b_end[gl_ibuf];
+  }
 
 #ifdef TIMES
   tt2[0].Set();
@@ -2422,34 +2449,46 @@ int CRS::DoBuf() {
   ttm[0]+=dif;
 #endif
 
-  cout << "gzread: " << Fmode << " " << module << " "
-        << nbuffers << " " << length << endl;
 
-
-  if (length>0) {
-    crs->inputbytes+=length;
-
-    if (opt.decode) {
-      //buf_len[ibuf]=BufLength;
-      if (MT) {
-	Decode_any_MT(gl_ibuf);
-      }
-      else {
-	Decode_any(gl_ibuf);
-      }
+  if (opt.decode) {
+    //buf_len[ibuf]=BufLength;
+    if (MT) {
+      Decode_any_MT(gl_ibuf);
     }
-    gl_ibuf = gl_ibuf2;
-    nbuffers++;
-
-    if (batch) {
-      cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
-	   << inputbytes/MB << endl;
+    else {
+      Decode_any(gl_ibuf);
     }
+  }
+  gl_ibuf = gl_ibuf2;
+  nbuffers++;
 
+  if (batch) {
+    cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
+	 << inputbytes/MB << endl;
+  }
     //if (!b_stop) {
     //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
     //}
 
+}
+
+int CRS::DoBuf() {
+
+  //cout << "gzread0: " << Fmode << " " << nbuffers << " " << BufLength << " " << opt.rbuf_size*1024 << endl;
+#ifdef TIMES
+  tt1[0].Set();
+#endif
+
+  int length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
+  b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
+
+  // cout << "gzread: " << Fmode << " " << module << " "
+  //       << nbuffers << " " << length << endl;
+
+
+  if (length>0) {
+    AnaBuf();
+    crs->inputbytes+=length;
     return nbuffers;
   }
   else {
@@ -2524,14 +2563,19 @@ void CRS::FAnalyze(bool nobatch) {
 
 void CRS::InitBuf() {
   gl_ibuf=0;
+  memset(b_fill,0,sizeof(b_fill));
   memset(b_start,0,sizeof(b_start));
-  memset(b_end,0,sizeof(b_start));
+  memset(b_end,0,sizeof(b_end));
 
-  if (GLBuf) {
-    delete[] GLBuf;
+  if (GLBuf2) {
+    delete[] GLBuf2;
   }
-  GLBuf = new UChar_t[opt.rbuf_size*1024*gl_ntrd];
-  memset(GLBuf,0,opt.rbuf_size*1024*gl_ntrd);
+  gl_sz = opt.rbuf_size*1024*gl_ntrd;
+  gl_off = 1024*128;
+  cout << "GLBuf size: " << (gl_sz+gl_off)/1024/1024 << " MB" << endl;
+  GLBuf2 = new UChar_t[gl_sz+gl_off];
+  memset(GLBuf2,0,gl_sz+gl_off);
+  GLBuf=GLBuf2+gl_off;
 
   if (Fmode==1) { //module
     for (int i=0;i<ntrans;i++) {
@@ -2809,12 +2853,14 @@ void CRS::Decode_any_MT(int ibuf) {
 void CRS::Decode_any(int ibuf) {
   //-----decode
   //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
-  cout << "Decode_any: " << ibuf << endl;
+  //cout << "Decode_any: " << ibuf << endl;
 #ifdef TIMES
   tt1[1].Set();
 #endif
   if (module>=32) {
-    FindLastEvent(ibuf);
+    if (ibuf!=gl_ntrd-1) {
+      FindLastEvent(ibuf);
+    }
     //Decode32(Fbuf,BufLength);
     Decode33(ibuf);
   }
@@ -2867,7 +2913,7 @@ void CRS::Decode_any(int ibuf) {
 
 void CRS::FindLastEvent(int ibuf) {
   //ibuf - current sub-buffer
-  //int ibuf2 = (ibuf+1)%gl_ntrd; //next transfer/buffer
+  int ibuf2 = (ibuf+1)%gl_ntrd; //next transfer/buffer
 
   //int idx1=length-8; // current index in the buffer (in 1-byte words)
 
@@ -2882,7 +2928,7 @@ void CRS::FindLastEvent(int ibuf) {
     if (frmt==0) {
 
       b_end[ibuf]=i;
-      //b_start[ibuf2]=i;
+      b_start[ibuf2]=i;
       //int idx1 = b_start[ibuf2];
       //frmt = GLBuf[idx1+6];
       //frmt = (frmt & 0xF0)>>4;
@@ -3033,10 +3079,10 @@ void CRS::Decode33(int ibuf) {
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
   //UChar_t* buf1 = Fbuf[ibuf];
 
-  //int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
-  int idx1=b_end[(ibuf+gl_ntrd-1)%gl_ntrd]; // current index in the buffer (in 1-byte words)
+  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  //int idx1=b_end[(ibuf+gl_ntrd-1)%gl_ntrd]; // current index in the buffer (in 1-byte words)
 
-  cout << "Decode33: " << ibuf << " " << idx1 << endl;
+  cout << "Decode33: " << ibuf << " " << idx1 << " " << b_end[ibuf] << endl;
 
   unsigned short frmt;
   ULong64_t data;

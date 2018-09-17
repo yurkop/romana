@@ -135,8 +135,6 @@ RQ_OBJECT("CRS")
 
   //int ibuf;//index of Fbuf[*]
 
-  int b_start[MAXTRANS]; //start of local buffer(part of GLBuf), included
-  int b_end[MAXTRANS]; //end of local buffer(part of GLBuf), excluded
   //int buf_off[MAXTRANS];
   //int buf_len[MAXTRANS];
   //unsigned char *buftr2[MAXTRANS];
@@ -152,7 +150,7 @@ RQ_OBJECT("CRS")
   Long64_t rawbytes;
   Long64_t decbytes;
   Long64_t npulses; //total number of pulses (zero at Reset (Start button))
-  UInt_t npulses_buf; //pulses in the current buffer
+  //UInt_t npulses_buf; //pulses in the current buffer
   Long64_t nevents; //total number of events (zero at Reset (Start button))
   Long64_t nevents2; //number of analyzed/saved events
   Long64_t nbuffers; //total number of buffers (zero at Reset (Start button))
@@ -262,6 +260,7 @@ RQ_OBJECT("CRS")
   void InitBuf();
   void EndAna(int all);
   void FAnalyze2(bool nobatch);
+  void AnaBuf();
   int DoBuf();
   //void DoNBuf(int nb);
   void DoNBuf2(int nb);
