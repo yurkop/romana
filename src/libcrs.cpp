@@ -437,10 +437,13 @@ static void cback(libusb_transfer *trans) {
 
 
       int itr = *(int*) trans->user_data;
-      int itr0 = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
+      int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
+      int i_next = (itr+1)%crs->ntrans; //next itr
+
       //memcpy(crs->Fbuf[itr],trans->buffer,trans->actual_length);
       //crs->buf_len[itr]=trans->actual_length;
 
+      /*
       b_end[gl_ibuf]=b_fill[gl_ibuf]+trans->actual_length;
       int next_len = b_end[gl_ibuf]+opt.usb_size*1024;
       if (next_len>=opt.rbuf_size*1024) {
@@ -452,9 +455,19 @@ static void cback(libusb_transfer *trans) {
 	//   crs->Decode_any(itr);
 	// }
       }
+      */
 
-      trans->buffer=crs->transfer[itr0]->buffer + opt.usb_size*1024;
+      UChar_t* next_buf=crs->transfer[i_prev]->buffer + opt.usb_size*1024;
+      if (next_buf+opt.usb_size*1024 > GLBuf+gl_sz) {
+	trans->buffer=GLBuf;
+      }
+      else {
+	trans->buffer=crs->transfer[i_prev]->buffer + opt.usb_size*1024;
+      }
 
+      if (crs->b_acq) {
+	libusb_submit_transfer(trans);
+      }
 
       /*
       //int itr = *(int*) trans->user_data;
@@ -506,9 +519,9 @@ static void cback(libusb_transfer *trans) {
   } //if (trans->actual_length) {
 
     
-  if (crs->b_acq) {
-    libusb_submit_transfer(trans);
-  }
+  // if (crs->b_acq) {
+  //   libusb_submit_transfer(trans);
+  // }
 
   //crs->nvp = (crs->nvp+1)%crs->ntrans;
   
