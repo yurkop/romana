@@ -66,8 +66,10 @@ int MT=0;
 //const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
 const Long64_t GLBSIZE=1024*1024*1024; //1024 MB
 
-int gl_sz;
-int gl_off;
+int tr_size;
+
+Long64_t gl_sz;
+Long64_t gl_off;
 UChar_t* GLBuf;
 UChar_t* GLBuf2;
 
@@ -457,13 +459,17 @@ static void cback(libusb_transfer *trans) {
       }
       */
 
-      UChar_t* next_buf=crs->transfer[i_prev]->buffer + opt.usb_size*1024;
-      if (next_buf+opt.usb_size*1024 > GLBuf+gl_sz) {
+      UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
+      if (next_buf+tr_size > GLBuf+gl_sz) {
 	trans->buffer=GLBuf;
       }
       else {
-	trans->buffer=crs->transfer[i_prev]->buffer + opt.usb_size*1024;
+	trans->buffer=crs->transfer[i_prev]->buffer + tr_size;
       }
+
+      cout << "cback: " << itr << " " << i_prev << " " << i_next
+	   << " " << (int) (trans->buffer-GLBuf)/1024
+	   << " " << gl_sz/1024 << endl;
 
       if (crs->b_acq) {
 	libusb_submit_transfer(trans);
@@ -1281,6 +1287,8 @@ int CRS::Detect_device() {
   gSystem->Sleep(50);
   */
 
+  InitBuf();
+
   if (Init_Transfer()) {
     return 8;
   };
@@ -1387,15 +1395,17 @@ int CRS::Init_Transfer() {
   cyusb_reset_device(cy_handle);
   //cout << "cyusb_reset: " << r << endl;
 
-  if (opt.rbuf_size<=opt.usb_size*2) {
-    opt.rbuf_size=opt.usb_size*2;
-  }
-      
+  // if (opt.rbuf_size<=opt.usb_size*2) {
+  //   opt.rbuf_size=opt.usb_size*2;
+  // }
+
+  /*
   for (int i=0;i<MAXTRANS;i++) {
     //buftr[i] = new unsigned char[opt.usb_size*1024];
     buftr[i] = GLBuf+opt.usb_size*1024*i;
     //memset(buftr[i],0,sizeof(unsigned char)*opt.usb_size*1024);
   }
+  */
 
   //cout << "---Init_Transfer 3---" << endl;
   ntrans=0;
@@ -1406,8 +1416,8 @@ int CRS::Init_Transfer() {
     int* ntr = new int;
     (*ntr) = i;
 
-    libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], opt.usb_size*1024, cback, ntr, 0);
-    //libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, Fbuf[i], opt.usb_size*1024, cback, ntr, 0);
+    libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], tr_size, cback, ntr, 0);
+    //libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], opt.usb_size*1024, cback, ntr, 0);
 
     /*
     int res;
@@ -1425,12 +1435,14 @@ int CRS::Init_Transfer() {
 
   }
 
+  /*
   if (opt.usb_size>1024) {
     MAXTRANS2=MAXTRANS-1;
   }
   else {
     MAXTRANS2=MAXTRANS;
   }
+  */
 
   Submit_all(MAXTRANS2);
 
@@ -1844,9 +1856,11 @@ int CRS::DoStartStop() {
   
   if (!b_acq) { //start
     //if (b_usbbuf) {
-      crs->Free_Transfer();
-      gSystem->Sleep(50);
-      crs->Init_Transfer();
+    crs->Free_Transfer();
+    gSystem->Sleep(50);
+
+    InitBuf();
+    crs->Init_Transfer();
       //}
       //b_usbbuf=false;
 
@@ -1939,7 +1953,7 @@ int CRS::DoStartStop() {
     TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
     cv->SetEditable(false);
 
-    InitBuf();
+    //InitBuf();
 
 
     ProcessCrs();
@@ -2583,25 +2597,49 @@ void CRS::InitBuf() {
   if (GLBuf2) {
     delete[] GLBuf2;
   }
-  gl_sz = opt.rbuf_size*1024*gl_ntrd;
+
   gl_off = 1024*128;
-  cout << "GLBuf size: " << (gl_sz+gl_off)/1024/1024 << " MB" << endl;
-  GLBuf2 = new UChar_t[gl_sz+gl_off];
-  memset(GLBuf2,0,gl_sz+gl_off);
-  GLBuf=GLBuf2+gl_off;
 
   if (Fmode==1) { //module
+    if (opt.usb_size<=1024) {
+      tr_size=opt.usb_size*1024;
+      MAXTRANS2=MAXTRANS;
+    }
+    else if (opt.usb_size<=2048) {
+      tr_size=opt.usb_size*1024;
+      MAXTRANS2=MAXTRANS-1;
+    }
+    else {
+      tr_size=2048*1024;
+      MAXTRANS2=MAXTRANS-1;
+    }
+
+    gl_sz = opt.usb_size;
+    gl_sz *= 1024*MAXTRANS2*gl_ntrd;
+    cout << "gl_sz: " << opt.usb_size << " " << gl_sz/1024/1024 << " MB" << endl;
+    GLBuf2 = new UChar_t[gl_sz+gl_off];
+    memset(GLBuf2,0,gl_sz+gl_off);
+    GLBuf=GLBuf2+gl_off;
+
     for (int i=0;i<ntrans;i++) {
-      buftr[i] = GLBuf+opt.usb_size*1024*i;
+      buftr[i] = GLBuf+tr_size*i;
       if (transfer[i])
 	transfer[i]->buffer = buftr[i];
     }
-  }
+  } // if Fmode==1
   else { //file analysis
+    gl_sz = opt.rbuf_size;
+    gl_sz *= 1024*gl_ntrd;
+    GLBuf2 = new UChar_t[gl_sz+gl_off];
+    memset(GLBuf2,0,gl_sz+gl_off);
+    GLBuf=GLBuf2+gl_off;
+
     for (int i=0;i<gl_ntrd;i++) {
       buftr[i] = GLBuf+opt.rbuf_size*1024*i;
     }
   }
+
+  cout << "GLBuf size: " << (gl_sz+gl_off)/1024/1024 << " MB" << endl;
 
 }
 

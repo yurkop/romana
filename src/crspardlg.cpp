@@ -1034,7 +1034,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip2= "Size of the READ buffer in kilobytes (as large as possible for faster speed)";
   label="USB/READ buffer size";
   AddLine_opt(fF6,ww,&opt.usb_size,&opt.rbuf_size,tip1,tip2,label,k_int,k_int,
-	      1,2048,1,1e5,(char*) "DoNum_SetBuf()");
+	      1,100000,1,64000,(char*) "DoNum_SetBuf()");
   id_usb = Plist.size()-1;
   //cout << "usbbuf: " << id_usb << endl;
 
