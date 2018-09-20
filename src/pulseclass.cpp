@@ -744,7 +744,7 @@ void EventClass::FillHist(Bool_t first) {
   //cout << "FillHist: " << this->Nevt << endl;
 
   if (first) {
-    opt.T_acq=(T-crs->Tstart64)*DT;
+    opt.T_acq=(T - crs->Tstart64)*DT;
     //cout << "T_acq: " << opt.T_acq << " " << T << endl;
 
     if (opt.Tstop && (opt.T_acq > opt.Tstop || opt.T_acq < opt.Tstart)) {

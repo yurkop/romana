@@ -78,7 +78,7 @@ int b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
 int b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
 
 int gl_ibuf;
-int gl_ntrd=8; //number of decode threads (and also sub-buffers)
+int gl_ntrd=6; //number of decode threads (and also sub-buffers)
 
 int decode_thread_run;
 int dec_nr[CRS::MAXTRANS];
@@ -442,6 +442,25 @@ static void cback(libusb_transfer *trans) {
       int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
       int i_next = (itr+1)%crs->ntrans; //next itr
 
+      UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
+      if (next_buf+tr_size > GLBuf+gl_sz) {
+	next_buf=GLBuf;
+      }
+
+      int rr = (next_buf-GLBuf)*gl_ntrd/gl_sz;
+      cout << "cback: " << itr << " " << i_prev << " " << i_next
+	   << " " << (int) (trans->buffer-GLBuf)/1024
+	   << " " << gl_sz/1024 << " " << rr << " " << gl_ibuf
+	   << endl;
+      if (rr!=gl_ibuf+1) {
+	int length=trans->buffer-GLBuf+b_fill[gl_ibuf]+trans->actual_length;
+	b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
+	cout << "--- AnaBuf: " << b_fill[gl_ibuf] << " " << b_end[gl_ibuf]
+	     << " " << length << endl;
+	gl_ibuf=(gl_ibuf+1)%gl_ntrd;
+	//crs->AnaBuf();
+      }
+
       //memcpy(crs->Fbuf[itr],trans->buffer,trans->actual_length);
       //crs->buf_len[itr]=trans->actual_length;
 
@@ -459,17 +478,21 @@ static void cback(libusb_transfer *trans) {
       }
       */
 
-      UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
-      if (next_buf+tr_size > GLBuf+gl_sz) {
-	trans->buffer=GLBuf;
-      }
-      else {
-	trans->buffer=crs->transfer[i_prev]->buffer + tr_size;
-      }
+      trans->buffer=next_buf;
 
-      cout << "cback: " << itr << " " << i_prev << " " << i_next
-	   << " " << (int) (trans->buffer-GLBuf)/1024
-	   << " " << gl_sz/1024 << endl;
+      // UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
+      // if (next_buf+tr_size > GLBuf+gl_sz) {
+      // 	trans->buffer=GLBuf;
+      // }
+      // else {
+      // 	trans->buffer=crs->transfer[i_prev]->buffer + tr_size;
+      // }
+
+      // int rr = (trans->buffer-GLBuf)*gl_ntrd/gl_sz;
+      // cout << "cback: " << itr << " " << i_prev << " " << i_next
+      // 	   << " " << (int) (trans->buffer-GLBuf)/1024
+      // 	   << " " << gl_sz/1024 << " " << rr
+      // 	   << endl;
 
       if (crs->b_acq) {
 	libusb_submit_transfer(trans);
