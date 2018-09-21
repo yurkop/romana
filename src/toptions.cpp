@@ -321,6 +321,7 @@ Toptions::Toptions() {
 
   usb_size=1024;
   rbuf_size=20000;
+  nthreads=1;
   Nchan=32;
   tsleep=500;
   event_buf=1000;

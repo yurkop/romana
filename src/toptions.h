@@ -103,6 +103,7 @@ public:
   Long64_t F_start; //start of the acuisition
   Float_t T_acq; //duration of the acquisition / file (in seconds)
 
+  Int_t nthreads;
   Int_t Nchan;
   Float_t Tstart,Tstop;
   Int_t tsleep;

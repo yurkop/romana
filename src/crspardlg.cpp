@@ -1010,10 +1010,10 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   // 2 column, n rows
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
 
-  tip1= "";
-  tip2= "Number of used channels";
-  label="Number of channels";
-  AddLine_opt(fF6,ww,NULL,&opt.Nchan,tip1,tip2,label,k_int,k_int,1,MAX_CH,1,MAX_CH);
+  tip1= "Number of used channels";
+  tip2= "Number of threads (1 - no multithreading)";
+  label="Number of channels/Number of threads";
+  AddLine_opt(fF6,ww,&opt.Nchan,&opt.nthreads,tip1,tip2,label,k_int,k_int,1,MAX_CH,1,8);
 
   tip1= "Analysis start (in sec) - only for analyzing files";
   tip2= "Analysis stop (in sec)";

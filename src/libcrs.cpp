@@ -61,7 +61,7 @@ const Long64_t P64_0=-123456789123456789;
 
 std::list<EventClass>::iterator m_event;
 
-int MT=0;
+//int MT=1;
 
 //const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
 const Long64_t GLBSIZE=1024*1024*1024; //1024 MB
@@ -78,7 +78,7 @@ int b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
 int b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
 
 int gl_ibuf;
-int gl_ntrd=6; //number of decode threads (and also sub-buffers)
+//int gl_ntrd=6; //number of decode threads (and also sub-buffers)
 
 int decode_thread_run;
 int dec_nr[CRS::MAXTRANS];
@@ -204,7 +204,7 @@ void *handle_decode(void *ctx) {
       break;
     }
     if (crs->module>=32) {
-      if (ibuf!=gl_ntrd-1) {
+      if (ibuf!=opt.nthreads-1) {
 	crs->FindLastEvent(ibuf);
       }
       //Decode32(Fbuf,BufLength);
@@ -269,7 +269,7 @@ void *handle_mkev(void *ctx) {
     cout << "Make_events33: " << ibuf << " " << crs->Levents.size() << endl;
 
     dec_finished[ibuf]=0;
-    ibuf=(ibuf+1)%gl_ntrd;
+    ibuf=(ibuf+1)%opt.nthreads;
     
     if ((int) crs->Levents.size()>opt.ev_min) {
       ana_check=1;
@@ -449,7 +449,7 @@ static void cback(libusb_transfer *trans) {
 
       double rr =
 	double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
-      int nn = (rr+1e-6)*gl_ntrd;
+      int nn = (rr+1e-6)*opt.nthreads;
       // cout << "cback: " << itr //<< " " << i_prev << " " << i_next
       // 	   << " " << (int) (trans->buffer-GLBuf)/1024
       // 	   << " " << gl_sz/1024 << " " << rr << " " << nn << " " << gl_ibuf
@@ -458,9 +458,11 @@ static void cback(libusb_transfer *trans) {
       if (nn!=gl_ibuf) {
 	int length=trans->buffer-GLBuf-b_fill[gl_ibuf]+trans->actual_length;
 	b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
-	cout << "--- AnaBuf: " << b_fill[gl_ibuf]/1024
-	     << " " << b_end[gl_ibuf]/1024
-	     << " " << length/1024 << endl;
+
+	// cout << "--- AnaBuf: " << b_fill[gl_ibuf]/1024
+	//      << " " << b_end[gl_ibuf]/1024
+	//      << " " << length/1024 << endl;
+
 	//gl_ibuf=(gl_ibuf+1)%gl_ntrd;
 	crs->AnaBuf();
       }
@@ -789,10 +791,10 @@ void CRS::Ana_start() {
   gzclose(ff);
 
 
-  if (MT) {
+  if (opt.nthreads>1) {
     decode_thread_run=1;
 
-    for (int i=0;i<gl_ntrd;i++) {
+    for (int i=0;i<opt.nthreads;i++) {
       dec_check[i]=0;
       dec_finished[i]=0;
       char ss[50];
@@ -877,7 +879,7 @@ void CRS::Ana2(int all) {
   }
   //m_event=it;
 
-  cout << "Analyzed: " << nnn << endl;
+  //cout << "Analyzed: " << nnn << endl;
 
   //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
 
@@ -2480,7 +2482,7 @@ int CRS::DoBuf() {
 void CRS::AnaBuf() {
 
   int gl_ibuf2 = gl_ibuf+1;
-  if (gl_ibuf2==gl_ntrd) { //last buffer in ring, jump to zero
+  if (gl_ibuf2==opt.nthreads) { //last buffer in ring, jump to zero
     int end0 = b_end[gl_ibuf];
     FindLastEvent(gl_ibuf);
     int sz = end0 - b_end[gl_ibuf];
@@ -2506,7 +2508,7 @@ void CRS::AnaBuf() {
 
   if (opt.decode) {
     //buf_len[ibuf]=BufLength;
-    if (MT) {
+    if (opt.nthreads>1) {
       Decode_any_MT(gl_ibuf);
     }
     else {
@@ -2642,7 +2644,7 @@ void CRS::InitBuf() {
     }
 
     gl_sz = opt.usb_size;
-    gl_sz *= 1024*MAXTRANS2*gl_ntrd;
+    gl_sz *= 1024*MAXTRANS2*opt.nthreads;
     cout << "gl_sz: " << opt.usb_size << " " << gl_sz/1024/1024 << " MB" << endl;
     GLBuf2 = new UChar_t[gl_sz+gl_off];
     memset(GLBuf2,0,gl_sz+gl_off);
@@ -2656,12 +2658,12 @@ void CRS::InitBuf() {
   } // if Fmode==1
   else { //file analysis
     gl_sz = opt.rbuf_size;
-    gl_sz *= 1024*gl_ntrd;
+    gl_sz *= 1024*opt.nthreads;
     GLBuf2 = new UChar_t[gl_sz+gl_off];
     memset(GLBuf2,0,gl_sz+gl_off);
     GLBuf=GLBuf2+gl_off;
 
-    for (int i=0;i<gl_ntrd;i++) {
+    for (int i=0;i<opt.nthreads;i++) {
       buftr[i] = GLBuf+opt.rbuf_size*1024*i;
     }
   }
@@ -2671,11 +2673,11 @@ void CRS::InitBuf() {
 }
 
 void CRS::EndAna(int all) {
-  if (MT) {
+  if (opt.nthreads>1) {
     cout << "delete threads... ";
     gSystem->Sleep(1000);
     decode_thread_run=0;    
-    for (int i=0;i<gl_ntrd;i++) {
+    for (int i=0;i<opt.nthreads;i++) {
       dec_check[i]=1;
       dec_cond[i].Signal();
       trd_dec[i]->Join();
@@ -2936,7 +2938,7 @@ void CRS::Decode_any(int ibuf) {
   tt1[1].Set();
 #endif
   if (module>=32) {
-    if (ibuf!=gl_ntrd-1) {
+    if (ibuf!=opt.nthreads-1) {
       FindLastEvent(ibuf);
     }
     //Decode32(Fbuf,BufLength);
@@ -2991,7 +2993,7 @@ void CRS::Decode_any(int ibuf) {
 
 void CRS::FindLastEvent(int ibuf) {
   //ibuf - current sub-buffer
-  int ibuf2 = (ibuf+1)%gl_ntrd; //next transfer/buffer
+  int ibuf2 = (ibuf+1)%opt.nthreads; //next transfer/buffer
 
   //int idx1=length-8; // current index in the buffer (in 1-byte words)
 
@@ -3185,6 +3187,11 @@ void CRS::Decode33(int ibuf) {
     frmt = (frmt & 0xF0)>>4;
     data = buf8[idx1/8] & 0xFFFFFFFFFFFF;
     unsigned char ch = GLBuf[idx1+7];
+
+    if (vv->size()<4) {
+      cout << "idx: " << idx1 << " " << vv->size() << " " << frmt << " " << (int) ch << " " << (int) ipls->Chan << endl;
+    }
+
 
     if (frmt && vv->empty()) {
       cout << "dec33: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
