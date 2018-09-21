@@ -274,10 +274,10 @@ RQ_OBJECT("CRS")
   void Decode_any(int ibuf);
   void FindLastEvent(int ibuf);
   void Decode33(int ibuf);
+  void Decode2(int ibuf);
 
   //void Decode32(UChar_t* buffer, int length);
   //void Decode33(UChar_t* buffer, int length, int ivp, int ivp2);
-  //void Decode2(UChar_t* buffer, int length);
   //void Decode_adcm(UChar_t* buffer, int length);
 
   int Searchsync(UChar_t* buffer, int length);

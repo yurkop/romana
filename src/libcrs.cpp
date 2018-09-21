@@ -211,7 +211,7 @@ void *handle_decode(void *ctx) {
       crs->Decode33(ibuf);
     }
     else if (crs->module==2) {
-      //Decode2(buffer,length);
+      crs->Decode2(ibuf);
     }
     else if (crs->module==1) {
       //Decode_adcm(buffer,length/sizeof(UInt_t));
@@ -440,25 +440,29 @@ static void cback(libusb_transfer *trans) {
 
       int itr = *(int*) trans->user_data;
       int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
-      int i_next = (itr+1)%crs->ntrans; //next itr
+      //int i_next = (itr+1)%crs->ntrans; //next itr
 
       UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
       if (next_buf+tr_size > GLBuf+gl_sz) {
 	next_buf=GLBuf;
       }
 
-      int rr = (next_buf-GLBuf)*gl_ntrd/gl_sz;
-      cout << "cback: " << itr << " " << i_prev << " " << i_next
-	   << " " << (int) (trans->buffer-GLBuf)/1024
-	   << " " << gl_sz/1024 << " " << rr << " " << gl_ibuf
-	   << endl;
-      if (rr!=gl_ibuf+1) {
-	int length=trans->buffer-GLBuf+b_fill[gl_ibuf]+trans->actual_length;
+      double rr =
+	double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
+      int nn = (rr+1e-6)*gl_ntrd;
+      // cout << "cback: " << itr //<< " " << i_prev << " " << i_next
+      // 	   << " " << (int) (trans->buffer-GLBuf)/1024
+      // 	   << " " << gl_sz/1024 << " " << rr << " " << nn << " " << gl_ibuf
+      // 	   << endl;
+
+      if (nn!=gl_ibuf) {
+	int length=trans->buffer-GLBuf-b_fill[gl_ibuf]+trans->actual_length;
 	b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
-	cout << "--- AnaBuf: " << b_fill[gl_ibuf] << " " << b_end[gl_ibuf]
-	     << " " << length << endl;
-	gl_ibuf=(gl_ibuf+1)%gl_ntrd;
-	//crs->AnaBuf();
+	cout << "--- AnaBuf: " << b_fill[gl_ibuf]/1024
+	     << " " << b_end[gl_ibuf]/1024
+	     << " " << length/1024 << endl;
+	//gl_ibuf=(gl_ibuf+1)%gl_ntrd;
+	crs->AnaBuf();
       }
 
       //memcpy(crs->Fbuf[itr],trans->buffer,trans->actual_length);
@@ -2939,7 +2943,7 @@ void CRS::Decode_any(int ibuf) {
     Decode33(ibuf);
   }
   else if (module==2) {
-    //Decode2(buffer,length);
+    Decode2(ibuf);
   }
   else if (module==1) {
     //Decode_adcm(buffer,length/sizeof(UInt_t));
@@ -3445,24 +3449,32 @@ void CRS::Decode33(int ibuf) {
 
 } //decode33
 
-/*
-void CRS::Decode2(UChar_t* buffer, int length) {
 
-  unsigned short* buf2 = (unsigned short*) buffer;
+void CRS::Decode2(int ibuf) {
 
-  unsigned short frmt;
-  int idx2=0;
-  int len = length/2;
+  UShort_t* buf2 = (UShort_t*) GLBuf;
+
+  UShort_t frmt;
+  int idx2=b_start[ibuf]/2;
+  //int len = length/2;
+  pulse_vect *vv = Vpulses+ibuf;
+  PulseClass* ipls=&dummy_pulse;
+
 
   //cout << "decode2: " << idx2 << endl;
-  while (idx2<len) {
+  while (idx2<b_end[ibuf]/2) {
 
     unsigned short uword = buf2[idx2];
     frmt = (uword & 0x7000)>>12;
     short data = uword & 0xFFF;
     unsigned char ch = (uword & 0x8000)>>15;
 
-    if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
+    if (frmt && vv->empty()) {
+      cout << "dec2: bad buf start: " << idx2 << " " << (int) ch << " " << frmt << endl;
+      idx2++;
+      continue;
+    }
+    else if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
       cout << "2: Bad channel: " << (int) ch
 	   << " " << (int) ipls->Chan << endl;
       ipls->ptype|=P_BADCH;
@@ -3472,15 +3484,15 @@ void CRS::Decode2(UChar_t* buffer, int length) {
     }
 
     if (frmt==0) {
-      ipls->ptype&=~P_NOSTOP; //pulse has stop
+      //ipls->ptype&=~P_NOSTOP; //pulse has stop
+
+      //analyze previous pulse
+      //ipls->FindPeaks();
+      ipls->PeakAna33();
 
 
-      //analyze pulse
-      ipls->FindPeaks();
-      ipls->PeakAna();
-
-
-      ipls = vv->insert(vv->end(),PulseClass());
+      vv->push_back(PulseClass());
+      ipls=&vv->back();
       npulses++;
       ipls->Chan = ch;
       ipls->Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
@@ -3511,7 +3523,7 @@ void CRS::Decode2(UChar_t* buffer, int length) {
   }
 
 } //decode2
-*/
+
 
 //-------------------------------
 
