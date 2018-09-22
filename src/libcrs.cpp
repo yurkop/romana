@@ -417,7 +417,7 @@ void *handle_ana(void *ctx) {
 
 
     // cmut.Lock();
-    // cout << "Ana2_MT_end: " << crs->Levents.size() << " " << ana_all << endl;
+    cout << "Ana2_MT_end: " << crs->Levents.size() << " " << ana_all << endl;
     // cmut.UnLock();
 
 
