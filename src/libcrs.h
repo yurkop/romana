@@ -285,7 +285,8 @@ RQ_OBJECT("CRS")
   void Decode_any_MT(UInt_t iread, UInt_t ibuf);
 
   void Decode_any(UInt_t iread, UInt_t ibuf);
-  void FindLastEvent(UInt_t ibuf);
+  void FindLast33(UInt_t ibuf);
+  void FindLast2(UInt_t ibuf);
   void Decode33(UInt_t iread, UInt_t ibuf);
   void Decode2(UInt_t iread, UInt_t ibuf);
 
