@@ -77,16 +77,21 @@ int b_start[CRS::MAXTRANS]; //start of local buffer(part of GLBuf), included
 int b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
 int b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
 
-int gl_ibuf;
+UInt_t gl_iread; //current number of readbuf or cback [0.. infinity)
+UInt_t gl_ivect; //current number of pstruct in make_event [0.. infinity)
+UInt_t gl_ibuf; //current buffer for decode* [0 .. gl_Nbuf]
+UInt_t gl_Nbuf; //maximal number of buffers for decode*
 //int gl_ntrd=6; //number of decode threads (and also sub-buffers)
 
 int decode_thread_run;
+int ana_thread_run;
 int dec_nr[CRS::MAXTRANS];
 
 TThread* trd_dec[CRS::MAXTRANS];
 TCondition dec_cond[CRS::MAXTRANS];
-int dec_check[CRS::MAXTRANS];
-int dec_finished[CRS::MAXTRANS];
+UInt_t dec_iread[CRS::MAXTRANS];
+//int dec_check[CRS::MAXTRANS];
+//int dec_finished[CRS::MAXTRANS];
 
 
 TThread* trd_mkev;
@@ -179,17 +184,16 @@ void *ballast(void* xxx) {
 */
 
 void *handle_decode(void *ctx) {
-  int ibuf = *(int*) ctx;
+  UInt_t ibuf = *(int*) ctx;
 
   cmut.Lock();
-  cout << "Decode thread started: " << ibuf << " " << dec_finished[ibuf] << endl;
+  cout << "Decode thread started: " << ibuf << endl;
   cmut.UnLock();
+
   while (decode_thread_run) {
 
-    while(!dec_check[ibuf])
+    while(!dec_iread[ibuf])
       dec_cond[ibuf].Wait();
-
-    dec_check[ibuf]=0;
 
     //cmut.Lock();
     //cout << "dec_working: " << ibuf << endl;
@@ -201,17 +205,19 @@ void *handle_decode(void *ctx) {
     // }
 
     if (!decode_thread_run) {
+      //dec_iread[ibuf]=0;
       break;
     }
+
     if (crs->module>=32) {
-      if (ibuf!=opt.nthreads-1) {
+      if (ibuf!=gl_Nbuf-1) {
 	crs->FindLastEvent(ibuf);
       }
       //Decode32(Fbuf,BufLength);
-      crs->Decode33(ibuf);
+      crs->Decode33(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==2) {
-      crs->Decode2(ibuf);
+      crs->Decode2(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==1) {
       //Decode_adcm(buffer,length/sizeof(UInt_t));
@@ -220,7 +226,8 @@ void *handle_decode(void *ctx) {
     //evt_check=1;
     //evt_cond.Signal();
 
-    dec_finished[ibuf]=1;
+    dec_iread[ibuf]=0;
+    //dec_finished[ibuf]=1;
 
     //mkev_check[ibuf]=1;
     //mkev_cond[ibuf].Signal();
@@ -238,7 +245,7 @@ void *handle_decode(void *ctx) {
     //   ana_check=1;
     //   ana_cond.Signal();
     // }
-  }
+  } //while
   cmut.Lock();
   cout << "Decode thread deleted: " << ibuf << endl;
   cmut.UnLock();
@@ -246,30 +253,39 @@ void *handle_decode(void *ctx) {
 }
 
 void *handle_mkev(void *ctx) {
+  //return 0;
+
   cmut.Lock();
   cout << "Mkev thread started: " << endl;
   cmut.UnLock();
-  int ibuf=gl_ibuf;
+  //UInt_t ibuf=gl_ibuf;
+  CRS::plist_iter it;
+
   while (decode_thread_run) {
 
-    while(!dec_finished[ibuf])
+    bool fdec=false; //proper dec.. finished
+    while(!fdec && decode_thread_run) {
+      for (it = crs->plist.begin(); it!=crs->plist.end();++it) {
+	if (it->num==gl_ivect) {
+	  fdec=true;
+	  break;
+	}
+      }
       gSystem->Sleep(1);
-
-    //while(!mkev_check[ibuf])
-    //mkev_cond[ibuf].Wait();
-    //mkev_check[ibuf]=0;
+    }
 
     if (!decode_thread_run) {
       break;
     }
 
     //if (crs->Vpulses[ibuf].size()>2) {
-    crs->Make_Events(ibuf);
-      //}
-    cout << "Make_events33: " << ibuf << " " << crs->Levents.size() << endl;
+    crs->Make_Events(it);
+    //}
+    cout << "Make_events33: " << gl_ivect << " " << crs->plist.size()
+	 << " " << crs->Levents.size() << endl;
 
-    dec_finished[ibuf]=0;
-    ibuf=(ibuf+1)%opt.nthreads;
+    //dec_finished[ibuf]=0;
+    //ibuf=(ibuf+1)%gl_Nbuf;
     
     if ((int) crs->Levents.size()>opt.ev_min) {
       ana_check=1;
@@ -290,7 +306,7 @@ void *handle_ana(void *ctx) {
   cmut.Lock();
   cout << "Ana thread started: " << endl;
   cmut.UnLock();
-  while (decode_thread_run) {
+  while (ana_thread_run) {
     while(!ana_check)
       ana_cond.Wait();
 
@@ -310,10 +326,10 @@ void *handle_ana(void *ctx) {
     // если ana_all!=0 ->
     // анализируем данные от m_event до Levents.end()
 
-    ana_mut.Lock();
+    //ana_mut.Lock();
     //if (Levents.empty()) {
     if ((int) crs->Levents.size()<=opt.ev_min) {
-      ana_mut.UnLock();
+      //ana_mut.UnLock();
       continue;
     }
 
@@ -396,13 +412,16 @@ void *handle_ana(void *ctx) {
   
     //cout << "Levents5: " << Levents.size() << " " << nevents << endl;
 
-    ana_mut.UnLock();
+
+    cmut.Lock();
+    cout << "Ana2_MT_end: " << crs->Levents.size() << " " << ana_all << endl;
+    cmut.UnLock();
 
 
+    //ana_mut.UnLock();
 
 
-
-  }
+  } //while
   cmut.Lock();
   cout << "Ana thread deleted: " << endl;
   cmut.UnLock();
@@ -449,7 +468,7 @@ static void cback(libusb_transfer *trans) {
 
       double rr =
 	double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
-      int nn = (rr+1e-6)*opt.nthreads;
+      UInt_t nn = (rr+1e-6)*gl_Nbuf;
       // cout << "cback: " << itr //<< " " << i_prev << " " << i_next
       // 	   << " " << (int) (trans->buffer-GLBuf)/1024
       // 	   << " " << gl_sz/1024 << " " << rr << " " << nn << " " << gl_ibuf
@@ -793,10 +812,12 @@ void CRS::Ana_start() {
 
   if (opt.nthreads>1) {
     decode_thread_run=1;
+    ana_thread_run=1;
 
-    for (int i=0;i<opt.nthreads;i++) {
-      dec_check[i]=0;
-      dec_finished[i]=0;
+    for (UInt_t i=0;i<gl_Nbuf;i++) {
+      dec_iread[i]=0;
+      //dec_check[i]=0;
+      //dec_finished[i]=0;
       char ss[50];
       sprintf(ss,"trd_dec%d",i);
       dec_nr[i] = i;
@@ -2141,9 +2162,11 @@ void CRS::DoReset() {
   nevents2=0;
 
   //Vpulses.clear();
-  for (int i=0;i<MAXTRANS;i++)
-    Vpulses[i].clear();
-  //Vpulses[1].clear();
+  plist.clear();
+
+  //for (int i=0;i<MAXTRANS;i++)
+  //Vpulses[i].clear();
+
   //nvp=0;
 
   //vv = Vpulses+nvp; //- vector of pulses from current
@@ -2299,9 +2322,9 @@ void CRS::DoFopen(char* oname, int popt) {
 
   //ibuf=0;
 
-  cout << "Dofopen1: " << endl;
+  //cout << "Dofopen1: " << endl;
   InitBuf();
-  cout << "Dofopen2: " << endl;
+  //cout << "Dofopen2: " << endl;
   //nvp=0;
 
   if (tp) { //adcm raw - determine durwr
@@ -2481,17 +2504,17 @@ int CRS::DoBuf() {
 
 void CRS::AnaBuf() {
 
-  int gl_ibuf2 = gl_ibuf+1;
-  if (gl_ibuf2==opt.nthreads) { //last buffer in ring, jump to zero
+  UInt_t gl_ibuf2 = gl_ibuf+1;
+  if (gl_ibuf2==gl_Nbuf) { //last buffer in ring, jump to zero
     int end0 = b_end[gl_ibuf];
     FindLastEvent(gl_ibuf);
     int sz = end0 - b_end[gl_ibuf];
     memcpy(GLBuf-sz,GLBuf+b_end[gl_ibuf],sz);
     // cout << "Move: " << gl_ibuf << " " << sz << " " << end0
     // 	 << " " << b_end[gl_ibuf] << " " << gl_sz << endl;
-    gl_ibuf2=0;
-    b_start[gl_ibuf2]=-sz;
-    b_fill[gl_ibuf2]=0;
+    //gl_ibuf2=0;
+    b_start[0]=-sz;
+    b_fill[0]=0;
   }
   else { //normal buffer
     b_start[gl_ibuf2]=b_end[gl_ibuf];
@@ -2509,14 +2532,16 @@ void CRS::AnaBuf() {
   if (opt.decode) {
     //buf_len[ibuf]=BufLength;
     if (opt.nthreads>1) {
-      Decode_any_MT(gl_ibuf);
+      Decode_any_MT(gl_iread, gl_ibuf);
     }
     else {
-      Decode_any(gl_ibuf);
+      Decode_any(gl_iread, gl_ibuf);
     }
   }
-  gl_ibuf = gl_ibuf2;
-  nbuffers++;
+  gl_iread++;
+  gl_ibuf=gl_iread%gl_Nbuf;
+  //gl_ibuf = gl_ibuf2;
+  //nbuffers++;
 
   if (batch) {
     cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
@@ -2535,16 +2560,20 @@ int CRS::DoBuf() {
   tt1[0].Set();
 #endif
 
+  while (dec_iread[gl_ibuf])
+    gSystem->Sleep(1);
+
   int length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
   b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
   // cout << "gzread: " << Fmode << " " << module << " "
-  //       << nbuffers << " " << length << endl;
+  //      << gl_iread << " " << gl_ibuf << " " << gl_Nbuf << " " << length << endl;
 
 
   if (length>0) {
     AnaBuf();
-    crs->inputbytes+=length;
+    nbuffers++;
+    inputbytes+=length;
     return nbuffers;
   }
   else {
@@ -2618,7 +2647,11 @@ void CRS::FAnalyze(bool nobatch) {
 */
 
 void CRS::InitBuf() {
+  gl_iread=0;
+  gl_ivect=0;
   gl_ibuf=0;
+  gl_off = 1024*128;
+
   memset(b_fill,0,sizeof(b_fill));
   memset(b_start,0,sizeof(b_start));
   memset(b_end,0,sizeof(b_end));
@@ -2627,8 +2660,11 @@ void CRS::InitBuf() {
     delete[] GLBuf2;
   }
 
-  gl_off = 1024*128;
-
+  if (opt.nthreads>1)
+    gl_Nbuf=opt.nthreads;
+  else
+    gl_Nbuf=8;
+      
   if (Fmode==1) { //module
     if (opt.usb_size<=1024) {
       tr_size=opt.usb_size*1024;
@@ -2644,7 +2680,7 @@ void CRS::InitBuf() {
     }
 
     gl_sz = opt.usb_size;
-    gl_sz *= 1024*MAXTRANS2*opt.nthreads;
+    gl_sz *= 1024*MAXTRANS2*gl_Nbuf;
     cout << "gl_sz: " << opt.usb_size << " " << gl_sz/1024/1024 << " MB" << endl;
     GLBuf2 = new UChar_t[gl_sz+gl_off];
     memset(GLBuf2,0,gl_sz+gl_off);
@@ -2658,12 +2694,12 @@ void CRS::InitBuf() {
   } // if Fmode==1
   else { //file analysis
     gl_sz = opt.rbuf_size;
-    gl_sz *= 1024*opt.nthreads;
+    gl_sz *= 1024*gl_Nbuf;
     GLBuf2 = new UChar_t[gl_sz+gl_off];
     memset(GLBuf2,0,gl_sz+gl_off);
     GLBuf=GLBuf2+gl_off;
 
-    for (int i=0;i<opt.nthreads;i++) {
+    for (UInt_t i=0;i<gl_Nbuf;i++) {
       buftr[i] = GLBuf+opt.rbuf_size*1024*i;
     }
   }
@@ -2673,21 +2709,29 @@ void CRS::InitBuf() {
 }
 
 void CRS::EndAna(int all) {
+  //all=1 -> finish analysis of all buffers
+  //all=0 -> just stop, buffers remain not analyzed,
+  //         can continue from this point on
   if (opt.nthreads>1) {
-    cout << "delete threads... ";
-    gSystem->Sleep(1000);
+    while (!plist.empty()) {
+      gSystem->Sleep(10);
+    }
+    cout << "deleting threads... ";
     decode_thread_run=0;    
-    for (int i=0;i<opt.nthreads;i++) {
-      dec_check[i]=1;
+    for (UInt_t i=0;i<gl_Nbuf;i++) {
+      dec_iread[i]=1; //=1;
       dec_cond[i].Signal();
       trd_dec[i]->Join();
       trd_dec[i]->Delete();
-      dec_finished[i]=1;
+      //dec_finished[i]=1;
     }
 
     trd_mkev->Join();
     trd_mkev->Delete();
 
+    
+    gSystem->Sleep(100);
+    ana_thread_run=0;    
     ana_all=all;
     ana_check=1;
     ana_cond.Signal();
@@ -2829,6 +2873,7 @@ void CRS::DoNBuf2(int nb) {
 
 
   Ana_start();
+
   int res;
   int i=1;
   while ((res=crs->DoBuf()) && crs->b_fana && i<nb) {
@@ -2920,17 +2965,17 @@ void CRS::Show(bool force) {
   //cout << "Show end" << endl;
 }
 
-void CRS::Decode_any_MT(int ibuf) {
+void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf) {
   //-----decode
   //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
   //cout << "Decode_MT: " << ibuf << endl;
 
-  dec_check[ibuf]=1;
+  dec_iread[ibuf]=iread+1;
   dec_cond[ibuf].Signal();
 
 }
 
-void CRS::Decode_any(int ibuf) {
+void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   //-----decode
   //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
   //cout << "Decode_any: " << ibuf << endl;
@@ -2938,18 +2983,20 @@ void CRS::Decode_any(int ibuf) {
   tt1[1].Set();
 #endif
   if (module>=32) {
-    if (ibuf!=opt.nthreads-1) {
+    if (ibuf!=gl_Nbuf-1) {
       FindLastEvent(ibuf);
     }
     //Decode32(Fbuf,BufLength);
-    Decode33(ibuf);
+    Decode33(iread, ibuf);
   }
   else if (module==2) {
-    Decode2(ibuf);
+    Decode2(iread, ibuf);
   }
   else if (module==1) {
     //Decode_adcm(buffer,length/sizeof(UInt_t));
   }
+
+  dec_iread[ibuf]=0;
 
 #ifdef TIMES
   tt2[1].Set();
@@ -2961,10 +3008,9 @@ void CRS::Decode_any(int ibuf) {
   tt1[2].Set();
 #endif
 
-  if (Vpulses[ibuf].size()>2) {
-    //cout << "Make_events33: " <<endl;
-    Make_Events(ibuf);
-  }
+  //cout << "Make_events33: " <<endl;
+  Make_Events(plist.begin());
+
 
 #ifdef TIMES
   tt2[2].Set();
@@ -2991,9 +3037,9 @@ void CRS::Decode_any(int ibuf) {
 
 }
 
-void CRS::FindLastEvent(int ibuf) {
+void CRS::FindLastEvent(UInt_t ibuf) {
   //ibuf - current sub-buffer
-  int ibuf2 = (ibuf+1)%opt.nthreads; //next transfer/buffer
+  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
 
   //int idx1=length-8; // current index in the buffer (in 1-byte words)
 
@@ -3153,7 +3199,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 } //decode32
 */
 
-void CRS::Decode33(int ibuf) {
+void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   //ibuf - current sub-buffer
 
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
@@ -3162,7 +3208,7 @@ void CRS::Decode33(int ibuf) {
   int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
   //int idx1=b_end[(ibuf+gl_ntrd-1)%gl_ntrd]; // current index in the buffer (in 1-byte words)
 
-  cout << "Decode33: " << ibuf << " " << idx1 << " " << b_end[ibuf] << endl;
+  //cout << "Decode33: " << iread << " " << ibuf << " " << idx1 << " " << b_end[ibuf] << endl;
 
   unsigned short frmt;
   ULong64_t data;
@@ -3174,7 +3220,11 @@ void CRS::Decode33(int ibuf) {
   Double_t QX=0,QY=0,RX,RY;
   //peak_type *pk=&dummy_peak;
 
-  pulse_vect *vv = Vpulses+ibuf;
+  Pstruct vp;
+  vp.done=false;
+  vp.num=iread;
+  //pulse_vect *vv = Vpulses+ibuf;
+  pulse_vect *vv = &vp.Vpulses;
   PulseClass* ipls=&dummy_pulse;
 
   //cout << "Decode33: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
@@ -3188,9 +3238,9 @@ void CRS::Decode33(int ibuf) {
     data = buf8[idx1/8] & 0xFFFFFFFFFFFF;
     unsigned char ch = GLBuf[idx1+7];
 
-    if (vv->size()<4) {
-      cout << "idx: " << idx1 << " " << vv->size() << " " << frmt << " " << (int) ch << " " << (int) ipls->Chan << endl;
-    }
+    // if (vv->size()<4) {
+    //   cout << "idx: " << idx1 << " " << vv->size() << " " << frmt << " " << (int) ch << " " << (int) ipls->Chan << endl;
+    // }
 
 
     if (frmt && vv->empty()) {
@@ -3202,7 +3252,7 @@ void CRS::Decode33(int ibuf) {
 	     (frmt && ch!=ipls->Chan)) {
       cout << "dec33: Bad channel: " << (int) ch
 	   << " " << (int) ipls->Chan
-	   << " " << idx1 //<< " " << nvp
+	   << " " << idx1 << " " << ibuf
 	   << endl;
       ipls->ptype|=P_BADCH;
 
@@ -3449,6 +3499,7 @@ void CRS::Decode33(int ibuf) {
     idx1+=8;
   } //while (idx1<buf_len)
 
+  plist.push_back(vp);
   //buf_len[ibuf]=0;
 
   //cout << "decode33: " << idx1 << " " << frmt << " " << ipls->Counter << " "
@@ -3457,14 +3508,19 @@ void CRS::Decode33(int ibuf) {
 } //decode33
 
 
-void CRS::Decode2(int ibuf) {
+void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 
   UShort_t* buf2 = (UShort_t*) GLBuf;
 
   UShort_t frmt;
   int idx2=b_start[ibuf]/2;
   //int len = length/2;
-  pulse_vect *vv = Vpulses+ibuf;
+
+  Pstruct vp;
+  vp.done=false;
+  vp.num=iread;
+  //pulse_vect *vv = Vpulses+ibuf;
+  pulse_vect *vv = &vp.Vpulses;
   PulseClass* ipls=&dummy_pulse;
 
 
@@ -3528,6 +3584,8 @@ void CRS::Decode2(int ibuf) {
 
     idx2++;
   }
+
+  plist.push_back(vp);
 
 } //decode2
 
@@ -3918,9 +3976,9 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
 
 }
 
-void CRS::Make_Events(int ibuf) {
+void CRS::Make_Events(plist_iter it) {
 
-  //cout << "Make_Events: T_acq: " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
+  //cout << "Make_Events: T_acq: " << gl_ivect << " " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
   
   pulse_vect::iterator pls;
 
@@ -3958,7 +4016,9 @@ void CRS::Make_Events(int ibuf) {
   //now insert all pulses from the current buffer, except last one
   //--vv;// = Vpulses+nvp;
 
-  pulse_vect *vv = Vpulses+ibuf;
+  pulse_vect *vv = &(it->Vpulses);
+  //pulse_vect *vv = Vpulses+ibuf;
+
   //for (pls=vv->begin(); pls != --vv->end(); ++pls) {
   for (pls=vv->begin(); pls != vv->end(); ++pls) {
     if (!(pls->ptype&P_NOSTOP)) {
@@ -3966,7 +4026,10 @@ void CRS::Make_Events(int ibuf) {
       //Print_Events();
     }
   }
-  Vpulses[ibuf].clear();
+
+  plist.erase(it);
+  gl_ivect++;
+  //Vpulses[ibuf].clear();
 
   //nvp=(nvp+1)%ntrans;
 

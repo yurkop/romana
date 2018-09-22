@@ -85,11 +85,24 @@ RQ_OBJECT("CRS")
   UChar_t* DecBuf;
   Int_t idec; //index of DecBuf;
 
+  struct Pstruct {
+    UInt_t num;
+    bool done;
+    pulse_vect Vpulses;
+  };
+
+  std::list<Pstruct> plist;
+  typedef std::list<Pstruct>::iterator plist_iter;
+
   //Vpulses - list of vectors of pulses for Decode*
   // size of Vpulses can not be larger than 2
   // (contains current vector and previous vector)
   //std::list<pulse_vect> Vpulses;
-  pulse_vect Vpulses[MAXTRANS];
+
+
+  //YK pulse_vect Vpulses[MAXTRANS];
+
+
   //int nvp; //Vpulses index
   //pulse_vect *vv; //- vector of pulses from current buffer
   //pulse_vect *vv2; //- vector of pulses from previous buffer
@@ -269,12 +282,12 @@ RQ_OBJECT("CRS")
   //void AllParameters32_old(); // load all parameters
   //void Decode_any(UChar_t** buffer, int length, int itr);
 
-  void Decode_any_MT(int ibuf);
+  void Decode_any_MT(UInt_t iread, UInt_t ibuf);
 
-  void Decode_any(int ibuf);
-  void FindLastEvent(int ibuf);
-  void Decode33(int ibuf);
-  void Decode2(int ibuf);
+  void Decode_any(UInt_t iread, UInt_t ibuf);
+  void FindLastEvent(UInt_t ibuf);
+  void Decode33(UInt_t iread, UInt_t ibuf);
+  void Decode2(UInt_t iread, UInt_t ibuf);
 
   //void Decode32(UChar_t* buffer, int length);
   //void Decode33(UChar_t* buffer, int length, int ivp, int ivp2);
@@ -293,7 +306,7 @@ RQ_OBJECT("CRS")
 
   //void Event_Insert_Pulse(PulseClass* pulse);
   void Event_Insert_Pulse(pulse_vect::iterator pls);
-  void Make_Events(int ibuf);
+  void Make_Events(plist_iter it);
   void Select_Event(EventClass *evt);
   //void *Ana_Events(void* ptr);
 
