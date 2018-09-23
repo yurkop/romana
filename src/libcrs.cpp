@@ -370,12 +370,12 @@ void *handle_ana(void *ctx) {
 
 	//m_event->Analyzed=true;
 	++crs->nevents2;
-	++m_event;
       }
       // else {
       // 	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
       // 	m_event=crs->Levents.erase(m_event);
       // }
+      ++m_event;
     }
 
     //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
