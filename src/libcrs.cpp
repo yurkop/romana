@@ -23,7 +23,7 @@
 
 //TMutex Emut3;
 TMutex stat_mut;
-TMutex ana_mut;
+//TMutex ana_mut;
 
 TMutex cmut;
 
@@ -59,7 +59,12 @@ TThread* trd_crs;
 
 const Long64_t P64_0=-123456789123456789;
 
-std::list<EventClass>::iterator m_event;
+std::list<EventClass>::iterator m_event; //важный параметр
+// расстояние от этого элемента до конца списка не должно быть больше,
+// чем opt.ev_min
+// в Ana данные анализируются от m_event до Levents.end()-opt.ev_min
+// или до Levents.end(), если конец анализа
+// данные удаляются от Levents.begin() до m_event
 
 //int MT=1;
 
@@ -321,14 +326,6 @@ void *handle_ana(void *ctx) {
     // }
 
 
-    // вызываем ana2 после каждого cback или DoBuf
-    // Входные данные: Levents, не меняется во время работы ana2
-    // (нет параллельных потоков)
-    // если ana_all==0 ->
-    // анализируем данные от m_event до Levents.end()-opt.ev_min
-    // если ana_all!=0 ->
-    // анализируем данные от m_event до Levents.end()
-
     //ana_mut.Lock();
     //if (Levents.empty()) {
     if ((int) crs->Levents.size()<=opt.ev_min) {
@@ -336,23 +333,30 @@ void *handle_ana(void *ctx) {
       continue;
     }
 
-    std::list<EventClass>::iterator it;
-    std::list<EventClass>::iterator m_end = crs->Levents.end();
+    // вызываем ana2 после каждого cback или DoBuf
+    // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
+    // если ana_all==0 ->
+    // анализируем данные от Levents.begin() до Levents.end()-opt.ev_min
+    // если ana_all!=0 ->
+    // анализируем данные от Levents.begin() до Levents.end()
+
+    int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
 
     // cmut.Lock();
     // cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
     // cmut.UnLock();
 
+    std::list<EventClass>::iterator m_end = crs->Levents.end();
     if (!ana_all) { //analyze up to ev_min events
-      if (m_event==crs->Levents.end()) {
-	m_event=crs->Levents.begin();
-      }
-      std::advance (m_end,-opt.ev_min);
+      // if (m_event==crs->Levents.end()) {
+      // 	m_event=crs->Levents.begin();
+      // }
+      std::advance(m_end,-opt.ev_min);
     }
 
     //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
 
-    // analyze events from m_start to m_event
+    // analyze events from m_event to m_end
     while (m_event!=m_end) {
       if (m_event->pulses.size()>=opt.mult1 &&
 	  m_event->pulses.size()<=opt.mult2) {
@@ -367,32 +371,23 @@ void *handle_ana(void *ctx) {
 	//m_event->Analyzed=true;
 	++crs->nevents2;
 	++m_event;
-	//YK
-	//cout << "ana71: " << m_event->Nevt << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_event,m_end) << " " << nevents2 << endl;
       }
-      else {
-	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
-	m_event=crs->Levents.erase(m_event);
-      }
+      // else {
+      // 	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
+      // 	m_event=crs->Levents.erase(m_event);
+      // }
     }
-    //m_event=it;
 
     //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
 
     // erase events if the list is too long
-    int n2 = crs->Levents.size()-opt.ev_max;
-    if (n2>0) {
-      int ii=0;
-      for (it=crs->Levents.begin(); it!=m_event && ii<n2;) {
-	it=crs->Levents.erase(it);
+    for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
+      it=crs->Levents.erase(it);
 	//YK
 	//cout << "ana73: " << it->Nevt << " " << std::distance(it,m_event) << endl;
-	++ii;
-	//++it;
-      }
     }
 
-    //cout << "Levents3: " << crs->Levents.size() << " " << nevents << endl;
+    //cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
 
     if (opt.dec_write) {
       crs->Flush_Dec();
@@ -413,11 +408,11 @@ void *handle_ana(void *ctx) {
       EvtFrm->d_event=EvtFrm->Pevents->begin();
     }
   
-    //cout << "Levents5: " << Levents.size() << " " << nevents << endl;
+    //cout << "Levents5: " << crs->Levents.size() << " " << crs->nevents << endl;
 
 
     // cmut.Lock();
-    cout << "Ana2_MT_end: " << crs->Levents.size() << " " << n2
+    cout << "Ana2_MT_end: " << crs->Levents.size()
 	 << " " << std::distance(m_event,crs->Levents.begin())
 	 << " " << std::distance(m_event,crs->Levents.end())
 	 << " " << ana_all << endl;
@@ -618,167 +613,6 @@ void *handle_buf(void *ctx)
 }
 */
 
-/*
-void *handle_old_ana(void* ptr) {
-  // when the event list (Levents) becomes larger than ev_min,
-  // starts analysing the events (fillhist);
-  // when it becomes larger than ev_max, starts erasing the events
-
-  int delete_old_ana;
-
-  std::list<EventClass>::iterator it;
-
-  //check if it's the beginning of the analysis -> then define crs->m_start
-  //if (crs->m_start==crs->Levents.end()) {
-  //cout << "ana_start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
-  if (crs->Levents.empty()) {
-    //cout << "loop start: " << crs->Levents.empty() << " " << crs->b_stop << endl;
-    //need this loop to have at least one event in Levents
-    while (crs->Levents.empty() && !crs->b_stop) {
-      //cout << "a9: " << crs->Levents.empty() << " " << crs->b_stop << endl;
-      gSystem->Sleep(10);
-    }
-    crs->m_start = crs->Levents.begin();
-    //cout << "loop end: " << endl;
-  }
-
-  //cout << "handle_old_ana: " << std::distance(crs->m_start,crs->Levents.begin()) << " " << EvtFrm << endl;
-
-  int n2; //number of events to erase
-  //m_event - first event which is not analyzed
-
-  int ii=0; //temporary variable
-
-  //MemInfo_t info;
-  //bool unchecked=true;
-
-  while (crs->b_run) {
-
-    //gSystem->Sleep(100);
-
-    // //aviod exhausting all memory
-    // gSystem->GetMemInfo(&info);
-    // if (unchecked && info.fMemFree<300) {
-    //   opt.ev_max = crs->Levents.size()*0.005; //was sz*0.005;
-    //   opt.ev_max*=100;
-    //   if (opt.ev_max < 500) opt.ev_max=500;
-    //   cout << "ev_max updated: " << opt.ev_max << endl;
-    //   unchecked=false;
-    // }
-
-    if (opt.ev_min>=opt.ev_max) {
-      opt.ev_min=opt.ev_max/2;
-    }
-
-    if (crs->b_run==2) { //analyze all events, then stop
-      crs->m_event=crs->Levents.end();
-      crs->b_run=0;
-    }
-    else { //analyze normally
-      ii=0;
-      for (it=--crs->Levents.end(); it!=crs->m_start && ii<opt.ev_min; --it) {
-	++ii;
-      }
-      crs->m_event=it;
-    }
-
-    //cout << "st: " << ii << " " << std::distance(crs->m_start,crs->m_event) << " " << crs->m_event->Nevt << " " << crs->m_start->Nevt << endl;
-    
-    if (crs->m_event!=crs->m_start) { //there are some events to analyze
-      
-      //goto skip;
-
-      if (EvtFrm) {
-	// fill Tevents for EvtFrm::DrawEvent2
-	EvtFrm->Tevents.clear();
-	if (crs->m_event!=crs->Levents.end()) {
-	  EvtFrm->Tevents.push_back(*crs->m_event);
-	}
-	EvtFrm->d_event=EvtFrm->Pevents->begin();
-      }
-
-
-      //skip:
-      // cout << "ana: " << std::distance(crs->m_start,crs->m_event)
-      // 	   << " " << std::distance(crs->m_event,crs->Levents.end()) << endl;
-
-      // analyze events up to m_event
-      for (it=crs->m_start; it!=crs->m_event;) {
-	//if (it->Nevt>100000) {
-	// cout << "ana7: " << it->Nevt << " " << std::distance(it,crs->m_event)
-	//      << " " << crs->b_stop << " " << it->pulses.size()
-	//      << endl;
-	  //exit(0);
-	  //}
-	if (//!crs->b_stop &&
-	    it->pulses.size()>=opt.mult1 && it->pulses.size()<=opt.mult2) {
-
-	  it->FillHist(true);
-	  it->FillHist(false);
-	  //it->FillHist_old();
-	  if (opt.dec_write) {
-	    crs->Fill_Dec73(&(*it));
-	  }
-
-
-	  //it->Analyzed=true;
-	  ++crs->nevents2;
-	  ++it;
-	  //YK
-	  //cout << "ana71: " << it->Nevt << " " << std::distance(it,crs->m_event) << " " << crs->nevents2 << endl;
-	}
-	else {
-	  it=crs->Levents.erase(it);
-	  // if (it!=crs->m_event)
-	  //   cout << "ana72: " << it->Nevt
-	  // 	 << " " << std::distance(it,crs->m_event)
-	  // 	 << " " << std::distance(it,crs->Levents.end())
-	  // 	 << " " << &*it
-	  // 	 << " " << &*crs->m_event
-	  // 	 << " " << &*crs->Levents.end()
-	  // 	 << endl;
-	}
-      }
-
-      // cout << "ana33: " << std::distance(crs->m_start,crs->m_event) << endl;
-
-      // m_start now points to the first event which is not analyzed yet
-      crs->m_start=crs->m_event;
-
-      //cout << "ana33a: " << std::distance(crs->m_start,crs->m_event) << endl;
-
-      // erase events if the list is too long
-      n2 = crs->Levents.size()-opt.ev_max;
-      if (n2>0) {
-	ii=0;
-	for (it=crs->Levents.begin(); it!=crs->m_start && ii<n2;) {
-	  it=crs->Levents.erase(it);
-	  //YK
-	  //cout << "ana73: " << it->Nevt << " " << std::distance(it,crs->m_event) << endl;
-	  ++ii;
-	  //++it;
-	}
-      }
-
-      //cout << "ana3: " << std::distance(crs->m_start,crs->m_event) << endl;
-
-    } // if (n1>0)
-    else {
-      gSystem->Sleep(10);
-    }
-  } //while (!crs->b_run)
-
-  if (opt.dec_write) {
-    crs->Flush_Dec();
-  }
-
-  //cout << "end_ana: " << endl;
-
-  return 0;
-    
-} //handle_old_ana
-*/
-
 int CRS::Set_Trigger() {
   int len = strlen(opt.maintrig);
   if (len==0) {
@@ -850,39 +684,30 @@ void CRS::Ana_start() {
 
 void CRS::Ana2(int all) {
   // вызываем ana2 после каждого cback или DoBuf
-  // Входные данные: Levents, не меняется во время работы ana2
-  // (нет параллельных потоков)
-  // если all==0 ->
-  // анализируем данные от m_event до Levents.end()-opt.ev_min
-  // если all!=0 ->
-  // анализируем данные от m_event до Levents.end()
+  // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
+  // если ana_all==0 ->
+  // анализируем данные от Levents.begin() до Levents.end()-opt.ev_min
+  // если ana_all!=0 ->
+  // анализируем данные от Levents.begin() до Levents.end()
 
-  ana_mut.Lock();
-  //if (Levents.empty()) {
-  if ((int) Levents.size()<=opt.ev_min) {
-    ana_mut.UnLock();
-    return;
-  }
+  int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
 
-  std::list<EventClass>::iterator it;
-  std::list<EventClass>::iterator m_end = Levents.end();
+  // cmut.Lock();
+  // cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
+  // cmut.UnLock();
 
-  //cout << "Ana2: " << Levents.size() << endl;
-
-  if (!all) { //analyze up to ev_min events
-    if (m_event==Levents.end()) {
-      m_event=Levents.begin();
-    }
-    std::advance (m_end,-opt.ev_min);
+  std::list<EventClass>::iterator m_end = crs->Levents.end();
+  if (!ana_all) { //analyze up to ev_min events
+    // if (m_event==crs->Levents.end()) {
+    // 	m_event=crs->Levents.begin();
+    // }
+    std::advance(m_end,-opt.ev_min);
   }
 
   //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
 
-  int nnn=0;
-
-  // analyze events from m_start to m_event
+  // analyze events from m_event to m_end
   while (m_event!=m_end) {
-    nnn++;
     if (m_event->pulses.size()>=opt.mult1 &&
 	m_event->pulses.size()<=opt.mult2) {
 
@@ -890,37 +715,26 @@ void CRS::Ana2(int all) {
       m_event->FillHist(false);
       //it->FillHist_old();
       if (opt.dec_write) {
-	Fill_Dec73(&(*m_event));
+	crs->Fill_Dec73(&(*m_event));
       }
 
       //m_event->Analyzed=true;
-      ++nevents2;
+      ++crs->nevents2;
       ++m_event;
-      //YK
-      //cout << "ana71: " << m_event->Nevt << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_event,m_end) << " " << nevents2 << endl;
     }
-    else {
-      //cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
-      m_event=Levents.erase(m_event);
-    }
+    // else {
+    // 	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
+    // 	m_event=crs->Levents.erase(m_event);
+    // }
   }
-  //m_event=it;
-
-  //cout << "Analyzed: " << nnn << endl;
 
   //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
 
   // erase events if the list is too long
-  int n2 = Levents.size()-opt.ev_max;
-  if (n2>0) {
-    int ii=0;
-    for (it=Levents.begin(); it!=m_event && ii<n2;) {
-      it=Levents.erase(it);
-      //YK
-      //cout << "ana73: " << it->Nevt << " " << std::distance(it,m_event) << endl;
-      ++ii;
-      //++it;
-    }
+  for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
+    it=crs->Levents.erase(it);
+    //YK
+    //cout << "ana73: " << it->Nevt << " " << std::distance(it,m_event) << endl;
   }
 
   //cout << "Levents3: " << Levents.size() << " " << nevents << endl;
@@ -946,60 +760,54 @@ void CRS::Ana2(int all) {
   
   //cout << "Levents5: " << Levents.size() << " " << nevents << endl;
 
-  ana_mut.UnLock();
 } //ana2
 
 CRS::CRS() {
 
   /*
+  // begin test block
+  std::list<int> mylist;
+  std::list<int>::iterator it;
+  std::list<int>::reverse_iterator rit;
+
+  // set some initial values:
+  for (int i=1; i<=11; ++i) mylist.push_back(i*10); // 1 2 3 4 5
+
+  for (it=mylist.begin(); it!=mylist.end(); ++it)
+    std::cout << ' ' << *it;
+  std::cout << '\n';
+
+  for (rit=mylist.rbegin(); rit!=mylist.rend(); ++rit) {
+    if (*rit<75) {
+      it = mylist.insert(rit.base(),75);
+      cout << *it << endl;
+      break;
+    }
+  }
+
+  for (it=mylist.begin(); it!=mylist.end(); ++it)
+    std::cout << ' ' << *it;
+  std::cout << '\n';
+
+  // for (rit=mylist.rbegin(); rit!=mylist.rend(); ++rit)
+  //   std::cout << ' ' << *rit;
+  // std::cout << '\n';
+
+  // --rit;
+  // std::cout << *rit << endl;
+
+  exit(1);
+  */
+
+  /*
+  for (int x = 0, y = 0; (y <10 || x <10); x++, y++){
+    cout << x << " " << y << endl;
+  }
+  exit(1);
+
   //cout << TClass::GetClass("Toptions")->GetClassVersion() << endl;
   //exit(1);
 
-    // begin test block
-    std::list<int> mylist;
-    std::list<int>::iterator it;
-    std::list<int>::reverse_iterator rit;
-
-    it = mylist.begin();
-    cout << *it << endl;
-    // set some initial values:
-    for (int i=1; i<=11; ++i) mylist.push_back(i); // 1 2 3 4 5
-
-    //mylist.insert(mylist.end(),77);
-    //mylist.insert(it,77);
-    //cout << *it << endl;
-
-    for (it=mylist.begin(); it!=mylist.end(); ++it)
-      std::cout << ' ' << *it;
-    std::cout << '\n';
-
-    it = mylist.end();
-    --it;
-    //--it;
-    rit = mylist.rbegin();
-    //++rit;
-    //++rit;
-    //it = rit.base();
-    cout << "end: " << " " << &*it << " " << &*rit << " " << *it << " " << *rit << endl;
-
-    mylist.clear();
-    it = mylist.end();
-    --it;
-    cout << "end2: " << " " << &*it << " " << &*rit << " " << *it << " " << *rit << endl;
-
-
-    exit(1);
-    
-    rit=mylist.rbegin();
-    mylist.insert(rit.base(),10);
-
-    for (rit=mylist.rbegin(); rit!=mylist.rend(); ++rit)
-      std::cout << ' ' << *rit;
-    std::cout << '\n';
-
-    --rit;
-    std::cout << *rit << endl;
-    
     mylist.insert(mylist.begin(),0);
     //mylist.clear();
     //mylist.insert(mylist.begin(),21);
@@ -2161,8 +1969,8 @@ void CRS::DoReset() {
     EvtFrm->DoReset();
   }
 
-  //m_start=Levents.end();
   m_event=Levents.end();
+  //m_event=Levents.begin();
 
   nevents=0;
   nevents2=0;
@@ -3559,7 +3367,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
   PulseClass* ipls=&dummy_pulse;
 
 
-  cout << "Decode2: " << iread << " " << ibuf << " " << idx2 << " " << b_end[ibuf] << endl;
+  //cout << "Decode2: " << iread << " " << ibuf << " " << idx2 << " " << b_end[ibuf] << endl;
 
   //cout << "decode2: " << idx2 << endl;
   while (idx2<b_end[ibuf]/2) {
@@ -3861,13 +3669,12 @@ void CRS::Print_Events() {
 void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
 
   event_iter it;
-  event_iter it_last;
+  event_reviter rit;
+  //event_iter it_last;
   Long64_t dt;
 
   //cout << "Event_Insert_Pulse: " << (int) pls->Chan << " " << pls->Counter << " " << npulses << " " << pls->Tstamp64 << " " << (int) pls->ptype << endl;
 
-  //if (pls->ptype & 0xF) { //P_NOSTART | P_NOSTOP | P_BADCH | P_BADTST
-  //if (pls->ptype & 0x7) {
   if (pls->ptype) { //any bad pulse
     // cout << "bad pulse: " << (int) pls->ptype << " " << (int) pls->Chan
     // 	 << " " << pls->Counter << " " << pls->Tstamp64 << endl;
@@ -3876,63 +3683,7 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
     return;
   }
 
-  // if (pls->sData.size() != 100) { 
-  //   cout << "sData.size: " << pls->Counter << " " << pls->sData.size() << endl;
-  // }
-
-  //const Long64_t ev1=36090;
-  //const Long64_t ev2=37010;
-
-  //const Long64_t ev1=1;
-  //const Long64_t ev2=0;
-
-  //if (nbuffers < 1) {
-  //pls->PrintPulse(0);
-  //}
-
-  // if (pls->ptype & 0x7) {
-  //   cout << "bad pulse2: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
-  // 	 << (int) pls->ptype << endl;
-  //   return;
-  // }
-
-  // if (pls->Chan==3 || pls->Chan==4) {
-  //   static Long64_t t64[MAX_CH];
-  //   cout << "ch3 or ch4: " << (int) pls->Chan << " " << pls->Tstamp64 << " "
-  // 	 << pls->Tstamp64-t64[3] << " " << pls->Tstamp64-t64[4] << endl;
-  //   t64[pls->Chan]=pls->Tstamp64;
-  // }
-
   npulses2[pls->Chan]++;
-
-  // if (opt.nsmoo[pls->Chan] && !opt.dsp[pls->Chan]) {
-  //   pls->Smooth(opt.nsmoo[pls->Chan]);
-  // }
-  //cout << "module: " << module << endl;
-
-
-  /*
-  if (module>=33) {
-    if (!opt.dsp[pls->Chan]) {
-      if (opt.nsmoo[pls->Chan]) {
-	pls->Smooth(opt.nsmoo[pls->Chan]);
-      }
-      pls->PeakAna33();
-    }
-    else {
-      if (opt.checkdsp) {
-	pls->PeakAna33();
-	pls->CheckDSP();
-      }
-    }
-  }
-  else {
-    pls->FindPeaks();
-    pls->PeakAna();
-  }
-  */
-
-
 
   if (Levents.empty()) {
     //if (Tstart64<0) {
@@ -3943,51 +3694,19 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
     it->Nevt=nevents;
     nevents++;
     it->Pulse_Ana_Add(pls);
-
-    //Pstamp64=pls->Tstamp64;
+    m_event=Levents.begin();
 
     return;
   }
 
-  //it_last=--Levents.end();
-  //dt=pls->Tstamp64-it_last->T;
-
-
-
-
-
-
-
-  // //10 or 20 sec
-  // Long64_t dt1=-99;
-  // Long64_t T1=-99;
-  // if (it!=Levents.end()) {
-  //   dt1=pls->Tstamp64-it->T;
-  //   T1=it->T;
-  // }
-  // cout << "tt: " << dt << " " << dt1 << " " << pls->Tstamp64-Tstart64 << " "
-  //      << T1-Tstart64 << endl;
-
-  // if (dt>opt.tgate) { //add event at the end of the list
-  //   it=Levents.insert(Levents.end(),EventClass());
-
-  //   it->Nevt=nevents;
-  //   nevents++;
-  //   it->Pulse_Ana_Add(pls);
-
-  //   Pstamp64=pls->Tstamp64;
-
-  //   return;
-  // }
-
-  for (it=--Levents.end();it!=m_event;--it) {
-    //for (rl=Levents.rbegin(); rl!=r_event; ++rl) {
-    dt = (pls->Tstamp64 - it->T);
-    //cout << "tt: " << it->Nevt << " " << dt << " " << pls->Tstamp64 << " " << it->T << endl;
+  // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
+  int nn=opt.ev_min;
+  //for (it=--Levents.end();it!=m_event && nn>0 ;--it,--nn) {
+  for (rit=Levents.rbegin();rit!=Levents.rend() && nn>0 ;++rit,--nn) {
+    dt = (pls->Tstamp64 - rit->T);
     if (dt > opt.tgate) {
-      //cout << "t1: " << endl;
-      //add new event at the current position of the eventlist
-      it=Levents.insert(++it,EventClass());
+      //add new event AFTER rit.base()
+      it=Levents.insert(rit.base(),EventClass());
       it->Nevt=nevents;
       nevents++;
       it->Pulse_Ana_Add(pls);
@@ -3996,14 +3715,16 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
     else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
       //cout << "t2: " << endl;
       // coincidence event
-      it->Pulse_Ana_Add(pls);
+      rit->Pulse_Ana_Add(pls);
       return;
     }
   }
 
-  if (debug)
-    cout << "beginning: " << nevents << " " << pls->Tstamp64 << " " << dt
+  if (debug) {
+    cout << "!!! beginning!!! ------------: "
+	 << nevents << " " << pls->Tstamp64 << " " << dt
 	 << " " << Levents.size() << endl;
+  }
 
   // if the current event is too early, insert it at the end of the event list
   it=Levents.insert(Levents.end(),EventClass());
