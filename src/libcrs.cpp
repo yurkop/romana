@@ -3091,6 +3091,11 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       idx1+=8;
       continue;
     }
+    else if (ch==255) {
+      //start signal
+      idx1+=8;
+      continue;      
+    }
     else if ((ch>=opt.Nchan) ||
 	     (frmt && ch!=ipls->Chan)) {
       cout << "dec33: Bad channel: " << (int) ch
