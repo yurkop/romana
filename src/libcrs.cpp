@@ -413,7 +413,7 @@ void *handle_ana(void *ctx) {
 
     // cmut.Lock();
     cout << "Ana2_MT_end: " << crs->Levents.size()
-	 << " " << std::distance(m_event,crs->Levents.begin())
+	 << " " << std::distance(crs->Levents.begin(),m_event)
 	 << " " << std::distance(m_event,crs->Levents.end())
 	 << " " << ana_all << endl;
     // cmut.UnLock();
@@ -795,6 +795,13 @@ CRS::CRS() {
 
   // --rit;
   // std::cout << *rit << endl;
+
+  it=mylist.begin();
+  std::advance(it,3);
+
+  cout << *it << endl;
+  cout << std::distance(mylist.begin(),it) << " " << std::distance(it,mylist.end()) << endl;
+  
 
   exit(1);
   */
