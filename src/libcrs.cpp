@@ -289,8 +289,8 @@ void *handle_mkev(void *ctx) {
     //if (crs->Vpulses[ibuf].size()>2) {
     crs->Make_Events(it);
     //}
-    cout << "Make_events33: " << gl_ivect << " " << crs->plist.size()
-	 << " " << crs->Levents.size() << endl;
+    // cout << "Make_events33: " << gl_ivect << " " << crs->plist.size()
+    // 	 << " " << crs->Levents.size() << endl;
 
     //dec_finished[ibuf]=0;
     //ibuf=(ibuf+1)%gl_Nbuf;
@@ -354,31 +354,45 @@ void *handle_ana(void *ctx) {
       std::advance(m_end,-opt.ev_min);
     }
 
+    cout << "Levents1: " << std::distance(m_end,crs->Levents.end()) << endl;
+    cout << "Levents1a: " << std::distance(m_end,crs->Levents.end()) << endl;
+
     //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
 
+    int n1=0,n2=0;
     // analyze events from m_event to m_end
     while (m_event!=m_end) {
       if (m_event->pulses.size()>=opt.mult1 &&
 	  m_event->pulses.size()<=opt.mult2) {
 
-	m_event->FillHist(true);
-	m_event->FillHist(false);
+	//m_event->FillHist(true);
+	//m_event->FillHist(false);
 	//it->FillHist_old();
 	if (opt.dec_write) {
 	  crs->Fill_Dec73(&(*m_event));
 	}
 
 	//m_event->Analyzed=true;
+	++m_event;
 	++crs->nevents2;
+	++n1;
       }
-      // else {
-      // 	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
-      // 	m_event=crs->Levents.erase(m_event);
-      // }
-      ++m_event;
+      else {
+      	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
+      	m_event=crs->Levents.erase(m_event);
+	++n2;
+      }
+      //++m_event;
     }
 
-    //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
+    //gSystem->Sleep(500);
+
+    cout << "Levents1b: " << std::distance(m_end,crs->Levents.end()) << " " << n1 << " " << n2 << endl;
+
+    cout << "Levents2: " << std::distance(m_event,m_end)
+	 << " " << std::distance(m_event,crs->Levents.end())
+	 << " " << std::distance(m_end,crs->Levents.end())
+	 << " " << crs->Levents.size() << endl;
 
     // erase events if the list is too long
     for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
@@ -416,6 +430,7 @@ void *handle_ana(void *ctx) {
 	 << " " << std::distance(crs->Levents.begin(),m_event)
 	 << " " << std::distance(m_event,crs->Levents.end())
 	 << " " << ana_all << endl;
+    cout << "---------------------------------" << endl;
     // cmut.UnLock();
 
 
