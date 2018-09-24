@@ -770,8 +770,8 @@ void EventFrame::DoCheckPoint() {
     while (d_event!=ievt) {
       //cout << d_event->Nevt << " " << d_event->T << endl;
       par[5]=d_event->pulses.size();
-      par[2]=(d_event->T-crs->Tstart64)*crs->period*1e-9;
-      par[3]=d_event->T;
+      par[2]=(d_event->TT-crs->Tstart64)*crs->period*1e-9;
+      par[3]=d_event->TT;
 
       for (UInt_t i=0;i<d_event->pulses.size();i++) {
 	int ch = d_event->pulses[i].Chan;
@@ -780,12 +780,12 @@ void EventFrame::DoCheckPoint() {
 	for (UInt_t j=0;j<d_event->pulses[i].Peaks.size();j++) {
 	  peak_type* pk = &d_event->pulses[i].Peaks[j];
 	  par[1]=pk->Area;
-	  double dt = d_event->pulses[i].Tstamp64 - d_event->T;
+	  double dt = d_event->pulses[i].Tstamp64 - d_event->TT;
 	  //double tt = pk->Time - crs->Pre[ch] - d_event->T0 + dt;
 	  double tt = pk->Time - d_event->T0 + dt;
 	  par[4]=tt*crs->period;
 	  res = formula->EvalPar(0,par);
-	  cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->T << " " << " " << par[4] << " " << res << endl;
+	  cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->TT << " " << " " << par[4] << " " << res << endl;
 	  if (res) {
 	    //d_event = d_event;
 	    DrawEvent2();
@@ -918,8 +918,8 @@ void EventFrame::FillGraph(int dr) {
     Gr[dr][i]->SetLineColor(chcol[ch[i]]);
     Gr[dr][i]->SetMarkerColor(chcol[ch[i]]);
 
-    //double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch[i]];
-    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch[i]];
+    //double dt=pulse->Tstamp64 - d_event->TT - crs->Pre[ch[i]];
+    double dt=pulse->Tstamp64 - d_event->TT - cpar.preWr[ch[i]];
     // cout << "dt: " << (int) pulse->Chan << " " << dt << " "
     // 	 << ch[i] << " " << pulse->Tstamp64 << " "
     // 	 << d_event->T << " " << crs->Pre[ch[i]] << endl;
@@ -1138,7 +1138,7 @@ void EventFrame::DrawEvent2() {
   sprintf(ss,"%lld",d_event->Nevt);
   fStat[0]->SetText(ss);
 
-  sprintf(ss,"%lld",d_event->T);
+  sprintf(ss,"%lld",d_event->TT);
   fStat[1]->SetText(ss);
 
   sprintf(ss,"%ld",d_event->pulses.size());
@@ -1167,8 +1167,8 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
-    //double dt=pulse->Tstamp64 - d_event->T - crs->Pre[ch];
-    double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch];
+    //double dt=pulse->Tstamp64 - d_event->TT - crs->Pre[ch];
+    double dt=pulse->Tstamp64 - d_event->TT - cpar.preWr[ch];
     //double dt=pulse->Tstamp64 - d_event->T;
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {

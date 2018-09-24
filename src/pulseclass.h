@@ -133,7 +133,7 @@ class EventClass { //event of pulses
  public:
   Long64_t Nevt;
   Char_t State; //state word from CRS module
-  Long64_t T; //Timestamp of the earliest pulse (threshold crossig)
+  Long64_t TT; //Timestamp of the earliest pulse (threshold crossig)
   Float_t T0; //time of the earliest *START* peak, relative to T
   std::vector <PulseClass> pulses;
   //Bool_t Analyzed;
@@ -144,7 +144,9 @@ class EventClass { //event of pulses
   virtual ~EventClass() {};
   //void Make_Mean_Event();
   //void Pulse_Mean_Add(PulseClass *newpulse);
-  void Pulse_Ana_Add(pulse_vect::iterator pls);
+
+  //void Pulse_Ana_Add(pulse_vect::iterator pls);
+  void Pulse_Ana_Add(PulseClass *pls);
   void Fill_Time_Extend(HMap* map);
   void Fill1d(Bool_t first, HMap* map[], int ch, Float_t x);
   void Fill_Mean_Pulse(Bool_t first, HMap* map,  PulseClass* pls);

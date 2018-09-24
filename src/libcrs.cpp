@@ -25,6 +25,8 @@
 TMutex stat_mut;
 //TMutex ana_mut;
 
+TMutex dec_mut;
+
 TMutex cmut;
 
 const int BFMAX=999999999;
@@ -83,7 +85,7 @@ int b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
 int b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
 
 UInt_t gl_iread; //current number of readbuf or cback [0.. infinity)
-UInt_t gl_ivect; //current number of pstruct in make_event [0.. infinity)
+//UInt_t gl_ivect; //current number of pstruct in make_event [0.. infinity)
 UInt_t gl_ibuf; //current buffer for decode* [0 .. gl_Nbuf]
 UInt_t gl_Nbuf; //maximal number of buffers for decode*
 //int gl_ntrd=6; //number of decode threads (and also sub-buffers)
@@ -239,8 +241,9 @@ void *handle_decode(void *ctx) {
 }
 
 void *handle_mkev(void *ctx) {
-  //return 0;
+  return 0;
 
+  /*
   cmut.Lock();
   cout << "Mkev thread started: " << endl;
   cmut.UnLock();
@@ -285,6 +288,7 @@ void *handle_mkev(void *ctx) {
   cout << "Mkev thread deleted: " << endl;
   cmut.UnLock();
   return NULL;
+  */
 }
 
 void *handle_ana(void *ctx) {
@@ -630,9 +634,9 @@ void CRS::Ana2(int all) {
 
   std::list<EventClass>::iterator m_end = crs->Levents.end();
   if (!ana_all) { //analyze up to ev_min events
-    // if (m_event==crs->Levents.end()) {
-    // 	m_event=crs->Levents.begin();
-    // }
+    if (m_event==crs->Levents.end()) {
+    	m_event=crs->Levents.begin();
+    }
     std::advance(m_end,-opt.ev_min);
   }
 
@@ -643,8 +647,8 @@ void CRS::Ana2(int all) {
     if (m_event->pulses.size()>=opt.mult1 &&
 	m_event->pulses.size()<=opt.mult2) {
 
-      m_event->FillHist(true);
-      m_event->FillHist(false);
+      //m_event->FillHist(true);
+      //m_event->FillHist(false);
       //it->FillHist_old();
       if (opt.dec_write) {
 	crs->Fill_Dec73(&(*m_event));
@@ -1915,7 +1919,8 @@ void CRS::DoReset() {
   nevents2=0;
 
   //Vpulses.clear();
-  plist.clear();
+  Bufevents.clear();
+  //plist.clear();
 
   //for (int i=0;i<MAXTRANS;i++)
   //Vpulses[i].clear();
@@ -2408,7 +2413,7 @@ void CRS::FAnalyze(bool nobatch) {
 
 void CRS::InitBuf() {
   gl_iread=0;
-  gl_ivect=0;
+  //gl_ivect=0;
   gl_ibuf=0;
   gl_off = 1024*128;
 
@@ -2473,7 +2478,7 @@ void CRS::EndAna(int all) {
   //all=0 -> just stop, buffers remain not analyzed,
   //         can continue from this point on
   if (opt.nthreads>1) {
-    while (!plist.empty()) {
+    while (!Bufevents.empty()) {
       gSystem->Sleep(10);
     }
     cout << "deleting threads... ";
@@ -2773,8 +2778,9 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   tt1[2].Set();
 #endif
 
-  //cout << "Make_events33: " <<endl;
-  Make_Events(plist.begin());
+  cout << "Make_events33_1: " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
+  Make_Events(Bufevents.begin());
+  cout << "Make_events33_2: " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
 
 
 #ifdef TIMES
@@ -2787,7 +2793,9 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   tt1[3].Set();
 #endif
 
+  //cout << "Ana2_1: " << endl; 
   crs->Ana2(0);
+  //cout << "Ana2_2: " << endl; 
   
 #ifdef TIMES
   tt2[3].Set();
@@ -2983,6 +2991,21 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 } //decode32
 */
 
+void CRS::PulseAna(PulseClass &ipls) {
+  if (!opt.dsp[ipls.Chan]) {
+    if (opt.nsmoo[ipls.Chan]) {
+      ipls.Smooth(opt.nsmoo[ipls.Chan]);
+    }
+    ipls.PeakAna33();
+  }
+  else {
+    if (opt.checkdsp) {
+      ipls.PeakAna33();
+      ipls.CheckDSP();
+    }
+  }
+}
+
 void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   //ibuf - current sub-buffer
 
@@ -3004,12 +3027,20 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   Double_t QX=0,QY=0,RX,RY;
   //peak_type *pk=&dummy_peak;
 
-  Pstruct vp;
-  vp.done=false;
-  vp.num=iread;
+  //Pstruct vp;
+  //vp.done=false;
+  //vp.num=iread;
   //pulse_vect *vv = Vpulses+ibuf;
-  pulse_vect *vv = &vp.Vpulses;
-  PulseClass* ipls=&dummy_pulse;
+  //pulse_vect *vv = &vp.Vpulses;
+
+  dec_mut.Lock();
+  Bufevents.push_back(eventlist());
+  eventlist *Blist = &Bufevents.back();
+  dec_mut.UnLock();
+
+  Blist->push_back(EventClass());
+  Blist->back().Nevt=iread;
+  PulseClass ipls=dummy_pulse;
 
   //cout << "Decode33: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
 
@@ -3027,7 +3058,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     // }
 
 
-    if (frmt && vv->empty()) {
+    if (frmt && Blist->empty()) {
       cout << "dec33: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
       idx1+=8;
       continue;
@@ -3038,12 +3069,12 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       continue;      
     }
     else if ((ch>=opt.Nchan) ||
-	     (frmt && ch!=ipls->Chan)) {
+	     (frmt && ch!=ipls.Chan)) {
       cout << "dec33: Bad channel: " << (int) ch
-	   << " " << (int) ipls->Chan
+	   << " " << (int) ipls.Chan
 	   << " " << idx1 << " " << ibuf
 	   << endl;
-      ipls->ptype|=P_BADCH;
+      ipls.ptype|=P_BADCH;
 
       //idx8++;
       idx1+=8;
@@ -3054,54 +3085,45 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       //ipls->ptype&=~P_NOSTOP; //pulse has stop
 
       //analyze previous pulse
-      if (ipls->ptype==0) {
-	if (!opt.dsp[ipls->Chan]) {
-	  if (opt.nsmoo[ipls->Chan]) {
-	    ipls->Smooth(opt.nsmoo[ipls->Chan]);
-	  }
-	  ipls->PeakAna33();
-	}
-	else {
-	  if (opt.checkdsp) {
-	    ipls->PeakAna33();
-	    ipls->CheckDSP();
-	  }
-	}
+      if (ipls.ptype==0) {
+	PulseAna(ipls);
+	Event_Insert_Pulse(Blist,&ipls);
       }
 
-      vv->push_back(PulseClass());
-      ipls=&vv->back();
+      //vv->push_back(PulseClass());
+      //Blist->push_back(PulseClass());
+      ipls=PulseClass();
       //ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
-      ipls->Chan=ch;
-      ipls->Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
+      ipls.Chan=ch;
+      ipls.Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
       n_frm=0;
     }
     else if (frmt==1) {
-      ipls->State = GLBuf[idx1+5];
-      ipls->Counter = data & 0xFFFFFFFFFF;
-      //cout << "Counter: " << ipls->Counter << " " << (int) ipls->Chan << endl;
+      ipls.State = GLBuf[idx1+5];
+      ipls.Counter = data & 0xFFFFFFFFFF;
+      //cout << "Counter: " << ipls.Counter << " " << (int) ipls.Chan << endl;
       // if (buffer[idx1+5]) {
-      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls->State << " " << data << " " << buf8[idx8] << endl;
+      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls.State << " " << data << " " << buf8[idx8] << endl;
       // }
     }
     else if (frmt==2) {
 
-      if (ipls->sData.size()>=cpar.durWr[ipls->Chan]) {
+      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "32: ERROR Nsamp: "
-	//      << " " << (ipls->Counter & 0x0F)
-	//      << " " << ipls->sData.size() << " " << cpar.durWr[ipls->Chan]
-	//      << " " << (int) ch << " " << (int) ipls->Chan
+	//      << " " << (ipls.Counter & 0x0F)
+	//      << " " << ipls.sData.size() << " " << cpar.durWr[ipls.Chan]
+	//      << " " << (int) ch << " " << (int) ipls.Chan
 	//      << " " << idx8 //<< " " << transfer->actual_length
 	//      << endl;
-	ipls->ptype|=P_BADSZ;
+	ipls.ptype|=P_BADSZ;
       }
       //else {
       for (int i=0;i<4;i++) {
 
 	iii = data & 0xFFF;
-	ipls->sData.push_back((iii<<20)>>20);
-	//ipls->sData[ipls->Nsamp++]=(iii<<20)>>20;
+	ipls.sData.push_back((iii<<20)>>20);
+	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=12;
       }
@@ -3109,48 +3131,48 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     }
     else if (frmt==3) {
 
-      if (ipls->sData.size()>=cpar.durWr[ipls->Chan]) {
+      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "33: ERROR Nsamp: "
-	//      << " " << (ipls->Counter & 0x0F)
-	//      << " " << ipls->sData.size() << " " << cpar.durWr[ipls->Chan]
-	//      << " " << (int) ch << " " << (int) ipls->Chan
+	//      << " " << (ipls.Counter & 0x0F)
+	//      << " " << ipls.sData.size() << " " << cpar.durWr[ipls.Chan]
+	//      << " " << (int) ch << " " << (int) ipls.Chan
 	//      << " " << idx8 //<< " " << transfer->actual_length
 	//      << endl;
-	ipls->ptype|=P_BADSZ;
+	ipls.ptype|=P_BADSZ;
       }
       //else {
       for (int i=0;i<3;i++) {
 
 	iii = data & 0xFFFF;
-	ipls->sData.push_back((iii<<16)>>16);
-	//ipls->sData[ipls->Nsamp++]=(iii<<20)>>20;
+	ipls.sData.push_back((iii<<16)>>16);
+	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=16;
       }
       //}
     }
     else if (frmt==4) {
-      if (opt.dsp[ipls->Chan]) {
-	if (ipls->Peaks.size()==0) {
-	  ipls->Peaks.push_back(peak_type());
-	  ipk=&ipls->Peaks[0];
+      if (opt.dsp[ipls.Chan]) {
+	if (ipls.Peaks.size()==0) {
+	  ipls.Peaks.push_back(peak_type());
+	  ipk=&ipls.Peaks[0];
 	}
 	switch (n_frm) {
 	case 0: //C – [24]; A – [24]
 	  //area
 	  iii = data & 0xFFFFFF;
 	  ipk->Area0=((iii<<8)>>8);
-	  ipk->Area0/=p_len[ipls->Chan];
+	  ipk->Area0/=p_len[ipls.Chan];
 	  data>>=24;
 	  //bkg
 	  iii = data & 0xFFFFFF;
 	  ipk->Base=((iii<<8)>>8);
-	  ipk->Base/=b_len[ipls->Chan];
+	  ipk->Base/=b_len[ipls.Chan];
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
-	  ipk->Area*=opt.emult[ipls->Chan];
-	  ipk->Area0*=opt.emult[ipls->Chan];
-	  ipk->Base*=opt.emult[ipls->Chan];
+	  ipk->Area*=opt.emult[ipls.Chan];
+	  ipk->Area0*=opt.emult[ipls.Chan];
+	  ipk->Base*=opt.emult[ipls.Chan];
 
 	  break;
 	case 1: //H – [12]; QX – [36]
@@ -3184,17 +3206,17 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  else
 	    ipk->Width=-999;
 
-	  //if (ipls->Peaks[0].Width==0 || ipls->Counter==25597) {
+	  //if (ipls.Peaks[0].Width==0 || ipls.Counter==25597) {
 
 	  // printf("Alp: %10lld %2d %8.1f %8.1f %8.1f %8.1f %8.1f\n",
-	  // 	   ipls->Counter,n_frm,ipls->Peaks[0].Base,ipls->Peaks[0].Area0,
-	  // 	   ipls->Peaks[0].Height,
-	  // 	   ipls->Peaks[0].Time,ipls->Peaks[0].Width);
+	  // 	   ipls.Counter,n_frm,ipls.Peaks[0].Base,ipls.Peaks[0].Area0,
+	  // 	   ipls.Peaks[0].Height,
+	  // 	   ipls.Peaks[0].Time,ipls.Peaks[0].Width);
 
 	  //}
-	  // cout << "frmt4: " << ipls->Counter << " " << n_frm
-	  //      << " " << ipls->Bg << " " << ipls->Ar << " " << ipls->Ht
-	  //      << " " << ipls->Tm << " " << ipls->Wd << " " << RX
+	  // cout << "frmt4: " << ipls.Counter << " " << n_frm
+	  //      << " " << ipls.Bg << " " << ipls.Ar << " " << ipls.Ht
+	  //      << " " << ipls.Tm << " " << ipls.Wd << " " << RX
 	  //      << " " << RY << endl;
 
 	  break;
@@ -3202,13 +3224,13 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  ;
 	} //switch
 	n_frm++;
-      } //if (opt.dsp[ipls->Chan])
+      } //if (opt.dsp[ipls.Chan])
     }
     else if (frmt==5) {
-      if (opt.dsp[ipls->Chan]) {
-	if (ipls->Peaks.size()==0) {
-	  ipls->Peaks.push_back(peak_type());
-	  ipk=&ipls->Peaks[0];
+      if (opt.dsp[ipls.Chan]) {
+	if (ipls.Peaks.size()==0) {
+	  ipls.Peaks.push_back(peak_type());
+	  ipk=&ipls.Peaks[0];
 	}
 	switch (n_frm) {
 	case 0: //C – [28]; H – [16]
@@ -3219,17 +3241,17 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  //bkg
 	  iii = data & 0xFFFFFFF;
 	  ipk->Base=((iii<<4)>>4);
-	  ipk->Base/=b_len[ipls->Chan];
+	  ipk->Base/=b_len[ipls.Chan];
 	case 1: //A – [28]
 	  //area
 	  iii = data & 0xFFFFFFF;
 	  ipk->Area0=((iii<<4)>>4);
-	  ipk->Area0/=p_len[ipls->Chan];
+	  ipk->Area0/=p_len[ipls.Chan];
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
-	  ipk->Area*=opt.emult[ipls->Chan];
-	  ipk->Area0*=opt.emult[ipls->Chan];
-	  ipk->Base*=opt.emult[ipls->Chan];
+	  ipk->Area*=opt.emult[ipls.Chan];
+	  ipk->Area0*=opt.emult[ipls.Chan];
+	  ipk->Base*=opt.emult[ipls.Chan];
 	  break;
 	case 2: //A – [28]
 	  //QX
@@ -3260,17 +3282,17 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  else
 	    ipk->Width=-999;
 
-	  //if (ipls->Peaks[0].Width==0 || ipls->Counter==25597) {
+	  //if (ipls.Peaks[0].Width==0 || ipls.Counter==25597) {
 
 	  // printf("Alp: %10lld %2d %8.1f %8.1f %8.1f %8.1f %8.1f\n",
-	  // 	   ipls->Counter,n_frm,ipls->Peaks[0].Base,ipls->Peaks[0].Area0,
-	  // 	   ipls->Peaks[0].Height,
-	  // 	   ipls->Peaks[0].Time,ipls->Peaks[0].Width);
+	  // 	   ipls.Counter,n_frm,ipls.Peaks[0].Base,ipls.Peaks[0].Area0,
+	  // 	   ipls.Peaks[0].Height,
+	  // 	   ipls.Peaks[0].Time,ipls.Peaks[0].Width);
 
 	  //}
-	  // cout << "frmt4: " << ipls->Counter << " " << n_frm
-	  //      << " " << ipls->Bg << " " << ipls->Ar << " " << ipls->Ht
-	  //      << " " << ipls->Tm << " " << ipls->Wd << " " << RX
+	  // cout << "frmt4: " << ipls.Counter << " " << n_frm
+	  //      << " " << ipls.Bg << " " << ipls.Ar << " " << ipls.Ht
+	  //      << " " << ipls.Tm << " " << ipls.Wd << " " << RX
 	  //      << " " << RY << endl;
 
 	  break;
@@ -3278,7 +3300,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  ;
 	} //switch
 	n_frm++;
-      } //if (opt.dsp[ipls->Chan])
+      } //if (opt.dsp[ipls.Chan])
     }
     else {
       cout << "bad frmt: " << frmt << endl;
@@ -3288,17 +3310,34 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     idx1+=8;
   } //while (idx1<buf_len)
 
-  plist.push_back(vp);
+
+  //add last pulse to the list
+  if (ipls.ptype==0) {
+    PulseAna(ipls);
+    Event_Insert_Pulse(Blist,&ipls);
+  }
+
+  //plist.push_back(vp);
   //buf_len[ibuf]=0;
 
-  //cout << "decode33: " << idx1 << " " << frmt << " " << ipls->Counter << " "
-  //   << ipls->sData.size() << " " << n_frm << endl;
+  //if (Blist->front().TT<0) {
+  //Blist->pop_front();
+  //}
 
+  cout << "decode33: " << idx1 << " " << frmt << " " << ipls.Counter << " "
+       << ipls.sData.size() << " " << n_frm << " " << Blist->size()
+       << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
+
+  // int nn=3;
+  // for (evlist_iter it=Blist->begin();nn>=0;++it,--nn) {
+  //   cout << "evt: " << it->Nevt << " " << it->TT << " " << it->pulses.size() << " " << endl;
+  // }
 } //decode33
 
 
 void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 
+  /*
   UShort_t* buf2 = (UShort_t*) GLBuf;
 
   UShort_t frmt;
@@ -3377,7 +3416,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
   }
 
   plist.push_back(vp);
-
+  */
 } //decode2
 
 
@@ -3601,10 +3640,10 @@ void CRS::Print_Pulses() {
 
 void CRS::Print_Events() {
   int nn=0;
-  cout << "Print_Events: " << Levents.begin()->T << endl;
+  cout << "Print_Events: " << Levents.begin()->TT << endl;
   for (std::list<EventClass>::iterator it=Levents.begin();
        it!=Levents.end();++it) {
-    cout << nn++ << " " << it->T << " :>>";
+    cout << nn++ << " " << it->TT << " :>>";
     for (UInt_t i=0;i<it->pulses.size();i++) {
       cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64-Tstart64;
     }
@@ -3612,7 +3651,8 @@ void CRS::Print_Events() {
   }
 }
 
-void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
+void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
+//void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
 
   event_iter it;
   event_reviter rit;
@@ -3631,28 +3671,28 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
 
   npulses2[pls->Chan]++;
 
-  if (Levents.empty()) {
+  if (Elist->empty()) {
     //if (Tstart64<0) {
     Tstart64 = pls->Tstamp64;
 
     //cout << "TStart64: " << Tstart64 << endl;
-    it=Levents.insert(Levents.end(),EventClass());
+    it=Elist->insert(Elist->end(),EventClass());
     it->Nevt=nevents;
     nevents++;
     it->Pulse_Ana_Add(pls);
-    m_event=Levents.begin();
+    //m_event=Elist->begin();
 
     return;
   }
 
   // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
   int nn=opt.ev_min;
-  //for (it=--Levents.end();it!=m_event && nn>0 ;--it,--nn) {
-  for (rit=Levents.rbegin();rit!=Levents.rend() && nn>0 ;++rit,--nn) {
-    dt = (pls->Tstamp64 - rit->T);
+  //for (it=--Elist.end();it!=m_event && nn>0 ;--it,--nn) {
+  for (rit=Elist->rbegin();rit!=Elist->rend() && nn>0 ;++rit,--nn) {
+    dt = (pls->Tstamp64 - rit->TT);
     if (dt > opt.tgate) {
       //add new event AFTER rit.base()
-      it=Levents.insert(rit.base(),EventClass());
+      it=Elist->insert(rit.base(),EventClass());
       it->Nevt=nevents;
       nevents++;
       it->Pulse_Ana_Add(pls);
@@ -3669,23 +3709,22 @@ void CRS::Event_Insert_Pulse(pulse_vect::iterator pls) {
   if (debug) {
     cout << "!!! beginning!!! ------------: "
 	 << nevents << " " << pls->Tstamp64 << " " << dt
-	 << " " << Levents.size() << endl;
+	 << " " << Elist->size() << endl;
   }
 
   // if the current event is too early, insert it at the end of the event list
-  it=Levents.insert(Levents.end(),EventClass());
+  it=Elist->insert(Elist->end(),EventClass());
   it->Nevt=nevents;
   it->Pulse_Ana_Add(pls);
   nevents++;
 
-}
+} //Event_Insert_Pulse
 
-void CRS::Make_Events(plist_iter it) {
+//void CRS::Make_Events(plist_iter it) {
+void CRS::Make_Events(std::list<eventlist>::iterator BB) {
 
   //cout << "Make_Events: T_acq: " << gl_ivect << " " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
   
-  pulse_vect::iterator pls;
-
   if (opt.Tstop && opt.T_acq>opt.Tstop) {
     if (b_acq) {
       //myM->DoStartStop();
@@ -3696,50 +3735,35 @@ void CRS::Make_Events(plist_iter it) {
       crs->b_fana=false;
       crs->b_stop=true;
     }
-    // crs->b_stop=true;
-    // crs->b_fana=false;
-    // crs->b_acq=false;
-    // crs->b_run=0;
-
     //return;
   }
 
-  //if (!opt.analyze)
-  //return;
-
-  /*
-  //insert last pulse from "previous" vector vv2
-  int nvp2 = (nvp+1)%ntrans;
-  if (Vpulses[nvp2].size()) {
-    pulse_vect::iterator pls = --(Vpulses[nvp2].end());
-    Event_Insert_Pulse(pls);
+  if (BB->front().TT<0) {
+    BB->pop_front();
   }
-  Vpulses[nvp2].clear();
-  */
 
-  //now insert all pulses from the current buffer, except last one
-  //--vv;// = Vpulses+nvp;
-
-  pulse_vect *vv = &(it->Vpulses);
-  //pulse_vect *vv = Vpulses+ibuf;
 
   //for (pls=vv->begin(); pls != --vv->end(); ++pls) {
-  for (pls=vv->begin(); pls != vv->end(); ++pls) {
-    if (!(pls->ptype&P_NOSTOP)) {
-      Event_Insert_Pulse(pls);
-      //Print_Events();
+  int nn;
+
+  nn=3;
+  for (evlist_iter evt=BB->begin(); evt!=BB->end() && nn>=0 ; ++evt,--nn) {
+    for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
     }
+    cout << "evt: " << evt->Nevt << " " << evt->TT << " " << evt->pulses.size() << " " << endl;
   }
+  Levents.splice(Levents.end(),*BB);
 
-  plist.erase(it);
-  gl_ivect++;
+  cout << "BB: " << Levents.size() << endl;
+  // nn=3;
+  // for (evlist_iter evt=BB->begin(); evt!=BB->end() && nn>=0 ; ++evt,--nn) {
+  //   for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
+  //   }
+  //   cout << "evt: " << evt->Nevt << " " << evt->TT << " " << evt->pulses.size() << " " << endl;
+  // }
+
+  //plist.erase(it);
   //Vpulses[ibuf].clear();
-
-  //nvp=(nvp+1)%ntrans;
-
-  //Print_Events();
-  //Select_Event(firstevent);
-
 
 }
 
@@ -3813,7 +3837,7 @@ void CRS::Fill_Dec73(EventClass* evt) {
   Long64_t* buf8 = (Long64_t*) (DecBuf+idec);
   Long64_t tt = evt->State;
   tt <<= 48;
-  tt += evt->T;
+  tt += evt->TT;
   *buf8 = tt;
   idec+=sizeof(Long64_t);
   for (UInt_t i=0; i<rPeaks.size(); i++) {

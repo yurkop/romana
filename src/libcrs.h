@@ -85,14 +85,14 @@ RQ_OBJECT("CRS")
   UChar_t* DecBuf;
   Int_t idec; //index of DecBuf;
 
-  struct Pstruct {
-    UInt_t num;
-    bool done;
-    pulse_vect Vpulses;
-  };
+  // struct Pstruct {
+  //   UInt_t num;
+  //   bool done;
+  //   pulse_vect Vpulses;
+  // };
 
-  std::list<Pstruct> plist;
-  typedef std::list<Pstruct>::iterator plist_iter;
+  // std::list<Pstruct> plist;
+  // typedef std::list<Pstruct>::iterator plist_iter;
 
   //Vpulses - list of vectors of pulses for Decode*
   // size of Vpulses can not be larger than 2
@@ -113,7 +113,13 @@ RQ_OBJECT("CRS")
   //Int_t n_frm; //counter for frmt4 and frmt5
 
   //std::list<event_list> Levents; //list of events
-  std::list<EventClass> Levents; //list of events
+  typedef std::list<EventClass> eventlist;
+  typedef std::list<EventClass>::iterator evlist_iter;
+  typedef std::list<EventClass>::reverse_iterator evlist_reviter;
+
+  eventlist Levents; //list of events
+  std::list<eventlist> Bufevents;
+  
   //EventClass mean_event;
 
   ///////##std::list<EventClass>::iterator m_start;
@@ -287,6 +293,7 @@ RQ_OBJECT("CRS")
   void Decode_any(UInt_t iread, UInt_t ibuf);
   void FindLast33(UInt_t ibuf);
   void FindLast2(UInt_t ibuf);
+  void PulseAna(PulseClass &ipls);
   void Decode33(UInt_t iread, UInt_t ibuf);
   void Decode2(UInt_t iread, UInt_t ibuf);
 
@@ -306,8 +313,9 @@ RQ_OBJECT("CRS")
   //void SigEvent() { Emit("SigEvent()"); } //*SIGNAL*
 
   //void Event_Insert_Pulse(PulseClass* pulse);
-  void Event_Insert_Pulse(pulse_vect::iterator pls);
-  void Make_Events(plist_iter it);
+  //void Event_Insert_Pulse(pulse_vect::iterator pls);
+  void Event_Insert_Pulse(eventlist *Elist, PulseClass* pls);
+  void Make_Events(std::list<eventlist>::iterator BB);
   void Select_Event(EventClass *evt);
   //void *Ana_Events(void* ptr);
 
