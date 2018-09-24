@@ -218,7 +218,6 @@ void *handle_decode(void *ctx) {
       if (ibuf!=gl_Nbuf-1) {
 	crs->FindLast33(ibuf);
       }
-      //Decode32(Fbuf,BufLength);
       crs->Decode33(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==2) {
@@ -231,28 +230,7 @@ void *handle_decode(void *ctx) {
       //Decode_adcm(buffer,length/sizeof(UInt_t));
     }
 
-    //evt_check=1;
-    //evt_cond.Signal();
-
     dec_iread[ibuf]=0;
-    //dec_finished[ibuf]=1;
-
-    //mkev_check[ibuf]=1;
-    //mkev_cond[ibuf].Signal();
-
-
-    // cout << "handle_decode: " << ibuf << " " << dec_check[ibuf]
-    // 	 << " " << crs->Vpulses[ibuf].size() << endl;
-
-    // if (crs->Vpulses[ibuf].size()>2) {
-    //   //cout << "Make_events33: " <<endl;
-    //   crs->Make_Events(ibuf);
-    // }
-
-    // if ((int) crs->Levents.size()>opt.ev_min) {
-    //   ana_check=1;
-    //   ana_cond.Signal();
-    // }
   } //while
   cmut.Lock();
   cout << "Decode thread deleted: " << ibuf << endl;
@@ -289,8 +267,10 @@ void *handle_mkev(void *ctx) {
     //if (crs->Vpulses[ibuf].size()>2) {
     crs->Make_Events(it);
     //}
-    // cout << "Make_events33: " << gl_ivect << " " << crs->plist.size()
-    // 	 << " " << crs->Levents.size() << endl;
+    cout << "\033[31m";
+    cout << "Make_events33: " << gl_ivect << " " << crs->plist.size()
+    	 << " " << crs->Levents.size() << endl;
+    cout << "\033[0m";
 
     //dec_finished[ibuf]=0;
     //ibuf=(ibuf+1)%gl_Nbuf;
@@ -365,8 +345,8 @@ void *handle_ana(void *ctx) {
       if (m_event->pulses.size()>=opt.mult1 &&
 	  m_event->pulses.size()<=opt.mult2) {
 
-	//m_event->FillHist(true);
-	//m_event->FillHist(false);
+	m_event->FillHist(true);
+	m_event->FillHist(false);
 	//it->FillHist_old();
 	if (opt.dec_write) {
 	  crs->Fill_Dec73(&(*m_event));
@@ -461,13 +441,8 @@ static void cback(libusb_transfer *trans) {
 
   //static TTimeStamp t1;
 
-  //cout << "cback: " << endl;
-  //return;
-
   //TTimeStamp t2;
   //t2.Set();
-
-  //crs->npulses_buf=0;
 
   if (trans->actual_length) {
     if (opt.decode) {
@@ -494,73 +469,15 @@ static void cback(libusb_transfer *trans) {
 	int length=trans->buffer-GLBuf-b_fill[gl_ibuf]+trans->actual_length;
 	b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
-	// cout << "--- AnaBuf: " << b_fill[gl_ibuf]/1024
-	//      << " " << b_end[gl_ibuf]/1024
-	//      << " " << length/1024 << endl;
-
-	//gl_ibuf=(gl_ibuf+1)%gl_ntrd;
 	crs->AnaBuf();
       }
-
-      //memcpy(crs->Fbuf[itr],trans->buffer,trans->actual_length);
-      //crs->buf_len[itr]=trans->actual_length;
-
-      /*
-      b_end[gl_ibuf]=b_fill[gl_ibuf]+trans->actual_length;
-      int next_len = b_end[gl_ibuf]+opt.usb_size*1024;
-      if (next_len>=opt.rbuf_size*1024) {
-	crs->AnaBuf();
-	// if (MT) {
-	//   crs->Decode_any_MT(itr);
-	// }
-	// else {
-	//   crs->Decode_any(itr);
-	// }
-      }
-      */
 
       trans->buffer=next_buf;
-
-      // UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
-      // if (next_buf+tr_size > GLBuf+gl_sz) {
-      // 	trans->buffer=GLBuf;
-      // }
-      // else {
-      // 	trans->buffer=crs->transfer[i_prev]->buffer + tr_size;
-      // }
-
-      // int rr = (trans->buffer-GLBuf)*gl_ntrd/gl_sz;
-      // cout << "cback: " << itr << " " << i_prev << " " << i_next
-      // 	   << " " << (int) (trans->buffer-GLBuf)/1024
-      // 	   << " " << gl_sz/1024 << " " << rr
-      // 	   << endl;
 
       if (crs->b_acq) {
 	libusb_submit_transfer(trans);
       }
 
-      /*
-      //int itr = *(int*) trans->user_data;
-      int new_len=crs->buf_len[crs->ibuf]+trans->actual_length;
-      if (new_len<=opt.rbuf_size*1024) {
-      memcpy(crs->Fbuf[crs->ibuf]+crs->buf_len[crs->ibuf],trans->buffer,
-      trans->actual_length);
-      crs->buf_len[crs->ibuf]=new_len;
-      }
-      else {
-      if (MT) {
-      crs->Decode_any_MT(crs->ibuf);
-      }
-      else {
-      crs->Decode_any(crs->ibuf);
-      }
-      crs->ibuf=(crs->ibuf+1)%crs->ntrans;
-      //buf_len[crs->ibuf]=0;
-      memcpy(crs->Fbuf[crs->ibuf],trans->buffer,
-      trans->actual_length);
-      crs->buf_len[crs->ibuf]=trans->actual_length;
-      }
-      */
     }
 
     if (opt.raw_write) {
@@ -2762,10 +2679,12 @@ void CRS::Show(bool force) {
 
   tm2=gSystem->Now();
   if (tm2-tm1>opt.tsleep || force) {
+
+    // cout << "\033[35m";
+    // cout << "Show: " << tm2-tm1 << " " << force << endl;
+    // cout << "\033[0m";
+
     tm1=tm2;
-
-    //cout << "Show: " << endl;
-
     //cout << "show... " << info.fMemTotal << " " << info.fMemFree << " " << info.fMemUsed << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
 
     if (myM) {

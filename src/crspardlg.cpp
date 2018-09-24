@@ -2070,7 +2070,9 @@ void CrsParDlg::UpdateStatus() {
     fStat[MAX_CH]->SetText(txt);
     txt.Form("%lld",allbad);
     fStatBad[MAX_CH]->SetText(txt);
-    //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
+    // cout << "\033[1;31m";
+    // cout << "rate: " << rate << " " << dt << endl;
+    // cout << "\033[0m";
     //}
     allpulses=crs->npulses;
     //}
