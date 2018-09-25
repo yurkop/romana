@@ -2778,10 +2778,7 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   tt1[2].Set();
 #endif
 
-  cout << "Make_events33_1: " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
   Make_Events(Bufevents.begin());
-  cout << "Make_events33_2: " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
-
 
 #ifdef TIMES
   tt2[2].Set();
@@ -2992,6 +2989,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 */
 
 void CRS::PulseAna(PulseClass &ipls) {
+  //cout << "PulseAna: " << endl;
   if (!opt.dsp[ipls.Chan]) {
     if (opt.nsmoo[ipls.Chan]) {
       ipls.Smooth(opt.nsmoo[ipls.Chan]);
@@ -3053,6 +3051,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     data = buf8[idx1/8] & 0xFFFFFFFFFFFF;
     unsigned char ch = GLBuf[idx1+7];
 
+    cout << "data: " << idx << " " << frmt << " " << data << endl;
     // if (vv->size()<4) {
     //   cout << "idx: " << idx1 << " " << vv->size() << " " << frmt << " " << (int) ch << " " << (int) ipls->Chan << endl;
     // }
@@ -3088,6 +3087,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       if (ipls.ptype==0) {
 	PulseAna(ipls);
 	Event_Insert_Pulse(Blist,&ipls);
+	cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
       }
 
       //vv->push_back(PulseClass());
@@ -3098,6 +3098,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       ipls.Chan=ch;
       ipls.Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
       n_frm=0;
+      cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
     }
     else if (frmt==1) {
       ipls.State = GLBuf[idx1+5];
@@ -3328,10 +3329,10 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
        << ipls.sData.size() << " " << n_frm << " " << Blist->size()
        << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
 
-  // int nn=3;
-  // for (evlist_iter it=Blist->begin();nn>=0;++it,--nn) {
-  //   cout << "evt: " << it->Nevt << " " << it->TT << " " << it->pulses.size() << " " << endl;
-  // }
+  int nn=10;
+  for (evlist_iter it=Blist->begin();it!=Blist->end() && nn>=0;++it,--nn) {
+    cout << "evt: " << it->Nevt << " " << it->TT << " " << it->pulses.size() << " " << endl;
+  }
 } //decode33
 
 
@@ -3742,19 +3743,24 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     BB->pop_front();
   }
 
-
+  if (Levents.size() && Levents.back().TT >= BB->front().TT) {
+    cout << Levents.back().TT << " " << BB->front().TT << endl;
+  }
+  /*
   //for (pls=vv->begin(); pls != --vv->end(); ++pls) {
   int nn;
-
   nn=3;
+  cout << "back: " << Levents.size() << " " << Levents.back().TT << endl;
   for (evlist_iter evt=BB->begin(); evt!=BB->end() && nn>=0 ; ++evt,--nn) {
     for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
     }
     cout << "evt: " << evt->Nevt << " " << evt->TT << " " << evt->pulses.size() << " " << endl;
   }
   Levents.splice(Levents.end(),*BB);
-
   cout << "BB: " << Levents.size() << endl;
+  */
+
+  Bufevents.erase(BB);
   // nn=3;
   // for (evlist_iter evt=BB->begin(); evt!=BB->end() && nn>=0 ; ++evt,--nn) {
   //   for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
