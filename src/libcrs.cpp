@@ -638,6 +638,7 @@ void CRS::Ana2(int all) {
 
   //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
 
+  /*
   Long64_t t_prev=0;
   for (evlist_iter it = Levents.begin();it!=Levents.end();++it) {
     Long64_t dt = it->TT - t_prev;
@@ -646,6 +647,7 @@ void CRS::Ana2(int all) {
       cout << "Missed: " << dt << " " << it->Nevt << " " << it->TT << " " << endl;
     }
   }
+  */
 
   // analyze events from m_event to m_end
   while (m_event!=m_end) {
@@ -3691,6 +3693,19 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
     return;
   }
 
+  /*
+  rit=Elist->rbegin();
+  dt = (pls->Tstamp64 - rit->TT);
+  if (pls->Tstamp64==4247360091) {
+    cout << "E!!!: " << rit->Nevt << " " << (int)pls->Chan << " " << pls->Tstamp64
+	 << " " << rit->TT << " " << dt << endl;
+  }
+  if (rit->Nevt > 69480 && rit->Nevt<69490) {
+    cout << "Elist: " << rit->Nevt << " " << (int)pls->Chan << " " << pls->Tstamp64
+	 << " " << rit->TT << " " << dt << endl;
+  }
+  */
+
   // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
   int nn=opt.ev_min;
   //for (it=--Elist.end();it!=m_event && nn>0 ;--it,--nn) {
@@ -3748,15 +3763,17 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     BB->pop_front();
   }
 
+  //cout << "LL: " << Levents.rbegin()->Nevt << " " << Levents.rbegin()->TT << endl;
+
   if (!Levents.empty() && !BB->empty()) {
     evlist_iter it = BB->begin();
     evlist_reviter rr = Levents.rbegin();
     while (it!=BB->end() && TMath::Abs(it->TT - rr->TT)<=opt.tgate*2) {
-      if (it->Nevt>69485 && it->Nevt<69490) {
-	cout << "Nevt: " << it->Nevt << " " << it->TT << " " << it->TT - rr->TT << endl;
-      }
-      cout << "Back: " << rr->Nevt << " " << it->Nevt
-       	   << " " << rr->TT << " " << it->TT-rr->TT << endl;
+      // if (it->Nevt>69485 && it->Nevt<69490) {
+      // 	cout << "Nevt: " << it->Nevt << " " << it->TT << " " << it->TT - rr->TT << endl;
+      // }
+      // cout << "Back: " << rr->Nevt << " " << it->Nevt
+      //  	   << " " << rr->TT << " " << it->TT-rr->TT << endl;
       for (UInt_t i=0;i<it->pulses.size();i++) {
 	Event_Insert_Pulse(&Levents,&it->pulses[i]);
       }
