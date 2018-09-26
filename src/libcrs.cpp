@@ -449,40 +449,31 @@ static void cback(libusb_transfer *trans) {
   //t2.Set();
 
   if (trans->actual_length) {
+    int itr = *(int*) trans->user_data;
+    int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
+    //int i_next = (itr+1)%crs->ntrans; //next itr
+
+    UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
+    if (next_buf+tr_size > GLBuf+gl_sz) {
+      next_buf=GLBuf;
+    }
+
+    double rr =
+      double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
+    UInt_t nn = (rr+1e-6)*gl_Nbuf;
+    // cout << "cback: " << itr //<< " " << i_prev << " " << i_next
+    // 	   << " " << (int) (trans->buffer-GLBuf)/1024
+    // 	   << " " << gl_sz/1024 << " " << rr << " " << nn << " " << gl_ibuf
+    // 	   << endl;
+
     if (opt.decode) {
-
-
-      int itr = *(int*) trans->user_data;
-      int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
-      //int i_next = (itr+1)%crs->ntrans; //next itr
-
-      UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
-      if (next_buf+tr_size > GLBuf+gl_sz) {
-	next_buf=GLBuf;
-      }
-
-      double rr =
-	double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
-      UInt_t nn = (rr+1e-6)*gl_Nbuf;
-      // cout << "cback: " << itr //<< " " << i_prev << " " << i_next
-      // 	   << " " << (int) (trans->buffer-GLBuf)/1024
-      // 	   << " " << gl_sz/1024 << " " << rr << " " << nn << " " << gl_ibuf
-      // 	   << endl;
-
       if (nn!=gl_ibuf) {
 	int length=trans->buffer-GLBuf-b_fill[gl_ibuf]+trans->actual_length;
 	b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
 	crs->AnaBuf();
       }
-
-      trans->buffer=next_buf;
-
-      if (crs->b_acq) {
-	libusb_submit_transfer(trans);
-      }
-
-    }
+    } //if decode
 
     if (opt.raw_write) {
       crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
@@ -494,6 +485,11 @@ static void cback(libusb_transfer *trans) {
       else {
     	cout << "Can't open file: " << opt.fname_raw << endl;
       }
+    }
+
+    trans->buffer=next_buf;
+    if (crs->b_acq) {
+      libusb_submit_transfer(trans);
     }
 
     crs->nbuffers++;
@@ -641,6 +637,15 @@ void CRS::Ana2(int all) {
   }
 
   //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
+
+  Long64_t t_prev=0;
+  for (evlist_iter it = Levents.begin();it!=Levents.end();++it) {
+    Long64_t dt = it->TT - t_prev;
+    t_prev=it->TT;
+    if (TMath::Abs(dt)<opt.tgate) {
+      cout << "Missed: " << dt << " " << it->Nevt << " " << it->TT << " " << endl;
+    }
+  }
 
   // analyze events from m_event to m_end
   while (m_event!=m_end) {
@@ -3051,7 +3056,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     data = buf8[idx1/8] & 0xFFFFFFFFFFFF;
     unsigned char ch = GLBuf[idx1+7];
 
-    cout << "data: " << idx << " " << frmt << " " << data << endl;
+    //cout << "data: " << idx << " " << frmt << " " << data << endl;
     // if (vv->size()<4) {
     //   cout << "idx: " << idx1 << " " << vv->size() << " " << frmt << " " << (int) ch << " " << (int) ipls->Chan << endl;
     // }
@@ -3087,7 +3092,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       if (ipls.ptype==0) {
 	PulseAna(ipls);
 	Event_Insert_Pulse(Blist,&ipls);
-	cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
+	//cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
       }
 
       //vv->push_back(PulseClass());
@@ -3098,7 +3103,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       ipls.Chan=ch;
       ipls.Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
       n_frm=0;
-      cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
+      //cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
     }
     else if (frmt==1) {
       ipls.State = GLBuf[idx1+5];
@@ -3325,14 +3330,14 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   //Blist->pop_front();
   //}
 
-  cout << "decode33: " << idx1 << " " << frmt << " " << ipls.Counter << " "
-       << ipls.sData.size() << " " << n_frm << " " << Blist->size()
-       << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
+  // cout << "decode33: " << idx1 << " " << frmt << " " << ipls.Counter << " "
+  //      << ipls.sData.size() << " " << n_frm << " " << Blist->size()
+  //      << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
 
-  int nn=10;
-  for (evlist_iter it=Blist->begin();it!=Blist->end() && nn>=0;++it,--nn) {
-    cout << "evt: " << it->Nevt << " " << it->TT << " " << it->pulses.size() << " " << endl;
-  }
+  // int nn=10;
+  // for (evlist_iter it=Blist->begin();it!=Blist->end() && nn>=0;++it,--nn) {
+  //   cout << "evt: " << it->Nevt << " " << it->TT << " " << it->pulses.size() << " " << endl;
+  // }
 } //decode33
 
 
@@ -3743,24 +3748,41 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     BB->pop_front();
   }
 
-  if (Levents.size() && Levents.back().TT >= BB->front().TT) {
-    cout << Levents.back().TT << " " << BB->front().TT << endl;
-  }
-  /*
-  //for (pls=vv->begin(); pls != --vv->end(); ++pls) {
-  int nn;
-  nn=3;
-  cout << "back: " << Levents.size() << " " << Levents.back().TT << endl;
-  for (evlist_iter evt=BB->begin(); evt!=BB->end() && nn>=0 ; ++evt,--nn) {
-    for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
+  if (!Levents.empty() && !BB->empty()) {
+    evlist_iter it = BB->begin();
+    evlist_reviter rr = Levents.rbegin();
+    while (it!=BB->end() && TMath::Abs(it->TT - rr->TT)<=opt.tgate*2) {
+      if (it->Nevt>69485 && it->Nevt<69490) {
+	cout << "Nevt: " << it->Nevt << " " << it->TT << " " << it->TT - rr->TT << endl;
+      }
+      cout << "Back: " << rr->Nevt << " " << it->Nevt
+       	   << " " << rr->TT << " " << it->TT-rr->TT << endl;
+      for (UInt_t i=0;i<it->pulses.size();i++) {
+	Event_Insert_Pulse(&Levents,&it->pulses[i]);
+      }
+      it=BB->erase(it);
+      rr=Levents.rbegin();
     }
-    cout << "evt: " << evt->Nevt << " " << evt->TT << " " << evt->pulses.size() << " " << endl;
   }
+
+  //for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
+  //}
+
+
+  // int nn;
+  // nn=3;
+  // cout << "back: " << Levents.size() << " " << Levents.back().TT << endl;
+  // for (evlist_iter evt=BB->begin(); evt!=BB->end() && nn>=0 ; ++evt,--nn) {
+  //   for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
+  //   }
+  //   cout << "evt: " << evt->Nevt << " " << evt->TT << " " << evt->pulses.size() << " " << endl;
+  // }
+
   Levents.splice(Levents.end(),*BB);
-  cout << "BB: " << Levents.size() << endl;
-  */
+  //cout << "BB1: " << Levents.size() << " " << Bufevents.size() << endl;
 
   Bufevents.erase(BB);
+  //cout << "BB2: " << Levents.size() << " " << Bufevents.size() << endl;
   // nn=3;
   // for (evlist_iter evt=BB->begin(); evt!=BB->end() && nn>=0 ; ++evt,--nn) {
   //   for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
