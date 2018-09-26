@@ -62,11 +62,13 @@ TThread* trd_crs;
 const Long64_t P64_0=-123456789123456789;
 
 std::list<EventClass>::iterator m_event; //важный параметр
-// расстояние от этого элемента до конца списка не должно быть больше,
+std::list<EventClass>::iterator m_end; //важный параметр
+// расстояние m_end до конца списка не должно быть больше,
 // чем opt.ev_min
-// в Ana данные анализируются от m_event до Levents.end()-opt.ev_min
+// в Ana данные анализируются от m_event до m_end
 // или до Levents.end(), если конец анализа
 // данные удаляются от Levents.begin() до m_event
+// (но оставляется opt.ev_max событий)
 
 //int MT=1;
 
@@ -85,12 +87,13 @@ int b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
 int b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
 
 UInt_t gl_iread; //current number of readbuf or cback [0.. infinity)
-//UInt_t gl_ivect; //current number of pstruct in make_event [0.. infinity)
+UInt_t gl_ivect; //current number of pstruct in make_event [0.. infinity)
 UInt_t gl_ibuf; //current buffer for decode* [0 .. gl_Nbuf]
 UInt_t gl_Nbuf; //maximal number of buffers for decode*
 //int gl_ntrd=6; //number of decode threads (and also sub-buffers)
 
 int decode_thread_run;
+int mkev_thread_run;
 int ana_thread_run;
 int dec_nr[CRS::MAXTRANS];
 
@@ -108,8 +111,8 @@ TThread* trd_mkev;
 
 int ana_all;
 TThread* trd_ana;
-TCondition ana_cond;
-int ana_check;
+//TCondition ana_cond;
+//int ana_check;
 
 
 
@@ -202,10 +205,6 @@ void *handle_decode(void *ctx) {
     while(!dec_iread[ibuf])
       dec_cond[ibuf].Wait();
 
-    //cmut.Lock();
-    //cout << "dec_working: " << ibuf << endl;
-    //cmut.UnLock();
-
     // while(dec_finished[ibuf]) {
     //   cout << "dec_sleeping: " << ibuf << endl;
     //   gSystem->Sleep(1);
@@ -215,6 +214,10 @@ void *handle_decode(void *ctx) {
       //dec_iread[ibuf]=0;
       break;
     }
+
+    cmut.Lock();
+    cout << "dec_working: " << ibuf << endl;
+    cmut.UnLock();
 
     if (crs->module>=32) {
       if (ibuf!=gl_Nbuf-1) {
@@ -241,21 +244,22 @@ void *handle_decode(void *ctx) {
 }
 
 void *handle_mkev(void *ctx) {
-  return 0;
+  //return 0;
 
-  /*
   cmut.Lock();
   cout << "Mkev thread started: " << endl;
   cmut.UnLock();
   //UInt_t ibuf=gl_ibuf;
-  CRS::plist_iter it;
-
-  while (decode_thread_run) {
+  //CRS::plist_iter it;
+  std::list<CRS::eventlist>::iterator BB;
+  
+  while (mkev_thread_run) {
 
     bool fdec=false; //proper dec.. finished
-    while(!fdec && decode_thread_run) {
-      for (it = crs->plist.begin(); it!=crs->plist.end();++it) {
-	if (it->num==gl_ivect) {
+    while(!fdec && mkev_thread_run) {
+      //cout << "mkev: " << crs->Bufevents.size() << endl;
+      for (BB = crs->Bufevents.begin(); BB!=crs->Bufevents.end();++BB) {
+	if (BB->front().Nevt==gl_ivect && BB->front().State==123) {
 	  fdec=true;
 	  break;
 	}
@@ -263,32 +267,36 @@ void *handle_mkev(void *ctx) {
       gSystem->Sleep(1);
     }
 
-    if (!decode_thread_run) {
+    if (!mkev_thread_run) {
       break;
     }
 
     //if (crs->Vpulses[ibuf].size()>2) {
-    crs->Make_Events(it);
+    crs->Make_Events(BB);
     //}
+
+    m_end = crs->Levents.end();
+    std::advance(m_end,-opt.ev_min);
+ 
     cout << "\033[31m";
-    cout << "Make_events33: " << gl_ivect << " " << crs->plist.size()
+    cout << "Make_events33: " << gl_ivect << " " << crs->Bufevents.size()
     	 << " " << crs->Levents.size() << endl;
     cout << "\033[0m";
 
     //dec_finished[ibuf]=0;
     //ibuf=(ibuf+1)%gl_Nbuf;
     
-    if ((int) crs->Levents.size()>opt.ev_min) {
-      ana_check=1;
-      ana_cond.Signal();
-    }
+    // if ((int) crs->Levents.size()>opt.ev_min) {
+    //   ana_check=1;
+    //   ana_cond.Signal();
+    // }
 
   }
   cmut.Lock();
   cout << "Mkev thread deleted: " << endl;
   cmut.UnLock();
   return NULL;
-  */
+
 }
 
 void *handle_ana(void *ctx) {
@@ -299,6 +307,14 @@ void *handle_ana(void *ctx) {
   cout << "Ana thread started: " << endl;
   cmut.UnLock();
   while (ana_thread_run) {
+
+    while (ana_thread_run &&
+	   //((int)crs->Levents.size()<=opt.ev_min ||
+	   m_event==m_end ) {
+      gSystem->Sleep(1);
+    }
+
+    /*
     while(!ana_check)
       ana_cond.Wait();
 
@@ -316,6 +332,7 @@ void *handle_ana(void *ctx) {
       //ana_mut.UnLock();
       continue;
     }
+    */
 
     // вызываем ana2 после каждого cback или DoBuf
     // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
@@ -330,15 +347,19 @@ void *handle_ana(void *ctx) {
     // cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
     // cmut.UnLock();
 
-    std::list<EventClass>::iterator m_end = crs->Levents.end();
+    //std::list<EventClass>::iterator m_end = crs->Levents.end();
+
     if (!ana_all) { //analyze up to ev_min events
-      // if (m_event==crs->Levents.end()) {
-      // 	m_event=crs->Levents.begin();
-      // }
-      std::advance(m_end,-opt.ev_min);
+      if (m_event==crs->Levents.end()) {
+	m_event=crs->Levents.begin();
+      }
+    }
+    else {
+      m_end=crs->Levents.end();
+      //std::advance(m_end,-opt.ev_min);
     }
 
-    cout << "Levents1: " << std::distance(m_end,crs->Levents.end()) << endl;
+    cout << "Levents1: " << crs->Levents.size() << " " << std::distance(m_end,crs->Levents.end()) << endl;
     cout << "Levents1a: " << std::distance(m_end,crs->Levents.end()) << endl;
 
     //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
@@ -584,6 +605,7 @@ void CRS::Ana_start() {
 
   if (opt.nthreads>1) {
     decode_thread_run=1;
+    mkev_thread_run=1;
     ana_thread_run=1;
 
     for (UInt_t i=0;i<gl_Nbuf;i++) {
@@ -603,7 +625,7 @@ void CRS::Ana_start() {
     trd_mkev->Run();
 
     ana_all=0;
-    ana_check=0;
+    //ana_check=0;
 
     trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
     trd_ana->Run();
@@ -654,8 +676,8 @@ void CRS::Ana2(int all) {
     if (m_event->pulses.size()>=opt.mult1 &&
 	m_event->pulses.size()<=opt.mult2) {
 
-      //m_event->FillHist(true);
-      //m_event->FillHist(false);
+      m_event->FillHist(true);
+      m_event->FillHist(false);
       //it->FillHist_old();
       if (opt.dec_write) {
 	crs->Fill_Dec73(&(*m_event));
@@ -1920,6 +1942,7 @@ void CRS::DoReset() {
   }
 
   m_event=Levents.end();
+  m_end=Levents.end();
   //m_event=Levents.begin();
 
   nevents=0;
@@ -2420,7 +2443,7 @@ void CRS::FAnalyze(bool nobatch) {
 
 void CRS::InitBuf() {
   gl_iread=0;
-  //gl_ivect=0;
+  gl_ivect=0;
   gl_ibuf=0;
   gl_off = 1024*128;
 
@@ -2485,6 +2508,7 @@ void CRS::EndAna(int all) {
   //all=0 -> just stop, buffers remain not analyzed,
   //         can continue from this point on
   if (opt.nthreads>1) {
+    gSystem->Sleep(50);
     while (!Bufevents.empty()) {
       gSystem->Sleep(10);
     }
@@ -2498,15 +2522,17 @@ void CRS::EndAna(int all) {
       //dec_finished[i]=1;
     }
 
+    gSystem->Sleep(50);
+    mkev_thread_run=0;    
+    
     trd_mkev->Join();
     trd_mkev->Delete();
 
-    
-    gSystem->Sleep(100);
+    gSystem->Sleep(50);
     ana_thread_run=0;    
     ana_all=all;
-    ana_check=1;
-    ana_cond.Signal();
+    //ana_check=1;
+    //ana_cond.Signal();
     trd_ana->Join();
     trd_ana->Delete();
     cout << "done" << endl;
@@ -2742,7 +2768,7 @@ void CRS::Show(bool force) {
 void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf) {
   //-----decode
   //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
-  //cout << "Decode_MT: " << ibuf << endl;
+  cout << "Decode_MT: " << ibuf << " " << iread << endl;
 
   dec_iread[ibuf]=iread+1;
   dec_cond[ibuf].Signal();
@@ -3044,7 +3070,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   dec_mut.UnLock();
 
   Blist->push_back(EventClass());
-  Blist->back().Nevt=iread;
+  Blist->front().Nevt=iread;
   PulseClass ipls=dummy_pulse;
 
   //cout << "Decode33: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
@@ -3332,9 +3358,11 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   //Blist->pop_front();
   //}
 
-  // cout << "decode33: " << idx1 << " " << frmt << " " << ipls.Counter << " "
-  //      << ipls.sData.size() << " " << n_frm << " " << Blist->size()
-  //      << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
+  Blist->front().State=123;
+
+  cout << "decode33: " << idx1 << " " << frmt << " " << ipls.Counter << " "
+       << ipls.sData.size() << " " << n_frm << " " << Blist->size()
+       << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
 
   // int nn=10;
   // for (evlist_iter it=Blist->begin();it!=Blist->end() && nn>=0;++it,--nn) {
