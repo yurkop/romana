@@ -35,6 +35,8 @@ namespace PROF {
 
 }
 
+//Double_t initcuts[MAXCUTS];
+
 using namespace std;
 
 PulseClass::PulseClass() {
@@ -201,6 +203,7 @@ void PulseClass::PeakAna() {
     if (pk->T4<(int)kk) {pk->T4=kk; pk->Type|=P_B11;}
     if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B11;}
 
+    //cout << "T3: " << pk->T3 << endl;
     //if (t4>(int)kk) {t3=kk; pk->Type|=P_B111;}
 
     for (int j=pk->T3;j<pk->T4;j++) {
@@ -599,6 +602,7 @@ void EventClass::Fill_Time_Extend(HMap* map) {
 }
 
 void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
+  // if first -> check cuts and set cut_flag
   if (first) {
     //cout << "fill: " << map->hst->GetName() << endl;
     map[ch]->hst->Fill(x);
@@ -611,9 +615,11 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
       for (int i=0;i<opt.ncuts;i++) {
 	if (getbit(*(map[ch]->cut_index),i)) {
 	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
+	    //if (hcl->cut_flag[i]==0)
 	    hcl->cut_flag[i]=1;
-	    //cout << "Cut: " << Nevt << " " << i << " " << ch << " " << x << endl;
 	  }
+	  //else
+	  //hcl->cut_flag[i]=-1;
 	}
       }
     }
@@ -711,8 +717,11 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
 	if (getbit(*(map->cut_index),i)) {
 	  //cout << "cut: " << i << " " << icut << " " << hcl->cutG[icut] << endl;
 	  if (hcl->cutG[i]->IsInside(x,y)) {
+	    //if (hcl->cut_flag[i]==0)
 	    hcl->cut_flag[i]=1;
 	  }
+	  //else
+	  //hcl->cut_flag[i]=-1;
 	}
       }
     }
@@ -756,8 +765,10 @@ void EventClass::FillHist(Bool_t first) {
       return;
     }
 
-    if (opt.ncuts)
+    if (opt.ncuts) {
+      //memcpy(hcl->cut_flag,initcuts,sizeof(hcl->cut_flag));
       memset(hcl->cut_flag,0,sizeof(hcl->cut_flag));
+    }
   }
 
   // if (opt.Tstop && (T-crs->Tstart64)*DT > opt.Tstop) {
@@ -928,6 +939,9 @@ void EventClass::FillHist(Bool_t first) {
   */
 
   if (first) {
+    // for (int i=0;i<opt.ncuts;i++) {
+    //   hcl->cut_flag[i]=(hcl->cut_flag[i]>0);
+    // }
     if (hcl->b_formula) {
       for (int i=0;i<opt.ncuts;i++) {
 	if (opt.pcuts[i]==1) {//formula

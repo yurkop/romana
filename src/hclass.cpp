@@ -17,6 +17,8 @@ extern ULong_t fCyan;
 
 extern HistFrame* EvtFrm;
 
+//extern Double_t initcuts[MAXCUTS];
+
 //TText txt;
 
 //------------------------------
@@ -115,6 +117,7 @@ HClass::HClass()
     sprintf(ss,"form%d",i+1);
     cform[i]=new TFormula(ss,"0");
     strcpy(cuttitle[i],"");
+    //initcuts[i]=1;
     //cutmap[i]=0;
   }
 

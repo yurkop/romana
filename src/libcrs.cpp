@@ -215,9 +215,9 @@ void *handle_decode(void *ctx) {
       break;
     }
 
-    cmut.Lock();
-    cout << "dec_working: " << ibuf << endl;
-    cmut.UnLock();
+    // cmut.Lock();
+    // cout << "dec_working: " << ibuf << endl;
+    // cmut.UnLock();
 
     if (crs->module>=32) {
       if (ibuf!=gl_Nbuf-1) {
@@ -259,6 +259,8 @@ void *handle_mkev(void *ctx) {
     while(!fdec && mkev_thread_run) {
       //cout << "mkev: " << crs->Bufevents.size() << endl;
       for (BB = crs->Bufevents.begin(); BB!=crs->Bufevents.end();++BB) {
+	// cout << "mkev: " << crs->Bufevents.size() << BB->front().Nevt
+	//      << " " << gl_ivect << " " << (int) BB->front().State << endl;
 	if (BB->front().Nevt==gl_ivect && BB->front().State==123) {
 	  fdec=true;
 	  break;
@@ -283,6 +285,7 @@ void *handle_mkev(void *ctx) {
     	 << " " << crs->Levents.size() << endl;
     cout << "\033[0m";
 
+    gl_ivect++;
     //dec_finished[ibuf]=0;
     //ibuf=(ibuf+1)%gl_Nbuf;
     
@@ -359,8 +362,8 @@ void *handle_ana(void *ctx) {
       //std::advance(m_end,-opt.ev_min);
     }
 
-    cout << "Levents1: " << crs->Levents.size() << " " << std::distance(m_end,crs->Levents.end()) << endl;
-    cout << "Levents1a: " << std::distance(m_end,crs->Levents.end()) << endl;
+    //cout << "Levents1: " << crs->Levents.size() << " " << std::distance(m_end,crs->Levents.end()) << endl;
+    //cout << "Levents1a: " << std::distance(m_end,crs->Levents.end()) << endl;
 
     //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
 
@@ -392,12 +395,12 @@ void *handle_ana(void *ctx) {
 
     //gSystem->Sleep(500);
 
-    cout << "Levents1b: " << std::distance(m_end,crs->Levents.end()) << " " << n1 << " " << n2 << endl;
+    //cout << "Levents1b: " << std::distance(m_end,crs->Levents.end()) << " " << n1 << " " << n2 << endl;
 
-    cout << "Levents2: " << std::distance(m_event,m_end)
-	 << " " << std::distance(m_event,crs->Levents.end())
-	 << " " << std::distance(m_end,crs->Levents.end())
-	 << " " << crs->Levents.size() << endl;
+    // cout << "Levents2: " << std::distance(m_event,m_end)
+    // 	 << " " << std::distance(m_event,crs->Levents.end())
+    // 	 << " " << std::distance(m_end,crs->Levents.end())
+    // 	 << " " << crs->Levents.size() << endl;
 
     // erase events if the list is too long
     for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
