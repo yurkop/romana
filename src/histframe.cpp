@@ -614,7 +614,7 @@ void HistFrame::Make_Ltree() {
 
 
   iWork = Item_Ltree(iroot, "WORK",0,0,0);
-  for (int cc=0;cc<opt.ncuts;cc++) {
+  for (int cc=1;cc<opt.ncuts;cc++) {
     if (opt.pcuts[cc]) {
       sprintf(cutname,"WORK_cut%d",cc);
       iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
@@ -648,7 +648,7 @@ void HistFrame::Make_Ltree() {
   }
 
   fListTree->CheckAllChildren(iWork,wrk_check[0]);
-  for (int cc=0;cc<opt.ncuts;cc++) {
+  for (int cc=1;cc<opt.ncuts;cc++) {
     if (opt.pcuts[cc]) {
       fListTree->CheckAllChildren(iWork_cut[cc],wrk_check[cc+1]);
     }
@@ -664,7 +664,7 @@ void HistFrame::Make_Ltree() {
   // }
 
   //fill fCutTree
-  for (int i=0;i<opt.ncuts;i++) {
+  for (int i=1;i<opt.ncuts;i++) {
     //cout << "Make_Ltree1: " << opt.ncuts << " " << i << " " << opt.pcuts[i] << endl;
     if (opt.pcuts[i]) {
       TCutG* gcut = hcl->cutG[i];
@@ -785,7 +785,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
     }
     
     fListTree->DeleteChildren(iWork);
-    for (int cc=0;cc<opt.ncuts;cc++) {
+    for (int cc=1;cc<opt.ncuts;cc++) {
       if (opt.pcuts[cc]) {
 	fListTree->DeleteChildren(iWork_cut[cc]);
       }
@@ -831,7 +831,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       }
 
       //cout << "work2: " << item << " " << hname << endl;
-      for (int cc=0;cc<opt.ncuts;cc++) {
+      for (int cc=1;cc<opt.ncuts;cc++) {
 	if (opt.pcuts[cc]) {
 	  sprintf(hname2,"%s_cut%d",hname,cc);
 	  item2 = fListTree->FindChildByName(iWork_cut[cc],hname2);
@@ -893,7 +893,7 @@ void HistFrame::Clone_Ltree(HMap* map) {
     else
       pic=pic1;
 
-    for (int i=0;i<opt.ncuts;i++) {
+    for (int i=1;i<opt.ncuts;i++) {
       if (opt.pcuts[i]) {
 	HMap* mcut = map->h_cuts[i];
 	if (mcut)
@@ -1134,7 +1134,7 @@ void HistFrame::MakeCutG(TPolyLine *pl, TObject* hobj) {
   HMap *map;
 
   int icut=-1;
-  for (int i=0;i<opt.ncuts;i++) {
+  for (int i=1;i<opt.ncuts;i++) {
     if (opt.pcuts[i]==0) {
       icut=i;
       break;
@@ -1278,7 +1278,7 @@ void HistFrame::AddFormula() {
   else {
 
     int icut=-1;
-    for (int i=0;i<opt.ncuts;i++) {
+    for (int i=1;i<opt.ncuts;i++) {
       if (opt.pcuts[i]==0) {
 	icut=i;
 	break;
@@ -1332,7 +1332,7 @@ void HistFrame::ClearCutG()
   Clear_Ltree();
 
   //opt.gcut[0]->Print();
-  for (int i=0;i<opt.ncuts;i++) {
+  for (int i=1;i<opt.ncuts;i++) {
     delete hcl->cutG[i];
     hcl->cutG[i]=0;
   }
@@ -1648,7 +1648,7 @@ void HistFrame::DrawHist() {
 	leg.SetMargin(0.5);
 
 	bool found=false;
-	for (int j=0;j<opt.ncuts;j++) {
+	for (int j=1;j<opt.ncuts;j++) {
 
 	  if (getbit(*(map->cut_index),j)) {
 	    if (hcl->cutG[j]) {

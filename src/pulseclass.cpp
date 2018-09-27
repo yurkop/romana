@@ -606,7 +606,7 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   if (first) {
     map[ch]->hst->Fill(x);
     if (opt.ncuts) {
-      for (int i=0;i<opt.ncuts;i++) {
+      for (int i=1;i<opt.ncuts;i++) {
 	if (getbit(*(map[ch]->cut_index),i)) {
 	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
 	    //if (hcl->cut_flag[i]==0)
@@ -619,7 +619,7 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
     }
   }
   else if (*(map[ch]->wrk)) {
-    for (int i=0;i<opt.ncuts;i++) {
+    for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
 	map[ch]->h_cuts[i]->hst->Fill(x);
       }
@@ -668,7 +668,7 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
     Fill_Mean1((TH1F*)map->hst, pls, newsz);
   } //if first
   else if (*(map->wrk)) {
-    for (int i=0;i<opt.ncuts;i++) {
+    for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
 
 	if (map->h_cuts[i]->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
@@ -688,9 +688,8 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
   if (first) {
     map->hst->Fill(x,y);
     if (opt.ncuts) {
-      for (int i=0;i<MAXCUTS;i++) {
+      for (int i=1;i<opt.ncuts;i++) {
 	if (getbit(*(map->cut_index),i)) {
-	  //cout << "cut: " << i << " " << icut << " " << hcl->cutG[icut] << endl;
 	  if (hcl->cutG[i]->IsInside(x,y)) {
 	    //if (hcl->cut_flag[i]==0)
 	    hcl->cut_flag[i]=1;
@@ -702,7 +701,7 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
     }
   }
   else if (*(map->wrk)) {
-    for (int i=0;i<opt.ncuts;i++) {
+    for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i])
 	map->h_cuts[i]->hst->Fill(x,y);      
     }
@@ -894,7 +893,7 @@ void EventClass::FillHist(Bool_t first) {
     //   hcl->cut_flag[i]=(hcl->cut_flag[i]>0);
     // }
     if (hcl->b_formula) {
-      for (int i=0;i<opt.ncuts;i++) {
+      for (int i=1;i<opt.ncuts;i++) {
 	if (opt.pcuts[i]==1) {//formula
 	  hcl->cut_flag[i]=hcl->cform[i]->EvalPar(0,hcl->cut_flag);
 	}

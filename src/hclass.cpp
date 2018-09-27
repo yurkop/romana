@@ -269,7 +269,7 @@ void HClass::Clone_Hist(HMap* map) {
 
   //if (*map->wrk) {
     TH1* h0 = (TH1*) map->hst;
-    for (int i=0;i<opt.ncuts;i++) {
+    for (int i=1;i<opt.ncuts;i++) {
       if (opt.pcuts[i]) {
 	sprintf(cutname,"WORK_cut%d",i);
 	sprintf(name,"%s_cut%d",h0->GetName(),i);
@@ -348,9 +348,9 @@ void HClass::Make_cuts() {
 
     //determine cut titles and colors
     int icut=1;
-    for (int i=0;i<opt.ncuts;i++) {
+    for (int i=1;i<opt.ncuts;i++) {
       if (getbit(*(map->cut_index),i)) {
-	cutcolor[i]=icut+1;
+	cutcolor[i]=icut;
 	icut++;
 	//cutcolor[i]+=1;
 	sprintf(cuttitle[i],"%s",map->GetName());
@@ -368,7 +368,7 @@ void HClass::Make_cuts() {
 
   //cout << "color[0]: " << cutcolor[0] << endl;
   //make cuts
-  for (int i=0;i<opt.ncuts;i++) {
+  for (int i=1;i<opt.ncuts;i++) {
     //cout << "cuts1: " << i << endl;
     if (cutG[i]) {
       delete cutG[i];
