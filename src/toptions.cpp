@@ -332,7 +332,8 @@ Toptions::Toptions() {
 
   memset(formula,0,sizeof(formula));
   memset(cut_form,0,sizeof(cut_form));
-  memset(maintrig,0,sizeof(maintrig));
+  maintrig=0;
+  //memset(maintrig,0,sizeof(maintrig));
   //strcpy(formula,"0");
 }
 

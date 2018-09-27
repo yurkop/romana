@@ -1119,7 +1119,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   const int fwid=120;
 
-  const char* txtlab[n_stat] = {"Start","AcqTime","Events","Ev/sec","Events2","Buffers","MB in","MB/sec","Raw MB out","Dec MB out"};
+  const char* txtlab[n_stat] = {"Start","AcqTime","Events","Ev/sec","MTrig","MTrig/sec","Buffers","MB in","MB/sec","Raw MB out","Dec MB out"};
 
   const char* st_tip[n_stat] = {
     "Acquisition start",
@@ -1127,7 +1127,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     "Acquisition Time",
     "Total number of events received",
     "Event rate received (in Hz)",
-    "Total number of events analyzed",
+    "Total number of main trigger events",
+    "Main trigger event rate (in Hz)",
     "Number of buffers received",
     "Megabytes received",
     "Received megabytes per second",
@@ -1768,9 +1769,10 @@ void MainFrame::UpdateStatus() {
   int ii=0;
 
   static Long64_t bytes1=0;
-  static Long64_t nevents1=0;
+  static Long64_t nevents_old=0;
+  static Long64_t nevents2_old=0;
   static double t1=0;
-  double mb_rate,ev_rate;
+  double mb_rate,ev_rate,trig_rate;
 
   char txt[100];
   //time_t tt = opt.F_start.GetSec();
@@ -1789,15 +1791,18 @@ void MainFrame::UpdateStatus() {
 
   if (dt>0.1) {
     mb_rate = (crs->inputbytes-bytes1)/MB/dt;
-    ev_rate = (crs->nevents-nevents1)/dt;
+    ev_rate = (crs->nevents-nevents_old)/dt;
+    trig_rate = (crs->nevents2-nevents2_old)/dt;
   }
   else {
     mb_rate=0;
     ev_rate=0;
+    trig_rate=0;
   }
 
   bytes1=crs->inputbytes;
-  nevents1=crs->nevents;
+  nevents_old=crs->nevents;
+  nevents2_old=crs->nevents2;
   t1=opt.T_acq;
 
   fStat[ii++]->SetText(txt,kFALSE);
@@ -1808,6 +1813,7 @@ void MainFrame::UpdateStatus() {
   fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents),kFALSE);
   fStat[ii++]->SetText(TGString::Format("%0.3f",ev_rate),kFALSE);
   fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents2),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.3f",trig_rate),kFALSE);
   fStat[ii++]->SetText(TGString::Format("%lld",crs->nbuffers),kFALSE);
   fStat[ii++]->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),kFALSE);
   fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),kFALSE);

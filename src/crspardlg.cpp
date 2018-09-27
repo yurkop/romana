@@ -1069,12 +1069,18 @@ void ParParDlg::AddLogic(TGCompositeFrame* frame) {
   AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,k_int,
 	      1,MAX_CH,1,MAX_CH);
 
+  tip1= "";
+  tip2= "Main trigegr condition (cut).\nThis condition is used for selecting events which are written as decoded events\nSee Histograms->Cuts for making conditions\nUse this cut number as a main trigger condition.\nIf set to zero - write all events.";
+  label="Main trigger";
+  AddLine_opt(fF6,ww,NULL,&opt.maintrig,tip1,tip2,label,k_int,k_int,
+	      0,0,0,MAXCUTS);
 
+  /*
   tip1= "This condition is used for selecting events which are written as decoded events\nSee Histograms->Cuts for making conditions\nUse arithmetic/logic operations on existing cuts or leave it empty to record all events\nPress Enter or Check button to check if the syntaxis is correct";
   label="Main Trigger conditions";
   ww=150;
   AddLine_txt(fF6,ww,opt.maintrig, tip1, label);
-
+  */
 
   fF6->Resize();
 
@@ -1282,6 +1288,7 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 
 }
 
+/*
 void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
 			    const char* tip1, const char* label)
 {
@@ -1312,6 +1319,7 @@ void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname,
   hfr1->AddFrame(fLabel,fL7);
 
 }
+*/
 
 void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 		  const char* tip, const char* label) {
@@ -1585,6 +1593,7 @@ void ParParDlg::DoCheckPulse() {
   HiFrm->HiReset();
 }
 
+/*
 void ParParDlg::CheckFormula() {
   //cout << "Check: " << opt.maintrig << endl;
   Pixel_t color;
@@ -1604,6 +1613,7 @@ void ParParDlg::CheckFormula() {
   }
 
 }
+*/
 
 void ParParDlg::Update() {
   ParDlg::Update();

@@ -176,7 +176,8 @@ public:
 
   char formula[36];
   char cut_form[MAXCUTS][24];
-  char maintrig[22];
+  Int_t maintrig;
+  //char maintrig[22];
 
   Hdef h_time;
   Hdef h_area;

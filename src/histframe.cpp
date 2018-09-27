@@ -620,10 +620,10 @@ void HistFrame::Make_Ltree() {
       iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
     }
   }
-  if (crs->b_maintrig) {
-    sprintf(cutname,"WORK_MT");
-    iWork_MT = Item_Ltree(iroot, cutname,0,0,0);
-  }
+  // if (crs->b_maintrig) {
+  //   sprintf(cutname,"WORK_MT");
+  //   iWork_MT = Item_Ltree(iroot, cutname,0,0,0);
+  // }
   
   next.Reset();
   while ( (obj=(TObject*)next()) ) {
@@ -653,9 +653,9 @@ void HistFrame::Make_Ltree() {
       fListTree->CheckAllChildren(iWork_cut[cc],wrk_check[cc+1]);
     }
   }
-  if (crs->b_maintrig) {
-    fListTree->CheckAllChildren(iWork_MT,wrk_check_MT);
-  }
+  // if (crs->b_maintrig) {
+  //   fListTree->CheckAllChildren(iWork_MT,wrk_check_MT);
+  // }
   
   // TIter next2(hcl->dir_list);
   // TObject* obj2=0;
@@ -790,9 +790,9 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	fListTree->DeleteChildren(iWork_cut[cc]);
       }
     }
-    if (crs->b_maintrig) {
-      fListTree->DeleteChildren(iWork_MT);
-    }
+    // if (crs->b_maintrig) {
+    //   fListTree->DeleteChildren(iWork_MT);
+    // }
 
   }
 
@@ -840,12 +840,12 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	    fListTree->DeleteItem(item2);
 	}
       }
-      if (crs->b_maintrig) {
-	sprintf(hname2,"%s_MT",hname);
-	item2 = fListTree->FindChildByName(iWork_MT,hname2);
-	if (item2)
-	  fListTree->DeleteItem(item2);
-      }
+      // if (crs->b_maintrig) {
+      // 	sprintf(hname2,"%s_MT",hname);
+      // 	item2 = fListTree->FindChildByName(iWork_MT,hname2);
+      // 	if (item2)
+      // 	  fListTree->DeleteItem(item2);
+      // }
       //cout << "work3: " << item << " " << hname << endl;
     } //work*
     else { //not work*
@@ -901,11 +901,11 @@ void HistFrame::Clone_Ltree(HMap* map) {
       }
     }
 
-    if (crs->b_maintrig) {
-      HMap* mcut = map->h_MT;
-      if (mcut)
-	Item_Ltree(iWork_MT, mcut->GetName(), mcut, pic, pic);
-    }
+    // if (crs->b_maintrig) {
+    //   HMap* mcut = map->h_MT;
+    //   if (mcut)
+    // 	Item_Ltree(iWork_MT, mcut->GetName(), mcut, pic, pic);
+    // }
 
   }
 }

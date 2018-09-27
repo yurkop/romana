@@ -144,8 +144,8 @@ public:
 		   //TGNumberFormat::EAttribute attr, 
 		   double min1=0, double max1=0,
 		   double min2=0, double max2=0, char* connect=NULL);
-  void AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
-		   const char* tip1, const char* label);
+  // void AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
+  // 		   const char* tip1, const char* label);
   void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
   void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
@@ -166,7 +166,7 @@ public:
   void DoNum_SetBuf();
   void DoCheckHist();
   void DoCheckPulse();
-  void CheckFormula();
+  //void CheckFormula();
   void Update();
 
   ClassDef(ParParDlg, 0)

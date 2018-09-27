@@ -232,9 +232,9 @@ RQ_OBJECT("CRS")
   rpeak_type73 rP;
   std::vector<rpeak_type73> rPeaks;
 
-  bool b_maintrig; //true if maintrig (formula) is not empty
-  bool cut_main; //main trigger - set for each event in fillhist
-  TFormula maintrig;
+  //bool b_maintrig; //true if maintrig (formula) is not empty
+  //bool cut_main; //main trigger - set for each event in fillhist
+  //TFormula maintrig;
 
   peak_type dummy_peak;
   PulseClass dummy_pulse;
@@ -303,7 +303,7 @@ RQ_OBJECT("CRS")
 
   int Searchsync(UChar_t* buffer, int length);
 
-  int Set_Trigger();
+  //int Set_Trigger();
   void Ana_start();
   void Ana2(int all);
 

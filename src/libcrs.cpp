@@ -36,7 +36,7 @@ using namespace std;
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
-//extern HClass* hcl;
+extern HClass* hcl;
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern AnaParDlg *anapar;
@@ -367,7 +367,7 @@ void *handle_ana(void *ctx) {
 
     //cout << "Levents1: " << Levents.size() << " " << nevents << " " << &*Levents.end() << " " << &*m_end << " " << std::distance(m_event,Levents.end()) << " " << std::distance(m_end,Levents.end()) << endl;
 
-    int n1=0,n2=0;
+    //int n1=0,n2=0;
     // analyze events from m_event to m_end
     while (m_event!=m_end) {
       if (m_event->pulses.size()>=opt.mult1 &&
@@ -376,19 +376,21 @@ void *handle_ana(void *ctx) {
 	m_event->FillHist(true);
 	m_event->FillHist(false);
 	//it->FillHist_old();
-	if (opt.dec_write) {
-	  crs->Fill_Dec73(&(*m_event));
+	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
+	  ++crs->nevents2;
+	  if (opt.dec_write) {
+	    crs->Fill_Dec73(&(*m_event));
+	  }
 	}
 
 	//m_event->Analyzed=true;
 	++m_event;
-	++crs->nevents2;
-	++n1;
+	//++n1;
       }
       else {
       	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
       	m_event=crs->Levents.erase(m_event);
-	++n2;
+	//++n2;
       }
       //++m_event;
     }
@@ -569,6 +571,7 @@ void *handle_buf(void *ctx)
 }
 */
 
+/*
 int CRS::Set_Trigger() {
   int len = strlen(opt.maintrig);
   if (len==0) {
@@ -588,6 +591,7 @@ int CRS::Set_Trigger() {
     }
   }
 }
+*/
 
 void CRS::Ana_start() {
   //set initial variables for analysis
@@ -595,7 +599,7 @@ void CRS::Ana_start() {
   if (opt.ev_min>=opt.ev_max) {
     opt.ev_min=opt.ev_max/2;
   }
-  Set_Trigger();
+  //Set_Trigger();
   for (int i=0;i<MAX_CH;i++) {
     b_len[i] = opt.bkg2[i]-opt.bkg1[i];
     p_len[i] = opt.peak2[i]-opt.peak1[i];
@@ -682,12 +686,14 @@ void CRS::Ana2(int all) {
       m_event->FillHist(true);
       m_event->FillHist(false);
       //it->FillHist_old();
-      if (opt.dec_write) {
-	crs->Fill_Dec73(&(*m_event));
+      if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
+	++crs->nevents2;
+	if (opt.dec_write) {
+	  crs->Fill_Dec73(&(*m_event));
+	}
       }
 
       //m_event->Analyzed=true;
-      ++crs->nevents2;
       ++m_event;
     }
     // else {
@@ -2018,7 +2024,7 @@ void CRS::DoReset() {
   rPeaks.clear();
   //CloseTree();
 
-  Set_Trigger();  
+  //Set_Trigger();  
 
 }
 
@@ -2203,7 +2209,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   //cout << "ReadParGz2: " << sz << " " << pname << " " << HiFrm << endl;
 
-  Set_Trigger();
+  //Set_Trigger();
 
   opt.raw_write=false;
   opt.dec_write=false;

@@ -286,20 +286,20 @@ void HClass::Clone_Hist(HMap* map) {
       }
     }
 
-    if (crs->b_maintrig) {
-      sprintf(cutname,"WORK_MT");
-      sprintf(name,"%s_MT",h0->GetName());
-      sprintf(htitle,"%s_MT",h0->GetTitle());
-      TH1* hcut = (TH1*) h0->Clone();
-      hcut->Reset();
-      hcut->SetNameTitle(name,htitle);
-      //cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
-      hist_list->Add(hcut);
-      HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
+    // if (crs->b_maintrig) {
+    //   sprintf(cutname,"WORK_MT");
+    //   sprintf(name,"%s_MT",h0->GetName());
+    //   sprintf(htitle,"%s_MT",h0->GetTitle());
+    //   TH1* hcut = (TH1*) h0->Clone();
+    //   hcut->Reset();
+    //   hcut->SetNameTitle(name,htitle);
+    //   //cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
+    //   hist_list->Add(hcut);
+    //   HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
 
-      // add this map to the list h_cuts
-      map->h_MT=mcut;
-    }
+    //   // add this map to the list h_cuts
+    //   map->h_MT=mcut;
+    // }
     //}
 }
 

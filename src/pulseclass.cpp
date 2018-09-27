@@ -604,13 +604,7 @@ void EventClass::Fill_Time_Extend(HMap* map) {
 void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   // if first -> check cuts and set cut_flag
   if (first) {
-    //cout << "fill: " << map->hst->GetName() << endl;
     map[ch]->hst->Fill(x);
-    // cout << "xx: " << x << endl;
-    // if (x>map[ch]->hst->GetXaxis()->GetXmin() &&
-    // 	x<map[ch]->hst->GetXaxis()->GetXmax()) {
-    //   map[ch]->hst->AddBinContent(x);
-    // }
     if (opt.ncuts) {
       for (int i=0;i<opt.ncuts;i++) {
 	if (getbit(*(map[ch]->cut_index),i)) {
@@ -627,27 +621,14 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   else if (*(map[ch]->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
-	//cout << "Fill1d: " << Nevt << " " << x << endl;
 	map[ch]->h_cuts[i]->hst->Fill(x);
-	// if (x>=map[ch]->h_cuts[i]->hst->GetXaxis()->GetXmin() &&
-	//     x<map[ch]->h_cuts[i]->hst->GetXaxis()->GetXmax()) {
-	//   map[ch]->h_cuts[i]->hst->AddBinContent(x);
-	// }
       }
     }
-    if (crs->cut_main) {
-      //cout << "Fill1d: " << Nevt << " " << x << endl;
-      map[ch]->h_MT->hst->Fill(x);
-      // if (x>=map[ch]->h_MT->hst->GetXaxis()->GetXmin() &&
-      // 	  x<map[ch]->h_MT->hst->GetXaxis()->GetXmax()) {
-      // 	map[ch]->h_MT->hst->AddBinContent(x);
-      // }
-    }
+    // if (crs->cut_main) {
+    //   map[ch]->h_MT->hst->Fill(x);
+    // }
   }
 
-  // if (opt.Mrk[ch] && ch<MAX_CH) {
-  //   Fill1d(first,map,MAX_CH,x);
-  // }
   for (int j=0;j<NGRP;j++) {
     if (opt.Grp[ch][j] && ch<MAX_CH) {
       Fill1d(first,map,MAX_CH+j,x);
@@ -679,19 +660,13 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
   // }
 
   if (first) {
-    //cout << "fill_mean: " << (int) ch << " " << map->hst->GetNbinsX() << " " << pls->sData.size() << endl;
     int newsz = pls->sData.size();
     if (map->hst->GetNbinsX() < newsz) {
       map->hst->
 	SetBins(pls->sData.size(),-cpar.preWr[ch],newsz-cpar.preWr[ch]);
-      // cout << "Pulse_Mean: resize: " << (int) pls->Chan
-      // 	   << " " << map->hst->GetNbinsX() << endl;     
     }
-
     Fill_Mean1((TH1F*)map->hst, pls, newsz);
-    
   } //if first
-
   else if (*(map->wrk)) {
     for (int i=0;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
@@ -736,14 +711,8 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
 
 void EventClass::FillHist(Bool_t first) {
   double DT = crs->period*1e-9;
-  //int ch[MAX_CH];
   Double_t tt;
   Double_t ee;
-  //Double_t tt2;
-  //Double_t max,max2;
-  //int nbin;
-
-  //int icut=0;
   int mult=0;
   Long64_t tm;
 
@@ -754,7 +723,6 @@ void EventClass::FillHist(Bool_t first) {
 
   if (first) {
     opt.T_acq=(TT - crs->Tstart64)*DT;
-    //cout << "T_acq: " << opt.T_acq << " " << TT << endl;
 
     if (opt.Tstop && (opt.T_acq > opt.Tstop || opt.T_acq < opt.Tstart)) {
       if (crs->b_fana) {
@@ -771,10 +739,6 @@ void EventClass::FillHist(Bool_t first) {
     }
   }
 
-  // if (opt.Tstop && (T-crs->Tstart64)*DT > opt.Tstop) {
-  //   return;
-  // }
-
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
 
@@ -784,19 +748,6 @@ void EventClass::FillHist(Bool_t first) {
 
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
       peak_type* pk = &pulses[i].Peaks[j];
-
-      // if (first) {
-      // 	if (opt.dec_write) {
-      // 	  crs->rP.Area   = pk->Area  ;
-      // 	  //crs->rP.Height = pk->Height;
-      // 	  crs->rP.Width  = pk->Width ;
-      // 	  crs->rP.Time   = pk->Time  ;
-      // 	  crs->rP.Ch     = ch        ;
-      // 	  crs->rP.Type   = pk->Type  ;
-
-      // 	  crs->rPeaks.push_back(crs->rP);
-      // 	}
-      // }
 
       if (opt.elim2[ch]>0 &&
 	  (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
@@ -950,9 +901,9 @@ void EventClass::FillHist(Bool_t first) {
 	//cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i] << endl;
       }
     }
-    if (crs->b_maintrig) {
-      crs->cut_main = crs->maintrig.EvalPar(0,hcl->cut_flag);
-    }
+    // if (crs->b_maintrig) {
+    //   crs->cut_main = crs->maintrig.EvalPar(0,hcl->cut_flag);
+    // }
   }
 
 }
