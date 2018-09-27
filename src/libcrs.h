@@ -272,7 +272,7 @@ RQ_OBJECT("CRS")
   void DoReset(); //reset BPulses
   void DoFopen(char* oname, int popt);
   int ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2);
-  void SaveParGz(gzFile &ff);
+  void SaveParGz(gzFile &ff, Short_t mod);
 
   //void DoFAna();
   //void FAnalyze(bool nobatch);
@@ -321,7 +321,7 @@ RQ_OBJECT("CRS")
 
   //void NewTree();
   //void CloseTree();
-  void Reset_Dec();
+  void Reset_Dec73();
   void Fill_Dec73(EventClass* evt);
   void Flush_Dec();
 

@@ -2112,7 +2112,7 @@ void CrsParDlg::DoCrsNum() {
     crs->SetPar();
     //cout << "Command_start: " << endl;
     gzFile ff = gzopen("tmp.par","wb");
-    crs->SaveParGz(ff);
+    crs->SaveParGz(ff,crs->module);
     gzclose(ff);
     crs->Command2(3,0,0,0);
   }

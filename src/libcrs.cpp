@@ -606,7 +606,7 @@ void CRS::Ana_start() {
   }
   //cout << "Command_start: " << endl;
   gzFile ff = gzopen("tmp.par","wb");
-  SaveParGz(ff);
+  SaveParGz(ff,module);
   gzclose(ff);
 
 
@@ -1759,7 +1759,7 @@ int CRS::DoStartStop() {
       f_raw = gzopen(opt.fname_raw,raw_opt);
       if (f_raw) {
 	cout << "Writing parameters... : " << opt.fname_raw << endl;
-	SaveParGz(f_raw);
+	SaveParGz(f_raw,module);
 	gzclose(f_raw);
 	}
       else {
@@ -1770,7 +1770,7 @@ int CRS::DoStartStop() {
     }   
 
     if (opt.dec_write) {
-      Reset_Dec();
+      Reset_Dec73();
       // sprintf(dec_opt,"wb%d",opt.dec_compr);
 
       // f_dec = gzopen(opt.fname_dec,dec_opt);
@@ -2221,7 +2221,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   return 0;
 }
 
-void CRS::SaveParGz(gzFile &ff) {
+void CRS::SaveParGz(gzFile &ff, Short_t mod) {
 
   char buf[100000];
   UShort_t sz=0;
@@ -2241,7 +2241,7 @@ void CRS::SaveParGz(gzFile &ff) {
   }
 
 
-  gzwrite(ff,&module,sizeof(module));
+  gzwrite(ff,&mod,sizeof(mod));
   gzwrite(ff,&sz,sizeof(sz));
   gzwrite(ff,buf,sz);
 
@@ -2564,7 +2564,7 @@ void CRS::FAnalyze2(bool nobatch) {
   TCanvas *cv=0;
   //cout << "FAnalyze: " << gztell(f_read) << endl;
   if (juststarted && opt.dec_write) {
-    Reset_Dec();
+    Reset_Dec73();
   }
   juststarted=false;
 
@@ -2668,7 +2668,7 @@ void CRS::DoNBuf2(int nb) {
   }
 
   if (juststarted && opt.dec_write) {
-    Reset_Dec();
+    Reset_Dec73();
   }
   juststarted=false;
 
@@ -3876,13 +3876,13 @@ void CRS::Select_Event(EventClass *evt) {
 
 }
 
-void CRS::Reset_Dec() {
+void CRS::Reset_Dec73() {
   sprintf(dec_opt,"wb%d",opt.dec_compr);
 
   f_dec = gzopen(opt.fname_dec,dec_opt);
   if (f_dec) {
     cout << "Writing parameters... : " << opt.fname_dec << endl;
-    SaveParGz(f_dec);
+    SaveParGz(f_dec,73);
     gzclose(f_dec);
   }
   else {

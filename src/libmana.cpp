@@ -1582,7 +1582,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 	//saveinit(pname);
 	gzFile ff = gzopen(pname,"wb");
 	if (ff) {
-	  crs->SaveParGz(ff);
+	  crs->SaveParGz(ff,crs->module);
 	  gzclose(ff);
 	}
 	else {
@@ -1876,7 +1876,7 @@ void MainFrame::DoExit() {
   //parname = (char*)"romana.par";
   gzFile ff = gzopen(parname,"wb");
   if (ff) {
-    crs->SaveParGz(ff);
+    crs->SaveParGz(ff,crs->module);
     gzclose(ff);
   }
   else {
