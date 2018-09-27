@@ -907,7 +907,7 @@ void ParParDlg::AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				   "DoNum()");
 
-  TGLabel* fLabel = new TGLabel(hframe1, "compr.level");
+  TGLabel* fLabel = new TGLabel(hframe1, "compr.");
   hframe1->AddFrame(fLabel,fL3);
 
 
@@ -989,7 +989,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
-  AddWrite(fF6,"Write decoded data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
+  AddWrite(fF6,"Write data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
   id_write[1]=Plist.size();
   //cout << "dec: " << Plist.size()+1 << endl;
 
