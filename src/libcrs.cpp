@@ -379,7 +379,8 @@ void *handle_ana(void *ctx) {
 	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
 	  ++crs->nevents2;
 	  if (opt.dec_write) {
-	    crs->Fill_Dec73(&(*m_event));
+	    //crs->Fill_Dec73(&(*m_event));
+	    crs->Fill_Dec74(&(*m_event));
 	  }
 	}
 
@@ -689,7 +690,8 @@ void CRS::Ana2(int all) {
       if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
 	++crs->nevents2;
 	if (opt.dec_write) {
-	  crs->Fill_Dec73(&(*m_event));
+	  //crs->Fill_Dec73(&(*m_event));
+	  crs->Fill_Dec74(&(*m_event));
 	}
       }
 
@@ -1770,7 +1772,8 @@ int CRS::DoStartStop() {
     }   
 
     if (opt.dec_write) {
-      Reset_Dec73();
+      //Reset_Dec(73);
+      Reset_Dec(74);
       // sprintf(dec_opt,"wb%d",opt.dec_compr);
 
       // f_dec = gzopen(opt.fname_dec,dec_opt);
@@ -2021,7 +2024,8 @@ void CRS::DoReset() {
   //if (HiFrm)
   //cout << "DoReset2: " << endl;
 
-  rPeaks.clear();
+  rPeaks73.clear();
+  rPeaks74.clear();
   //CloseTree();
 
   //Set_Trigger();  
@@ -2564,7 +2568,8 @@ void CRS::FAnalyze2(bool nobatch) {
   TCanvas *cv=0;
   //cout << "FAnalyze: " << gztell(f_read) << endl;
   if (juststarted && opt.dec_write) {
-    Reset_Dec73();
+    //Reset_Dec(73);
+    Reset_Dec(74);
   }
   juststarted=false;
 
@@ -2668,7 +2673,8 @@ void CRS::DoNBuf2(int nb) {
   }
 
   if (juststarted && opt.dec_write) {
-    Reset_Dec73();
+    //Reset_Dec(73);
+    Reset_Dec(74);
   }
   juststarted=false;
 
@@ -3876,13 +3882,13 @@ void CRS::Select_Event(EventClass *evt) {
 
 }
 
-void CRS::Reset_Dec73() {
+void CRS::Reset_Dec(Short_t mod) {
   sprintf(dec_opt,"wb%d",opt.dec_compr);
 
   f_dec = gzopen(opt.fname_dec,dec_opt);
   if (f_dec) {
     cout << "Writing parameters... : " << opt.fname_dec << endl;
-    SaveParGz(f_dec,73);
+    SaveParGz(f_dec,mod);
     gzclose(f_dec);
   }
   else {
@@ -3898,17 +3904,16 @@ void CRS::Fill_Dec73(EventClass* evt) {
     //int ch = evt->pulses[i].Chan;
     for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
       peak_type* pk = &evt->pulses[i].Peaks[j];
-      rP.Area   = pk->Area       ;
+      rP73.Area   = pk->Area;
       //rP.Width  = pk->Width      ;
-      rP.Time   = pk->Time       ;
-      rP.Ch     = evt->pulses[i].Chan ;
+      rP73.Time   = pk->Time;
+      rP73.Ch     = evt->pulses[i].Chan;
       //rP.Type   = pk->Type       ;
-      rPeaks.push_back(crs->rP)  ;      
+      rPeaks73.push_back(rP73);
     }
   }
 
-
-  UShort_t sz = 3 + sizeof(Long64_t) + rPeaks.size()*sizeof(rpeak_type73);
+  UShort_t sz = 3 + sizeof(Long64_t) + rPeaks73.size()*sizeof(rpeak_type73);
   if (idec+sz >= DECSIZE) {
     Flush_Dec();
   }
@@ -3922,14 +3927,51 @@ void CRS::Fill_Dec73(EventClass* evt) {
   tt += evt->TT;
   *buf8 = tt;
   idec+=sizeof(Long64_t);
-  for (UInt_t i=0; i<rPeaks.size(); i++) {
+  for (UInt_t i=0; i<rPeaks73.size(); i++) {
     rpeak_type73* buf = (rpeak_type73*) (DecBuf+idec);
-    memcpy(buf,&rPeaks[i],sizeof(rpeak_type73));
+    memcpy(buf,&rPeaks73[i],sizeof(rpeak_type73));
     idec+=sizeof(rpeak_type73);
   }
-  rPeaks.clear();
+  rPeaks73.clear();
 
 }
+
+void CRS::Fill_Dec74(EventClass* evt) {
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+      rP74.Area   = pk->Area;
+      //rP.Width  = pk->Width      ;
+      rP74.Time   = pk->Time*10;
+      rP74.Ch     = evt->pulses[i].Chan;
+      //rP.Type   = pk->Type       ;
+      rPeaks74.push_back(rP74);
+    }
+  }
+
+  UShort_t sz = 3 + sizeof(Long64_t) + rPeaks74.size()*sizeof(rpeak_type74);
+  if (idec+sz >= DECSIZE) {
+    Flush_Dec();
+  }
+  DecBuf[idec++] = 'D';
+  UShort_t* buf2 = (UShort_t*) (DecBuf+idec);
+  *buf2 = sz;
+  idec+=2;
+  Long64_t* buf8 = (Long64_t*) (DecBuf+idec);
+  Long64_t tt = evt->State;
+  tt <<= 48;
+  tt += evt->TT;
+  *buf8 = tt;
+  idec+=sizeof(Long64_t);
+  for (UInt_t i=0; i<rPeaks74.size(); i++) {
+    rpeak_type74* buf = (rpeak_type74*) (DecBuf+idec);
+    memcpy(buf,&rPeaks74[i],sizeof(rpeak_type74));
+    idec+=sizeof(rpeak_type74);
+  }
+  rPeaks74.clear();
+
+} //Fill_Dec74
 
 void CRS::Flush_Dec() {
 

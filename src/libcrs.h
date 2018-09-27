@@ -48,6 +48,17 @@ struct rpeak_type73 {
 };
 #pragma pack (pop)
 
+#pragma pack (push, 1)
+struct rpeak_type74 {
+  Short_t Area;
+  //Float_t Height;
+  //Short_t Width;
+  Short_t Time; //exact time relative to pulse start (from 1st deriv)
+  UChar_t Ch; //Channel number
+  //UChar_t Type; //peak type
+};
+#pragma pack (pop)
+
 //---------------------------
 class CRS {
 
@@ -229,8 +240,10 @@ RQ_OBJECT("CRS")
 
   //Long64_t rTime; //Tstamp of decoded event
   //Char_t rState; //State of decoded event
-  rpeak_type73 rP;
-  std::vector<rpeak_type73> rPeaks;
+  rpeak_type73 rP73;
+  std::vector<rpeak_type73> rPeaks73;
+  rpeak_type74 rP74;
+  std::vector<rpeak_type74> rPeaks74;
 
   //bool b_maintrig; //true if maintrig (formula) is not empty
   //bool cut_main; //main trigger - set for each event in fillhist
@@ -321,8 +334,9 @@ RQ_OBJECT("CRS")
 
   //void NewTree();
   //void CloseTree();
-  void Reset_Dec73();
+  void Reset_Dec(Short_t mod);
   void Fill_Dec73(EventClass* evt);
+  void Fill_Dec74(EventClass* evt);
   void Flush_Dec();
 
   //void Print_Pulses();
