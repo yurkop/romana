@@ -350,7 +350,7 @@ void HClass::Make_cuts() {
     int icut=1;
     for (int i=1;i<opt.ncuts;i++) {
       if (getbit(*(map->cut_index),i)) {
-	cutcolor[i]=icut;
+	cutcolor[i]=icut+1;
 	icut++;
 	//cutcolor[i]+=1;
 	sprintf(cuttitle[i],"%s",map->GetName());

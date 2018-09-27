@@ -1141,13 +1141,21 @@ void HistFrame::MakeCutG(TPolyLine *pl, TObject* hobj) {
     }
   }
   if (icut<0) {
-    icut=opt.ncuts;
-    opt.ncuts++;
+    if (opt.ncuts) {
+      icut=opt.ncuts;
+      opt.ncuts++;
+    }
+    else {
+      icut=1;
+      opt.ncuts=2;
+    }
   }
   if (icut>=MAXCUTS) {
     cout << "Too many cuts: " << icut << endl;
     return;
   }
+
+  cout << "ncuts: " << icut << " " << opt.ncuts << endl;
 
   TGListTreeItem *idir = fListTree->GetFirstItem();
   if (strcmp(idir->GetText(),"WORK")) {
@@ -1285,8 +1293,14 @@ void HistFrame::AddFormula() {
       }
     }
     if (icut<0) {
-      icut=opt.ncuts;
-      opt.ncuts++;
+      if (opt.ncuts) {
+	icut=opt.ncuts;
+	opt.ncuts++;
+      }
+      else {
+	icut=1;
+	opt.ncuts=2;
+      }
     }
     if (icut>=MAXCUTS) {
       cout << "Too many cuts: " << icut << endl;
