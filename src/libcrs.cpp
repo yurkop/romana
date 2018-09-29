@@ -72,6 +72,8 @@ std::list<EventClass>::iterator m_end; //важный параметр
 
 //int MT=1;
 
+const Long64_t sixbytes=0xFFFFFFFFFFFF;
+
 //const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
 const Long64_t GLBSIZE=1024*1024*1024; //1024 MB
 
@@ -219,11 +221,23 @@ void *handle_decode(void *ctx) {
     // cout << "dec_working: " << ibuf << endl;
     // cmut.UnLock();
 
-    if (crs->module>=32) {
+    if (crs->module>=32 && crs->module<=33) {
       if (ibuf!=gl_Nbuf-1) {
 	crs->FindLast33(ibuf);
       }
       crs->Decode33(dec_iread[ibuf]-1,ibuf);
+    }
+    else if (crs->module==75) {
+      if (ibuf!=gl_Nbuf-1) {
+	crs->FindLast75(ibuf);
+      }
+      crs->Decode75(dec_iread[ibuf]-1,ibuf);
+    }
+    else if (crs->module==76) {
+      if (ibuf!=gl_Nbuf-1) {
+	crs->FindLast76(ibuf);
+      }
+      crs->Decode76(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==2) {
       if (ibuf!=gl_Nbuf-1) {
@@ -277,9 +291,6 @@ void *handle_mkev(void *ctx) {
     crs->Make_Events(BB);
     //}
 
-    m_end = crs->Levents.end();
-    std::advance(m_end,-opt.ev_min);
- 
     cout << "\033[31m";
     cout << "Make_events33: " << gl_ivect << " " << crs->Bufevents.size()
     	 << " " << crs->Levents.size() << endl;
@@ -380,7 +391,9 @@ void *handle_ana(void *ctx) {
 	  ++crs->nevents2;
 	  if (opt.dec_write) {
 	    //crs->Fill_Dec73(&(*m_event));
-	    crs->Fill_Dec74(&(*m_event));
+	    //crs->Fill_Dec74(&(*m_event));
+	    //crs->Fill_Dec75(&(*m_event));
+	    crs->Fill_Dec76(&(*m_event));
 	  }
 	}
 
@@ -691,7 +704,9 @@ void CRS::Ana2(int all) {
 	++crs->nevents2;
 	if (opt.dec_write) {
 	  //crs->Fill_Dec73(&(*m_event));
-	  crs->Fill_Dec74(&(*m_event));
+	  //crs->Fill_Dec74(&(*m_event));
+	  //crs->Fill_Dec75(&(*m_event));
+	  crs->Fill_Dec76(&(*m_event));
 	}
       }
 
@@ -897,7 +912,7 @@ CRS::CRS() {
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
 
-  DecBuf=new UChar_t[DECSIZE]; //1 MB
+  DecBuf=new UChar_t[2*DECSIZE]; //1 MB
 
   strcpy(Fname," ");
   DoReset();
@@ -1773,7 +1788,9 @@ int CRS::DoStartStop() {
 
     if (opt.dec_write) {
       //Reset_Dec(73);
-      Reset_Dec(74);
+      //Reset_Dec(74);
+      //Reset_Dec(75);
+      Reset_Dec(76);
       // sprintf(dec_opt,"wb%d",opt.dec_compr);
 
       // f_dec = gzopen(opt.fname_dec,dec_opt);
@@ -1850,7 +1867,7 @@ void CRS::ProcessCrs() {
 
   //decode_thread_run=1;
   //tt1[3].Set();
-  if (module>=32) {
+  if (crs->module>=32 && crs->module<=33) {
     Command32(8,0,0,0);
     Command32(9,0,0,0);    
   }
@@ -2056,6 +2073,9 @@ void CRS::DoFopen(char* oname, int popt) {
     tp=0;
   }
   else if (TString(ext).EqualTo(".raw",TString::kIgnoreCase)) {
+    tp=0;
+  }
+  else if (TString(ext).EqualTo(".dec",TString::kIgnoreCase)) {
     tp=0;
   }
   //else if (TString(ext).EqualTo(".dec",TString::kIgnoreCase)) {
@@ -2308,7 +2328,7 @@ void CRS::AnaBuf() {
   UInt_t gl_ibuf2 = gl_ibuf+1;
   if (gl_ibuf2==gl_Nbuf) { //last buffer in ring, jump to zero
     int end0 = b_end[gl_ibuf];
-    if (crs->module>=32) {
+    if (crs->module>=32 && crs->module<=33) {
       FindLast33(gl_ibuf);
     }
     else if (crs->module==2) {
@@ -2569,7 +2589,9 @@ void CRS::FAnalyze2(bool nobatch) {
   //cout << "FAnalyze: " << gztell(f_read) << endl;
   if (juststarted && opt.dec_write) {
     //Reset_Dec(73);
-    Reset_Dec(74);
+    //Reset_Dec(74);
+    //Reset_Dec(75);
+    Reset_Dec(76);
   }
   juststarted=false;
 
@@ -2674,7 +2696,9 @@ void CRS::DoNBuf2(int nb) {
 
   if (juststarted && opt.dec_write) {
     //Reset_Dec(73);
-    Reset_Dec(74);
+    //Reset_Dec(74);
+    //Reset_Dec(75);
+    Reset_Dec(76);
   }
   juststarted=false;
 
@@ -2793,16 +2817,28 @@ void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf) {
 void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   //-----decode
   //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
-  //cout << "Decode_any: " << ibuf << endl;
+  cout << "Decode_any: " << ibuf << " " << crs->module << endl;
 #ifdef TIMES
   tt1[1].Set();
 #endif
-  if (module>=32) {
+  if (module>=32 && module<=33) {
     if (ibuf!=gl_Nbuf-1) {
       FindLast33(ibuf);
     }
     //Decode32(Fbuf,BufLength);
     Decode33(iread, ibuf);
+  }
+  else if (crs->module==75) {
+    if (ibuf!=gl_Nbuf-1) {
+      FindLast75(ibuf);
+    }
+    Decode75(iread,ibuf);
+  }
+  else if (crs->module==76) {
+    if (ibuf!=gl_Nbuf-1) {
+      FindLast76(ibuf);
+    }
+    Decode76(iread,ibuf);
   }
   else if (module==2) {
     if (ibuf!=gl_Nbuf-1) {
@@ -2826,7 +2862,10 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   tt1[2].Set();
 #endif
 
+  cout << "Make_1: " << endl;
   Make_Events(Bufevents.begin());
+  cout << "Make_2: " << endl;
+
 
 #ifdef TIMES
   tt2[2].Set();
@@ -2838,9 +2877,9 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   tt1[3].Set();
 #endif
 
-  //cout << "Ana2_1: " << endl; 
+  cout << "Ana2_1: " << endl; 
   crs->Ana2(0);
-  //cout << "Ana2_2: " << endl; 
+  cout << "Ana2_2: " << endl; 
   
 #ifdef TIMES
   tt2[3].Set();
@@ -2852,6 +2891,48 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
     (tt2[3].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
   ttm[4]+=dif;
 #endif
+
+}
+
+void CRS::FindLast76(UInt_t ibuf) {
+  //ibuf - current sub-buffer
+  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
+
+  //unsigned char *buf = Fbuf[];
+  UChar_t frmt;
+
+  for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
+    //find frmt==1 -> this is the start of a pulse
+    frmt = GLBuf[i+7] & 0x80; //event start bit
+    if (frmt) {
+      b_end[ibuf]=i;
+      b_start[ibuf2]=i;
+      return;
+    }
+  }
+
+  cout << "Error: no last event: " << ibuf << endl;
+
+}
+
+void CRS::FindLast75(UInt_t ibuf) {
+  //ibuf - current sub-buffer
+  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
+
+  //unsigned char *buf = Fbuf[];
+  UChar_t frmt;
+
+  for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
+    //find frmt==1 -> this is the start of a pulse
+    frmt = GLBuf[i+7] & 0x80; //event start bit
+    if (frmt) {
+      b_end[ibuf]=i;
+      b_start[ibuf2]=i;
+      return;
+    }
+  }
+
+  cout << "Error: no last event: " << ibuf << endl;
 
 }
 
@@ -3052,16 +3133,166 @@ void CRS::PulseAna(PulseClass &ipls) {
   }
 }
 
+void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
+
+  //cout << "decode75_1: " << endl;
+  //ibuf - current sub-buffer
+
+  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  UChar_t frmt;
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  dec_mut.Lock();
+  Bufevents.push_back(eventlist());
+  Blist = &Bufevents.back();
+  dec_mut.UnLock();
+
+  Blist->push_back(EventClass());
+  Blist->front().Nevt=iread;
+  //PulseClass ipls=dummy_pulse;
+
+  //cout << "decode75_2: " << endl;
+  while (idx1<b_end[ibuf]) {
+    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+
+    if (frmt && Blist->empty()) {
+      cout << "dec33: bad buf start: " << idx1 << " " << (int ) frmt << endl;
+      idx1+=8;
+      continue;
+    }
+
+
+
+    // else if ((ch>=opt.Nchan) ||
+    // 	     (frmt && ch!=ipls.Chan)) {
+    //   cout << "dec33: Bad channel: " << (int) ch
+    // 	   << " " << (int) ipls.Chan
+    // 	   << " " << idx1 << " " << ibuf
+    // 	   << endl;
+    //   ipls.ptype|=P_BADCH;
+
+    //   //idx8++;
+    //   idx1+=8;
+    //   continue;
+    // }
+
+
+    if (frmt) { //event start
+      ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+
+      evt = &*Blist->insert(Blist->end(),EventClass());
+
+      evt->TT = (*buf8) & sixbytes;
+      evt->State = Bool_t((*buf8) & 0x1000000000000);
+    }
+    else {
+      Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+      pulse_vect::iterator ipls =
+	evt->pulses.insert(evt->pulses.end(),PulseClass());
+      ipls->Peaks.push_back(peak_type());
+      peak_type *pk = &ipls->Peaks.back();
+      pk->Area = buf2[0];
+      pk->Time = buf2[1]*0.1;
+      ipls->Chan = buf2[3];
+    }
+
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+  //cout << "decode75_3: " << endl;
+  Blist->front().State=123;
+
+  cout << "decode76: " << idx1 << " " << Blist->size()
+       << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
+
+} //decode76
+
+void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
+
+  //cout << "decode75_1: " << endl;
+  //ibuf - current sub-buffer
+
+  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  UChar_t frmt;
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  dec_mut.Lock();
+  Bufevents.push_back(eventlist());
+  Blist = &Bufevents.back();
+  dec_mut.UnLock();
+
+  Blist->push_back(EventClass());
+  Blist->front().Nevt=iread;
+  //PulseClass ipls=dummy_pulse;
+
+  //cout << "decode75_2: " << endl;
+  while (idx1<b_end[ibuf]) {
+    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+
+    if (frmt && Blist->empty()) {
+      cout << "dec33: bad buf start: " << idx1 << " " << (int ) frmt << endl;
+      idx1+=8;
+      continue;
+    }
+
+
+
+    // else if ((ch>=opt.Nchan) ||
+    // 	     (frmt && ch!=ipls.Chan)) {
+    //   cout << "dec33: Bad channel: " << (int) ch
+    // 	   << " " << (int) ipls.Chan
+    // 	   << " " << idx1 << " " << ibuf
+    // 	   << endl;
+    //   ipls.ptype|=P_BADCH;
+
+    //   //idx8++;
+    //   idx1+=8;
+    //   continue;
+    // }
+
+
+    if (frmt) { //event start
+      ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+
+      evt = &*Blist->insert(Blist->end(),EventClass());
+
+      evt->TT = (*buf8) & sixbytes;
+      evt->State = Bool_t((*buf8) & 0x1000000000000);
+    }
+    else {
+      Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+      pulse_vect::iterator ipls =
+	evt->pulses.insert(evt->pulses.end(),PulseClass());
+      ipls->Peaks.push_back(peak_type());
+      peak_type *pk = &ipls->Peaks.back();
+      pk->Area = buf2[0];
+      pk->Time = buf2[1]*0.1;
+      ipls->Chan = buf2[3];
+    }
+
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+  //cout << "decode75_3: " << endl;
+  Blist->front().State=123;
+
+  cout << "decode75: " << idx1 << " " << Blist->size()
+       << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
+
+} //decode75
+
 void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   //ibuf - current sub-buffer
 
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
-  //UChar_t* buf1 = Fbuf[ibuf];
 
   int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
-  //int idx1=b_end[(ibuf+gl_ntrd-1)%gl_ntrd]; // current index in the buffer (in 1-byte words)
-
-  //cout << "Decode33: " << iread << " " << ibuf << " " << idx1 << " " << b_end[ibuf] << endl;
 
   unsigned short frmt;
   ULong64_t data;
@@ -3071,17 +3302,11 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   int n_frm=0; //counter for frmt4 and frmt5
   peak_type *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
   Double_t QX=0,QY=0,RX,RY;
-  //peak_type *pk=&dummy_peak;
 
-  //Pstruct vp;
-  //vp.done=false;
-  //vp.num=iread;
-  //pulse_vect *vv = Vpulses+ibuf;
-  //pulse_vect *vv = &vp.Vpulses;
-
+  eventlist *Blist;
   dec_mut.Lock();
   Bufevents.push_back(eventlist());
-  eventlist *Blist = &Bufevents.back();
+  Blist = &Bufevents.back();
   dec_mut.UnLock();
 
   Blist->push_back(EventClass());
@@ -3096,7 +3321,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     //YKYKYK!!!! do something with cnt - ???
     //int cnt = frmt & 0x0F;
     frmt = (frmt & 0xF0)>>4;
-    data = buf8[idx1/8] & 0xFFFFFFFFFFFF;
+    data = buf8[idx1/8] & sixbytes;
     unsigned char ch = GLBuf[idx1+7];
 
     //cout << "data: " << idx << " " << frmt << " " << data << endl;
@@ -3812,11 +4037,6 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     evlist_iter it = BB->begin();
     evlist_reviter rr = Levents.rbegin();
     while (it!=BB->end() && TMath::Abs(it->TT - rr->TT)<=opt.tgate*2) {
-      // if (it->Nevt>69485 && it->Nevt<69490) {
-      // 	cout << "Nevt: " << it->Nevt << " " << it->TT << " " << it->TT - rr->TT << endl;
-      // }
-      // cout << "Back: " << rr->Nevt << " " << it->Nevt
-      //  	   << " " << rr->TT << " " << it->TT-rr->TT << endl;
       for (UInt_t i=0;i<it->pulses.size();i++) {
 	Event_Insert_Pulse(&Levents,&it->pulses[i]);
       }
@@ -3842,17 +4062,9 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   //cout << "BB1: " << Levents.size() << " " << Bufevents.size() << endl;
 
   Bufevents.erase(BB);
-  //cout << "BB2: " << Levents.size() << " " << Bufevents.size() << endl;
-  // nn=3;
-  // for (evlist_iter evt=BB->begin(); evt!=BB->end() && nn>=0 ; ++evt,--nn) {
-  //   for (evlist_reviter rr=Levents.rbegin();rr!=Levents.rend();++rr) {
-  //   }
-  //   cout << "evt: " << evt->Nevt << " " << evt->TT << " " << evt->pulses.size() << " " << endl;
-  // }
 
-  //plist.erase(it);
-  //Vpulses[ibuf].clear();
-
+  m_end = crs->Levents.end();
+  std::advance(m_end,-opt.ev_min);  
 }
 
 void CRS::Select_Event(EventClass *evt) {
@@ -3896,6 +4108,8 @@ void CRS::Reset_Dec(Short_t mod) {
   }
 
   sprintf(dec_opt,"ab%d",opt.dec_compr);
+
+  DecBuf8 = (ULong64_t*) DecBuf;
 }
 
 void CRS::Fill_Dec73(EventClass* evt) {
@@ -3972,6 +4186,93 @@ void CRS::Fill_Dec74(EventClass* evt) {
   rPeaks74.clear();
 
 } //Fill_Dec74
+
+void CRS::Fill_Dec76(EventClass* evt) {
+  // fill_dec is not thread safe!!!
+  //format of decoded data:
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - State
+  // 2) N 8 byte words, each containing one peak
+  //    1st (lowest) 2 bytes - Area
+  //    2 bytes - Time*10
+  //    2 bytes - Width
+  //    1 byte - channel
+
+  *DecBuf8 = 1;
+  *DecBuf8<<=63;
+  *DecBuf8 |= evt->TT & sixbytes;
+  if (evt->State) {
+    *DecBuf8 |= 0x1000000000000;
+  }
+
+  ++DecBuf8;
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+      *DecBuf8=0;
+      Short_t* Decbuf2 = (Short_t*) DecBuf8;
+      Decbuf2[0] = pk->Area;
+      Decbuf2[1] = pk->Time*10;
+      // Decbuf2[2] = 0;
+      Decbuf2[3] = evt->pulses[i].Chan;
+      ++DecBuf8;
+    }
+  }
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    Flush_Dec();
+    DecBuf8 = (ULong64_t*) DecBuf;
+  }
+
+} //Fill_Dec76
+
+
+void CRS::Fill_Dec75(EventClass* evt) {
+  // fill_dec is not thread safe!!!
+  //format of decoded data:
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - State
+  // 2) N 8 byte words, each containing one peak
+  //    1st (lowest) 2 bytes - Area
+  //    2 bytes - Time*10
+  //    2 bytes - Width
+  //    1 byte - channel
+
+  *DecBuf8 = 1;
+  *DecBuf8<<=63;
+  *DecBuf8 |= evt->TT & sixbytes;
+  if (evt->State) {
+    *DecBuf8 |= 0x1000000000000;
+  }
+
+  ++DecBuf8;
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+
+      Short_t* Decbuf2 = (Short_t*) DecBuf8;
+      Decbuf2[0] = pk->Area;
+      Decbuf2[1] = pk->Time*10;
+      Decbuf2[2] = 0;
+      Decbuf2[3] = evt->pulses[i].Chan;
+      ++DecBuf8;
+    }
+  }
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    Flush_Dec();
+    DecBuf8 = (ULong64_t*) DecBuf;
+  }
+
+} //Fill_Dec75
 
 void CRS::Flush_Dec() {
 

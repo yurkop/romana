@@ -94,6 +94,8 @@ RQ_OBJECT("CRS")
   char Fname[255];
 
   UChar_t* DecBuf;
+  ULong64_t* DecBuf8;
+
   Int_t idec; //index of DecBuf;
 
   // struct Pstruct {
@@ -251,6 +253,7 @@ RQ_OBJECT("CRS")
 
   peak_type dummy_peak;
   PulseClass dummy_pulse;
+  EventClass dummy_event;
 
   Int_t b_len[MAX_CH],p_len[MAX_CH]; //length of window for bkg and peak integration in DSP
   //--------functions---------
@@ -304,9 +307,13 @@ RQ_OBJECT("CRS")
   void Decode_any_MT(UInt_t iread, UInt_t ibuf);
 
   void Decode_any(UInt_t iread, UInt_t ibuf);
+  void FindLast75(UInt_t ibuf);
+  void FindLast76(UInt_t ibuf);
   void FindLast33(UInt_t ibuf);
   void FindLast2(UInt_t ibuf);
   void PulseAna(PulseClass &ipls);
+  void Decode76(UInt_t iread, UInt_t ibuf);
+  void Decode75(UInt_t iread, UInt_t ibuf);
   void Decode33(UInt_t iread, UInt_t ibuf);
   void Decode2(UInt_t iread, UInt_t ibuf);
 
@@ -337,6 +344,8 @@ RQ_OBJECT("CRS")
   void Reset_Dec(Short_t mod);
   void Fill_Dec73(EventClass* evt);
   void Fill_Dec74(EventClass* evt);
+  void Fill_Dec75(EventClass* evt);
+  void Fill_Dec76(EventClass* evt);
   void Flush_Dec();
 
   //void Print_Pulses();
