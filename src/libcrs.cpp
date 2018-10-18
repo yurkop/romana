@@ -3529,9 +3529,9 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 
   Blist->front().State=123;
 
-  cout << "decode33: " << idx1 << " " << frmt << " " << ipls.Counter << " "
-       << ipls.sData.size() << " " << n_frm << " " << Blist->size()
-       << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
+  // cout << "decode33: " << idx1 << " " << frmt << " " << ipls.Counter << " "
+  //      << ipls.sData.size() << " " << n_frm << " " << Blist->size()
+  //      << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
 
   // int nn=10;
   // for (evlist_iter it=Blist->begin();it!=Blist->end() && nn>=0;++it,--nn) {
