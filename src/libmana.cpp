@@ -1772,7 +1772,7 @@ void MainFrame::UpdateStatus() {
   static Long64_t nevents_old=0;
   static Long64_t nevents2_old=0;
   static double t1=0;
-  double mb_rate,ev_rate,trig_rate;
+  static double mb_rate,ev_rate,trig_rate;
 
   char txt[100];
   //time_t tt = opt.F_start.GetSec();
@@ -1783,8 +1783,8 @@ void MainFrame::UpdateStatus() {
   // }
 
   time_t tt = (opt.F_start+788907600000)*0.001;
-  //struct tm *ptm = localtime(&tt);
-  struct tm *ptm = gmtime(&tt);
+  struct tm *ptm = localtime(&tt);
+  //struct tm *ptm = gmtime(&tt);
   strftime(txt,sizeof(txt),"%F %T",ptm);
 
   double dt = opt.T_acq - t1;
@@ -1793,17 +1793,19 @@ void MainFrame::UpdateStatus() {
     mb_rate = (crs->inputbytes-bytes1)/MB/dt;
     ev_rate = (crs->nevents-nevents_old)/dt;
     trig_rate = (crs->nevents2-nevents2_old)/dt;
-  }
-  else {
-    mb_rate=0;
-    ev_rate=0;
-    trig_rate=0;
-  }
 
-  bytes1=crs->inputbytes;
-  nevents_old=crs->nevents;
-  nevents2_old=crs->nevents2;
-  t1=opt.T_acq;
+    bytes1=crs->inputbytes;
+    nevents_old=crs->nevents;
+    nevents2_old=crs->nevents2;
+    t1=opt.T_acq;
+  }
+  // else {
+  //   cout << "rate0: " << dt << endl;
+  //   mb_rate=0;
+  //   ev_rate=0;
+  //   trig_rate=0;
+  // }
+
 
   fStat[ii++]->SetText(txt,kFALSE);
 
@@ -1844,21 +1846,6 @@ void MainFrame::UpdateStatus() {
 //   opt.num_buf=(int) n_buffers->GetNumber();
 //   printf("test %d\n",opt.num_buf);
 // }
-
-void MainFrame::DoResetUSB() {
-#ifdef CYUSB
-  if (!crs->b_stop)
-    return;
-  if (crs->Fmode==1 && crs->module>=32) {
-    cout << "Reset USB" << endl;
-    crs->Command32(7,0,0,0); //reset usb command
-    crs->Detect_device();
-  }
-  else {
-    cout << "Module not found or reset not possible" << endl;
-  }  
-#endif
-}
 
 void MainFrame::DoExit() {
   //int i;
@@ -2112,7 +2099,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
     new TBrowser();
     break;
   case M_RESET_USB:
-    DoResetUSB();
+    crs->DoResetUSB();
     break;
   case M_EXPORT:
     Export();

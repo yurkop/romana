@@ -70,6 +70,8 @@ RQ_OBJECT("CRS")
 
   //--------constants---------
   static const int MAXTRANS=8;
+  //static const int MAXTRANS=7;
+  static const int MAXTRANS7=7;
   static const int DECSIZE=1048576; //1 MB
 
   //static const Int_t MAXEV=1000; //maximal number of events in Levents
@@ -260,6 +262,7 @@ RQ_OBJECT("CRS")
 
   //void Dummy_trd();
 
+  void DoResetUSB();
 #ifdef CYUSB
   int Detect_device();
   int SetPar();

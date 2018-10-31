@@ -353,7 +353,7 @@ void PulseClass::PeakAna33() {
     //pk->Time+=1;
   }
   else
-    pk->Time=-999;
+    pk->Time=-999+pk->Pos;
 
   pk->Time-=pk->Pos;
   //cout << "Time: " << pk->Time << " " << sum << " " << pk->T3 << " " << pk->T4 << endl;
@@ -376,10 +376,10 @@ void PulseClass::PeakAna33() {
   if (abs(sum)>1e-5)
     pk->Width/=sum;
   else
-    pk->Width=-999;
+    pk->Width=-999+pk->Pos;
 
   pk->Width-=pk->Pos;
-
+  //pk->Width+=0.1;
 
   pk->Base=0;
   int nbkg=0;
@@ -452,13 +452,13 @@ void PulseClass::CheckDSP() {
   if (bad) {
     printf(ANSI_COLOR_YELLOW"Error!\n");
     printf(ANSI_COLOR_RED
-	   "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
+	   "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f %4d\n" ANSI_COLOR_RESET,
 	   Counter,Peaks[0].Base,Peaks[0].Area0,Peaks[0].Height,
-	   Peaks[0].Time,Peaks[0].Width);
+	   Peaks[0].Time,Peaks[0].Width,Peaks[1].Pos);
     printf(ANSI_COLOR_GREEN
-	   "Kop: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
+	   "Kop: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f %4d\n" ANSI_COLOR_RESET,
 	   Counter,Peaks[1].Base,Peaks[1].Area0,Peaks[1].Height,
-	   Peaks[1].Time,Peaks[1].Width);
+	   Peaks[1].Time,Peaks[1].Width,Peaks[1].Pos);
   }
   else {
     //printf("%10lld OK\n",Counter);

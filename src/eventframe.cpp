@@ -1044,7 +1044,7 @@ void EventFrame::SetRanges(int dr) {
 
 void EventFrame::DrawEvent2() {
 
-  //cout << "draw0:" << endl;
+  cout << "draw0:" << " " << Pevents->empty() << endl;
   //return;
   //Emut2.Lock();
 
@@ -1081,7 +1081,7 @@ void EventFrame::DrawEvent2() {
     return;
   }
 
-  //cout << "draw1b: " << d_event->pulses.size() << endl;
+  cout << "draw1b: " << d_event->pulses.size() << endl;
   ULong64_t mask=0;
   ULong64_t one=1;
   

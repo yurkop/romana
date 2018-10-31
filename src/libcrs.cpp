@@ -63,7 +63,7 @@ const Long64_t P64_0=-123456789123456789;
 
 std::list<EventClass>::iterator m_event; //важный параметр
 // m_event - указатель на первое непроанализированное событие в Levents
-std::list<EventClass>::iterator m_end; //важный параметр
+//std::list<EventClass>::iterator m_end; //важный параметр
 // расстояние m_end до конца списка не должно быть больше,
 // чем opt.ev_min
 // в Ana данные анализируются от m_event до m_end
@@ -170,9 +170,11 @@ cyusb_handle *cy_handle;
 
 void *handle_events_func(void *ctx)
 {
+  cout << "CRS thread created... " << endl;
   while (event_thread_run) {
     libusb_handle_events_completed(NULL,NULL);
   }
+  cout << "CRS thread finished... " << endl;
   return NULL;
 }
 
@@ -324,7 +326,9 @@ void *handle_ana(void *ctx) {
 
     while (ana_thread_run &&
 	   //((int)crs->Levents.size()<=opt.ev_min ||
-	   m_event==m_end ) {
+	   //m_event==m_end
+	   (int) crs->Levents.size()<=opt.ev_max
+	   ) {
       gSystem->Sleep(1);
     }
 
@@ -337,19 +341,22 @@ void *handle_ana(void *ctx) {
 
     int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
 
-    // cmut.Lock();
-    // cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
-    // cmut.UnLock();
+    cmut.Lock();
+    cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
+    cmut.UnLock();
 
-    //std::list<EventClass>::iterator m_end = crs->Levents.end();
-
-    if (!ana_all) { //analyze up to ev_min events
-      if (m_event==crs->Levents.end()) {
-	m_event=crs->Levents.begin();
-      }
+    if (m_event==crs->Levents.end()) {
+      m_event=crs->Levents.begin();
     }
-    else {
-      m_end=crs->Levents.end();
+
+    std::list<EventClass>::iterator m_end = crs->Levents.end();
+    //m_end = crs->Levents.end();
+    if (!ana_all) { //analyze up to ev_min events
+      int nmin=opt.ev_min;
+      while (m_end!=m_event && nmin>0) {
+	--m_end;
+	--nmin;
+      }
       //std::advance(m_end,-opt.ev_min);
     }
 
@@ -370,41 +377,24 @@ void *handle_ana(void *ctx) {
 	    crs->Fill_Dec76(&(*m_event));
 	  }
 	}
-
-	//m_event->Analyzed=true;
 	++m_event;
-	//++n1;
       }
       else {
-      	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
-      	m_event=crs->Levents.erase(m_event);
-	//++n2;
+	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
+    	m_event=crs->Levents.erase(m_event);
       }
-      //++m_event;
     }
-
-    //gSystem->Sleep(500);
-
-    //cout << "Levents1b: " << std::distance(m_end,crs->Levents.end()) << " " << n1 << " " << n2 << endl;
-
-    // cout << "Levents2: " << std::distance(m_event,m_end)
-    // 	 << " " << std::distance(m_event,crs->Levents.end())
-    // 	 << " " << std::distance(m_end,crs->Levents.end())
-    // 	 << " " << crs->Levents.size() << endl;
 
     // erase events if the list is too long
     for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
       it=crs->Levents.erase(it);
-	//YK
-	//cout << "ana73: " << it->Nevt << " " << std::distance(it,m_event) << endl;
     }
 
-    //cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
+    cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
 
     if (opt.dec_write) {
       crs->Flush_Dec();
     }
-
 
     //cout << "Levents4: " << crs->Levents.size() << " " << nevents << endl;
 
@@ -420,20 +410,17 @@ void *handle_ana(void *ctx) {
       EvtFrm->d_event=EvtFrm->Pevents->begin();
     }
   
-    //cout << "Levents5: " << crs->Levents.size() << " " << crs->nevents << endl;
-
-
+    cout << "Levents5: " << crs->Levents.size() << " " << crs->nevents << endl;
     // cmut.Lock();
-    cout << "Ana2_MT_end: " << crs->Levents.size()
-	 << " " << std::distance(crs->Levents.begin(),m_event)
-	 << " " << std::distance(m_event,crs->Levents.end())
-	 << " " << ana_all << endl;
-    cout << "---------------------------------" << endl;
+    // cout << "Ana2_MT_end: " << crs->Levents.size()
+    // 	 << " " << std::distance(crs->Levents.begin(),m_event)
+    // 	 << " " << std::distance(m_event,crs->Levents.end())
+    // 	 << " " << ana_all << endl;
+    // cout << "---------------------------------" << endl;
     // cmut.UnLock();
 
 
     //ana_mut.UnLock();
-
 
   } //while
   cmut.Lock();
@@ -603,6 +590,8 @@ void CRS::Ana_start() {
     mkev_thread_run=1;
     ana_thread_run=1;
 
+    //cout << "gl_Nbuf: " << gl_Nbuf << endl;
+    //exit(1);
     for (UInt_t i=0;i<gl_Nbuf;i++) {
       dec_iread[i]=0;
       //dec_check[i]=0;
@@ -616,14 +605,19 @@ void CRS::Ana_start() {
       //mkev_check[i]=0;
     }
 
+    //cout << "dec ready: " << endl;
+    //gSystem->Sleep(5000);
     trd_mkev = new TThread("trd_mkev", handle_mkev, (void*) 0);
     trd_mkev->Run();
 
+    //cout << "mkev ready: " << endl;
+    //gSystem->Sleep(5000);
     ana_all=0;
     //ana_check=0;
 
     trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
     trd_ana->Run();
+    //gSystem->Sleep(5000);
 
     gSystem->Sleep(100);
   }
@@ -652,6 +646,7 @@ void CRS::Ana2(int all) {
   }
 
   std::list<EventClass>::iterator m_end = crs->Levents.end();
+  //m_end = crs->Levents.end();
   if (!ana_all) { //analyze up to ev_min events
     int nmin=opt.ev_min;
     while (m_end!=m_event && nmin>0) {
@@ -660,24 +655,6 @@ void CRS::Ana2(int all) {
     }
     //std::advance(m_end,-opt.ev_min);
   }
-
-  // cout << "Levents1: " << Levents.size() << " " << nevents
-  //      << " " << std::distance(m_event,m_end)
-  //      << " " << std::distance(m_event,Levents.begin())
-  //      << " " << std::distance(m_event,Levents.end())
-  //      << " " << std::distance(m_end,Levents.end())
-  //      << endl;
-
-  /*
-  Long64_t t_prev=0;
-  for (evlist_iter it = Levents.begin();it!=Levents.end();++it) {
-    Long64_t dt = it->TT - t_prev;
-    t_prev=it->TT;
-    if (TMath::Abs(dt)<opt.tgate) {
-      cout << "Missed: " << dt << " " << it->Nevt << " " << it->TT << " " << endl;
-    }
-  }
-  */
 
   // analyze events from m_event to m_end
   while (m_event!=m_end) {
@@ -704,13 +681,9 @@ void CRS::Ana2(int all) {
     }
   }
 
-  //cout << "Levents2: " << Levents.size() << " " << nevents << endl;
-
   // erase events if the list is too long
   for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
     it=crs->Levents.erase(it);
-    //YK
-    //cout << "ana73: " << it->Nevt << " " << std::distance(it,m_event) << endl;
   }
 
   //cout << "Levents3: " << Levents.size() << " " << nevents << endl;
@@ -718,7 +691,6 @@ void CRS::Ana2(int all) {
   if (opt.dec_write) {
     Flush_Dec();
   }
-
 
   //cout << "Levents4: " << Levents.size() << " " << nevents << endl;
 
@@ -875,7 +847,7 @@ CRS::CRS() {
     type_ch[i]=255;
   }
 
-  MAXTRANS2=MAXTRANS;
+  MAXTRANS2=MAXTRANS7;
   //memset(Pre,0,sizeof(Pre));
 
   Fmode=0;
@@ -916,10 +888,10 @@ CRS::CRS() {
 
   chan_in_module=MAX_CH;
 
-  ntrans=MAXTRANS;
+  ntrans=MAXTRANS7;
   //opt.usb_size=1024*1024;
 
-  for (int i=0;i<MAXTRANS;i++) {
+  for (int i=0;i<MAXTRANS7;i++) {
     transfer[i] =NULL;
     buftr[i]=NULL;
     //Fbuf[i]=NULL;
@@ -966,6 +938,30 @@ void CRS::Dummy_trd() {
   trd_dum->Run();
 }
 */
+
+void CRS::DoResetUSB() {
+#ifdef CYUSB
+  if (!b_stop)
+    return;
+  if (Fmode==1 && module>=32) {
+    cout << "Reset USB" << endl;
+
+    event_thread_run=0;
+    if (Fmode==1) {
+      //cyusb_close();
+      if (trd_crs) {
+	trd_crs->Delete();
+      }
+    }
+    
+    Command32(7,0,0,0); //reset usb command
+    Detect_device();
+  }
+  else {
+    cout << "Module not found or reset not possible" << endl;
+  }  
+#endif
+}
 
 #ifdef CYUSB
 
@@ -1039,6 +1035,7 @@ int CRS::Detect_device() {
   //}
 
 #ifdef CYUSB
+  event_thread_run=1;
   trd_crs = new TThread("trd_crs", handle_events_func, (void*) 0);
   trd_crs->Run();
 #endif
@@ -1049,7 +1046,6 @@ int CRS::Detect_device() {
   // trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
   // trd_evt->Run();
 
-  cout << "CRS thread created... " << endl;
 
   //memset(buf_out,'\0',64);
   //memset(buf_in,'\0',64);
@@ -1178,13 +1174,13 @@ int CRS::SetPar() {
 
 void CRS::Free_Transfer() {
 
-  Cancel_all(MAXTRANS);
+  Cancel_all(MAXTRANS7);
   gSystem->Sleep(50);
 
   //cout << "---Free_Transfer---" << endl;
 
   //for (int i=0;i<ntrans;i++) {
-  for (int i=0;i<MAXTRANS;i++) {
+  for (int i=0;i<MAXTRANS7;i++) {
     //cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
     //int res = libusb_cancel_transfer(transfer[i]);
     libusb_free_transfer(transfer[i]);
@@ -1193,7 +1189,7 @@ void CRS::Free_Transfer() {
 
   }
 
-  for (int i=0;i<MAXTRANS;i++) {
+  for (int i=0;i<MAXTRANS7;i++) {
     if (buftr[i]) {
       buftr[i]=NULL;
     }
@@ -1256,7 +1252,7 @@ int CRS::Init_Transfer() {
 
   //cout << "---Init_Transfer 3---" << endl;
   ntrans=0;
-  for (int i=0;i<MAXTRANS;i++) {
+  for (int i=0;i<MAXTRANS7;i++) {
     transfer[i] = libusb_alloc_transfer(0);
     //transfer[i]->flags|=LIBUSB_TRANSFER_FREE_BUFFER;
     
@@ -1315,7 +1311,7 @@ int CRS::Init_Transfer() {
   }
   gSystem->Sleep(250);
 
-  Cancel_all(MAXTRANS);
+  Cancel_all(MAXTRANS7);
   gSystem->Sleep(250);
 
   return 0;
@@ -1803,9 +1799,6 @@ int CRS::DoStartStop() {
     //ProcessCrs_old();
 
 
-
-
-
     //cout << "startstop1: " << endl;
     EvtFrm->Clear();
     EvtFrm->Pevents = &Levents;
@@ -1951,7 +1944,7 @@ void CRS::DoReset() {
   // вставляем dum евент, чтобы Levents не был пустой  // не делаем, это плохо
   //m_event=Levents.insert(Levents.end(),EventClass());
   m_event=Levents.end();
-  m_end=Levents.end();
+  //m_end=Levents.end();
   //m_event=Levents.begin();
 
   nevents=0;
@@ -2476,15 +2469,15 @@ void CRS::InitBuf() {
   if (Fmode==1) { //module
     if (opt.usb_size<=1024) {
       tr_size=opt.usb_size*1024;
-      MAXTRANS2=MAXTRANS;
+      MAXTRANS2=MAXTRANS7;
     }
     else if (opt.usb_size<=2048) {
       tr_size=opt.usb_size*1024;
-      MAXTRANS2=MAXTRANS-1;
+      MAXTRANS2=MAXTRANS7;
     }
     else {
       tr_size=2048*1024;
-      MAXTRANS2=MAXTRANS-1;
+      MAXTRANS2=MAXTRANS7;
     }
 
     gl_sz = opt.usb_size;
@@ -3054,6 +3047,9 @@ void CRS::PulseAna(PulseClass &ipls) {
   }
   else {
     if (opt.checkdsp) {
+      // if (ipls.Peaks.size()!=1) {
+      // 	cout << "size!!!: " << ipls.Peaks.size() << endl;
+      // }
       ipls.PeakAna33();
       ipls.CheckDSP();
     }
@@ -3253,7 +3249,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     data = buf8[idx1/8] & sixbytes;
     unsigned char ch = GLBuf[idx1+7];
 
-    //cout << "data: " << idx << " " << frmt << " " << data << endl;
+    //cout << "data: " << idx << " " << frmt << " " << n_frm << " " << data << endl;
     // if (vv->size()<4) {
     //   cout << "idx: " << idx1 << " " << vv->size() << " " << frmt << " " << (int) ch << " " << (int) ipls->Chan << endl;
     // }
@@ -3445,6 +3441,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  iii = data & 0xFFFFFFF;
 	  ipk->Base=((iii<<4)>>4);
 	  ipk->Base/=b_len[ipls.Chan];
+	  break;
 	case 1: //A – [28]
 	  //area
 	  iii = data & 0xFFFFFFF;
@@ -3454,7 +3451,9 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  ipk->Area=ipk->Area0 - ipk->Base;
 	  ipk->Area*=opt.emult[ipls.Chan];
 	  ipk->Area0*=opt.emult[ipls.Chan];
+	  //cout << " Base1: " << ipk->Base << " " << (int) ipls.Chan << " " << opt.emult[ipls.Chan] << endl;
 	  ipk->Base*=opt.emult[ipls.Chan];
+	  //cout << " Base1: " << ipk->Base << " " << (int) ipls.Chan << " " << opt.emult[ipls.Chan] << endl;
 	  break;
 	case 2: //A – [28]
 	  //QX
