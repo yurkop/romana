@@ -1398,6 +1398,7 @@ void MainFrame::DoClose() {
   anapar->Update();
   pikpar->Update();
 
+#ifdef CYUSB
   crs->Detect_device();
   if (crs->Fmode==1) { //CRS is present
     crspar->AllEnabled(true);
@@ -1411,6 +1412,7 @@ void MainFrame::DoClose() {
     if (te) 
       te->SetEnabled(true);
   }
+#endif
 
 }
 

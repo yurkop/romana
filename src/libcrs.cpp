@@ -178,6 +178,81 @@ void *handle_events_func(void *ctx)
   return NULL;
 }
 
+static void cback(libusb_transfer *trans) {
+
+  //static TTimeStamp t1;
+
+  //TTimeStamp t2;
+  //t2.Set();
+
+  if (trans->actual_length) {
+    int itr = *(int*) trans->user_data;
+    int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
+    //int i_next = (itr+1)%crs->ntrans; //next itr
+
+    UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
+    if (next_buf+tr_size > GLBuf+gl_sz) {
+      next_buf=GLBuf;
+    }
+
+    double rr =
+      double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
+    UInt_t nn = (rr+1e-6)*gl_Nbuf;
+    // cout << "cback: " << itr //<< " " << i_prev << " " << i_next
+    // 	   << " " << (int) (trans->buffer-GLBuf)/1024
+    // 	   << " " << gl_sz/1024 << " " << rr << " " << nn << " " << gl_ibuf
+    // 	   << endl;
+
+    if (opt.decode) {
+      if (nn!=gl_ibuf) {
+	int length=trans->buffer-GLBuf-b_fill[gl_ibuf]+trans->actual_length;
+	b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
+
+	crs->AnaBuf();
+      }
+    } //if decode
+
+    if (opt.raw_write) {
+      crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
+      if (crs->f_raw) {
+    	int res=gzwrite(crs->f_raw,trans->buffer,trans->actual_length);
+    	gzclose(crs->f_raw);
+    	crs->rawbytes+=res;
+      }
+      else {
+    	cout << "Can't open file: " << opt.fname_raw << endl;
+      }
+    }
+
+    trans->buffer=next_buf;
+    if (crs->b_acq) {
+      libusb_submit_transfer(trans);
+    }
+
+    crs->nbuffers++;
+
+    stat_mut.Lock();
+    crs->inputbytes+=trans->actual_length;
+    //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
+    //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
+    //opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
+    //cout << "T_acq: " << opt.T_acq << " " << crs->T_start << endl;
+
+    stat_mut.UnLock();
+
+  } //if (trans->actual_length) {
+
+    
+  // if (crs->b_acq) {
+  //   libusb_submit_transfer(trans);
+  // }
+
+  //crs->nvp = (crs->nvp+1)%crs->ntrans;
+  
+}
+
+#endif //CYUSB
+
 /*
 void *ballast(void* xxx) {
 
@@ -441,81 +516,6 @@ void *handle_ana(void *ctx) {
 //   }
 //   return NULL;
 // }
-
-static void cback(libusb_transfer *trans) {
-
-  //static TTimeStamp t1;
-
-  //TTimeStamp t2;
-  //t2.Set();
-
-  if (trans->actual_length) {
-    int itr = *(int*) trans->user_data;
-    int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
-    //int i_next = (itr+1)%crs->ntrans; //next itr
-
-    UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
-    if (next_buf+tr_size > GLBuf+gl_sz) {
-      next_buf=GLBuf;
-    }
-
-    double rr =
-      double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
-    UInt_t nn = (rr+1e-6)*gl_Nbuf;
-    // cout << "cback: " << itr //<< " " << i_prev << " " << i_next
-    // 	   << " " << (int) (trans->buffer-GLBuf)/1024
-    // 	   << " " << gl_sz/1024 << " " << rr << " " << nn << " " << gl_ibuf
-    // 	   << endl;
-
-    if (opt.decode) {
-      if (nn!=gl_ibuf) {
-	int length=trans->buffer-GLBuf-b_fill[gl_ibuf]+trans->actual_length;
-	b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
-
-	crs->AnaBuf();
-      }
-    } //if decode
-
-    if (opt.raw_write) {
-      crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
-      if (crs->f_raw) {
-    	int res=gzwrite(crs->f_raw,trans->buffer,trans->actual_length);
-    	gzclose(crs->f_raw);
-    	crs->rawbytes+=res;
-      }
-      else {
-    	cout << "Can't open file: " << opt.fname_raw << endl;
-      }
-    }
-
-    trans->buffer=next_buf;
-    if (crs->b_acq) {
-      libusb_submit_transfer(trans);
-    }
-
-    crs->nbuffers++;
-
-    stat_mut.Lock();
-    crs->inputbytes+=trans->actual_length;
-    //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
-    //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
-    //opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
-    //cout << "T_acq: " << opt.T_acq << " " << crs->T_start << endl;
-
-    stat_mut.UnLock();
-
-  } //if (trans->actual_length) {
-
-    
-  // if (crs->b_acq) {
-  //   libusb_submit_transfer(trans);
-  // }
-
-  //crs->nvp = (crs->nvp+1)%crs->ntrans;
-  
-}
-
-#endif //CYUSB
 
 /*
 void *handle_buf(void *ctx)
@@ -2489,8 +2489,10 @@ void CRS::InitBuf() {
 
     for (int i=0;i<ntrans;i++) {
       buftr[i] = GLBuf+tr_size*i;
+#ifdef CYUSB
       if (transfer[i])
 	transfer[i]->buffer = buftr[i];
+#endif
     }
   } // if Fmode==1
   else { //file analysis
