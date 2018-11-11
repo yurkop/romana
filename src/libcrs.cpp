@@ -467,7 +467,7 @@ void *handle_ana(void *ctx) {
 
     cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
 
-    if (opt.dec_write) {
+    if (ana_all && opt.dec_write) {
       crs->Flush_Dec();
     }
 
@@ -497,7 +497,7 @@ void *handle_ana(void *ctx) {
 
     //ana_mut.UnLock();
 
-  } //while
+  } //while (ana_thread_run)
   cmut.Lock();
   cout << "Ana thread deleted: " << endl;
   cmut.UnLock();
@@ -628,9 +628,9 @@ void CRS::Ana_start() {
 void CRS::Ana2(int all) {
   // вызываем ana2 после каждого cback или DoBuf
   // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
-  // если ana_all==0 ->
+  // если all==0 ->
   // анализируем данные от Levents.begin() до Levents.end()-opt.ev_min
-  // если ana_all!=0 ->
+  // если all!=0 ->
   // анализируем данные от Levents.begin() до Levents.end()
 
   //Print_Events();
@@ -638,7 +638,7 @@ void CRS::Ana2(int all) {
   int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
 
   // cmut.Lock();
-  // cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
+  // cout << "Ana2_MT: " << crs->Levents.size() << " " << all << endl;
   // cmut.UnLock();
 
   if (m_event==crs->Levents.end()) {
@@ -647,7 +647,7 @@ void CRS::Ana2(int all) {
 
   std::list<EventClass>::iterator m_end = crs->Levents.end();
   //m_end = crs->Levents.end();
-  if (!ana_all) { //analyze up to ev_min events
+  if (!all) { //analyze up to ev_min events
     int nmin=opt.ev_min;
     while (m_end!=m_event && nmin>0) {
       --m_end;
@@ -688,7 +688,7 @@ void CRS::Ana2(int all) {
 
   //cout << "Levents3: " << Levents.size() << " " << nevents << endl;
 
-  if (opt.dec_write) {
+  if (all && opt.dec_write) {
     Flush_Dec();
   }
 
@@ -2547,6 +2547,7 @@ void CRS::EndAna(int all) {
   }
   else {
     if (all) {
+      ana_all=all;
       Ana2(1);
     }
   }
@@ -4105,50 +4106,6 @@ void CRS::Fill_Dec74(EventClass* evt) {
 
 } //Fill_Dec74
 
-void CRS::Fill_Dec76(EventClass* evt) {
-  // fill_dec is not thread safe!!!
-  //format of decoded data:
-  // 1) one 8byte header word:
-  //    bit63=1 - start of event
-  //    lowest 6 bytes - Tstamp
-  //    byte 7 - State
-  // 2) N 8 byte words, each containing one peak
-  //    1st (lowest) 2 bytes - Area
-  //    2 bytes - Time*10
-  //    2 bytes - Width
-  //    1 byte - channel
-
-  *DecBuf8 = 1;
-  *DecBuf8<<=63;
-  *DecBuf8 |= evt->TT & sixbytes;
-  if (evt->State) {
-    *DecBuf8 |= 0x1000000000000;
-  }
-
-  ++DecBuf8;
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      peak_type* pk = &evt->pulses[i].Peaks[j];
-      *DecBuf8=0;
-      Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      Decbuf2[0] = pk->Area;
-      Decbuf2[1] = pk->Time*10;
-      // Decbuf2[2] = 0;
-      Decbuf2[3] = evt->pulses[i].Chan;
-      ++DecBuf8;
-    }
-  }
-
-  idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
-    Flush_Dec();
-    DecBuf8 = (ULong64_t*) DecBuf;
-  }
-
-} //Fill_Dec76
-
-
 void CRS::Fill_Dec75(EventClass* evt) {
   // fill_dec is not thread safe!!!
   //format of decoded data:
@@ -4191,6 +4148,49 @@ void CRS::Fill_Dec75(EventClass* evt) {
   }
 
 } //Fill_Dec75
+
+void CRS::Fill_Dec76(EventClass* evt) {
+  // fill_dec is not thread safe!!!
+  //format of decoded data:
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - State
+  // 2) N 8-byte words, each containing one peak
+  //    1st (lowest) 2 bytes - Area
+  //    2 bytes - Time*10
+  //    2 bytes - Width
+  //    1 byte - channel
+
+  *DecBuf8 = 1;
+  *DecBuf8<<=63;
+  *DecBuf8 |= evt->TT & sixbytes;
+  if (evt->State) {
+    *DecBuf8 |= 0x1000000000000;
+  }
+
+  ++DecBuf8;
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+      *DecBuf8=0;
+      Short_t* Decbuf2 = (Short_t*) DecBuf8;
+      Decbuf2[0] = pk->Area;
+      Decbuf2[1] = pk->Time*10;
+      // Decbuf2[2] = 0;
+      Decbuf2[3] = evt->pulses[i].Chan;
+      ++DecBuf8;
+    }
+  }
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    Flush_Dec();
+    DecBuf8 = (ULong64_t*) DecBuf;
+  }
+
+} //Fill_Dec76
 
 void CRS::Flush_Dec() {
 
