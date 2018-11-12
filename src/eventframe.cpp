@@ -914,6 +914,7 @@ void EventFrame::FillGraph(int dr) {
     PulseClass *pulse = &d_event->pulses.at(i);
     ch[i]= pulse->Chan;
 
+    cout << "sData: " << i << " " << pulse->sData.size() << endl;
     Gr[dr][i]->Set(pulse->sData.size());
     Gr[dr][i]->SetLineColor(chcol[ch[i]]);
     Gr[dr][i]->SetMarkerColor(chcol[ch[i]]);
@@ -1021,6 +1022,7 @@ void EventFrame::SetRanges(int dr) {
   my1[dr]=1e99;
   my2[dr]=-1e99;
 
+  //cout << "psize: " << d_event->pulses.size() << endl;
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     UInt_t ch= d_event->pulses.at(i).Chan;
     if (fChn[ch]->IsOn()) {
@@ -1030,7 +1032,7 @@ void EventFrame::SetRanges(int dr) {
       if (gy2[dr][i]>my2[dr]) my2[dr]=gy2[dr][i];
 
       //cout << "Graph1: " << dr << " " << mx1 << " " << mx2 << " " 
-      //   << my1[dr] << " " << my2[dr] << endl;
+      //<< my1[dr] << " " << my2[dr] << endl;
 
       //mgr[dr]->Add(Gr[dr][ch]);
     }
@@ -1044,7 +1046,7 @@ void EventFrame::SetRanges(int dr) {
 
 void EventFrame::DrawEvent2() {
 
-  cout << "draw0:" << " " << Pevents->empty() << endl;
+  //cout << "draw0:" << " " << Pevents->empty() << endl;
   //return;
   //Emut2.Lock();
 
@@ -1081,7 +1083,7 @@ void EventFrame::DrawEvent2() {
     return;
   }
 
-  cout << "draw1b: " << d_event->pulses.size() << endl;
+  //cout << "draw1b: " << d_event->pulses.size() << endl;
   ULong64_t mask=0;
   ULong64_t one=1;
   
@@ -1097,17 +1099,9 @@ void EventFrame::DrawEvent2() {
     Pixel_t cc;
     if (mask&(one<<i)) {
       cc = gcol[i];
-      //cout << i << " " << fChn[i]->GetBackground() << " " << gcol[i] << endl;
-      //fChn[i]->SetBackgroundColor(gcol[i]);
-      //fChn[i]->ChangeBackground(gcol[i]);
-      //fChn[i]->SetForegroundColor(fcol[i]);
     }
     else {
       cc = 15263976;
-      //cout << i << " " << fChn[i]->GetBackground() << endl;
-      //fChn[i]->SetBackgroundColor(15263976);
-      //fChn[i]->ChangeBackground(15263976);
-      //fChn[i]->SetForegroundColor(0);
     }
     if (cc!=fChn[i]->GetBackground())
       fChn[i]->ChangeBackground(cc);
@@ -1241,6 +1235,8 @@ void EventFrame::ReDraw() {
       cv->cd(nn++);
 
       SetRanges(i);
+
+      cout << "mx1: " << i << " " << mx1 << endl;
 
       if (mx1>1e98) {
 	gPad->Clear();

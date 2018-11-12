@@ -416,9 +416,9 @@ void *handle_ana(void *ctx) {
 
     int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
 
-    cmut.Lock();
-    cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
-    cmut.UnLock();
+    //cmut.Lock();
+    //cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
+    //cmut.UnLock();
 
     if (m_event==crs->Levents.end()) {
       m_event=crs->Levents.begin();
@@ -465,7 +465,7 @@ void *handle_ana(void *ctx) {
       it=crs->Levents.erase(it);
     }
 
-    cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
+    //cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
 
     if (ana_all && opt.dec_write) {
       crs->Flush_Dec();
@@ -485,7 +485,7 @@ void *handle_ana(void *ctx) {
       EvtFrm->d_event=EvtFrm->Pevents->begin();
     }
   
-    cout << "Levents5: " << crs->Levents.size() << " " << crs->nevents << endl;
+    //cout << "Levents5: " << crs->Levents.size() << " " << crs->nevents << endl;
     // cmut.Lock();
     // cout << "Ana2_MT_end: " << crs->Levents.size()
     // 	 << " " << std::distance(crs->Levents.begin(),m_event)
@@ -2730,7 +2730,7 @@ void CRS::Show(bool force) {
 void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf) {
   //-----decode
   //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
-  cout << "Decode_MT: " << ibuf << " " << iread << endl;
+  //cout << "Decode_MT: " << ibuf << " " << iread << endl;
 
   dec_iread[ibuf]=iread+1;
   dec_cond[ibuf].Signal();
