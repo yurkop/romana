@@ -262,12 +262,13 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHslider->Connect("PositionChanged()", "HistFrame", 
    		    this, "DoSlider()");
 
-  // fVslider = new TGDoubleVSlider(fHor1, 40, kDoubleScaleBoth,1);
-  // fVslider->SetRange(0,1);
-  // fVslider->SetPosition(0,1);
-  // fHor1->AddFrame(fVslider, fLay8);
-  // // fVslider->Connect("PositionChanged()", "EventFrame", 
-  // // 		    this, "DoSlider()");
+  fVslider = new TGDoubleVSlider(fHor1, 10, kDoubleScaleBoth,1);
+  fVslider->SetRange(0,1);
+  fVslider->SetPosition(0,1);
+  //fVslider->SetWidth(10);
+  fHor1->AddFrame(fVslider, fLay8);
+  fVslider->Connect("PositionChanged()", "HistFrame", 
+   		    this, "DoSlider()");
 
   //TGVerticalFrame *fV1 = new TGVerticalFrame(fHor1, 10,10);
   //fHor1->AddFrame(fV1, fLay7);
@@ -1097,6 +1098,47 @@ void HistFrame::DoSlider() {
 
 }
 
+void HistFrame::X_Slider(TH1* hh) {
+  Float_t h1,h2;
+  fHslider->GetPosition(h1,h2);
+  if (h2-h1<1) {
+    double x1=hh->GetXaxis()->GetXmin();
+    double x2=hh->GetXaxis()->GetXmax();
+    double rr = x2-x1;
+    double a1 = x1+rr*h1;
+    double a2 = x1+rr*h2;
+    hh->GetXaxis()->SetRangeUser(a1,a2);
+  }
+  else {
+    hh->GetXaxis()->UnZoom();
+  }
+}
+
+void HistFrame::Y_Slider(TH1* hh) {
+  Float_t h1,h2;
+  fVslider->GetPosition(h2,h1);
+  h1=1-h1;
+  h2=1-h2;
+  double x1,x2;
+  if (h2-h1<1) {
+    if (hh->GetDimension()==2) {
+      x1=hh->GetYaxis()->GetXmin();
+      x2=hh->GetYaxis()->GetXmax();
+    }
+    else {
+      x1=hh->GetBinContent(hh->GetMinimumBin());
+      x2=hh->GetBinContent(hh->GetMaximumBin())*1.05;
+    }
+    double rr = x2-x1;
+    double a1 = x1+rr*h1;
+    double a2 = x1+rr*h2;
+    hh->GetYaxis()->SetRangeUser(a1,a2);
+  }
+  else {
+    hh->GetYaxis()->UnZoom();
+  }
+}
+
 void HistFrame::AddCutG(TPolyLine *pl, TObject* hobj) {
 
   if (opt.b_stack)
@@ -1560,8 +1602,18 @@ void HistFrame::DrawStack() {
   double rr = x2-x1;
   double a1 = x1+rr*h1;
   double a2 = x1+rr*h2;
-
   hstack->GetXaxis()->SetRangeUser(a1,a2);
+
+  Float_t v1,v2;
+  fVslider->GetPosition(v1,v2);
+  double y1=hstack->GetYaxis()->GetXmin();
+  double y2=hstack->GetYaxis()->GetXmax();
+  double rr2 = y2-y1;
+  double b1 = y1+rr2*v1;
+  double b2 = y1+rr2*v2;
+  hstack->GetYaxis()->SetRangeUser(b1,b2);
+
+  cout << "Vslider: " << b1 << " " << b2 << endl;
   hstack->Draw("nostack");
 
   if (opt.b_norm) {
@@ -1638,20 +1690,44 @@ void HistFrame::DrawHist() {
       hh->UseCurrentStyle();
       if (hh->GetDimension()==2) {
 	gPad->SetLogz(opt.b_logy);
+	X_Slider(hh);
+	Y_Slider(hh);
 	hh->Draw("zcol");
       }
       else {
 	gPad->SetLogy(opt.b_logy);
 
-	Float_t h1,h2;
-	fHslider->GetPosition(h1,h2);
-	double x1=hh->GetXaxis()->GetXmin();
-	double x2=hh->GetXaxis()->GetXmax();
-	double rr = x2-x1;
-	double a1 = x1+rr*h1;
-	double a2 = x1+rr*h2;
+	// Float_t h1,h2;
+	// fHslider->GetPosition(h1,h2);
+	// double x1=hh->GetXaxis()->GetXmin();
+	// double x2=hh->GetXaxis()->GetXmax();
+	// double rr = x2-x1;
+	// double a1 = x1+rr*h1;
+	// double a2 = x1+rr*h2;
+	// hh->GetXaxis()->SetRangeUser(a1,a2);
+	X_Slider(hh);
 
-	hh->GetXaxis()->SetRangeUser(a1,a2);
+	// Float_t v1,v2;
+	// fVslider->GetPosition(v2,v1);
+	// v1=1-v1;
+	// v2=1-v2;
+	// if (v2-v1<1) {
+	//   //cout << "vvv: " << v1-v2 << endl;
+	//   double y1=hh->GetBinContent(hh->GetMinimumBin());
+	//   double y2=hh->GetBinContent(hh->GetMaximumBin())*1.05;
+
+	//   double rr2 = y2-y1;
+	//   double b1 = y1+rr2*v1;
+	//   double b2 = y1+rr2*v2;
+	//   hh->GetYaxis()->SetRangeUser(b1,b2);
+	// }
+	// else {
+	//   hh->GetYaxis()->UnZoom();
+	// }
+
+	Y_Slider(hh);
+
+	//cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
 	hh->Draw();
       }
       padmap[nn-1]=obj;

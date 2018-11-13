@@ -914,10 +914,18 @@ void EventFrame::FillGraph(int dr) {
     PulseClass *pulse = &d_event->pulses.at(i);
     ch[i]= pulse->Chan;
 
-    cout << "sData: " << i << " " << pulse->sData.size() << endl;
     Gr[dr][i]->Set(pulse->sData.size());
     Gr[dr][i]->SetLineColor(chcol[ch[i]]);
     Gr[dr][i]->SetMarkerColor(chcol[ch[i]]);
+
+    if (Gr[dr][i]->GetN()==0) {
+      gx1[i]=0;
+      gx2[i]=1;
+      gy1[dr][i]=0;
+      gy2[dr][i]=1;
+      continue;
+    }
+    //cout << "sData: " << i << " " << pulse->sData.size() << " " << Gr[dr][i]->GetN() << endl;
 
     //double dt=pulse->Tstamp64 - d_event->TT - crs->Pre[ch[i]];
     double dt=pulse->Tstamp64 - d_event->TT - cpar.preWr[ch[i]];
@@ -1203,7 +1211,9 @@ void EventFrame::ReDraw() {
 
   //Emut.Lock();
   //cv->Update();
-  
+
+  TText tt;
+
   if (Pevents->empty()) {
     return;
   }
@@ -1232,11 +1242,15 @@ void EventFrame::ReDraw() {
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
 
+      int tx=0,ty=0;
+      int ny=d_event->pulses.size();
+      double dd = 0.74*2.0/ny;
+
       cv->cd(nn++);
 
       SetRanges(i);
 
-      cout << "mx1: " << i << " " << mx1 << endl;
+      //cout << "mx1: " << i << " " << mx1 << endl;
 
       if (mx1>1e98) {
 	gPad->Clear();
@@ -1272,15 +1286,47 @@ void EventFrame::ReDraw() {
 	PulseClass *pulse = &d_event->pulses.at(j);
 	//UInt_t ch= d_event->pulses.at(j).Chan;
 	if (fChn[pulse->Chan]->IsOn()) {
-	  Gr[i][j]->Draw("lp");
-	  DrawPeaks(i,pulse,y1,y2);
-	  //int ideriv = (Bool_t) opt.kdrv[pulse->Chan];
-	  //cout << "idrv: " << ideriv << " " << opt.kdrv[pulse->Chan] << endl;
-	  if (i==1 && fPeak[7]->IsOn()) //threshold
-	    doYline(opt.thresh[pulse->Chan],gx1[j],
-		    gx2[j],chcol[pulse->Chan],2);
+	  if (Gr[i][j]->GetN()) { //draw graph
+	    Gr[i][j]->Draw("lp");
+	    DrawPeaks(i,pulse,y1,y2);
+	    //int ideriv = (Bool_t) opt.kdrv[pulse->Chan];
+	    //cout << "idrv: " << ideriv << " " << opt.kdrv[pulse->Chan] << endl;
+	    if (i==1 && fPeak[7]->IsOn()) //threshold
+	      doYline(opt.thresh[pulse->Chan],gx1[j],
+		      gx2[j],chcol[pulse->Chan],2);
+	  }
+	  else if (i==0) { //draw text
+	    char ss[256];
+	    peak_type *pk = &pulse->Peaks.back();
+	    sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f",
+		    pulse->Chan,pk->Area,pk->Time,pk->Width);
+	    //tt.SetBBoxX1(0);
+	    //tt.SetBBoxX2(100);
+	    //tt.SetBBoxY1(0);
+	    //tt.SetBBoxY2(20);
+
+	    tt.SetTextAlign(0);
+	    tt.SetTextSize(0.03);
+	    tt.SetTextColor(chcol[pulse->Chan]);
+	    dd=0.74*2.0/32;
+
+	    // cout << "txt: " << j << " " << tx << " " << ty << " "
+	    // 	 << 0.1+tx*0.5 << " " << 0.8-ty*dd
+	    // 	 << endl;
+	    tt.DrawTextNDC(0.17+tx*0.35,0.85-ty*dd,ss);
+	    tx++;
+	    if (tx>1) {
+	      tx=0;
+	      ty++;
+	    }
+	  }
 	}
       }
+
+      // for (UInt_t j=0;j<32;j++) {
+      // 	PulseClass *pulse = &d_event->pulses.at(0);
+      // 	pulse->Chan=j;
+      // }
 
     }
   }

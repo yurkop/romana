@@ -39,7 +39,7 @@ public:
 
 
   TGDoubleHSlider        *fHslider;
-  //TGDoubleVSlider        *fVslider;
+  TGDoubleVSlider        *fVslider;
 
 
   TGListTree             *fListTree;    // list tree with histograms
@@ -99,6 +99,8 @@ public:
   void DoRadio();
   void DoButton();
   void DoSlider();
+  void X_Slider(TH1* hh);
+  void Y_Slider(TH1* hh);
   void AddCutG(TPolyLine *pl, TObject* hobj);
   void MakeCutG(TPolyLine *pl, TObject* hobj);
   void DoCutG();
