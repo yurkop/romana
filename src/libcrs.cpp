@@ -2863,57 +2863,18 @@ void CRS::FindLast33(UInt_t ibuf) {
   //ibuf - current sub-buffer
   UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
 
-  //int idx1=length-8; // current index in the buffer (in 1-byte words)
-
-  //unsigned char *buf = Fbuf[];
   unsigned char frmt;
-  //int sz=0;
 
   for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
     //find frmt==0 -> this is the start of a pulse
     frmt = (GLBuf[i+6] & 0xF0);
-    //cout << "frmt: " << (int) (frmt/16) << " " << " " << (int) frmt << " " << i << " " << length-2-i << endl;
     if (frmt==0) {
 
       b_end[ibuf]=i;
       b_start[ibuf2]=i;
-      //int idx1 = b_start[ibuf2];
-      //frmt = GLBuf[idx1+6];
-      //frmt = (frmt & 0xF0)>>4;
-
-
-      // cout << "FindLastEvent: " << ibuf << " " << i << " " << (int) frmt << endl;
-      // for (int j=0;j<gl_ntrd;j++) {
-      // 	cout << "bb: " << j << " " << b_start[j] << " " << b_end[j] << endl;
-      // }
 
       return;
 
-
-
-
-      //i+=8;
-      //memcpy(Fbuf[ibuf2]-i,Fbuf[ibuf]+buf_len[ibuf]-i,i);
-
-      // for (int j=-10;j<10;j++) {
-      // 	frmt = *(buffer[ibuf]+j*8+length-i-8+6);
-      // 	unsigned char frmt2 = *(buffer[ibuf2]+j*8-i-8+6);;
-      // 	cout << "j1: " << j << " " << (int) (frmt) << " " << (int) (frmt2) << endl;
-      // }
-
-      // //int i8=i/8;
-      // ULong64_t* buf8_1 = (ULong64_t*) (buffer[ibuf]+length-i);
-      // ULong64_t* buf8_2 = (ULong64_t*) (buffer[ibuf2]-i);
-
-      // for (int j=-10;j<10;j++) {
-      // 	cout << "j3: " << j << " " << hex << buf8_1[j] << " " << buf8_2[j] << dec << endl;
-      // }
-
-      //buf_off[ibuf2]=-i;
-      //buf_len[ibuf]-=i;
-      //cout << "Last event found: " << ibuf << " " << ibuf2 << " " << i << " " << length << " " << buf_off[ibuf2] << endl;
-
-      //return;
     }
   }
   cout << "Error: no last event: " << ibuf << endl;
@@ -3291,10 +3252,8 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	//cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
       }
 
-      //vv->push_back(PulseClass());
-      //Blist->push_back(PulseClass());
+      // create new pulse
       ipls=PulseClass();
-      //ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls.Chan=ch;
       ipls.Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
@@ -3515,49 +3474,39 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     idx1+=8;
   } //while (idx1<buf_len)
 
-
   //add last pulse to the list
   if (ipls.ptype==0) {
     PulseAna(ipls);
     Event_Insert_Pulse(Blist,&ipls);
   }
 
-  //plist.push_back(vp);
-  //buf_len[ibuf]=0;
-
-  //if (Blist->front().TT<0) {
-  //Blist->pop_front();
-  //}
-
   Blist->front().State=123;
 
-  // cout << "decode33: " << idx1 << " " << frmt << " " << ipls.Counter << " "
-  //      << ipls.sData.size() << " " << n_frm << " " << Blist->size()
-  //      << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
-
-  // int nn=10;
-  // for (evlist_iter it=Blist->begin();it!=Blist->end() && nn>=0;++it,--nn) {
-  //   cout << "evt: " << it->Nevt << " " << it->TT << " " << it->pulses.size() << " " << endl;
-  // }
 } //decode33
 
 
 void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 
-  /*
   UShort_t* buf2 = (UShort_t*) GLBuf;
 
   UShort_t frmt;
   int idx2=b_start[ibuf]/2;
   //int len = length/2;
 
-  Pstruct vp;
-  vp.done=false;
-  vp.num=iread;
+  //Pstruct vp;
+  //vp.done=false;
+  //vp.num=iread;
   //pulse_vect *vv = Vpulses+ibuf;
-  pulse_vect *vv = &vp.Vpulses;
-  PulseClass* ipls=&dummy_pulse;
 
+  eventlist *Blist;
+  dec_mut.Lock();
+  Bufevents.push_back(eventlist());
+  Blist = &Bufevents.back();
+  dec_mut.UnLock();
+
+  Blist->push_back(EventClass());
+  Blist->front().Nevt=iread;
+  PulseClass ipls=dummy_pulse;
 
   //cout << "Decode2: " << iread << " " << ibuf << " " << idx2 << " " << b_end[ibuf] << endl;
 
@@ -3569,52 +3518,53 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
     short data = uword & 0xFFF;
     unsigned char ch = (uword & 0x8000)>>15;
 
-    if (frmt && vv->empty()) {
+    if (frmt && Blist->empty()) {
       cout << "dec2: bad buf start: " << idx2 << " " << (int) ch << " " << frmt << endl;
       idx2++;
       continue;
     }
-    else if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
+    else if ((ch>=opt.Nchan) || (frmt && ch!=ipls.Chan)) {
       cout << "2: Bad channel: " << (int) ch
-	   << " " << (int) ipls->Chan << endl;
-      ipls->ptype|=P_BADCH;
+	   << " " << (int) ipls.Chan << endl;
+      ipls.ptype|=P_BADCH;
 
       idx2++;
       continue;
     }
 
     if (frmt==0) {
-      //ipls->ptype&=~P_NOSTOP; //pulse has stop
+      //ipls.ptype&=~P_NOSTOP; //pulse has stop
 
       //analyze previous pulse
-      //ipls->FindPeaks();
-      ipls->PeakAna33();
+      if (ipls.ptype==0) {
+	PulseAna(ipls);
+	Event_Insert_Pulse(Blist,&ipls);
+	//cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
+      }
 
-
-      vv->push_back(PulseClass());
-      ipls=&vv->back();
+      // create new pulse
+      ipls=PulseClass();
       npulses++;
-      ipls->Chan = ch;
-      ipls->Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
+      ipls.Chan = ch;
+      ipls.Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
     }
     else if (frmt<4) {
       Long64_t t64 = data;
-      ipls->Tstamp64+= (t64 << (frmt*12));
+      ipls.Tstamp64+= (t64 << (frmt*12));
     }
     else if (frmt==4) {
-      ipls->Counter=data;
+      ipls.Counter=data;
     }
     else if (frmt==5) {
-      if (ipls->sData.size()>=cpar.durWr[ipls->Chan]) {
-	// cout << "2: Nsamp error: " << ipls->sData.size()
-	//      << " " << (int) ch << " " << (int) ipls->Chan
+      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
+	// cout << "2: Nsamp error: " << ipls.sData.size()
+	//      << " " << (int) ch << " " << (int) ipls.Chan
 	//      << " " << idx2
 	//      << endl;
-	ipls->ptype|=P_BADSZ;
+	ipls.ptype|=P_BADSZ;
       }
       //else {
-      //cout << "decode2a: " << idx2 << " " << ipls << " " << ipls->sData.size() << endl;
-      ipls->sData.push_back((data<<21)>>21);
+      ipls.sData.push_back((data<<21)>>21);
       //cout << "decode2b: " << idx2 << endl;
       //}
     }
@@ -3622,8 +3572,14 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
     idx2++;
   }
 
-  plist.push_back(vp);
-  */
+  //add last pulse to the list
+  if (ipls.ptype==0) {
+    PulseAna(ipls);
+    Event_Insert_Pulse(Blist,&ipls);
+  }
+
+  Blist->front().State=123;
+
 } //decode2
 
 
