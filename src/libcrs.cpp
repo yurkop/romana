@@ -3332,8 +3332,8 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
 	  ipk->Area*=opt.emult[ipls.Chan];
-	  ipk->Area0*=opt.emult[ipls.Chan];
-	  ipk->Base*=opt.emult[ipls.Chan];
+	  //ipk->Area0*=opt.emult[ipls.Chan];
+	  //ipk->Base*=opt.emult[ipls.Chan];
 
 	  break;
 	case 1: //H – [12]; QX – [36]
@@ -3412,10 +3412,8 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
 	  ipk->Area*=opt.emult[ipls.Chan];
-	  ipk->Area0*=opt.emult[ipls.Chan];
-	  //cout << " Base1: " << ipk->Base << " " << (int) ipls.Chan << " " << opt.emult[ipls.Chan] << endl;
-	  ipk->Base*=opt.emult[ipls.Chan];
-	  //cout << " Base1: " << ipk->Base << " " << (int) ipls.Chan << " " << opt.emult[ipls.Chan] << endl;
+	  //ipk->Area0*=opt.emult[ipls.Chan];
+	  //ipk->Base*=opt.emult[ipls.Chan];
 	  break;
 	case 2: //A – [28]
 	  //QX

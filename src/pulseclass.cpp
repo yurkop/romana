@@ -281,8 +281,8 @@ void PulseClass::PeakAna() {
     }
 
     pk->Area*=opt.emult[Chan];
-    pk->Area0*=opt.emult[Chan];
-    pk->Base*=opt.emult[Chan];
+    //pk->Area0*=opt.emult[Chan];
+    //pk->Base*=opt.emult[Chan];
 
   }
 
@@ -415,8 +415,8 @@ void PulseClass::PeakAna33() {
   }
   pk->Area=pk->Area0 - pk->Base;
   pk->Area*=opt.emult[Chan];
-  pk->Area0*=opt.emult[Chan];
-  pk->Base*=opt.emult[Chan];
+  //pk->Area0*=opt.emult[Chan];
+  //pk->Base*=opt.emult[Chan];
 
   // printf(ANSI_COLOR_RED
   // 	 "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,

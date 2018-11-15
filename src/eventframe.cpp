@@ -303,6 +303,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[6] = new TGCheckButton(fVer_d, "*TStart", 6);
   fPeak[7] = new TGCheckButton(fVer_d, "Thresh", 7);
 
+  fPeak[8] = new TGCheckButton(fVer_d, "Values", 8);
+
   //int cc;
   //cc=gROOT->GetColor(2)->GetPixel();
   fPeak[1]->SetForegroundColor(gROOT->GetColor(2)->GetPixel());
@@ -330,7 +332,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[6]->SetToolTipText("Time start marker");
   fPeak[7]->SetToolTipText("Threshold, plotted only in 1st derivative)");
 
-  for (int i=0;i<8;i++) {
+  fPeak[8]->SetToolTipText("Print integral values");
+
+  for (int i=0;i<9;i++) {
     fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
     fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
     fVer_d->AddFrame(fPeak[i], fLay4);
@@ -1295,7 +1299,7 @@ void EventFrame::ReDraw() {
 	      doYline(opt.thresh[pulse->Chan],gx1[j],
 		      gx2[j],chcol[pulse->Chan],2);
 	  }
-	  else if (i==0) { //draw text
+	  if (fPeak[8]->IsOn()) { //draw text
 	    char ss[256];
 	    peak_type *pk = &pulse->Peaks.back();
 	    sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f",
