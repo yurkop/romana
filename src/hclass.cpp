@@ -435,6 +435,8 @@ void HClass::Make_hist() {
   Make_1d("Area","area",";Channel;Counts",m_area,&opt.h_area);
   Make_1d("Area0","area0",";Channel;Counts",m_area0,&opt.h_area0);
   Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);
+  Make_1d("Slope1","slope1",";Channel;Counts",m_slope1,&opt.h_slope1);
+  Make_1d("Slope2","slope2",";Channel;Counts",m_slope2,&opt.h_slope2);
   Make_1d("Height","height",";Channel;Counts",m_height,&opt.h_hei);
   Make_1d("Tof","tof",";t(ns);Counts",m_tof,&opt.h_tof);
   Make_1d("Mtof","mtof",";t(mks);Counts",m_mtof,&opt.h_mtof);
@@ -443,7 +445,10 @@ void HClass::Make_hist() {
   Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,&opt.h_pulse);
 
   Make_a0a1("A0A1","A0A1",";Channel;Channel",m_a0a1,&opt.h_a0a1);
-  Make_2d("Area-Base","Area-Base",";Channel;Channel",m_area_base,&opt.h_area_base,&opt.h_area,&opt.h_base);
+  Make_2d("Area_Base","Area_Base",";Channel;Channel",m_area_base,&opt.h_area_base,&opt.h_area,&opt.h_base);
+  Make_2d("Area_Sl1","Area_Sl1",";Channel;Channel",m_area_sl1,&opt.h_area_sl1,&opt.h_area,&opt.h_slope1);
+  Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);
+  Make_2d("Slope_12","Slope_12",";Channel;Channel",m_slope_12,&opt.h_slope_12,&opt.h_slope1,&opt.h_slope2);
 
 
   b_formula=false;

@@ -21,8 +21,8 @@ namespace EF {
       {1,0,0},
       {0,1,0},
       {0,0,1},
-      {0,1,1},
-      {1,0,1}, //5
+      {1,0,1},
+      {0,1,1}, //5
       {0.63,0.67,0.02},
       {0.71,0.11,0.52},
       {0.51,0.95,0.46},
@@ -266,7 +266,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - area;\n[2] - time (sec);\n[3] - Tstamp;\n[4] - tof;\n[5] - multiplicity";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);;
   tEnt->SetWidth(100);
@@ -303,7 +303,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[6] = new TGCheckButton(fVer_d, "*TStart", 6);
   fPeak[7] = new TGCheckButton(fVer_d, "Thresh", 7);
 
-  fPeak[8] = new TGCheckButton(fVer_d, "Values", 8);
+  fPeak[8] = new TGCheckButton(fVer_d, "Par", 8);
 
   //int cc;
   //cc=gROOT->GetColor(2)->GetPixel();
@@ -332,7 +332,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[6]->SetToolTipText("Time start marker");
   fPeak[7]->SetToolTipText("Threshold, plotted only in 1st derivative)");
 
-  fPeak[8]->SetToolTipText("Print integral values");
+  fPeak[8]->SetToolTipText("Print peak parameters");
 
   for (int i=0;i<9;i++) {
     fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
@@ -738,7 +738,7 @@ void EventFrame::DoCheckPoint() {
   Int_t id = btn->WidgetId();
 
   Pixel_t color;
-  Double_t par[6];
+  Double_t par[7];
   formula->SetTitle(opt.formula);
   formula->Clear();
   int ires = formula->Compile();
@@ -773,9 +773,9 @@ void EventFrame::DoCheckPoint() {
     }
     while (d_event!=ievt) {
       //cout << d_event->Nevt << " " << d_event->T << endl;
-      par[5]=d_event->pulses.size();
+      par[3]=d_event->pulses.size();
       par[2]=(d_event->TT-crs->Tstart64)*crs->period*1e-9;
-      par[3]=d_event->TT;
+      par[1]=d_event->TT;
 
       for (UInt_t i=0;i<d_event->pulses.size();i++) {
 	int ch = d_event->pulses[i].Chan;
@@ -783,13 +783,14 @@ void EventFrame::DoCheckPoint() {
 
 	for (UInt_t j=0;j<d_event->pulses[i].Peaks.size();j++) {
 	  peak_type* pk = &d_event->pulses[i].Peaks[j];
-	  par[1]=pk->Area;
+	  par[4]=pk->Area;
+	  par[5]=pk->Base;
 	  double dt = d_event->pulses[i].Tstamp64 - d_event->TT;
 	  //double tt = pk->Time - crs->Pre[ch] - d_event->T0 + dt;
 	  double tt = pk->Time - d_event->T0 + dt;
-	  par[4]=tt*crs->period;
+	  par[6]=tt*crs->period;
 	  res = formula->EvalPar(0,par);
-	  cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->TT << " " << " " << par[4] << " " << res << endl;
+	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->TT << " " << " " << par[4] << " " << res << endl;
 	  if (res) {
 	    //d_event = d_event;
 	    DrawEvent2();
@@ -1117,6 +1118,8 @@ void EventFrame::DrawEvent2() {
     }
     if (cc!=fChn[i]->GetBackground())
       fChn[i]->ChangeBackground(cc);
+
+    //fChn[i]->ChangeBackground(gcol[i]);
   }
 
   markt[1]=gSystem->Now();
@@ -1292,53 +1295,51 @@ void EventFrame::ReDraw() {
 	if (fChn[pulse->Chan]->IsOn()) {
 	  if (Gr[i][j]->GetN()) { //draw graph
 	    Gr[i][j]->Draw("lp");
-	    DrawPeaks(i,pulse,y1,y2);
-	    //int ideriv = (Bool_t) opt.kdrv[pulse->Chan];
-	    //cout << "idrv: " << ideriv << " " << opt.kdrv[pulse->Chan] << endl;
+	    DrawPeaks(i,pulse,y1,y2);;
 	    if (i==1 && fPeak[7]->IsOn()) //threshold
 	      doYline(opt.thresh[pulse->Chan],gx1[j],
 		      gx2[j],chcol[pulse->Chan],2);
 	  }
 	  if (fPeak[8]->IsOn()) { //draw text
-	    char ss[256];
-	    peak_type *pk = &pulse->Peaks.back();
-	    sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f",
-		    pulse->Chan,pk->Area,pk->Time,pk->Width);
-	    //tt.SetBBoxX1(0);
-	    //tt.SetBBoxX2(100);
-	    //tt.SetBBoxY1(0);
-	    //tt.SetBBoxY2(20);
+	    if (pulse->Peaks.size()) {
+	      char ss[256];
+	      peak_type *pk = &pulse->Peaks.back();
+	      sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f",
+		      pulse->Chan,pk->Area,pk->Time,pk->Width);
+	      //tt.SetBBoxX1(0);
+	      //tt.SetBBoxX2(100);
+	      //tt.SetBBoxY1(0);
+	      //tt.SetBBoxY2(20);
 
-	    tt.SetTextAlign(0);
-	    tt.SetTextSize(0.03);
-	    tt.SetTextColor(chcol[pulse->Chan]);
-	    dd=0.74*2.0/32;
+	      tt.SetTextAlign(0);
+	      tt.SetTextSize(0.03);
+	      tt.SetTextColor(chcol[pulse->Chan]);
+	      dd=0.74*2.0/32;
 
-	    // cout << "txt: " << j << " " << tx << " " << ty << " "
-	    // 	 << 0.1+tx*0.5 << " " << 0.8-ty*dd
-	    // 	 << endl;
-	    tt.DrawTextNDC(0.17+tx*0.35,0.85-ty*dd,ss);
-	    tx++;
-	    if (tx>1) {
-	      tx=0;
-	      ty++;
+	      // cout << "txt: " << j << " " << tx << " " << ty << " "
+	      // 	 << 0.1+tx*0.5 << " " << 0.8-ty*dd
+	      // 	 << endl;
+	      tt.DrawTextNDC(0.17+tx*0.35,0.85-ty*dd,ss);
+	      tx++;
+	      if (tx>1) {
+		tx=0;
+		ty++;
+	      }
 	    }
 	  }
 	}
-      }
+      } //for (UInt_t j=0;j<d_event->pulses.size();j++) {
 
       // for (UInt_t j=0;j<32;j++) {
       // 	PulseClass *pulse = &d_event->pulses.at(0);
       // 	pulse->Chan=j;
       // }
 
-    }
-  }
+    } // if (opt.b_deriv[i]) {
+  } //for i
 
-  //cout << "rdr77: " << endl;
   cv->Update();
 
-  //cout << "rdr78: " << endl;
   //Emut.UnLock();
 
 }

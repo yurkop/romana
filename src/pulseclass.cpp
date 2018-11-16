@@ -163,6 +163,8 @@ void PulseClass::FindPeaks() {
 
 void PulseClass::PeakAna() {
 
+  //cout << "Peakana: " << Peaks.size() << endl;
+
   int sz=sData.size()-1;
 
   for (UInt_t i=0;i<Peaks.size();i++) {
@@ -280,9 +282,12 @@ void PulseClass::PeakAna() {
       //cout << "zero Area: " << Counter << " " << Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
     }
 
-    pk->Area*=opt.emult[Chan];
-    //pk->Area0*=opt.emult[Chan];
-    //pk->Base*=opt.emult[Chan];
+    //pk->Area*=opt.emult[Chan];
+    pk->Area=opt.emult0[Chan] + opt.emult[Chan]*pk->Area +
+      opt.emult2[Chan]*pk->Area*pk->Area;
+    if (opt.bcor[Chan]) {
+      pk->Area+=opt.bcor[Chan]*pk->Base;
+    }
 
   }
 
@@ -381,10 +386,9 @@ void PulseClass::PeakAna33() {
   pk->Width-=pk->Pos;
   //pk->Width+=0.1;
 
+  //baseline
   pk->Base=0;
   int nbkg=0;
-  //background
-  //return;
   for (int j=pk->B1;j<pk->B2;j++) {
     pk->Base+=sData[j];
     nbkg++;
@@ -413,10 +417,39 @@ void PulseClass::PeakAna33() {
   else {
     cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
   }
+
+  //slope1 (baseline)
+  pk->Slope1=0;
+  nbkg=0;
+  for (int j=pk->B1+1;j<pk->B2;j++) {
+    pk->Slope1+=sData[j]-sData[j-1];
+    nbkg++;
+  }
+
+  if (nbkg)
+    pk->Slope1/=nbkg;
+
+  //slope2 (peak)
+  pk->Slope2=0;
+  nbkg=0;
+  for (int j=pk->P1+1;j<pk->P2;j++) {
+    pk->Slope2+=sData[j]-sData[j-1];
+    nbkg++;
+  }
+
+  if (nbkg)
+    pk->Slope2/=nbkg;
+
+
+  //calibration
   pk->Area=pk->Area0 - pk->Base;
-  pk->Area*=opt.emult[Chan];
-  //pk->Area0*=opt.emult[Chan];
-  //pk->Base*=opt.emult[Chan];
+  //pk->Area*=opt.emult[Chan];
+  pk->Area=opt.emult0[Chan] + opt.emult[Chan]*pk->Area +
+    opt.emult2[Chan]*pk->Area*pk->Area;
+
+  if (opt.bcor[Chan]) {
+    pk->Area+=opt.bcor[Chan]*pk->Base;
+  }
 
   // printf(ANSI_COLOR_RED
   // 	 "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
@@ -748,10 +781,10 @@ void EventClass::FillHist(Bool_t first) {
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
       peak_type* pk = &pulses[i].Peaks[j];
 
-      if (opt.elim2[ch]>0 &&
-	  (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
-	continue;
-      }
+      // if (opt.elim2[ch]>0 &&
+      // 	  (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
+      // 	continue;
+      // }
 
       if (opt.h_time.b) {
 	if (first) {
@@ -772,8 +805,28 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_base,ch,pk->Base);
       }
 
+      if (opt.h_slope1.b) {
+	Fill1d(first,hcl->m_slope1,ch,pk->Slope1);
+      }
+
+      if (opt.h_slope2.b) {
+	Fill1d(first,hcl->m_slope2,ch,pk->Slope2);
+      }
+
       if (opt.h_area_base.b) {
 	Fill2d(first,hcl->m_area_base[ch],pk->Area,pk->Base);
+      }
+
+      if (opt.h_area_sl1.b) {
+	Fill2d(first,hcl->m_area_sl1[ch],pk->Area,pk->Slope1);
+      }
+
+      if (opt.h_area_sl2.b) {
+	Fill2d(first,hcl->m_area_sl2[ch],pk->Area,pk->Slope2);
+      }
+
+      if (opt.h_slope_12.b) {
+	Fill2d(first,hcl->m_slope_12[ch],pk->Slope1,pk->Slope2);
       }
 
       if (opt.h_hei.b) {

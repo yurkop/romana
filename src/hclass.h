@@ -47,11 +47,13 @@ class HClass {
 
  public:
 
+  HMap* m_time[MAX_CH+NGRP]; // real time
   HMap* m_area[MAX_CH+NGRP]; //area of the peak
   HMap* m_area0[MAX_CH+NGRP]; //area of the peak w/o bkg
-  HMap* m_base[MAX_CH+NGRP]; //base - background
+  HMap* m_base[MAX_CH+NGRP]; //baseline - background
+  HMap* m_slope1[MAX_CH+NGRP]; //slope1 - baseline
+  HMap* m_slope2[MAX_CH+NGRP]; //slope2 - peak
   HMap* m_height[MAX_CH+NGRP]; //height of the peak
-  HMap* m_time[MAX_CH+NGRP]; // real time
   HMap* m_tof[MAX_CH+NGRP]; // time of flight
   HMap* m_mtof[MAX_CH+NGRP]; // time of flight
   HMap* m_etof[MAX_CH+NGRP]; // Energy from time of flight
@@ -61,6 +63,9 @@ class HClass {
 
   HMap* m_a0a1[1];
   HMap* m_area_base[MAX_CH];
+  HMap* m_area_sl1[MAX_CH];
+  HMap* m_area_sl2[MAX_CH];
+  HMap* m_slope_12[MAX_CH];
 
   TCutG* cutG[MAXCUTS];
   //Name: cut[i]

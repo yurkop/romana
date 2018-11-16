@@ -256,7 +256,10 @@ Toptions::Toptions() {
     twin1[i]=-5;
     twin2[i]=5;
 
+    emult0[i]=0;
     emult[i]=1;
+    emult2[i]=0;
+    bcor[i]=0;
   }
 
   // for (int i=MAX_CH;i<MAX_CH+ADDCH;i++) {

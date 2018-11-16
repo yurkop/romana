@@ -40,8 +40,8 @@ class peak_type {
   Float_t Base; //baseline
   Float_t Area0; //area+background
   Float_t Area; //pure area (Area0-Base)
-  //Float_t Slope1;
-  //Float_t Slope2;
+  Float_t Slope1;
+  Float_t Slope2;
   //Float_t Noise1;
   //Float_t Noise2;
   Float_t Height; //maximum of pulse in the same region as Area

@@ -86,6 +86,10 @@ public:
   Int_t wwin2[MAX_CH+ADDCH];
 
   Float_t emult[MAX_CH+ADDCH];
+  Float_t emult0[MAX_CH+ADDCH];
+  Float_t emult2[MAX_CH+ADDCH];
+  Float_t bcor[MAX_CH+ADDCH];
+
   Float_t elim1[MAX_CH+ADDCH];
   Float_t elim2[MAX_CH+ADDCH];
 
@@ -183,6 +187,8 @@ public:
   Hdef h_area;
   Hdef h_area0;
   Hdef h_base;
+  Hdef h_slope1;
+  Hdef h_slope2;
   Hdef h_hei;
   Hdef h_tof;
   Hdef h_mtof;
@@ -192,6 +198,9 @@ public:
 
   Hdef h_a0a1;
   Hdef h_area_base;
+  Hdef h_area_sl1;
+  Hdef h_area_sl2;
+  Hdef h_slope_12;
 public:
   //void InitPar(Int_t module);
 

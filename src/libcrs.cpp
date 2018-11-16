@@ -3284,6 +3284,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 
 	iii = data & 0xFFF;
 	ipls.sData.push_back((iii<<20)>>20);
+
 	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=12;
@@ -3306,6 +3307,13 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 
 	iii = data & 0xFFFF;
 	ipls.sData.push_back((iii<<16)>>16);
+
+	//YK
+	//float aa = (iii<<16)>>16;
+	//aa*=10*ipls.sData.size();
+	//ipls.sData.push_back(aa);
+
+
 	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
 	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=16;
@@ -3331,9 +3339,12 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  ipk->Base/=b_len[ipls.Chan];
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
-	  ipk->Area*=opt.emult[ipls.Chan];
-	  //ipk->Area0*=opt.emult[ipls.Chan];
-	  //ipk->Base*=opt.emult[ipls.Chan];
+	  //ipk->Area*=opt.emult[ipls.Chan];
+	  ipk->Area=opt.emult0[ipls.Chan] + opt.emult[ipls.Chan]*ipk->Area +
+	    opt.emult2[ipls.Chan]*ipk->Area*ipk->Area;
+	  if (opt.bcor[ipls.Chan]) {
+	    ipk->Area+=opt.bcor[ipls.Chan]*ipk->Base;
+	  }
 
 	  break;
 	case 1: //H – [12]; QX – [36]
@@ -3411,9 +3422,12 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  ipk->Area0/=p_len[ipls.Chan];
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
-	  ipk->Area*=opt.emult[ipls.Chan];
-	  //ipk->Area0*=opt.emult[ipls.Chan];
-	  //ipk->Base*=opt.emult[ipls.Chan];
+	  //ipk->Area*=opt.emult[ipls.Chan];
+	  ipk->Area=opt.emult0[ipls.Chan] + opt.emult[ipls.Chan]*ipk->Area +
+	    opt.emult2[ipls.Chan]*ipk->Area*ipk->Area;
+	  if (opt.bcor[ipls.Chan]) {
+	    ipk->Area+=opt.bcor[ipls.Chan]*ipk->Base;
+	  }
 	  break;
 	case 2: //A – [28]
 	  //QX

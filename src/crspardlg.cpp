@@ -55,9 +55,9 @@ const char* ttip1[ncrspar+1]={
   "Number of Bad pulses"
 };
 
-const int n_apar=15;
-const int tlen2[n_apar]={26,60,24,24,24,25,35,32,40,35,35,20,42,42,42};
-const char* tlab2[n_apar]={"Ch","Type","dsp","St","Mt","sS","Delay","Drv","Thr","dT","Pile","Tm","EM","Elim1","Elim2"};
+const int n_apar=16;
+const int tlen2[n_apar]={26,60,24,24,24,25,35,32,40,35,35,20,38,38,38,38};
+const char* tlab2[n_apar]={"Ch","Type","dsp","St","Mt","sS","Delay","Drv","Thr","dT","Pile","Tm","E0","E1","E2","B"};
 const char* ttip2[n_apar]={
   "Channel number",
   "Channel type",
@@ -71,9 +71,10 @@ const char* ttip2[n_apar]={
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   "Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
-  "Energy multiplier",
-  "Low energy limit (not working yet)",
-  "High energy limit (not working yet)"
+  "Energy calibration 0 - [0]+[1]*x+[2]*x^2",
+  "Energy calibration 1 - [0]+[1]*x+[2]*x^2",
+  "Energy calibration 2 - [0]+[1]*x+[2]*x^2",
+  "Baseline correction"
 };
 
 const int n_ppar=10;
@@ -1135,13 +1136,21 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Area";
   AddLine_hist(frame,&opt.h_area,tip1,label);
 
-  tip1= "Area w/o background, calibrated (see Channels->EM for calibration)";
+  tip1= "Area w/o background, not calibrated";
   label="Area0";
   AddLine_hist(frame,&opt.h_area0,tip1,label);
 
-  tip1= "Base line, calibrated (see Channels->EM for calibration)";
+  tip1= "Base line, not calibrated";
   label="Base";
   AddLine_hist(frame,&opt.h_base,tip1,label);
+
+  tip1= "Slope1 (baseline)";
+  label="Slope1";
+  AddLine_hist(frame,&opt.h_slope1,tip1,label);
+
+  tip1= "Slope2 (peak)";
+  label="Slope2";
+  AddLine_hist(frame,&opt.h_slope2,tip1,label);
 
   tip1= "Maximal pulse height (in channels)";
   label="Height";
@@ -1176,9 +1185,21 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="A0A1";
   AddLine_hist(frame,&opt.h_a0a1,tip1,label);
 
-  tip1= "2-dimensional histogram (Area-Base)\nMin Max are taken from the corresponding 1d histograms";
+  tip1= "2-dimensional histogram (Area_Base)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Base";
   AddLine_2d(frame,&opt.h_area_base,tip1,label);
+
+  tip1= "2-dimensional histogram (Area_Slope1)\nMin Max are taken from the corresponding 1d histograms";
+  label="Area_Sl1";
+  AddLine_2d(frame,&opt.h_area_sl1,tip1,label);
+
+  tip1= "2-dimensional histogram (Area_Slope2)\nMin Max are taken from the corresponding 1d histograms";
+  label="Area_Sl2";
+  AddLine_2d(frame,&opt.h_area_sl2,tip1,label);
+
+  tip1= "2-dimensional histogram (Slope1-Slope2)\nMin Max are taken from the corresponding 1d histograms";
+  label="Slope_12";
+  AddLine_2d(frame,&opt.h_slope_12,tip1,label);
 
   /*
   tip1= "Bins per channel for Width";
@@ -1715,6 +1736,7 @@ void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 			   TGNumberFormat::kNELLimitMinMax,min,max);
 
   DoChanMap(fNum,apar,ptype, all,0,0);
+  fNum->SetAlignment(kTextLeft);
   fNum->SetWidth(tlen7[kk]);
   fNum->SetHeight(20);
   fNum->Connect("TextChanged(char*)", "ChanParDlg", this, "DoChanNum()");
@@ -2316,9 +2338,10 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   //AddNumChan(i,kk++,all,cframe[i],&opt.wwin1[i],-999,3070,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.wwin2[i],-999,3070,p_inum);
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.emult[i],0,99999,p_fnum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.elim1[i],0,99999,p_fnum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.elim2[i],0,99999,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.emult0[i],-1e99,1e99,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.emult[i],-1e99,1e99,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.emult2[i],-1e99,1e99,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.bcor[i],-1e99,1e99,p_fnum);
 
   for (int j=0;j<NGRP;j++) {
     id = Plist.size()+1;
