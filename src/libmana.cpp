@@ -1978,7 +1978,7 @@ void MainFrame::DoTab(Int_t num) {
     if (crs->b_stop)
       EvtFrm->DrawEvent2();
   }
-  else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
+  else if (name.Contains("Histograms",TString::kIgnoreCase)) {
     //cout << "DoTab5: " << name << endl;
     if (!crs->b_acq)
       HiFrm->Update();
