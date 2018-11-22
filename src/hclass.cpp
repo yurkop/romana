@@ -449,6 +449,7 @@ void HClass::Make_hist() {
   Make_2d("Area_Sl1","Area_Sl1",";Channel;Channel",m_area_sl1,&opt.h_area_sl1,&opt.h_area,&opt.h_slope1);
   Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);
   Make_2d("Slope_12","Slope_12",";Channel;Channel",m_slope_12,&opt.h_slope_12,&opt.h_slope1,&opt.h_slope2);
+  Make_2d("Area_Time","Area_Time",";Channel;Time (sec)",m_area_time,&opt.h_area_time,&opt.h_area,&opt.h_time);
 
 
   b_formula=false;

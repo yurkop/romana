@@ -1201,6 +1201,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Slope_12";
   AddLine_2d(frame,&opt.h_slope_12,tip1,label);
 
+  tip1= "2-dimensional histogram (Area_Time)\nMin Max are taken from the corresponding 1d histograms";
+  label="Area_Time";
+  AddLine_2d(frame,&opt.h_area_time,tip1,label);
+
   /*
   tip1= "Bins per channel for Width";
   tip2= "Length of Width (in channels)";

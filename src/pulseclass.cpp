@@ -829,6 +829,10 @@ void EventClass::FillHist(Bool_t first) {
 	Fill2d(first,hcl->m_slope_12[ch],pk->Slope1,pk->Slope2);
       }
 
+      if (opt.h_area_time.b) {
+	Fill2d(first,hcl->m_area_time[ch],pk->Area,opt.T_acq);
+      }
+
       if (opt.h_hei.b) {
 	Fill1d(first,hcl->m_height,ch,pk->Height);
       }

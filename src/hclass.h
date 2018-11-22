@@ -66,6 +66,7 @@ class HClass {
   HMap* m_area_sl1[MAX_CH];
   HMap* m_area_sl2[MAX_CH];
   HMap* m_slope_12[MAX_CH];
+  HMap* m_area_time[MAX_CH];
 
   TCutG* cutG[MAXCUTS];
   //Name: cut[i]

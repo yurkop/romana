@@ -345,7 +345,7 @@ Hdef::Hdef() {
   bins2=1;
   min=0;
   max=1000;
-  b=true;
+  b=false;
   for (int i=0;i<MAX_CH+NGRP;i++) {
     c[i]=true;
     w[i]=false;

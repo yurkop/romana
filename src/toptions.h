@@ -16,7 +16,7 @@ public:
   virtual ~Hdef() {};
 
   Float_t bins,min,max,bins2;
-  Bool_t b;
+  Bool_t b; //book histogram or not
   Bool_t c[MAX_CH+NGRP];
   Bool_t w[MAX_CH+NGRP];
   Int_t cut[MAX_CH+NGRP];
@@ -201,6 +201,7 @@ public:
   Hdef h_area_sl1;
   Hdef h_area_sl2;
   Hdef h_slope_12;
+  Hdef h_area_time;
 public:
   //void InitPar(Int_t module);
 
