@@ -845,11 +845,13 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_tof,ch,tt*crs->period);
       }
 
+      //cout << "mtof1: " << j << " " << ch << " " << crs->Tstart0 << endl;
       if (j==0) { //only for the first peak
 	//mtof
 	if (opt.h_mtof.b || opt.h_etof.b) {
 	  if (ch==opt.start_ch) {
-	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Pos;
+	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Time;
+	    cout << "mtof2: " << j << " " << ch << " " << crs->Tstart0 << endl;
 	  }
 	  if (opt.Mrk[ch]) {
 	    mult++;
@@ -858,8 +860,9 @@ void EventClass::FillHist(Bool_t first) {
 	    if (crs->Tstart0>0) {
 	      if (mult>=opt.Nchan) mult=opt.Nchan-1;
 
-	      tm = pulses[i].Tstamp64 + pk->Pos;
+	      tm = pulses[i].Tstamp64 + pk->Time;
 	      tt = (tm - crs->Tstart0)*0.001*crs->period;
+	      cout << "mtof7: " << j << " " << ch << " " << crs->Tstart0 << " " << tt << endl;
 	      if (opt.mtof_period>0.01 && tt>opt.mtof_period) {
 		crs->Tstart0+=1000*opt.mtof_period;
 		tt = (tm - crs->Tstart0)*0.001*crs->period;
@@ -895,7 +898,7 @@ void EventClass::FillHist(Bool_t first) {
 	}
 
 	if (opt.h_per.b) {
-	  tm = pulses[i].Tstamp64 + pk->Pos;
+	  tm = pulses[i].Tstamp64 + pk->Time;
 	  if (hcl->T_prev[ch]) {
 	    tt = (tm - hcl->T_prev[ch])*0.001*crs->period; //convert to mks
 	    Fill1d(first,hcl->m_per,ch,tt);
