@@ -813,6 +813,10 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_slope2,ch,pk->Slope2);
       }
 
+      if (opt.h_width.b) {
+	Fill1d(first,hcl->m_width,ch,pk->Width);
+      }
+
       if (opt.h_area_base.b) {
 	Fill2d(first,hcl->m_area_base[ch],pk->Area,pk->Base);
       }
@@ -831,6 +835,10 @@ void EventClass::FillHist(Bool_t first) {
 
       if (opt.h_area_time.b) {
 	Fill2d(first,hcl->m_area_time[ch],pk->Area,opt.T_acq);
+      }
+
+      if (opt.h_area_width.b) {
+	Fill2d(first,hcl->m_area_width[ch],pk->Area,pk->Width);
       }
 
       if (opt.h_hei.b) {

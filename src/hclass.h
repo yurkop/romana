@@ -58,6 +58,7 @@ class HClass {
   HMap* m_mtof[MAX_CH+NGRP]; // time of flight
   HMap* m_etof[MAX_CH+NGRP]; // Energy from time of flight
   HMap* m_per[MAX_CH+NGRP]; // period
+  HMap* m_width[MAX_CH+NGRP]; // width
 
   HMap* m_pulse[MAX_CH]; // pulse shape
 
@@ -67,6 +68,7 @@ class HClass {
   HMap* m_area_sl2[MAX_CH];
   HMap* m_slope_12[MAX_CH];
   HMap* m_area_time[MAX_CH];
+  HMap* m_area_width[MAX_CH];
 
   TCutG* cutG[MAXCUTS];
   //Name: cut[i]
