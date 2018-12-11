@@ -1174,7 +1174,7 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
   tip1= "Pulse width";
   label="Width";
-  AddLine_mean(frame,&opt.h_width,tip1,label);
+  AddLine_hist(frame,&opt.h_width,tip1,label);
 
   tip1= "Average pulse shapes for all channels";
   label="Mean_pulses";
