@@ -445,6 +445,7 @@ void HClass::Make_hist() {
   Make_1d("Width","width",";width(a.u.);Counts",m_width,&opt.h_width);
   Make_1d("Width2","width2",";width(a.u.);Counts",m_width2,&opt.h_width2);
   Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,&opt.h_pulse);
+  Make_1d_pulse("Deriv","deriv",";samples;Amplitude",m_deriv,&opt.h_deriv);
 
   Make_a0a1("A0A1","A0A1",";Channel;Channel",m_a0a1,&opt.h_a0a1);
   Make_2d("Area_Base","Area_Base",";Channel;Channel",m_area_base,&opt.h_area_base,&opt.h_area,&opt.h_base);

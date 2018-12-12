@@ -1180,9 +1180,13 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Width2";
   AddLine_hist(frame,&opt.h_width2,tip1,label);
 
-  tip1= "Average pulse shapes for all channels";
+  tip1= "Average pulse shape";
   label="Mean_pulses";
   AddLine_mean(frame,&opt.h_pulse,tip1,label);
+
+  tip1= "Derivative of Average pulse shape";
+  label="Mean_deriv";
+  AddLine_mean(frame,&opt.h_deriv,tip1,label);
 
 
   frame = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);

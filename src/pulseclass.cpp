@@ -373,6 +373,7 @@ void PulseClass::PeakAna33() {
   for (int j=T5;j<T6;j++) {
     if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
       Float_t dif=sData[j]-sData[j-kk];
+      //Float_t dif=sData[j];//-sData[j-kk];
       pk->Width+=dif*j;
       sum+=dif;
     }
@@ -689,11 +690,20 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   }
 }
 
-void EventClass::Fill_Mean1(TH1F* hh, PulseClass* pls, UInt_t nbins) {
+void EventClass::Fill_Mean1(TH1F* hh, PulseClass* pls, UInt_t nbins, int ideriv) {
+  Float_t zz=0;
   Float_t* arr = hh->GetArray();
   int nent=hh->GetEntries();
   for (UInt_t j=0;j<nbins;j++) {
-    Float_t val = arr[j+1]*nent+pls->sData[j];
+    if (ideriv==0) {
+      zz = pls->sData[j];
+    }
+    else if (ideriv==1) {
+      if (j) zz = pls->sData[j]-pls->sData[j-1];
+      else zz=0;
+    }
+
+    Float_t val = arr[j+1]*nent+zz;
     arr[j+1]=val/(nent+1);
   }
   hh->SetEntries(nent+1);
@@ -701,7 +711,8 @@ void EventClass::Fill_Mean1(TH1F* hh, PulseClass* pls, UInt_t nbins) {
   // 	 << map->hst->GetEntries() << endl;  
 }
 
-void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
+void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
+				 int ideriv) {
 
   //HMap* map = hcl->m_pulse[n];
   int ch = pls->Chan;
@@ -718,7 +729,7 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
       map->hst->
 	SetBins(pls->sData.size(),-cpar.preWr[ch],newsz-cpar.preWr[ch]);
     }
-    Fill_Mean1((TH1F*)map->hst, pls, newsz);
+    Fill_Mean1((TH1F*)map->hst, pls, newsz, ideriv);
   } //if first
   else if (*(map->wrk)) {
     for (int i=1;i<opt.ncuts;i++) {
@@ -729,7 +740,7 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls) {
 	    SetBins(cpar.durWr[ch],-cpar.preWr[ch],cpar.durWr[ch]-cpar.preWr[ch]);
 	}
 
-	Fill_Mean1((TH1F*)map->h_cuts[i]->hst, pls, cpar.durWr[ch]);
+	Fill_Mean1((TH1F*)map->h_cuts[i]->hst, pls, cpar.durWr[ch], ideriv);
 
       }
     }
@@ -795,7 +806,11 @@ void EventClass::FillHist(Bool_t first) {
     int ch = pulses[i].Chan;
 
     if (opt.h_pulse.b) {
-      Fill_Mean_Pulse(first,hcl->m_pulse[ch],&pulses[i]);
+      Fill_Mean_Pulse(first,hcl->m_pulse[ch],&pulses[i],0);
+    }
+
+    if (opt.h_deriv.b) {
+      Fill_Mean_Pulse(first,hcl->m_deriv[ch],&pulses[i],1);
     }
 
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
@@ -862,7 +877,7 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       if (opt.h_area_width.b) {
-	Fill2d(first,hcl->m_area_width[ch],pk->Area,pk->Width2);
+	Fill2d(first,hcl->m_area_width[ch],pk->Area,pk->Width);
       }
 
       if (opt.h_width_12.b) {

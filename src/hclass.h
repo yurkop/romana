@@ -62,6 +62,7 @@ class HClass {
   HMap* m_width2[MAX_CH+NGRP]; // width
 
   HMap* m_pulse[MAX_CH]; // pulse shape
+  HMap* m_deriv[MAX_CH]; // pulse shape (deriv)
 
   HMap* m_a0a1[1];
   HMap* m_area_base[MAX_CH];
