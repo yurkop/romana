@@ -46,6 +46,7 @@ class peak_type {
   //Float_t Noise2;
   Float_t Height; //maximum of pulse in the same region as Area
   Float_t Width; //peak width
+  Float_t Width2; //peak width2
   Float_t Time; //exact time relative to pulse start (from 1st deriv)
   //Float_t Time2; //exact time (from 2nd deriv)
   Short_t Pos; //position relative to pulse start (in samples)

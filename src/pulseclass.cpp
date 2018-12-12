@@ -383,6 +383,21 @@ void PulseClass::PeakAna33() {
   else
     pk->Width=-999+pk->Pos;
 
+  pk->Width2=0;
+  sum=0;
+  for (int j=T5;j<T6;j++) {
+    if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
+      Float_t dif=sData[j]-sData[j-kk];
+      pk->Width+=dif*j;
+      sum+=dif;
+    }
+    //nt++;
+  }
+  if (abs(sum)>1e-5)
+    pk->Width/=sum;
+  else
+    pk->Width=-999+pk->Pos;
+
   pk->Width-=pk->Pos;
   //pk->Width+=0.1;
 
