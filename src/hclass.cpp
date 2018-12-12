@@ -443,6 +443,7 @@ void HClass::Make_hist() {
   Make_1d("Etof","etof",";Energy(eV);Counts",m_etof,&opt.h_etof);
   Make_1d("Period","period",";t(mks);Counts",m_per,&opt.h_per);
   Make_1d("Width","width",";width(a.u.);Counts",m_width,&opt.h_width);
+  Make_1d("Width2","width2",";width(a.u.);Counts",m_width2,&opt.h_width2);
   Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,&opt.h_pulse);
 
   Make_a0a1("A0A1","A0A1",";Channel;Channel",m_a0a1,&opt.h_a0a1);
@@ -451,7 +452,8 @@ void HClass::Make_hist() {
   Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);
   Make_2d("Slope_12","Slope_12",";Channel;Channel",m_slope_12,&opt.h_slope_12,&opt.h_slope1,&opt.h_slope2);
   Make_2d("Area_Time","Area_Time",";Channel;Time (sec)",m_area_time,&opt.h_area_time,&opt.h_area,&opt.h_time);
-  Make_2d("Area_Width","Area_Width",";Channel;Time (sec)",m_area_width,&opt.h_area_width,&opt.h_area,&opt.h_width);
+  Make_2d("Area_Width","Area_Width",";Channel;Width (a.u.)",m_area_width,&opt.h_area_width,&opt.h_area,&opt.h_width);
+  Make_2d("Width_12","Width_12",";Width(a.u.);Width2(a.u.)",m_width_12,&opt.h_width_12,&opt.h_width,&opt.h_width2);
 
 
   b_formula=false;

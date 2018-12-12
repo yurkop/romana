@@ -1176,6 +1176,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Width";
   AddLine_hist(frame,&opt.h_width,tip1,label);
 
+  tip1= "Pulse width2";
+  label="Width2";
+  AddLine_hist(frame,&opt.h_width2,tip1,label);
+
   tip1= "Average pulse shapes for all channels";
   label="Mean_pulses";
   AddLine_mean(frame,&opt.h_pulse,tip1,label);
@@ -1212,6 +1216,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   tip1= "2-dimensional histogram (Area_Width)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Width";
   AddLine_2d(frame,&opt.h_area_width,tip1,label);
+
+  tip1= "2-dimensional histogram (Width_12)\nMin Max are taken from the corresponding 1d histograms";
+  label="Width_12";
+  AddLine_2d(frame,&opt.h_width_12,tip1,label);
 
   /*
   tip1= "Bins per channel for Width";
