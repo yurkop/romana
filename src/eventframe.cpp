@@ -774,8 +774,8 @@ void EventFrame::DoCheckPoint() {
     while (d_event!=ievt) {
       //cout << d_event->Nevt << " " << d_event->T << endl;
       par[3]=d_event->pulses.size();
-      par[2]=(d_event->TT-crs->Tstart64)*crs->period*1e-9;
-      par[1]=d_event->TT;
+      par[2]=(d_event->Tstmp-crs->Tstart64)*crs->period*1e-9;
+      par[1]=d_event->Tstmp;
 
       for (UInt_t i=0;i<d_event->pulses.size();i++) {
 	int ch = d_event->pulses[i].Chan;
@@ -785,7 +785,7 @@ void EventFrame::DoCheckPoint() {
 	  peak_type* pk = &d_event->pulses[i].Peaks[j];
 	  par[4]=pk->Area;
 	  par[5]=pk->Base;
-	  double dt = d_event->pulses[i].Tstamp64 - d_event->TT;
+	  double dt = d_event->pulses[i].Tstamp64 - d_event->Tstmp;
 	  //double tt = pk->Time - crs->Pre[ch] - d_event->T0 + dt;
 	  double tt = pk->Time - d_event->T0 + dt;
 	  par[6]=tt*crs->period;
@@ -933,7 +933,7 @@ void EventFrame::FillGraph(int dr) {
     //cout << "sData: " << i << " " << pulse->sData.size() << " " << Gr[dr][i]->GetN() << endl;
 
     //double dt=pulse->Tstamp64 - d_event->TT - crs->Pre[ch[i]];
-    double dt=pulse->Tstamp64 - d_event->TT - cpar.preWr[ch[i]];
+    double dt=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch[i]];
     // cout << "dt: " << (int) pulse->Chan << " " << dt << " "
     // 	 << ch[i] << " " << pulse->Tstamp64 << " "
     // 	 << d_event->T << " " << crs->Pre[ch[i]] << endl;
@@ -1147,7 +1147,7 @@ void EventFrame::DrawEvent2() {
   sprintf(ss,"%lld",d_event->Nevt);
   fStat[0]->SetText(ss);
 
-  sprintf(ss,"%lld",d_event->TT);
+  sprintf(ss,"%lld",d_event->Tstmp);
   fStat[1]->SetText(ss);
 
   sprintf(ss,"%ld",d_event->pulses.size());
@@ -1177,7 +1177,7 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
     //double dt=pulse->Tstamp64 - d_event->TT - crs->Pre[ch];
-    double dt=pulse->Tstamp64 - d_event->TT - cpar.preWr[ch];
+    double dt=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch];
     //double dt=pulse->Tstamp64 - d_event->T;
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {

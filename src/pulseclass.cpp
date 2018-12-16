@@ -524,7 +524,7 @@ void PulseClass::CheckDSP() {
 
 EventClass::EventClass() {
   State=0;
-  TT=-9999999999;
+  Tstmp=-9999999999;
   T0=99999;
   //Analyzed=false;
 }
@@ -595,19 +595,19 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 
   pulses.push_back(*pls);
 
-  if (TT==-9999999999) { //this is the first pulse in event
-    TT=pls->Tstamp64;
+  if (Tstmp==-9999999999) { //this is the first pulse in event
+    Tstmp=pls->Tstamp64;
   }
-  else if (pls->Tstamp64 < TT) { //event exists & new pulse is earlier
+  else if (pls->Tstamp64 < Tstmp) { //event exists & new pulse is earlier
     // -> correct T and T0
     if (T0<99998) //if T0 already exists, just adjust it
-      T0+= TT - pls->Tstamp64;
-    TT=pls->Tstamp64;
+      T0+= Tstmp - pls->Tstamp64;
+    Tstmp=pls->Tstamp64;
   }
 
   if (opt.Start[pls->Chan]) {
     if (pls->Peaks.size()) {
-      Float_t dt = pls->Tstamp64 - TT;
+      Float_t dt = pls->Tstamp64 - Tstmp;
 
       peak_type *pk = &pls->Peaks.front();
       //Float_t T2 = pk->Time - crs->Pre[pls->Chan] + dt;
@@ -785,7 +785,7 @@ void EventClass::FillHist(Bool_t first) {
   //cout << "FillHist: " << this->Nevt << endl;
 
   if (first) {
-    opt.T_acq=(TT - crs->Tstart64)*DT;
+    opt.T_acq=(Tstmp - crs->Tstart64)*DT;
 
     if (opt.Tstop && (opt.T_acq > opt.Tstop || opt.T_acq < opt.Tstart)) {
       if (crs->b_fana) {
@@ -889,7 +889,7 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       if (opt.h_tof.b) {
-	double dt = pulses[i].Tstamp64 - TT;
+	double dt = pulses[i].Tstamp64 - Tstmp;
 	//tt = pk->Time - crs->Pre[ch] - T0 + dt;
 	//tt = pk->Time - cpar.preWr[ch] - T0 + dt;
 	tt = pk->Time - T0 + dt;

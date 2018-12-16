@@ -3074,7 +3074,7 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
       evt->Nevt=nevents;
       nevents++;
 
-      evt->TT = (*buf8) & sixbytes;
+      evt->Tstmp = (*buf8) & sixbytes;
       evt->State = Bool_t((*buf8) & 0x1000000000000);
     }
     else {
@@ -3151,7 +3151,7 @@ void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
 
       evt = &*Blist->insert(Blist->end(),EventClass());
 
-      evt->TT = (*buf8) & sixbytes;
+      evt->Tstmp = (*buf8) & sixbytes;
       evt->State = Bool_t((*buf8) & 0x1000000000000);
     }
     else {
@@ -3815,10 +3815,10 @@ void CRS::Print_Pulses() {
 
 void CRS::Print_Events() {
   int nn=0;
-  cout << "Print_Events: " << Levents.begin()->TT << endl;
+  cout << "Print_Events: " << Levents.begin()->Tstmp << endl;
   for (std::list<EventClass>::iterator it=Levents.begin();
        it!=Levents.end();++it) {
-    cout << nn++ << " " << it->TT << " :>>";
+    cout << nn++ << " " << it->Tstmp << " :>>";
     for (UInt_t i=0;i<it->pulses.size();i++) {
       cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64-Tstart64 << "," << it->pulses.at(i).Peaks.back().Time;
     }
@@ -3860,24 +3860,11 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
     return;
   }
 
-  /*
-  rit=Elist->rbegin();
-  dt = (pls->Tstamp64 - rit->TT);
-  if (pls->Tstamp64==4247360091) {
-    cout << "E!!!: " << rit->Nevt << " " << (int)pls->Chan << " " << pls->Tstamp64
-	 << " " << rit->TT << " " << dt << endl;
-  }
-  if (rit->Nevt > 69480 && rit->Nevt<69490) {
-    cout << "Elist: " << rit->Nevt << " " << (int)pls->Chan << " " << pls->Tstamp64
-	 << " " << rit->TT << " " << dt << endl;
-  }
-  */
-
   // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
   int nn=opt.ev_min;
   //for (it=--Elist.end();it!=m_event && nn>0 ;--it,--nn) {
   for (rit=Elist->rbegin();rit!=Elist->rend() && nn>0 ;++rit,--nn) {
-    dt = (pls->Tstamp64 - rit->TT);
+    dt = (pls->Tstamp64 - rit->Tstmp);
     if (dt > opt.tgate) {
       //add new event AFTER rit.base()
       it=Elist->insert(rit.base(),EventClass());
@@ -3926,7 +3913,7 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     //return;
   }
 
-  if (BB->front().TT<0) {
+  if (BB->front().Tstmp<0) {
     BB->pop_front();
   }
 
@@ -3936,7 +3923,7 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   if (!Levents.empty() && !BB->empty()) {
     evlist_iter it = BB->begin();
     evlist_reviter rr = Levents.rbegin();
-    while (it!=BB->end() && it->TT - rr->TT<=opt.tgate*2) {
+    while (it!=BB->end() && it->Tstmp - rr->Tstmp<=opt.tgate*2) {
       for (UInt_t i=0;i<it->pulses.size();i++) {
 	Event_Insert_Pulse(&Levents,&it->pulses[i]);
       }
@@ -4025,7 +4012,7 @@ void CRS::Fill_Dec73(EventClass* evt) {
   Long64_t* buf8 = (Long64_t*) (DecBuf+idec);
   Long64_t tt = evt->State;
   tt <<= 48;
-  tt += evt->TT;
+  tt += evt->Tstmp;
   *buf8 = tt;
   idec+=sizeof(Long64_t);
   for (UInt_t i=0; i<rPeaks73.size(); i++) {
@@ -4062,7 +4049,7 @@ void CRS::Fill_Dec74(EventClass* evt) {
   Long64_t* buf8 = (Long64_t*) (DecBuf+idec);
   Long64_t tt = evt->State;
   tt <<= 48;
-  tt += evt->TT;
+  tt += evt->Tstmp;
   *buf8 = tt;
   idec+=sizeof(Long64_t);
   for (UInt_t i=0; i<rPeaks74.size(); i++) {
@@ -4089,7 +4076,7 @@ void CRS::Fill_Dec75(EventClass* evt) {
 
   *DecBuf8 = 1;
   *DecBuf8<<=63;
-  *DecBuf8 |= evt->TT & sixbytes;
+  *DecBuf8 |= evt->Tstmp & sixbytes;
   if (evt->State) {
     *DecBuf8 |= 0x1000000000000;
   }
@@ -4132,7 +4119,7 @@ void CRS::Fill_Dec76(EventClass* evt) {
 
   *DecBuf8 = 1;
   *DecBuf8<<=63;
-  *DecBuf8 |= evt->TT & sixbytes;
+  *DecBuf8 |= evt->Tstmp & sixbytes;
   if (evt->State) {
     *DecBuf8 |= 0x1000000000000;
   }
