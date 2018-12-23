@@ -206,7 +206,9 @@ public:
   Hdef h_slope_12;
   Hdef h_area_time;
   Hdef h_area_width;
-  Hdef h_width_12;
+  Hdef h_area_width2;
+  Hdef h_area_width3;
+  //Hdef h_width_12;
 public:
   //void InitPar(Int_t module);
 

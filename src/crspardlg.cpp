@@ -1221,9 +1221,17 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Area_Width";
   AddLine_2d(frame,&opt.h_area_width,tip1,label);
 
-  tip1= "2-dimensional histogram (Width_12)\nMin Max are taken from the corresponding 1d histograms";
-  label="Width_12";
-  AddLine_2d(frame,&opt.h_width_12,tip1,label);
+  tip1= "2-dimensional histogram (Area_Width2)\nMin Max are taken from the corresponding 1d histograms";
+  label="Area_Width2";
+  AddLine_2d(frame,&opt.h_area_width2,tip1,label);
+
+  tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
+  label="Area_Width3";
+  AddLine_2d(frame,&opt.h_area_width3,tip1,label);
+
+  // tip1= "2-dimensional histogram (Width_12)\nMin Max are taken from the corresponding 1d histograms";
+  // label="Width_12";
+  // AddLine_2d(frame,&opt.h_width_12,tip1,label);
 
   /*
   tip1= "Bins per channel for Width";

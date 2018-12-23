@@ -386,6 +386,26 @@ void PulseClass::PeakAna33() {
   pk->Width-=pk->Pos;
 
 
+
+  pk->Width3=0;
+  sum=0;
+  for (int j=T5;j<T6;j++) {
+    if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
+      //Float_t dif=sData[j]-sData[j-kk];
+      Float_t dif=sData[j];//-sData[j-kk];
+      pk->Width3+=dif*j;
+      sum+=dif;
+    }
+    //nt++;
+  }
+  if (abs(sum)>1e-5)
+    pk->Width3/=sum;
+  else
+    pk->Width3=-999+pk->Pos;
+  pk->Width3-=pk->Pos;
+
+
+
   double bkg2=(sData[pk->P2]-sData[pk->P1])/2;
   //double sum2=0;
   double asum2=0;
@@ -880,9 +900,17 @@ void EventClass::FillHist(Bool_t first) {
 	Fill2d(first,hcl->m_area_width[ch],pk->Area,pk->Width);
       }
 
-      if (opt.h_width_12.b) {
-	Fill2d(first,hcl->m_width_12[ch],pk->Width,pk->Width2);
+      if (opt.h_area_width2.b) {
+	Fill2d(first,hcl->m_area_width2[ch],pk->Area,pk->Width2);
       }
+
+      if (opt.h_area_width3.b) {
+	Fill2d(first,hcl->m_area_width3[ch],pk->Area,pk->Width3);
+      }
+
+      // if (opt.h_width_12.b) {
+      // 	Fill2d(first,hcl->m_width_12[ch],pk->Width,pk->Width2);
+      // }
 
       if (opt.h_hei.b) {
 	Fill1d(first,hcl->m_height,ch,pk->Height);
