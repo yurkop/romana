@@ -1986,9 +1986,9 @@ void CRS::DoReset() {
 
   //MAX_LAG=opt.event_buf/2;
 
-  idx=0;
-  idnext=0;
-  lastfl=1;
+  //idx=0;
+  //idnext=0;
+  //lastfl=1;
 
   idec=0;
 
@@ -2074,7 +2074,7 @@ void CRS::DoFopen(char* oname, int popt) {
     // bsize=opt.rbuf_size*1024+4096;
     // boffset=4096;
     period=10;
-    idx=0;
+    //idx=0;
   }
   else { //crs32 or crs2
     //printhlist(7);
@@ -3564,12 +3564,6 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 
   UShort_t frmt;
   int idx2=b_start[ibuf]/2;
-  //int len = length/2;
-
-  //Pstruct vp;
-  //vp.done=false;
-  //vp.num=iread;
-  //pulse_vect *vv = Vpulses+ibuf;
 
   eventlist *Blist;
   dec_mut.Lock();
@@ -3658,30 +3652,21 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 
 //-------------------------------
 
-int CRS::Searchsync(UChar_t* buffer, int length) {
-  //returns 0 if syncw is not found; otherwise len (length of the m-link frame)
+int CRS::Searchsync(int &idx, UInt_t* buf4, int end) {
+  //returns 1 if syncw is found;
+  //returns 0 if syncw is not found;
 
-  UInt_t* rbuf4 = (UInt_t*) buffer;
-  UShort_t* rbuf2 = (UShort_t*) buffer;
-
-  for (;idx<length;idx++)
-    if (rbuf4[idx] == 0x2a500100) {
-      rLen = rbuf2[idx*2+3];
-      idnext=idx+rLen;
-      if (rLen>511)
-	cout << "Bad length: " << idx << " " << idnext << " "
-	     << rLen << endl;
-      else {
-	return rLen;
-      }
+  for (;idx<end;++idx)
+    if (buf4[idx] == 0x2a500100) {
+      return 1;
     }
 
   return 0;
 }
 
 //-------------------------------------
-/*
-void CRS::Decode_adcm(UChar_t* buffer, int length) {
+
+void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
   //cout << "decode_adcm: " << endl;
   //it is assumed that at the beginning of this procedure idx points
@@ -3699,6 +3684,11 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
 
   // nsamp+8=rLen
 
+
+
+
+
+  /*
   UInt_t header; //data header
   //UShort_t nbits; //ADC bits
   //UShort_t nw; //samples per word = 2
@@ -3713,26 +3703,50 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
   //cout << "idx1: " << idx << " " << hex << rbuf4[idx] << dec << endl;
 
   //now idnext points to the next syncw (which may be larger than length)
-  while (idx+1 < length) {
-    //rLen (~rbuf[idx+1]) should be inside buf
+  */
 
+  eventlist *Blist;
+  dec_mut.Lock();
+  Bufevents.push_back(eventlist());
+  Blist = &Bufevents.back();
+  dec_mut.UnLock();
+
+  Blist->push_back(EventClass());
+  Blist->front().Nevt=iread;
+  PulseClass ipls=dummy_pulse;
+
+
+  UInt_t* buf4 = (UInt_t*) GLBuf;
+  UShort_t* buf2 = (UShort_t*) GLBuf;
+
+  int idx=b_start[ibuf]/4; // current index in the buffer (in 1-byte words)
+  int idnext=0; //idx of the next event
+  int rLen; // length of one m-link fram
+  UInt_t header; //data header
+  UShort_t id; // block id (=0,1,2)
+  UShort_t lflag; //last fragment flag
+  UShort_t nsamp; // number of samples in the fragment
+  int length = b_end[ibuf]/4;
+
+  while (idx<length) {
+    //rLen (~rbuf[idx+1]) should be inside buf
     //at this point idx points to a valid syncw and idnext is also withing FBuf
 
-    if (rbuf4[idx] != 0x2a500100) {
-      cout << "bad syncw: " << idx << " " << rbuf4[idx] << endl;
-      if (!Searchsync(buffer,length)){
+    if (buf4[idx] != 0x2a500100) {
+      cout << "bad syncw: " << idx << " " << buf4[idx] << endl;
+      if (!Searchsync(idx,buf4,length)){
 	cout << "sync word not found (YK: do something here...)" << endl;
 	break;
       }
     }
-    else {
-      rLen = rbuf2[idx*2+3];
-      idnext=idx+rLen;
-    }
+
+    rLen = buf2[idx*2+3];
+    idnext=idx+rLen;
+
     if (idnext>length)
       break;
 
-    header = rbuf4[idx+3];
+    header = buf4[idx+3];
     id=bits(header,26,31);
     if (id==1) {
       cout << "adcm: id==1. What a luck, counters!: " << id << " " << npulses << endl;
@@ -3767,10 +3781,10 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
 
       //nbits=bits(header,0,3);
       //nw=bits(header,4,5);
-      ipls->Tstamp64 = rbuf4[idx+rLen-2];
+      ipls->Tstamp64 = buf4[idx+rLen-2];
       ipls->Tstamp64 <<= 32;
-      ipls->Tstamp64 += rbuf4[idx+rLen-3]+opt.delay[ipls->Chan];
-      //ipls->Tstamp64 = rbuf4[idx+rLen-3];
+      ipls->Tstamp64 += buf4[idx+rLen-3]+opt.delay[ipls->Chan];
+      //ipls->Tstamp64 = buf4[idx+rLen-3];
 
       if (Pstamp64==P64_0) {
 	Pstamp64=ipls->Tstamp64;
@@ -3800,13 +3814,13 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
 
       static Float_t baseline=0;
       if (ipls->sData.empty() && nsamp) {
-	baseline = rbuf2[idx*2+11];
+	baseline = buf2[idx*2+11];
       }
       for (int i=0;i<nsamp*2;i+=2) {
-	ipls->sData.push_back(rbuf2[idx*2+i+11]-baseline);
-	ipls->sData.push_back(rbuf2[idx*2+i+10]-baseline);
-	//cout << i << " " << rbuf2[idx*2+i+11] << endl;
-	//cout << i << " " << rbuf2[idx*2+i+10] << endl;
+	ipls->sData.push_back(buf2[idx*2+i+11]-baseline);
+	ipls->sData.push_back(buf2[idx*2+i+10]-baseline);
+	//cout << i << " " << buf2[idx*2+i+11] << endl;
+	//cout << i << " " << buf2[idx*2+i+10] << endl;
       }
 
       if (lflag) {
@@ -3835,12 +3849,12 @@ void CRS::Decode_adcm(UChar_t* buffer, int length) {
     cout << "Bad adcm file. Frame size too large: " << sz << " " << idx << endl;
     exit(-1);
   }
-  memcpy(rbuf4-sz,rbuf4+idx,sz*sizeof(UInt_t));
+  memcpy(buf4-sz,buf4+idx,sz*sizeof(UInt_t));
   //int idx2=idx;
   idx=-sz;
 
 } //Decode_adcm
-*/
+
 
 //-------------------------------------
 

@@ -213,13 +213,13 @@ RQ_OBJECT("CRS")
   //vars for decoding...
 
   //for adcm
-  int idx; //index for Decode_adcm (in 32bit words, rbuf4)
-  int rLen; // length of one m-link frame
-  //int BufLength; //length of the read buffer
-  int idnext; //next expected idx pointing to new syncw
-  int lastfl; //transient last fragment flag
-  //UInt_t* rbuf4; //only for decode_adcm
-  //UShort_t* rbuf2; //only for decode_adcm
+  // int idx; //index for Decode_adcm (in 32bit words, rbuf4)
+  // int rLen; // length of one m-link frame
+  // //int BufLength; //length of the read buffer
+  // int idnext; //next expected idx pointing to new syncw
+  // int lastfl; //transient last fragment flag
+  // //UInt_t* rbuf4; //only for decode_adcm
+  // //UShort_t* rbuf2; //only for decode_adcm
   
   //for crs32...
   //ULong64_t *buf8; //buffer for 8-byte words
@@ -324,12 +324,13 @@ RQ_OBJECT("CRS")
   void Decode75(UInt_t iread, UInt_t ibuf);
   void Decode33(UInt_t iread, UInt_t ibuf);
   void Decode2(UInt_t iread, UInt_t ibuf);
+  void Decode_adcm(UInt_t iread, UInt_t ibuf);
 
   //void Decode32(UChar_t* buffer, int length);
   //void Decode33(UChar_t* buffer, int length, int ivp, int ivp2);
   //void Decode_adcm(UChar_t* buffer, int length);
 
-  int Searchsync(UChar_t* buffer, int length);
+  int Searchsync(int &idx, UInt_t* buf4, int end);
 
   //int Set_Trigger();
   void Ana_start();
