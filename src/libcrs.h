@@ -310,10 +310,15 @@ RQ_OBJECT("CRS")
   void Decode_any_MT(UInt_t iread, UInt_t ibuf);
 
   void Decode_any(UInt_t iread, UInt_t ibuf);
-  void FindLast75(UInt_t ibuf);
-  void FindLast76(UInt_t ibuf);
-  void FindLast33(UInt_t ibuf);
-  void FindLast2(UInt_t ibuf);
+  // FindLast* находит конец текущего буфера b_end[ibuf],
+  // что является одновременно началом следующего b_start[ibuf2]
+  void FindLast(UInt_t ibuf);
+
+  // void FindLast75(UInt_t ibuf);
+  // void FindLast76(UInt_t ibuf);
+  // void FindLast33(UInt_t ibuf);
+  // void FindLast2(UInt_t ibuf);
+  // void FindLast_adcm(UInt_t ibuf);
   void PulseAna(PulseClass &ipls);
   void Decode76(UInt_t iread, UInt_t ibuf);
   void Decode75(UInt_t iread, UInt_t ibuf);

@@ -299,28 +299,20 @@ void *handle_decode(void *ctx) {
     // cout << "dec_working: " << ibuf << endl;
     // cmut.UnLock();
 
+    if (ibuf!=gl_Nbuf-1) {
+      crs->FindLast(ibuf);
+    }
+    
     if (crs->module>=32 && crs->module<=33) {
-      if (ibuf!=gl_Nbuf-1) {
-	crs->FindLast33(ibuf);
-      }
       crs->Decode33(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==75) {
-      if (ibuf!=gl_Nbuf-1) {
-	crs->FindLast75(ibuf);
-      }
       crs->Decode75(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==76) {
-      if (ibuf!=gl_Nbuf-1) {
-	crs->FindLast76(ibuf);
-      }
       crs->Decode76(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==2) {
-      if (ibuf!=gl_Nbuf-1) {
-	crs->FindLast2(ibuf);
-      }
       crs->Decode2(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==1) {
@@ -2299,16 +2291,10 @@ int CRS::DoBuf() {
 void CRS::AnaBuf() {
 
   UInt_t gl_ibuf2 = gl_ibuf+1;
+  //Если последний буфер в "кольце буферов" -> копируем "хвост" буфера в начало
   if (gl_ibuf2==gl_Nbuf) { //last buffer in ring, jump to zero
     int end0 = b_end[gl_ibuf];
-    if (crs->module>=32 && crs->module<=33) {
-      FindLast33(gl_ibuf);
-    }
-    else if (crs->module==2) {
-      FindLast2(gl_ibuf);
-    }
-    else if (module==1) {
-    }
+    FindLast(gl_ibuf);
     int sz = end0 - b_end[gl_ibuf];
     memcpy(GLBuf-sz,GLBuf+b_end[gl_ibuf],sz);
     // cout << "Move: " << gl_ibuf << " " << sz << " " << end0
@@ -2744,29 +2730,20 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
 #ifdef TIMES
   tt1[1].Set();
 #endif
+  if (ibuf!=gl_Nbuf-1) {
+    crs->FindLast(ibuf);
+  }
+
   if (module>=32 && module<=33) {
-    if (ibuf!=gl_Nbuf-1) {
-      FindLast33(ibuf);
-    }
-    //Decode32(Fbuf,BufLength);
     Decode33(iread, ibuf);
   }
   else if (crs->module==75) {
-    if (ibuf!=gl_Nbuf-1) {
-      FindLast75(ibuf);
-    }
     Decode75(iread,ibuf);
   }
   else if (crs->module==76) {
-    if (ibuf!=gl_Nbuf-1) {
-      FindLast76(ibuf);
-    }
     Decode76(iread,ibuf);
   }
   else if (module==2) {
-    if (ibuf!=gl_Nbuf-1) {
-      FindLast2(ibuf);
-    }
     Decode2(iread, ibuf);
   }
   else if (module==1) {
@@ -2817,6 +2794,70 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
 
 }
 
+void CRS::FindLast(UInt_t ibuf) {
+
+  //ibuf - current sub-buffer
+  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
+  UInt_t frmt;
+
+  switch (module) {
+  case 1:
+  for (int i=b_end[ibuf]-4;i>=b_start[ibuf];i-=4) {
+    //find *frmt==0x2a500100 -> this is the start of a pulse
+    frmt = *((UInt_t*) GLBuf+i);
+    if (frmt==0x2a500100) {
+      b_end[ibuf]=i;
+      b_start[ibuf2]=i;
+      return;
+    }
+  }
+  cout << "Error: no last event: " << ibuf << endl;
+    break;
+  case 2:
+    for (int i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
+      //find frmt==0 -> this is the start of a pulse
+      frmt = (GLBuf[i+1] & 0x70);
+      if (frmt==0) {
+	b_end[ibuf]=i;
+	b_start[ibuf2]=i;
+	return;
+      }
+    }
+    cout << "Error: no last event: " << ibuf << endl;
+    break;
+  case 32:
+  case 33:
+    for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
+      //find frmt==0 -> this is the start of a pulse
+      frmt = (GLBuf[i+6] & 0xF0);
+      if (frmt==0) {
+	b_end[ibuf]=i;
+	b_start[ibuf2]=i;
+	return;
+      }
+    }
+    cout << "Error: no last event: " << ibuf << endl;
+    break;
+  case 75:
+  case 76:
+    for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
+      //find frmt==1 -> this is the start of a pulse
+      frmt = GLBuf[i+7] & 0x80; //event start bit
+      if (frmt) {
+	b_end[ibuf]=i;
+	b_start[ibuf2]=i;
+	return;
+      }
+    }
+    cout << "Error: no last event: " << ibuf << endl;
+    break;
+  default:
+    cout << "Wrong module: " << module << endl;
+  }
+
+}
+
+/*
 void CRS::FindLast76(UInt_t ibuf) {
   //ibuf - current sub-buffer
   UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
@@ -2899,6 +2940,26 @@ void CRS::FindLast2(UInt_t ibuf) {
   cout << "Error: no last event: " << ibuf << endl;
 
 }
+
+void CRS::FindLast_adcm(UInt_t ibuf) {
+  //ibuf - current sub-buffer
+  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
+
+  UInt_t* frmt;
+
+  for (int i=b_end[ibuf]-4;i>=b_start[ibuf];i-=4) {
+    //find *frmt==0x2a500100 -> this is the start of a pulse
+    frmt = (UInt_t*) GLBuf+i;
+    if (*frmt==0x2a500100) {
+      b_end[ibuf]=i;
+      b_start[ibuf2]=i;
+      return;
+    }
+  }
+  cout << "Error: no last event: " << ibuf << endl;
+
+}
+*/
 
 /*
 void CRS::Decode32(UChar_t *buffer, int length) {
