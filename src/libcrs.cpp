@@ -316,7 +316,7 @@ void *handle_decode(void *ctx) {
       crs->Decode2(dec_iread[ibuf]-1,ibuf);
     }
     else if (crs->module==1) {
-      //Decode_adcm(buffer,length/sizeof(UInt_t));
+      crs->Decode_adcm(dec_iread[ibuf]-1,ibuf);
     }
     dec_iread[ibuf]=0;
   } //while
@@ -2735,7 +2735,7 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   }
 
   if (module>=32 && module<=33) {
-    Decode33(iread, ibuf);
+    Decode33(iread,ibuf);
   }
   else if (crs->module==75) {
     Decode75(iread,ibuf);
@@ -2744,10 +2744,10 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
     Decode76(iread,ibuf);
   }
   else if (module==2) {
-    Decode2(iread, ibuf);
+    Decode2(iread,ibuf);
   }
   else if (module==1) {
-    //Decode_adcm(buffer,length/sizeof(UInt_t));
+    Decode_adcm(iread,ibuf);
   }
 
   dec_iread[ibuf]=0;
@@ -3768,41 +3768,40 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 	//idx=idnext;
 	goto next;
       }
-      if (lastfl) {
-	//cout << "decode_adcm pulse: " << npulses << endl;
-	npulses++;
-	ipls->Chan=bits(header,18,25);
+      //if (lastfl) {
 
+      //cout << "decode_adcm pulse: " << npulses << endl;
+      npulses++;
+      ipls.Chan=bits(header,18,25);
 
-	if ((ipls->Chan>=opt.Nchan)) {
-	  cout << "adcm: Bad channel: " << (int) ipls->Chan
-	       << " " << idx //<< " " << nvp
-	       << endl;
-	  ipls->ptype|=P_BADCH;
-	  goto next;
-	}
-
-
+      if ((ipls.Chan>=opt.Nchan)) {
+	cout << "adcm: Bad channel: " << (int) ipls.Chan
+	     << " " << idx //<< " " << nvp
+	     << endl;
+	ipls.ptype|=P_BADCH;
+	goto next;
       }
-      lastfl=lflag;
+
+
+      //lastfl=lflag;
 
       //nbits=bits(header,0,3);
       //nw=bits(header,4,5);
-      ipls->Tstamp64 = buf4[idx+rLen-2];
-      ipls->Tstamp64 <<= 32;
-      ipls->Tstamp64 += buf4[idx+rLen-3]+opt.delay[ipls->Chan];
-      //ipls->Tstamp64 = buf4[idx+rLen-3];
+      ipls.Tstamp64 = buf4[idx+rLen-2];
+      ipls.Tstamp64 <<= 32;
+      ipls.Tstamp64 += buf4[idx+rLen-3]+opt.delay[ipls.Chan];
+      //ipls.Tstamp64 = buf4[idx+rLen-3];
 
       if (Pstamp64==P64_0) {
-	Pstamp64=ipls->Tstamp64;
+	Pstamp64=ipls.Tstamp64;
 	Offset64=0;
 	//cout << "Zero Offset64: " << Offset64 << endl;
       }
 
       if (Offset64)
-	ipls->Tstamp64-=Offset64;
+	ipls.Tstamp64-=Offset64;
 
-      Long64_t dt=ipls->Tstamp64-Pstamp64;
+      Long64_t dt=ipls.Tstamp64-Pstamp64;
       //10 or 20 sec = 2e9
       if (abs(dt) > 2000000000) { //bad event - ignore it
 
@@ -3811,32 +3810,31 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 	  Offset64=0;
 
 	//cout << "Offset64: " << Offset64 << endl;
-	ipls->ptype|=P_BADTST;
+	ipls.ptype|=P_BADTST;
 
-	cout << "bad Tstamp: "<<dt<<" "<<ipls->Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
+	cout << "bad Tstamp: "<<dt<<" "<<ipls.Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
       }
       else {
-	Pstamp64=ipls->Tstamp64;
+	Pstamp64=ipls.Tstamp64;
       }
 
       static Float_t baseline=0;
-      if (ipls->sData.empty() && nsamp) {
+      if (ipls.sData.empty() && nsamp) {
 	baseline = buf2[idx*2+11];
       }
       for (int i=0;i<nsamp*2;i+=2) {
-	ipls->sData.push_back(buf2[idx*2+i+11]-baseline);
-	ipls->sData.push_back(buf2[idx*2+i+10]-baseline);
+	ipls.sData.push_back(buf2[idx*2+i+11]-baseline);
+	ipls.sData.push_back(buf2[idx*2+i+10]-baseline);
 	//cout << i << " " << buf2[idx*2+i+11] << endl;
 	//cout << i << " " << buf2[idx*2+i+10] << endl;
       }
 
-      if (lflag) {
-	ipls->ptype&=~P_NOSTOP; //pulse has stop
-
-	//analyze pulse
-	ipls->FindPeaks();
-	ipls->PeakAna();
-      }
+      // if (lflag) {
+      // 	ipls.ptype&=~P_NOSTOP; //pulse has stop
+      // 	//analyze pulse
+      // 	ipls.FindPeaks();
+      // 	ipls.PeakAna();
+      // }
 
     } //id!=1
 
@@ -3848,17 +3846,13 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
   } //while
 
-  // if (Vpulses.size()>2)
-  //   Vpulses.pop_front();
-
-  int sz=(length-idx);
-  if (sz>1024) {
-    cout << "Bad adcm file. Frame size too large: " << sz << " " << idx << endl;
-    exit(-1);
+  if (ipls.ptype==0) {
+    PulseAna(ipls);
+    Event_Insert_Pulse(Blist,&ipls);
   }
-  memcpy(buf4-sz,buf4+idx,sz*sizeof(UInt_t));
-  //int idx2=idx;
-  idx=-sz;
+
+  Blist->front().State=123;
+
 
 } //Decode_adcm
 
