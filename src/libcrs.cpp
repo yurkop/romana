@@ -3676,7 +3676,7 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
   //idx+1 - rLen + frame counter
   //idx+2 - rubbish
   //idx+3 - header
-  //idx+4 - event counter
+  //idx+4 - event counter + Fragment number
   //idx+5 .. idx+5+nsamp-1 - data
   //idx+rLen-3 - tst
   //idx+rLen-2 - cnst
@@ -3752,17 +3752,24 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
       cout << "adcm: id==1. What a luck, counters!: " << id << " " << npulses << endl;
     }
     else { //id!=1
+      //analyze previous pulse and insert it into the list
+      if (ipls.ptype==0) {
+	PulseAna(ipls);
+	Event_Insert_Pulse(Blist,&ipls);
+      }
+
+      ipls=PulseClass();
+      npulses++;
+
       lflag=bits(header,6,6);
       nsamp=bits(header,7,17);
       if (nsamp+8!=rLen) {
-	//cout << "wrong length: " << idx << " " << nsamp << " " << rLen << endl;
+	cout << "wrong length: " << idx << " " << nsamp << " " << rLen << endl;
 	//idx=idnext;
 	goto next;
       }
       if (lastfl) {
 	//cout << "decode_adcm pulse: " << npulses << endl;
-	ipls = vv->insert(vv->end(),PulseClass());
-	//vv->push_back(PulseClass());
 	npulses++;
 	ipls->Chan=bits(header,18,25);
 
