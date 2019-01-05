@@ -53,6 +53,97 @@ PulseClass::PulseClass() {
 }
 
 void PulseClass::FindPeaks() {
+  //Находим только первый пик
+
+  //strg: 0 - hreshold crossing of pulse;
+  //      1 - threshold crossing of derivative;
+  //      2 - maximum of derivative;
+  //      3 - rise of derivative;
+
+  if (sData.size()<2)
+    return;
+
+  UInt_t kk=opt.kdrv[Chan];
+  if (kk<1 || kk>=sData.size()) kk=1;
+
+  peak_type pk=peak_type();
+  //peak_type *p_prev=0;
+
+  //bool in_peak=false;
+  Float_t* D = new Float_t[sData.size()]();
+  Float_t Dpr;
+  //Float_t jmax=0;
+
+  D[0]=0;
+  UInt_t j;
+  UInt_t jj=0;
+
+  switch (opt.strg[Chan]) {
+  case 0: // hreshold crossing of pulse
+    for (j=0;j<sData.size();j++) {
+      if (sData[j] >= opt.thresh[Chan]) {
+	pk.Pos=j;
+	Peaks.push_back(pk);
+	break;
+      }
+    }
+    break;
+  case 1: // threshold crossing of derivative;
+    for (j=kk;j<sData.size();j++) {
+      D[j]=sData[j]-sData[j-kk];
+      if (D[j] >= opt.thresh[Chan]) {
+	pk.Pos=j;
+	Peaks.push_back(pk);
+	break;
+      }
+    }
+    break;
+  case 2: // maximum of derivative;
+    Dpr=-1e6;
+    //int jpr;
+    for (j=kk;j<sData.size();j++) {
+      D[j]=sData[j]-sData[j-kk];
+      if (D[j] >= opt.thresh[Chan] && D[j]<Dpr) {
+	pk.Pos=j-1;
+	Peaks.push_back(pk);
+	break;
+      }
+      Dpr=D[j];
+    }
+    break;
+  case 3: // rise of derivative;
+    Dpr=1;
+    //int jj=0;
+    for (j=kk;j<sData.size();j++) {
+      D[j]=sData[j]-sData[j-kk];
+      if (D[j] > 0 && Dpr<=0) {
+	jj=j;
+      }
+      if (D[j] >= opt.thresh[Chan] && jj) {
+	pk.Pos=jj;
+	Peaks.push_back(pk);
+	break;
+      }
+      else {
+	break;
+      }
+      Dpr=D[j];
+    }
+    break;
+  default:
+    break;
+  }
+
+  //printf("FindPeaks: %d\n",Npeaks);
+
+  delete[] D;
+
+} //FindPeaks
+
+
+
+/*
+void PulseClass::FindPeaks() {
   // always K-th derivative (D) is used
   // T1 - D>0, D(-1)<=0 (left zero-crossing of D)
   // T2 - D<=0, d(-1)>0 (right zero-crossing of D)
@@ -61,12 +152,12 @@ void PulseClass::FindPeaks() {
   // Pos2 - Maximum of D between T1 and T2
 
 
-  /*
+
   // peak is the first maximum in deriv, above the threshold
   // if deadtime=0 - next peak is searched only after deriv crosses zero
   // if deadtime!=0 - next peak is searched after 
   // N=deadtime samples from the previous peak
-  */
+
 
   if (sData.size()<2)
     return;
@@ -158,7 +249,7 @@ void PulseClass::FindPeaks() {
   delete[] D;
 
 }
-
+*/
 //-----------------------------
 
 void PulseClass::PeakAna() {
@@ -299,10 +390,12 @@ void PulseClass::PeakAna33() {
 
   //cout << "Peakana33: " << Peaks.size() << endl;
 
+  peak_type *pk;
+
   int sz=sData.size();
   Int_t kk=opt.kdrv[Chan];
   if (kk<1 || kk>=sz-1) kk=1;
-    
+
   if (sData.size()<2)
     return;
 
@@ -310,11 +403,21 @@ void PulseClass::PeakAna33() {
   Short_t T5; //left width window
   Short_t T6; //right width window
 
-  Peaks.push_back(peak_type());
-  peak_type *pk = &Peaks.back();
-  //pk->Pos=crs->Pre[Chan];
-  pk->Pos=cpar.preWr[Chan];
+  if (opt.strg[Chan]<0) { //use hardware trigger
+    Peaks.push_back(peak_type());
+    //pk = &Peaks.back();
+    //pk->Pos=crs->Pre[Chan];
+    Peaks.back().Pos=cpar.preWr[Chan];
+  }
+  else { //use software trigger
+    FindPeaks();
+  }
 
+  if (Peaks.empty()) {
+    return;
+  }
+
+  pk=&Peaks.back();
   Float_t sum;
 
   pk->B1=pk->Pos+opt.bkg1[Chan];
@@ -805,6 +908,11 @@ void EventClass::FillHist(Bool_t first) {
   //cout << "FillHist: " << this->Nevt << endl;
 
   if (first) {
+    if (crs->Tstart64<0) {
+      crs->Tstart64 = Tstmp;
+      cout << "Tstart64: " << crs->Tstart64 << endl;
+    }
+    
     opt.T_acq=(Tstmp - crs->Tstart64)*DT;
 
     if (opt.Tstop && (opt.T_acq > opt.Tstop || opt.T_acq < opt.Tstart)) {

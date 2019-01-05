@@ -48,7 +48,7 @@ const char* ttip1[ncrspar+1]={
   "Number of samples before the trigger",
   "Total length of the pulse in samples",
   "Additional Gain",
-  "Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative",
+  "Trigget type: 0 - threshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative",
   "Parameter of derivative: S(i) - S(i-Drv). 0 means trigger on the signal.",
   "Trigger threshold",
   "Pulse rate",
@@ -56,8 +56,8 @@ const char* ttip1[ncrspar+1]={
 };
 
 const int n_apar=16;
-const int tlen2[n_apar]={26,60,24,24,24,25,35,32,40,35,35,20,38,38,38,38};
-const char* tlab2[n_apar]={"Ch","Type","dsp","St","Mt","sS","Delay","Drv","Thr","dT","Pile","Tm","E0","E1","E2","B"};
+const int tlen2[n_apar]={26,60,24,24,24,25,35,26,32,40,35,35,38,38,38,38};
+const char* tlab2[n_apar]={"Ch","Type","dsp","St","Mt","sS","Delay","sTg","Drv","Thr","dT","Pile","E0","E1","E2","B"};
 const char* ttip2[n_apar]={
   "Channel number",
   "Channel type",
@@ -66,11 +66,12 @@ const char* ttip2[n_apar]={
   "Use this channel for making Mtof spectra",
   "Software smoothing",
   "Time delay in samples (can be negative or positive)",
+  "Software trigget type: 0 - hreshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
-  "Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
+  //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
   "Energy calibration 0 - [0]+[1]*x+[2]*x^2",
   "Energy calibration 1 - [0]+[1]*x+[2]*x^2",
   "Energy calibration 2 - [0]+[1]*x+[2]*x^2",
@@ -138,6 +139,11 @@ using namespace std;
 ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
+
+  fDock = new TGDockableFrame(this);
+  AddFrame(fDock, fLexp);
+  //fDock->SetWindowName("Events");  
+  fDock->SetFixedSize(kFALSE);
 
   for (int i=0;i<nchtype;i++) {
     combotype[i]=i;
@@ -818,12 +824,17 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   id_usb=-1;
   //id_tstop=-1;
 
-  fCanvas = new TGCanvas(this,w,h);
-  AddFrame(fCanvas,fLexp);
+  fDock->SetWindowName("Parameters");  
 
-  fcont1 = new TGCompositeFrame(fCanvas->GetViewPort(), 
+  TGCompositeFrame *fMain=fDock->GetContainer();
+  fMain->SetLayoutManager(new TGHorizontalLayout(fMain));
+
+  fCanvas1 = new TGCanvas(fMain,w,h);
+  fMain->AddFrame(fCanvas1,fLexp);
+
+  fcont1 = new TGCompositeFrame(fCanvas1->GetViewPort(), 
 				100, 100, kVerticalFrame);
-  fCanvas->SetContainer(fcont1);
+  fCanvas1->SetContainer(fcont1);
 
   /*
   //opt.chk_raw=true;
@@ -1677,13 +1688,28 @@ void ParParDlg::Update() {
 ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :ParDlg(p,w,h)
 {
+
+  fDock->SetWindowName("Analysis");
+
+  TGCompositeFrame *fMain=fDock->GetContainer();
+  fMain->SetLayoutManager(new TGHorizontalLayout(fMain));
+
+  TGCanvas *fCanvas = new TGCanvas(fMain,10,10);
+  TGCompositeFrame *fcont = new TGCompositeFrame(fCanvas->GetViewPort(), 
+  				100, 100, kVerticalFrame);
+  fCanvas->SetContainer(fcont);
+  fCanvas->SetScrolling(TGCanvas::kCanvasScrollHorizontal);
+  fMain->AddFrame(fCanvas,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
+                                             kLHintsExpandX, 0, 0, 1, 1));
+
+
   //AddHeader();
-  head_frame = new TGHorizontalFrame(this,10,10);
-  AddFrame(head_frame,fL1);
+  head_frame = new TGHorizontalFrame(fcont,10,10);
+  fcont->AddFrame(head_frame,fL1);
 
   // Hsplitter
-  TGVerticalFrame *vFrame = new TGVerticalFrame(this, 10, 10);
-  AddFrame(vFrame, new TGLayoutHints(kLHintsRight | kLHintsExpandX | kLHintsExpandY));
+  TGVerticalFrame *vFrame = new TGVerticalFrame(fcont, 10, 10);
+  fcont->AddFrame(vFrame, new TGLayoutHints(kLHintsRight | kLHintsExpandX | kLHintsExpandY));
   TGHorizontalFrame *fH1 = new TGHorizontalFrame(vFrame, 10, 320);
   TGHorizontalFrame *fH2 = new TGHorizontalFrame(vFrame, 10, 205, kFixedHeight);
   vFrame->AddFrame(fH1, new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsExpandY));
@@ -1695,11 +1721,19 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 
 
-  fCanvas = new TGCanvas(fH1,10,10);
-  fcont1 = new TGCompositeFrame(fCanvas->GetViewPort(), 
+  fCanvas1 = new TGCanvas(fH1,10,10);
+  fcont1 = new TGCompositeFrame(fCanvas1->GetViewPort(), 
 				100, 100, kVerticalFrame);
-  fCanvas->SetContainer(fcont1);
-  fH1->AddFrame(fCanvas,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
+  fCanvas1->SetContainer(fcont1);
+  fCanvas1->SetScrolling(TGCanvas::kCanvasScrollVertical);
+  //fCanvas1->SetVsbPosition(100);
+
+  //AddHeader();
+  //head_frame = new TGHorizontalFrame(fcont1,10,10);
+  //fcont1->AddFrame(head_frame,fL1);
+
+
+  fH1->AddFrame(fCanvas1,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
                                           kLHintsExpandX, 0, 0, 1, 1));
 
 
@@ -1707,6 +1741,7 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fcont2 = new TGCompositeFrame(fCanvas2->GetViewPort(), 
   				100, 100, kVerticalFrame);
   fCanvas2->SetContainer(fcont2);
+  fCanvas2->SetScrolling(TGCanvas::kCanvasScrollVertical);
   fH2->AddFrame(fCanvas2,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
                                              kLHintsExpandX, 0, 0, 1, 1));
 
@@ -1782,43 +1817,13 @@ void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 CrsParDlg::CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :ChanParDlg(p,w,h)
 {
+  fDock->SetWindowName("DAQ");  
   trig=0;
 }
 
 void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   AddHeader();
-
-  /*
-  AddHeader1();
-
-  // Hsplitter
-  TGVerticalFrame *vFrame = new TGVerticalFrame(this, 10, 10);
-  AddFrame(vFrame, new TGLayoutHints(kLHintsRight | kLHintsExpandX | kLHintsExpandY));
-  TGHorizontalFrame *fH1 = new TGHorizontalFrame(vFrame, 10, 320, kFixedHeight);
-  TGHorizontalFrame *fH2 = new TGHorizontalFrame(vFrame, 10, 10);
-  vFrame->AddFrame(fH1, new TGLayoutHints(kLHintsTop | kLHintsExpandX));
-  TGHSplitter *hsplitter = new TGHSplitter(vFrame,2,2);
-  hsplitter->SetFrame(fH1, kTRUE);
-  vFrame->AddFrame(hsplitter, new TGLayoutHints(kLHintsTop | kLHintsExpandX));
-  vFrame->AddFrame(fH2, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));   
-
-
-  fCanvas = new TGCanvas(fH1,10,10);
-  fcont1 = new TGCompositeFrame(fCanvas->GetViewPort(), 
-				100, 100, kVerticalFrame);
-  fCanvas->SetContainer(fcont1);
-  fH1->AddFrame(fCanvas,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
-                                          kLHintsExpandX, 0, 0, 1, 1));
-
-  fCanvas2 = new TGCanvas(fH2,10,10);
-  fcont2 = new TGCompositeFrame(fCanvas2->GetViewPort(), 
-  				100, 100, kVerticalFrame);
-  fCanvas2->SetContainer(fcont2);
-  fH2->AddFrame(fCanvas2,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
-                                             kLHintsExpandX, 0, 0, 1, 1));
-
-  */
 
   for (int i=0;i<MAX_CH;i++) {
     AddLine_crs(i,fcont1);
@@ -1856,9 +1861,9 @@ void CrsParDlg::AddHeader() {
   TGTextEntry* tt[ncrspar+1];
 
   for (int i=0;i<=ncrspar;i++) {
-    if (!strcmp(tlab1[i],"Trg") && crs->module<33) {
-      continue;
-    }
+    // if (!strcmp(tlab1[i],"Trg") && crs->module<33) {
+    //   continue;
+    // }
     tt[i]=new TGTextEntry(head_frame, tlab1[i]);
     tt[i]->SetWidth(tlen1[i]);
     tt[i]->SetState(false);
@@ -1998,10 +2003,11 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   else
     AddNumCrs(i,kk++,all,cframe[i],"gain"  ,&cpar.adcGain[i]);
 
-  if (crs->module>=33)
-    AddNumCrs(i,kk++,all,cframe[i],"trig" ,&cpar.trg[i]);
-  else
-    kk++;
+  // if (crs->module>=33)
+  //   AddNumCrs(i,kk++,all,cframe[i],"trig" ,&cpar.trg[i]);
+  // else
+  //   kk++;
+  AddNumCrs(i,kk++,all,cframe[i],"trig" ,&cpar.trg[i]);
 
   AddNumCrs(i,kk++,all,cframe[i],"deriv" ,&cpar.kderiv[i],&opt.kdrv[i]);
   AddNumCrs(i,kk++,all,cframe[i],"thresh",&cpar.threshold[i],&opt.thresh[i]);
@@ -2356,6 +2362,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
   AddNumChan(i,kk++,all,cframe[i],&opt.nsmoo[i],0,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.delay[i],-999,999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.strg[i],-1,3,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.kdrv[i],1,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.thresh[i],0,9999,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-999,3070,p_inum);
@@ -2364,7 +2371,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   //AddNumChan(i,kk++,all,cframe[i],&opt.peak2[i],-999,3070,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.deadT[i],0,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.pile[i],0,9999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.timing[i],0,3,p_inum);
+  //AddNumChan(i,kk++,all,cframe[i],&opt.timing[i],0,3,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.twin1[i],-99,99,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.twin2[i],-99,99,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.wwin1[i],-999,3070,p_inum);
@@ -2392,6 +2399,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 PikParDlg::PikParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :ChanParDlg(p,w,h)
 {
+  fDock->SetWindowName("Peaks");  
 }
 
 void PikParDlg::Make_PikPar(const TGWindow *p,UInt_t w,UInt_t h) {

@@ -107,6 +107,7 @@ void doYline(Float_t yy, Float_t x1, Float_t x2, int col, int type) {
 
 EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kHorizontalFrame)
+   //:TGCompositeFrame(p,w,h,kVerticalFrame)
 {
 
   Float_t rr[3];
@@ -166,14 +167,23 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //Frames.....
 
-  fVer0 = new TGVerticalFrame(this, 10, 10);
-  AddFrame(fVer0, fLay1);
+  fDock = new TGDockableFrame(this);
+  AddFrame(fDock, fLay1);
+  fDock->SetWindowName("Events");  
+  fDock->SetFixedSize(kFALSE);
+  fDock->Connect("Docked()","EventFrame",this,"Rebuild()");
+  fDock->Connect("Undocked()","EventFrame",this,"DoUndock()");
 
-  separator1 = new TGVertical3DLine(this);
-  AddFrame(separator1, fLay2);
+  TGCompositeFrame *fMain=fDock->GetContainer();
+  fMain->SetLayoutManager(new TGHorizontalLayout(fMain));
 
-  fVer_st = new TGVerticalFrame(this, 10, 10);
-  AddFrame(fVer_st, fLay4);
+  fVer0 = new TGVerticalFrame(fMain, 10, 10);
+  separator1 = new TGVertical3DLine(fMain);
+  fVer_st = new TGVerticalFrame(fMain, 10, 10);
+
+  fMain->AddFrame(fVer0, fLay1);
+  fMain->AddFrame(separator1, fLay2);
+  fMain->AddFrame(fVer_st, fLay4);
 
   fHor_st = new TGHorizontalFrame(fVer_st, 10, 10);
   fVer_st->AddFrame(fHor_st, fLay4);
@@ -628,7 +638,7 @@ void EventFrame::AddCh() {
 }
 
 void EventFrame::Rebuild() {
-  //cout << "Event::Rebuild: " << opt.Nchan << endl;
+  //cout << "Event::Rebuild: " << opt.Nchan << " " << fDock->GetUndocked() << endl;
 
   //fGroupCh->RemoveAll();
   //fGroupCh->Cleanup();
@@ -636,9 +646,11 @@ void EventFrame::Rebuild() {
   for (int i=0;i<MAX_CH;i++) {
     //fGroupCh->AddFrame(frCh[i]);
     if (i<opt.Nchan) {
+      //fGroupCh->MapWindow();
       fGroupCh->ShowFrame(frCh[i]);
     }
     else {
+      //fGroupCh->UnmapWindow();
       fGroupCh->HideFrame(frCh[i]);
     }
   }
@@ -649,6 +661,16 @@ void EventFrame::Rebuild() {
   //fGroupCh->Resize(GetDefaultSize());
   //fGroupCh->MapWindow();
   //fGroupCh->Layout();
+}
+
+void EventFrame::DoUndock() {
+  //cout << "Event::DoUndock: " << opt.Nchan << endl;
+  Rebuild();
+  // if (fDock->GetUndocked()) {
+  //   fDock->GetUndocked()->
+  //     ChangeOptions((fDock->GetUndocked()->GetOptions() &
+  // 		     ~kTransientFrame) | kMainFrame);
+  // }
 }
 
 void EventFrame::ShPtr(int zz) {

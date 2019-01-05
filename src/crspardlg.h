@@ -10,6 +10,7 @@
 #include <TGStatusBar.h>
 #include <TGSplitFrame.h>
 //#include <TGListBox.h>
+#include <TGDockableFrame.h>
 
 //#define p_fnum 1
 //#define p_inum 2
@@ -42,6 +43,10 @@ struct pmap {
 //-----------------------------------------------
 class ParDlg: public TGCompositeFrame {
 
+public:
+
+  TGDockableFrame        *fDock;
+
 protected:
 
   ULong_t tcol[ADDCH];
@@ -55,7 +60,7 @@ protected:
   // TGLayoutHints* fL6;
   // TGLayoutHints* fLexp;
 
-  TGCanvas* fCanvas;
+  TGCanvas* fCanvas1;
   TGCompositeFrame* fcont1;
 
   int nfld; //number of fields in a line

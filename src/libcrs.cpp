@@ -1912,15 +1912,15 @@ void CRS::DoReset() {
   b_fstart=false;
   opt.T_acq=0;
 
-  // if (Fmode==1) {
-  //   Tstart64=-1;
-  // }
-  // else {
-  //   Tstart64=0;
-  // }
-  Tstart64=0;
+  if (module==1) {
+    Tstart64=-1;
+  }
+  else {
+    Tstart64=0;
+  }
+  //Tstart64=0;
 
-  //cout << "Doreset: " << Fmode << " " << Tstart64 << endl;
+  cout << "Doreset: " << Fmode << " " << Tstart64 << endl;
 
   Tstart0=0;
   //Offset64=0;
@@ -2091,13 +2091,13 @@ void CRS::DoFopen(char* oname, int popt) {
 
   //boffset=1024*1024;
   //bsize=opt.rbuf_size*1024+boffset;
-  // if (Fmode==1) {
-  //   Tstart64=-1;
-  // }
-  // else {
-  //   Tstart64=0;
-  // }
-  Tstart64=0;
+  if (module==1) {
+    Tstart64=-1;
+  }
+  else {
+    Tstart64=0;
+  }
+  //Tstart64=0;
 
   //list_min=opt.ev_max-opt.ev_min;
 
@@ -2330,6 +2330,8 @@ void CRS::AnaBuf() {
   //gl_ibuf = gl_ibuf2;
   //nbuffers++;
 
+  //Print_Events();
+
   if (batch) {
     cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
 	 << inputbytes/MB << endl;
@@ -2354,7 +2356,8 @@ int CRS::DoBuf() {
   b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
   // cout << "gzread: " << Fmode << " " << module << " "
-  //      << gl_iread << " " << gl_ibuf << " " << gl_Nbuf << " " << length << endl;
+  //      << gl_iread << " " << gl_ibuf << " " << gl_Nbuf << " " << length
+  //      << " " << b_fill[gl_ibuf] << endl;
 
 
   if (length>0) {
@@ -2437,7 +2440,7 @@ void CRS::InitBuf() {
   gl_iread=0;
   gl_ivect=0;
   gl_ibuf=0;
-  gl_off = 1024*128;
+  gl_off = 1024*1024; //1MB, was 1024*128
 
   memset(b_fill,0,sizeof(b_fill));
   memset(b_start,0,sizeof(b_start));
@@ -2493,7 +2496,8 @@ void CRS::InitBuf() {
     }
   }
 
-  cout << "GLBuf size: " << (gl_sz+gl_off)/1024/1024 << " MB" << endl;
+  cout << "GLBuf size: " << (gl_sz+gl_off)/1024 << " kB" << endl;
+  //cout << "GLBuf size2: " << gl_sz << " " << gl_off << endl;
 
 }
 
@@ -2543,7 +2547,7 @@ void CRS::FAnalyze2(bool nobatch) {
 
   if (gzeof(f_read)) {
     cout << "Enf of file: " << endl;
-    Ana2(1);
+    //Ana2(1);
     Show();
     return;
   }
@@ -2800,18 +2804,34 @@ void CRS::FindLast(UInt_t ibuf) {
   UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
   UInt_t frmt;
 
+  int sss=-1;
+  //bool found=false;
+  UShort_t lflag;
+
+  //cout << "FindLast1: " << ibuf << " " << b_end[ibuf] << " " << b_start[ibuf]<< endl;
+
   switch (module) {
   case 1:
-  for (int i=b_end[ibuf]-4;i>=b_start[ibuf];i-=4) {
-    //find *frmt==0x2a500100 -> this is the start of a pulse
-    frmt = *((UInt_t*) GLBuf+i);
-    if (frmt==0x2a500100) {
-      b_end[ibuf]=i;
-      b_start[ibuf2]=i;
-      return;
-    }
-  }
-  cout << "Error: no last event: " << ibuf << endl;
+    for (int i=b_end[ibuf]-4;i>=b_start[ibuf];i-=4) {
+      //find *frmt==0x2a500100 -> this is the start of a pulse
+      frmt = *((UInt_t*) (GLBuf+i));
+      //cout << "for: " << i << " " << hex << frmt << dec << endl;
+      if (frmt==0x2a500100) {
+	if (sss>0) {
+	  UInt_t *header =  (UInt_t*) (GLBuf+i);
+	  header+=3;
+	  lflag=bits(*header,6,6);
+	  if (lflag) {
+	    b_end[ibuf]=sss;
+	    b_start[ibuf2]=sss;
+	    //cout << "FindLast2: " << sss << " " << hex << frmt << dec << endl;
+	    return;
+	  }
+	} //if sss>0
+	sss=i;
+      } //if frmt
+    } //for i
+    cout << "Error: no last event: " << ibuf << endl;
     break;
   case 2:
     for (int i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
@@ -3725,8 +3745,12 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
   UInt_t header; //data header
   UShort_t id; // block id (=0,1,2)
   UShort_t lflag; //last fragment flag
+  //UShort_t nfrag; //fragment number
   UShort_t nsamp; // number of samples in the fragment
   int length = b_end[ibuf]/4;
+  int ch;
+
+  //cout << "idx: " << idx << " " << nevents << endl;
 
   while (idx<length) {
     //rLen (~rbuf[idx+1]) should be inside buf
@@ -3740,8 +3764,16 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
       }
     }
 
+    // printf("idx: %3d",idx);
+    // for (int i=0;i<12;i++) {
+    //   printf("%6d",buf2[idx*2+i]);
+    // }
+    // printf("\n");
+
     rLen = buf2[idx*2+3];
     idnext=idx+rLen;
+
+    //cout << "while: " << idx << " " << idnext << " " << length << endl;
 
     if (idnext>length)
       break;
@@ -3753,80 +3785,99 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
     }
     else { //id!=1
       //analyze previous pulse and insert it into the list
-      if (ipls.ptype==0) {
-	PulseAna(ipls);
-	Event_Insert_Pulse(Blist,&ipls);
-      }
 
-      ipls=PulseClass();
-      npulses++;
-
-      lflag=bits(header,6,6);
       nsamp=bits(header,7,17);
       if (nsamp+8!=rLen) {
 	cout << "wrong length: " << idx << " " << nsamp << " " << rLen << endl;
 	//idx=idnext;
 	goto next;
       }
-      //if (lastfl) {
-
-      //cout << "decode_adcm pulse: " << npulses << endl;
-      npulses++;
-      ipls.Chan=bits(header,18,25);
-
-      if ((ipls.Chan>=opt.Nchan)) {
-	cout << "adcm: Bad channel: " << (int) ipls.Chan
+      lflag=bits(header,6,6);
+      ch=bits(header,18,25);
+      if ((ch>=opt.Nchan)) {
+	cout << "adcm: Bad channel: " << (int) ch
 	     << " " << idx //<< " " << nvp
 	     << endl;
-	ipls.ptype|=P_BADCH;
+	//ipls.ptype|=P_BADCH;
 	goto next;
       }
 
+      if (ipls.ptype==0) { //if previous pulse is good -> analyze it
+	PulseAna(ipls);
+	Event_Insert_Pulse(Blist,&ipls);
+      }
 
-      //lastfl=lflag;
+      //cout << "newpulse: " << ch << " " << (int)ipls.ptype << " " << ipls.Tstamp64 << endl;
+      //new pulse
+      if (!(ipls.ptype&P_NOSTOP)) { //if previous pulse has STOP -> insert new pulse
+	//cout << "--------" << endl;
+	ipls=PulseClass();
+	npulses++;
+	ipls.Chan=ch;
+
+	ipls.Tstamp64 = buf4[idx+rLen-2];
+	ipls.Tstamp64 <<= 32;
+	ipls.Tstamp64 += buf4[idx+rLen-3]+opt.delay[ipls.Chan];
+
+	if (Pstamp64==P64_0) {
+	  Pstamp64=ipls.Tstamp64;
+	  Offset64=0;
+	  //cout << "Zero Offset64: " << Offset64 << endl;
+	}
+
+	if (Offset64)
+	  ipls.Tstamp64-=Offset64;
+
+	Long64_t dt=ipls.Tstamp64-Pstamp64;
+	//10 or 20 sec = 2e9
+	if (abs(dt) > 2000000000) { //bad event - ignore it
+
+	  Offset64+=dt;
+	  if (abs(Offset64) < 20000000) //~100-200 msec
+	    Offset64=0;
+
+	  //cout << "Offset64: " << Offset64 << endl;
+	  ipls.ptype|=P_BADTST;
+
+	  cout << "bad Tstamp: "<<dt<<" "<<ipls.Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
+	}
+	else {
+	  Pstamp64=ipls.Tstamp64;
+	}
+
+      } //if (!(ipls.ptype&P_NOSTOP))
+      else { //previous pulse has no stop -> this is continuation of the prev.pulse
+	//ничего не делаем, хотя можно было бы проверить соответствие ch и Tstamp
+      }
+
+      if (lflag) {
+	ipls.ptype&=~P_NOSTOP;
+      }
+      else {
+	ipls.ptype|=P_NOSTOP;
+      }
+
+      //if (lastfl) {
+
+      //cout << "decode_adcm pulse: " << npulses << endl;
+
+
+      //ipls.Counter = buf2[idx*2+8];
 
       //nbits=bits(header,0,3);
       //nw=bits(header,4,5);
-      ipls.Tstamp64 = buf4[idx+rLen-2];
-      ipls.Tstamp64 <<= 32;
-      ipls.Tstamp64 += buf4[idx+rLen-3]+opt.delay[ipls.Chan];
       //ipls.Tstamp64 = buf4[idx+rLen-3];
 
-      if (Pstamp64==P64_0) {
-	Pstamp64=ipls.Tstamp64;
-	Offset64=0;
-	//cout << "Zero Offset64: " << Offset64 << endl;
-      }
+      // static Float_t baseline=0;
+      // if (ipls.sData.empty() && nsamp) {
+      // 	baseline = buf2[idx*2+11];
+      // }
 
-      if (Offset64)
-	ipls.Tstamp64-=Offset64;
-
-      Long64_t dt=ipls.Tstamp64-Pstamp64;
-      //10 or 20 sec = 2e9
-      if (abs(dt) > 2000000000) { //bad event - ignore it
-
-	Offset64+=dt;
-	if (abs(Offset64) < 20000000) //~100-200 msec
-	  Offset64=0;
-
-	//cout << "Offset64: " << Offset64 << endl;
-	ipls.ptype|=P_BADTST;
-
-	cout << "bad Tstamp: "<<dt<<" "<<ipls.Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
-      }
-      else {
-	Pstamp64=ipls.Tstamp64;
-      }
-
-      static Float_t baseline=0;
-      if (ipls.sData.empty() && nsamp) {
-	baseline = buf2[idx*2+11];
-      }
       for (int i=0;i<nsamp*2;i+=2) {
-	ipls.sData.push_back(buf2[idx*2+i+11]-baseline);
-	ipls.sData.push_back(buf2[idx*2+i+10]-baseline);
-	//cout << i << " " << buf2[idx*2+i+11] << endl;
-	//cout << i << " " << buf2[idx*2+i+10] << endl;
+	ipls.sData.push_back(buf2[idx*2+i+11]);
+	ipls.sData.push_back(buf2[idx*2+i+10]);
+	//ipls.sData.push_back(buf2[idx*2+i+11]-baseline);
+	//ipls.sData.push_back(buf2[idx*2+i+10]-baseline);
       }
 
       // if (lflag) {
@@ -3846,14 +3897,18 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
   } //while
 
-  if (ipls.ptype==0) {
+  //cout << "nevt1: " << nevents << " " << (int) (ipls.ptype&~P_NOSTOP) << endl;
+
+  if (!ipls.ptype) {
     PulseAna(ipls);
     Event_Insert_Pulse(Blist,&ipls);
   }
 
+  //cout << "nevt2: " << nevents << endl;
+
   Blist->front().State=123;
 
-
+  //cout << "idx2: " << idx << endl;
 } //Decode_adcm
 
 
@@ -3890,13 +3945,15 @@ void CRS::Print_Pulses() {
 */
 
 void CRS::Print_Events() {
+  //return;
   int nn=0;
-  cout << "Print_Events: " << Levents.begin()->Tstmp << endl;
+  //cout << "Print_Events0: " << Levents.size() << endl;
+  cout << "Print_Events: " << Levents.begin()->Tstmp << " " << Levents.size() << endl;
   for (std::list<EventClass>::iterator it=Levents.begin();
        it!=Levents.end();++it) {
-    cout << nn++ << " " << it->Tstmp << " :>>";
+    cout << nn++ << " " << it->Tstmp << " " << " :>>";
     for (UInt_t i=0;i<it->pulses.size();i++) {
-      cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64-Tstart64 << "," << it->pulses.at(i).Peaks.back().Time;
+      cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64<< "," << it->pulses.at(i).Peaks.back().Time;
     }
     cout << endl;
   }
@@ -3910,7 +3967,7 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
   //event_iter it_last;
   Long64_t dt;
 
-  //cout << "Event_Insert_Pulse: " << (int) pls->Chan << " " << pls->Counter << " " << npulses << " " << pls->Tstamp64 << " " << (int) pls->ptype << endl;
+  //cout << "Event_Insert_Pulse: " << nevents << " " << (int) pls->Chan << " " << pls->Counter << " " << (int) pls->State << " " << npulses << " " << pls->Tstamp64 << " " << (int) pls->ptype << endl;
 
   if (pls->ptype) { //any bad pulse
     // cout << "bad pulse: " << (int) pls->ptype << " " << (int) pls->Chan
@@ -3924,7 +3981,7 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
 
   if (Elist->empty()) {
     //if (Tstart64<0) {
-    Tstart64 = pls->Tstamp64;
+    //Tstart64 = pls->Tstamp64;
 
     //cout << "TStart64: " << Tstart64 << endl;
     it=Elist->insert(Elist->end(),EventClass());
@@ -4000,6 +4057,7 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     evlist_iter it = BB->begin();
     evlist_reviter rr = Levents.rbegin();
     while (it!=BB->end() && it->Tstmp - rr->Tstmp<=opt.tgate*2) {
+      //cout << "merge: -------------" << endl;
       for (UInt_t i=0;i<it->pulses.size();i++) {
 	Event_Insert_Pulse(&Levents,&it->pulses[i]);
       }

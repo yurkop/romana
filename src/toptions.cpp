@@ -252,6 +252,7 @@ Toptions::Toptions() {
     peak2[i]=30;
     deadT[i]=100;
     pile[i]=100;
+    strg[i]=-1;
     timing[i]=3;
     twin1[i]=-5;
     twin2[i]=5;

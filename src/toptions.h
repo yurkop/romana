@@ -79,6 +79,7 @@ public:
   Int_t deadT[MAX_CH+ADDCH];
   Int_t pile[MAX_CH+ADDCH];
   //Int_t pile2[MAX_CH+ADDCH];
+  Int_t strg[MAX_CH+ADDCH]; // Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
   Int_t timing[MAX_CH+ADDCH];
   Int_t twin1[MAX_CH+ADDCH];
   Int_t twin2[MAX_CH+ADDCH];

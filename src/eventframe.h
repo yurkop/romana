@@ -14,6 +14,7 @@
 #include <TMultiGraph.h>
 #include <TGStatusBar.h>
 #include <TGTextEntry.h>
+#include <TGDockableFrame.h>
 
 //#include "TThread.h"
 #include <list>
@@ -26,8 +27,7 @@ protected:
   Int_t chcol[MAX_CH];
   ULong_t gcol[MAX_CH];
   //ULong_t fcol[MAX_CH];
-
-  //TGTransientFrame       *fMain;
+  TGDockableFrame        *fDock;
   TGVertical3DLine       *separator1;
   TGHorizontalFrame      *fHor;
   TGHorizontalFrame      *fHor2;
@@ -144,6 +144,7 @@ public:
   void DoChkDeriv();
   void DoChkPeak();
   void DoPulseOff();
+  void DoUndock();
 
   ClassDef(EventFrame, 0)
 };

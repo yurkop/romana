@@ -16,6 +16,7 @@
 #include <TGListTree.h>
 #include <TPolyLine.h>
 //#include <TCutG.h>
+#include <TGDockableFrame.h>
 
 //#include "TThread.h"
 #include <list>
@@ -27,6 +28,8 @@ void DynamicExec();
 class HistFrame: public TGCompositeFrame {
 
 public:
+  TGDockableFrame        *fDock;
+
   TGCanvas               *gCanvas; //hist Gcanvas
   TGCanvas               *gCanvas2; //cuts Gcanvas
   TRootEmbeddedCanvas    *fEc;

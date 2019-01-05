@@ -241,11 +241,19 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   TGTextButton* but;
 
-  fHor1 = new TGHorizontalFrame(this, 10, 10);
-  AddFrame(fHor1, fLay1);
+  fDock = new TGDockableFrame(this);
+  AddFrame(fDock, fLay1);
+  fDock->SetWindowName("Histograms/Cuts");  
+  fDock->SetFixedSize(kFALSE);
 
-  fHor2 = new TGHorizontalFrame(this, 10, 10);
-  AddFrame(fHor2, fLay2);
+  TGCompositeFrame *fMain=fDock->GetContainer();
+  fMain->SetLayoutManager(new TGVerticalLayout(fMain));
+
+  fHor1 = new TGHorizontalFrame(fMain, 10, 10);
+  fHor2 = new TGHorizontalFrame(fMain, 10, 10);
+
+  fMain->AddFrame(fHor1, fLay1);
+  fMain->AddFrame(fHor2, fLay2);
 
   fVer0 = new TGVerticalFrame(fHor1, 10, 10);
   fHor1->AddFrame(fVer0, fLay1);
