@@ -197,6 +197,7 @@ public:
   Hdef h_per;
   Hdef h_width;
   Hdef h_width2;
+  Hdef h_width3;
   Hdef h_pulse;
   Hdef h_deriv;
 

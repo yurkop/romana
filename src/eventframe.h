@@ -22,12 +22,15 @@
 //-----------------------------------------------
 class EventFrame: public TGCompositeFrame {
 
+public:
+
+  TGDockableFrame        *fDock;
+
 protected:
 
   Int_t chcol[MAX_CH];
   ULong_t gcol[MAX_CH];
   //ULong_t fcol[MAX_CH];
-  TGDockableFrame        *fDock;
   TGVertical3DLine       *separator1;
   TGHorizontalFrame      *fHor;
   TGHorizontalFrame      *fHor2;

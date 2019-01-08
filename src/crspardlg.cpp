@@ -48,7 +48,7 @@ const char* ttip1[ncrspar+1]={
   "Number of samples before the trigger",
   "Total length of the pulse in samples",
   "Additional Gain",
-  "Trigget type: 0 - threshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative",
+  "Trigget type: 0 - threshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; 4 - fall of derivative",
   "Parameter of derivative: S(i) - S(i-Drv). 0 means trigger on the signal.",
   "Trigger threshold",
   "Pulse rate",
@@ -1190,6 +1190,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   tip1= "Pulse width2";
   label="Width2";
   AddLine_hist(frame,&opt.h_width2,tip1,label);
+
+  tip1= "Pulse width3";
+  label="Width3";
+  AddLine_hist(frame,&opt.h_width3,tip1,label);
 
   tip1= "Average pulse shape";
   label="Mean_pulses";
@@ -2362,7 +2366,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
   AddNumChan(i,kk++,all,cframe[i],&opt.nsmoo[i],0,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.delay[i],-999,999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.strg[i],-1,3,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.strg[i],-1,4,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.kdrv[i],1,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.thresh[i],0,9999,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-999,3070,p_inum);
@@ -2515,12 +2519,17 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   tlen7 = (int*) tlen3;
   ttip7 = (char**) ttip3;
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-999,3070,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.bkg2[i],-999,3070,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.peak1[i],-999,3070,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.peak2[i],-999,3070,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.twin1[i],-99,99,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.twin2[i],-99,99,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.wwin1[i],-999,3070,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.wwin2[i],-999,3070,p_inum);
+  int amax=1023;
+  if (crs->type_ch[i]==1)
+    amax=511;
+  cout << "module: " << crs->module << " " << i << " " << crs->type_ch[i] << " " << amax << endl;
+
+  AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-1024,amax,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.bkg2[i],-1024,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.peak1[i],-1024,amax,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.peak2[i],-1024,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.twin1[i],-1024,amax,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.twin2[i],-1024,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.wwin1[i],-1024,amax,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.wwin2[i],-1024,9999,p_inum);
 }

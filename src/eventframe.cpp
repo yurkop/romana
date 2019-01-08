@@ -303,48 +303,41 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[0] = new TGCheckButton(fVer_d, "Peaks", 0);
   fPeak[1] = new TGCheckButton(fVer_d, "Pos", 1);
   fPeak[2] = new TGCheckButton(fVer_d, "Time", 2);
-  //fPeak[3] = new TGCheckButton(fVer_d, "Time\"", 3);
-  fPeak[3] = new TGCheckButton(fVer_d, "Wpeak", 3);
-  fPeak[4] = new TGCheckButton(fVer_d, "WBase", 4);
+  fPeak[3] = new TGCheckButton(fVer_d, "WBase", 4);
+  fPeak[4] = new TGCheckButton(fVer_d, "Wpeak", 3);
   fPeak[5] = new TGCheckButton(fVer_d, "WTime", 5);
-  //fPeak[6] = new TGCheckButton(fVer_d, "BRight", 6);
-  //fPeak[7] = new TGCheckButton(fVer_d, "TLeft", 7);
-  //fPeak[8] = new TGCheckButton(fVer_d, "TRight", 8);
-  fPeak[6] = new TGCheckButton(fVer_d, "*TStart", 6);
-  fPeak[7] = new TGCheckButton(fVer_d, "Thresh", 7);
+  fPeak[6] = new TGCheckButton(fVer_d, "WWidth", 6);
+  fPeak[7] = new TGCheckButton(fVer_d, "*TStart", 7);
+  fPeak[8] = new TGCheckButton(fVer_d, "Thresh", 8);
 
-  fPeak[8] = new TGCheckButton(fVer_d, "Par", 8);
+  fPeak[9] = new TGCheckButton(fVer_d, "Val", 9);
 
   //int cc;
   //cc=gROOT->GetColor(2)->GetPixel();
   fPeak[1]->SetForegroundColor(gROOT->GetColor(2)->GetPixel());
   fPeak[2]->SetForegroundColor(gROOT->GetColor(3)->GetPixel());
-  fPeak[3]->SetForegroundColor(gROOT->GetColor(4)->GetPixel());
-  fPeak[4]->SetForegroundColor(gROOT->GetColor(6)->GetPixel());
-  //fPeak[5]->SetForegroundColor(gROOT->GetColor(1)->GetPixel());
-  fPeak[6]->SetForegroundColor(gROOT->GetColor(2)->GetPixel());
-  //fPeak[7]->SetForegroundColor(gROOT->GetColor(3)->GetPixel());
+  fPeak[3]->SetForegroundColor(gROOT->GetColor(6)->GetPixel()); //Wbase
+  fPeak[4]->SetForegroundColor(gROOT->GetColor(1)->GetPixel()); //Wpeak
+  fPeak[5]->SetForegroundColor(gROOT->GetColor(3)->GetPixel()); //Wtime
+  fPeak[6]->SetForegroundColor(gROOT->GetColor(4)->GetPixel()); //Wwidth
+  fPeak[7]->SetForegroundColor(gROOT->GetColor(2)->GetPixel()); //Tstart
 
-  
+
   fPeak[0]->SetToolTipText("Show peaks");
   fPeak[1]->SetToolTipText("Peak Position (maximum in 1st derivative)");
   fPeak[2]->SetToolTipText("Exact time from 1st derivative");
   //fPeak[3]->SetToolTipText("Exact time from 2nd derivative");
-  fPeak[3]->SetToolTipText("Window for peak integration");
-  fPeak[4]->SetToolTipText("Window for baseline integration");
-  fPeak[5]->SetToolTipText("Window for time integration (left lower than right),\nplotted only in 1st derivative");
-  // fPeak[3]->SetToolTipText("Left border of the peak integration");
-  // fPeak[4]->SetToolTipText("Right border of the peak integration");
-  // fPeak[5]->SetToolTipText("Left border of the background integration");
-  // fPeak[6]->SetToolTipText("Right border of the background integration");
-  // fPeak[7]->SetToolTipText("Left border of the time integration");
-  // fPeak[8]->SetToolTipText("Right border of the time integration");
-  fPeak[6]->SetToolTipText("Time start marker");
-  fPeak[7]->SetToolTipText("Threshold, plotted only in 1st derivative)");
+  fPeak[3]->SetToolTipText("Window for baseline integration");
+  fPeak[4]->SetToolTipText("Window for peak integration");
+  fPeak[5]->SetToolTipText("Window for time integration (left,right),\nplotted only in 1st derivative");
+  fPeak[6]->SetToolTipText("Window for width integration (left,right),\nplotted only in pulse");
+  fPeak[7]->SetToolTipText("Time start marker (earliest Time)");
+  //fPeak[8]->SetToolTipText("Threshold, plotted only in 1st derivative)");
+  fPeak[8]->SetToolTipText("Threshold)");
 
-  fPeak[8]->SetToolTipText("Print peak parameters");
+  fPeak[9]->SetToolTipText("Print peak values");
 
-  for (int i=0;i<9;i++) {
+  for (int i=0;i<10;i++) {
     fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
     fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
     fVer_d->AddFrame(fPeak[i], fLay4);
@@ -897,7 +890,7 @@ void EventFrame::DoChkPeak() {
   btn->SetState((EButtonState) opt.b_peak[id]);
 
   if (id==0) {
-    for (int i=1;i<8;i++) {
+    for (int i=1;i<10;i++) {
       opt.b_peak[i] = opt.b_peak[id];
       fPeak[i]->SetState((EButtonState) opt.b_peak[id]);
     }
@@ -1210,17 +1203,21 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 	doXline(pk->Pos+dt,y1,y2-dy*0.3,2,1);
       if (fPeak[2]->IsOn()) // Time
 	doXline(pk->Time+dt+cpar.preWr[ch],y2-dy*0.2,y2,3,1);
-      if (dr==0 && fPeak[3]->IsOn()) { // Wpeak
-	doXline(pk->P1+dt,y1,y2-dy*0.2,4,2);
-	doXline(pk->P2+dt,y1,y2-dy*0.1,4,2);
+      if (dr==0 && fPeak[4]->IsOn()) { // Wpeak
+	doXline(pk->P1+dt,y1,y2-dy*0.2,1,2);
+	doXline(pk->P2-1+dt,y1,y2-dy*0.1,1,2);
       }
-      if (dr==0 && fPeak[4]->IsOn()) { // WBkgr
+      if (dr==0 && fPeak[3]->IsOn()) { // WBkgr
 	doXline(pk->B1+dt,y1,y2-dy*0.2,6,3);
-	doXline(pk->B2+dt,y1,y2-dy*0.1,6,3);
+	doXline(pk->B2-1+dt,y1,y2-dy*0.1,6,3);
       }
       if (dr==1 && fPeak[5]->IsOn()) { //WTime
-	doXline(pk->T3+dt,y1,y2-dy*0.2,1,2);
-	doXline(pk->T4+dt,y1,y2-dy*0.1,1,2);
+	doXline(pk->T3+dt,y1,y2-dy*0.2,3,2);
+	doXline(pk->T4-1+dt,y1,y2-dy*0.1,3,2);
+      }
+      if (dr==0 && fPeak[6]->IsOn()) { //WWidth
+	doXline(pk->T5+dt,y1,y2-dy*0.2,4,4);
+	doXline(pk->T6-1+dt,y1,y2-dy*0.1,4,4);
       }
       //cout <<"DrawPeaksT2: " << pk->Time+dt << " " << dt << " " 
       //   << pulse->Tstamp64 << " " << d_event->T << endl;
@@ -1307,7 +1304,7 @@ void EventFrame::ReDraw() {
       fHist[i]->Draw("axis");
 
       doYline(0,x1,x2,4,2);
-      if (fPeak[6]->IsOn()) { //T0
+      if (fPeak[7]->IsOn()) { //T0
 	mk.DrawMarker(d_event->T0,y2-dy*0.1);
       }
 
@@ -1317,17 +1314,18 @@ void EventFrame::ReDraw() {
 	if (fChn[pulse->Chan]->IsOn()) {
 	  if (Gr[i][j]->GetN()) { //draw graph
 	    Gr[i][j]->Draw("lp");
-	    DrawPeaks(i,pulse,y1,y2);;
-	    if (i==1 && fPeak[7]->IsOn()) //threshold
+	    DrawPeaks(i,pulse,y1,y2);
+	    int ithr=(opt.strg[pulse->Chan]!=0);
+	    if (i==ithr && fPeak[8]->IsOn()) //threshold
 	      doYline(opt.thresh[pulse->Chan],gx1[j],
 		      gx2[j],chcol[pulse->Chan],2);
 	  }
-	  if (fPeak[8]->IsOn()) { //draw text
+	  if (fPeak[9]->IsOn()) { //draw text
 	    if (pulse->Peaks.size()) {
 	      char ss[256];
 	      peak_type *pk = &pulse->Peaks.back();
-	      sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f",
-		      pulse->Chan,pk->Area,pk->Time,pk->Width);
+	      sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f W3=%f",
+		      pulse->Chan,pk->Area,pk->Time,pk->Width,pk->Width3);
 	      //tt.SetBBoxX1(0);
 	      //tt.SetBBoxX2(100);
 	      //tt.SetBBoxY1(0);

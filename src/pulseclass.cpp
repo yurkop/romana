@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "TSystem.h"
+#include "TRandom.h"
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -103,7 +104,7 @@ void PulseClass::FindPeaks() {
     //int jpr;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
-      if (D[j] >= opt.thresh[Chan] && D[j]<Dpr) {
+      if (Dpr >= opt.thresh[Chan] && D[j]<Dpr) {
 	pk.Pos=j-1;
 	Peaks.push_back(pk);
 	break;
@@ -119,15 +120,33 @@ void PulseClass::FindPeaks() {
       if (D[j] > 0 && Dpr<=0) {
 	jj=j;
       }
-      if (D[j] >= opt.thresh[Chan] && jj) {
+      if (D[j] >= opt.thresh[Chan]) {
 	pk.Pos=jj;
 	Peaks.push_back(pk);
 	break;
       }
-      else {
+      // else {
+      // 	break;
+      // }
+      Dpr=D[j];
+    }
+    break;
+  case 4: // fall of derivative;
+    Dpr=1;
+    for (j=kk;j<sData.size();j++) {
+      D[j]=sData[j]-sData[j-kk];
+      if (D[j] < 0 && jj) {
+	pk.Pos=j-1;
+	Peaks.push_back(pk);
 	break;
       }
-      Dpr=D[j];
+      if (D[j] >= opt.thresh[Chan]) {
+	jj=1;
+      }
+      // else {
+      // 	break;
+      // }
+      //Dpr=D[j];
     }
     break;
   default:
@@ -321,9 +340,9 @@ void PulseClass::PeakAna() {
     //cout << "pk: " << (int) Chan << " " << pk->T3 << " " << pk->T4 << " " << pk->Time << " " << pk->Pos << endl;
 
     pk->B1=pk->Pos+opt.bkg1[Chan];
-    pk->B2=pk->Pos+opt.bkg2[Chan];
+    pk->B2=pk->Pos+opt.bkg2[Chan]+1;
     pk->P1=pk->Pos+opt.peak1[Chan];
-    pk->P2=pk->Pos+opt.peak2[Chan];
+    pk->P2=pk->Pos+opt.peak2[Chan]+1;
 
     // if (Counter==150) {
     //   cout << "E150: " << Counter << " " << Tstamp64 << " " << pk->B1 << " " << pk->B2 << " " << pk->Pos << " " << pk->Pos2 << " " << pk->P1 << " " << pk->P2 << endl;
@@ -400,8 +419,8 @@ void PulseClass::PeakAna33() {
     return;
 
   //return;
-  Short_t T5; //left width window
-  Short_t T6; //right width window
+  //Short_t T5; //left width window
+  //Short_t T6; //right width window
 
   if (opt.strg[Chan]<0) { //use hardware trigger
     Peaks.push_back(peak_type());
@@ -421,38 +440,45 @@ void PulseClass::PeakAna33() {
   Float_t sum;
 
   pk->B1=pk->Pos+opt.bkg1[Chan];
-  pk->B2=pk->Pos+opt.bkg2[Chan];
+  pk->B2=pk->Pos+opt.bkg2[Chan]+1;
   pk->P1=pk->Pos+opt.peak1[Chan];
-  pk->P2=pk->Pos+opt.peak2[Chan];
+  pk->P2=pk->Pos+opt.peak2[Chan]+1;
   pk->T3=pk->Pos+opt.twin1[Chan];
-  pk->T4=pk->Pos+opt.twin2[Chan];
-  T5=pk->Pos+opt.wwin1[Chan];
-  T6=pk->Pos+opt.wwin2[Chan];
+  pk->T4=pk->Pos+opt.twin2[Chan]+1;
+  pk->T5=pk->Pos+opt.wwin1[Chan];
+  pk->T6=pk->Pos+opt.wwin2[Chan]+1;
+
+  //cout << "B2: " << pk->B1 << " " << pk->B2 << endl;
 
   if (pk->B1<0) pk->B1=0;
-  if (pk->B2<0) pk->B2=1;
+  if (pk->B2<=pk->B1) pk->B2=pk->B1+1;
   if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
-  if (pk->P2<0) {pk->P2=1; pk->Type|=P_B2;}
+  if (pk->P2<=pk->P1) {pk->P2=pk->P1+1; pk->Type|=P_B2;}
 
   if (pk->B1>=sz) pk->B1=sz-1;
   if (pk->B2>sz) pk->B2=sz;
   if (pk->P1>=sz) {pk->P1=sz-1; pk->Type|=P_B1;}
   if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
 
+  if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
+  if (pk->T4<=pk->T3) {pk->T4=pk->T3+1; pk->Type|=P_B11;}
+  if (pk->T5<(int)kk) {pk->T5=kk; pk->Type|=P_B22;}
+  if (pk->T6<=pk->T5) {pk->T6=pk->T5+1; pk->Type|=P_B22;}
 
-  // if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
-  // if (pk->T3>sz) {pk->T3=sz; pk->Type|=P_B11;}
-  // if (pk->T4<(int)kk) {pk->T4=kk; pk->Type|=P_B11;}
-  // if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B11;}
+  if (pk->T3>sz) {pk->T3=sz-1; pk->Type|=P_B11;}
+  if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B11;}
+  if (pk->T5>sz) {pk->T5=sz-1; pk->Type|=P_B22;}
+  if (pk->T6>sz) {pk->T6=sz; pk->Type|=P_B22;}
 
   pk->Time=0;
   sum=0;
   for (int j=pk->T3;j<pk->T4;j++) {
-    if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
-      Float_t dif=sData[j]-sData[j-kk];
-      pk->Time+=dif*j;
-      sum+=dif;
-    }
+    //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
+    Float_t dif=sData[j]-sData[j-kk];
+    pk->Time+=dif*j;
+    sum+=dif;
+    //cout << "j: " << Tstamp64 << " " << j << " " << dif << " " << sum << endl;
+    //}
     //nt++;
   }
   if (abs(sum)>1e-5) {
@@ -461,10 +487,12 @@ void PulseClass::PeakAna33() {
     //pk->Time+=1;
   }
   else
-    pk->Time=-999+pk->Pos;
+    //pk->Time=-999+pk->Pos;
+    pk->Time=(pk->T3+pk->T4)*0.5;
 
-  pk->Time-=pk->Pos;
-  //cout << "Time: " << pk->Time << " " << sum << " " << pk->T3 << " " << pk->T4 << endl;
+  //pk->Time-=pk->Pos;
+  pk->Time-=cpar.preWr[Chan];
+  //cout << "Time: " << Tstamp64 << " " << pk->Time << " " << sum << " " << pk->Pos << " " << cpar.preWr[Chan] << " " << pk->T3 << " " << pk->T4 << endl;
 
   // if (T5<(int)kk) {T5=kk;}
   // if (T5>sz) {T5=sz;}
@@ -473,41 +501,76 @@ void PulseClass::PeakAna33() {
 
   pk->Width=0;
   sum=0;
-  for (int j=T5;j<T6;j++) {
-    if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
-      Float_t dif=sData[j]-sData[j-kk];
-      //Float_t dif=sData[j];//-sData[j-kk];
-      pk->Width+=dif*j;
-      sum+=dif;
-    }
+  for (int j=pk->T5;j<pk->T6;j++) {
+    //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
+    Float_t dif=sData[j]-sData[j-kk]+gRandom->Rndm();
+    //Float_t dif=sData[j];//-sData[j-kk];
+    pk->Width+=dif*j;
+    sum+=dif;
+    //}
     //nt++;
   }
-  if (abs(sum)>1e-5)
+  if (abs(sum)>1e-5) {
+    //sum+=gRandom->Rndm();
+    //pk->Width+=gRandom->Rndm();
     pk->Width/=sum;
+  }
   else
-    pk->Width=-999+pk->Pos;
-  pk->Width-=pk->Pos;
+    //pk->Width=-999+pk->Pos;
+    pk->Width=(pk->T5+pk->T6)*0.5;
+
+  //pk->Width-=pk->Pos;
+  pk->Width-=cpar.preWr[Chan];
 
 
-
+  /*
   pk->Width3=0;
   sum=0;
-  for (int j=T5;j<T6;j++) {
-    if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
-      //Float_t dif=sData[j]-sData[j-kk];
-      Float_t dif=sData[j];//-sData[j-kk];
-      pk->Width3+=dif*j;
-      sum+=dif;
-    }
+  for (int j=pk->T5;j<pk->T6;j++) {
+    //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
+    //Float_t dif=sData[j]-sData[j-kk];
+    Float_t dif=sData[j]-sData[0]+gRandom->Rndm();//-sData[j-kk];
+    pk->Width3+=dif*j;
+    sum+=dif+gRandom->Rndm();
+    //}
     //nt++;
   }
-  if (abs(sum)>1e-5)
+  if (abs(sum)>1e-5) {
+    sum+=gRandom->Rndm();
+    //cout << "w3: " << (int) Chan << " " << pk->Width3 << " " << sum << " " << pk->Width3/sum << endl;
     pk->Width3/=sum;
+  }
   else
-    pk->Width3=-999+pk->Pos;
-  pk->Width3-=pk->Pos;
+    //pk->Width3=-999+pk->Pos;
+    pk->Width3=(pk->T5+pk->T6)*0.5;
+  
+  //pk->Width3-=pk->Pos;
+  pk->Width3-=cpar.preWr[Chan];
+  */
 
+  /*
+  double w3=0;
+  double s3=0;
+  for (int j=pk->T5;j<pk->T6;j++) {
+    //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
+    //Float_t dif=sData[j]-sData[j-kk];
+    double dif=sData[j]-sData[0];//-sData[j-kk];
+    w3+=dif*j;
+    s3+=dif;
+    //}
+    //nt++;
+  }
+  if (abs(s3)>1e-5)
+    w3/=s3;
+  else
+    //pk->Width3=-999+pk->Pos;
+    w3=(pk->T5+pk->T6)*0.5;
+  
+  //pk->Width3-=pk->Pos;
+  w3-=cpar.preWr[Chan];
 
+  pk->Width3=w3;
+  */
 
   double bkg2=(sData[pk->P2]-sData[pk->P1])/2;
   //double sum2=0;
@@ -561,6 +624,26 @@ void PulseClass::PeakAna33() {
   else {
     cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
   }
+
+  //width3 === area2
+  pk->Width3=0;
+  nn=0;
+  for (int j=pk->T5;j<pk->T6;j++) {
+    pk->Width3+=sData[j];
+    nn++;
+  }
+  if (nn) {
+    //cout << "w3: " << (int) Chan << " " << pk->Width3 << " " << sum << " " << pk->Width3/sum << endl;
+    pk->Width3/=nn;
+  }
+  else {
+    cout << "zero Width3: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
+  }
+  
+  pk->Width3-=pk->Base;
+  pk->Width3=opt.emult0[Chan] + opt.emult[Chan]*pk->Width3 +
+    opt.emult2[Chan]*pk->Width3*pk->Width3;
+
 
   //slope1 (baseline)
   pk->Slope1=0;
@@ -910,7 +993,7 @@ void EventClass::FillHist(Bool_t first) {
   if (first) {
     if (crs->Tstart64<0) {
       crs->Tstart64 = Tstmp;
-      cout << "Tstart64: " << crs->Tstart64 << endl;
+      //cout << "Tstart64: " << crs->Tstart64 << endl;
     }
     
     opt.T_acq=(Tstmp - crs->Tstart64)*DT;
@@ -982,6 +1065,10 @@ void EventClass::FillHist(Bool_t first) {
 
       if (opt.h_width2.b) {
 	Fill1d(first,hcl->m_width2,ch,pk->Width2);
+      }
+
+      if (opt.h_width3.b) {
+	Fill1d(first,hcl->m_width3,ch,pk->Width3);
       }
 
       if (opt.h_area_base.b) {

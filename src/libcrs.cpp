@@ -568,11 +568,11 @@ void CRS::Ana_start() {
   }
   //Set_Trigger();
   for (int i=0;i<MAX_CH;i++) {
-    b_len[i] = opt.bkg2[i]-opt.bkg1[i];
-    p_len[i] = opt.peak2[i]-opt.peak1[i];
+    b_len[i] = opt.bkg2[i]-opt.bkg1[i]+1;
+    p_len[i] = opt.peak2[i]-opt.peak1[i]+1;
   }
   //cout << "Command_start: " << endl;
-  gzFile ff = gzopen("tmp.par","wb");
+  gzFile ff = gzopen("last.par","wb");
   SaveParGz(ff,module);
   gzclose(ff);
 
@@ -1577,14 +1577,14 @@ void CRS::Command_crs(byte cmd, byte chan) {
 }
 */
 void CRS::Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
-  int len = a2-a1;
+  int len = a2-a1+1;
   if (len>max) {
     len=max;
-    a2=a1+max;
+    a2=a1+max-1;
   }
   if (len<min) {
     len=min;
-    a2=a1+min;
+    a2=a1+min-1;
   }
   Command32(2,ch,cmd,a1); //offset
   Command32(2,ch,cmd+1,len); //length
@@ -2678,28 +2678,25 @@ void CRS::Show(bool force) {
     //cout << "show... " << info.fMemTotal << " " << info.fMemFree << " " << info.fMemUsed << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
 
     if (myM) {
-      if (myM->fTab->GetCurrent()==EvtFrm->ntab) {
+      if (myM->fTab->GetCurrent()==EvtFrm->ntab || EvtFrm->fDock->GetUndocked()) {
 	EvtFrm->fCanvas->GetCanvas()->SetEditable(true);
 	EvtFrm->DrawEvent2();
 	EvtFrm->fCanvas->GetCanvas()->SetEditable(false);
       }
-      else if (myM->fTab->GetCurrent()==HiFrm->ntab) {
+      if (myM->fTab->GetCurrent()==HiFrm->ntab || HiFrm->fDock->GetUndocked()) {
 	//HiFrm->DrawHist();      
 	HiFrm->ReDraw();
 	//HiFrm->Update();
       }
-      else {
-	TString name = TString(myM->fTab->GetCurrentTab()->GetString());
-	// if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
-	//   //cout << "DoTab1a: " << name << endl;
-	//   parpar->Update();
-	// }
-	// else
-	  if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
-	  crspar->UpdateStatus();
-	}
-      }
+      // else {
+      // 	TString name = TString(myM->fTab->GetCurrentTab()->GetString());
+      // 	if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
+      // 	  crspar->UpdateStatus();
+      // 	}
+      // }
     }
+
+    crspar->UpdateStatus();
 
     myM->UpdateStatus();
 #ifdef TIMES

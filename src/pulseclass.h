@@ -23,8 +23,8 @@ const UShort_t P_PILE1=1<<0; //fisrt puleup pulse
 const UShort_t P_PILE2=1<<1; //subsequent puleup pulse
 const UShort_t P_B1=1<<2; //bad left side (opt.peak1 is out of range)
 const UShort_t P_B2=1<<3; //bad right side (opt.peak2 is out of range)
-const UShort_t P_B11=1<<4; //bad left or right side in timing (T3 is out of range)
-//const UShort_t P_B22=1<<5; //bad right side in timing (T4 is out of range)
+const UShort_t P_B11=1<<4; //bad left or right side in timing (T3 or T4 is out of range)
+const UShort_t P_B22=1<<5; //bad left or right side in width (T5 or T6 is out of range)
 //const UShort_t P_B111=1<<6; //bad left size in timing
 
 
@@ -60,6 +60,8 @@ class peak_type {
   Short_t T2; //right zero crossing of deriv
   Short_t T3; //left timing window
   Short_t T4; //right timing window
+  Short_t T5; //left timing window
+  Short_t T6; //right timing window
 
   //Pos,T1,T2 - relative to pulse start, in samples
   //Time - relative to discriminator (+preWr), in samples
