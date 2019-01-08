@@ -85,13 +85,13 @@ const char* ttip3[n_ppar]={
   "Channel number",
   "Channel type",
   "Baseline start, relative to peak Pos (negative)",
-  "Baseline end, relative to peak Pos (negative), excluded",
+  "Baseline end, relative to peak Pos (negative), included",
   "Peak start, relative to peak Pos (usually negative)",
-  "Peak end, relative to peak Pos (usually positive), excluded",
-  "Timing window start, included (usually negative, if 99 - use T1)",
-  "Timing window end, excluded (usually positive, if 99 - use T2)",
+  "Peak end, relative to peak Pos (usually positive), included",
+  "Timing window start, included (usually negative)",
+  "Timing window end, included (usually positive), included",
   "Width window start",
-  "Width window end, excluded",
+  "Width window end, included",
 };
 
 char ttip_g[NGRP][100];

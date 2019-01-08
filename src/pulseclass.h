@@ -48,7 +48,7 @@ class peak_type {
   Float_t Width; //peak width - Alpatov (in 1st deriv)
   Float_t Width2; //peak width2 - romana3a
   Float_t Width3; //peak width3 - Alpatov2 (in pulse)
-  Float_t Time; //exact time relative to pulse start (from 1st deriv)
+  Float_t Time; //exact time relative to pulse start (from 1st deriv), also relative to event start
   //Float_t Time2; //exact time (from 2nd deriv)
   Short_t Pos; //position relative to pulse start (in samples)
   Short_t Pos2; //position of the 1st maximum in 1st derivative after threshold

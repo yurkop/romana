@@ -800,9 +800,10 @@ void EventFrame::DoCheckPoint() {
 	  peak_type* pk = &d_event->pulses[i].Peaks[j];
 	  par[4]=pk->Area;
 	  par[5]=pk->Base;
-	  double dt = d_event->pulses[i].Tstamp64 - d_event->Tstmp;
-	  //double tt = pk->Time - crs->Pre[ch] - d_event->T0 + dt;
-	  double tt = pk->Time - d_event->T0 + dt;
+	  //double dt = d_event->pulses[i].Tstamp64 - d_event->Tstmp;
+	  //double tt = pk->Time - d_event->T0 + dt;
+	  double tt = pk->Time - d_event->T0;
+
 	  par[6]=tt*crs->period;
 	  res = formula->EvalPar(0,par);
 	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->TT << " " << " " << par[4] << " " << res << endl;
@@ -947,28 +948,7 @@ void EventFrame::FillGraph(int dr) {
     }
     //cout << "sData: " << i << " " << pulse->sData.size() << " " << Gr[dr][i]->GetN() << endl;
 
-    //double dt=pulse->Tstamp64 - d_event->TT - crs->Pre[ch[i]];
     double dt=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch[i]];
-    // cout << "dt: " << (int) pulse->Chan << " " << dt << " "
-    // 	 << ch[i] << " " << pulse->Tstamp64 << " "
-    // 	 << d_event->T << " " << crs->Pre[ch[i]] << endl;
-
-
-    //double dt=pulse->Tstamp64 - d_event->T - cpar.preWr[ch[i]];
-    //double dt=pulse->Tstamp64 - d_event->T;
-
-    // if (d_event->pulses.size()>1) {
-    //   int nh=0;
-    //   if (hst[dr]->GetHists())
-    // 	nh=hst[dr]->GetHists()->GetSize();
-    //   cout << "Dt: " << i << " " << (int) pulse->Chan << " "
-    // 	   << pulse->Tstamp64 << " " << d_event->T << " " << dt
-    // 	   << " " << d_event->pulses.size() << " " << nh
-    // 	   << endl;
-    // }
-
-    //Double_t *xx = Gr[dr][ch]->GetX();
-    //Double_t *yy = Gr[dr][ch]->GetY();
 
     gx1[i]=(dt-1);
     gx2[i]=(pulse->sData.size()+dt);
@@ -984,15 +964,6 @@ void EventFrame::FillGraph(int dr) {
 	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
 	if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
 	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
-
-	//xx[j]=dt+j;
-	//yy[j]=pulse->sData[j];
-	// cout << "GR: " << dt << " " << Gr[dr][ch[i]]->GetN() << " "
-	//      << ch[i] << " " << dt+j << " "
-	//      << pulse->sData[j] << " " 
-	//      << Gr[dr][ch[i]]->GetX()[j] << " " 
-	//      << Gr[dr][ch[i]]->GetY()[j] << endl; 
-	  
       }
     }
     else if (dr==1) { //1st derivaive
@@ -1191,9 +1162,7 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
-    //double dt=pulse->Tstamp64 - d_event->TT - crs->Pre[ch];
     double dt=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch];
-    //double dt=pulse->Tstamp64 - d_event->T;
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];
@@ -1201,8 +1170,11 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 
       if (fPeak[1]->IsOn()) // Pos
 	doXline(pk->Pos+dt,y1,y2-dy*0.3,2,1);
-      if (fPeak[2]->IsOn()) // Time
-	doXline(pk->Time+dt+cpar.preWr[ch],y2-dy*0.2,y2,3,1);
+      if (fPeak[2]->IsOn()) {// Time
+	//double dt2=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch];
+	//doXline(pk->Time+dt+cpar.preWr[ch],y2-dy*0.2,y2,3,1);
+	doXline(pk->Time,y2-dy*0.2,y2,3,1);
+      }
       if (dr==0 && fPeak[4]->IsOn()) { // Wpeak
 	doXline(pk->P1+dt,y1,y2-dy*0.2,1,2);
 	doXline(pk->P2-1+dt,y1,y2-dy*0.1,1,2);

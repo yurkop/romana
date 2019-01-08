@@ -37,6 +37,7 @@ typedef std::list<EventClass>::reverse_iterator event_reviter;
 
 //using namespace std;
 
+/*
 #pragma pack (push, 1)
 struct rpeak_type73 {
   Float_t Area;
@@ -58,6 +59,7 @@ struct rpeak_type74 {
   //UChar_t Type; //peak type
 };
 #pragma pack (pop)
+*/
 
 //---------------------------
 class CRS {
@@ -244,10 +246,11 @@ RQ_OBJECT("CRS")
 
   //Long64_t rTime; //Tstamp of decoded event
   //Char_t rState; //State of decoded event
-  rpeak_type73 rP73;
-  std::vector<rpeak_type73> rPeaks73;
-  rpeak_type74 rP74;
-  std::vector<rpeak_type74> rPeaks74;
+
+  // rpeak_type73 rP73;
+  // std::vector<rpeak_type73> rPeaks73;
+  // rpeak_type74 rP74;
+  // std::vector<rpeak_type74> rPeaks74;
 
   //bool b_maintrig; //true if maintrig (formula) is not empty
   //bool cut_main; //main trigger - set for each event in fillhist
@@ -320,6 +323,7 @@ RQ_OBJECT("CRS")
   // void FindLast2(UInt_t ibuf);
   // void FindLast_adcm(UInt_t ibuf);
   void PulseAna(PulseClass &ipls);
+  void Decode77(UInt_t iread, UInt_t ibuf);
   void Decode76(UInt_t iread, UInt_t ibuf);
   void Decode75(UInt_t iread, UInt_t ibuf);
   void Decode33(UInt_t iread, UInt_t ibuf);
@@ -351,10 +355,11 @@ RQ_OBJECT("CRS")
   //void NewTree();
   //void CloseTree();
   void Reset_Dec(Short_t mod);
-  void Fill_Dec73(EventClass* evt);
-  void Fill_Dec74(EventClass* evt);
+  // void Fill_Dec73(EventClass* evt);
+  // void Fill_Dec74(EventClass* evt);
   void Fill_Dec75(EventClass* evt);
   void Fill_Dec76(EventClass* evt);
+  void Fill_Dec77(EventClass* evt);
   void Flush_Dec();
 
   //void Print_Pulses();

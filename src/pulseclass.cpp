@@ -730,7 +730,7 @@ void PulseClass::CheckDSP() {
 
 EventClass::EventClass() {
   State=0;
-  Tstmp=-9999999999;
+  //Tstmp=-9999999999;
   T0=99999;
   //Analyzed=false;
 }
@@ -786,6 +786,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   // if (opt.b_pulse) {
   //   crs->mean_event.Pulse_Mean_Add(pls);
   // }
+  Float_t dt;
   
   for (UInt_t i=0;i<pulses.size();i++) {
     if (pls->Chan == pulses[i].Chan &&
@@ -799,29 +800,42 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     //cout << "state: " << Nevt << " " << (int) State << endl;
   }
 
+  if (pulses.empty()) { //this is the first pulse in the event
+    dt=0;
+    Tstmp=pls->Tstamp64;
+  }
+  else {
+    dt = pls->Tstamp64 - Tstmp;
+    for (std::vector<peak_type>::reverse_iterator pk=pls->Peaks.rbegin();
+	 pk!=pls->Peaks.rend();++pk) {
+      pk->Time+=dt;
+    }
+  }
+ 
   pulses.push_back(*pls);
 
-  if (Tstmp==-9999999999) { //this is the first pulse in event
-    Tstmp=pls->Tstamp64;
-  }
-  else if (pls->Tstamp64 < Tstmp) { //event exists & new pulse is earlier
-    // -> correct T and T0
-    if (T0<99998) //if T0 already exists, just adjust it
-      T0+= Tstmp - pls->Tstamp64;
-    Tstmp=pls->Tstamp64;
-  }
+  // if (Tstmp==-9999999999) { //this is the first pulse in the event
+  //   Tstmp=pls->Tstamp64;
+  // }
+  // else if (pls->Tstamp64 < Tstmp) { //event exists & new pulse is earlier
+  //   // -> correct T and T0
+  //   if (T0<99998) //if T0 already exists, just adjust it
+  //     T0+= Tstmp - pls->Tstamp64;
+  //   Tstmp=pls->Tstamp64;
+  // }
 
   if (opt.Start[pls->Chan]) {
     if (pls->Peaks.size()) {
-      Float_t dt = pls->Tstamp64 - Tstmp;
+      //Float_t dt = pls->Tstamp64 - Tstmp;
 
       peak_type *pk = &pls->Peaks.front();
       //Float_t T2 = pk->Time - crs->Pre[pls->Chan] + dt;
       //Float_t T2 = pk->Time - cpar.preWr[pls->Chan] + dt;
-      Float_t T2 = pk->Time + dt;
+      //Float_t T2 = pk->Time + dt;
 
-      if (T2<T0) {
-	T0=T2;
+      //if (T2<T0) {
+      if (pk->Time<T0) {
+	T0=pk->Time;
       }
       // cout << "Peak: " << Nevt << " " << (int) pls->Chan
       // 	   << " " << pk->Time << " " 
@@ -1112,10 +1126,9 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       if (opt.h_tof.b) {
-	double dt = pulses[i].Tstamp64 - Tstmp;
-	//tt = pk->Time - crs->Pre[ch] - T0 + dt;
-	//tt = pk->Time - cpar.preWr[ch] - T0 + dt;
-	tt = pk->Time - T0 + dt;
+	//double dt = pulses[i].Tstamp64 - Tstmp;
+	//tt = pk->Time - T0 + dt;
+	tt = pk->Time - T0;
 	Fill1d(first,hcl->m_tof,ch,tt*crs->period);
       }
 
