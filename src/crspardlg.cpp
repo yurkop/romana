@@ -1955,7 +1955,8 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
   }
   else {
-    DoChanMap(fCombo,&combotype[i],p_cmb,all,0,0);
+    //cout << "combo: " << i << " " << MAX_CH << " " << &combotype[i] << endl;
+    DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
     fCombo->Select(i-MAX_CH,false);
     fCombo->SetEnabled(false);
     //cout << "tcol: " << i-MAX_CH << " " << tcol[i-MAX_CH] << endl;
@@ -2326,7 +2327,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
     DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
   }
   else {
-    DoChanMap(fCombo,&combotype[i],p_cmb,all,0,0);
+    DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
     fCombo->Select(i-MAX_CH,false);
     fCombo->SetEnabled(false);
     //cout << "tcol: " << i-MAX_CH << " " << tcol[i-MAX_CH] << endl;
@@ -2505,7 +2506,7 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
     DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
   }
   else {
-    DoChanMap(fCombo,&combotype[i],p_cmb,all,0,0);
+    DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
     fCombo->Select(i-MAX_CH,false);
     fCombo->SetEnabled(false);
     //cout << "tcol: " << i-MAX_CH << " " << tcol[i-MAX_CH] << endl;

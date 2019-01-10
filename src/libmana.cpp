@@ -83,7 +83,7 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
-int debug=0; //=1 or 2 or 6// for printing debug messages
+int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
 
 //int *opt_id[MXNUM];
 
@@ -163,11 +163,11 @@ UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf)
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
-    //if (debug&0x2) {
-    // if (!dm->GetDataType()) {
-    //   cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetClass()->GetName() << endl;
-    // }
-    //}
+    if (debug&0x2) {
+      // if (!dm->GetDataType()) {
+      cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetClass()->GetName() << endl;
+      // }
+    }
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -281,7 +281,7 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
 	  len2*=dm->GetMaxIndex(i);
 	}
 	if (debug&0x4)
-	  cout << dm->GetName() << " " << len << " " << sz << endl;
+	  cout << "read: " << dm->GetName() << " " << len << " " << sz << endl;
 	memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
       }
       else {
