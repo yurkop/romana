@@ -79,6 +79,9 @@ struct stat statbuffer;
 const char* msg_exists = "Output file already exists.\nPress OK to overwrite it";
 
 
+std::list<string> listpar;
+typedef std::list<string>::iterator l_iter;
+
 MyMainFrame *myM;
 
 Coptions cpar;
@@ -391,31 +394,45 @@ int main(int argc, char **argv)
     gzclose(ff);
   }
 
+  listpar.clear();
   //process command line parameters
   if (argc > 1) {
-    int argnn=1;
-    while (argnn<argc) {
+    for (int i=1;i<argc;i++) {
+      //int argnn=1;
+      //while (argnn<argc) {
       // cout << "argnn: " << argc << " " << argnn << " " << argv[argnn] << " "
       // 	   << argv[argnn]+1 << endl;
-      char cc = argv[argnn][0];
-      if (cc=='-') { //control character
-	char pp = argv[argnn][1];
-	switch (pp) {
+      string sarg=string(argv[i]);
+
+      if (sarg[0]=='-') {
+	//cout << "sarg: " << i << " " << sarg << " " << (int) sarg[1] << endl;
+	switch (sarg[1]) {
 	case 'b':
 	case 'B':
 	  crs->batch=true;
-	  break;
+	  continue;
 	case 'p':
 	case 'P':
-	  argnn++;
-	  //cout << argnn+1 << " " << argc << endl;
-	  if (argnn<argc) {
-	    parname2 = argv[argnn];
+	  ++i;
+	  if (i<argc) {
+	    parname2 = argv[i];
 	  }
-	  break;
+	  //cout << "parname2: " << parname2 << endl;
+	  continue;
 	default:
-	  break;
+	  continue;
 	}
+      } //if (sarg[0]=='-')
+      else if (sarg.find("=")!=string::npos) {
+	listpar.push_back(sarg);
+      }
+      else {
+	datfname = argv[i];
+      }
+      /*
+      char cc = argv[i][0];
+      if (cc=='-') { //control character
+	char pp = argv[i][1];
       }
       else if (cc=='+') { //read file of parameters
 	parname2 = argv[argnn]+1;
@@ -424,7 +441,8 @@ int main(int argc, char **argv)
 	datfname = argv[argnn];
       }
       argnn++;
-    }
+      */
+    } //for i
   }
 
   //if (parname2) cout << "parname2: " << parname2 << endl;
@@ -444,6 +462,53 @@ int main(int argc, char **argv)
     }
   }
 
+  //cout << "listpar: " << endl;
+  for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
+    try {
+      string p,p0,p2;
+      int index;
+      size_t ll,len;
+
+      ll = it->find("=");
+      p0 = it->substr(0,ll);
+    //double d=0;
+      Float_t d = stod(it->substr(ll+1));
+      //cout << *it << " " << p << " " << d << endl;
+
+      ll = p0.find("[");
+      len = p0.find("]");
+      //cout << p0 << " " << ll << " " << string::npos << endl;
+      if (ll==string::npos || len==string::npos) {
+	p=p0;
+	index=-1;
+      }
+      else {
+	len=len-ll-1;
+	p=p0.substr(0,ll);
+	p2=p0.substr(ll+1,len);
+	index=stoi(p2);
+      }
+
+      //cout << p0 << " " << p << " " << index << endl;
+      
+      TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
+      TDataMember* dm = (TDataMember*) lst->FindObject(p.c_str());
+      //cout << dm << endl;
+      if (dm) {
+      	//TDataType* tm = dm->GetDataType();
+	TString tp = dm->GetTypeName();
+      	cout << "tp: " << tp << " " <<dm->GetArrayDim() << " " << dm->GetMaxIndex(0) << endl;
+	
+      }
+      
+      //lst->ls();
+    }
+    catch (const std::invalid_argument& ia) {
+      std::cerr << "Invalid argument: " << ia.what() << '\n';
+    }
+    
+  }
+  exit(-1);
   //cout << "class: " << TClass::GetClass("hdef")->GetNdata() << endl;
   //cout << "tof_max: " << opt.h_tof.max << endl;
   //opt.h_tof.max=100;
