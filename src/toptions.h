@@ -68,7 +68,7 @@ public:
   Bool_t Mrk[MAX_CH+ADDCH]; // flag to use channel for mtof
   Bool_t Grp[MAX_CH+ADDCH][NGRP]; // flag to use channel in group histograms
   //UInt_t ch_flag[MAX_CH+ADDCH];
-  Int_t nsmoo[MAX_CH+ADDCH]; //software smoothing 0..100
+  Int_t sS[MAX_CH+ADDCH]; //software smoothing 0..100
   Int_t kdrv[MAX_CH+ADDCH]; //K=0 - trigger on the signal; k!=0 - on derivative
   Int_t thresh[MAX_CH+ADDCH];
   Int_t delay[MAX_CH+ADDCH];

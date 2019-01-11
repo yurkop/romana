@@ -48,7 +48,7 @@ const char* ttip1[ncrspar+1]={
   "Number of samples before the trigger",
   "Total length of the pulse in samples",
   "Additional Gain",
-  "Trigget type: 0 - threshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; 4 - fall of derivative",
+  "Trigget type: 0 - threshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative;",
   "Parameter of derivative: S(i) - S(i-Drv). 0 means trigger on the signal.",
   "Trigger threshold",
   "Pulse rate",
@@ -66,15 +66,15 @@ const char* ttip2[n_apar]={
   "Use this channel for making Mtof spectra",
   "Software smoothing",
   "Time delay in samples (can be negative or positive)",
-  "Software trigget type: 0 - hreshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger",
+  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n-1 - use hardware trigger",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
-  "Energy calibration 0 - [0]+[1]*x+[2]*x^2",
-  "Energy calibration 1 - [0]+[1]*x+[2]*x^2",
-  "Energy calibration 2 - [0]+[1]*x+[2]*x^2",
+  "Energy calibration 0: [0]+[1]*x+[2]*x^2",
+  "Energy calibration 1: [0]+[1]*x+[2]*x^2",
+  "Energy calibration 2: [0]+[1]*x+[2]*x^2",
   "Baseline correction"
 };
 
@@ -1001,7 +1001,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
-  AddWrite(fF6,"Write data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
+  AddWrite(fF6,"Write decoded data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
   id_write[1]=Plist.size();
   //cout << "dec: " << Plist.size()+1 << endl;
 
@@ -2365,7 +2365,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   tlen7 = (int*) tlen2;
   ttip7 = (char**) ttip2;
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.nsmoo[i],0,99,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],0,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.delay[i],-999,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.strg[i],-1,4,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.kdrv[i],1,999,p_inum);

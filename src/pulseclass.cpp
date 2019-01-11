@@ -1280,7 +1280,7 @@ void PulseClass::Smooth(int nn) {
     }
 
     sData[i]/=ndiv;
-    //printf("Smooth: %d %d %d %d %f\n",i,nsamp-i, opt.nsmoo, ndiv, sData[i]);
+    //printf("Smooth: %d %d %d %d %f\n",i,nsamp-i, opt.sS, ndiv, sData[i]);
 
   }
 

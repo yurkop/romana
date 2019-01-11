@@ -242,7 +242,7 @@ Toptions::Toptions() {
     Mrk[i]=false;
     for (int j=0;j<NGRP;j++)
       Grp[i][j]=false;
-    nsmoo[i]=2;
+    sS[i]=2;
     thresh[i]=cpar.threshold[i];
 
     delay[i]=0;
