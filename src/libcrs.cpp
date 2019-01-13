@@ -3137,8 +3137,8 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 void CRS::PulseAna(PulseClass &ipls) {
   //cout << "PulseAna: " << endl;
   if (!opt.dsp[ipls.Chan]) {
-    if (opt.sS[ipls.Chan]) {
-      ipls.Smooth(opt.sS[ipls.Chan]);
+    if (opt.nsmoo[ipls.Chan]) {
+      ipls.Smooth(opt.nsmoo[ipls.Chan]);
     }
     ipls.PeakAna33();
   }

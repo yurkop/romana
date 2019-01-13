@@ -7,6 +7,8 @@
 extern Coptions cpar;
 using namespace std;
 
+extern TList listmap;
+
 Coptions::Coptions() {
   //ver = TClass::GetClass("Coptions")->GetClassVersion();
   // for (int i=0;i<MAX_CH;i++) {
@@ -40,7 +42,7 @@ void Coptions::InitPar(int zero) {
 
 }
 
-void Coptions::GetPar(const char* name, int module, int i, Short_t type_ch, int &par, int &min, int &max) {
+void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &par, int &min, int &max) {
 
   min=0;
   max=0;
@@ -242,7 +244,7 @@ Toptions::Toptions() {
     Mrk[i]=false;
     for (int j=0;j<NGRP;j++)
       Grp[i][j]=false;
-    sS[i]=2;
+    nsmoo[i]=2;
     thresh[i]=cpar.threshold[i];
 
     delay[i]=0;

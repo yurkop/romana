@@ -9,6 +9,15 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
+struct pmap2 {
+  void* par; //address of the parameter
+  // P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
+  // char all; //1 - all parameters, >1 - channel type
+  // byte cmd; //for Command_crs
+  // byte chan; //for Command_crs
+};
+
+
 //------------------------------------
 class Hdef {
 public:
@@ -50,7 +59,7 @@ public:
 
 public:
   void InitPar(int zero);
-  void GetPar(const char* name, Int_t module, Int_t i, Short_t type_ch, Int_t &par, Int_t &min, Int_t &max);
+  void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
   ClassDef(Coptions, 3)
 };
@@ -68,7 +77,7 @@ public:
   Bool_t Mrk[MAX_CH+ADDCH]; // flag to use channel for mtof
   Bool_t Grp[MAX_CH+ADDCH][NGRP]; // flag to use channel in group histograms
   //UInt_t ch_flag[MAX_CH+ADDCH];
-  Short_t sS[MAX_CH+ADDCH]; //software smoothing 0..100
+  Int_t nsmoo[MAX_CH+ADDCH]; //software smoothing 0..100
   Int_t kdrv[MAX_CH+ADDCH]; //K=0 - trigger on the signal; k!=0 - on derivative
   Int_t thresh[MAX_CH+ADDCH];
   Int_t delay[MAX_CH+ADDCH];
@@ -129,9 +138,9 @@ public:
   //histframe vars
   Bool_t b_stack; // draw stack
   Bool_t b_norm; // normalize histograms in the stack
-  Short_t xdiv; // ndiv on X
-  Short_t ydiv; // ndiv on Y
-  Short_t icheck; //first histogram to plot among checked
+  Int_t xdiv; // ndiv on X
+  Int_t ydiv; // ndiv on Y
+  Int_t icheck; //first histogram to plot among checked
   
   Bool_t decode;
   //Bool_t analyze_or_dsp; //true - raw analyze, false - use dsp
@@ -143,9 +152,9 @@ public:
   Int_t raw_compr; //raw data compr level
   Int_t dec_compr; //decoded data compr level
   Int_t root_compr; //decoded data compr level
-  char fname_raw[99];
-  char fname_dec[99];
-  char fname_root[99];
+  char fname_raw[199];
+  char fname_dec[199];
+  char fname_root[199];
 
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list

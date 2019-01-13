@@ -78,6 +78,7 @@ const char* ttip2[n_apar]={
   "Baseline correction"
 };
 
+
 const int n_ppar=10;
 const int tlen3[n_ppar]={26,60,40,40,42,42,35,35,35,35};
 const char* tlab3[n_ppar]={"Ch","Type","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
@@ -936,7 +937,7 @@ void ParParDlg::AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   id = Plist.size()+1;
   TGTextEntry* tt = new TGTextEntry(hframe2,(char*)opt_fname, id);
   tt->SetDefaultSize(380,20);
-  tt->SetMaxLength(98);
+  tt->SetMaxLength(198);
   //tt->SetWidth(590);
   //tt->SetState(false);
   hframe2->AddFrame(tt,fL0);
@@ -2365,7 +2366,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   tlen7 = (int*) tlen2;
   ttip7 = (char**) ttip2;
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],0,99,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.nsmoo[i],0,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.delay[i],-999,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.strg[i],-1,4,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.kdrv[i],1,999,p_inum);

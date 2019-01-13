@@ -82,6 +82,8 @@ const char* msg_exists = "Output file already exists.\nPress OK to overwrite it"
 std::list<string> listpar;
 typedef std::list<string>::iterator l_iter;
 
+//TList listmap2;
+
 MyMainFrame *myM;
 
 Coptions cpar;
@@ -430,17 +432,17 @@ int main(int argc, char **argv)
 	datfname = argv[i];
       }
       /*
-      char cc = argv[i][0];
-      if (cc=='-') { //control character
+	char cc = argv[i][0];
+	if (cc=='-') { //control character
 	char pp = argv[i][1];
-      }
-      else if (cc=='+') { //read file of parameters
+	}
+	else if (cc=='+') { //read file of parameters
 	parname2 = argv[argnn]+1;
-      }
-      else { //read file
+	}
+	else { //read file
 	datfname = argv[argnn];
-      }
-      argnn++;
+	}
+	argnn++;
       */
     } //for i
   }
@@ -465,26 +467,29 @@ int main(int argc, char **argv)
   //cout << "listpar: " << endl;
   for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
     try {
-      string p,p0,p2;
+      string par,p0,p2,sdata;
       int index;
       size_t ll,len;
+      char sbuf[1024];
+      int buflen=0;
+      char* var = (char*) &opt;
 
       ll = it->find("=");
       p0 = it->substr(0,ll);
-    //double d=0;
-      Float_t d = stod(it->substr(ll+1));
+      //double d=0;
+      sdata=it->substr(ll+1);
       //cout << *it << " " << p << " " << d << endl;
 
       ll = p0.find("[");
       len = p0.find("]");
       //cout << p0 << " " << ll << " " << string::npos << endl;
       if (ll==string::npos || len==string::npos) {
-	p=p0;
+	par=p0;
 	index=-1;
       }
       else {
 	len=len-ll-1;
-	p=p0.substr(0,ll);
+	par=p0.substr(0,ll);
 	p2=p0.substr(ll+1,len);
 	index=stoi(p2);
       }
@@ -492,13 +497,75 @@ int main(int argc, char **argv)
       //cout << p0 << " " << p << " " << index << endl;
       
       TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
-      TDataMember* dm = (TDataMember*) lst->FindObject(p.c_str());
+      TDataMember* dm = (TDataMember*) lst->FindObject(par.c_str());
       //cout << dm << endl;
       if (dm) {
+	cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
       	//TDataType* tm = dm->GetDataType();
 	TString tp = dm->GetTypeName();
       	cout << "tp: " << tp << " " <<dm->GetArrayDim() << " " << dm->GetMaxIndex(0) << endl;
-	
+	int dim=dm->GetArrayDim();
+	int maxindex = dm->GetMaxIndex(0);
+	int unit = dm->GetUnitSize();
+	Long_t off = dm->GetOffset();
+
+	if (tp.Contains("int",TString::kIgnoreCase)) {
+	  int d=stoi(sdata);
+	  buflen=sizeof(int);
+	  memcpy(sbuf,&d,buflen);
+	//   cout << "int: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
+	}
+	// else if (tp.Contains("short",TString::kIgnoreCase)) {
+	//   short d=stoi(sdata);
+	//   buflen=sizeof(short);
+	//   memcpy(sbuf,&d,buflen);
+	//   cout << "short: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
+	// }
+	else if (tp.Contains("bool",TString::kIgnoreCase)) {
+	  bool d=stoi(sdata);
+	  buflen=sizeof(bool);
+	  memcpy(sbuf,&d,buflen);
+	}
+	else if (tp.Contains("float",TString::kIgnoreCase)) {
+	  float d=stof(sdata);
+	  buflen=sizeof(float);
+	  memcpy(sbuf,&d,buflen);
+	}
+	else if (tp.Contains("char",TString::kIgnoreCase)) {
+	  buflen=sdata.size();
+	  memset(var+off,0,maxindex);
+	  memcpy(var+off,sdata.c_str(),TMath::Min(buflen,maxindex));
+	  //cout << "char: " << sdata.c_str() << " " << buflen << " " << maxindex << endl;
+	}
+	else {
+	  cout << "Error: unknown type of parameter: "
+	       << par << " " << tp << endl;
+	  continue;
+	}
+
+	if (dim==0) { //only one parameter
+	  memcpy(var+off,sbuf,TMath::Min(buflen,unit));
+	}
+	else if (dim==1) { //array [text was copied in the if("char") ]
+	  if (index<0) {
+	    for (int j=0;j<maxindex;j++) {
+	      memcpy(var+off+j*unit,sbuf,TMath::Min(buflen,unit));
+	    }
+	  }
+	  else if (index<maxindex) {
+	    memcpy(var+off+index*unit,sbuf,TMath::Min(buflen,unit));
+	  }
+	  else {
+	    cout << "Error: index is out of range : "
+		 << par << " " << index << " " << maxindex << endl;
+	    continue;
+	  }
+	}
+	else { //2-dim of more - ignore
+	  cout << "Error: parameter with dimension >1 : "
+	       << par << " " << dim << endl;
+	  continue;
+	}
       }
       
       //lst->ls();
@@ -506,9 +573,11 @@ int main(int argc, char **argv)
     catch (const std::invalid_argument& ia) {
       std::cerr << "Invalid argument: " << ia.what() << '\n';
     }
-    
+
   }
-  exit(-1);
+
+  cout << "sS: " << opt.nsmoo[1] << endl;
+  //exit(-1);
   //cout << "class: " << TClass::GetClass("hdef")->GetNdata() << endl;
   //cout << "tof_max: " << opt.h_tof.max << endl;
   //opt.h_tof.max=100;
@@ -1965,13 +2034,13 @@ void MainFrame::DoSave() {
 
   s_name = string();
 
-//   SplitFilename (string(datfname),dir,name,ext);
-//   dir.append("Root/");
-// #ifdef LINUX
-//   mkdir(dir.c_str(),0755);
-// #else
-//   _mkdir(dir.c_str());
-// #endif
+  //   SplitFilename (string(datfname),dir,name,ext);
+  //   dir.append("Root/");
+  // #ifdef LINUX
+  //   mkdir(dir.c_str(),0755);
+  // #else
+  //   _mkdir(dir.c_str());
+  // #endif
 
   //s_name = dir;
   s_name.append(name);
