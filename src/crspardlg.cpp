@@ -63,7 +63,7 @@ const char* ttip2[n_apar]={
   "Channel type",
   "Use Digital Signal Processing (DSP) data instead of raw data",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
-  "Use this channel for making Mtof spectra",
+  "Use this channel for making ntof spectra",
   "Software smoothing",
   "Time delay in samples (can be negative or positive)",
   "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n-1 - use hardware trigger",
@@ -1103,19 +1103,19 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   
   int ww=70;
 
-  TGGroupFrame* fF6 = new TGGroupFrame(frame, "MTOF Analysis", kVerticalFrame);
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "NTOF Analysis", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, fL6);
 
-  tip1= "Mtof period (mks) (ignored if set to zero)";
-  tip2= "Mtof start channel";
-  label="Mtof period / start channel";
-  AddLine_opt(fF6,ww,&opt.mtof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
+  tip1= "Ntof period (mks) (ignored if set to zero)";
+  tip2= "Ntof start channel";
+  label="Ntof period / start channel";
+  AddLine_opt(fF6,ww,&opt.ntof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
 	      0,1e9,0,MAX_CH-1);
 
-  tip1= "Mtof Flight path (in meters) for Mtof-Energy conversion";
-  tip2= "Mtof Time offset (in mks) for Mtof-Energy conversion";
-  label="Mtof Flpath / MTOF Zero";
+  tip1= "Ntof Flight path (in meters) for Ntof-Energy conversion";
+  tip2= "Ntof Time offset (in mks) for Ntof-Energy conversion";
+  label="Ntof Flpath / NTOF Zero";
   AddLine_opt(fF6,ww,&opt.Flpath,&opt.TofZero,tip1,tip2,label,k_r3,k_r3,
 	      0,1e9,-1e9,1e9);
 
@@ -1172,11 +1172,11 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Tof";
   AddLine_hist(frame,&opt.h_tof,tip1,label);
 
-  tip1= "Time of flight with multiplicity, in mks";
-  label="Mtof";
-  AddLine_hist(frame,&opt.h_mtof,tip1,label);
+  tip1= "Neutron time of flight, in mks";
+  label="Ntof";
+  AddLine_hist(frame,&opt.h_ntof,tip1,label);
 
-  tip1= "Neutron energy from MTOF, in eV";
+  tip1= "Neutron energy from NTOF, in eV";
   label="Etof";
   AddLine_hist(frame,&opt.h_etof,tip1,label);
 
@@ -2524,7 +2524,8 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   int amax=1023;
   if (crs->type_ch[i]==1)
     amax=511;
-  cout << "module: " << crs->module << " " << i << " " << crs->type_ch[i] << " " << amax << endl;
+
+  //cout << "module: " << crs->module << " " << i << " " << crs->type_ch[i] << " " << amax << endl;
 
   AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-1024,amax,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.bkg2[i],-1024,9999,p_inum);

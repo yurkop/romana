@@ -74,7 +74,7 @@ public:
   Int_t chtype[MAX_CH+ADDCH]; //channel type
   Bool_t dsp[MAX_CH+ADDCH]; //true - use dsp for data analysis
   Bool_t Start[MAX_CH+ADDCH]; //
-  Bool_t Mrk[MAX_CH+ADDCH]; // flag to use channel for mtof
+  Bool_t Mrk[MAX_CH+ADDCH]; // flag to use channel for ntof
   Bool_t Grp[MAX_CH+ADDCH][NGRP]; // flag to use channel in group histograms
   //UInt_t ch_flag[MAX_CH+ADDCH];
   Int_t nsmoo[MAX_CH+ADDCH]; //software smoothing 0..100
@@ -169,7 +169,7 @@ public:
   Int_t seltab;
 
   Int_t start_ch;
-  Float_t mtof_period;
+  Float_t ntof_period;
   Float_t Flpath;
   Float_t TofZero;
 
@@ -201,7 +201,7 @@ public:
   Hdef h_slope2;
   Hdef h_hei;
   Hdef h_tof;
-  Hdef h_mtof;
+  Hdef h_ntof;
   Hdef h_etof;
   Hdef h_per;
   Hdef h_width;

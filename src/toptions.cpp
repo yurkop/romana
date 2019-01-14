@@ -308,7 +308,7 @@ Toptions::Toptions() {
   b_gcuts=false;
 
   start_ch=0;
-  mtof_period=0;
+  ntof_period=0;
   Flpath=10;
   TofZero=0;
 

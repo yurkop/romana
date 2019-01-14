@@ -55,7 +55,7 @@ class HClass {
   HMap* m_slope2[MAX_CH+NGRP]; //slope2 - peak
   HMap* m_height[MAX_CH+NGRP]; //height of the peak
   HMap* m_tof[MAX_CH+NGRP]; // time of flight
-  HMap* m_mtof[MAX_CH+NGRP]; // time of flight
+  HMap* m_ntof[MAX_CH+NGRP]; // time of flight
   HMap* m_etof[MAX_CH+NGRP]; // Energy from time of flight
   HMap* m_per[MAX_CH+NGRP]; // period
   HMap* m_width[MAX_CH+NGRP]; // width

@@ -961,7 +961,7 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
 
   // HMap *map2 = (HMap*) hcl->map_list->FindObject(item->GetText());
   // if (map2) {
-  //   cout << "map2: " << map2->GetName() << " " << *map2->chk << " " << opt.s_mtof[0] << endl;
+  //   cout << "map2: " << map2->GetName() << " " << *map2->chk << " " << opt.s_ntof[0] << endl;
   // }
 
   if (crs->b_stop)
