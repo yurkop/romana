@@ -1183,7 +1183,7 @@ void EventClass::FillHist(Bool_t first) {
 	    if (crs->Tstart0>0) {
 	      tm = pulses[i].Tstamp64 + pk->Time;
 	      tt = (tm - crs->Tstart0)*0.001*crs->period;
-	      //cout << "ntof7: " << j << " " << ch << " " << crs->Tstart0 << " " << tt << endl;
+	      //cout << "ntof7: " << j << " " << ch << " " << tm << " " << crs->Tstart0 << " " << tm-crs->Tstart0 << " " << tt << endl;
 	      if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
 		crs->Tstart0+=1000*opt.ntof_period;
 		tt = (tm - crs->Tstart0)*0.001*crs->period;
@@ -1191,6 +1191,7 @@ void EventClass::FillHist(Bool_t first) {
 
 	      if (opt.h_ntof.b) {
 		Fill1d(first,hcl->m_ntof,ch,tt);
+		//cout << "tt: " << tt << endl;
 	      }
 	      if (opt.h_etof.b) {
 		ee = 72.298*opt.Flpath/(tt-opt.TofZero);
