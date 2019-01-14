@@ -26,6 +26,8 @@ extern MyMainFrame *myM;
 //extern HistFrame* HiFrm;
 extern Coptions cpar;
 
+const double mks=0.001;
+
 namespace PROF {
 
   const int prof_ch[32] = {
@@ -1150,11 +1152,11 @@ void EventClass::FillHist(Bool_t first) {
 	      if (mult>=opt.Nchan) mult=opt.Nchan-1;
 
 	      tm = pulses[i].Tstamp64 + pk->Time;
-	      tt = (tm - crs->Tstart0)*0.001*crs->period;
+	      tt = (tm - crs->Tstart0)*mks*crs->period;
 	      //cout << "ntof7: " << j << " " << ch << " " << crs->Tstart0 << " " << tt << endl;
 	      if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
 		crs->Tstart0+=1000*opt.ntof_period;
-		tt = (tm - crs->Tstart0)*0.001*crs->period;
+		tt = (tm - crs->Tstart0)*mks*crs->period;
 	      }
 
 	      if (opt.h_ntof.b) {
@@ -1177,18 +1179,18 @@ void EventClass::FillHist(Bool_t first) {
 	//ntof
 	if (opt.h_ntof.b || opt.h_etof.b) {
 	  if (ch==opt.start_ch) {
-	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Time;
+	    crs->Tstart0 = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	    //cout << "ntof2: " << j << " " << ch << " " << pulses[i].Tstamp64 << " " << crs->Tstart0 << endl;
 	  }
 	  if ((i==pulses.size()-1)) { //last pulse
 	    if (crs->Tstart0>0) {
-	      tm = pulses[i].Tstamp64 + pk->Time;
-	      tt = (tm - crs->Tstart0)*0.001*crs->period;
+	      tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
+	      tt = (tm - crs->Tstart0)*mks*crs->period;
 	      if (tt>0) {
-		cout << "ntof7: " << j << " " << ch << " " << tm << " " << crs->Tstart0 << " " << tm-crs->Tstart0 << " " << tt << endl;
+		//cout << "ntof7: " << j << " " << ch << " " << tm << " " << crs->Tstart0 << " " << tm-crs->Tstart0 << " " << tt << endl;
 		if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
-		  crs->Tstart0+=1000*opt.ntof_period;
-		  tt = (tm - crs->Tstart0)*0.001*crs->period;
+		  crs->Tstart0+=Long64_t(1000*opt.ntof_period/crs->period);
+		  tt = (tm - crs->Tstart0)*mks*crs->period;
 		}
 		if (opt.h_ntof.b) {
 		  Fill1d(first,hcl->m_ntof,ch,tt);
@@ -1220,15 +1222,15 @@ void EventClass::FillHist(Bool_t first) {
 	}
 
 	if (opt.h_per.b) {
-	  tm = pulses[i].Tstamp64 + pk->Time;
+	  tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	  if (hcl->T_prev[ch] && tm!=hcl->T_prev[ch]) {
-	    tt = (tm - hcl->T_prev[ch])*0.001*crs->period; //convert to mks
+	    tt = (tm - hcl->T_prev[ch])*mks*crs->period; //convert to mks
 
-	    int mm=tt/32;
-	    mm*=32;
-	    tt-=mm;
+	    //int mm=tt/32;
+	    //mm*=32;
+	    //tt-=mm;
 
-	    cout << "tt: " << tt << " " << tm << " " << hcl->T_prev[ch] << endl;
+	    //cout << "tt: " << tt << " " << tm << " " << hcl->T_prev[ch] << endl;
 	    Fill1d(first,hcl->m_per,ch,tt);
 	  }
 	  hcl->T_prev[ch]=tm;

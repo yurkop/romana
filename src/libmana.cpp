@@ -79,8 +79,10 @@ struct stat statbuffer;
 const char* msg_exists = "Output file already exists.\nPress OK to overwrite it";
 
 
-std::list<string> listpar;
-typedef std::list<string>::iterator l_iter;
+//std::list<string> listpar;
+//typedef std::list<string>::iterator l_iter;
+std::list<TString> listpar;
+typedef std::list<TString>::iterator l_iter;
 
 //TList listmap2;
 
@@ -467,21 +469,22 @@ int main(int argc, char **argv)
   //cout << "listpar: " << endl;
   for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
     try {
-      string par,p0,p2,sdata;
+      TString par,p0,p2,sdata;
       int index;
       size_t ll,len;
       char sbuf[1024];
       int buflen=0;
       char* var = (char*) &opt;
 
-      ll = it->find("=");
-      p0 = it->substr(0,ll);
-      //double d=0;
-      sdata=it->substr(ll+1);
+      ll = it->First("=");
+      //p0 = it->substr(0,ll);
+      p0 = (*it)(0,ll);
+      //sdata=it->substr(ll+1);
+      sdata=(*it)(ll+1);
       //cout << *it << " " << p << " " << d << endl;
 
-      ll = p0.find("[");
-      len = p0.find("]");
+      ll = p0.First("[");
+      len = p0.First("]");
       //cout << p0 << " " << ll << " " << string::npos << endl;
       if (ll==string::npos || len==string::npos) {
 	par=p0;
@@ -489,15 +492,17 @@ int main(int argc, char **argv)
       }
       else {
 	len=len-ll-1;
-	par=p0.substr(0,ll);
-	p2=p0.substr(ll+1,len);
-	index=stoi(p2);
+	//par=p0.substr(0,ll);
+	par=p0(0,ll);
+	//p2=p0.substr(ll+1,len);
+	p2=p0(ll+1,len);
+	index=p2.Atoi();
       }
 
       //cout << p0 << " " << p << " " << index << endl;
       
       TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
-      TDataMember* dm = (TDataMember*) lst->FindObject(par.c_str());
+      TDataMember* dm = (TDataMember*) lst->FindObject(par.Data());
       //cout << dm << endl;
       if (dm) {
 	cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
@@ -510,7 +515,7 @@ int main(int argc, char **argv)
 	Long_t off = dm->GetOffset();
 
 	if (tp.Contains("int",TString::kIgnoreCase)) {
-	  int d=stoi(sdata);
+	  int d=sdata.Atoi();
 	  buflen=sizeof(int);
 	  memcpy(sbuf,&d,buflen);
 	//   cout << "int: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
@@ -522,19 +527,19 @@ int main(int argc, char **argv)
 	//   cout << "short: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
 	// }
 	else if (tp.Contains("bool",TString::kIgnoreCase)) {
-	  bool d=stoi(sdata);
+	  bool d=sdata.Atoi();
 	  buflen=sizeof(bool);
 	  memcpy(sbuf,&d,buflen);
 	}
 	else if (tp.Contains("float",TString::kIgnoreCase)) {
-	  float d=stof(sdata);
+	  float d=sdata.Atof();
 	  buflen=sizeof(float);
 	  memcpy(sbuf,&d,buflen);
 	}
 	else if (tp.Contains("char",TString::kIgnoreCase)) {
-	  buflen=sdata.size();
+	  buflen=sdata.Length();
 	  memset(var+off,0,maxindex);
-	  memcpy(var+off,sdata.c_str(),TMath::Min(buflen,maxindex));
+	  memcpy(var+off,sdata.Data(),TMath::Min(buflen,maxindex));
 	  //cout << "char: " << sdata.c_str() << " " << buflen << " " << maxindex << endl;
 	}
 	else {
