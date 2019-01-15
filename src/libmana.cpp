@@ -468,7 +468,7 @@ int main(int argc, char **argv)
 
   //cout << "listpar: " << endl;
   for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
-    try {
+    //try {
       TString par,p0,p2,sdata;
       int index;
       size_t ll,len;
@@ -574,10 +574,10 @@ int main(int argc, char **argv)
       }
       
       //lst->ls();
-    }
-    catch (const std::invalid_argument& ia) {
-      std::cerr << "Invalid argument: " << ia.what() << '\n';
-    }
+      //}
+    // catch (const std::invalid_argument& ia) {
+    //   std::cerr << "Invalid argument: " << ia.what() << '\n';
+    // }
 
   }
 
