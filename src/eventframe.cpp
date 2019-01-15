@@ -968,10 +968,10 @@ void EventFrame::FillGraph(int dr) {
     }
     else if (dr==1) { //1st derivaive
 
-      Int_t kk=opt.kdrv[ch[i]];
+      Int_t kk=opt.Drv[ch[i]];
       if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
 
-      //cout << "kk=" << kk << " " << ch[i] << " " << opt.kdrv[ch[i]] << endl;
+      //cout << "kk=" << kk << " " << ch[i] << " " << opt.Drv[ch[i]] << endl;
       //dat = new Float_t[pulse->sData.size()];
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
@@ -1289,7 +1289,7 @@ void EventFrame::ReDraw() {
 	    DrawPeaks(i,pulse,y1,y2);
 	    int ithr=(opt.strg[pulse->Chan]!=0);
 	    if (i==ithr && fPeak[8]->IsOn()) //threshold
-	      doYline(opt.thresh[pulse->Chan],gx1[j],
+	      doYline(opt.Thr[pulse->Chan],gx1[j],
 		      gx2[j],chcol[pulse->Chan],2);
 	  }
 	  if (fPeak[9]->IsOn()) { //draw text

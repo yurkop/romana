@@ -3077,7 +3077,7 @@ void CRS::Decode32(UChar_t *buffer, int length) {
       ipls = vv->insert(vv->end(),PulseClass());
       npulses++;
       ipls->Chan=ch;
-      ipls->Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
+      ipls->Tstamp64=data+opt.Delay[ch];// - cpar.preWr[ch];
     }
     else if (frmt==1) {
       ipls->State = buffer[idx1+5];
@@ -3137,8 +3137,8 @@ void CRS::Decode32(UChar_t *buffer, int length) {
 void CRS::PulseAna(PulseClass &ipls) {
   //cout << "PulseAna: " << endl;
   if (!opt.dsp[ipls.Chan]) {
-    if (opt.nsmoo[ipls.Chan]) {
-      ipls.Smooth(opt.nsmoo[ipls.Chan]);
+    if (opt.sS[ipls.Chan]) {
+      ipls.Smooth(opt.sS[ipls.Chan]);
     }
     ipls.PeakAna33();
   }
@@ -3470,7 +3470,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       ipls=PulseClass();
       npulses++;
       ipls.Chan=ch;
-      ipls.Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
+      ipls.Tstamp64=data+opt.Delay[ch];// - cpar.preWr[ch];
       n_frm=0;
       //cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
     }
@@ -3766,7 +3766,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
       ipls=PulseClass();
       npulses++;
       ipls.Chan = ch;
-      ipls.Tstamp64=data+opt.delay[ch];// - cpar.preWr[ch];
+      ipls.Tstamp64=data+opt.Delay[ch];// - cpar.preWr[ch];
     }
     else if (frmt<4) {
       Long64_t t64 = data;
@@ -3950,7 +3950,7 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
 	ipls.Tstamp64 = buf4[idx+rLen-2];
 	ipls.Tstamp64 <<= 32;
-	ipls.Tstamp64 += buf4[idx+rLen-3]+opt.delay[ipls.Chan];
+	ipls.Tstamp64 += buf4[idx+rLen-3]+opt.Delay[ipls.Chan];
 
 	if (Pstamp64==P64_0) {
 	  Pstamp64=ipls.Tstamp64;

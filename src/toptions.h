@@ -73,19 +73,19 @@ public:
 
   Int_t chtype[MAX_CH+ADDCH]; //channel type
   Bool_t dsp[MAX_CH+ADDCH]; //true - use dsp for data analysis
-  Bool_t Start[MAX_CH+ADDCH]; //
-  Bool_t Mrk[MAX_CH+ADDCH]; // flag to use channel for ntof
+  Bool_t St[MAX_CH+ADDCH]; //[Start]
+  //Bool_t Nt[MAX_CH+ADDCH]; //[Mrk] flag to use channel for ntof
   Bool_t Grp[MAX_CH+ADDCH][NGRP]; // flag to use channel in group histograms
   //UInt_t ch_flag[MAX_CH+ADDCH];
-  Int_t nsmoo[MAX_CH+ADDCH]; //software smoothing 0..100
-  Int_t kdrv[MAX_CH+ADDCH]; //K=0 - trigger on the signal; k!=0 - on derivative
-  Int_t thresh[MAX_CH+ADDCH];
-  Int_t delay[MAX_CH+ADDCH];
+  Int_t sS[MAX_CH+ADDCH]; //[nsmoo] software smoothing 0..100
+  Int_t Drv[MAX_CH+ADDCH]; //[kdrv] parameter of derivative
+  Int_t Thr[MAX_CH+ADDCH];//[thresh]
+  Int_t Delay[MAX_CH+ADDCH]; //[delay]
   Int_t bkg1[MAX_CH+ADDCH];
   Int_t bkg2[MAX_CH+ADDCH];
   Int_t peak1[MAX_CH+ADDCH];
   Int_t peak2[MAX_CH+ADDCH];
-  Int_t deadT[MAX_CH+ADDCH];
+  Int_t dT[MAX_CH+ADDCH];//[deadT]
   Int_t pile[MAX_CH+ADDCH];
   //Int_t pile2[MAX_CH+ADDCH];
   Int_t strg[MAX_CH+ADDCH]; // Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger

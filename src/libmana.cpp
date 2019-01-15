@@ -215,10 +215,19 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
     return;
   }
 
+  // TList* lst;
+  // TIter nextd(lst);
+  // TDataMember *dm;
+  // while ((dm = (TDataMember *) nextd())) {
+  // }
+
+  //= (TList*)lst1->Clone("lst2");
+  //cout << "lst: " << lst->GetName() << endl;
+  //exit(1);
+
   Int_t sz=0;
   UShort_t len=0;
   UShort_t len2=0;
-  //TIter nextd(lst);
   TDataMember *dm;
   char memname[100];
   char clname[100]; //class name
@@ -281,7 +290,34 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
     }
 
     if (!strcmp(clname,name) && !strcmp(vname,varname)) { //the same class & var
-      dm = (TDataMember*) lst->FindObject(memname);
+      TIter nextd(lst);
+      while ((dm = (TDataMember *) nextd())) {
+	if (!strcmp(dm->GetName(),memname)) {
+	  break;
+	}
+	else {
+	  const char* s1 = strchr(dm->GetTitle(),'[');
+	  const char* s2 = strchr(dm->GetTitle(),']');
+	  if (s1 && s2) {
+	    int len=s2-s1-1;
+	    char str[999]="";
+	    strncpy(str,s1+1,len);
+	    // cout << "dm: " << dm << " " << str << " " << len << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+	    // exit(-1);
+	    if (!strcmp(str,memname)) {
+	      cout << "dm2: " << dm << " " << str << " " << len << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+	      //exit(-1);
+	      break;
+	    }
+	  }
+	}
+	//cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+      }
+      // cout << "dm2: " << dm << endl;
+      // if (dm) {
+      //  	cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+      // }
+      //dm = (TDataMember*) lst->FindObject(memname);
       if (dm) {
 	len2=dm->GetUnitSize();
 	for (int i=0;i<dm->GetArrayDim();i++) {
@@ -303,7 +339,6 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
   if (debug&0x2)
     cout << "len: " << len << " " << sz << endl;
   
-
 }
 //--------------------------------
 
@@ -406,7 +441,7 @@ int main(int argc, char **argv)
       //while (argnn<argc) {
       // cout << "argnn: " << argc << " " << argnn << " " << argv[argnn] << " "
       // 	   << argv[argnn]+1 << endl;
-      string sarg=string(argv[i]);
+      TString sarg=TString(argv[i]);
 
       if (sarg[0]=='-') {
 	//cout << "sarg: " << i << " " << sarg << " " << (int) sarg[1] << endl;
@@ -427,7 +462,8 @@ int main(int argc, char **argv)
 	  continue;
 	}
       } //if (sarg[0]=='-')
-      else if (sarg.find("=")!=string::npos) {
+      //else if (sarg.find("=")!=string::npos) {
+      else if (sarg.First("=")>=0) {
 	listpar.push_back(sarg);
       }
       else {
@@ -469,119 +505,122 @@ int main(int argc, char **argv)
   //cout << "listpar: " << endl;
   for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
     //try {
-      TString par,p0,p2,sdata;
-      int index;
-      size_t ll,len;
-      char sbuf[1024];
-      int buflen=0;
-      char* var = (char*) &opt;
+    TString par, // parameter name
+      p0, //parameter with []
+      p2, //index
+      sdata; //value
+    int index;
+    Ssiz_t ll,len;
+    char sbuf[1024];
+    int buflen=0;
+    char* var = (char*) &opt;
 
-      ll = it->First("=");
-      //p0 = it->substr(0,ll);
-      p0 = (*it)(0,ll);
-      //sdata=it->substr(ll+1);
-      sdata=(*it)(ll+1);
-      //cout << *it << " " << p << " " << d << endl;
+    ll = it->First("=");
+    //p0 = it->substr(0,ll);
+    p0 = (*it)(0,ll);
+    //sdata=it->substr(ll+1);
+    sdata=(*it)(ll+1,it->Length());
+    //cout << "p0: " << p0 << " " << sdata << endl;
 
-      ll = p0.First("[");
-      len = p0.First("]");
-      //cout << p0 << " " << ll << " " << string::npos << endl;
-      if (ll==string::npos || len==string::npos) {
-	par=p0;
-	index=-1;
+    ll = p0.First("[");
+    len = p0.First("]");
+    //cout << "p0: " << " " << ll << " " << len << endl;
+    if (ll==kNPOS || len==kNPOS) {
+      par=p0;
+      index=-1;
+    }
+    else {
+      len=len-ll-1;
+      //par=p0.substr(0,ll);
+      par=p0(0,ll);
+      //p2=p0.substr(ll+1,len);
+      p2=p0(ll+1,len);
+      index=p2.Atoi();
+    }
+
+    cout << "par: " << *it << " " << par << " " << p0 << " " << index << " " << sdata << endl;
+
+    TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
+    TDataMember* dm = (TDataMember*) lst->FindObject(par.Data());
+    //cout << dm << endl;
+    if (dm) {
+      cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+      //TDataType* tm = dm->GetDataType();
+      TString tp = dm->GetTypeName();
+      cout << "tp: " << tp << " " <<dm->GetArrayDim() << " " << dm->GetMaxIndex(0) << endl;
+      int dim=dm->GetArrayDim();
+      int maxindex = dm->GetMaxIndex(0);
+      int unit = dm->GetUnitSize();
+      Long_t off = dm->GetOffset();
+
+      if (tp.Contains("int",TString::kIgnoreCase)) {
+	int d=sdata.Atoi();
+	buflen=sizeof(int);
+	memcpy(sbuf,&d,buflen);
+	//   cout << "int: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
+      }
+      // else if (tp.Contains("short",TString::kIgnoreCase)) {
+      //   short d=stoi(sdata);
+      //   buflen=sizeof(short);
+      //   memcpy(sbuf,&d,buflen);
+      //   cout << "short: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
+      // }
+      else if (tp.Contains("bool",TString::kIgnoreCase)) {
+	bool d=sdata.Atoi();
+	buflen=sizeof(bool);
+	memcpy(sbuf,&d,buflen);
+      }
+      else if (tp.Contains("float",TString::kIgnoreCase)) {
+	float d=sdata.Atof();
+	buflen=sizeof(float);
+	memcpy(sbuf,&d,buflen);
+      }
+      else if (tp.Contains("char",TString::kIgnoreCase)) {
+	buflen=sdata.Length();
+	memset(var+off,0,maxindex);
+	memcpy(var+off,sdata.Data(),TMath::Min(buflen,maxindex));
+	//cout << "char: " << sdata.c_str() << " " << buflen << " " << maxindex << endl;
       }
       else {
-	len=len-ll-1;
-	//par=p0.substr(0,ll);
-	par=p0(0,ll);
-	//p2=p0.substr(ll+1,len);
-	p2=p0(ll+1,len);
-	index=p2.Atoi();
+	cout << "Error: unknown type of parameter: "
+	     << par << " " << tp << endl;
+	continue;
       }
 
-      //cout << p0 << " " << p << " " << index << endl;
-      
-      TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
-      TDataMember* dm = (TDataMember*) lst->FindObject(par.Data());
-      //cout << dm << endl;
-      if (dm) {
-	cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
-      	//TDataType* tm = dm->GetDataType();
-	TString tp = dm->GetTypeName();
-      	cout << "tp: " << tp << " " <<dm->GetArrayDim() << " " << dm->GetMaxIndex(0) << endl;
-	int dim=dm->GetArrayDim();
-	int maxindex = dm->GetMaxIndex(0);
-	int unit = dm->GetUnitSize();
-	Long_t off = dm->GetOffset();
-
-	if (tp.Contains("int",TString::kIgnoreCase)) {
-	  int d=sdata.Atoi();
-	  buflen=sizeof(int);
-	  memcpy(sbuf,&d,buflen);
-	//   cout << "int: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
+      if (dim==0) { //only one parameter
+	memcpy(var+off,sbuf,TMath::Min(buflen,unit));
+      }
+      else if (dim==1) { //array [text was copied in the if("char") ]
+	if (index<0) {
+	  for (int j=0;j<maxindex;j++) {
+	    memcpy(var+off+j*unit,sbuf,TMath::Min(buflen,unit));
+	  }
 	}
-	// else if (tp.Contains("short",TString::kIgnoreCase)) {
-	//   short d=stoi(sdata);
-	//   buflen=sizeof(short);
-	//   memcpy(sbuf,&d,buflen);
-	//   cout << "short: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
-	// }
-	else if (tp.Contains("bool",TString::kIgnoreCase)) {
-	  bool d=sdata.Atoi();
-	  buflen=sizeof(bool);
-	  memcpy(sbuf,&d,buflen);
-	}
-	else if (tp.Contains("float",TString::kIgnoreCase)) {
-	  float d=sdata.Atof();
-	  buflen=sizeof(float);
-	  memcpy(sbuf,&d,buflen);
-	}
-	else if (tp.Contains("char",TString::kIgnoreCase)) {
-	  buflen=sdata.Length();
-	  memset(var+off,0,maxindex);
-	  memcpy(var+off,sdata.Data(),TMath::Min(buflen,maxindex));
-	  //cout << "char: " << sdata.c_str() << " " << buflen << " " << maxindex << endl;
+	else if (index<maxindex) {
+	  memcpy(var+off+index*unit,sbuf,TMath::Min(buflen,unit));
 	}
 	else {
-	  cout << "Error: unknown type of parameter: "
-	       << par << " " << tp << endl;
-	  continue;
-	}
-
-	if (dim==0) { //only one parameter
-	  memcpy(var+off,sbuf,TMath::Min(buflen,unit));
-	}
-	else if (dim==1) { //array [text was copied in the if("char") ]
-	  if (index<0) {
-	    for (int j=0;j<maxindex;j++) {
-	      memcpy(var+off+j*unit,sbuf,TMath::Min(buflen,unit));
-	    }
-	  }
-	  else if (index<maxindex) {
-	    memcpy(var+off+index*unit,sbuf,TMath::Min(buflen,unit));
-	  }
-	  else {
-	    cout << "Error: index is out of range : "
-		 << par << " " << index << " " << maxindex << endl;
-	    continue;
-	  }
-	}
-	else { //2-dim of more - ignore
-	  cout << "Error: parameter with dimension >1 : "
-	       << par << " " << dim << endl;
+	  cout << "Error: index is out of range : "
+	       << par << " " << index << " " << maxindex << endl;
 	  continue;
 	}
       }
+      else { //2-dim of more - ignore
+	cout << "Error: parameter with dimension >1 : "
+	     << par << " " << dim << endl;
+	continue;
+      }
+    }
       
-      //lst->ls();
-      //}
+    //lst->ls();
+    //}
     // catch (const std::invalid_argument& ia) {
     //   std::cerr << "Invalid argument: " << ia.what() << '\n';
     // }
 
   }
 
-  cout << "sS: " << opt.nsmoo[1] << endl;
+  //cout << "sS: " << opt.sS[1] << endl;
   //exit(-1);
   //cout << "class: " << TClass::GetClass("hdef")->GetNdata() << endl;
   //cout << "tof_max: " << opt.h_tof.max << endl;

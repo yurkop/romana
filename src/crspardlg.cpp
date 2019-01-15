@@ -49,21 +49,20 @@ const char* ttip1[ncrspar+1]={
   "Total length of the pulse in samples",
   "Additional Gain",
   "Trigget type: 0 - threshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative;",
-  "Parameter of derivative: S(i) - S(i-Drv). 0 means trigger on the signal.",
+  "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
   "Pulse rate",
   "Number of Bad pulses"
 };
 
-const int n_apar=16;
-const int tlen2[n_apar]={26,60,24,24,24,25,35,26,32,40,35,35,38,38,38,38};
-const char* tlab2[n_apar]={"Ch","Type","dsp","St","Mt","sS","Delay","sTg","Drv","Thr","dT","Pile","E0","E1","E2","B"};
+const int n_apar=15;
+const int tlen2[n_apar]={26,60,24,24,25,35,26,32,40,35,35,38,38,38,38};
+const char* tlab2[n_apar]={"Ch","Type","dsp","St","sS","Delay","sTg","Drv","Thr","dT","Pile","E0","E1","E2","B"};
 const char* ttip2[n_apar]={
   "Channel number",
   "Channel type",
   "Use Digital Signal Processing (DSP) data instead of raw data",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
-  "Use this channel for making ntof spectra",
   "Software smoothing",
   "Time delay in samples (can be negative or positive)",
   "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n-1 - use hardware trigger",
@@ -2015,8 +2014,8 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   //   kk++;
   AddNumCrs(i,kk++,all,cframe[i],"trig" ,&cpar.trg[i]);
 
-  AddNumCrs(i,kk++,all,cframe[i],"deriv" ,&cpar.kderiv[i],&opt.kdrv[i]);
-  AddNumCrs(i,kk++,all,cframe[i],"thresh",&cpar.threshold[i],&opt.thresh[i]);
+  AddNumCrs(i,kk++,all,cframe[i],"deriv" ,&cpar.kderiv[i],&opt.Drv[i]);
+  AddNumCrs(i,kk++,all,cframe[i],"thresh",&cpar.threshold[i],&opt.Thr[i]);
 
 
   if (i<=MAX_CH) {
@@ -2348,34 +2347,34 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
   id = Plist.size()+1;
   TGCheckButton *fst = new TGCheckButton(cframe[i], "", id);
-  DoChanMap(fst,&opt.Start[i],p_chk,all,0,0);
+  DoChanMap(fst,&opt.St[i],p_chk,all,0,0);
   fst->Connect("Clicked()", "ParDlg", this, "DoChk()");
   fst->SetToolTipText(ttip2[kk]);
   cframe[i]->AddFrame(fst,fL3);
   kk++;
 
-  id = Plist.size()+1;
-  TGCheckButton *fmt = new TGCheckButton(cframe[i], "", id);
-  DoChanMap(fmt,&opt.Mrk[i],p_chk,all,0,0);
-  fmt->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  fmt->SetToolTipText(ttip2[kk]);
-  cframe[i]->AddFrame(fmt,fL3);
-  kk++;
+  // id = Plist.size()+1;
+  // TGCheckButton *fmt = new TGCheckButton(cframe[i], "", id);
+  // DoChanMap(fmt,&opt.Mrk[i],p_chk,all,0,0);
+  // fmt->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  // fmt->SetToolTipText(ttip2[kk]);
+  // cframe[i]->AddFrame(fmt,fL3);
+  // kk++;
 
 
   tlen7 = (int*) tlen2;
   ttip7 = (char**) ttip2;
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.nsmoo[i],0,99,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.delay[i],-999,999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],0,99,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Delay[i],-999,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.strg[i],-1,4,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.kdrv[i],1,999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.thresh[i],0,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Drv[i],1,999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Thr[i],0,9999,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-999,3070,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.bkg2[i],-999,3070,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.peak1[i],-999,3070,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.peak2[i],-999,3070,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.deadT[i],0,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.dT[i],0,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.pile[i],0,9999,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.timing[i],0,3,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.twin1[i],-99,99,p_inum);

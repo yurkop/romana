@@ -240,19 +240,20 @@ Toptions::Toptions() {
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     chtype[i]=ch_NIM;
     dsp[i]=false;
-    Start[i]=true;
-    Mrk[i]=false;
+    St[i]=true;
+    //Mrk[i]=false;
     for (int j=0;j<NGRP;j++)
       Grp[i][j]=false;
-    nsmoo[i]=2;
-    thresh[i]=cpar.threshold[i];
+    sS[i]=2;
+    Thr[i]=cpar.threshold[i];
 
-    delay[i]=0;
+    Drv[i]=1;
+    Delay[i]=0;
     bkg1[i]=-10;
     bkg2[i]=-5;
     peak1[i]=5;
     peak2[i]=30;
-    deadT[i]=100;
+    dT[i]=100;
     pile[i]=100;
     strg[i]=-1;
     timing[i]=3;

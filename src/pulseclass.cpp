@@ -67,7 +67,7 @@ void PulseClass::FindPeaks() {
   if (sData.size()<2)
     return;
 
-  UInt_t kk=opt.kdrv[Chan];
+  UInt_t kk=opt.Drv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
   peak_type pk=peak_type();
@@ -85,7 +85,7 @@ void PulseClass::FindPeaks() {
   switch (opt.strg[Chan]) {
   case 0: // hreshold crossing of pulse
     for (j=0;j<sData.size();j++) {
-      if (sData[j] >= opt.thresh[Chan]) {
+      if (sData[j] >= opt.Thr[Chan]) {
 	pk.Pos=j;
 	Peaks.push_back(pk);
 	break;
@@ -95,7 +95,7 @@ void PulseClass::FindPeaks() {
   case 1: // threshold crossing of derivative;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
-      if (D[j] >= opt.thresh[Chan]) {
+      if (D[j] >= opt.Thr[Chan]) {
 	pk.Pos=j;
 	Peaks.push_back(pk);
 	break;
@@ -107,7 +107,7 @@ void PulseClass::FindPeaks() {
     //int jpr;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
-      if (Dpr >= opt.thresh[Chan] && D[j]<Dpr) {
+      if (Dpr >= opt.Thr[Chan] && D[j]<Dpr) {
 	pk.Pos=j-1;
 	Peaks.push_back(pk);
 	break;
@@ -123,7 +123,7 @@ void PulseClass::FindPeaks() {
       if (D[j] > 0 && Dpr<=0) {
 	jj=j;
       }
-      if (D[j] >= opt.thresh[Chan]) {
+      if (D[j] >= opt.Thr[Chan]) {
 	pk.Pos=jj;
 	Peaks.push_back(pk);
 	break;
@@ -143,7 +143,7 @@ void PulseClass::FindPeaks() {
 	Peaks.push_back(pk);
 	break;
       }
-      if (D[j] >= opt.thresh[Chan]) {
+      if (D[j] >= opt.Thr[Chan]) {
 	jj=1;
       }
       // else {
@@ -184,7 +184,7 @@ void PulseClass::FindPeaks() {
   if (sData.size()<2)
     return;
 
-  UInt_t kk=opt.kdrv[Chan];
+  UInt_t kk=opt.Drv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
   peak_type *pk=0;
@@ -202,7 +202,7 @@ void PulseClass::FindPeaks() {
   for (j=kk;j<sData.size();j++) {
     D[j]=sData[j]-sData[j-kk];
     if (!in_peak) {
-      if (D[j] >= opt.thresh[Chan]) {
+      if (D[j] >= opt.Thr[Chan]) {
 	in_peak=true;
 	Peaks.push_back(peak_type());
 	pk = &Peaks.back();
@@ -239,7 +239,7 @@ void PulseClass::FindPeaks() {
 	jmax=0;
 	if (Peaks.size()>1) { //this is at least second peak
 	  p_prev = pk-1;
-	  if (pk->Pos - p_prev->Pos < opt.deadT[Chan])
+	  if (pk->Pos - p_prev->Pos < opt.dT[Chan])
 	    Peaks.pop_back();
 	  else if (pk->Pos - p_prev->Pos < opt.pile[Chan]) {
 	    p_prev->Type|=P_PILE1;
@@ -310,7 +310,7 @@ void PulseClass::PeakAna() {
     else
       pk->T4=tt+opt.twin2[Chan];
 
-    UInt_t kk=opt.kdrv[Chan];
+    UInt_t kk=opt.Drv[Chan];
     if (kk<1 || kk>=sData.size()) kk=1;
 
     if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
@@ -415,7 +415,7 @@ void PulseClass::PeakAna33() {
   peak_type *pk;
 
   int sz=sData.size();
-  Int_t kk=opt.kdrv[Chan];
+  Int_t kk=opt.Drv[Chan];
   if (kk<1 || kk>=sz-1) kk=1;
 
   if (sData.size()<2)
@@ -827,7 +827,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   //   Tstmp=pls->Tstamp64;
   // }
 
-  if (opt.Start[pls->Chan]) {
+  if (opt.St[pls->Chan]) {
     if (pls->Peaks.size()) {
       //Float_t dt = pls->Tstamp64 - Tstmp;
 
