@@ -241,7 +241,7 @@ void PulseClass::FindPeaks() {
 	  p_prev = pk-1;
 	  if (pk->Pos - p_prev->Pos < opt.dT[Chan])
 	    Peaks.pop_back();
-	  else if (pk->Pos - p_prev->Pos < opt.pile[Chan]) {
+	  else if (pk->Pos - p_prev->Pos < opt.Pile[Chan]) {
 	    p_prev->Type|=P_PILE1;
 	    pk->Type|=P_PILE2;
 	  }
@@ -342,10 +342,10 @@ void PulseClass::PeakAna() {
 
     //cout << "pk: " << (int) Chan << " " << pk->T3 << " " << pk->T4 << " " << pk->Time << " " << pk->Pos << endl;
 
-    pk->B1=pk->Pos+opt.bkg1[Chan];
-    pk->B2=pk->Pos+opt.bkg2[Chan]+1;
-    pk->P1=pk->Pos+opt.peak1[Chan];
-    pk->P2=pk->Pos+opt.peak2[Chan]+1;
+    pk->B1=pk->Pos+opt.Base1[Chan];
+    pk->B2=pk->Pos+opt.Base2[Chan]+1;
+    pk->P1=pk->Pos+opt.Peak1[Chan];
+    pk->P2=pk->Pos+opt.Peak2[Chan]+1;
 
     // if (Counter==150) {
     //   cout << "E150: " << Counter << " " << Tstamp64 << " " << pk->B1 << " " << pk->B2 << " " << pk->Pos << " " << pk->Pos2 << " " << pk->P1 << " " << pk->P2 << endl;
@@ -442,10 +442,10 @@ void PulseClass::PeakAna33() {
   pk=&Peaks.back();
   Float_t sum;
 
-  pk->B1=pk->Pos+opt.bkg1[Chan];
-  pk->B2=pk->Pos+opt.bkg2[Chan]+1;
-  pk->P1=pk->Pos+opt.peak1[Chan];
-  pk->P2=pk->Pos+opt.peak2[Chan]+1;
+  pk->B1=pk->Pos+opt.Base1[Chan];
+  pk->B2=pk->Pos+opt.Base2[Chan]+1;
+  pk->P1=pk->Pos+opt.Peak1[Chan];
+  pk->P2=pk->Pos+opt.Peak2[Chan]+1;
   pk->T3=pk->Pos+opt.twin1[Chan];
   pk->T4=pk->Pos+opt.twin2[Chan]+1;
   pk->T5=pk->Pos+opt.wwin1[Chan];

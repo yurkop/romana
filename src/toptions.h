@@ -81,12 +81,12 @@ public:
   Int_t Drv[MAX_CH+ADDCH]; //[kdrv] parameter of derivative
   Int_t Thr[MAX_CH+ADDCH];//[thresh]
   Int_t Delay[MAX_CH+ADDCH]; //[delay]
-  Int_t bkg1[MAX_CH+ADDCH];
-  Int_t bkg2[MAX_CH+ADDCH];
-  Int_t peak1[MAX_CH+ADDCH];
-  Int_t peak2[MAX_CH+ADDCH];
+  Int_t Base1[MAX_CH+ADDCH]; //[bkg1]
+  Int_t Base2[MAX_CH+ADDCH]; //[bkg2]
+  Int_t Peak1[MAX_CH+ADDCH]; //[peak1]
+  Int_t Peak2[MAX_CH+ADDCH]; //[peak2]
   Int_t dT[MAX_CH+ADDCH];//[deadT]
-  Int_t pile[MAX_CH+ADDCH];
+  Int_t Pile[MAX_CH+ADDCH]; //[pile]
   //Int_t pile2[MAX_CH+ADDCH];
   Int_t strg[MAX_CH+ADDCH]; // Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
   Int_t timing[MAX_CH+ADDCH];

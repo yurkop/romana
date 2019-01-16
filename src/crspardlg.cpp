@@ -200,7 +200,7 @@ void ParDlg::DoNum() {
 
   // cout << "DoNum: " << id << " ";
   // cout << *(Int_t*) pp.data << " ";
-  // cout << pp.data << " " << opt.bkg1[0] << " ";
+  // cout << pp.data << " " << opt.Base1[0] << " ";
   // cout << (Int_t) pp.all << endl;
 
   //cout << "Donum: " << te->GetName() << endl;
@@ -1596,7 +1596,7 @@ void ParParDlg::DoNum_SetBuf() {
   //cout << "DoNum_SetBuf: " << te->GetNumMax() << " " << id << " " << id_usb << endl;
   //cout << "DoNum: ";
   //cout << *(Int_t*) pp.data << " ";
-  //cout << pp.data << " " << opt.bkg1[0] << " ";
+  //cout << pp.data << " " << opt.Base1[0] << " ";
   //cout << (Int_t) pp.all << endl;
 
   if (te->GetNumber() > te->GetNumMax()) {
@@ -2370,12 +2370,12 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   AddNumChan(i,kk++,all,cframe[i],&opt.strg[i],-1,4,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Drv[i],1,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Thr[i],0,9999,p_inum);
-  //AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-999,3070,p_inum);
-  //AddNumChan(i,kk++,all,cframe[i],&opt.bkg2[i],-999,3070,p_inum);
-  //AddNumChan(i,kk++,all,cframe[i],&opt.peak1[i],-999,3070,p_inum);
-  //AddNumChan(i,kk++,all,cframe[i],&opt.peak2[i],-999,3070,p_inum);
+  //AddNumChan(i,kk++,all,cframe[i],&opt.Base1[i],-999,3070,p_inum);
+  //AddNumChan(i,kk++,all,cframe[i],&opt.Base2[i],-999,3070,p_inum);
+  //AddNumChan(i,kk++,all,cframe[i],&opt.Peak1[i],-999,3070,p_inum);
+  //AddNumChan(i,kk++,all,cframe[i],&opt.Peak2[i],-999,3070,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.dT[i],0,9999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.pile[i],0,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Pile[i],0,9999,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.timing[i],0,3,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.twin1[i],-99,99,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.twin2[i],-99,99,p_inum);
@@ -2526,10 +2526,10 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
 
   //cout << "module: " << crs->module << " " << i << " " << crs->type_ch[i] << " " << amax << endl;
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.bkg1[i],-1024,amax,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.bkg2[i],-1024,9999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.peak1[i],-1024,amax,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.peak2[i],-1024,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Base1[i],-1024,amax,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Base2[i],-1024,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Peak1[i],-1024,amax,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Peak2[i],-1024,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.twin1[i],-1024,amax,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.twin2[i],-1024,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.wwin1[i],-1024,amax,p_inum);

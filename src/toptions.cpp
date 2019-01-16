@@ -249,12 +249,12 @@ Toptions::Toptions() {
 
     Drv[i]=1;
     Delay[i]=0;
-    bkg1[i]=-10;
-    bkg2[i]=-5;
-    peak1[i]=5;
-    peak2[i]=30;
+    Base1[i]=-10;
+    Base2[i]=-5;
+    Peak1[i]=5;
+    Peak2[i]=30;
     dT[i]=100;
-    pile[i]=100;
+    Pile[i]=100;
     strg[i]=-1;
     timing[i]=3;
     twin1[i]=-5;

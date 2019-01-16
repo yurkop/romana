@@ -594,8 +594,8 @@ void CRS::Ana_start() {
   }
   //Set_Trigger();
   for (int i=0;i<MAX_CH;i++) {
-    b_len[i] = opt.bkg2[i]-opt.bkg1[i]+1;
-    p_len[i] = opt.peak2[i]-opt.peak1[i]+1;
+    b_len[i] = opt.Base2[i]-opt.Base1[i]+1;
+    p_len[i] = opt.Peak2[i]-opt.Peak1[i]+1;
   }
   //cout << "Command_start: " << endl;
   gzFile ff = gzopen("last.par","wb");
@@ -1644,9 +1644,9 @@ void CRS::AllParameters33()
       //Command32(2,chan,10,0); //test signal
       Command32(2,chan,12,(int) cpar.trg[chan]); //enabled
 
-      Check33(13,chan,opt.bkg1[chan],opt.bkg2[chan],1,4095);
-      Check33(15,chan,opt.peak1[chan],opt.peak2[chan],1,4095);
-      Check33(17,chan,opt.peak1[chan],opt.peak2[chan],1,4095);
+      Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
+      Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      Check33(17,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
       Check33(19,chan,opt.twin1[chan],opt.twin2[chan],1,4095);
       Check33(21,chan,opt.wwin1[chan],opt.wwin2[chan],1,4095);
 
