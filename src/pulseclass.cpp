@@ -274,6 +274,7 @@ void PulseClass::FindPeaks() {
 */
 //-----------------------------
 
+/*
 void PulseClass::PeakAna() {
 
   //cout << "Peakana: " << Peaks.size() << endl;
@@ -405,6 +406,7 @@ void PulseClass::PeakAna() {
   }
 
 }
+*/
 
 //-----------------------------
 
@@ -478,8 +480,10 @@ void PulseClass::PeakAna33() {
   for (int j=pk->T3;j<pk->T4;j++) {
     //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
     Float_t dif=sData[j]-sData[j-kk];
-    pk->Time+=dif*j;
-    sum+=dif;
+    if (dif>0) {
+      pk->Time+=dif*j;
+      sum+=dif;
+    }
     //cout << "j: " << Tstamp64 << " " << j << " " << dif << " " << sum << endl;
     //}
     //nt++;

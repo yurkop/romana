@@ -121,7 +121,7 @@ class PulseClass {
   void Analyze();
   void FindPeaks();
   //void FindPeaks(Float_t thresh, int deadtime);
-  void PeakAna();
+  //void PeakAna();
   void PeakAna33();
   void CheckDSP();
   void Smooth(int n);
