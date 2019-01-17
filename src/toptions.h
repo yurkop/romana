@@ -155,6 +155,7 @@ public:
   char fname_raw[199];
   char fname_dec[199];
   char fname_root[199];
+  char Filename[199];
 
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list

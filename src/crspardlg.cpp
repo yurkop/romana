@@ -945,17 +945,56 @@ void ParParDlg::AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 }
 
 void ParParDlg::AddFiles(TGCompositeFrame* frame) {
+  int id;
+  char txt[99];
+
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "Files", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, fL6);
 
+
+
+
+
+  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
+  fF6->AddFrame(hframe1,fL1);
+
+  TGLabel* fLabel = new TGLabel(hframe1, "Filename:");
+  hframe1->AddFrame(fLabel,fL3);
+
+
+  id = Plist.size()+1;
+  TGTextButton *fbut = new TGTextButton(hframe1,"Select...",id);
+  hframe1->AddFrame(fbut, fL3);
+  DoMap(fbut,opt.Filename,p_open,0);
+  fbut->Connect("Clicked()", "ParDlg", this, "DoOpen()");
+
+  TGHorizontalFrame *hframe2 = new TGHorizontalFrame(fF6,10,10);
+  fF6->AddFrame(hframe2,fL1);
+
+  //strcpy(opt.fname_raw,"raw32.gz");
+  id = Plist.size()+1;
+  TGTextEntry* tt = new TGTextEntry(hframe2,opt.Filename, id);
+  tt->SetDefaultSize(380,20);
+  tt->SetMaxLength(198);
+  //tt->SetWidth(590);
+  //tt->SetState(false);
+  hframe2->AddFrame(tt,fL0);
+  DoMap(tt,opt.Filename,p_txt,0);
+  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+
+
+
+
+
+
+
+  /*
   AddWrite(fF6,"Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
   id_write[0]=Plist.size();
   //cout << "raw: " << Plist.size()+1 << endl;
 
   TGCheckButton *fchk;
-  int id;
-  char txt[99];
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
   fF6->AddFrame(hframe1,fL1);
 
@@ -969,27 +1008,6 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
-  /*
-  id = Plist.size()+1;
-  sprintf(txt,"Analyze");
-  fchk = new TGCheckButton(hframe1, txt, id);
-  fchk->SetName(txt);
-  fchk->SetToolTipText("Analyze and use raw decoded data");
-  hframe1->AddFrame(fchk,fL3);
-  DoMap(fchk,&opt.analyze,p_chk,0);
-  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
-
-  id = Plist.size()+1;
-  sprintf(txt,"DSP");
-  fchk = new TGCheckButton(hframe1, txt, id);
-  fchk->SetName(txt);
-  fchk->SetToolTipText("Use Digital Signal Processing data");
-  hframe1->AddFrame(fchk,fL3);
-  DoMap(fchk,&opt.dsp,p_chk,0);
-  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
-  */
 
   id = Plist.size()+1;
   sprintf(txt,"CheckDSP");
@@ -1008,7 +1026,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   AddWrite(fF6,"Write root histograms",&opt.root_write,&opt.root_compr,opt.fname_root);
   id_write[2]=Plist.size();
   //cout << "root: " << Plist.size()+1 << endl;
-
+  */
 }
 
 void ParParDlg::AddOpt(TGCompositeFrame* frame) {
