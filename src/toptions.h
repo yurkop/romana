@@ -88,17 +88,17 @@ public:
   Int_t dT[MAX_CH+ADDCH];//[deadT]
   Int_t Pile[MAX_CH+ADDCH]; //[pile]
   //Int_t pile2[MAX_CH+ADDCH];
-  Int_t strg[MAX_CH+ADDCH]; // Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
+  Int_t sTg[MAX_CH+ADDCH]; // [strg] Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
   Int_t timing[MAX_CH+ADDCH];
-  Int_t twin1[MAX_CH+ADDCH];
-  Int_t twin2[MAX_CH+ADDCH];
-  Int_t wwin1[MAX_CH+ADDCH];
-  Int_t wwin2[MAX_CH+ADDCH];
+  Int_t T1[MAX_CH+ADDCH]; // [twin1]
+  Int_t T2[MAX_CH+ADDCH]; // [twin2]
+  Int_t W1[MAX_CH+ADDCH]; // [wwin1]
+  Int_t W2[MAX_CH+ADDCH]; // [wwin2]
 
-  Float_t emult[MAX_CH+ADDCH];
-  Float_t emult0[MAX_CH+ADDCH];
-  Float_t emult2[MAX_CH+ADDCH];
-  Float_t bcor[MAX_CH+ADDCH];
+  Float_t E0[MAX_CH+ADDCH]; // [emult0]
+  Float_t E1[MAX_CH+ADDCH]; // [emult]
+  Float_t E2[MAX_CH+ADDCH]; // [emult2]
+  Float_t Bc[MAX_CH+ADDCH]; // [bcor]
 
   Float_t elim1[MAX_CH+ADDCH];
   Float_t elim2[MAX_CH+ADDCH];

@@ -59,7 +59,7 @@ PulseClass::PulseClass() {
 void PulseClass::FindPeaks() {
   //Находим только первый пик
 
-  //strg: 0 - hreshold crossing of pulse;
+  //sTg: 0 - hreshold crossing of pulse;
   //      1 - threshold crossing of derivative;
   //      2 - maximum of derivative;
   //      3 - rise of derivative;
@@ -82,7 +82,7 @@ void PulseClass::FindPeaks() {
   UInt_t j;
   UInt_t jj=0;
 
-  switch (opt.strg[Chan]) {
+  switch (opt.sTg[Chan]) {
   case 0: // hreshold crossing of pulse
     for (j=0;j<sData.size();j++) {
       if (sData[j] >= opt.Thr[Chan]) {
@@ -300,15 +300,15 @@ void PulseClass::PeakAna() {
     else
       tt=pk->Pos2; //3->reference is Pos2 (maximum in 1st deriv)
 
-    if (opt.twin1[Chan] == 99)
+    if (opt.T1[Chan] == 99)
       pk->T3=pk->T1;
     else
-      pk->T3=tt+opt.twin1[Chan];
+      pk->T3=tt+opt.T1[Chan];
 
-    if (opt.twin2[Chan] == 99)
+    if (opt.T2[Chan] == 99)
       pk->T4=pk->T2;
     else
-      pk->T4=tt+opt.twin2[Chan];
+      pk->T4=tt+opt.T2[Chan];
 
     UInt_t kk=opt.Drv[Chan];
     if (kk<1 || kk>=sData.size()) kk=1;
@@ -396,10 +396,10 @@ void PulseClass::PeakAna() {
     }
 
     //pk->Area*=opt.emult[Chan];
-    pk->Area=opt.emult0[Chan] + opt.emult[Chan]*pk->Area +
-      opt.emult2[Chan]*pk->Area*pk->Area;
-    if (opt.bcor[Chan]) {
-      pk->Area+=opt.bcor[Chan]*pk->Base;
+    pk->Area=opt.E0[Chan] + opt.E1[Chan]*pk->Area +
+      opt.E2[Chan]*pk->Area*pk->Area;
+    if (opt.Bc[Chan]) {
+      pk->Area+=opt.Bc[Chan]*pk->Base;
     }
 
   }
@@ -425,7 +425,7 @@ void PulseClass::PeakAna33() {
   //Short_t T5; //left width window
   //Short_t T6; //right width window
 
-  if (opt.strg[Chan]<0) { //use hardware trigger
+  if (opt.sTg[Chan]<0) { //use hardware trigger
     Peaks.push_back(peak_type());
     //pk = &Peaks.back();
     //pk->Pos=crs->Pre[Chan];
@@ -446,10 +446,10 @@ void PulseClass::PeakAna33() {
   pk->B2=pk->Pos+opt.Base2[Chan]+1;
   pk->P1=pk->Pos+opt.Peak1[Chan];
   pk->P2=pk->Pos+opt.Peak2[Chan]+1;
-  pk->T3=pk->Pos+opt.twin1[Chan];
-  pk->T4=pk->Pos+opt.twin2[Chan]+1;
-  pk->T5=pk->Pos+opt.wwin1[Chan];
-  pk->T6=pk->Pos+opt.wwin2[Chan]+1;
+  pk->T3=pk->Pos+opt.T1[Chan];
+  pk->T4=pk->Pos+opt.T2[Chan]+1;
+  pk->T5=pk->Pos+opt.W1[Chan];
+  pk->T6=pk->Pos+opt.W2[Chan]+1;
 
   //cout << "B2: " << pk->B1 << " " << pk->B2 << endl;
 
@@ -644,8 +644,8 @@ void PulseClass::PeakAna33() {
   }
   
   pk->Width3-=pk->Base;
-  pk->Width3=opt.emult0[Chan] + opt.emult[Chan]*pk->Width3 +
-    opt.emult2[Chan]*pk->Width3*pk->Width3;
+  pk->Width3=opt.E0[Chan] + opt.E1[Chan]*pk->Width3 +
+    opt.E2[Chan]*pk->Width3*pk->Width3;
 
 
   //slope1 (baseline)
@@ -674,11 +674,11 @@ void PulseClass::PeakAna33() {
   //calibration
   pk->Area=pk->Area0 - pk->Base;
   //pk->Area*=opt.emult[Chan];
-  pk->Area=opt.emult0[Chan] + opt.emult[Chan]*pk->Area +
-    opt.emult2[Chan]*pk->Area*pk->Area;
+  pk->Area=opt.E0[Chan] + opt.E1[Chan]*pk->Area +
+    opt.E2[Chan]*pk->Area*pk->Area;
 
-  if (opt.bcor[Chan]) {
-    pk->Area+=opt.bcor[Chan]*pk->Base;
+  if (opt.Bc[Chan]) {
+    pk->Area+=opt.Bc[Chan]*pk->Base;
   }
 
   // printf(ANSI_COLOR_RED

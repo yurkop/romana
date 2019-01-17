@@ -57,7 +57,7 @@ const char* ttip1[ncrspar+1]={
 
 const int n_apar=15;
 const int tlen2[n_apar]={26,60,24,24,25,35,26,32,40,35,35,38,38,38,38};
-const char* tlab2[n_apar]={"Ch","Type","dsp","St","sS","Delay","sTg","Drv","Thr","dT","Pile","E0","E1","E2","B"};
+const char* tlab2[n_apar]={"Ch","Type","dsp","St","sS","Delay","sTg","Drv","Thr","dT","Pile","E0","E1","E2","Bc"};
 const char* ttip2[n_apar]={
   "Channel number",
   "Channel type",
@@ -2367,7 +2367,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
   AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],0,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Delay[i],-999,999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.strg[i],-1,4,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sTg[i],-1,4,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Drv[i],1,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Thr[i],0,9999,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.Base1[i],-999,3070,p_inum);
@@ -2382,10 +2382,10 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   //AddNumChan(i,kk++,all,cframe[i],&opt.wwin1[i],-999,3070,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.wwin2[i],-999,3070,p_inum);
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.emult0[i],-1e99,1e99,p_fnum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.emult[i],-1e99,1e99,p_fnum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.emult2[i],-1e99,1e99,p_fnum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.bcor[i],-1e99,1e99,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.E0[i],-1e99,1e99,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.E1[i],-1e99,1e99,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.E2[i],-1e99,1e99,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Bc[i],-1e99,1e99,p_fnum);
 
   for (int j=0;j<NGRP;j++) {
     id = Plist.size()+1;
@@ -2530,8 +2530,8 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   AddNumChan(i,kk++,all,cframe[i],&opt.Base2[i],-1024,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Peak1[i],-1024,amax,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Peak2[i],-1024,9999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.twin1[i],-1024,amax,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.twin2[i],-1024,9999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.wwin1[i],-1024,amax,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.wwin2[i],-1024,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.T1[i],-1024,amax,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.T2[i],-1024,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.W1[i],-1024,amax,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.W2[i],-1024,9999,p_inum);
 }

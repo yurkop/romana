@@ -255,15 +255,17 @@ Toptions::Toptions() {
     Peak2[i]=30;
     dT[i]=100;
     Pile[i]=100;
-    strg[i]=-1;
+    sTg[i]=-1;
     timing[i]=3;
-    twin1[i]=-5;
-    twin2[i]=5;
+    T1[i]=-5;
+    T2[i]=5;
+    W1[i]=-5;
+    W2[i]=5;
 
-    emult0[i]=0;
-    emult[i]=1;
-    emult2[i]=0;
-    bcor[i]=0;
+    E0[i]=0;
+    E1[i]=1;
+    E2[i]=0;
+    Bc[i]=0;
   }
 
   // for (int i=MAX_CH;i<MAX_CH+ADDCH;i++) {

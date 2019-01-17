@@ -1287,7 +1287,7 @@ void EventFrame::ReDraw() {
 	  if (Gr[i][j]->GetN()) { //draw graph
 	    Gr[i][j]->Draw("lp");
 	    DrawPeaks(i,pulse,y1,y2);
-	    int ithr=(opt.strg[pulse->Chan]!=0);
+	    int ithr=(opt.sTg[pulse->Chan]!=0);
 	    if (i==ithr && fPeak[8]->IsOn()) //threshold
 	      doYline(opt.Thr[pulse->Chan],gx1[j],
 		      gx2[j],chcol[pulse->Chan],2);

@@ -1647,8 +1647,8 @@ void CRS::AllParameters33()
       Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
       Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
       Check33(17,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
-      Check33(19,chan,opt.twin1[chan],opt.twin2[chan],1,4095);
-      Check33(21,chan,opt.wwin1[chan],opt.wwin2[chan],1,4095);
+      Check33(19,chan,opt.T1[chan],opt.T2[chan],1,4095);
+      Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
 
     }
 
@@ -3554,10 +3554,10 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
 	  //ipk->Area*=opt.emult[ipls.Chan];
-	  ipk->Area=opt.emult0[ipls.Chan] + opt.emult[ipls.Chan]*ipk->Area +
-	    opt.emult2[ipls.Chan]*ipk->Area*ipk->Area;
-	  if (opt.bcor[ipls.Chan]) {
-	    ipk->Area+=opt.bcor[ipls.Chan]*ipk->Base;
+	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
+	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
+	  if (opt.Bc[ipls.Chan]) {
+	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
 	  }
 
 	  break;
@@ -3637,10 +3637,10 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 
 	  ipk->Area=ipk->Area0 - ipk->Base;
 	  //ipk->Area*=opt.emult[ipls.Chan];
-	  ipk->Area=opt.emult0[ipls.Chan] + opt.emult[ipls.Chan]*ipk->Area +
-	    opt.emult2[ipls.Chan]*ipk->Area*ipk->Area;
-	  if (opt.bcor[ipls.Chan]) {
-	    ipk->Area+=opt.bcor[ipls.Chan]*ipk->Base;
+	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
+	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
+	  if (opt.Bc[ipls.Chan]) {
+	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
 	  }
 	  break;
 	case 2: //A – [28]
