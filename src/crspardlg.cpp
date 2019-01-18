@@ -954,7 +954,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
 
 
 
-
+  /*
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
   fF6->AddFrame(hframe1,fL1);
@@ -986,10 +986,9 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
 
 
 
+  */
 
 
-
-  /*
   AddWrite(fF6,"Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
   id_write[0]=Plist.size();
   //cout << "raw: " << Plist.size()+1 << endl;
@@ -1026,7 +1025,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   AddWrite(fF6,"Write root histograms",&opt.root_write,&opt.root_compr,opt.fname_root);
   id_write[2]=Plist.size();
   //cout << "root: " << Plist.size()+1 << endl;
-  */
+
 }
 
 void ParParDlg::AddOpt(TGCompositeFrame* frame) {
