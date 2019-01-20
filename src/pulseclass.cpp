@@ -579,13 +579,13 @@ void PulseClass::PeakAna33() {
   pk->Width3=w3;
   */
 
-  double bkg2=(sData[pk->P2]-sData[pk->P1])/2;
+  double bkg2=(sData[pk->P2]+sData[pk->P1])/2;
   //double sum2=0;
   double asum2=0;
   double mean2=0;
   double rms2=0;
   //int nrms=0;
-  pk->Width2=0;
+  //pk->Width2=0;
   for (int j=pk->P1;j<pk->P2;j++) {
     double w=sData[j]-bkg2;
     double aw=fabs(w);
@@ -597,7 +597,8 @@ void PulseClass::PeakAna33() {
   }
   mean2=mean2/asum2;
   pk->Width2=sqrt(rms2/asum2-mean2*mean2);
-  
+
+  //cout << "Width2: " << (int) Chan << " " << Tstamp64 << " " << pk->Width2 << endl;
   //pk->Width+=0.1;
 
   //baseline
@@ -1089,7 +1090,7 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       if (opt.h_width3.b) {
-	Fill1d(first,hcl->m_width3,ch,pk->Width3);
+	Fill1d(first,hcl->m_width3,ch,pk->Width3/pk->Area);
       }
 
       if (opt.h_area_base.b) {
@@ -1121,7 +1122,7 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       if (opt.h_area_width3.b) {
-	Fill2d(first,hcl->m_area_width3[ch],pk->Area,pk->Width3);
+	Fill2d(first,hcl->m_area_width3[ch],pk->Area,pk->Width3/pk->Area);
       }
 
       // if (opt.h_width_12.b) {
