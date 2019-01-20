@@ -291,7 +291,7 @@ void ParDlg::DoChk() {
 void ParDlg::DoChkWrite() {
 
   TGCheckButton *te = (TGCheckButton*) gTQSender;
-  Int_t id = te->WidgetId();
+  //Int_t id = te->WidgetId();
 
   DoChk();
 
@@ -299,21 +299,19 @@ void ParDlg::DoChkWrite() {
 
   //return;
 
-  pmap pp;
-  pp = Plist[id+1];
-  TGTextButton *but = (TGTextButton*) pp.field;
-  pp = Plist[id+2];
-  TGTextEntry *te2 = (TGTextEntry*) pp.field;
+  // pmap pp;
+  // pp = Plist[id+1];
+  // TGTextButton *but = (TGTextButton*) pp.field;
+  // pp = Plist[id+2];
+  // TGTextEntry *te2 = (TGTextEntry*) pp.field;
 
   Bool_t state = (Bool_t) te->GetState();      
 
   if (state) {
-    but->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
-    te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
+    te->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
   }
   else {
-    but->ChangeBackground(gROOT->GetColor(18)->GetPixel());
-    te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
+    te->ChangeBackground(gROOT->GetColor(18)->GetPixel());
   }
 
   //te->SetState(kButtonDisabled);
@@ -463,6 +461,29 @@ void ParDlg::SetTxt(pmap pp, const char* txt) {
 
 void ParDlg::DoTxt() {
 
+  TGTextEntry *te = (TGTextEntry*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  pmap pp = Plist[id-1];
+
+  SetTxt(pp,te->GetText());
+
+  if (pp.all==1) {
+    if (nfld) {
+      int kk = (id-1)%nfld;
+      for (int i=0;i<MAX_CH;i++) {
+	pmap p2 = Plist[i*nfld+kk];
+	SetTxt(p2,te->GetText());
+	TGTextEntry *te2 = (TGTextEntry*) p2.field;
+	te2->SetText(te->GetText());      
+      }
+    }
+  }
+
+}
+/*
+void ParDlg::DoTxt() {
+
   const char *r_ext[] = {".raw",".dec",".root"};
   //const int len[] = {4,4,5};
   string dir, name, ext;
@@ -524,7 +545,7 @@ void ParDlg::DoTxt() {
   }
 
 }
-
+*/
 void ParDlg::CopyParLine(int sel, int line) {
   if (sel<0) { //inverse copy - from current ch to group
     //cout << "CopyParLine: " << line << " " << MAX_CH-sel << endl;
@@ -645,22 +666,11 @@ void ParDlg::UpdateField(int nn) {
 
       TString str = TString(te->GetName());
       if (str.Contains("write",TString::kIgnoreCase)) {
-	TGTextButton *but = (TGTextButton*) (pp+2)->field;
-	TGTextEntry *te2 = (TGTextEntry*) (pp+3)->field;	
-
-	//cout << "updatefield2: " << te << " " << str << " " << but << " " << te2 << endl;
-
 	if (bb) {
-	  //cout << "updatefield4: " << te << " " << str << endl;
-	  but->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
-	  te2->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
+	  te->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
 	}
 	else {
-	  //cout << "updatefield5: " << te << " " << str << " " << gROOT->GetColor(18) << endl;
-	  but->ChangeBackground(gROOT->GetColor(18)->GetPixel());
-	  //cout << "updatefield6: " << te << " " << str << endl;
-	  te2->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
-	  //cout << "updatefield7: " << te << " " << str << endl;
+	  te->ChangeBackground(gROOT->GetColor(18)->GetPixel());
 	}
       }
       if (str.Contains("b_hist",TString::kIgnoreCase)) {
@@ -836,46 +846,6 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 				100, 100, kVerticalFrame);
   fCanvas1->SetContainer(fcont1);
 
-  /*
-  //opt.chk_raw=true;
-  //opt.chk_dec=false;
-  AddWrite("Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
-  id_write[0]=Plist.size();
-  //cout << "raw: " << Plist.size()+1 << endl;
-
-  TGCheckButton *fchk;
-  int id;
-  char txt[99];
-  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fcont1,10,10);
-  fcont1->AddFrame(hframe1,fL1);
-
-  id = Plist.size()+1;
-  sprintf(txt,"Decode");
-  fchk = new TGCheckButton(hframe1, txt, id);
-  fchk->SetName(txt);
-  hframe1->AddFrame(fchk,fL3);
-  DoMap(fchk,&opt.decode,p_chk,0);
-  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
-
-  id = Plist.size()+1;
-  sprintf(txt,"Analyze");
-  fchk = new TGCheckButton(hframe1, txt, id);
-  fchk->SetName(txt);
-  hframe1->AddFrame(fchk,fL3);
-  DoMap(fchk,&opt.analyze,p_chk,0);
-  fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
-
-  AddWrite("Write decoded data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
-  id_write[1]=Plist.size();
-  //cout << "dec: " << Plist.size()+1 << endl;
-
-  AddWrite("Write root histograms",&opt.root_write,&opt.root_compr,opt.fname_root);
-  id_write[2]=Plist.size();
-  //cout << "root: " << Plist.size()+1 << endl;
-  */
-
   hor = new TGSplitFrame(fcont1,10,10);
   fcont1->AddFrame(hor,fLexp);
   hor->VSplit(420);
@@ -891,7 +861,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   AddHist(ver2);
 
 }
-
+/*
 void ParParDlg::AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 			 Int_t* compr, char* opt_fname) {
   int id;
@@ -943,6 +913,42 @@ void ParParDlg::AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   DoMap(tt,opt_fname,p_txt,0);
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
 }
+*/
+void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
+			 Int_t* compr) {
+  int id;
+
+  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(frame,10,10);
+  frame->AddFrame(hframe1,fL1);
+
+  id = Plist.size()+1;
+  TGCheckButton *fchk = new TGCheckButton(hframe1, txt, id);
+  fchk->SetName(txt);
+  fchk->ChangeOptions(fchk->GetOptions()|kFixedWidth);
+  fchk->SetWidth(230);
+
+  hframe1->AddFrame(fchk,fL3);
+  DoMap(fchk,opt_chk,p_chk,0);
+  //fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+
+  //fchk->SetState(kButtonDown,false);
+
+  id = Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(hframe1, *compr, 2, id, k_int, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   TGNumberFormat::kNELLimitMinMax,
+					   0,9);
+  hframe1->AddFrame(fNum1,fL3);
+  DoMap(fNum1->GetNumberEntry(),compr,p_inum,0);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoNum()");
+
+  fNum1->GetNumberEntry()->SetToolTipText("Compression factor [0-9]: 0 - no compression (fast); 9- maximum compression (slow)");
+  TGLabel* fLabel = new TGLabel(hframe1, "compr.");
+  hframe1->AddFrame(fLabel,fL3);
+
+}
 
 void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   int id;
@@ -954,7 +960,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
 
 
 
-  /*
+
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
   fF6->AddFrame(hframe1,fL1);
@@ -984,25 +990,22 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
 
 
+  AddChk(fF6,"Write raw data [Filename].raw",&opt.raw_write,&opt.raw_compr);
+  AddChk(fF6,"Write decoded data [Filename].dec",&opt.dec_write,&opt.dec_compr);
+  AddChk(fF6,"Write root histograms [Filename].root",&opt.root_write,&opt.root_compr);
 
 
-  */
-
-
-  AddWrite(fF6,"Write raw data",&opt.raw_write,&opt.raw_compr,opt.fname_raw);
-  id_write[0]=Plist.size();
-  //cout << "raw: " << Plist.size()+1 << endl;
 
   TGCheckButton *fchk;
-  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
-  fF6->AddFrame(hframe1,fL1);
+  TGHorizontalFrame *hframe3 = new TGHorizontalFrame(fF6,10,10);
+  fF6->AddFrame(hframe3,fL1);
 
   id = Plist.size()+1;
   sprintf(txt,"Decode");
-  fchk = new TGCheckButton(hframe1, txt, id);
+  fchk = new TGCheckButton(hframe3, txt, id);
   fchk->SetName(txt);
   fchk->SetToolTipText("Decode raw data");
-  hframe1->AddFrame(fchk,fL3);
+  hframe3->AddFrame(fchk,fL3);
   DoMap(fchk,&opt.decode,p_chk,0);
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
@@ -1010,21 +1013,14 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
 
   id = Plist.size()+1;
   sprintf(txt,"CheckDSP");
-  fchk = new TGCheckButton(hframe1, txt, id);
+  fchk = new TGCheckButton(hframe3, txt, id);
   fchk->SetName(txt);
   fchk->SetToolTipText("Compare raw decoded data vs DSP data");
-  hframe1->AddFrame(fchk,fL3);
+  hframe3->AddFrame(fchk,fL3);
   DoMap(fchk,&opt.checkdsp,p_chk,0);
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
 
-  AddWrite(fF6,"Write decoded data",&opt.dec_write,&opt.dec_compr,opt.fname_dec);
-  id_write[1]=Plist.size();
-  //cout << "dec: " << Plist.size()+1 << endl;
-
-  AddWrite(fF6,"Write root histograms",&opt.root_write,&opt.root_compr,opt.fname_root);
-  id_write[2]=Plist.size();
-  //cout << "root: " << Plist.size()+1 << endl;
 
 }
 

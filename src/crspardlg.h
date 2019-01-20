@@ -65,7 +65,7 @@ protected:
 
   int nfld; //number of fields in a line
 
-  int id_write[3]; //id of different *write* text fields
+  //int id_write[3]; //id of different *write* text fields
 
 public:
   std::vector<pmap> Plist;
@@ -160,8 +160,10 @@ public:
   // 		    const char* tip, const char* label);
   void AddLine_mean(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
-  void AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
-		Int_t* compr, char* opt_fname);
+  // void AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
+  // 		Int_t* compr, char* opt_fname);
+  void AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
+	      Int_t* compr);
   void AddFiles(TGCompositeFrame* frame);
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);

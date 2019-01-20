@@ -35,7 +35,7 @@ typedef unsigned char byte;
 typedef std::list<EventClass>::iterator event_iter;
 typedef std::list<EventClass>::reverse_iterator event_reviter;
 
-//using namespace std;
+using namespace std;
 
 /*
 #pragma pack (push, 1)
@@ -96,6 +96,10 @@ RQ_OBJECT("CRS")
   char dec_opt[5];
   Short_t Fmode; //0 - do nothing; 1 - CRS module online; 2 - file analysis
   char Fname[255];
+
+  string rawname;
+  string decname;
+  string rootname;
 
   UChar_t* DecBuf;
   ULong64_t* DecBuf8;

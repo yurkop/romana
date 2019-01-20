@@ -73,9 +73,9 @@ char* datfname=0;
 char startdir[200];
 char pr_name[200];
 char maintitle[200];
-char rootname[200]="";
+//char rootname[200]="";
 
-struct stat statbuffer;
+struct stat statb;
 const char* msg_exists = "Output file already exists.\nPress OK to overwrite it";
 
 
@@ -538,33 +538,26 @@ int main(int argc, char **argv)
       index=p2.Atoi();
     }
 
-    cout << "par: " << *it << " " << par << " " << p0 << " " << index << " " << sdata << endl;
+    //strcpy(opt.Filename,"qwerty");
+    //cout << "par: " << *it << " " << par << " " << p0 << " " << index << " " << sdata << endl;
 
     TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
     TDataMember* dm = (TDataMember*) lst->FindObject(par.Data());
-    //cout << dm << endl;
     if (dm) {
-      cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+      //cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
       //TDataType* tm = dm->GetDataType();
       TString tp = dm->GetTypeName();
-      cout << "tp: " << tp << " " <<dm->GetArrayDim() << " " << dm->GetMaxIndex(0) << endl;
+      //cout << "tp: " << tp << " " <<dm->GetArrayDim() << " " << dm->GetMaxIndex(0) << endl;
       int dim=dm->GetArrayDim();
       int maxindex = dm->GetMaxIndex(0);
       int unit = dm->GetUnitSize();
       Long_t off = dm->GetOffset();
-
+      //cout << "off: " << var+off << " " << &opt.Filename << endl;
       if (tp.Contains("int",TString::kIgnoreCase)) {
 	int d=sdata.Atoi();
 	buflen=sizeof(int);
 	memcpy(sbuf,&d,buflen);
-	//   cout << "int: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
       }
-      // else if (tp.Contains("short",TString::kIgnoreCase)) {
-      //   short d=stoi(sdata);
-      //   buflen=sizeof(short);
-      //   memcpy(sbuf,&d,buflen);
-      //   cout << "short: " << d << " " << buflen << " " << unit << " " << sbuf << endl;
-      // }
       else if (tp.Contains("bool",TString::kIgnoreCase)) {
 	bool d=sdata.Atoi();
 	buflen=sizeof(bool);
@@ -579,7 +572,8 @@ int main(int argc, char **argv)
 	buflen=sdata.Length();
 	memset(var+off,0,maxindex);
 	memcpy(var+off,sdata.Data(),TMath::Min(buflen,maxindex));
-	//cout << "char: " << sdata.c_str() << " " << buflen << " " << maxindex << endl;
+	//cout << "char: " << sdata.Data() << " " << buflen << " " << maxindex << endl;
+	continue;
       }
       else {
 	cout << "Error: unknown type of parameter: "
@@ -620,7 +614,7 @@ int main(int argc, char **argv)
 
   }
 
-  //cout << "sS: " << opt.sS[1] << endl;
+  //cout << "sS: " << opt.sS[1] << " " << opt.Filename << endl;
   //exit(-1);
   //cout << "class: " << TClass::GetClass("hdef")->GetNdata() << endl;
   //cout << "tof_max: " << opt.h_tof.max << endl;
@@ -638,27 +632,20 @@ int main(int argc, char **argv)
   //hcl->Make_hist();
   //cout << "gStyle2: " << gStyle << endl;
 
+
+  //batch loop
   EvtFrm = 0;
   if (crs->batch) {
-    if (strlen(datfname)==0)
-      return 0;
+    if (strlen(datfname)==0) {
+      cout << "No input file. Exiting..." << endl;
+      exit(0);
+    }
 
-    SplitFilename (string(datfname),dir,name,ext);
-    dir = TString(startdir);
-    //cout << "Root_dir: " << dir << endl;
-    dir.append("Root/");
-#ifdef LINUX
-    mkdir(dir.c_str(),0755);
-#else
-    _mkdir(dir.c_str());
-#endif
-    s_name = dir;
-    s_name.append(name);
-    s_name.append(".root");
-    strcpy(opt.fname_root,s_name.c_str());
+    if (!TestFile()) {
+      exit(0);
+    }
 
     hcl->Make_hist();
-    //cout << "batch0: " << endl;
 
     crs->b_fana=true;
     crs->b_stop=false;
@@ -669,10 +656,9 @@ int main(int argc, char **argv)
     crs->b_stop=true;
 
     //allevents();
-    //cout << "batch99: " << endl;
 
-    cout << opt.fname_root << endl;
-    saveroot(opt.fname_root);
+    cout << crs->rootname << endl;
+    saveroot(crs->rootname.c_str());
 
     return 0;
   }
@@ -954,6 +940,70 @@ MFileDialog::MFileDialog(const TGWindow* p, const TGWindow* main, EFileDialogMod
 cout << "finside: " << p << " " << main << " " << dlg_type << " " << file_info << endl;
 }
 */
+
+bool TestFile() {
+
+  string dir, name, ext;
+
+  if (crs->batch && strlen(opt.Filename)==0) {
+    //strcpy(opt.Filename,crs->Fname);
+    SplitFilename (string(crs->Fname),dir,name,ext);
+    dir = TString(startdir);
+    //cout << "Root_dir: " << dir << endl;
+    dir.append("Root/");
+#ifdef LINUX
+    mkdir(dir.c_str(),0755);
+#else
+    _mkdir(dir.c_str());
+#endif
+    opt.root_write=true;
+  }
+  else {
+    SplitFilename(string(opt.Filename),dir,name,ext);
+  }
+
+  dir.append(name);
+  crs->rawname=dir;
+  crs->decname=dir;
+  crs->rootname=dir;
+  crs->rawname.append(".raw");
+  crs->decname.append(".dec");
+  crs->rootname.append(".root");
+
+  if (!crs->juststarted) return true;
+
+  //EMsgBoxIcon icontype = kMBIconStop;
+  //EMsgBoxIcon icontype = kMBIconExclamation;
+  //EMsgBoxIcon icontype = kMBIconQuestion;
+  //EMsgBoxIcon icontype = kMBIconAsterisk;
+  //Int_t buttons = kMBOk|kMBCancel;
+
+  if ((opt.raw_write && !stat(crs->rawname.c_str(), &statb)) ||
+      (opt.dec_write && !stat(crs->decname.c_str(), &statb)) ||
+      (opt.root_write && !stat(crs->rootname.c_str(), &statb))) {
+
+    if (crs->batch) {
+      cout << "file exists. Exiting..." << endl;
+      exit(0);
+    }
+
+    Int_t retval;
+    //new ColorMsgBox(gClient->GetRoot(), this,
+    new TGMsgBox(gClient->GetRoot(), myM,
+		 "File exists",
+		 msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
+    if (retval == kMBOk) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+  else {
+    return true;
+  }
+
+}
 
 //----- MainFrame ----------------
 
@@ -1484,7 +1534,7 @@ void MainFrame::DoStartStop() {
     crs->DoStartStop();
 
     if (opt.root_write) {
-      saveroot(opt.fname_root);
+      saveroot(crs->rootname.c_str());
     }
 
   }
@@ -1506,7 +1556,7 @@ void MainFrame::DoStartStop() {
       crs->b_run=0;
 
       if (opt.root_write) {
-	saveroot(opt.fname_root);
+	saveroot(crs->rootname.c_str());
       }
 
     }
@@ -1612,7 +1662,7 @@ void MainFrame::DoAna() {
     //fAna->SetText(hAna);
 
     if (opt.root_write) {
-      saveroot(opt.fname_root);
+      saveroot(crs->rootname.c_str());
     }
 
   }
@@ -1634,7 +1684,7 @@ void MainFrame::DoAna() {
       crs->b_stop=true;
 
       if (opt.root_write) {
-	saveroot(opt.fname_root);
+	saveroot(crs->rootname.c_str());
       }
 
     }
@@ -1752,7 +1802,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
     }
     else { //Save pars
       Int_t retval=kMBOk;
-      if (!stat(fi.fFilename, &statbuffer)) {
+      if (!stat(fi.fFilename, &statb)) {
 	new TGMsgBox(gClient->GetRoot(), this,
 		     "File exists",
 		     msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
@@ -1783,6 +1833,8 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 
 void MainFrame::DoReadRoot() {
 
+  char rname[255];
+
   if (!crs->b_stop) return;
 
   const char *dnd_types[] = {
@@ -1804,14 +1856,13 @@ void MainFrame::DoReadRoot() {
 
     //rootname=new char[200];
 
-    strcpy(rootname,fi.fFilename);
-    //printf("xxxx TGFile: %s\n",rootname);
+    strcpy(rname,fi.fFilename);
 
-    readpar_root(rootname);
+    readpar_root(rname);
     //reset();
     //new_hist();
 
-    readroot(rootname);
+    readroot(rname);
 
     parpar->Update();
     crspar->Update();
@@ -1880,7 +1931,7 @@ void MainFrame::Export() {
 
   if (fi.fFilename) {
     Int_t retval=kMBOk;
-    if (!stat(fi.fFilename, &statbuffer)) {
+    if (!stat(fi.fFilename, &statb)) {
       new TGMsgBox(gClient->GetRoot(), this,
 		   "File exists",
 		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
@@ -2103,7 +2154,7 @@ void MainFrame::DoSave() {
 
   if (fi.fFilename) {
     Int_t retval=kMBOk;
-    if (!stat(fi.fFilename, &statbuffer)) {
+    if (!stat(fi.fFilename, &statb)) {
       new TGMsgBox(gClient->GetRoot(), this,
 		   "File exists",
 		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
@@ -2320,37 +2371,6 @@ void MainFrame::HandleMenu(Int_t menu_id)
     DoExit();   // terminate theApp no need to use SendCloseMessage()
     break;
   }
-}
-
-bool MainFrame::TestFile() {
-
-  if (!crs->juststarted) return true;
-
-  //EMsgBoxIcon icontype = kMBIconStop;
-  //EMsgBoxIcon icontype = kMBIconExclamation;
-  //EMsgBoxIcon icontype = kMBIconQuestion;
-  //EMsgBoxIcon icontype = kMBIconAsterisk;
-  //Int_t buttons = kMBOk|kMBCancel;
-
-  if ((opt.raw_write && !stat(opt.fname_raw, &statbuffer)) ||
-      (opt.dec_write && !stat(opt.fname_dec, &statbuffer)) ||
-      (opt.root_write && !stat(opt.fname_root, &statbuffer))) {
-    Int_t retval;
-    //new ColorMsgBox(gClient->GetRoot(), this,
-    new TGMsgBox(gClient->GetRoot(), this,
-		 "File exists",
-		 msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
-    if (retval == kMBOk) {
-      return true;
-    }
-    else {
-      return false;
-    }
-  }
-  else {
-    return true;
-  }
-
 }
 
 //______________________________________________________________________________

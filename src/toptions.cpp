@@ -280,9 +280,11 @@ Toptions::Toptions() {
   dec_compr=1;
   root_compr=1;
 
-  memset(fname_raw,0,sizeof(fname_raw));
-  memset(fname_dec,0,sizeof(fname_dec));
-  memset(fname_root,0,sizeof(fname_root));
+  memset(Filename,0,sizeof(Filename));
+
+  // memset(fname_raw,0,sizeof(fname_raw));
+  // memset(fname_dec,0,sizeof(fname_dec));
+  // memset(fname_root,0,sizeof(fname_root));
 
   ev_min=10;
   ev_max=1000;

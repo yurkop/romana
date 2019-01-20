@@ -39,6 +39,8 @@ short int bits(int n, int i1, int i2);
 Bool_t getbit(int n, int bit);
 void setbit(int &n, int bit, int set);
 
+bool TestFile();
+
 //-----------------------------------------------
 class MainFrame : public TGMainFrame {
 
@@ -98,8 +100,6 @@ public:
 
   //void ParLock();
   //void ParUnLock();
-
-  bool TestFile();
 
   void EventInfo(Int_t, Int_t, Int_t, TObject*);
   void DoCross();

@@ -152,9 +152,9 @@ public:
   Int_t raw_compr; //raw data compr level
   Int_t dec_compr; //decoded data compr level
   Int_t root_compr; //decoded data compr level
-  char fname_raw[199];
-  char fname_dec[199];
-  char fname_root[199];
+  //char fname_raw[199];
+  //char fname_dec[199];
+  //char fname_root[199];
   char Filename[199];
 
   Int_t ev_min; //minimal length of events list
@@ -227,7 +227,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 112)
+  ClassDef(Toptions, 113)
 };
 
 //ClassImp(Toptions)

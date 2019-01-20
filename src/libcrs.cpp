@@ -213,14 +213,14 @@ static void cback(libusb_transfer *trans) {
     } //if decode
 
     if (opt.raw_write) {
-      crs->f_raw = gzopen(opt.fname_raw,crs->raw_opt);
+      crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
       if (crs->f_raw) {
     	int res=gzwrite(crs->f_raw,trans->buffer,trans->actual_length);
     	gzclose(crs->f_raw);
     	crs->rawbytes+=res;
       }
       else {
-    	cout << "Can't open file: " << opt.fname_raw << endl;
+    	cout << "Can't open file: " << crs->rawname.c_str() << endl;
       }
     }
 
@@ -890,7 +890,8 @@ CRS::CRS() {
 
   DecBuf=new UChar_t[2*DECSIZE]; //1 MB
 
-  strcpy(Fname," ");
+  //strcpy(Fname," ");
+  memset(Fname,0,sizeof(Fname));
   DoReset();
 
   module=0;
@@ -1772,14 +1773,14 @@ int CRS::DoStartStop() {
     if (opt.raw_write) {
       sprintf(raw_opt,"wb%d",opt.raw_compr);
 
-      f_raw = gzopen(opt.fname_raw,raw_opt);
+      f_raw = gzopen(crs->rawname.c_str(),raw_opt);
       if (f_raw) {
-	cout << "Writing parameters... : " << opt.fname_raw << endl;
+	cout << "Writing parameters... : " << crs->rawname.c_str() << endl;
 	SaveParGz(f_raw,module);
 	gzclose(f_raw);
 	}
       else {
-	cout << "Can't open file: " << opt.fname_raw << endl;
+	cout << "Can't open file: " << crs->rawname.c_str() << endl;
       }
 
       sprintf(raw_opt,"ab%d",opt.raw_compr);
@@ -2610,7 +2611,7 @@ void CRS::FAnalyze2(bool nobatch) {
     if (nbuffers%10==0) {
       //cout << "nbuf%10: " << nbuffers << endl;
       if (batch || opt.root_write) {
-	saveroot(opt.fname_root);
+	saveroot(crs->rootname.c_str());
       }
     }
   }
@@ -4238,14 +4239,14 @@ void CRS::Select_Event(EventClass *evt) {
 void CRS::Reset_Dec(Short_t mod) {
   sprintf(dec_opt,"wb%d",opt.dec_compr);
 
-  f_dec = gzopen(opt.fname_dec,dec_opt);
+  f_dec = gzopen(crs->decname.c_str(),dec_opt);
   if (f_dec) {
-    cout << "Writing parameters... : " << opt.fname_dec << endl;
+    cout << "Writing parameters... : " << crs->decname.c_str() << endl;
     SaveParGz(f_dec,mod);
     gzclose(f_dec);
   }
   else {
-    cout << "Can't open file: " << opt.fname_dec << endl;
+    cout << "Can't open file: " << crs->decname.c_str() << endl;
   }
 
   sprintf(dec_opt,"ab%d",opt.dec_compr);
@@ -4468,16 +4469,16 @@ void CRS::Flush_Dec() {
   //return;
 
   sprintf(dec_opt,"ab%d",opt.dec_compr);
-  f_dec = gzopen(opt.fname_dec,dec_opt);
+  f_dec = gzopen(crs->decname.c_str(),dec_opt);
   if (!f_dec) {
-    cout << "Can't open file: " << opt.fname_dec << endl;
+    cout << "Can't open file: " << crs->decname.c_str() << endl;
     idec=0;
     return;
   }
 
   int res=gzwrite(f_dec,DecBuf,idec);
   if (res!=idec) {
-    cout << "Error writing to file: " << opt.fname_dec << " " 
+    cout << "Error writing to file: " << crs->decname.c_str() << " " 
 	 << res << " " << idec << endl;
   }
   idec=0;
