@@ -806,7 +806,7 @@ void EventFrame::DoCheckPoint() {
 
 	  par[6]=tt*crs->period;
 	  res = formula->EvalPar(0,par);
-	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->TT << " " << " " << par[4] << " " << res << endl;
+	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->Tstmp << " " << " " << par[4] << " " << res << endl;
 	  if (res) {
 	    //d_event = d_event;
 	    DrawEvent2();

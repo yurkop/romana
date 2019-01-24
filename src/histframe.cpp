@@ -1507,7 +1507,12 @@ void HistFrame::Update()
 
   Hmut.Lock();
 
-  gStyle->SetOptStat(opt.b_stat);
+  if (opt.b_stat) {
+    gStyle->SetOptStat(1002211);
+  }
+  else {
+    gStyle->SetOptStat(0);
+  }
   
 
   //xdiv=2;

@@ -412,7 +412,9 @@ void PulseClass::PeakAna() {
 
 void PulseClass::PeakAna33() {
 
-  //cout << "Peakana33: " << Peaks.size() << endl;
+  // if (Chan==7) {
+  //   cout << "Peakana33: " << (int) Chan << " " << Peaks.size() << " " << sData.size() << endl;
+  // }
 
   peak_type *pk;
 
@@ -420,8 +422,12 @@ void PulseClass::PeakAna33() {
   Int_t kk=opt.Drv[Chan];
   if (kk<1 || kk>=sz-1) kk=1;
 
-  if (sData.size()<2)
+  if (sData.size()<=2) {
+    Peaks.push_back(peak_type());
+    Peaks.back().Pos=cpar.preWr[Chan];
+    Peaks.back().Time=0;
     return;
+  }
 
   //return;
   //Short_t T5; //left width window
@@ -1038,6 +1044,10 @@ void EventClass::FillHist(Bool_t first) {
   for (UInt_t i=0;i<pulses.size();i++) {
     int ch = pulses[i].Chan;
 
+    // if (ch==7) {
+    //   cout << "ch7: " << (int) ch << " " << pulses[i].Peaks.size() << endl;
+    // }
+
     if (opt.h_pulse.b) {
       Fill_Mean_Pulse(first,hcl->m_pulse[ch],&pulses[i],0);
     }
@@ -1179,7 +1189,9 @@ void EventClass::FillHist(Bool_t first) {
 	} //if (opt.h_ntof.b || opt.h_etof.b)
       */
 
-      //cout << "ntof1: " << j << " " << ch << " " << crs->Tstart0 << endl;
+      // if (ch==7) {
+      // 	cout << "ntof1: " << j << " " << ch << " " << opt.start_ch << " " << crs->Tstart0 << endl;
+      // }
       if (j==0) { //only for the first peak
 	//ntof
 	if (opt.h_ntof.b || opt.h_etof.b) {

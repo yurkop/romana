@@ -6,6 +6,7 @@
 
 class HMap;
 
+/*
 enum PeakDef {
   p_undet,
   p_gam,
@@ -18,7 +19,9 @@ enum PeakDef {
   p_pileup,
   p_f_pileup
 };
+*/
 
+//peak Type:
 const UShort_t P_PILE1=1<<0; //fisrt puleup pulse
 const UShort_t P_PILE2=1<<1; //subsequent puleup pulse
 const UShort_t P_B1=1<<2; //bad left side (opt.peak1 is out of range)
@@ -27,12 +30,11 @@ const UShort_t P_B11=1<<4; //bad left or right side in timing (T3 or T4 is out o
 const UShort_t P_B22=1<<5; //bad left or right side in width (T5 or T6 is out of range)
 //const UShort_t P_B111=1<<6; //bad left size in timing
 
+//const UShort_t P_GAM=1<<9; //gamma
+//const UShort_t P_NEU=1<<10; //neutron
+//const UShort_t P_TAIL=1<<11; //tail
 
-
-const UShort_t P_GAM=1<<9; //gamma
-const UShort_t P_NEU=1<<10; //neutron
-const UShort_t P_TAIL=1<<11; //tail
-
+const UShort_t P_BAD=1<<15; //bad (dummy) peak
 
 
 class peak_type {
@@ -48,7 +50,7 @@ class peak_type {
   Float_t Width; //peak width - Alpatov (in 1st deriv)
   Float_t Width2; //peak width2 - romana3a
   Float_t Width3; //peak width3 - Alpatov2 (in pulse)
-  Float_t Time; //exact time relative to pulse start (from 1st deriv), also relative to event start
+  Float_t Time; //exact time relative to pulse start (from 1st deriv), also relative to event start, in samples
   //Float_t Time2; //exact time (from 2nd deriv)
   Short_t Pos; //position relative to pulse start (in samples)
   Short_t Pos2; //position of the 1st maximum in 1st derivative after threshold

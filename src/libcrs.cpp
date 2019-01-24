@@ -276,9 +276,9 @@ void *ballast(void* xxx) {
 void *handle_decode(void *ctx) {
   UInt_t ibuf = *(int*) ctx;
 
-  cmut.Lock();
-  cout << "Decode thread started: " << ibuf << endl;
-  cmut.UnLock();
+  // cmut.Lock();
+  // cout << "Decode thread started: " << ibuf << endl;
+  // cmut.UnLock();
 
   while (decode_thread_run) {
 
@@ -345,18 +345,18 @@ void *handle_decode(void *ctx) {
 
     dec_iread[ibuf]=0;
   } //while
-  cmut.Lock();
-  cout << "Decode thread deleted: " << ibuf << endl;
-  cmut.UnLock();
+  // cmut.Lock();
+  // cout << "Decode thread deleted: " << ibuf << endl;
+  // cmut.UnLock();
   return NULL;
 }
 
 void *handle_mkev(void *ctx) {
   //return 0;
 
-  cmut.Lock();
-  cout << "Mkev thread started: " << endl;
-  cmut.UnLock();
+  // cmut.Lock();
+  // cout << "Mkev thread started: " << endl;
+  // cmut.UnLock();
   //UInt_t ibuf=gl_ibuf;
   //CRS::plist_iter it;
   std::list<CRS::eventlist>::iterator BB;
@@ -400,9 +400,9 @@ void *handle_mkev(void *ctx) {
     // }
 
   }
-  cmut.Lock();
-  cout << "Mkev thread deleted: " << endl;
-  cmut.UnLock();
+  // cmut.Lock();
+  // cout << "Mkev thread deleted: " << endl;
+  // cmut.UnLock();
   return NULL;
 
 }
@@ -411,9 +411,9 @@ void *handle_ana(void *ctx) {
 
   //return 0;
 
-  cmut.Lock();
-  cout << "Ana thread started: " << endl;
-  cmut.UnLock();
+  // cmut.Lock();
+  // cout << "Ana thread started: " << endl;
+  // cmut.UnLock();
   while (ana_thread_run) {
 
     while (ana_thread_run &&
@@ -516,9 +516,9 @@ void *handle_ana(void *ctx) {
     //ana_mut.UnLock();
 
   } //while (ana_thread_run)
-  cmut.Lock();
-  cout << "Ana thread deleted: " << endl;
-  cmut.UnLock();
+  // cmut.Lock();
+  // cout << "Ana thread deleted: " << endl;
+  // cmut.UnLock();
   return NULL;
 } //handle_ana
 
@@ -861,6 +861,13 @@ CRS::CRS() {
   //memset(GLBuf,0,GLBSIZE);
 
   dummy_pulse.ptype=P_BADPULSE;
+  dummy_peak.Area=0;
+  dummy_peak.Height=0;
+  dummy_peak.Width=0;
+  dummy_peak.Width2=0;
+  dummy_peak.Width3=0;
+  dummy_peak.Time=-100;
+  dummy_peak.Pos=0;
 
   for (int i=0;i<MAX_CH+ADDCH;i++) {
     type_ch[i]=255;
@@ -1807,7 +1814,7 @@ int CRS::DoStartStop() {
       // sprintf(dec_opt,"ab%d",opt.dec_compr);
     }   
 
-    cout << "Acquisition started" << endl;
+    //cout << "Acquisition started" << endl;
     //gettimeofday(&t_start,NULL);
 
     TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
@@ -2045,7 +2052,7 @@ void CRS::DoReset() {
 
 void CRS::DoFopen(char* oname, int popt) {
   //popt: 1 - read opt from file; 0 - don't read opt from file
-  int tp=0; //1 - adcm raw; 0 - crs2/32
+  int tp=0; //1 - adcm raw; 0 - crs2/32/dec
   //int bsize;
   //int boffset;
 
@@ -2105,17 +2112,17 @@ void CRS::DoFopen(char* oname, int popt) {
     period=10;
     //idx=0;
   }
-  else { //crs32 or crs2
+  else { //crs32 or crs2 or dec
     //printhlist(7);
     if (ReadParGz(f_read,Fname,1,1,popt)) {
       gzclose(f_read);
       f_read=0;
       return;
     }
-    // bsize=opt.rbuf_size*1024;
-    // boffset=0;
     period=5;
-    //printhlist(8);
+    opt.raw_write=false;
+    opt.dec_write=false;
+    opt.root_write=false;
   }
 
   //boffset=1024*1024;
@@ -2539,7 +2546,7 @@ void CRS::EndAna(int all) {
     while (!Bufevents.empty()) {
       gSystem->Sleep(10);
     }
-    cout << "deleting threads... ";
+    //cout << "deleting threads... ";
     decode_thread_run=0;    
     for (UInt_t i=0;i<gl_Nbuf;i++) {
       dec_iread[i]=1; //=1;
@@ -2562,7 +2569,7 @@ void CRS::EndAna(int all) {
     //ana_cond.Signal();
     trd_ana->Join();
     trd_ana->Delete();
-    cout << "done" << endl;
+    //cout << "done" << endl;
   }
   else {
     if (all) {
