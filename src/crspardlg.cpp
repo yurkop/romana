@@ -849,6 +849,8 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   hor = new TGSplitFrame(fcont1,10,10);
   fcont1->AddFrame(hor,fLexp);
   hor->VSplit(420);
+  hor->SetWRatio(0.5);
+  //hor->SplitVertical();
   ver1 = hor->GetFirst();
   ver2 = hor->GetSecond();
 
@@ -1143,9 +1145,9 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   //frame->AddFrame(fLabel, fL5);
 
 
-  TGGroupFrame* frame = new TGGroupFrame(frame2, "1D Histograms", kVerticalFrame);
-  frame->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame2->AddFrame(frame, fL6);
+  frame1d = new TGGroupFrame(frame2, "1D Histograms", kVerticalFrame);
+  frame1d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame2->AddFrame(frame1d, fL6);
 
    // 2 column, n rows
    //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
@@ -1154,108 +1156,143 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
   tip1= "Total aqcuisition time, in seconds";
   label="Time";
-  AddLine_hist(frame,&opt.h_time,tip1,label);
+  AddLine_hist(frame1d,&opt.h_time,tip1,label);
 
   tip1= "Area of the pulse or energy, calibrated (see Channels->EM for calibration)";
   label="Area";
-  AddLine_hist(frame,&opt.h_area,tip1,label);
+  AddLine_hist(frame1d,&opt.h_area,tip1,label);
 
   tip1= "Area w/o background, not calibrated";
   label="Area0";
-  AddLine_hist(frame,&opt.h_area0,tip1,label);
+  AddLine_hist(frame1d,&opt.h_area0,tip1,label);
 
   tip1= "Base line, not calibrated";
   label="Base";
-  AddLine_hist(frame,&opt.h_base,tip1,label);
+  AddLine_hist(frame1d,&opt.h_base,tip1,label);
 
   tip1= "Slope1 (baseline)";
   label="Slope1";
-  AddLine_hist(frame,&opt.h_slope1,tip1,label);
+  AddLine_hist(frame1d,&opt.h_slope1,tip1,label);
 
   tip1= "Slope2 (peak)";
   label="Slope2";
-  AddLine_hist(frame,&opt.h_slope2,tip1,label);
+  AddLine_hist(frame1d,&opt.h_slope2,tip1,label);
 
   tip1= "Maximal pulse height (in channels)";
   label="Height";
-  AddLine_hist(frame,&opt.h_hei,tip1,label);
+  AddLine_hist(frame1d,&opt.h_hei,tip1,label);
 
   tip1= "Time of flight (relative to the starts - see Channels->St), in ns";
   label="Tof";
-  AddLine_hist(frame,&opt.h_tof,tip1,label);
+  AddLine_hist(frame1d,&opt.h_tof,tip1,label);
 
   tip1= "Neutron time of flight, in mks";
   label="Ntof";
-  AddLine_hist(frame,&opt.h_ntof,tip1,label);
+  AddLine_hist(frame1d,&opt.h_ntof,tip1,label);
 
   tip1= "Neutron energy from NTOF, in eV";
   label="Etof";
-  AddLine_hist(frame,&opt.h_etof,tip1,label);
+  AddLine_hist(frame1d,&opt.h_etof,tip1,label);
 
   tip1= "Pulse period (distance between two consecutive pulses), in mks";
   label="Period";
-  AddLine_hist(frame,&opt.h_per,tip1,label);
+  AddLine_hist(frame1d,&opt.h_per,tip1,label);
 
   tip1= "Pulse width";
   label="Width";
-  AddLine_hist(frame,&opt.h_width,tip1,label);
+  AddLine_hist(frame1d,&opt.h_width,tip1,label);
 
   tip1= "Pulse width2";
   label="Width2";
-  AddLine_hist(frame,&opt.h_width2,tip1,label);
+  AddLine_hist(frame1d,&opt.h_width2,tip1,label);
 
   tip1= "Pulse width3";
   label="Width3";
-  AddLine_hist(frame,&opt.h_width3,tip1,label);
+  AddLine_hist(frame1d,&opt.h_width3,tip1,label);
 
   tip1= "Average pulse shape";
   label="Mean_pulses";
-  AddLine_mean(frame,&opt.h_pulse,tip1,label);
+  AddLine_mean(frame1d,&opt.h_pulse,tip1,label);
 
   tip1= "Derivative of Average pulse shape";
   label="Mean_deriv";
-  AddLine_mean(frame,&opt.h_deriv,tip1,label);
+  AddLine_mean(frame1d,&opt.h_deriv,tip1,label);
 
 
-  frame = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
-  frame->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame2->AddFrame(frame, fL6);
+  frame2d = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
+  frame2d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame2->AddFrame(frame2d, fL6);
+
+
+  TGHorizontalFrame* h2fr = new TGHorizontalFrame(frame2d);
+  frame2d->AddFrame(h2fr,fL1);
+  TGComboBox* cmb1=new TGComboBox(h2fr,0);
+  h2fr->AddFrame(cmb1,fL2);
+  cmb1->AddEntry("test1", 0);
+  cmb1->Resize(60, 20);
+  TGNumberEntry* fNum1 =
+    new TGNumberEntry(h2fr, 0, 0, 111, k_int,
+			   TGNumberFormat::kNEAAnyNumber,
+			   TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
+
+  fNum1->SetWidth(45);
+  h2fr->AddFrame(fNum1,fL8a);
+
+  TGComboBox* cmb2=new TGComboBox(h2fr,1);
+  h2fr->AddFrame(cmb2,fL2);
+  cmb2->AddEntry("test2", 1);
+  cmb2->Resize(60, 20);
+
+  TGNumberEntry* fNum2 =
+    new TGNumberEntry(h2fr, 0, 0, 112, k_int,
+			   TGNumberFormat::kNEAAnyNumber,
+			   TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
+
+  fNum2->SetWidth(45);
+  h2fr->AddFrame(fNum2,fL8a);
+
+  TGTextButton *fbut = new TGTextButton(h2fr,"Add",0);
+  h2fr->AddFrame(fbut, fL3);
+  fbut->Connect("Clicked()", "ParParDlg", this, "Add2d()");
+
+
+
 
   tip1= "2-dimensional histogram (area0-area1), calibrated (see Channels->EM for calibration)";
   label="A0A1";
-  AddLine_hist(frame,&opt.h_a0a1,tip1,label);
+  AddLine_hist(frame2d,&opt.h_a0a1,tip1,label);
 
   tip1= "2-dimensional histogram (Area_Base)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Base";
-  AddLine_2d(frame,&opt.h_area_base,tip1,label);
+  AddLine_2d(frame2d,&opt.h_area_base,tip1,label);
 
   tip1= "2-dimensional histogram (Area_Slope1)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Sl1";
-  AddLine_2d(frame,&opt.h_area_sl1,tip1,label);
+  AddLine_2d(frame2d,&opt.h_area_sl1,tip1,label);
 
   tip1= "2-dimensional histogram (Area_Slope2)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Sl2";
-  AddLine_2d(frame,&opt.h_area_sl2,tip1,label);
+  AddLine_2d(frame2d,&opt.h_area_sl2,tip1,label);
 
   tip1= "2-dimensional histogram (Slope1-Slope2)\nMin Max are taken from the corresponding 1d histograms";
   label="Slope_12";
-  AddLine_2d(frame,&opt.h_slope_12,tip1,label);
+  AddLine_2d(frame2d,&opt.h_slope_12,tip1,label);
 
   tip1= "2-dimensional histogram (Area_Time)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Time";
-  AddLine_2d(frame,&opt.h_area_time,tip1,label);
+  AddLine_2d(frame2d,&opt.h_area_time,tip1,label);
 
   tip1= "2-dimensional histogram (Area_Width)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Width";
-  AddLine_2d(frame,&opt.h_area_width,tip1,label);
+  AddLine_2d(frame2d,&opt.h_area_width,tip1,label);
 
   tip1= "2-dimensional histogram (Area_Width2)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Width2";
-  AddLine_2d(frame,&opt.h_area_width2,tip1,label);
+  AddLine_2d(frame2d,&opt.h_area_width2,tip1,label);
 
   tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Width3";
-  AddLine_2d(frame,&opt.h_area_width3,tip1,label);
+  AddLine_2d(frame2d,&opt.h_area_width3,tip1,label);
 
   // tip1= "2-dimensional histogram (Width_12)\nMin Max are taken from the corresponding 1d histograms";
   // label="Width_12";
@@ -1273,6 +1310,15 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   AddLine_opt(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
   */
 
+}
+
+void ParParDlg::Add2d() {
+  cout << "Add2d: " << endl;
+  tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
+  label="Area_Width4";
+  AddLine_2d(frame2d,&opt.h_area_width3,tip1,label);
+  MapSubwindows();
+  Layout();
 }
 
 void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
@@ -1549,7 +1595,6 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
   hfr1->AddFrame(fLabel,fL8a);
-
 }
 
 void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,

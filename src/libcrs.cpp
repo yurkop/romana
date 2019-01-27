@@ -3600,19 +3600,6 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	  else
 	    ipk->Width=-999;
 
-	  //if (ipls.Peaks[0].Width==0 || ipls.Counter==25597) {
-
-	  // printf("Alp: %10lld %2d %8.1f %8.1f %8.1f %8.1f %8.1f\n",
-	  // 	   ipls.Counter,n_frm,ipls.Peaks[0].Base,ipls.Peaks[0].Area0,
-	  // 	   ipls.Peaks[0].Height,
-	  // 	   ipls.Peaks[0].Time,ipls.Peaks[0].Width);
-
-	  //}
-	  // cout << "frmt4: " << ipls.Counter << " " << n_frm
-	  //      << " " << ipls.Bg << " " << ipls.Ar << " " << ipls.Ht
-	  //      << " " << ipls.Tm << " " << ipls.Wd << " " << RX
-	  //      << " " << RY << endl;
-
 	  break;
 	default:
 	  ;
@@ -3679,19 +3666,6 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
 	    ipk->Width=QY/RY;
 	  else
 	    ipk->Width=-999;
-
-	  //if (ipls.Peaks[0].Width==0 || ipls.Counter==25597) {
-
-	  // printf("Alp: %10lld %2d %8.1f %8.1f %8.1f %8.1f %8.1f\n",
-	  // 	   ipls.Counter,n_frm,ipls.Peaks[0].Base,ipls.Peaks[0].Area0,
-	  // 	   ipls.Peaks[0].Height,
-	  // 	   ipls.Peaks[0].Time,ipls.Peaks[0].Width);
-
-	  //}
-	  // cout << "frmt4: " << ipls.Counter << " " << n_frm
-	  //      << " " << ipls.Bg << " " << ipls.Ar << " " << ipls.Ht
-	  //      << " " << ipls.Tm << " " << ipls.Wd << " " << RX
-	  //      << " " << RY << endl;
 
 	  break;
 	default:
@@ -4425,7 +4399,7 @@ void CRS::Fill_Dec76(EventClass* evt) {
 } //Fill_Dec76
 
 void CRS::Fill_Dec77(EventClass* evt) {
-  //Decode77 is the same as 76, but since this version Time is relative to event Tstmp (was relative to pulse Tstamp64)
+  //Decode77 is the same as 76, but since this version Time is relative to event Tstmp (was relative to pulse Tstamp64 in Decode76)
   //Width3 is recorded
 
   // fill_dec is not thread safe!!!

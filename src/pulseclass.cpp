@@ -63,6 +63,7 @@ void PulseClass::FindPeaks() {
   //      1 - threshold crossing of derivative;
   //      2 - maximum of derivative;
   //      3 - rise of derivative;
+  //      4 - fall of derivative.
 
   if (sData.size()<2)
     return;
@@ -423,9 +424,9 @@ void PulseClass::PeakAna33() {
   if (kk<1 || kk>=sz-1) kk=1;
 
   if (sData.size()<=2) {
-    Peaks.push_back(peak_type());
-    Peaks.back().Pos=cpar.preWr[Chan];
-    Peaks.back().Time=0;
+  //   Peaks.push_back(peak_type());
+  //   Peaks.back().Pos=cpar.preWr[Chan];
+  //   Peaks.back().Time=0;
     return;
   }
 

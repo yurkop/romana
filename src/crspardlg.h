@@ -118,6 +118,9 @@ protected:
   TGSplitFrame *ver1;
   TGSplitFrame *ver2;
   
+  TGGroupFrame* frame1d;
+  TGGroupFrame* frame2d;
+
   const char* tip1;
   const char* tip2;
   const char* label;
@@ -174,6 +177,9 @@ public:
   void DoCheckHist();
   void DoCheckPulse();
   //void CheckFormula();
+
+  void Add2d();
+
   void Update();
 
   ClassDef(ParParDlg, 0)

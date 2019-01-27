@@ -1626,7 +1626,7 @@ void HistFrame::DrawStack() {
   double b2 = y1+rr2*v2;
   hstack->GetYaxis()->SetRangeUser(b1,b2);
 
-  cout << "Vslider: " << b1 << " " << b2 << endl;
+  //cout << "Vslider: " << b1 << " " << b2 << endl;
   hstack->Draw("nostack");
 
   if (opt.b_norm) {
