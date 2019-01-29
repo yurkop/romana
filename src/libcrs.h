@@ -367,7 +367,7 @@ RQ_OBJECT("CRS")
   void Flush_Dec();
 
   //void Print_Pulses();
-  void Print_Events();
+  void Print_Events(const char* file=0);
   ClassDef(CRS, 0)
 };
 

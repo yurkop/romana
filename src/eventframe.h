@@ -66,6 +66,7 @@ protected:
   TGTextButton           *fChk1;
   TGTextButton           *fChk2;
   TGTextEntry            *tEnt;
+  TGTextButton           *fPrint;
   
   TGDoubleHSlider        *fHslider;
   TGDoubleVSlider        *fVslider;
@@ -142,6 +143,7 @@ public:
   void First();
   void Last();
   void DoCheckPoint();
+  void DoPrint();
   void DoFormula();
   void DoSlider();
   void DoChkDeriv();

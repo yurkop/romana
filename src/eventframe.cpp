@@ -285,6 +285,15 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor_but->AddFrame(tEnt,fLay4);
   tEnt->Connect("TextChanged(char*)", "EventFrame", this, "DoFormula()");
 
+
+  ttip = "Print events from First to Last.\nThe data are saved to file 'events.dat' in the current directory.";
+  fPrint = new TGTextButton(fHor_but,"Print",2);
+  fPrint->SetToolTipText(ttip);
+  fPrint->Connect("Clicked()","EventFrame",this,"DoPrint()");
+  fHor_but->AddFrame(fPrint, fLay4);
+
+  
+
   opt.b_deriv[0]=true;
 
   fDeriv[0] = new TGCheckButton(fVer_d, "Pulse", 0);
@@ -824,6 +833,11 @@ void EventFrame::DoCheckPoint() {
 
     DrawEvent2();
   } //else
+}
+
+void EventFrame::DoPrint() {
+  crs->Print_Events("events.dat");
+  //crs->Print_Events();
 }
 
 void EventFrame::DoFormula() {

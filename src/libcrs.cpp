@@ -1,7 +1,8 @@
 #include "libcrs.h"
 
+//#include <iostream>
+#include <fstream>
 #include <zlib.h>
-
 #include <sys/stat.h>
 
 #ifdef CYUSB
@@ -4059,18 +4060,33 @@ void CRS::Print_Pulses() {
 }
 */
 
-void CRS::Print_Events() {
-  //return;
-  int nn=0;
-  //cout << "Print_Events0: " << Levents.size() << endl;
-  cout << "Print_Events: " << Levents.begin()->Tstmp << " " << Levents.size() << endl;
+void CRS::Print_Events(const char* file) {
+  std::streambuf * buf;
+  std::ofstream of;
+
+  if (file) {
+    of.open(file);
+    buf = of.rdbuf();
+  }
+  else {
+    buf = std::cout.rdbuf();
+  }
+  std::ostream out(buf);
+
   for (std::list<EventClass>::iterator it=Levents.begin();
        it!=Levents.end();++it) {
-    cout << nn++ << " " << it->Tstmp << " " << " :>>";
+    out << "--- Event: " << it->Nevt << " Tstamp: " << it->Tstmp << endl;
     for (UInt_t i=0;i<it->pulses.size();i++) {
-      cout << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64<< "," << it->pulses.at(i).Peaks.back().Time;
+      PulseClass pp = it->pulses.at(i);
+      out << "Ch: " << (int)pp.Chan << " Tstamp: " << pp.Tstamp64 << endl;
+      for (int j=0;j<(int)pp.sData.size();j++) {
+	out << j << " " << pp.sData[j] << endl;
+	//printf("-- %d %f\n",i,pp.sData[i]);
+      }
+      
+      //out << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64<< "," << it->pulses.at(i).Peaks.back().Time;
     }
-    cout << endl;
+    //out << endl;
   }
 }
 
