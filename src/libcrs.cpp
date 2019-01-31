@@ -45,6 +45,7 @@ extern PikParDlg *pikpar;
 
 extern int debug; // for printing debug messages
 
+extern char startdir[200];
 const double MB = 1024*1024;
 
 //Int_t ev_max;
@@ -599,6 +600,11 @@ void CRS::Ana_start() {
     p_len[i] = opt.Peak2[i]-opt.Peak1[i]+1;
   }
   //cout << "Command_start: " << endl;
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
   gzFile ff = gzopen("last.par","wb");
   SaveParGz(ff,module);
   gzclose(ff);
@@ -2121,9 +2127,10 @@ void CRS::DoFopen(char* oname, int popt) {
       return;
     }
     period=5;
-    opt.raw_write=false;
-    opt.dec_write=false;
-    opt.root_write=false;
+    // cout << "false_open: " << endl;
+    // opt.raw_write=false;
+    // opt.dec_write=false;
+    // opt.root_write=false;
   }
 
   //boffset=1024*1024;
@@ -2216,30 +2223,16 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   //cout << "ReadParGz: " << sz << " " << pname << endl;
 
-  // if (module!=1) {
-  //   memcpy(&Pre,&cpar.preWr,sizeof(Pre));
-  // }
-
-  // for (int i=0;i<opt.ncuts;i++) {
-  //   char ss[64];
-  //   sprintf(ss,"%d",i+1);
-  //   hcl->cutG[i] = new TCutG(ss,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
-  //   hcl->cutG[i]->SetLineColor(i+2);
-  // }
-
-  // printhlist(9);
-  // //HiFrm->Clear_Ltree();
-  // hcl->Make_cuts();
-  // //HiFrm->Make_Ltree();
-  // printhlist(10);
-
   //cout << "ReadParGz2: " << sz << " " << pname << " " << HiFrm << endl;
 
   //Set_Trigger();
 
-  opt.raw_write=false;
-  opt.dec_write=false;
-  //opt.root_write=false;
+  if (p2) {
+    cout << "false_gz: " << endl;
+    opt.raw_write=false;
+    opt.dec_write=false;
+    opt.root_write=false;
+  }
 
   if (HiFrm)
     HiFrm->HiReset();
@@ -2616,12 +2609,12 @@ void CRS::FAnalyze2(bool nobatch) {
       Show();
       gSystem->ProcessEvents();
     }
-    if (nbuffers%10==0) {
-      //cout << "nbuf%10: " << nbuffers << endl;
-      if (batch || opt.root_write) {
-	saveroot(crs->rootname.c_str());
-      }
-    }
+    // if (nbuffers%10==0) {
+    //   //cout << "nbuf%10: " << nbuffers << endl;
+    //   if (batch || opt.root_write) {
+    // 	saveroot(crs->rootname.c_str());
+    //   }
+    // }
   }
 
   EndAna(1);

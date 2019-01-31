@@ -63,6 +63,7 @@ PikParDlg *pikpar;
 
 //const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
+//TString parname,lastpar;
 char* parname=(char*)"romana.par";;
 char* parname2=0;
 char* datfname=0;
@@ -410,6 +411,7 @@ int main(int argc, char **argv)
   _getcwd(startdir,150);
   strcat(startdir,"\\");
 #endif
+  
   //cout << "startdir: " << startdir << endl;
 
   cout << "----------------------------------------------" << endl;
