@@ -71,7 +71,7 @@ class peak_type {
   UShort_t Type; //peak type
   //Char_t ch;
  public:
-  peak_type() {Type=0;};
+  peak_type();// {Type=0;};
   virtual ~peak_type() {};
   
 };

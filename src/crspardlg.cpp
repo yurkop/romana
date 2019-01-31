@@ -719,6 +719,9 @@ void ParDlg::Update() {
   for (UInt_t i=0;i<Plist.size();i++) {
     UpdateField(i);
   }
+  //MapSubwindows();
+  //Layout();
+  //Rebuild();
   //cout << "update2: " << endl;
 }
 
@@ -1743,6 +1746,8 @@ void ParParDlg::CheckFormula() {
 
 void ParParDlg::Update() {
   ParDlg::Update();
+  MapSubwindows();
+  Layout();
 }
 
 //------ ChanParDlg -------
@@ -2265,6 +2270,11 @@ void CrsParDlg::DoCheck() {
 
 }
 
+// void CrsParDlg::Update() {
+//   ParDlg::Update();
+//   MapSubwindows();
+//   Layout();
+// }
 
 //------ AnaParDlg -------
 

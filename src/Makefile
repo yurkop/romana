@@ -21,7 +21,7 @@ ifdef TIMES
 endif
 
 CPPFLAGS += $(LFS) -MD -MP -D LINUX=1 -I. #-I$(LIB_D)
-CXXFLAGS += -O3 -Wall #-Wextra
+CXXFLAGS += -O3 -Wall -Wno-maybe-uninitialized #-Wextra
 #LDFLAGS += -lz -l cyusb -l usb-1.0
 LDFLAGS += -lz
 #SVNVER=\"$(shell svnversion)\"

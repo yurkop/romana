@@ -228,6 +228,7 @@ public:
   void DoCrsNum();
   void DoCheck();
 
+  //void Update();
   ClassDef(CrsParDlg, 0)
 };
 

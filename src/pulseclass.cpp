@@ -43,6 +43,13 @@ namespace PROF {
 
 using namespace std;
 
+peak_type::peak_type() {
+  Type=0;
+  //Area=0;
+  //Width=0;
+  //B1=0;
+}
+
 PulseClass::PulseClass() {
   //ptype=P_NOSTOP;
   ptype=0;
@@ -275,140 +282,6 @@ void PulseClass::FindPeaks() {
 */
 //-----------------------------
 
-/*
-void PulseClass::PeakAna() {
-
-  //cout << "Peakana: " << Peaks.size() << endl;
-
-  int sz=sData.size()-1;
-
-  for (UInt_t i=0;i<Peaks.size();i++) {
-    peak_type *pk = &Peaks[i];
-  
-    //peak time & position
-    //int nt=0;
-    Float_t sum=0;
-    pk->Time=0;
-    int tt; //reference window (timing mode)
-    //int t3; //start window for timing
-    //int t4; //end window for timing
-
-    if (opt.timing[Chan]==0) 
-      tt=pk->Pos; //0->reference is Pos (threshold crossing)
-    else if (opt.timing[Chan]==1)
-      tt=pk->T1; //1->reference is T1 (Left zero crossing of 1st drv)
-    else if (opt.timing[Chan]==2)
-      tt=pk->T2; //2->reference is T2 (Right zero crossing of 1st drv)
-    else
-      tt=pk->Pos2; //3->reference is Pos2 (maximum in 1st deriv)
-
-    if (opt.T1[Chan] == 99)
-      pk->T3=pk->T1;
-    else
-      pk->T3=tt+opt.T1[Chan];
-
-    if (opt.T2[Chan] == 99)
-      pk->T4=pk->T2;
-    else
-      pk->T4=tt+opt.T2[Chan];
-
-    UInt_t kk=opt.Drv[Chan];
-    if (kk<1 || kk>=sData.size()) kk=1;
-
-    if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
-    if (pk->T3>sz) {pk->T3=sz; pk->Type|=P_B11;}
-    if (pk->T4<(int)kk) {pk->T4=kk; pk->Type|=P_B11;}
-    if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B11;}
-
-    //cout << "T3: " << pk->T3 << endl;
-    //if (t4>(int)kk) {t3=kk; pk->Type|=P_B111;}
-
-    for (int j=pk->T3;j<pk->T4;j++) {
-      Float_t dif=sData[j]-sData[j-kk];
-      pk->Time+=dif*j;
-      sum+=dif;
-      //nt++;
-    }
-    if (abs(sum)>1e-5) {
-      pk->Time/=sum;
-    }
-    else
-      pk->Time=-999;
-
-    pk->Time-=cpar.preWr[Chan];
-    //cout << "TTT: " << Tstamp64 << " " << pk->Time << " " << pk->T2
-    //<< " " << kk << endl;
-
-    //pk->Pos = pk->Time+0.5;
-    pk->Pos = pk->Pos2;
-
-    //cout << "pk: " << (int) Chan << " " << pk->T3 << " " << pk->T4 << " " << pk->Time << " " << pk->Pos << endl;
-
-    pk->B1=pk->Pos+opt.Base1[Chan];
-    pk->B2=pk->Pos+opt.Base2[Chan]+1;
-    pk->P1=pk->Pos+opt.Peak1[Chan];
-    pk->P2=pk->Pos+opt.Peak2[Chan]+1;
-
-    // if (Counter==150) {
-    //   cout << "E150: " << Counter << " " << Tstamp64 << " " << pk->B1 << " " << pk->B2 << " " << pk->Pos << " " << pk->Pos2 << " " << pk->P1 << " " << pk->P2 << endl;
-    // }
-
-    if (pk->B1<0) pk->B1=0;
-    if (pk->B2<0) pk->B2=0;
-    if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
-    if (pk->P2<0) {pk->P2=0; pk->Type|=P_B2;}
-
-    if (pk->B1>sz) pk->B1=sz;
-    if (pk->B2>sz) pk->B2=sz;
-    if (pk->P1>sz) {pk->P1=sz; pk->Type|=P_B1;}
-    if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
-
-    //Float_t bkg=0;
-    pk->Base=0;
-    int nbkg=0;
-    //background
-    for (int j=pk->B1;j<pk->B2;j++) {
-      pk->Base+=sData[j];
-      nbkg++;
-    }
-    if (nbkg)
-      pk->Base/=nbkg;
-    else {
-      pk->Base=-999999;
-      //cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << Counter << " " << Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
-    }
-
-    int nn=0;
-    //peak Area & Height
-    pk->Area0=0;
-    pk->Height=0;
-    for (int j=pk->P1;j<pk->P2;j++) {
-      pk->Area0+=sData[j];
-      if (sData[j]>pk->Height) pk->Height = sData[j];
-      nn++;
-    }
-    if (nn) {
-      pk->Area0/=nn;
-      pk->Area=pk->Area0-pk->Base;
-    }
-    else {
-      pk->Area0=-999999;
-      pk->Area=-9999999;
-      //cout << "zero Area: " << Counter << " " << Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
-    }
-
-    //pk->Area*=opt.emult[Chan];
-    pk->Area=opt.E0[Chan] + opt.E1[Chan]*pk->Area +
-      opt.E2[Chan]*pk->Area*pk->Area;
-    if (opt.Bc[Chan]) {
-      pk->Area+=opt.Bc[Chan]*pk->Base;
-    }
-
-  }
-
-}
-*/
-
 //-----------------------------
 
 void PulseClass::PeakAna33() {
@@ -535,56 +408,6 @@ void PulseClass::PeakAna33() {
 
   //pk->Width-=pk->Pos;
   pk->Width-=cpar.preWr[Chan];
-
-
-  /*
-  pk->Width3=0;
-  sum=0;
-  for (int j=pk->T5;j<pk->T6;j++) {
-    //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
-    //Float_t dif=sData[j]-sData[j-kk];
-    Float_t dif=sData[j]-sData[0]+gRandom->Rndm();//-sData[j-kk];
-    pk->Width3+=dif*j;
-    sum+=dif+gRandom->Rndm();
-    //}
-    //nt++;
-  }
-  if (abs(sum)>1e-5) {
-    sum+=gRandom->Rndm();
-    //cout << "w3: " << (int) Chan << " " << pk->Width3 << " " << sum << " " << pk->Width3/sum << endl;
-    pk->Width3/=sum;
-  }
-  else
-    //pk->Width3=-999+pk->Pos;
-    pk->Width3=(pk->T5+pk->T6)*0.5;
-  
-  //pk->Width3-=pk->Pos;
-  pk->Width3-=cpar.preWr[Chan];
-  */
-
-  /*
-  double w3=0;
-  double s3=0;
-  for (int j=pk->T5;j<pk->T6;j++) {
-    //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
-    //Float_t dif=sData[j]-sData[j-kk];
-    double dif=sData[j]-sData[0];//-sData[j-kk];
-    w3+=dif*j;
-    s3+=dif;
-    //}
-    //nt++;
-  }
-  if (abs(s3)>1e-5)
-    w3/=s3;
-  else
-    //pk->Width3=-999+pk->Pos;
-    w3=(pk->T5+pk->T6)*0.5;
-  
-  //pk->Width3-=pk->Pos;
-  w3-=cpar.preWr[Chan];
-
-  pk->Width3=w3;
-  */
 
   double bkg2=(sData[pk->P2]+sData[pk->P1])/2;
   //double sum2=0;
