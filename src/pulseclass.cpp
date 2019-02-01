@@ -386,6 +386,7 @@ void PulseClass::PeakAna33() {
   // if (T6<(int)kk) {T6=kk;}
   // if (T6>sz) {T6=sz;}
 
+  /*
   pk->Width=0;
   sum=0;
   for (int j=pk->T5;j<pk->T6;j++) {
@@ -408,6 +409,7 @@ void PulseClass::PeakAna33() {
 
   //pk->Width-=pk->Pos;
   pk->Width-=cpar.preWr[Chan];
+*/
 
   double bkg2=(sData[pk->P2]+sData[pk->P1])/2;
   //double sum2=0;
@@ -463,25 +465,37 @@ void PulseClass::PeakAna33() {
     cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
   }
 
-  //width3 === area2
-  pk->Width3=0;
-  nn=0;
-  for (int j=pk->T5;j<pk->T6;j++) {
-    pk->Width3+=sData[j];
-    nn++;
-  }
-  if (nn) {
-    //cout << "w3: " << (int) Chan << " " << pk->Width3 << " " << sum << " " << pk->Width3/sum << endl;
-    pk->Width3/=nn;
-  }
-  else {
-    cout << "zero Width3: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
-  }
-  
-  pk->Width3-=pk->Base;
-  pk->Width3=opt.E0[Chan] + opt.E1[Chan]*pk->Width3 +
-    opt.E2[Chan]*pk->Width3*pk->Width3;
+  //calibration
+  pk->Area=pk->Area0 - pk->Base;
+  //pk->Area*=opt.emult[Chan];
+  pk->Area=opt.E0[Chan] + opt.E1[Chan]*pk->Area +
+    opt.E2[Chan]*pk->Area*pk->Area;
 
+  if (opt.Bc[Chan]) {
+    pk->Area+=opt.Bc[Chan]*pk->Base;
+  }
+
+  //width === area2
+  pk->Width=0;
+  if (pk->Area) {
+    nn=0;
+    for (int j=pk->T5;j<pk->T6;j++) {
+      pk->Width+=sData[j];
+      nn++;
+    }
+    if (nn) {
+      //cout << "w3: " << (int) Chan << " " << pk->Width << " " << sum << " " << pk->Width/sum << endl;
+      pk->Width/=nn;
+    }
+    else {
+      cout << "zero Width: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
+    }
+  
+    pk->Width-=pk->Base;
+    pk->Width=opt.E0[Chan] + opt.E1[Chan]*pk->Width +
+      opt.E2[Chan]*pk->Width*pk->Width;
+    pk->Width/=pk->Area;
+  }
 
   //slope1 (baseline)
   pk->Slope1=0;
@@ -505,16 +519,6 @@ void PulseClass::PeakAna33() {
   if (nbkg)
     pk->Slope2/=nbkg;
 
-
-  //calibration
-  pk->Area=pk->Area0 - pk->Base;
-  //pk->Area*=opt.emult[Chan];
-  pk->Area=opt.E0[Chan] + opt.E1[Chan]*pk->Area +
-    opt.E2[Chan]*pk->Area*pk->Area;
-
-  if (opt.Bc[Chan]) {
-    pk->Area+=opt.Bc[Chan]*pk->Base;
-  }
 
   // printf(ANSI_COLOR_RED
   // 	 "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
@@ -677,8 +681,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
       }
       // cout << "Peak: " << Nevt << " " << (int) pls->Chan
       // 	   << " " << pk->Time << " " 
-      // 	   << pk->Pos << " " << T0 << " " << T2 << " " << dt << " "
-      // 	   << T << endl;
+      // 	   << pk->Pos << " " << T0 << endl;
     }
   }
 
@@ -923,9 +926,9 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_width2,ch,pk->Width2);
       }
 
-      if (opt.h_width3.b) {
-	Fill1d(first,hcl->m_width3,ch,pk->Width3/pk->Area);
-      }
+      // if (opt.h_width3.b) {
+      // 	Fill1d(first,hcl->m_width3,ch,pk->Width3/pk->Area);
+      // }
 
       if (opt.h_area_base.b) {
 	Fill2d(first,hcl->m_area_base[ch],pk->Area,pk->Base);
@@ -955,9 +958,9 @@ void EventClass::FillHist(Bool_t first) {
 	Fill2d(first,hcl->m_area_width2[ch],pk->Area,pk->Width2);
       }
 
-      if (opt.h_area_width3.b) {
-	Fill2d(first,hcl->m_area_width3[ch],pk->Area,pk->Width3/pk->Area);
-      }
+      // if (opt.h_area_width3.b) {
+      // 	Fill2d(first,hcl->m_area_width3[ch],pk->Area,pk->Width3/pk->Area);
+      // }
 
       // if (opt.h_width_12.b) {
       // 	Fill2d(first,hcl->m_width_12[ch],pk->Width,pk->Width2);
@@ -967,10 +970,11 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_height,ch,pk->Height);
       }
 
-      if (opt.h_tof.b) {
+      if (opt.h_tof.b && T0!=99999) {
 	//double dt = pulses[i].Tstamp64 - Tstmp;
 	//tt = pk->Time - T0 + dt;
 	tt = pk->Time - T0;
+	//cout << "Tof: " << Nevt << " " << pk->Time << " " << T0 << endl;
 	Fill1d(first,hcl->m_tof,ch,tt*crs->period);
       }
 
@@ -1020,12 +1024,14 @@ void EventClass::FillHist(Bool_t first) {
 	//ntof
 	if (opt.h_ntof.b || opt.h_etof.b) {
 	  if (ch==opt.start_ch) {
-	    crs->Tstart0 = pulses[i].Tstamp64 + Long64_t(pk->Time);
-	    //cout << "ntof2: " << j << " " << ch << " " << pulses[i].Tstamp64 << " " << crs->Tstart0 << endl;
+	    //crs->Tstart0 = pulses[i].Tstamp64 + Long64_t(pk->Time);
+	    crs->Tstart0 = Tstmp + Long64_t(pk->Time);
+	    cout << "ntof2: " << Nevt << " " << j << " " << ch << " " << Tstmp << " " << pulses[i].Tstamp64 << " " << crs->Tstart0 << endl;
 	  }
 	  if ((i==pulses.size()-1)) { //last pulse
 	    if (crs->Tstart0>0) {
-	      tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
+	      //tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
+	      tm = Tstmp + Long64_t(pk->Time);
 	      tt = (tm - crs->Tstart0)*mks*crs->period;
 	      if (tt>0) {
 		//cout << "ntof7: " << j << " " << ch << " " << tm << " " << crs->Tstart0 << " " << tm-crs->Tstart0 << " " << tt << endl;
@@ -1063,7 +1069,8 @@ void EventClass::FillHist(Bool_t first) {
 	}
 
 	if (opt.h_per.b) {
-	  tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
+	  //tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
+	  tm = Tstmp + Long64_t(pk->Time);
 	  if (hcl->T_prev[ch] && tm!=hcl->T_prev[ch]) {
 	    tt = (tm - hcl->T_prev[ch])*mks*crs->period; //convert to mks
 

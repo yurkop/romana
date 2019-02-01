@@ -136,6 +136,7 @@ public:
   //Int_t sel_hdiv; //number of divisions in histframe
 
   //histframe vars
+  //Bool_t fopen; //true: open-; false: open+
   Bool_t b_stack; // draw stack
   Bool_t b_norm; // normalize histograms in the stack
   Int_t xdiv; // ndiv on X
@@ -207,7 +208,7 @@ public:
   Hdef h_per;
   Hdef h_width;
   Hdef h_width2;
-  Hdef h_width3;
+  //Hdef h_width3;
   Hdef h_pulse;
   Hdef h_deriv;
 
@@ -219,7 +220,7 @@ public:
   Hdef h_area_time;
   Hdef h_area_width;
   Hdef h_area_width2;
-  Hdef h_area_width3;
+  //Hdef h_area_width3;
   //Hdef h_width_12;
 public:
   //void InitPar(Int_t module);

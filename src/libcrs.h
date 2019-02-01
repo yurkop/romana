@@ -327,6 +327,7 @@ RQ_OBJECT("CRS")
   // void FindLast2(UInt_t ibuf);
   // void FindLast_adcm(UInt_t ibuf);
   void PulseAna(PulseClass &ipls);
+  void Decode78(UInt_t iread, UInt_t ibuf);
   void Decode77(UInt_t iread, UInt_t ibuf);
   void Decode76(UInt_t iread, UInt_t ibuf);
   void Decode75(UInt_t iread, UInt_t ibuf);
@@ -364,6 +365,7 @@ RQ_OBJECT("CRS")
   void Fill_Dec75(EventClass* evt);
   void Fill_Dec76(EventClass* evt);
   void Fill_Dec77(EventClass* evt);
+  void Fill_Dec78(EventClass* evt);
   void Flush_Dec();
 
   //void Print_Pulses();

@@ -310,6 +310,9 @@ void *handle_decode(void *ctx) {
     case 33:
       crs->Decode33(dec_iread[ibuf]-1,ibuf);
       break;
+    case 78:
+      crs->Decode78(dec_iread[ibuf]-1,ibuf);
+      break;
     case 77:
       crs->Decode77(dec_iread[ibuf]-1,ibuf);
       break;
@@ -469,7 +472,8 @@ void *handle_ana(void *ctx) {
 	    //crs->Fill_Dec74(&(*m_event));
 	    //crs->Fill_Dec75(&(*m_event));
 	    //crs->Fill_Dec76(&(*m_event));
-	    crs->Fill_Dec77(&(*m_event));
+	    //crs->Fill_Dec77(&(*m_event));
+	    crs->Fill_Dec78(&(*m_event));
 	  }
 	}
 	++m_event;
@@ -696,7 +700,8 @@ void CRS::Ana2(int all) {
 	  //crs->Fill_Dec74(&(*m_event));
 	  //crs->Fill_Dec75(&(*m_event));
 	  //crs->Fill_Dec76(&(*m_event));
-	  crs->Fill_Dec77(&(*m_event));
+	  //crs->Fill_Dec77(&(*m_event));
+	  crs->Fill_Dec78(&(*m_event));
 	}
       }
       ++m_event;
@@ -872,7 +877,7 @@ CRS::CRS() {
   dummy_peak.Height=0;
   dummy_peak.Width=0;
   dummy_peak.Width2=0;
-  dummy_peak.Width3=0;
+  //dummy_peak.Width3=0;
   dummy_peak.Time=-100;
   dummy_peak.Pos=0;
 
@@ -1805,7 +1810,8 @@ int CRS::DoStartStop() {
       //Reset_Dec(74);
       //Reset_Dec(75);
       //Reset_Dec(76);
-      Reset_Dec(77);
+      //Reset_Dec(77);
+      Reset_Dec(78);
       // sprintf(dec_opt,"wb%d",opt.dec_compr);
 
       // f_dec = gzopen(opt.fname_dec,dec_opt);
@@ -2588,7 +2594,8 @@ void CRS::FAnalyze2(bool nobatch) {
     //Reset_Dec(74);
     //Reset_Dec(75);
     //Reset_Dec(76);
-    Reset_Dec(77);
+    //Reset_Dec(77);
+    Reset_Dec(78);
   }
   juststarted=false;
 
@@ -2643,7 +2650,8 @@ void CRS::DoNBuf2(int nb) {
     //Reset_Dec(74);
     //Reset_Dec(75);
     //Reset_Dec(76);
-    Reset_Dec(77);
+    //Reset_Dec(77);
+    Reset_Dec(78);
   }
   juststarted=false;
 
@@ -2771,6 +2779,9 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   case 32:
   case 33:
     crs->Decode33(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 78:
+    crs->Decode78(dec_iread[ibuf]-1,ibuf);
     break;
   case 77:
     crs->Decode77(dec_iread[ibuf]-1,ibuf);
@@ -2914,6 +2925,7 @@ void CRS::FindLast(UInt_t ibuf) {
   case 75:
   case 76:
   case 77:
+  case 78:
     for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==1 -> this is the start of a pulse
       frmt = GLBuf[i+7] & 0x80; //event start bit
@@ -3155,9 +3167,10 @@ void CRS::PulseAna(PulseClass &ipls) {
   }
 }
 
-void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
+void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
+  //Decode78 - the same as 77, but different factors for Time and Width
+  //also, added determination of T0
 
-  //cout << "decode75_1: " << endl;
   //ibuf - current sub-buffer
 
   int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
@@ -3174,9 +3187,7 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
 
   Blist->push_back(EventClass());
   Blist->front().Nevt=iread;
-  //PulseClass ipls=dummy_pulse;
 
-  //cout << "decode75_2: " << endl;
   while (idx1<b_end[ibuf]) {
     frmt = GLBuf[idx1+7] & 0x80; //event start bit
 
@@ -3185,22 +3196,6 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
       idx1+=8;
       continue;
     }
-
-
-
-    // else if ((ch>=opt.Nchan) ||
-    // 	     (frmt && ch!=ipls.Chan)) {
-    //   cout << "dec33: Bad channel: " << (int) ch
-    // 	   << " " << (int) ipls.Chan
-    // 	   << " " << idx1 << " " << ibuf
-    // 	   << endl;
-    //   ipls.ptype|=P_BADCH;
-
-    //   //idx8++;
-    //   idx1+=8;
-    //   continue;
-    // }
-
 
     if (frmt) { //event start
       ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
@@ -3219,25 +3214,24 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
       ipls->Peaks.push_back(peak_type());
       peak_type *pk = &ipls->Peaks.back();
       pk->Area = buf2[0];
-      pk->Time = buf2[1]*0.1;
+      pk->Time = buf2[1]*0.01;
+      pk->Width = buf2[2]*0.001;
       ipls->Chan = buf2[3];
+      if (opt.St[ipls->Chan] && pk->Time < evt->T0) {
+	evt->T0=pk->Time;
+      }
     }
 
     idx1+=8;
   } //while (idx1<buf_len)
 
-  //cout << "decode75_3: " << endl;
   Blist->front().State=123;
 
-  // cout << "decode76: " << idx1 << " " << Blist->size()
-  //      << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
-
-} //decode76
+} //decode78
 
 void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
   //Decode77 is the same as 76, but since this version Time is relative to event Tstmp (was relative to pulse Tstamp64)
 
-  //cout << "decode75_1: " << endl;
   //ibuf - current sub-buffer
 
   int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
@@ -3254,9 +3248,7 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
 
   Blist->push_back(EventClass());
   Blist->front().Nevt=iread;
-  //PulseClass ipls=dummy_pulse;
 
-  //cout << "decode75_2: " << endl;
   while (idx1<b_end[ibuf]) {
     frmt = GLBuf[idx1+7] & 0x80; //event start bit
 
@@ -3265,22 +3257,6 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
       idx1+=8;
       continue;
     }
-
-
-
-    // else if ((ch>=opt.Nchan) ||
-    // 	     (frmt && ch!=ipls.Chan)) {
-    //   cout << "dec33: Bad channel: " << (int) ch
-    // 	   << " " << (int) ipls.Chan
-    // 	   << " " << idx1 << " " << ibuf
-    // 	   << endl;
-    //   ipls.ptype|=P_BADCH;
-
-    //   //idx8++;
-    //   idx1+=8;
-    //   continue;
-    // }
-
 
     if (frmt) { //event start
       ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
@@ -3300,20 +3276,75 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
       peak_type *pk = &ipls->Peaks.back();
       pk->Area = buf2[0];
       pk->Time = buf2[1]*0.1;
-      pk->Width3 = buf2[2];
+      pk->Width = buf2[2];
+      ipls->Chan = buf2[3];
+      if (opt.St[ipls->Chan] && pk->Time < evt->T0) {
+	evt->T0=pk->Time;
+      }
+    }
+
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+  Blist->front().State=123;
+
+} //decode77
+
+void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
+
+  //ibuf - current sub-buffer
+
+  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  UChar_t frmt;
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  dec_mut.Lock();
+  Bufevents.push_back(eventlist());
+  Blist = &Bufevents.back();
+  dec_mut.UnLock();
+
+  Blist->push_back(EventClass());
+  Blist->front().Nevt=iread;
+
+  while (idx1<b_end[ibuf]) {
+    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+
+    if (frmt && Blist->empty()) {
+      cout << "dec33: bad buf start: " << idx1 << " " << (int ) frmt << endl;
+      idx1+=8;
+      continue;
+    }
+
+    if (frmt) { //event start
+      ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+
+      evt = &*Blist->insert(Blist->end(),EventClass());
+      evt->Nevt=nevents;
+      nevents++;
+
+      evt->Tstmp = (*buf8) & sixbytes;
+      evt->State = Bool_t((*buf8) & 0x1000000000000);
+    }
+    else {
+      Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+      pulse_vect::iterator ipls =
+	evt->pulses.insert(evt->pulses.end(),PulseClass());
+      ipls->Peaks.push_back(peak_type());
+      peak_type *pk = &ipls->Peaks.back();
+      pk->Area = buf2[0];
+      pk->Time = buf2[1]*0.1;
       ipls->Chan = buf2[3];
     }
 
     idx1+=8;
   } //while (idx1<buf_len)
 
-  //cout << "decode75_3: " << endl;
   Blist->front().State=123;
 
-  // cout << "decode77: " << idx1 << " " << Blist->size()
-  //      << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
-
-} //decode77
+} //decode76
 
 void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
 
@@ -4409,7 +4440,7 @@ void CRS::Fill_Dec76(EventClass* evt) {
 
 void CRS::Fill_Dec77(EventClass* evt) {
   //Decode77 is the same as 76, but since this version Time is relative to event Tstmp (was relative to pulse Tstamp64 in Decode76)
-  //Width3 is recorded
+  //Width is recorded
 
   // fill_dec is not thread safe!!!
   //format of decoded data:
@@ -4439,7 +4470,7 @@ void CRS::Fill_Dec77(EventClass* evt) {
       Short_t* Decbuf2 = (Short_t*) DecBuf8;
       Decbuf2[0] = pk->Area;
       Decbuf2[1] = pk->Time*10;
-      Decbuf2[2] = pk->Width3;
+      Decbuf2[2] = pk->Width;
       Decbuf2[3] = evt->pulses[i].Chan;
       ++DecBuf8;
     }
@@ -4452,6 +4483,51 @@ void CRS::Fill_Dec77(EventClass* evt) {
   }
 
 } //Fill_Dec77
+
+void CRS::Fill_Dec78(EventClass* evt) {
+  //Decode78 - the same as 77, but different factors for Time and Width
+
+  // fill_dec is not thread safe!!!
+  //format of decoded data:
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - State
+  // 2) N 8-byte words, each containing one peak
+  //    1st (lowest) 2 bytes - Area
+  //    2 bytes - Time*100
+  //    2 bytes - Width*1000
+  //    1 byte - channel
+
+  *DecBuf8 = 1;
+  *DecBuf8<<=63;
+  *DecBuf8 |= evt->Tstmp & sixbytes;
+  if (evt->State) {
+    *DecBuf8 |= 0x1000000000000;
+  }
+
+  ++DecBuf8;
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+      *DecBuf8=0;
+      Short_t* Decbuf2 = (Short_t*) DecBuf8;
+      Decbuf2[0] = pk->Area;
+      Decbuf2[1] = pk->Time*100;
+      Decbuf2[2] = pk->Width*1000;
+      Decbuf2[3] = evt->pulses[i].Chan;
+      ++DecBuf8;
+    }
+  }
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    Flush_Dec();
+    DecBuf8 = (ULong64_t*) DecBuf;
+  }
+
+} //Fill_Dec78
 
 void CRS::Flush_Dec() {
 

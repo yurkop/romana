@@ -1046,6 +1046,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGLayoutHints* l_Gr = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
   //TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY,0,0,5,5);
   TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsTop,0,0,5,5);
+  //TGLayoutHints* l_But2 = new TGLayoutHints(kLHintsExpandX | kLHintsTop,0,0,0,0);
   TGLayoutHints* lay2 = new TGLayoutHints(kLHintsLeft | kLHintsTop,1,1,1,1);
 
   Lay11 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
@@ -1193,12 +1194,29 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
 
 
-  TGTextButton *fOpen = new TGTextButton(fGr2,new TGHotString("&Open"));
+  // TGTextButton *fOpen = new TGTextButton(fGr2,new TGHotString("&Open"));
+  // fOpen->SetFont(tfont,false);
+  // fOpen->Resize(butx,buty);
+  // fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
+  // fOpen->ChangeBackground(fBluevio);
+  // fOpen->Connect("Clicked()","MainFrame",this,"DoOpen()");
+  // fGr2->AddFrame(fOpen, l_But);
+
+  TGPopupMenu* fPopMenu = new TGPopupMenu(gClient->GetRoot());
+  fPopMenu->AddEntry("Open+", 1);
+  fPopMenu->AddEntry("Open-", 0);
+  //fPopMenu->AddSeparator();
+  //fPopMenu->Resize(butx,buty);
+  //fPopMenu->ChangeOptions(fPopMenu->GetOptions() | kFixedSize);
+
+  TGSplitButton *fOpen = new TGSplitButton(fGr2, new TGHotString("&Open+"),
+					   fPopMenu,1);
+  fOpen->SetToolTipText("Open+: open data file with parameters\nOpen-: open data file without parameters");
   fOpen->SetFont(tfont,false);
   fOpen->Resize(butx,buty);
   fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
   fOpen->ChangeBackground(fBluevio);
-  fOpen->Connect("Clicked()","MainFrame",this,"DoOpen()");
+  fOpen->Connect("ItemClicked(Int_t)", "MainFrame", this, "DoOpen(Int_t)");
   fGr2->AddFrame(fOpen, l_But);
 
   TGTextButton *fClose = new TGTextButton(fGr2,new TGHotString("&Close"));
@@ -1568,9 +1586,12 @@ void MainFrame::DoStartStop() {
 
 }
 
-void MainFrame::DoOpen() {
+void MainFrame::DoOpen(Int_t id) {
 
   if (!crs->b_stop) return;
+
+  //id=12-id;
+  //cout << "DoOpen: " << id << endl;
 
   const char *dnd_types[] = {
     "all files",     "*",
@@ -1590,7 +1611,7 @@ void MainFrame::DoOpen() {
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
 
   if (fi.fFilename != NULL) {
-    crs->DoFopen(fi.fFilename,1);//1 - read toptions
+    crs->DoFopen(fi.fFilename,id);//1 - read toptions
 
     parpar->Update();
     crspar->Update();

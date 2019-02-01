@@ -60,7 +60,7 @@ class HClass {
   HMap* m_per[MAX_CH+NGRP]; // period
   HMap* m_width[MAX_CH+NGRP]; // width
   HMap* m_width2[MAX_CH+NGRP]; // width
-  HMap* m_width3[MAX_CH+NGRP]; // width
+  //HMap* m_width3[MAX_CH+NGRP]; // width
 
   HMap* m_pulse[MAX_CH]; // pulse shape
   HMap* m_deriv[MAX_CH]; // pulse shape (deriv)
@@ -73,7 +73,7 @@ class HClass {
   HMap* m_area_time[MAX_CH];
   HMap* m_area_width[MAX_CH];
   HMap* m_area_width2[MAX_CH];
-  HMap* m_area_width3[MAX_CH];
+  //HMap* m_area_width3[MAX_CH];
   //HMap* m_width_12[MAX_CH];
 
   TCutG* cutG[MAXCUTS];

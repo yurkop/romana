@@ -82,7 +82,7 @@ public:
   void SetTitle(char* fname);
   void DoStartStop();
 
-  void DoOpen();
+  void DoOpen(Int_t id);
   void DoClose();
   void DoAna();
   void DoRWinit(EFileDialogMode);

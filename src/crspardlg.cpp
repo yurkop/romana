@@ -1209,9 +1209,9 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Width2";
   AddLine_hist(frame1d,&opt.h_width2,tip1,label);
 
-  tip1= "Pulse width3";
-  label="Width3";
-  AddLine_hist(frame1d,&opt.h_width3,tip1,label);
+  // tip1= "Pulse width3";
+  // label="Width3";
+  // AddLine_hist(frame1d,&opt.h_width3,tip1,label);
 
   tip1= "Average pulse shape";
   label="Mean_pulses";
@@ -1293,9 +1293,9 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Area_Width2";
   AddLine_2d(frame2d,&opt.h_area_width2,tip1,label);
 
-  tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Width3";
-  AddLine_2d(frame2d,&opt.h_area_width3,tip1,label);
+  // tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
+  // label="Area_Width3";
+  // AddLine_2d(frame2d,&opt.h_area_width3,tip1,label);
 
   // tip1= "2-dimensional histogram (Width_12)\nMin Max are taken from the corresponding 1d histograms";
   // label="Width_12";
@@ -1317,9 +1317,9 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
 void ParParDlg::Add2d() {
   cout << "Add2d: " << endl;
-  tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
+  tip1= "2-dimensional histogram (Area_Width)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Width4";
-  AddLine_2d(frame2d,&opt.h_area_width3,tip1,label);
+  AddLine_2d(frame2d,&opt.h_area_width,tip1,label);
   MapSubwindows();
   Layout();
 }

@@ -1310,8 +1310,8 @@ void EventFrame::ReDraw() {
 	    if (pulse->Peaks.size()) {
 	      char ss[256];
 	      peak_type *pk = &pulse->Peaks.back();
-	      sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f W3=%f",
-		      pulse->Chan,pk->Area,pk->Time,pk->Width,pk->Width3);
+	      sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f W2=%f",
+		      pulse->Chan,pk->Area,pk->Time,pk->Width,pk->Width2);
 	      //tt.SetBBoxX1(0);
 	      //tt.SetBBoxX2(100);
 	      //tt.SetBBoxY1(0);
