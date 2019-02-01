@@ -1026,7 +1026,7 @@ void EventClass::FillHist(Bool_t first) {
 	  if (ch==opt.start_ch) {
 	    //crs->Tstart0 = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	    crs->Tstart0 = Tstmp + Long64_t(pk->Time);
-	    cout << "ntof2: " << Nevt << " " << j << " " << ch << " " << Tstmp << " " << pulses[i].Tstamp64 << " " << crs->Tstart0 << endl;
+	    //cout << "ntof2: " << Nevt << " " << j << " " << ch << " " << Tstmp << " " << pulses[i].Tstamp64 << " " << crs->Tstart0 << endl;
 	  }
 	  if ((i==pulses.size()-1)) { //last pulse
 	    if (crs->Tstart0>0) {

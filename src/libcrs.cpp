@@ -390,10 +390,10 @@ void *handle_mkev(void *ctx) {
     crs->Make_Events(BB);
     //}
 
-    cout << "\033[31m";
-    cout << "Make_events33: " << gl_ivect << " " << crs->Bufevents.size()
-    	 << " " << crs->Levents.size() << endl;
-    cout << "\033[0m";
+    // cout << "\033[31m";
+    // cout << "Make_events33: " << gl_ivect << " " << crs->Bufevents.size()
+    // 	 << " " << crs->Levents.size() << endl;
+    // cout << "\033[0m";
 
     gl_ivect++;
     //dec_finished[ibuf]=0;

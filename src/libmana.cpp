@@ -1211,6 +1211,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGSplitButton *fOpen = new TGSplitButton(fGr2, new TGHotString("&Open+"),
 					   fPopMenu,1);
+  fOpen->SetSplit(true);
   fOpen->SetToolTipText("Open+: open data file with parameters\nOpen-: open data file without parameters");
   fOpen->SetFont(tfont,false);
   fOpen->Resize(butx,buty);
