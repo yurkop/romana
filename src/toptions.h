@@ -55,7 +55,9 @@ public:
   // 0 - only triggered channel is written; 
   // 1 - both channels are written with any trigger
   Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
+  //UInt_t Mask[MAX_CH+ADDCH];
   Bool_t forcewr; //only for crs2
+  //UInt_t DTW; //Start deat time window
 
 public:
   void InitPar(int zero);

@@ -282,6 +282,7 @@ RQ_OBJECT("CRS")
   void Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max);
   int Command2(byte cmd, byte ch, byte type, int par);
   //void Command_crs(byte cmd, byte chan);
+  void AllParameters34(); // load all parameters
   void AllParameters33(); // load all parameters
   void AllParameters32(); // load all parameters
   void AllParameters2(); // load all parameters
@@ -332,6 +333,7 @@ RQ_OBJECT("CRS")
   void Decode76(UInt_t iread, UInt_t ibuf);
   void Decode75(UInt_t iread, UInt_t ibuf);
   void Decode33(UInt_t iread, UInt_t ibuf);
+  void Decode34(UInt_t iread, UInt_t ibuf);
   void Decode2(UInt_t iread, UInt_t ibuf);
   void Decode_adcm(UInt_t iread, UInt_t ibuf);
 

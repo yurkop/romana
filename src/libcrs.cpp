@@ -308,7 +308,8 @@ void *handle_decode(void *ctx) {
     switch (crs->module) {
     case 32:
     case 33:
-      crs->Decode33(dec_iread[ibuf]-1,ibuf);
+    case 34:
+      crs->Decode34(dec_iread[ibuf]-1,ibuf);
       break;
     case 78:
       crs->Decode78(dec_iread[ibuf]-1,ibuf);
@@ -1144,9 +1145,12 @@ int CRS::Detect_device() {
 	cout << endl;
 	sz--;
 	//cout << i << " " << sz << endl;
-	if (ver_po>=3) {//версия ПО=3 или выше
-	  module=33;
-	}
+      }
+      if (ver_po==3) {//версия ПО=3 или выше
+	module=33;
+      }
+      else if (ver_po>=4) {//версия ПО=3 или выше
+	module=34;
       }
     }
   }
@@ -1185,22 +1189,20 @@ int CRS::Detect_device() {
 
 int CRS::SetPar() {
 
-  if (module==2) {
+  switch (module) {
+  case 2:
     AllParameters2();
-  }
-  else if (module==32) {
-    // if (ver_po==1)
-    //   AllParameters32_old();
-    // else
+    break;
+  case 32:
       AllParameters32();
-  }
-  else if (module==33) {
-    // if (ver_po==1)
-    //   AllParameters32_old();
-    // else
+      break;
+  case 33:
       AllParameters33();
-  }
-  else {
+      break;
+  case 34:
+      AllParameters34();
+      break;
+  default:
     cout << "SetPar Error! No module found" << endl;
     return 3;
   }
@@ -1467,8 +1469,12 @@ int CRS::Command32(byte cmd, byte ch, byte type, int par) {
     len_out=1;
     len_in=9;
     break;
+  case 11:
+    len_out=6;
+    len_in=1;
+    break;
   default:
-    cout << "Wrong CRS32 command: " << cmd << endl;
+    cout << "Wrong CRS32 command: " << (int) cmd << endl;
     return 0;
   }
   
@@ -1639,6 +1645,51 @@ void CRS::Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
   //<< " " << a2 << " " << len << endl;
 }
 
+void CRS::AllParameters34()
+{
+  cout << "AllParameters34(): " << endl;
+
+  //enable start channel by default
+  Command32(2,255,11,1); //enabled
+
+  for (byte chan = 0; chan < chan_in_module; chan++) {
+    Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
+
+    if (cpar.enabl[chan]) {
+      Command32(2,chan,0,(int)cpar.acdc[chan]);
+      Command32(2,chan,1,(int)cpar.inv[chan]);
+      Command32(2,chan,2,(int)cpar.smooth[chan]);
+      Command32(2,chan,3,(int)cpar.deadTime[chan]);
+      Command32(2,chan,4,(int)-cpar.preWr[chan]);
+      Command32(2,chan,5,(int)cpar.durWr[chan]);
+      Command32(2,chan,6,(int)cpar.kderiv[chan]);
+      Command32(2,chan,7,(int)cpar.threshold[chan]);
+      Command32(2,chan,8,(int)cpar.adcGain[chan]);
+      // new commands
+      Command32(2,chan,9,0); //delay
+      //Command32(2,chan,10,0); //test signal
+      Command32(2,chan,12,(int) cpar.trg[chan]); //trigger type
+
+      Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
+      Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      Check33(17,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      Check33(19,chan,opt.T1[chan],opt.T2[chan],1,4095);
+      Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
+
+      //cpar.Mask[chan]=0xFF;
+      //Command32(2,chan,23,(UInt_t) cpar.Mask[chan]); //bitmask
+      UInt_t mask = 0xFF;
+      Command32(2,chan,23,(UInt_t) mask); //bitmask
+    }
+
+  } //for
+
+  // Start deat time DT
+  //byte type = cpar.DTW>>24;
+  //Command32(11,0,type,(UInt_t) cpar.DTW); //bitmask
+
+}
+
 void CRS::AllParameters33()
 {
   cout << "AllParameters33(): " << endl;
@@ -1662,7 +1713,7 @@ void CRS::AllParameters33()
       // new commands
       Command32(2,chan,9,0); //delay
       //Command32(2,chan,10,0); //test signal
-      Command32(2,chan,12,(int) cpar.trg[chan]); //enabled
+      Command32(2,chan,12,(int) cpar.trg[chan]); //trigger type
 
       Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
       Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
@@ -1879,9 +1930,9 @@ void CRS::ProcessCrs() {
 
   //decode_thread_run=1;
   //tt1[3].Set();
-  if (crs->module>=32 && crs->module<=33) {
-    Command32(8,0,0,0);
-    Command32(9,0,0,0);    
+  if (crs->module>=32 && crs->module<=34) {
+    Command32(8,0,0,0); //сброс сч./буф.
+    Command32(9,0,0,0); //сброс времени
   }
   Command2(3,0,0,0);
   while (!crs->b_stop) {
@@ -2778,7 +2829,8 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   switch (crs->module) {
   case 32:
   case 33:
-    crs->Decode33(dec_iread[ibuf]-1,ibuf);
+  case 34:
+    crs->Decode34(dec_iread[ibuf]-1,ibuf);
     break;
   case 78:
     crs->Decode78(dec_iread[ibuf]-1,ibuf);
@@ -2911,6 +2963,7 @@ void CRS::FindLast(UInt_t ibuf) {
     break;
   case 32:
   case 33:
+  case 34:
     for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);
@@ -2942,110 +2995,6 @@ void CRS::FindLast(UInt_t ibuf) {
   }
 
 }
-
-/*
-void CRS::FindLast76(UInt_t ibuf) {
-  //ibuf - current sub-buffer
-  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
-
-  //unsigned char *buf = Fbuf[];
-  UChar_t frmt;
-
-  for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
-    //find frmt==1 -> this is the start of a pulse
-    frmt = GLBuf[i+7] & 0x80; //event start bit
-    if (frmt) {
-      b_end[ibuf]=i;
-      b_start[ibuf2]=i;
-      return;
-    }
-  }
-
-  cout << "Error: no last event: " << ibuf << endl;
-
-}
-
-void CRS::FindLast75(UInt_t ibuf) {
-  //ibuf - current sub-buffer
-  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
-
-  //unsigned char *buf = Fbuf[];
-  UChar_t frmt;
-
-  for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
-    //find frmt==1 -> this is the start of a pulse
-    frmt = GLBuf[i+7] & 0x80; //event start bit
-    if (frmt) {
-      b_end[ibuf]=i;
-      b_start[ibuf2]=i;
-      return;
-    }
-  }
-
-  cout << "Error: no last event: " << ibuf << endl;
-
-}
-
-void CRS::FindLast33(UInt_t ibuf) {
-  //ibuf - current sub-buffer
-  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
-
-  unsigned char frmt;
-
-  for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
-    //find frmt==0 -> this is the start of a pulse
-    frmt = (GLBuf[i+6] & 0xF0);
-    if (frmt==0) {
-
-      b_end[ibuf]=i;
-      b_start[ibuf2]=i;
-
-      return;
-
-    }
-  }
-  cout << "Error: no last event: " << ibuf << endl;
-
-}
-
-void CRS::FindLast2(UInt_t ibuf) {
-  //ibuf - current sub-buffer
-  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
-
-  unsigned char frmt;
-
-  for (int i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
-    //find frmt==0 -> this is the start of a pulse
-    frmt = (GLBuf[i+1] & 0x70);
-    if (frmt==0) {
-      b_end[ibuf]=i;
-      b_start[ibuf2]=i;
-      return;
-    }
-  }
-  cout << "Error: no last event: " << ibuf << endl;
-
-}
-
-void CRS::FindLast_adcm(UInt_t ibuf) {
-  //ibuf - current sub-buffer
-  UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
-
-  UInt_t* frmt;
-
-  for (int i=b_end[ibuf]-4;i>=b_start[ibuf];i-=4) {
-    //find *frmt==0x2a500100 -> this is the start of a pulse
-    frmt = (UInt_t*) GLBuf+i;
-    if (*frmt==0x2a500100) {
-      b_end[ibuf]=i;
-      b_start[ibuf2]=i;
-      return;
-    }
-  }
-  cout << "Error: no last event: " << ibuf << endl;
-
-}
-*/
 
 /*
 void CRS::Decode32(UChar_t *buffer, int length) {
@@ -3253,7 +3202,7 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
     frmt = GLBuf[idx1+7] & 0x80; //event start bit
 
     if (frmt && Blist->empty()) {
-      cout << "dec33: bad buf start: " << idx1 << " " << (int ) frmt << endl;
+      cout << "dec77: bad buf start: " << idx1 << " " << (int ) frmt << endl;
       idx1+=8;
       continue;
     }
@@ -3313,7 +3262,7 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
     frmt = GLBuf[idx1+7] & 0x80; //event start bit
 
     if (frmt && Blist->empty()) {
-      cout << "dec33: bad buf start: " << idx1 << " " << (int ) frmt << endl;
+      cout << "dec76: bad buf start: " << idx1 << " " << (int ) frmt << endl;
       idx1+=8;
       continue;
     }
@@ -3716,6 +3665,301 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
   Blist->front().State=123;
 
 } //decode33
+
+
+void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
+  //ibuf - current sub-buffer
+
+  ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
+
+  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  unsigned short frmt;
+  ULong64_t data;
+  Short_t sss; // temporary var. to convert signed nbit var. to signed 16bit int
+  Int_t iii; // temporary var. to convert signed nbit var. to signed 32bit int
+  Long64_t lll; //Long temporary var.
+  int n_frm=0; //counter for frmt4 and frmt5
+  peak_type *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
+  Double_t QX=0,QY=0,RX,RY;
+
+  eventlist *Blist;
+  dec_mut.Lock();
+  Bufevents.push_back(eventlist());
+  Blist = &Bufevents.back();
+  dec_mut.UnLock();
+
+  Blist->push_back(EventClass());
+  Blist->front().Nevt=iread;
+  PulseClass ipls=dummy_pulse;
+
+  //cout << "Decode34: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
+
+  while (idx1<b_end[ibuf]) {
+    //debug_mess(idx1>16500,"DDDD0: ",idx1,buf1[idx1]);
+    frmt = GLBuf[idx1+6];
+    //YKYKYK!!!! do something with cnt - ???
+    //int cnt = frmt & 0x0F;
+    frmt = (frmt & 0xF0)>>4;
+    data = buf8[idx1/8] & sixbytes;
+    unsigned char ch = GLBuf[idx1+7];
+
+    //cout << "data: " << idx << " " << frmt << " " << n_frm << " " << data << endl;
+    // if (vv->size()<4) {
+    //   cout << "idx: " << idx1 << " " << vv->size() << " " << frmt << " " << (int) ch << " " << (int) ipls->Chan << endl;
+    // }
+
+
+    if (frmt && Blist->empty()) {
+      cout << "dec34: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
+      idx1+=8;
+      continue;
+    }
+    else if (ch==255) {
+      //start signal
+      idx1+=8;
+      continue;      
+    }
+    else if ((ch>=opt.Nchan) ||
+	     (frmt && ch!=ipls.Chan)) {
+      cout << "dec34: Bad channel: " << (int) ch
+	   << " " << (int) ipls.Chan
+	   << " " << idx1 << " " << ibuf
+	   << endl;
+      ipls.ptype|=P_BADCH;
+
+      //idx8++;
+      idx1+=8;
+      continue;
+    }
+
+    if (frmt==0) {
+      //ipls->ptype&=~P_NOSTOP; //pulse has stop
+
+      //analyze previous pulse
+      if (ipls.ptype==0) {
+	PulseAna(ipls);
+	Event_Insert_Pulse(Blist,&ipls);
+	//cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
+      }
+
+      // create new pulse
+      ipls=PulseClass();
+      npulses++;
+      ipls.Chan=ch;
+      ipls.Tstamp64=data+opt.Delay[ch];// - cpar.preWr[ch];
+      n_frm=0;
+      //cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
+    }
+    else if (frmt==1) {
+      ipls.State = GLBuf[idx1+5];
+      ipls.Counter = data & 0xFFFFFFFFFF;
+      //cout << "Counter: " << ipls.Counter << " " << (int) ipls.Chan << endl;
+      // if (buffer[idx1+5]) {
+      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls.State << " " << data << " " << buf8[idx8] << endl;
+      // }
+    }
+    else if (frmt==2) {
+
+      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
+	// cout << "32: ERROR Nsamp: "
+	//      << " " << (ipls.Counter & 0x0F)
+	//      << " " << ipls.sData.size() << " " << cpar.durWr[ipls.Chan]
+	//      << " " << (int) ch << " " << (int) ipls.Chan
+	//      << " " << idx8 //<< " " << transfer->actual_length
+	//      << endl;
+	ipls.ptype|=P_BADSZ;
+      }
+      //else {
+      for (int i=0;i<4;i++) {
+
+	iii = data & 0xFFF;
+	ipls.sData.push_back((iii<<20)>>20);
+
+	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
+	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
+	data>>=12;
+      }
+      //}
+    }
+    else if (frmt==3) {
+
+      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
+	// cout << "34: ERROR Nsamp: "
+	//      << " " << (ipls.Counter & 0x0F)
+	//      << " " << ipls.sData.size() << " " << cpar.durWr[ipls.Chan]
+	//      << " " << (int) ch << " " << (int) ipls.Chan
+	//      << " " << idx8 //<< " " << transfer->actual_length
+	//      << endl;
+	ipls.ptype|=P_BADSZ;
+      }
+      //else {
+      for (int i=0;i<3;i++) {
+
+	iii = data & 0xFFFF;
+	ipls.sData.push_back((iii<<16)>>16);
+
+	//YK
+	//float aa = (iii<<16)>>16;
+	//aa*=10*ipls.sData.size();
+	//ipls.sData.push_back(aa);
+
+
+	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
+	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
+	data>>=16;
+      }
+      //}
+    }
+    else if (frmt==4) {
+      if (opt.dsp[ipls.Chan]) {
+	if (ipls.Peaks.size()==0) {
+	  ipls.Peaks.push_back(peak_type());
+	  ipk=&ipls.Peaks[0];
+	}
+	switch (n_frm) {
+	case 0: //C – [24]; A – [24]
+	  //area
+	  iii = data & 0xFFFFFF;
+	  ipk->Area0=((iii<<8)>>8);
+	  ipk->Area0/=p_len[ipls.Chan];
+	  data>>=24;
+	  //bkg
+	  iii = data & 0xFFFFFF;
+	  ipk->Base=((iii<<8)>>8);
+	  ipk->Base/=b_len[ipls.Chan];
+
+	  ipk->Area=ipk->Area0 - ipk->Base;
+	  //ipk->Area*=opt.emult[ipls.Chan];
+	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
+	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
+	  if (opt.Bc[ipls.Chan]) {
+	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
+	  }
+
+	  break;
+	case 1: //H – [12]; QX – [36]
+	  lll = data & 0xFFFFFFFFF;
+	  QX=((lll<<28)>>28);
+	  data>>=36;
+	  //height
+	  iii = data & 0xFFF;
+	  ipk->Height=((iii<<20)>>20);
+	  break;
+	case 2: //QY – [36]
+	  lll = data & 0xFFFFFFFFF;
+	  QY=((lll<<28)>>28);
+	  break;
+	case 3: //RY – [20]; RX – [20]
+	  //RX
+	  iii = data & 0xFFFFF;
+	  RX=((iii<<12)>>12);
+	  data>>=24;
+	  //RY
+	  iii = data & 0xFFFFF;
+	  RY=((iii<<12)>>12);
+
+	  if (RX!=0)
+	    ipk->Time=QX/RX;
+	  else
+	    ipk->Time=-999;
+
+	  if (RY!=0)
+	    ipk->Width=QY/RY;
+	  else
+	    ipk->Width=-999;
+
+	  break;
+	default:
+	  ;
+	} //switch
+	n_frm++;
+      } //if (opt.dsp[ipls.Chan])
+    }
+    else if (frmt==5) {
+      if (opt.dsp[ipls.Chan]) {
+	if (ipls.Peaks.size()==0) {
+	  ipls.Peaks.push_back(peak_type());
+	  ipk=&ipls.Peaks[0];
+	}
+	switch (n_frm) {
+	case 0: //C – [28]; H – [16]
+	  //height
+	  sss = data & 0xFFFF;
+	  ipk->Height=sss;
+	  data>>=16;
+	  //bkg
+	  iii = data & 0xFFFFFFF;
+	  ipk->Base=((iii<<4)>>4);
+	  ipk->Base/=b_len[ipls.Chan];
+	  break;
+	case 1: //A – [28]
+	  //area
+	  iii = data & 0xFFFFFFF;
+	  ipk->Area0=((iii<<4)>>4);
+	  ipk->Area0/=p_len[ipls.Chan];
+
+	  ipk->Area=ipk->Area0 - ipk->Base;
+	  //ipk->Area*=opt.emult[ipls.Chan];
+	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
+	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
+	  if (opt.Bc[ipls.Chan]) {
+	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
+	  }
+	  break;
+	case 2: //A – [28]
+	  //QX
+	  lll = data & 0xFFFFFFFFFF;
+	  QX=((lll<<24)>>24);
+	  break;
+	case 3: //QY – [40]
+	  //QY
+	  lll = data & 0xFFFFFFFFFF;
+	  QY=((lll<<24)>>24);
+	  break;
+	case 4: //RY – [24]; RX – [24]
+	  //RX
+	  iii = data & 0xFFFFFF;
+	  RX=((iii<<8)>>8);
+	  data>>=24;
+	  //RY
+	  iii = data & 0xFFFFFF;
+	  RY=((iii<<8)>>8);
+
+	  if (RX!=0)
+	    ipk->Time=QX/RX;
+	  else
+	    ipk->Time=-999;
+
+	  if (RY!=0)
+	    ipk->Width=QY/RY;
+	  else
+	    ipk->Width=-999;
+
+	  break;
+	default:
+	  ;
+	} //switch
+	n_frm++;
+      } //if (opt.dsp[ipls.Chan])
+    }
+    else {
+      cout << "bad frmt: " << frmt << endl;
+    }
+
+    //idx8++;
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+  //add last pulse to the list
+  if (ipls.ptype==0) {
+    PulseAna(ipls);
+    Event_Insert_Pulse(Blist,&ipls);
+  }
+
+  Blist->front().State=123;
+
+} //decode34
 
 
 void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
