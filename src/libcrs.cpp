@@ -1677,16 +1677,16 @@ void CRS::AllParameters34()
       Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
 
       //cpar.Mask[chan]=0xFF;
-      //Command32(2,chan,23,(UInt_t) cpar.Mask[chan]); //bitmask
-      UInt_t mask = 0xFF;
-      Command32(2,chan,23,(UInt_t) mask); //bitmask
+      Command32(2,chan,23,(UInt_t) cpar.Mask[chan]); //bitmask
+      //UInt_t mask = 0xFF;
+      //Command32(2,chan,23,(UInt_t) mask); //bitmask
     }
 
   } //for
 
   // Start deat time DT
-  //byte type = cpar.DTW>>24;
-  //Command32(11,0,type,(UInt_t) cpar.DTW); //bitmask
+  byte type = cpar.DTW>>24;
+  Command32(11,0,type,(UInt_t) cpar.DTW); //bitmask
 
 }
 

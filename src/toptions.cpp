@@ -37,10 +37,10 @@ void Coptions::InitPar(int zero) {
     kderiv[i]=1*zero;
     threshold[i]=50*zero;
     adcGain[i]=12*zero;
-    //Mask[i]=0xFF;
+    Mask[i]=0xFF;
   }
   forcewr=false;
-  //DTW=0;
+  DTW=0;
 
 }
 
@@ -159,7 +159,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
   }
   //CRS-33 [CRS-32, firmware>=3] --------------------------
-  else if (module==33) {
+  else if (module>=33) {
     if (!strcmp(name,"smooth")) {
       par = smooth[i];
       min = 0;
