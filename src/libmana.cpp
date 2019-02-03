@@ -59,7 +59,7 @@ HClass* hcl;
 ParParDlg *parpar;
 CrsParDlg *crspar;
 AnaParDlg *anapar;
-PikParDlg *pikpar;
+DspParDlg *pikpar;
 
 //const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
@@ -1513,8 +1513,8 @@ void MainFrame::MakeTabs() {
   ntab++;
   anapar->Update();
 
-  pikpar = new PikParDlg(tabfr[3], 600, 500);
-  pikpar->Make_PikPar(tabfr[3], 600, 210);
+  pikpar = new DspParDlg(tabfr[3], 600, 500);
+  pikpar->Make_DspPar(tabfr[3], 600, 210);
   tabfr[3]->AddFrame(pikpar, Lay12);
   ntab++;
   pikpar->Update();

@@ -41,7 +41,7 @@ extern HClass* hcl;
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern AnaParDlg *anapar;
-extern PikParDlg *pikpar;
+extern DspParDlg *pikpar;
 
 extern int debug; // for printing debug messages
 
@@ -603,6 +603,7 @@ void CRS::Ana_start() {
   for (int i=0;i<MAX_CH;i++) {
     b_len[i] = opt.Base2[i]-opt.Base1[i]+1;
     p_len[i] = opt.Peak2[i]-opt.Peak1[i]+1;
+    w_len[i] = opt.W2[i]-opt.W1[i]+1;
   }
   //cout << "Command_start: " << endl;
 #ifdef LINUX
@@ -1666,8 +1667,9 @@ void CRS::AllParameters34()
       Command32(2,chan,7,(int)cpar.threshold[chan]);
       Command32(2,chan,8,(int)cpar.adcGain[chan]);
       // new commands
+      //Command32(2,chan,9,(int)cpar.delay[chan]); //delay
       Command32(2,chan,9,0); //delay
-      //Command32(2,chan,10,0); //test signal
+      Command32(2,chan,10,0); //test signal is off
       Command32(2,chan,12,(int) cpar.trg[chan]); //trigger type
 
       Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
@@ -1677,7 +1679,14 @@ void CRS::AllParameters34()
       Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
 
       //cpar.Mask[chan]=0xFF;
-      Command32(2,chan,23,(UInt_t) cpar.Mask[chan]); //bitmask
+      UInt_t mask=0xC3; //11000011 - write tst,count40,count48,overflow
+      if (opt.dsp[chan]) {//add 110000
+	mask|=0x30; // write DSP data
+      }
+      if (cpar.pls[chan]) {//add 1100
+	mask|=0xC; // write pulse
+      }
+      Command32(2,chan,23,mask); //bitmask
       //UInt_t mask = 0xFF;
       //Command32(2,chan,23,(UInt_t) mask); //bitmask
     }
@@ -1685,6 +1694,7 @@ void CRS::AllParameters34()
   } //for
 
   // Start deat time DT
+  if (cpar.DTW==0) cpar.DTW=1;
   byte type = cpar.DTW>>24;
   Command32(11,0,type,(UInt_t) cpar.DTW); //bitmask
 
@@ -2285,7 +2295,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   //Set_Trigger();
 
   if (p2) {
-    cout << "false_gz: " << endl;
+    //cout << "false_gz: " << endl;
     opt.raw_write=false;
     opt.dec_write=false;
     opt.root_write=false;
@@ -3681,7 +3691,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   Long64_t lll; //Long temporary var.
   int n_frm=0; //counter for frmt4 and frmt5
   peak_type *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
-  Double_t QX=0,QY=0,RX,RY;
+  //Double_t QX=0,QY=0,RX,RY;
+  Double_t QX=0,RX,AY;
 
   eventlist *Blist;
   dec_mut.Lock();
@@ -3696,7 +3707,6 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   //cout << "Decode34: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
 
   while (idx1<b_end[ibuf]) {
-    //debug_mess(idx1>16500,"DDDD0: ",idx1,buf1[idx1]);
     frmt = GLBuf[idx1+6];
     //YKYKYK!!!! do something with cnt - ???
     //int cnt = frmt & 0x0F;
@@ -3733,34 +3743,25 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       continue;
     }
 
-    if (frmt==0) {
-      //ipls->ptype&=~P_NOSTOP; //pulse has stop
-
+    switch (frmt) {
+    case 0:
       //analyze previous pulse
       if (ipls.ptype==0) {
 	PulseAna(ipls);
 	Event_Insert_Pulse(Blist,&ipls);
-	//cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
       }
-
       // create new pulse
       ipls=PulseClass();
       npulses++;
       ipls.Chan=ch;
       ipls.Tstamp64=data+opt.Delay[ch];// - cpar.preWr[ch];
       n_frm=0;
-      //cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
-    }
-    else if (frmt==1) {
+      break;
+    case 1:
       ipls.State = GLBuf[idx1+5];
       ipls.Counter = data & 0xFFFFFFFFFF;
-      //cout << "Counter: " << ipls.Counter << " " << (int) ipls.Chan << endl;
-      // if (buffer[idx1+5]) {
-      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls.State << " " << data << " " << buf8[idx8] << endl;
-      // }
-    }
-    else if (frmt==2) {
-
+      break;
+    case 2:
       if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "32: ERROR Nsamp: "
 	//      << " " << (ipls.Counter & 0x0F)
@@ -3772,18 +3773,13 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       }
       //else {
       for (int i=0;i<4;i++) {
-
 	iii = data & 0xFFF;
 	ipls.sData.push_back((iii<<20)>>20);
-
-	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
-	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=12;
       }
       //}
-    }
-    else if (frmt==3) {
-
+      break;
+    case 3:
       if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "34: ERROR Nsamp: "
 	//      << " " << (ipls.Counter & 0x0F)
@@ -3795,23 +3791,13 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       }
       //else {
       for (int i=0;i<3;i++) {
-
 	iii = data & 0xFFFF;
 	ipls.sData.push_back((iii<<16)>>16);
-
-	//YK
-	//float aa = (iii<<16)>>16;
-	//aa*=10*ipls.sData.size();
-	//ipls.sData.push_back(aa);
-
-
-	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
-	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
 	data>>=16;
       }
       //}
-    }
-    else if (frmt==4) {
+      break;
+    case 4:
       if (opt.dsp[ipls.Chan]) {
 	if (ipls.Peaks.size()==0) {
 	  ipls.Peaks.push_back(peak_type());
@@ -3828,15 +3814,12 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  iii = data & 0xFFFFFF;
 	  ipk->Base=((iii<<8)>>8);
 	  ipk->Base/=b_len[ipls.Chan];
-
 	  ipk->Area=ipk->Area0 - ipk->Base;
-	  //ipk->Area*=opt.emult[ipls.Chan];
 	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
 	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
 	  if (opt.Bc[ipls.Chan]) {
 	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
 	  }
-
 	  break;
 	case 1: //H – [12]; QX – [36]
 	  lll = data & 0xFFFFFFFFF;
@@ -3846,28 +3829,31 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  iii = data & 0xFFF;
 	  ipk->Height=((iii<<20)>>20);
 	  break;
-	case 2: //QY – [36]
-	  lll = data & 0xFFFFFFFFF;
-	  QY=((lll<<28)>>28);
-	  break;
-	case 3: //RY – [20]; RX – [20]
+	// case 2: //QY – [36]
+	//   lll = data & 0xFFFFFFFFF;
+	//   QY=((lll<<28)>>28);
+	//   break;
+	case 2: //AY – [24]; RX – [20]
 	  //RX
 	  iii = data & 0xFFFFF;
 	  RX=((iii<<12)>>12);
 	  data>>=24;
-	  //RY
-	  iii = data & 0xFFFFF;
-	  RY=((iii<<12)>>12);
+	  //AY (Width)
+	  iii = data & 0xFFFFFF;
+	  AY=((iii<<8)>>8);
 
 	  if (RX!=0)
 	    ipk->Time=QX/RX;
 	  else
 	    ipk->Time=-999;
 
-	  if (RY!=0)
-	    ipk->Width=QY/RY;
-	  else
-	    ipk->Width=-999;
+	  ipk->Width=AY/w_len[ipls.Chan]-ipk->Base;
+	  ipk->Width=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Width +
+	    opt.E2[ipls.Chan]*ipk->Width*ipk->Width;
+	  // if (opt.Bc[ipls.Chan]) {
+	  //   ipk->Width+=opt.Bc[ipls.Chan]*ipk->Base;
+	  // }
+	  ipk->Width/=ipk->Area;
 
 	  break;
 	default:
@@ -3875,8 +3861,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	} //switch
 	n_frm++;
       } //if (opt.dsp[ipls.Chan])
-    }
-    else if (frmt==5) {
+      break;
+    case 5:
       if (opt.dsp[ipls.Chan]) {
 	if (ipls.Peaks.size()==0) {
 	  ipls.Peaks.push_back(peak_type());
@@ -3907,34 +3893,32 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
 	  }
 	  break;
-	case 2: //A – [28]
-	  //QX
+	case 2: //QX – [40]
 	  lll = data & 0xFFFFFFFFFF;
 	  QX=((lll<<24)>>24);
 	  break;
-	case 3: //QY – [40]
-	  //QY
-	  lll = data & 0xFFFFFFFFFF;
-	  QY=((lll<<24)>>24);
+	case 3: //AY – [28]
+	  iii = data & 0xFFFFFFF;
+	  AY=((iii<<4)>>4);
 	  break;
-	case 4: //RY – [24]; RX – [24]
+	case 4: //reserved – [24]; RX – [24]
 	  //RX
 	  iii = data & 0xFFFFFF;
 	  RX=((iii<<8)>>8);
 	  data>>=24;
-	  //RY
-	  iii = data & 0xFFFFFF;
-	  RY=((iii<<8)>>8);
 
 	  if (RX!=0)
 	    ipk->Time=QX/RX;
 	  else
 	    ipk->Time=-999;
 
-	  if (RY!=0)
-	    ipk->Width=QY/RY;
-	  else
-	    ipk->Width=-999;
+	  ipk->Width=AY/w_len[ipls.Chan]-ipk->Base;
+	  ipk->Width=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Width +
+	    opt.E2[ipls.Chan]*ipk->Width*ipk->Width;
+	  // if (opt.Bc[ipls.Chan]) {
+	  //   ipk->Width+=opt.Bc[ipls.Chan]*ipk->Base;
+	  // }
+	  ipk->Width/=ipk->Area;
 
 	  break;
 	default:
@@ -3942,10 +3926,10 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	} //switch
 	n_frm++;
       } //if (opt.dsp[ipls.Chan])
-    }
-    else {
+      break;
+    default:
       cout << "bad frmt: " << frmt << endl;
-    }
+    } //switch (frmt);
 
     //idx8++;
     idx1+=8;

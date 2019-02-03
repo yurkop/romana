@@ -46,6 +46,7 @@ public:
   UInt_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
   Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
   UInt_t durWr[MAX_CH+ADDCH]; // total length N = 1…32763 (internally - multiple of 4)
+  //Int_t delay[MAX_CH+ADDCH]; //hardware delay in samples
   UInt_t trg[MAX_CH+ADDCH]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
   UInt_t kderiv[MAX_CH+ADDCH]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t threshold[MAX_CH+ADDCH]; // T = –2048 .. +2047
@@ -55,7 +56,8 @@ public:
   // 0 - only triggered channel is written; 
   // 1 - both channels are written with any trigger
   Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
-  UInt_t Mask[MAX_CH+ADDCH];
+  Bool_t pls[MAX_CH+ADDCH]; //1 - send pulses (format 2,3); 0 - don't send
+  //UInt_t Mask[MAX_CH+ADDCH];
   Bool_t forcewr; //only for crs2
   UInt_t DTW; //Start deat time window
 
@@ -82,7 +84,8 @@ public:
   Int_t sS[MAX_CH+ADDCH]; //[nsmoo] software smoothing 0..100
   Int_t Drv[MAX_CH+ADDCH]; //[kdrv] parameter of derivative
   Int_t Thr[MAX_CH+ADDCH];//[thresh]
-  Int_t Delay[MAX_CH+ADDCH]; //[delay]
+  Float_t Delay[MAX_CH+ADDCH]; //[delay]
+  //Int_t Delay[MAX_CH+ADDCH]; //[delay]
   Int_t Base1[MAX_CH+ADDCH]; //[bkg1]
   Int_t Base2[MAX_CH+ADDCH]; //[bkg2]
   Int_t Peak1[MAX_CH+ADDCH]; //[peak1]

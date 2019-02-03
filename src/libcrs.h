@@ -264,7 +264,9 @@ RQ_OBJECT("CRS")
   PulseClass dummy_pulse;
   EventClass dummy_event;
 
-  Int_t b_len[MAX_CH],p_len[MAX_CH]; //length of window for bkg and peak integration in DSP
+  Int_t b_len[MAX_CH],
+    p_len[MAX_CH],
+    w_len[MAX_CH]; //length of window for bkg, peak and width integration in DSP
   //--------functions---------
 
   //void Dummy_trd();

@@ -31,7 +31,7 @@ namespace CP {
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
 extern AnaParDlg *anapar;
-extern PikParDlg *pikpar;
+extern DspParDlg *pikpar;
 
 const int ncrspar=14;
 
@@ -55,13 +55,12 @@ const char* ttip1[ncrspar+1]={
   "Number of Bad pulses"
 };
 
-const int n_apar=15;
-const int tlen2[n_apar]={26,60,24,24,25,35,26,32,40,35,35,38,38,38,38};
-const char* tlab2[n_apar]={"Ch","Type","dsp","St","sS","Delay","sTg","Drv","Thr","dT","Pile","E0","E1","E2","Bc"};
+const int n_apar=14;
+const int tlen2[n_apar]={26,60,24,25,35,26,32,40,35,35,38,38,38,38};
+const char* tlab2[n_apar]={"Ch","Type","St","sS","Delay","sTg","Drv","Thr","dT","Pile","E0","E1","E2","Bc"};
 const char* ttip2[n_apar]={
   "Channel number",
   "Channel type",
-  "Use Digital Signal Processing (DSP) data instead of raw data",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Software smoothing",
   "Time delay in samples (can be negative or positive)",
@@ -78,12 +77,14 @@ const char* ttip2[n_apar]={
 };
 
 
-const int n_ppar=10;
-const int tlen3[n_ppar]={26,60,40,40,42,42,35,35,35,35};
-const char* tlab3[n_ppar]={"Ch","Type","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
-const char* ttip3[n_ppar]={
+const int n_dpar=12;
+const int tlen3[n_dpar]={26,60,24,24,40,40,42,42,35,35,35,35};
+const char* tlab3[n_dpar]={"Ch","Type","dsp","pls","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
+const char* ttip3[n_dpar]={
   "Channel number",
   "Channel type",
+  "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
+  "Send/don't send pulse data",
   "Baseline start, relative to peak Pos (negative)",
   "Baseline end, relative to peak Pos (negative), included",
   "Peak start, relative to peak Pos (usually negative)",
@@ -1020,7 +1021,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   sprintf(txt,"CheckDSP");
   fchk = new TGCheckButton(hframe3, txt, id);
   fchk->SetName(txt);
-  fchk->SetToolTipText("Compare raw decoded data vs DSP data");
+  fchk->SetToolTipText("Compare software pulse analysis vs DSP data");
   hframe3->AddFrame(fchk,fL3);
   DoMap(fchk,&opt.checkdsp,p_chk,0);
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
@@ -1128,7 +1129,13 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
   tip2= "Ntof start channel";
   label="Ntof period / start channel";
   AddLine_opt(fF6,ww,&opt.ntof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
-	      0,1e9,0,MAX_CH-1);
+	      0,1e9,0,255);
+
+  tip1= "";
+  tip2= "Dead time for the start input of the CRS (in 5ns samples)";
+  label="Ntof dead time";
+  AddLine_opt(fF6,ww,NULL,&cpar.DTW,tip1,tip2,label,k_r1,k_int,
+	      0,0,1,2e9);
 
   tip1= "Ntof Flight path (in meters) for Ntof-Energy conversion";
   tip2= "Ntof Time offset (in mks) for Ntof-Energy conversion";
@@ -1814,6 +1821,68 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 }
 
+void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
+  //start AddChCombo
+  char txt[255];
+
+  if (i<MAX_CH)
+    sprintf(txt,"%2d  ",i);
+  else if (i==MAX_CH) {
+    sprintf(txt,"all");
+    all=1;
+  }
+  else {
+    sprintf(txt," ");
+    all=i-MAX_CH+1;
+  }
+
+  clab[i]=new TGTextEntry(cframe[i], txt);
+  clab[i]->SetHeight(20);
+  clab[i]->SetWidth(tlen1[0]);
+  clab[i]->SetToolTipText(ttip1[kk]);
+  clab[i]->SetState(false);
+  cframe[i]->AddFrame(clab[i],fL0a);
+  kk++;
+
+  if (!nfld && Plist.size()) {
+    nfld=Plist.size();
+  }
+
+  id = Plist.size()+1;
+  TGComboBox* fCombo=new TGComboBox(cframe[i],id);
+  //fCombo->SetToolTipText(ttip1[kk]);
+  cframe[i]->AddFrame(fCombo,fL0);
+  kk++;
+
+  for (int j = 0; j < ADDCH; j++) {
+    fCombo->AddEntry(types[j], j+1);
+  }
+
+  fCombo->Resize(tlen1[1], 20);
+
+  if (i==MAX_CH) {
+    fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
+  }
+  else {
+    fCombo->AddEntry(types[ADDCH], ADDCH+1);
+  }
+
+  if (i<=MAX_CH) {
+    DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
+  }
+  else {
+    DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
+    fCombo->Select(i-MAX_CH,false);
+    fCombo->SetEnabled(false);
+    cframe[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
+    clab[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);    
+  }
+
+  fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
+  //end AddChCombo
+
+}
+
 void ChanParDlg::DoChanMap(TGWidget *f, void *d, P_Def t, int all,
 		       byte cmd, byte chan, void* d2) {
   ParDlg::DoMap(f,d,t,all);
@@ -1942,7 +2011,7 @@ void CrsParDlg::AddHeader() {
 }
 
 void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
-  char txt[255];
+  //char txt[255];
   int kk=0;
   int all=0;
   int id;
@@ -1958,6 +2027,9 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   //cframe[i]->ChangeBackground(yellow);
   //cframe[i]->SetForegroundColor(green);
 
+  AddChCombo(i,id,kk,all);
+  /*
+  //start AddChCombo
   if (i<MAX_CH)
     sprintf(txt,"%2d  ",i);
   else if (i==MAX_CH) {
@@ -1977,27 +2049,13 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   cframe[i]->AddFrame(clab[i],fL0a);
   kk++;
 
-  // if (i%2) {
-  //   cframe[i]->SetBackgroundColor(yellow);
-  //   clab[i]->SetBackgroundColor(yellow);
-  // }
-  // else {
-  //   cframe[i]->SetBackgroundColor(green);
-  //   clab[i]->SetBackgroundColor(green);
-  // }
-
   if (!nfld && Plist.size()) {
     nfld=Plist.size();
-    //cout << "nfld: " << Plist.size() << " " << nfld << endl;
-    //start=false;
   }
 
   id = Plist.size()+1;
   TGComboBox* fCombo=new TGComboBox(cframe[i],id);
   //fCombo->SetToolTipText(ttip1[kk]);
-  //TGComboBox* fCombo=new TGComboBox(cframe[i],id,kHorizontalFrame|kSunkenFrame|kDoubleBorder, yellow);
-  // fCombo->SetBackgroundColor(yellow);
-  // fCombo->SetForegroundColor(green);
   cframe[i]->AddFrame(fCombo,fL0);
   kk++;
 
@@ -2018,24 +2076,16 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
   }
   else {
-    //cout << "combo: " << i << " " << MAX_CH << " " << &combotype[i] << endl;
     DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
     fCombo->Select(i-MAX_CH,false);
     fCombo->SetEnabled(false);
-    //cout << "tcol: " << i-MAX_CH << " " << tcol[i-MAX_CH] << endl;
     cframe[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
     clab[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);    
   }
 
-  // cout << fCombo->GetSelectedEntry() << endl; //->SetBackgroundColor(yellow);
-  // if (fCombo->GetSelectedEntry()) {
-  //   fCombo->GetSelectedEntry()->SetBackgroundColor(yellow);
-  //   fCombo->GetSelectedEntry()->SetForegroundColor(yellow);
-  // }
-  
-  //DoMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
-
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
+  //end AddChCombo
+  */
 
   id = Plist.size()+1;
   TGCheckButton *f_en = new TGCheckButton(cframe[i], "", id);
@@ -2332,7 +2382,7 @@ void AnaParDlg::AddHeader() {
 }
 
 void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
-  char txt[255];
+  //char txt[255];
   int kk=0;
   int all=0;
   int id;
@@ -2346,6 +2396,8 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   //gClient->GetColorByName("yellow", yellow);
   //cframe[i]->ChangeBackground(yellow);
 
+  AddChCombo(i,id,kk,all);
+  /*
   if (i<MAX_CH)
     sprintf(txt,"%2d  ",i);
   else if (i==MAX_CH) {
@@ -2367,12 +2419,9 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
   if (!nfld && Plist.size()) {
     nfld=Plist.size();
-    //cout << "nfld: " << Plist.size() << " " << nfld << endl;
-    //start=false;
   }
 
   id = Plist.size()+1;
-
 
   TGComboBox* fCombo=new TGComboBox(cframe[i],id);
   cframe[i]->AddFrame(fCombo,fL0);
@@ -2398,20 +2447,12 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
     DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
     fCombo->Select(i-MAX_CH,false);
     fCombo->SetEnabled(false);
-    //cout << "tcol: " << i-MAX_CH << " " << tcol[i-MAX_CH] << endl;
     cframe[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
     clab[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
   }
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
-
-  id = Plist.size()+1;
-  TGCheckButton *fdsp = new TGCheckButton(cframe[i], "", id);
-  DoChanMap(fdsp,&opt.dsp[i],p_chk,all,0,0);
-  fdsp->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  fdsp->SetToolTipText(ttip2[kk]);
-  cframe[i]->AddFrame(fdsp,fL3);
-  kk++;
+  */
 
   id = Plist.size()+1;
   TGCheckButton *fst = new TGCheckButton(cframe[i], "", id);
@@ -2434,7 +2475,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   ttip7 = (char**) ttip2;
 
   AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],0,99,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.Delay[i],-999,999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Delay[i],-999,999,p_fnum);
   AddNumChan(i,kk++,all,cframe[i],&opt.sTg[i],-1,4,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Drv[i],1,999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Thr[i],0,9999,p_inum);
@@ -2467,39 +2508,39 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
 }
 
-//------ PikParDlg -------
+//------ DspParDlg -------
 
-PikParDlg::PikParDlg(const TGWindow *p,UInt_t w,UInt_t h)
+DspParDlg::DspParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :ChanParDlg(p,w,h)
 {
   fDock->SetWindowName("Peaks");  
 }
 
-void PikParDlg::Make_PikPar(const TGWindow *p,UInt_t w,UInt_t h) {
+void DspParDlg::Make_DspPar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   AddHeader();
 
   for (int i=0;i<MAX_CH;i++) {
-    AddLine_Pik(i,fcont1);
+    AddLine_Dsp(i,fcont1);
   }
 
-  AddLine_Pik(MAX_CH,fcont2);
+  AddLine_Dsp(MAX_CH,fcont2);
 
   for (int i=1;i<ADDCH;i++) {
-    AddLine_Pik(MAX_CH+i,fcont2);
+    AddLine_Dsp(MAX_CH+i,fcont2);
   }
 
 
 }
 
-void PikParDlg::AddHeader() {
+void DspParDlg::AddHeader() {
 
   //TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
   //AddFrame(hframe1,fL1);
 
   TGTextEntry* tt;
 
-  for (int i=0;i<n_ppar;i++) {
+  for (int i=0;i<n_dpar;i++) {
     tt=new TGTextEntry(head_frame, tlab3[i]);
     tt->SetWidth(tlen3[i]);
     tt->SetState(false);
@@ -2510,8 +2551,8 @@ void PikParDlg::AddHeader() {
 
 }
 
-void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
-  char txt[255];
+void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
+  //char txt[255];
   int kk=0;
   int all=0;
   int id;
@@ -2525,6 +2566,8 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   //gClient->GetColorByName("yellow", yellow);
   //cframe[i]->ChangeBackground(yellow);
 
+  AddChCombo(i,id,kk,all);
+  /*
   if (i<MAX_CH)
     sprintf(txt,"%2d  ",i);
   else if (i==MAX_CH) {
@@ -2546,12 +2589,9 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
 
   if (!nfld && Plist.size()) {
     nfld=Plist.size();
-    //cout << "nfld: " << Plist.size() << " " << nfld << endl;
-    //start=false;
   }
 
   id = Plist.size()+1;
-
 
   TGComboBox* fCombo=new TGComboBox(cframe[i],id);
   cframe[i]->AddFrame(fCombo,fL0);
@@ -2583,7 +2623,23 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   }
 
   fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
+  */
 
+  id = Plist.size()+1;
+  TGCheckButton *fdsp = new TGCheckButton(cframe[i], "", id);
+  DoChanMap(fdsp,&opt.dsp[i],p_chk,all,0,0);
+  fdsp->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  fdsp->SetToolTipText(ttip2[kk]);
+  cframe[i]->AddFrame(fdsp,fL3);
+  kk++;
+
+  id = Plist.size()+1;
+  TGCheckButton *fpls = new TGCheckButton(cframe[i], "", id);
+  DoChanMap(fpls,&cpar.pls[i],p_chk,all,0,0);
+  fpls->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  fpls->SetToolTipText(ttip2[kk]);
+  cframe[i]->AddFrame(fpls,fL3);
+  kk++;
 
   tlen7 = (int*) tlen3;
   ttip7 = (char**) ttip3;

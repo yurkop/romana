@@ -197,11 +197,12 @@ public:
   ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ChanParDlg() {};
 
-  void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
-	       void* apar, double min, double max, P_Def ptype);
+  void AddChCombo(int i, int &id, int &kk, int &all);
   void DoChanMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan,
 	     void* d2=0);
   void DoChanNum();
+  void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
+	       void* apar, double min, double max, P_Def ptype);
 
   ClassDef(ChanParDlg, 0)
 };
@@ -249,18 +250,18 @@ public:
 };
 
 //-----------------------------------------------
-class PikParDlg: public ChanParDlg {
+class DspParDlg: public ChanParDlg {
 
 public:
-  PikParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~PikParDlg() {};
+  DspParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~DspParDlg() {};
 
-  void Make_PikPar(const TGWindow *p,UInt_t w,UInt_t h);
+  void Make_DspPar(const TGWindow *p,UInt_t w,UInt_t h);
 
   void AddHeader();
-  void AddLine_Pik(int i, TGCompositeFrame* fcont1);
+  void AddLine_Dsp(int i, TGCompositeFrame* fcont1);
 
-  ClassDef(PikParDlg, 0)
+  ClassDef(DspParDlg, 0)
 };
 
 #endif
