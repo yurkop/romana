@@ -163,6 +163,8 @@ public:
   //char fname_root[199];
   char Filename[199];
 
+  char tnames[ADDCH][6];
+
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list
 

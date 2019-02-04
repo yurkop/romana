@@ -14,7 +14,8 @@
 //const char* t_raw = "Write raw data";
 
 namespace CP {
-  Float_t RGB[ADDCH][3] =
+  //Float_t RGB[ADDCH][3] =
+  Float_t RGB[][3] =
     {
       {1,1,0}, //0
       {0,1,1},
@@ -100,7 +101,9 @@ char ttip_g[NGRP][100];
 int* tlen7;
 char** ttip7;
 
-const char* types[ADDCH+2]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
+// const char* types[ADDCH+2]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
+// 			    "NIM","Other","Copy",""};
+const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
 			    "NIM","Other","Copy",""};
 
 //-----------
@@ -2002,64 +2005,6 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   //cframe[i]->SetForegroundColor(green);
 
   AddChCombo(i,id,kk,all);
-  /*
-  //start AddChCombo
-  if (i<MAX_CH)
-    sprintf(txt,"%2d  ",i);
-  else if (i==MAX_CH) {
-    sprintf(txt,"all");
-    all=1;
-  }
-  else {
-    sprintf(txt," ");
-    all=i-MAX_CH+1;
-  }
-
-  clab[i]=new TGTextEntry(cframe[i], txt);
-  clab[i]->SetHeight(20);
-  clab[i]->SetWidth(tlen1[0]);
-  clab[i]->SetToolTipText(ttip1[kk]);
-  clab[i]->SetState(false);
-  cframe[i]->AddFrame(clab[i],fL0a);
-  kk++;
-
-  if (!nfld && Plist.size()) {
-    nfld=Plist.size();
-  }
-
-  id = Plist.size()+1;
-  TGComboBox* fCombo=new TGComboBox(cframe[i],id);
-  //fCombo->SetToolTipText(ttip1[kk]);
-  cframe[i]->AddFrame(fCombo,fL0);
-  kk++;
-
-  for (int j = 0; j < ADDCH; j++) {
-    fCombo->AddEntry(types[j], j+1);
-  }
-
-  fCombo->Resize(tlen1[1], 20);
-
-  if (i==MAX_CH) {
-    fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
-  }
-  else {
-    fCombo->AddEntry(types[ADDCH], ADDCH+1);
-  }
-
-  if (i<=MAX_CH) {
-    DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
-  }
-  else {
-    DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
-    fCombo->Select(i-MAX_CH,false);
-    fCombo->SetEnabled(false);
-    cframe[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
-    clab[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);    
-  }
-
-  fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
-  //end AddChCombo
-  */
 
   id = Plist.size()+1;
   TGCheckButton *f_en = new TGCheckButton(cframe[i], "", id);
@@ -2369,62 +2314,6 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   //cframe[i]->ChangeBackground(yellow);
 
   AddChCombo(i,id,kk,all);
-  /*
-  if (i<MAX_CH)
-    sprintf(txt,"%2d  ",i);
-  else if (i==MAX_CH) {
-    sprintf(txt,"all");
-    all=1;
-  }
-  else {
-    sprintf(txt," ");
-    all=i-MAX_CH+1;
-  }
-
-  clab[i]=new TGTextEntry(cframe[i], txt);
-  clab[i]->SetHeight(20);
-  clab[i]->SetWidth(tlen2[0]);
-  clab[i]->SetToolTipText(ttip2[kk]);
-  clab[i]->SetState(false);
-  cframe[i]->AddFrame(clab[i],fL0a);
-  kk++;
-
-  if (!nfld && Plist.size()) {
-    nfld=Plist.size();
-  }
-
-  id = Plist.size()+1;
-
-  TGComboBox* fCombo=new TGComboBox(cframe[i],id);
-  cframe[i]->AddFrame(fCombo,fL0);
-  kk++;
-
-  for (int j = 0; j < ADDCH; j++) {
-    fCombo->AddEntry(types[j], j+1);
-  }
-
-  fCombo->Resize(tlen2[1], 20);
-
-  if (i==MAX_CH) {
-    fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
-  }
-  else {
-    fCombo->AddEntry(types[ADDCH], ADDCH+1);
-  }
-
-  if (i<=MAX_CH) {
-    DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
-  }
-  else {
-    DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
-    fCombo->Select(i-MAX_CH,false);
-    fCombo->SetEnabled(false);
-    cframe[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
-    clab[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
-  }
-
-  fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
-  */
 
   id = Plist.size()+1;
   TGCheckButton *fst = new TGCheckButton(cframe[i], "", id);
@@ -2539,63 +2428,6 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
   //cframe[i]->ChangeBackground(yellow);
 
   AddChCombo(i,id,kk,all);
-  /*
-  if (i<MAX_CH)
-    sprintf(txt,"%2d  ",i);
-  else if (i==MAX_CH) {
-    sprintf(txt,"all");
-    all=1;
-  }
-  else {
-    sprintf(txt," ");
-    all=i-MAX_CH+1;
-  }
-
-  clab[i]=new TGTextEntry(cframe[i], txt);
-  clab[i]->SetHeight(20);
-  clab[i]->SetWidth(tlen2[0]);
-  clab[i]->SetToolTipText(ttip2[kk]);
-  clab[i]->SetState(false);
-  cframe[i]->AddFrame(clab[i],fL0a);
-  kk++;
-
-  if (!nfld && Plist.size()) {
-    nfld=Plist.size();
-  }
-
-  id = Plist.size()+1;
-
-  TGComboBox* fCombo=new TGComboBox(cframe[i],id);
-  cframe[i]->AddFrame(fCombo,fL0);
-  kk++;
-
-  for (int j = 0; j < ADDCH; j++) {
-    fCombo->AddEntry(types[j], j+1);
-  }
-
-  fCombo->Resize(tlen2[1], 20);
-
-  if (i==MAX_CH) {
-    fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
-  }
-  else {
-    fCombo->AddEntry(types[ADDCH], ADDCH+1);
-  }
-
-  if (i<=MAX_CH) {
-    DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
-  }
-  else {
-    DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
-    fCombo->Select(i-MAX_CH,false);
-    fCombo->SetEnabled(false);
-    //cout << "tcol: " << i-MAX_CH << " " << tcol[i-MAX_CH] << endl;
-    cframe[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
-    clab[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
-  }
-
-  fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
-  */
 
   id = Plist.size()+1;
   TGCheckButton *fdsp = new TGCheckButton(cframe[i], "", id);
