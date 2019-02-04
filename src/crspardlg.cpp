@@ -33,16 +33,17 @@ extern CrsParDlg *crspar;
 extern AnaParDlg *anapar;
 extern DspParDlg *pikpar;
 
-const int ncrspar=14;
+const int ncrspar=15;
 
-const int tlen1[ncrspar+1]={26,60,24,25,24,21,45,40,40,25,25,36,45,75,80};
-const char* tlab1[ncrspar+1]={"Ch","Type","on","Inv","AC","hS","Dt","Pre","Len","G","Trg","Drv","Thr","Pulse/sec","BadPulse"};
+const int tlen1[ncrspar+1]={26,60,24,25,24,24,21,45,40,40,25,25,36,45,75,80};
+const char* tlab1[ncrspar+1]={"Ch","Type","on","Inv","AC","pls","hS","Dt","Pre","Len","G","Trg","Drv","Thr","Pulse/sec","BadPulse"};
 const char* ttip1[ncrspar+1]={
   "Channel number",
   "Channel type",
   "On/Off",
   "Inversion",
   "AC coupling",
+  "Send/don't send pulse data",
   "Hardware smoothing: Smooth=2^hS",
   "Dead time - no new trigger on the current channel within dead time from the old trigger",
   "Number of samples before the trigger",
@@ -77,14 +78,13 @@ const char* ttip2[n_apar]={
 };
 
 
-const int n_dpar=12;
-const int tlen3[n_dpar]={26,60,24,24,40,40,42,42,35,35,35,35};
-const char* tlab3[n_dpar]={"Ch","Type","dsp","pls","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
+const int n_dpar=11;
+const int tlen3[n_dpar]={26,60,24,40,40,42,42,35,35,35,35};
+const char* tlab3[n_dpar]={"Ch","Type","dsp","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
 const char* ttip3[n_dpar]={
   "Channel number",
   "Channel type",
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
-  "Send/don't send pulse data",
   "Baseline start, relative to peak Pos (negative)",
   "Baseline end, relative to peak Pos (negative), included",
   "Peak start, relative to peak Pos (usually negative)",
@@ -113,20 +113,13 @@ extern Toptions opt;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
 
-// TGLayoutHints* fL0;
-// TGLayoutHints* fL1;
-// TGLayoutHints* fL2;
-// TGLayoutHints* fL3;
-// TGLayoutHints* fL4;
-// TGLayoutHints* fL5;
-// TGLayoutHints* fL6;
-// TGLayoutHints* fLexp;
 TGLayoutHints* fL0 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 0, 0);
 TGLayoutHints* fL0a = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 1, 1);
 TGLayoutHints* fL1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
 TGLayoutHints* fL2 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY);
 TGLayoutHints* fL2a = new TGLayoutHints(kLHintsLeft | kLHintsBottom,0,0,5,0);
 TGLayoutHints* fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
+//TGLayoutHints* fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 1, 1, 0, 0);
 TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
 TGLayoutHints* fL5 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
 TGLayoutHints* fL6 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 0, 0);
@@ -1893,25 +1886,6 @@ void ChanParDlg::DoChanMap(TGWidget *f, void *d, P_Def t, int all,
 
 void ChanParDlg::DoChanNum() {
   ParDlg::DoNum();
-
-  // TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
-  // Int_t id = te->WidgetId();
-
-  // pmap pp = Plist[id-1];
-
-  //cout << "ch_donum: " << pp.data2 << endl;
-
-// #ifdef CYUSB
-//   printf("cmd77: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
-//   if (pp.cmd && crs->b_acq) {
-//     crs->Command2(4,0,0,0);
-//     printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
-//     //crs->Command_crs(pp.cmd,pp.chan,*(Int_t*)pp.data);
-//     crs->Command_crs(pp.cmd,pp.chan);
-//     crs->Command2(3,0,0,0);
-//   }
-// #endif
-
 }
 
 //void ChanParDlg::DoCheck() {
@@ -2089,28 +2063,35 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
 
   id = Plist.size()+1;
   TGCheckButton *f_en = new TGCheckButton(cframe[i], "", id);
-  TGCheckButton *f_inv = new TGCheckButton(cframe[i], "", id+1);
-  TGCheckButton *f_acdc = new TGCheckButton(cframe[i], "", id+2);
   DoChanMap(f_en,&cpar.enabl[i],p_chk,all,1,i);
-  DoChanMap(f_inv,&cpar.inv[i],p_chk,all,2,i);
-  DoChanMap(f_acdc,&cpar.acdc[i],p_chk,all,3,i);
-
   f_en->SetToolTipText(ttip1[kk]);
-  f_inv->SetToolTipText(ttip1[kk+1]);
-  f_acdc->SetToolTipText(ttip1[kk+2]);
   f_en->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
-  f_inv->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
-  f_acdc->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
-
-  //f_inv->ChangeOptions(facdc->GetOptions()|kFixedSize);
-  //f_acdc->ChangeOptions(facdc->GetOptions()|kFixedSize);
-  //f_inv->SetWidth(25);
-  //f_acdc->SetWidth(25);
-
   cframe[i]->AddFrame(f_en,fL3);
+  kk++;
+
+  id = Plist.size()+1;
+  TGCheckButton *f_inv = new TGCheckButton(cframe[i], "", id);
+  DoChanMap(f_inv,&cpar.inv[i],p_chk,all,1,i);
+  f_inv->SetToolTipText(ttip1[kk]);
+  f_inv->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
   cframe[i]->AddFrame(f_inv,fL3);
+  kk++;
+
+  id = Plist.size()+1;
+  TGCheckButton *f_acdc = new TGCheckButton(cframe[i], "", id);
+  DoChanMap(f_acdc,&cpar.acdc[i],p_chk,all,1,i);
+  f_acdc->SetToolTipText(ttip1[kk]);
+  f_acdc->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
   cframe[i]->AddFrame(f_acdc,fL3);
-  kk+=3;
+  kk++;
+
+  id = Plist.size()+1;
+  TGCheckButton *f_pls = new TGCheckButton(cframe[i], "", id);
+  DoChanMap(f_pls,&cpar.pls[i],p_chk,all,1,i);
+  f_pls->SetToolTipText(ttip1[kk]);
+  f_pls->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
+  cframe[i]->AddFrame(f_pls,fL3);
+  kk++;
 
   AddNumCrs(i,kk++,all,cframe[i],"smooth",&cpar.smooth[i]);
   AddNumCrs(i,kk++,all,cframe[i],"dt"    ,&cpar.deadTime[i]);
@@ -2280,15 +2261,9 @@ void CrsParDlg::DoCrsNum() {
   Int_t id = te->WidgetId();
   pmap pp = Plist[id-1];
 
-  //cout << "ch_donum: " << id << " " << pp.data2 << " " << trig << endl;
-
-  //printf("cmd77: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
   if (pp.cmd && crs->b_acq && !trig) {
     crs->Command2(4,0,0,0);
-    //printf("cmd: %d %d %d\n",pp.cmd,pp.chan,*(Int_t*)pp.data);
-    //crs->Command_crs(pp.cmd,pp.chan);
     crs->SetPar();
-    //cout << "Command_start: " << endl;
     gzFile ff = gzopen("tmp.par","wb");
     crs->SaveParGz(ff,crs->module);
     gzclose(ff);
@@ -2308,11 +2283,8 @@ void CrsParDlg::DoCheck() {
   Int_t id = te->WidgetId();
   pmap pp = Plist[id-1];
 
-  //printf("chk77: %d %d %d\n",pp.cmd,pp.chan,*(Bool_t*)pp.data);
   if (pp.cmd && crs->b_acq && !trig) {
     crs->Command2(4,0,0,0);
-    //printf("chk: %d %d %d\n",pp.cmd,pp.chan,*(Bool_t*)pp.data);
-    //crs->Command_crs(pp.cmd,pp.chan);
     crs->SetPar();
     crs->Command2(3,0,0,0);
   }
@@ -2633,13 +2605,13 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
   cframe[i]->AddFrame(fdsp,fL3);
   kk++;
 
-  id = Plist.size()+1;
-  TGCheckButton *fpls = new TGCheckButton(cframe[i], "", id);
-  DoChanMap(fpls,&cpar.pls[i],p_chk,all,0,0);
-  fpls->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  fpls->SetToolTipText(ttip2[kk]);
-  cframe[i]->AddFrame(fpls,fL3);
-  kk++;
+  // id = Plist.size()+1;
+  // TGCheckButton *fpls = new TGCheckButton(cframe[i], "", id);
+  // DoChanMap(fpls,&cpar.pls[i],p_chk,all,0,0);
+  // fpls->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  // fpls->SetToolTipText(ttip2[kk]);
+  // cframe[i]->AddFrame(fpls,fL3);
+  // kk++;
 
   tlen7 = (int*) tlen3;
   ttip7 = (char**) ttip3;

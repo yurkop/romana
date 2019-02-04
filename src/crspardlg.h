@@ -36,7 +36,7 @@ struct pmap {
   void* data2; //address of the second (parallel) parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
   char all; //1 - all parameters, >1 - channel type
-  byte cmd; //for Command_crs
+  byte cmd; //for Command_crs (1 - start/stop crs; 0 - do nothing)
   byte chan; //for Command_crs
 };
 
