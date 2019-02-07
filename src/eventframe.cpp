@@ -962,7 +962,7 @@ void EventFrame::FillGraph(int dr) {
     }
     //cout << "sData: " << i << " " << pulse->sData.size() << " " << Gr[dr][i]->GetN() << endl;
 
-    double dt=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch[i]];
+    double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.preWr[ch[i]];
 
     gx1[i]=(dt-1);
     gx2[i]=(pulse->sData.size()+dt);
@@ -1176,7 +1176,7 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
-    double dt=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch];
+    double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.preWr[ch];
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];

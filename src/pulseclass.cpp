@@ -628,7 +628,8 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   // if (opt.b_pulse) {
   //   crs->mean_event.Pulse_Mean_Add(pls);
   // }
-  Float_t dt;
+  //Float_t dt;
+  //Long64_t dt;
   
   for (UInt_t i=0;i<pulses.size();i++) {
     if (pls->Chan == pulses[i].Chan &&
@@ -643,14 +644,15 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   }
 
   if (pulses.empty()) { //this is the first pulse in the event
-    dt=0;
+    //dt=0;
     Tstmp=pls->Tstamp64;
   }
   else {
-    dt = pls->Tstamp64 - Tstmp;
+    //dt = pls->Tstamp64 - Tstmp;
     for (std::vector<peak_type>::reverse_iterator pk=pls->Peaks.rbegin();
 	 pk!=pls->Peaks.rend();++pk) {
-      pk->Time+=dt;
+      //pk->Time+=dt;
+      pk->Time+=pls->Tstamp64 - Tstmp;
     }
   }
  
@@ -685,14 +687,6 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     }
   }
 
-  // if (T>=149270116965358390 && T<=149270116965364203) {
-  //   cout << "Evt: " << Nevt << ":";
-  //   for (UInt_t i=0;i<pulses.size();i++) {
-  //     cout << " " << (int)pulses.at(i).Chan<< "," << pulses.at(i).Tstamp64-crs->Tstart64;
-  //   }
-  //   cout << endl;
-  // }
-  
 }
 
 void EventClass::Fill_Time_Extend(HMap* map) {

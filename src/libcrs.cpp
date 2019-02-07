@@ -3462,7 +3462,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       ipls=PulseClass();
       npulses++;
       ipls.Chan=ch;
-      ipls.Tstamp64=data+opt.Delay[ch];// - cpar.preWr[ch];
+      ipls.Tstamp64=data+(Long64_t)opt.Delay[ch];// - cpar.preWr[ch];
       n_frm=0;
       //cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
     }
@@ -3754,7 +3754,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       ipls=PulseClass();
       npulses++;
       ipls.Chan=ch;
-      ipls.Tstamp64=data+opt.Delay[ch];// - cpar.preWr[ch];
+      ipls.Tstamp64=data+(Long64_t)opt.Delay[ch];// - cpar.preWr[ch];
       n_frm=0;
       break;
     case 1:
@@ -4001,7 +4001,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
       ipls=PulseClass();
       npulses++;
       ipls.Chan = ch;
-      ipls.Tstamp64=data+opt.Delay[ch];// - cpar.preWr[ch];
+      ipls.Tstamp64=data+(Long64_t)opt.Delay[ch];// - cpar.preWr[ch];
     }
     else if (frmt<4) {
       Long64_t t64 = data;
@@ -4185,7 +4185,7 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
 	ipls.Tstamp64 = buf4[idx+rLen-2];
 	ipls.Tstamp64 <<= 32;
-	ipls.Tstamp64 += buf4[idx+rLen-3]+opt.Delay[ipls.Chan];
+	ipls.Tstamp64 += buf4[idx+rLen-3]+(Long64_t)opt.Delay[ipls.Chan];
 
 	if (Pstamp64==P64_0) {
 	  Pstamp64=ipls.Tstamp64;
@@ -4327,10 +4327,16 @@ void CRS::Print_Events(const char* file) {
 
   for (std::list<EventClass>::iterator it=Levents.begin();
        it!=Levents.end();++it) {
-    out << "--- Event: " << it->Nevt << " Tstamp: " << it->Tstmp << endl;
+    out << "--- Event: " << it->Nevt << " M: " << it->pulses.size() << " Tstamp: " << it->Tstmp << endl;
     for (UInt_t i=0;i<it->pulses.size();i++) {
       PulseClass pp = it->pulses.at(i);
-      out << "Ch: " << (int)pp.Chan << " Tstamp: " << pp.Tstamp64 << endl;
+      out << "Ch: " << (int)pp.Chan << " Tstamp: " << pp.Tstamp64;
+      for (std::vector<peak_type>::iterator pk=pp.Peaks.begin();
+	   pk!=pp.Peaks.end();++pk) {
+	out << " Pk: " << pk->Time << " " << pk->Area << " " << pk->Width;
+      }
+      out << endl;
+
       for (int j=0;j<(int)pp.sData.size();j++) {
 	out << j << " " << pp.sData[j] << endl;
 	//printf("-- %d %f\n",i,pp.sData[i]);
