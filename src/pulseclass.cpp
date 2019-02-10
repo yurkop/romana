@@ -70,7 +70,8 @@ void PulseClass::FindPeaks() {
   //      1 - threshold crossing of derivative;
   //      2 - maximum of derivative;
   //      3 - rise of derivative;
-  //      4 - fall of derivative.
+  //      4 - fall of derivative;
+  //      5 - threshold crossing of derivative, use 2nd deriv for timing.
 
   if (sData.size()<2)
     return;
@@ -100,6 +101,7 @@ void PulseClass::FindPeaks() {
       }
     }
     break;
+  case 5:
   case 1: // threshold crossing of derivative;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
@@ -357,34 +359,42 @@ void PulseClass::PeakAna33() {
 
   pk->Time=0;
   sum=0;
-  for (int j=pk->T3;j<pk->T4;j++) {
-    //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
-    Float_t dif=sData[j]-sData[j-kk];
-    if (dif>0) {
-      pk->Time+=dif*j;
-      sum+=dif;
+  if (opt.sTg[Chan]!=5) { //use 1st deriv
+    for (int j=pk->T3;j<pk->T4;j++) {
+      Float_t dif=sData[j]-sData[j-kk];
+      if (dif>0) {
+	pk->Time+=dif*j;
+	sum+=dif;
+      }
     }
-    //cout << "j: " << Tstamp64 << " " << j << " " << dif << " " << sum << endl;
-    //}
-    //nt++;
+  }
+  else { //use 2nd deriv
+    for (int j=pk->Pos;j>=2;j--) {
+      Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
+      if (dif2<=0 || j<pk->T3)
+	break;
+      pk->Time+=dif2*j;
+      sum+=dif2;
+      //cout << "d1: " << Tstamp64 << " " << j-cpar.preWr[Chan] << " " << dif2 << endl;
+    }
+    for (int j=pk->Pos+1;j<sz;j++) {
+      Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
+      if (dif2<=0 || j>pk->T4)
+	break;
+      pk->Time+=dif2*j;
+      sum+=dif2;
+      //cout << "d2: " << Tstamp64 << " " << j-cpar.preWr[Chan] << " " << dif2 << endl;
+    }
+
   }
   if (abs(sum)>1e-5) {
-    //cout << "PeakAna33: " << pk->Time << " " << sum << endl;
     pk->Time/=sum;
-    //pk->Time+=1;
   }
   else
-    //pk->Time=-999+pk->Pos;
     pk->Time=(pk->T3+pk->T4)*0.5;
 
-  //pk->Time-=pk->Pos;
   pk->Time-=cpar.preWr[Chan];
-  //cout << "Time: " << Tstamp64 << " " << pk->Time << " " << sum << " " << pk->Pos << " " << cpar.preWr[Chan] << " " << pk->T3 << " " << pk->T4 << endl;
 
-  // if (T5<(int)kk) {T5=kk;}
-  // if (T5>sz) {T5=sz;}
-  // if (T6<(int)kk) {T6=kk;}
-  // if (T6>sz) {T6=sz;}
 
   /*
   pk->Width=0;

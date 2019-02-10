@@ -1003,14 +1003,24 @@ void EventFrame::FillGraph(int dr) {
       }
     }
     else if (dr==2) { //2nd derivative
+
+      Int_t kk=opt.Drv[ch[i]];
+      if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
+
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
-	if (j<2)
+
+	// if (j<2)
+	//   Gr[dr][i]->GetY()[j]=0;
+	// else
+	//   Gr[dr][i]->GetY()[j]=
+	//     pulse->sData[j]-2*pulse->sData[j-1]+pulse->sData[j-2];
+	if (j<kk+1)
 	  Gr[dr][i]->GetY()[j]=0;
-	//dat[j]=0;
 	else
 	  Gr[dr][i]->GetY()[j]=
-	    pulse->sData[j]-2*pulse->sData[j-1]+pulse->sData[j-2];
+	    pulse->sData[j]-pulse->sData[j-kk]-
+	    pulse->sData[j-1]+pulse->sData[j-kk-1];
 
 	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
 	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
@@ -1197,7 +1207,7 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 	doXline(pk->B1+dt,y1,y2-dy*0.2,6,3);
 	doXline(pk->B2-1+dt,y1,y2-dy*0.1,6,3);
       }
-      if (dr==1 && fPeak[5]->IsOn()) { //WTime
+      if (dr!=0 && fPeak[5]->IsOn()) { //WTime
 	doXline(pk->T3+dt,y1,y2-dy*0.2,3,2);
 	doXline(pk->T4-1+dt,y1,y2-dy*0.1,3,2);
       }

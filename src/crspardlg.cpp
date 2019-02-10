@@ -57,18 +57,15 @@ const char* ttip1[ncrspar+1]={
   "Number of Bad pulses"
 };
 
-const int n_apar=14;
-const int tlen2[n_apar]={26,60,24,25,35,26,32,40,35,35,38,38,38,38};
-const char* tlab2[n_apar]={"Ch","Type","St","sS","Delay","sTg","Drv","Thr","dT","Pile","E0","E1","E2","Bc"};
+const int n_apar=11;
+const int tlen2[n_apar]={26,60,24,25,35,35,35,38,38,38,38};
+const char* tlab2[n_apar]={"Ch","Type","St","sS","Delay","dT","Pile","E0","E1","E2","Bc"};
 const char* ttip2[n_apar]={
   "Channel number",
   "Channel type",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Software smoothing",
   "Time delay in samples (can be negative or positive)",
-  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n-1 - use hardware trigger",
-  "Drv>0 - trigger on differential S(i) - S(i-Drv)",
-  "Trigger threshold",
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
@@ -79,13 +76,16 @@ const char* ttip2[n_apar]={
 };
 
 
-const int n_dpar=11;
-const int tlen3[n_dpar]={26,60,24,40,40,42,42,35,35,35,35};
-const char* tlab3[n_dpar]={"Ch","Type","dsp","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
+const int n_dpar=14;
+const int tlen3[n_dpar]={26,60,24,26,32,40,40,40,42,42,35,35,35,35};
+const char* tlab3[n_dpar]={"Ch","Type","dsp","sTg","Drv","Thr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
 const char* ttip3[n_dpar]={
   "Channel number",
   "Channel type",
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
+  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - threshold crossing of derivative, use 2nd deriv for timing;\n-1 - use hardware trigger",
+  "Drv>0 - trigger on differential S(i) - S(i-Drv)",
+  "Trigger threshold",
   "Baseline start, relative to peak Pos (negative)",
   "Baseline end, relative to peak Pos (negative), included",
   "Peak start, relative to peak Pos (usually negative)",
@@ -2337,9 +2337,6 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
   AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],0,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Delay[i],-999,999,p_fnum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.sTg[i],-1,4,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.Drv[i],1,999,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.Thr[i],0,9999,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.Base1[i],-999,3070,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.Base2[i],-999,3070,p_inum);
   //AddNumChan(i,kk++,all,cframe[i],&opt.Peak1[i],-999,3070,p_inum);
@@ -2453,6 +2450,10 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
     amax=511;
 
   //cout << "module: " << crs->module << " " << i << " " << crs->type_ch[i] << " " << amax << endl;
+
+  AddNumChan(i,kk++,all,cframe[i],&opt.sTg[i],-1,5,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Drv[i],1,999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.Thr[i],0,9999,p_inum);
 
   AddNumChan(i,kk++,all,cframe[i],&opt.Base1[i],-1024,amax,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Base2[i],-1024,9999,p_inum);
