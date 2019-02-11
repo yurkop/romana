@@ -365,6 +365,8 @@ void segfault_c_handler(int signal, siginfo_t *si, void *arg) {
 int main(int argc, char **argv)
 {
 
+  //printf("Version: %s\n", VERSION);
+  //exit(1);
   string s_name, dir, name, ext;
 
   //bool batch=false;
@@ -1087,7 +1089,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		     "HandleMenu(Int_t)");
 
   fMenuBar->AddPopup("&File", fMenuFile, 
-		     new TGLayoutHints(kLHintsTop|kLHintsLeft,0, 4, 0, 0));
+		     new TGLayoutHints(kLHintsTop|kLHintsRight,0,4,0,0));
 
   /*
     fMenuBar->AddPopup("&Options", fMenuOptions, 
@@ -1101,10 +1103,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   */
   
   fMenuBar->AddPopup("&Help", fMenuHelp,
-		     new TGLayoutHints(kLHintsTop|kLHintsRight));
+		     new TGLayoutHints(kLHintsTop|kLHintsLeft,0,10,0,0));
 
   AddFrame(fMenuBar, 
 	   new TGLayoutHints(kLHintsTop | kLHintsExpandX, 2, 2, 2, 5));
+
+  //TGLabel *ver = new TGLabel(fMenuBar,VERSION);
+  //fMenuBar->AddFrame(ver,new TGLayoutHints(kLHintsCenterY|kLHintsRight,0,4,0,0));
 
   //fcanvas=NULL;
   //fAna=NULL;
@@ -1253,6 +1258,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   f1b->Connect("Clicked()","MainFrame",this,"Do1buf()");
   fGr2->AddFrame(f1b, l_But);
 
+  TGLabel *ver = new TGLabel(vframe1,VERSION);
+
+  //fMenuBar->AddFrame(ver,new TGLayoutHints(kLHintsCenterY|kLHintsRight,0,4,0,0));
+  vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
   fTab = new TGTab(hframe1, 300, 300);
   //TGLayoutHints *fL5 = new TGLayoutHints(kLHintsTop | kLHintsExpandX |

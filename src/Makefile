@@ -1,5 +1,6 @@
 # make TIMES=1 to compile with TIMES option
 # make DEBUG=1 to compile with debug option
+GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
 SRC_D = src
 OBJ_D = obj
 
@@ -9,6 +10,8 @@ SRC := $(wildcard $(SRC_D)/*.cpp)
 OBJ := $(addprefix $(OBJ_D)/,$(notdir $(SRC:.cpp=.o)))
 #SRCL := $(wildcard $(LIB_D)/*.cpp)
 #OBJL := $(addprefix $(OBJ_D)/,$(notdir $(SRCL:.cpp=.oo)))
+
+CPPFLAGS += -DVERSION=\"$(GIT_VERSION)\"
 
 LFS=$(shell getconf LFS_CFLAGS)
 
