@@ -224,8 +224,8 @@ public:
   void AddLine_crs(int i, TGCompositeFrame* fcont1);
   void AddNumCrs(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       const char* name, void* apar, void* apar2=0);
-  void ResetStatus();
-  void UpdateStatus();
+  //void ResetStatus();
+  void UpdateStatus(int rst=0);
   void DoCrsNum();
   void DoCheck();
 
@@ -262,6 +262,20 @@ public:
   void AddLine_Dsp(int i, TGCompositeFrame* fcont1);
 
   ClassDef(DspParDlg, 0)
+};
+
+//--------------------------------------
+class ErrFrame: public ParDlg {
+public:
+  TGTextEntry* fErr[MAX_ERR];
+
+  //routines
+  ErrFrame(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~ErrFrame();
+
+  void ErrUpdate();
+
+  ClassDef(ErrFrame, 0)
 };
 
 #endif

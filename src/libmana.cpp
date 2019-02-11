@@ -52,8 +52,10 @@ const double MB = 1024*1024;
 
 extern CRS* crs;
 
+Common* com;
 EventFrame* EvtFrm;
 HistFrame* HiFrm;
+ErrFrame* ErrFrm;
 HClass* hcl;
 
 ParParDlg *parpar;
@@ -365,6 +367,7 @@ void segfault_c_handler(int signal, siginfo_t *si, void *arg) {
 int main(int argc, char **argv)
 {
 
+  //common_init();
   //printf("Version: %s\n", VERSION);
   //exit(1);
   string s_name, dir, name, ext;
@@ -678,6 +681,7 @@ int main(int argc, char **argv)
   TApplication theApp("App",&argc,argv);
   //example();
 
+  com = new Common();
   myM=0;
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
 
@@ -1089,7 +1093,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		     "HandleMenu(Int_t)");
 
   fMenuBar->AddPopup("&File", fMenuFile, 
-		     new TGLayoutHints(kLHintsTop|kLHintsRight,0,4,0,0));
+		     new TGLayoutHints(kLHintsTop|kLHintsLeft,0,4,0,0));
 
   /*
     fMenuBar->AddPopup("&Options", fMenuOptions, 
@@ -1103,7 +1107,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   */
   
   fMenuBar->AddPopup("&Help", fMenuHelp,
-		     new TGLayoutHints(kLHintsTop|kLHintsLeft,0,10,0,0));
+		     new TGLayoutHints(kLHintsTop|kLHintsRight,0,4,0,0));
 
   AddFrame(fMenuBar, 
 	   new TGLayoutHints(kLHintsTop | kLHintsExpandX, 2, 2, 2, 5));
@@ -1144,25 +1148,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     font = gClient->GetResourcePool()->GetDefaultFont();
   FontStruct_t tfont = font->GetFontStruct();
 
-  //cout << font << endl;
 
   const int butx=80,buty=40;
-  //ULong_t fGreen;
-  //ULong_t fRed;
-  //ULong_t fCyan;
-  //ULong_t fBluevio;
-
-  gClient->GetColorByName("green", fGreen);
-  gClient->GetColorByName("red", fRed);
-  gClient->GetColorByName("cyan", fCyan);
-  gClient->GetColorByName("BlueViolet",fBluevio);
-
-  fBluevio=TColor::RGB2Pixel(255,114,86);
-  Pixel_t fBlue = TColor::RGB2Pixel(135,92,231);;
-
-  //cout << "fBluevio: " << fBluevio << " " << TColor::GetColor(fBluevio) << endl;
-
-  //gROOT->GetListOfColors()->ls();
 
   TGGroupFrame* fGr1 = new TGGroupFrame(vframe1, "Acquisition", kVerticalFrame);
   fGr1->SetTitlePos(TGGroupFrame::kCenter); // right aligned
@@ -1176,7 +1163,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fStart->ChangeOptions(fStart->GetOptions() | kFixedSize);
   //fStart->SetStyle("modern");
 
-  fStart->ChangeBackground(fGreen);
+  fStart->ChangeBackground(com->fGreen);
 
   fStart->Connect("Clicked()","MainFrame",this,"DoStartStop()");
   fGr1->AddFrame(fStart, l_But);
@@ -1188,7 +1175,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fReset->Resize(butx,buty);
   fReset->ChangeOptions(fStart->GetOptions() | kFixedSize);
-  fReset->ChangeBackground(fCyan);
+  fReset->ChangeBackground(com->fCyan);
 
   fReset->Connect("Clicked()","MainFrame",this,"DoReset()");
   fGr1->AddFrame(fReset, l_But);
@@ -1196,16 +1183,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGGroupFrame* fGr2 = new TGGroupFrame(vframe1, "Analysis", kVerticalFrame);
   fGr2->SetTitlePos(TGGroupFrame::kCenter);
   vframe1->AddFrame(fGr2, l_Gr);
-
-
-
-  // TGTextButton *fOpen = new TGTextButton(fGr2,new TGHotString("&Open"));
-  // fOpen->SetFont(tfont,false);
-  // fOpen->Resize(butx,buty);
-  // fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
-  // fOpen->ChangeBackground(fBluevio);
-  // fOpen->Connect("Clicked()","MainFrame",this,"DoOpen()");
-  // fGr2->AddFrame(fOpen, l_But);
 
   TGPopupMenu* fPopMenu = new TGPopupMenu(gClient->GetRoot());
   fPopMenu->AddEntry("Open+", 1);
@@ -1221,7 +1198,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fOpen->SetFont(tfont,false);
   fOpen->Resize(butx,buty);
   fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
-  fOpen->ChangeBackground(fBluevio);
+  fOpen->ChangeBackground(com->fOrng);
   fOpen->Connect("ItemClicked(Int_t)", "MainFrame", this, "DoOpen(Int_t)");
   fGr2->AddFrame(fOpen, l_But);
 
@@ -1229,7 +1206,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fClose->SetFont(tfont,false);
   fClose->Resize(butx,buty);
   fClose->ChangeOptions(fClose->GetOptions() | kFixedSize);
-  fClose->ChangeBackground(fBlue);
+  fClose->ChangeBackground(com->fBlue);
   fClose->Connect("Clicked()","MainFrame",this,"DoClose()");
   fGr2->AddFrame(fClose, l_But);
 
@@ -1237,7 +1214,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fReset2->SetFont(tfont,false);
   fReset2->Resize(butx,buty);
   fReset2->ChangeOptions(fReset2->GetOptions() | kFixedSize);
-  fReset2->ChangeBackground(fCyan);
+  fReset2->ChangeBackground(com->fCyan);
   fReset2->Connect("Clicked()","MainFrame",this,"DoReset()");
   //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
   fGr2->AddFrame(fReset2, l_But);
@@ -1246,7 +1223,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fAna->SetFont(tfont,false);
   fAna->Resize(butx,buty);
   fAna->ChangeOptions(fAna->GetOptions() | kFixedSize);
-  fAna->ChangeBackground(fGreen);
+  fAna->ChangeBackground(com->fGreen);
   fAna->Connect("Clicked()","MainFrame",this,"DoAna()");
   fGr2->AddFrame(fAna, l_But);
 
@@ -1254,7 +1231,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   f1b->SetFont(tfont,false);
   f1b->Resize(butx,buty);
   f1b->ChangeOptions(f1b->GetOptions() | kFixedSize);
-  f1b->ChangeBackground(fGreen);
+  f1b->ChangeBackground(com->fGreen);
   f1b->Connect("Clicked()","MainFrame",this,"Do1buf()");
   fGr2->AddFrame(f1b, l_But);
 
@@ -1282,6 +1259,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //tabfr[2] = fTab->AddTab("Channels");
   tabfr[4] = fTab->AddTab("Events");
   tabfr[5] = fTab->AddTab("Histograms/Cuts");
+  tabfr[6] = fTab->AddTab("Errors");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
   //TGDockableFrame *tab4 = fTab->AddTab("Events");
 
@@ -1292,6 +1270,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   MakeTabs();
   //fremake=true;
 
+  TGTabElement* tab6 = fTab->GetTabTab("Errors");
+  tab6->SetBackgroundColor(com->fRed);
+  //cout << "tab6: " << tab6 << endl;
+  //exit(1);
   //MakeTabs();
 
   if (crs->Fmode!=1) { //no CRS present
@@ -1339,7 +1321,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fNb->SetFont(tfont,false);
   fNb->Resize(35,22);
   fNb->ChangeOptions(fNb->GetOptions() | kFixedSize);
-  fNb->ChangeBackground(fGreen);
+  fNb->ChangeBackground(com->fGreen);
   fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
   hfr1->AddFrame(fNb, lay2);
 
@@ -1432,7 +1414,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
   //UpdateStatus();
 
-  UpdateStatus();
+  UpdateStatus(1);
 
   // Set a name to the main frame
   //SetWindowName(maintitle);
@@ -1537,6 +1519,11 @@ void MainFrame::MakeTabs() {
   tabfr[5]->AddFrame(HiFrm, Lay11);
   ntab++;
 
+  ErrFrm = new ErrFrame(tabfr[6], 800, 500);
+  //HiFrm->HiReset();
+  tabfr[6]->AddFrame(ErrFrm, Lay11);
+  ntab++;
+
   local_nch=opt.Nchan;
 
   // MapSubwindows();
@@ -1557,7 +1544,7 @@ void MainFrame::DoStartStop() {
 
 #ifdef CYUSB
   if (crs->b_acq) { //STOP is pressed here
-    fStart->ChangeBackground(fGreen);
+    fStart->ChangeBackground(com->fGreen);
     fStart->SetText("Start");
     //crs->b_stop=false;
     //crs->Show();
@@ -1571,13 +1558,13 @@ void MainFrame::DoStartStop() {
   else { // START is pressed here
     if (TestFile()) {
       //ParLock();
-      fStart->ChangeBackground(fRed);
+      fStart->ChangeBackground(com->fRed);
       fStart->SetText("Stop");
       crs->DoStartStop();
       //cout << "Start7: " << endl;
 
 
-      fStart->ChangeBackground(fGreen);
+      fStart->ChangeBackground(com->fGreen);
       fStart->SetText("Start");
 
       crs->b_stop=true;
@@ -1757,24 +1744,24 @@ void MainFrame::DoNbuf() {
   }
 
   if (crs->b_fana) { //analysis is running -> stop it
-    fAna->ChangeBackground(fGreen);
+    fAna->ChangeBackground(com->fGreen);
     fAna->SetText("&Analyse");
-    fNb->ChangeBackground(fGreen);
+    fNb->ChangeBackground(com->fGreen);
     gSystem->Sleep(100);
     crs->b_fana=false;
     crs->b_stop=true;
   }
   else { //start analysis of n buffers
     if (TestFile()) {
-      fAna->ChangeBackground(fRed);
+      fAna->ChangeBackground(com->fRed);
       fAna->SetText("P&ause");
-      fNb->ChangeBackground(fRed);
+      fNb->ChangeBackground(com->fRed);
       crs->b_fana=true;
       crs->b_stop=false;
       crs->DoNBuf2(opt.num_buf);
-      fAna->ChangeBackground(fGreen);
+      fAna->ChangeBackground(com->fGreen);
       fAna->SetText("&Analyse");
-      fNb->ChangeBackground(fGreen);
+      fNb->ChangeBackground(com->fGreen);
       crs->b_fana=false;
       crs->b_stop=true;
     }
@@ -1907,7 +1894,7 @@ void MainFrame::DoReadRoot() {
     //tof=opt.Tof;
 
     //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
-    UpdateStatus();
+    UpdateStatus(1);
 
     //if (fPar!=NULL) {
     //delete fPar;
@@ -2012,11 +1999,11 @@ void MainFrame::DoReset() {
   pikpar->Update();
   //}
 
-  UpdateStatus();
+  UpdateStatus(1);
 
 }
 
-void MainFrame::UpdateStatus() {
+void MainFrame::UpdateStatus(int rst) {
 
   int ii=0;
 
@@ -2025,6 +2012,16 @@ void MainFrame::UpdateStatus() {
   static Long64_t nevents2_old=0;
   static double t1=0;
   static double mb_rate,ev_rate,trig_rate;
+
+  if (rst) {
+    bytes1=0;
+    nevents_old=0;
+    nevents2_old=0;
+    t1=0;
+    mb_rate=0;
+    ev_rate=0;
+    trig_rate=0;
+  }
 
   char txt[100];
   //time_t tt = opt.F_start.GetSec();
@@ -2045,19 +2042,13 @@ void MainFrame::UpdateStatus() {
     mb_rate = (crs->inputbytes-bytes1)/MB/dt;
     ev_rate = (crs->nevents-nevents_old)/dt;
     trig_rate = (crs->nevents2-nevents2_old)/dt;
+    //cout << "trig_rate: " << trig_rate << " " << dt << endl;
 
     bytes1=crs->inputbytes;
     nevents_old=crs->nevents;
     nevents2_old=crs->nevents2;
     t1=opt.T_acq;
   }
-  // else {
-  //   cout << "rate0: " << dt << endl;
-  //   mb_rate=0;
-  //   ev_rate=0;
-  //   trig_rate=0;
-  // }
-
 
   fStat[ii++]->SetText(txt,kFALSE);
 
@@ -2452,6 +2443,48 @@ void MainFrame::HandleMenu(Int_t menu_id)
 //
 //
 
+//-------------------------
+Common::Common() {
+
+  gClient->GetColorByName("green", fGreen);
+  gClient->GetColorByName("red", fRed);
+  gClient->GetColorByName("cyan", fCyan);
+  //gClient->GetColorByName("BlueViolet",fBluevio);
+  fOrng=TColor::RGB2Pixel(255,114,86);
+  fBlue = TColor::RGB2Pixel(135,92,231);
+  fRed10=gROOT->GetColor(kRed-10)->GetPixel();
+
+  fL0   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,0,0);
+  fL0a  = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,1,1);
+  fL3   = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
+  fL4   = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
+  fL9   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
+
+  fL1   = new TGLayoutHints(kLHintsTop|kLHintsLeft, 0,0,0,0);
+  fL7   = new TGLayoutHints(kLHintsTop | kLHintsLeft, 11, 1, 1, 1);
+  fL8   = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 1, 1, 1);
+  fL8a  = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 1, 1, 0);
+
+  fL2   = new TGLayoutHints(kLHintsLeft | kLHintsExpandY);
+  fL21  = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,3,0,0,0);
+
+  fL2a  = new TGLayoutHints(kLHintsLeft | kLHintsBottom,0,0,5,0);
+
+  fL31  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
+  fL32  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,0,0,0);
+  fL33  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
+
+  fL50  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
+  fL5   = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
+  fL6   = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 0, 0);
+
+  fLexp = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
+
+}
+Common::~Common() {
+}
+
+/*
 struct MyClass {
   MyClass() {std::cout <<"MyClass constructed\n";}
   ~MyClass() {std::cout <<"MyClass destroyed\n";}
@@ -2465,6 +2498,8 @@ void pointer_test() {
   delete[] pt;
 
 }
+*/
+
 //-------------------------
 ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
 			 const char *title, const char *msg, EMsgBoxIcon icon,
@@ -2473,8 +2508,8 @@ ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
 {
   UInt_t width, height;
 
-  Pixel_t fBluevio;
-  fBluevio=TColor::RGB2Pixel(255,114,86);
+  //Pixel_t fBluevio;
+  //fBluevio=TColor::RGB2Pixel(255,114,86);
 
   cout << "ColorBox: " << endl;
 
@@ -2504,7 +2539,7 @@ ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
   label = new TGLabel(fLabelFrame, msg);
   label->SetTextJustify(kTextCenterX);
 
-  this->SetBackgroundColor(fBluevio);
+  this->SetBackgroundColor(com->fOrng);
 
   fLabelFrame->AddFrame(label, fL4);
 

@@ -110,26 +110,12 @@ const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
 const int nchtype=9;
 Int_t combotype[nchtype];
 
+extern Common* com;
 extern CRS* crs;
 extern Coptions cpar;
 extern Toptions opt;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
-
-TGLayoutHints* fL0 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 0, 0);
-TGLayoutHints* fL0a = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 1, 1);
-TGLayoutHints* fL1 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
-TGLayoutHints* fL2 = new TGLayoutHints(kLHintsLeft | kLHintsExpandY);
-TGLayoutHints* fL2a = new TGLayoutHints(kLHintsLeft | kLHintsBottom,0,0,5,0);
-TGLayoutHints* fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
-//TGLayoutHints* fL3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 1, 1, 0, 0);
-TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
-TGLayoutHints* fL5 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
-TGLayoutHints* fL6 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 0, 0);
-TGLayoutHints* fL7 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 11, 1, 1, 1);
-TGLayoutHints* fL8 = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 1, 1, 1);
-TGLayoutHints* fL8a = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 1, 1, 0);
-TGLayoutHints* fLexp = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 
 using namespace std;
 
@@ -138,7 +124,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 {
 
   fDock = new TGDockableFrame(this);
-  AddFrame(fDock, fLexp);
+  AddFrame(fDock, com->fLexp);
   //fDock->SetWindowName("Events");  
   fDock->SetFixedSize(kFALSE);
 
@@ -840,14 +826,14 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fMain->SetLayoutManager(new TGHorizontalLayout(fMain));
 
   fCanvas1 = new TGCanvas(fMain,w,h);
-  fMain->AddFrame(fCanvas1,fLexp);
+  fMain->AddFrame(fCanvas1,com->fLexp);
 
   fcont1 = new TGCompositeFrame(fCanvas1->GetViewPort(), 
 				100, 100, kVerticalFrame);
   fCanvas1->SetContainer(fcont1);
 
   hor = new TGSplitFrame(fcont1,10,10);
-  fcont1->AddFrame(hor,fLexp);
+  fcont1->AddFrame(hor,com->fLexp);
   hor->VSplit(420);
   hor->SetWRatio(0.5);
   //hor->SplitVertical();
@@ -863,65 +849,12 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   AddHist(ver2);
 
 }
-/*
-void ParParDlg::AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
-			 Int_t* compr, char* opt_fname) {
-  int id;
-
-  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(frame,10,10);
-  frame->AddFrame(hframe1,fL1);
-
-  id = Plist.size()+1;
-  TGCheckButton *fchk = new TGCheckButton(hframe1, txt, id);
-  fchk->SetName(txt);
-  hframe1->AddFrame(fchk,fL3);
-  DoMap(fchk,opt_chk,p_chk,0);
-  //fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
-
-  //fchk->SetState(kButtonDown,false);
-
-  id = Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(hframe1, *compr, 2, id, k_int, 
-					   TGNumberFormat::kNEAAnyNumber,
-					   TGNumberFormat::kNELLimitMinMax,
-					   0,9);
-  hframe1->AddFrame(fNum1,fL3);
-  DoMap(fNum1->GetNumberEntry(),compr,p_inum,0);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoNum()");
-
-  TGLabel* fLabel = new TGLabel(hframe1, "compr.");
-  hframe1->AddFrame(fLabel,fL3);
-
-
-  id = Plist.size()+1;
-  TGTextButton *fbut = new TGTextButton(hframe1,"Select...",id);
-  hframe1->AddFrame(fbut, fL3);
-  DoMap(fbut,opt_fname,p_open,0);
-  fbut->Connect("Clicked()", "ParDlg", this, "DoOpen()");
-
-  TGHorizontalFrame *hframe2 = new TGHorizontalFrame(frame,10,10);
-  frame->AddFrame(hframe2,fL1);
-
-  //strcpy(opt.fname_raw,"raw32.gz");
-  id = Plist.size()+1;
-  TGTextEntry* tt = new TGTextEntry(hframe2,(char*)opt_fname, id);
-  tt->SetDefaultSize(380,20);
-  tt->SetMaxLength(198);
-  //tt->SetWidth(590);
-  //tt->SetState(false);
-  hframe2->AddFrame(tt,fL0);
-  DoMap(tt,opt_fname,p_txt,0);
-  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
-}
-*/
 void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 			 Int_t* compr) {
   int id;
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(frame,10,10);
-  frame->AddFrame(hframe1,fL1);
+  frame->AddFrame(hframe1,com->fL1);
 
   id = Plist.size()+1;
   TGCheckButton *fchk = new TGCheckButton(hframe1, txt, id);
@@ -929,7 +862,7 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   fchk->ChangeOptions(fchk->GetOptions()|kFixedWidth);
   fchk->SetWidth(230);
 
-  hframe1->AddFrame(fchk,fL3);
+  hframe1->AddFrame(fchk,com->fL3);
   DoMap(fchk,opt_chk,p_chk,0);
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
@@ -941,14 +874,14 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 					   TGNumberFormat::kNEAAnyNumber,
 					   TGNumberFormat::kNELLimitMinMax,
 					   0,9);
-  hframe1->AddFrame(fNum1,fL3);
+  hframe1->AddFrame(fNum1,com->fL3);
   DoMap(fNum1->GetNumberEntry(),compr,p_inum,0);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				   "DoNum()");
 
   fNum1->GetNumberEntry()->SetToolTipText("Compression factor [0-9]: 0 - no compression (fast); 9- maximum compression (slow)");
   TGLabel* fLabel = new TGLabel(hframe1, "compr.");
-  hframe1->AddFrame(fLabel,fL3);
+  hframe1->AddFrame(fLabel,com->fL3);
 
 }
 
@@ -958,27 +891,27 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
 
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "Files", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame->AddFrame(fF6, fL6);
+  frame->AddFrame(fF6, com->fL6);
 
 
 
 
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
-  fF6->AddFrame(hframe1,fL1);
+  fF6->AddFrame(hframe1,com->fL1);
 
   TGLabel* fLabel = new TGLabel(hframe1, "Filename:");
-  hframe1->AddFrame(fLabel,fL3);
+  hframe1->AddFrame(fLabel,com->fL3);
 
 
   id = Plist.size()+1;
   TGTextButton *fbut = new TGTextButton(hframe1,"Select...",id);
-  hframe1->AddFrame(fbut, fL3);
+  hframe1->AddFrame(fbut, com->fL3);
   DoMap(fbut,opt.Filename,p_open,0);
   fbut->Connect("Clicked()", "ParDlg", this, "DoOpen()");
 
   TGHorizontalFrame *hframe2 = new TGHorizontalFrame(fF6,10,10);
-  fF6->AddFrame(hframe2,fL1);
+  fF6->AddFrame(hframe2,com->fL1);
 
   //strcpy(opt.fname_raw,"raw32.gz");
   id = Plist.size()+1;
@@ -987,7 +920,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   tt->SetMaxLength(198);
   //tt->SetWidth(590);
   //tt->SetState(false);
-  hframe2->AddFrame(tt,fL0);
+  hframe2->AddFrame(tt,com->fL0);
   DoMap(tt,opt.Filename,p_txt,0);
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
 
@@ -1000,14 +933,14 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
 
   TGCheckButton *fchk;
   TGHorizontalFrame *hframe3 = new TGHorizontalFrame(fF6,10,10);
-  fF6->AddFrame(hframe3,fL1);
+  fF6->AddFrame(hframe3,com->fL1);
 
   id = Plist.size()+1;
   sprintf(txt,"Decode");
   fchk = new TGCheckButton(hframe3, txt, id);
   fchk->SetName(txt);
   fchk->SetToolTipText("Decode raw data");
-  hframe3->AddFrame(fchk,fL3);
+  hframe3->AddFrame(fchk,com->fL3);
   DoMap(fchk,&opt.decode,p_chk,0);
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
@@ -1018,7 +951,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   fchk = new TGCheckButton(hframe3, txt, id);
   fchk->SetName(txt);
   fchk->SetToolTipText("Compare software pulse analysis vs DSP data");
-  hframe3->AddFrame(fchk,fL3);
+  hframe3->AddFrame(fchk,com->fL3);
   DoMap(fchk,&opt.checkdsp,p_chk,0);
   fchk->Connect("Clicked()", "ParDlg", this, "DoChk()");
   //fchk->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
@@ -1032,7 +965,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
 
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "Options", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame->AddFrame(fF6, fL6);
+  frame->AddFrame(fF6, com->fL6);
 
   // 2 column, n rows
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
@@ -1080,7 +1013,7 @@ void ParParDlg::AddLogic(TGCompositeFrame* frame) {
 
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "Event Logic", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame->AddFrame(fF6, fL6);
+  frame->AddFrame(fF6, com->fL6);
 
   // 2 column, n rows
   //fF6->SetLayoutManager(new TGMatrixLayout(fF6, 0, 3, 7));
@@ -1119,7 +1052,7 @@ void ParParDlg::AddAna(TGCompositeFrame* frame) {
 
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "NTOF Analysis", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame->AddFrame(fF6, fL6);
+  frame->AddFrame(fF6, com->fL6);
 
   tip1= "Ntof period (mks) (ignored if set to zero)";
   tip2= "Ntof start channel";
@@ -1148,12 +1081,12 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   //int ww=70;
   
   //TGLabel* fLabel = new TGLabel(frame, "---  Histograms  ---");
-  //frame->AddFrame(fLabel, fL5);
+  //frame->AddFrame(fLabel, com->fL5);
 
 
   frame1d = new TGGroupFrame(frame2, "1D Histograms", kVerticalFrame);
   frame1d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame2->AddFrame(frame1d, fL6);
+  frame2->AddFrame(frame1d, com->fL6);
 
    // 2 column, n rows
    //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
@@ -1227,13 +1160,13 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
   frame2d = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
   frame2d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame2->AddFrame(frame2d, fL6);
+  frame2->AddFrame(frame2d, com->fL6);
 
 
   TGHorizontalFrame* h2fr = new TGHorizontalFrame(frame2d);
-  frame2d->AddFrame(h2fr,fL1);
+  frame2d->AddFrame(h2fr,com->fL1);
   TGComboBox* cmb1=new TGComboBox(h2fr,0);
-  h2fr->AddFrame(cmb1,fL2);
+  h2fr->AddFrame(cmb1,com->fL2);
   cmb1->AddEntry("test1", 0);
   cmb1->Resize(60, 20);
   TGNumberEntry* fNum1 =
@@ -1242,10 +1175,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 			   TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
 
   fNum1->SetWidth(45);
-  h2fr->AddFrame(fNum1,fL8a);
+  h2fr->AddFrame(fNum1,com->fL8a);
 
   TGComboBox* cmb2=new TGComboBox(h2fr,1);
-  h2fr->AddFrame(cmb2,fL2);
+  h2fr->AddFrame(cmb2,com->fL2);
   cmb2->AddEntry("test2", 1);
   cmb2->Resize(60, 20);
 
@@ -1255,10 +1188,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 			   TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
 
   fNum2->SetWidth(45);
-  h2fr->AddFrame(fNum2,fL8a);
+  h2fr->AddFrame(fNum2,com->fL8a);
 
   TGTextButton *fbut = new TGTextButton(h2fr,"Add",0);
-  h2fr->AddFrame(fbut, fL3);
+  h2fr->AddFrame(fbut, com->fL3);
   fbut->Connect("Clicked()", "ParParDlg", this, "Add2d()");
 
 
@@ -1381,14 +1314,14 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
     fNum1->SetWidth(width);
     //fNum1->Resize(width, fNum1->GetDefaultHeight());
     fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParParDlg", this, connect);
-    hfr1->AddFrame(fNum1,fL7);
+    hfr1->AddFrame(fNum1,com->fL7);
   }
   else {
     TGLabel* fskip = new TGLabel(hfr1, "");
     fskip->ChangeOptions(fskip->GetOptions()|kFixedWidth);
     fskip->SetWidth(width);
     //fskip->Resize(width, fskip->GetDefaultHeight());
-    hfr1->AddFrame(fskip,fL7);
+    hfr1->AddFrame(fskip,com->fL7);
   }
   
   limits = TGNumberFormat::kNELNoLimits;
@@ -1406,18 +1339,18 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
     fNum2->SetWidth(width);
     //fNum2->Resize(width, fNum2->GetDefaultHeight());
     fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParParDlg", this, connect);
-    hfr1->AddFrame(fNum2,fL7);
+    hfr1->AddFrame(fNum2,com->fL7);
   }
   else {
     TGLabel* fskip = new TGLabel(hfr1, "");
     fskip->ChangeOptions(fskip->GetOptions()|kFixedWidth);
     fskip->SetWidth(width);
     //fskip->Resize(width, fskip->GetDefaultHeight());
-    hfr1->AddFrame(fskip,fL7);
+    hfr1->AddFrame(fskip,com->fL7);
   }
 
   TGLabel* fLabel = new TGLabel(hfr1, label);
-  hfr1->AddFrame(fLabel,fL7);
+  hfr1->AddFrame(fLabel,com->fL7);
 
 }
 
@@ -1441,15 +1374,15 @@ void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname,
   tTrig->Connect("ReturnPressed()", "ParParDlg", this, "CheckFormula()");
 
   tTrig->SetToolTipText(tip1);
-  hfr1->AddFrame(tTrig,fL7);
+  hfr1->AddFrame(tTrig,com->fL7);
   
   TGTextButton* but = new TGTextButton(hfr1,"Check",7);
   but->Connect("Clicked()", "ParParDlg", this, "CheckFormula()");
   but->SetToolTipText(tip1);
-  hfr1->AddFrame(but, fL6);
+  hfr1->AddFrame(but, com->fL6);
 
   TGLabel* fLabel = new TGLabel(hfr1, label);
-  hfr1->AddFrame(fLabel,fL7);
+  hfr1->AddFrame(fLabel,com->fL7);
 
 }
 */
@@ -1478,7 +1411,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   chk_hist->SetName(name);
   DoMap(chk_hist,&hd->b,p_chk,0);
   chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckHist()");
-  hfr1->AddFrame(chk_hist,fL3);
+  hfr1->AddFrame(chk_hist,com->fL3);
   //id0=id;
 
   //cout << "hist: " << id << " " << chk_hist->GetName() << " " << chk_hist->GetTitle() << endl;
@@ -1492,7 +1425,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   fNum1->SetWidth(ww1);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				     "DoNum()");
-  hfr1->AddFrame(fNum1,fL8a);
+  hfr1->AddFrame(fNum1,com->fL8a);
 
   //xlow
   id = Plist.size()+1;
@@ -1504,7 +1437,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   fNum2->SetWidth(ww);
   fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				     "DoNum()");
-  hfr1->AddFrame(fNum2,fL8a);
+  hfr1->AddFrame(fNum2,com->fL8a);
 
   //xup
   id = Plist.size()+1;
@@ -1516,7 +1449,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   fNum3->SetWidth(ww);
   fNum3->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				     "DoNum()");
-  hfr1->AddFrame(fNum3,fL8a);
+  hfr1->AddFrame(fNum3,com->fL8a);
 
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
@@ -1528,7 +1461,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
-  hfr1->AddFrame(fLabel,fL8a);
+  hfr1->AddFrame(fLabel,com->fL8a);
 
 }
 
@@ -1556,7 +1489,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   //chk_hist->SetName(name);
   DoMap(chk_hist,&hd->b,p_chk,0);
   chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
-  hfr1->AddFrame(chk_hist,fL3);
+  hfr1->AddFrame(chk_hist,com->fL3);
   //id0=id;
 
   //nbins (x-axis)
@@ -1569,7 +1502,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   fNum1->SetWidth(ww1);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				     "DoNum()");
-  hfr1->AddFrame(fNum1,fL8a);
+  hfr1->AddFrame(fNum1,com->fL8a);
 
   //nbins2 (y-axis)
   id = Plist.size()+1;
@@ -1581,7 +1514,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   fNum1->SetWidth(ww1);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
   				     "DoNum()");
-  hfr1->AddFrame(fNum1,fL8a);
+  hfr1->AddFrame(fNum1,com->fL8a);
 
   //hint
   TGLabel* tt = new TGLabel(hfr1,"");
@@ -1589,7 +1522,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   //tt->SetToolTipText("Min Max are taken from the corresponding 1d histograms");
   tt->ChangeOptions(tt->GetOptions()|kFixedWidth);
   tt->SetWidth(ww);
-  hfr1->AddFrame(tt,fL8a);
+  hfr1->AddFrame(tt,com->fL8a);
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
   //fLabel->SetWidth();
@@ -1600,7 +1533,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
-  hfr1->AddFrame(fLabel,fL8a);
+  hfr1->AddFrame(fLabel,com->fL8a);
 }
 
 void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,
@@ -1620,7 +1553,7 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,
   chk_hist->SetName(name);
   DoMap(chk_hist,&hd->b,p_chk,0);
   chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
-  hfr1->AddFrame(chk_hist,fL3);
+  hfr1->AddFrame(chk_hist,com->fL3);
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
   //fLabel->SetWidth();
@@ -1631,7 +1564,7 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
-  hfr1->AddFrame(fLabel,fL8);
+  hfr1->AddFrame(fLabel,com->fL8);
 
 }
 
@@ -1775,7 +1708,7 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   //AddHeader();
   head_frame = new TGHorizontalFrame(fcont,10,10);
-  fcont->AddFrame(head_frame,fL1);
+  fcont->AddFrame(head_frame,com->fL1);
 
   // Hsplitter
   TGVerticalFrame *vFrame = new TGVerticalFrame(fcont, 10, 10);
@@ -1800,7 +1733,7 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   //AddHeader();
   //head_frame = new TGHorizontalFrame(fcont1,10,10);
-  //fcont1->AddFrame(head_frame,fL1);
+  //fcont1->AddFrame(head_frame,com->fL1);
 
 
   fH1->AddFrame(fCanvas1,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
@@ -1837,7 +1770,7 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
   clab[i]->SetWidth(tlen1[0]);
   clab[i]->SetToolTipText(ttip1[kk]);
   clab[i]->SetState(false);
-  cframe[i]->AddFrame(clab[i],fL0a);
+  cframe[i]->AddFrame(clab[i],com->fL0a);
   kk++;
 
   if (!nfld && Plist.size()) {
@@ -1847,7 +1780,7 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
   id = Plist.size()+1;
   TGComboBox* fCombo=new TGComboBox(cframe[i],id);
   //fCombo->SetToolTipText(ttip1[kk]);
-  cframe[i]->AddFrame(fCombo,fL0);
+  cframe[i]->AddFrame(fCombo,com->fL0);
   kk++;
 
   for (int j = 0; j < ADDCH; j++) {
@@ -1921,7 +1854,7 @@ void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
   fNum->SetHeight(20);
   fNum->Connect("TextChanged(char*)", "ChanParDlg", this, "DoChanNum()");
   fNum->SetToolTipText(ttip7[kk]);
-  hframe1->AddFrame(fNum,fL0);
+  hframe1->AddFrame(fNum,com->fL0);
 
 }
 
@@ -1952,16 +1885,16 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   if (crs->module==2) {
     TGHorizontalFrame *hforce = new TGHorizontalFrame(fcont1,10,10);
-    fcont1->AddFrame(hforce,fL1);
+    fcont1->AddFrame(hforce,com->fL1);
 
     int id = Plist.size()+1;
     TGCheckButton *fforce = new TGCheckButton(hforce, "", id);
-    hforce->AddFrame(fforce,fL3);
+    hforce->AddFrame(fforce,com->fL3);
     DoChanMap((TGWidget*)fforce,&cpar.forcewr,p_chk,0,0,0);
     fforce->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
     
     TGLabel* lforce = new TGLabel(hforce, "  Force_write all channels");
-    hforce->AddFrame(lforce,fL1);
+    hforce->AddFrame(lforce,com->fL1);
   }
 
 }
@@ -1969,7 +1902,7 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
 void CrsParDlg::AddHeader() {
 
   //TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
-  //AddFrame(hframe1,fL1);
+  //AddFrame(hframe1,com->fL1);
 
   TGTextEntry* tt[ncrspar+1];
 
@@ -1982,7 +1915,7 @@ void CrsParDlg::AddHeader() {
     tt[i]->SetState(false);
     tt[i]->SetToolTipText(ttip1[i]);
     tt[i]->SetAlignment(kTextCenterX);
-    head_frame->AddFrame(tt[i],fL0);
+    head_frame->AddFrame(tt[i],com->fL0);
   }
 
 }
@@ -1996,7 +1929,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   //static bool start=true;
 
   cframe[i] = new TGHorizontalFrame(fcont1,10,10);
-  fcont1->AddFrame(cframe[i],fL1);
+  fcont1->AddFrame(cframe[i],com->fL1);
 
   // Pixel_t yellow,green;
   // gClient->GetColorByName("yellow", yellow);
@@ -2011,7 +1944,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   DoChanMap(f_en,&cpar.enabl[i],p_chk,all,1,i);
   f_en->SetToolTipText(ttip1[kk]);
   f_en->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
-  cframe[i]->AddFrame(f_en,fL3);
+  cframe[i]->AddFrame(f_en,com->fL3);
   kk++;
 
   id = Plist.size()+1;
@@ -2019,7 +1952,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   DoChanMap(f_inv,&cpar.inv[i],p_chk,all,1,i);
   f_inv->SetToolTipText(ttip1[kk]);
   f_inv->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
-  cframe[i]->AddFrame(f_inv,fL3);
+  cframe[i]->AddFrame(f_inv,com->fL3);
   kk++;
 
   id = Plist.size()+1;
@@ -2027,7 +1960,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   DoChanMap(f_acdc,&cpar.acdc[i],p_chk,all,1,i);
   f_acdc->SetToolTipText(ttip1[kk]);
   f_acdc->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
-  cframe[i]->AddFrame(f_acdc,fL3);
+  cframe[i]->AddFrame(f_acdc,com->fL3);
   kk++;
 
   id = Plist.size()+1;
@@ -2035,7 +1968,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
   DoChanMap(f_pls,&cpar.pls[i],p_chk,all,1,i);
   f_pls->SetToolTipText(ttip1[kk]);
   f_pls->Connect("Clicked()", "CrsParDlg", this, "DoCheck()");
-  cframe[i]->AddFrame(f_pls,fL3);
+  cframe[i]->AddFrame(f_pls,com->fL3);
   kk++;
 
   AddNumCrs(i,kk++,all,cframe[i],"smooth",&cpar.smooth[i]);
@@ -2074,7 +2007,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     //fBar2->SetParts(nparts);
     //fStat[i]->Draw3DCorner(kFALSE);
     //fbar[i]->DrawBorder();
-    cframe[i]->AddFrame(fStat[i],fL8);
+    cframe[i]->AddFrame(fStat[i],com->fL8);
   }
   kk++;
 
@@ -2089,7 +2022,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     int col=gROOT->GetColor(19)->GetPixel();
     fStatBad[i]->SetBackgroundColor(col);
     fStatBad[i]->SetText(0);
-    cframe[i]->AddFrame(fStatBad[i],fL8);
+    cframe[i]->AddFrame(fStatBad[i],com->fL8);
   }
 
 
@@ -2131,10 +2064,11 @@ void CrsParDlg::AddNumCrs(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
   fNum->Connect("TextChanged(char*)", "CrsParDlg", this, "DoCrsNum()");
 
-  hframe1->AddFrame(fNum,fL0);
+  hframe1->AddFrame(fNum,com->fL0);
 
 }
 
+/*
 void CrsParDlg::ResetStatus() {
 
   TGString txt="0";
@@ -2148,13 +2082,31 @@ void CrsParDlg::ResetStatus() {
   fStatBad[MAX_CH]->SetText(txt);
 
 }
-void CrsParDlg::UpdateStatus() {
+*/
+void CrsParDlg::UpdateStatus(int rst) {
 
-  static Long64_t allpulses;
+  static Long64_t allpulses2;
+  static Long64_t allpulses3;
   static Long64_t allbad;
-  static Int_t npulses3[MAX_CH];
   static double t1;
-  double rate;
+  static Long64_t npulses2a[MAX_CH];
+  static Long64_t npulses3a[MAX_CH];
+  static double rate2[MAX_CH];
+  static double rate_all2;
+  static double rate3[MAX_CH];
+  static double rate_all3;
+
+  if (rst) {
+    allpulses2=0;
+    allbad=0;
+    t1=0;
+    memset(npulses2a,0,sizeof(npulses2a));
+    memset(npulses3a,0,sizeof(npulses3a));
+    memset(rate2,0,sizeof(rate2));
+    rate_all2=0;
+    memset(rate3,0,sizeof(rate3));
+    rate_all3=0;
+  }
 
   TGString txt;
 
@@ -2162,36 +2114,28 @@ void CrsParDlg::UpdateStatus() {
 
   //cout << "DT: " << dt << endl;
   allbad=0;
-  if (dt>0) {
+  if (dt>0.1) {
     for (int i=0;i<opt.Nchan;i++) {
-      //if (crs->npulses2[i]) {
-      rate = (crs->npulses2[i]-npulses3[i])/dt;
-	//if (rate>0) {
-      txt.Form("%0.0f",rate);
-      fStat[i]->SetText(txt);
-      txt.Form("%d",crs->npulses_bad[i]);
-      fStatBad[i]->SetText(txt);
-	  //cout << i << " " << crs->npulses2[i] << " " << rate << " " << dt << endl;
-	  //}
-      npulses3[i]=crs->npulses2[i];
+      rate2[i] = (crs->npulses2[i]-npulses2a[i])/dt;
+      npulses2a[i]=crs->npulses2[i];
       allbad+=crs->npulses_bad[i];
-	//}
     }
-    //if (crs->npulses) {
-    rate = (crs->npulses-allpulses)/dt;
-    //if (rate>0) {
-    txt.Form("%0.0f",rate);
-    fStat[MAX_CH]->SetText(txt);
-    txt.Form("%lld",allbad);
-    fStatBad[MAX_CH]->SetText(txt);
-    // cout << "\033[1;31m";
-    // cout << "rate: " << rate << " " << dt << endl;
-    // cout << "\033[0m";
-    //}
-    allpulses=crs->npulses;
-    //}
+    rate_all2 = (crs->npulses-allpulses2)/dt;
+    allpulses2=crs->npulses;
+
+    t1=opt.T_acq;
   }
-  t1=opt.T_acq;
+
+  for (int i=0;i<opt.Nchan;i++) {
+    txt.Form("%0.0f",rate2[i]);
+    fStat[i]->SetText(txt);
+    txt.Form("%d",crs->npulses_bad[i]);
+    fStatBad[i]->SetText(txt);
+  }
+  txt.Form("%0.0f",rate_all2);
+  fStat[MAX_CH]->SetText(txt);
+  txt.Form("%lld",allbad);
+  fStatBad[MAX_CH]->SetText(txt);
 
 }
 
@@ -2270,7 +2214,7 @@ void AnaParDlg::Make_AnaPar(const TGWindow *p,UInt_t w,UInt_t h) {
 void AnaParDlg::AddHeader() {
 
   //TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
-  //AddFrame(hframe1,fL1);
+  //AddFrame(hframe1,com->fL1);
 
   TGTextEntry* tt;
 
@@ -2280,7 +2224,7 @@ void AnaParDlg::AddHeader() {
     tt->SetState(false);
     tt->SetToolTipText(ttip2[i]);
     tt->SetAlignment(kTextCenterX);
-    head_frame->AddFrame(tt,fL0);
+    head_frame->AddFrame(tt,com->fL0);
   }
 
   char ss[8];
@@ -2293,7 +2237,7 @@ void AnaParDlg::AddHeader() {
     tt->SetState(false);
     tt->SetToolTipText(ttip_g[j]);
     tt->SetAlignment(kTextCenterX);
-    head_frame->AddFrame(tt,fL0);
+    head_frame->AddFrame(tt,com->fL0);
   }
 
 }
@@ -2307,7 +2251,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   //static bool start=true;
 
   cframe[i] = new TGHorizontalFrame(fcont1,10,10);
-  fcont1->AddFrame(cframe[i],fL1);
+  fcont1->AddFrame(cframe[i],com->fL1);
 
   //Pixel_t yellow;
   //gClient->GetColorByName("yellow", yellow);
@@ -2320,7 +2264,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   DoChanMap(fst,&opt.St[i],p_chk,all,0,0);
   fst->Connect("Clicked()", "ParDlg", this, "DoChk()");
   fst->SetToolTipText(ttip2[kk]);
-  cframe[i]->AddFrame(fst,fL3);
+  cframe[i]->AddFrame(fst,com->fL3);
   kk++;
 
   // id = Plist.size()+1;
@@ -2328,7 +2272,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   // DoChanMap(fmt,&opt.Mrk[i],p_chk,all,0,0);
   // fmt->Connect("Clicked()", "ParDlg", this, "DoChk()");
   // fmt->SetToolTipText(ttip2[kk]);
-  // cframe[i]->AddFrame(fmt,fL3);
+  // cframe[i]->AddFrame(fmt,com->fL3);
   // kk++;
 
 
@@ -2360,7 +2304,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
     DoChanMap(gg,&opt.Grp[i][j],p_chk,all,0,0);
     gg->Connect("Clicked()", "ParDlg", this, "DoChk()");
     gg->SetToolTipText(ttip_g[j]);
-    cframe[i]->AddFrame(gg,fL3);
+    cframe[i]->AddFrame(gg,com->fL3);
     kk++;
   }
 
@@ -2394,7 +2338,7 @@ void DspParDlg::Make_DspPar(const TGWindow *p,UInt_t w,UInt_t h) {
 void DspParDlg::AddHeader() {
 
   //TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
-  //AddFrame(hframe1,fL1);
+  //AddFrame(hframe1,com->fL1);
 
   TGTextEntry* tt;
 
@@ -2404,7 +2348,7 @@ void DspParDlg::AddHeader() {
     tt->SetState(false);
     tt->SetToolTipText(ttip3[i]);
     tt->SetAlignment(kTextCenterX);
-    head_frame->AddFrame(tt,fL0);
+    head_frame->AddFrame(tt,com->fL0);
   }
 
 }
@@ -2418,7 +2362,7 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
   //static bool start=true;
 
   cframe[i] = new TGHorizontalFrame(fcont1,10,10);
-  fcont1->AddFrame(cframe[i],fL1);
+  fcont1->AddFrame(cframe[i],com->fL1);
 
   //Pixel_t yellow;
   //gClient->GetColorByName("yellow", yellow);
@@ -2431,7 +2375,7 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
   DoChanMap(fdsp,&opt.dsp[i],p_chk,all,0,0);
   fdsp->Connect("Clicked()", "ParDlg", this, "DoChk()");
   fdsp->SetToolTipText(ttip2[kk]);
-  cframe[i]->AddFrame(fdsp,fL3);
+  cframe[i]->AddFrame(fdsp,com->fL3);
   kk++;
 
   // id = Plist.size()+1;
@@ -2439,7 +2383,7 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
   // DoChanMap(fpls,&cpar.pls[i],p_chk,all,0,0);
   // fpls->Connect("Clicked()", "ParDlg", this, "DoChk()");
   // fpls->SetToolTipText(ttip2[kk]);
-  // cframe[i]->AddFrame(fpls,fL3);
+  // cframe[i]->AddFrame(fpls,com->fL3);
   // kk++;
 
   tlen7 = (int*) tlen3;
@@ -2464,3 +2408,77 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
   AddNumChan(i,kk++,all,cframe[i],&opt.W1[i],-1024,amax,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.W2[i],-1024,9999,p_inum);
 }
+
+//-------------------------
+ErrFrame::ErrFrame(const TGWindow *p,UInt_t w,UInt_t h)
+  :ParDlg(p,w,h)
+{
+
+  fDock->SetWindowName("Errors");  
+  /*
+  TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
+
+  fDock = new TGDockableFrame(this);
+  AddFrame(fDock, fLay1);
+  fDock->SetWindowName("Events");  
+  //fDock->SetBackgroundColor(com->fRed);
+  fDock->SetFixedSize(kFALSE);
+  */
+  
+  TGCompositeFrame *fMain=fDock->GetContainer();
+  fMain->SetBackgroundColor(com->fRed10);
+  fMain->SetLayoutManager(new TGVerticalLayout(fMain));
+  
+  fCanvas1 = new TGCanvas(fMain,w,h);
+  fMain->AddFrame(fCanvas1,com->fLexp);
+  fcont1 = new TGCompositeFrame(fCanvas1->GetViewPort(), 
+				100, 100, kVerticalFrame);
+  fCanvas1->SetContainer(fcont1);
+
+  const char* elab[MAX_ERR] = {
+    "Bad buf start:",
+    "Bad channel:",
+    "Channel mismatch:",
+    "Bad frmt:"
+  };
+  for (int i=0;i<MAX_ERR;i++) {
+    TGHorizontalFrame* cframe = new TGHorizontalFrame(fcont1,10,10);
+    fcont1->AddFrame(cframe,com->fL1);
+    TGLabel* lb = new TGLabel(cframe,elab[i]);
+    lb->SetTextJustify(kTextLeft);
+    lb->ChangeOptions(lb->GetOptions()|kFixedSize);
+    lb->Resize(120,20);
+    cframe->AddFrame(lb,com->fL8);
+    fErr[i] = new TGTextEntry(cframe, "");
+    fErr[i]->ChangeOptions(fErr[i]->GetOptions()|kFixedSize|kSunkenFrame);
+
+    fErr[i]->SetState(false);
+    //fErr[i]->SetMargins(10,0,0,0);
+    //fErr[i]->SetTextJustify(kTextLeft|kTextCenterY);
+
+    //////fErr[i]->SetToolTipText(ttip1[kk]);
+
+    fErr[i]->Resize(70,20);
+    int col=gROOT->GetColor(19)->GetPixel();
+    fErr[i]->SetBackgroundColor(col);
+    fErr[i]->SetText(0);
+    //fbar[i]->SetParts(parts, nparts);
+    //fBar2->SetParts(nparts);
+    //fErr[i]->Draw3DCorner(kFALSE);
+    //fbar[i]->DrawBorder();
+    cframe->AddFrame(fErr[i],com->fL8);
+  }
+
+}
+
+ErrFrame::~ErrFrame() {
+}
+
+void ErrFrame::ErrUpdate() {
+  TGString txt;
+  for (int i=0;i<MAX_ERR;i++) {
+    txt.Form("%lld",crs->errors[i]);
+    fErr[i]->SetText(txt);
+  }
+}
+

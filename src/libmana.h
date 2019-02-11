@@ -2,6 +2,7 @@
 #define libmana_H 1
 
 #include "common.h"
+#include <TGDockableFrame.h>
 
 using namespace std;
 
@@ -15,7 +16,7 @@ using namespace std;
 //#endif
 
 #include <TH1.h>
-#include <TGFrame.h>
+//#include <TGFrame.h>
 #include <TRootEmbeddedCanvas.h>
 #include <TGNumberEntry.h>
 #include "TGMenu.h"
@@ -63,10 +64,10 @@ public:
   TGTab                *fTab;
   TGCompositeFrame     *tabfr[10];
 
-  Pixel_t fGreen;
-  Pixel_t fRed;
-  Pixel_t fCyan;
-  Pixel_t fBluevio;
+  // Pixel_t fGreen;
+  // Pixel_t fRed;
+  // Pixel_t fCyan;
+  // Pixel_t fBluevio;
 
   //bool fremake;
   int local_nch;
@@ -104,7 +105,7 @@ public:
   void EventInfo(Int_t, Int_t, Int_t, TObject*);
   void DoCross();
 
-  void UpdateStatus();
+  void UpdateStatus(int rst=0);
 
   //void DoSetNumBuf();
   void HandleMenu(Int_t);

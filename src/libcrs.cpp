@@ -37,6 +37,7 @@ using namespace std;
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
+extern ErrFrame* ErrFrm;
 extern HClass* hcl;
 extern ParParDlg *parpar;
 extern CrsParDlg *crspar;
@@ -1919,7 +1920,7 @@ int CRS::DoStartStop() {
 
     Command2(4,0,0,0);
 
-    gSystem->Sleep(300);
+    gSystem->Sleep(500);
 
     //cout << "Acquisition stopped2" << endl;
     Cancel_all(ntrans);
@@ -2081,7 +2082,9 @@ void CRS::DoReset() {
   npulses=0;
   nbuffers=0;
   memset(npulses2,0,sizeof(npulses2));
+  memset(npulses3,0,sizeof(npulses3));
   memset(npulses_bad,0,sizeof(npulses_bad));
+  memset(errors,0,sizeof(errors));
 
 #ifdef TIMES
   memset(ttm,0,sizeof(ttm));
@@ -2111,7 +2114,8 @@ void CRS::DoReset() {
   //printhlist(6);
   // parpar->Update();
   if (crspar) {
-    crspar->ResetStatus();
+    crspar->UpdateStatus(1);
+    //crspar->ResetStatus();
   }
   //if (HiFrm)
   //cout << "DoReset2: " << endl;
@@ -2796,10 +2800,9 @@ void CRS::Show(bool force) {
       // 	}
       // }
     }
-
     crspar->UpdateStatus();
-
     myM->UpdateStatus();
+    ErrFrm->ErrUpdate();
 #ifdef TIMES
     printf("T_acq: %0.2f Read: %0.2f Dec: %0.2f Make: %0.2f Ana: %0.2f Tot: %0.2f\n",opt.T_acq,ttm[0],ttm[1],ttm[2],ttm[3],ttm[4]);
 #endif
@@ -3721,7 +3724,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 
 
     if (frmt && Blist->empty()) {
-      cout << "dec34: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
+      ++errors[0];
+      //cout << "dec34: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
       idx1+=8;
       continue;
     }
@@ -3730,17 +3734,19 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       idx1+=8;
       continue;      
     }
-    else if ((ch>=opt.Nchan) ||
-	     (frmt && ch!=ipls.Chan)) {
-      cout << "dec34: Bad channel: " << (int) ch
-	   << " " << (int) ipls.Chan
-	   << " " << idx1 << " " << ibuf
-	   << endl;
-      ipls.ptype|=P_BADCH;
-
-      //idx8++;
-      idx1+=8;
-      continue;
+    else if (frmt<6) {
+      if (ch>=opt.Nchan) {
+	++errors[1];
+	ipls.ptype|=P_BADCH;
+	idx1+=8;
+	continue;
+      }
+      if (frmt && ch!=ipls.Chan) {
+	++errors[2];
+	ipls.ptype|=P_BADCH;
+	idx1+=8;
+	continue;
+      }
     }
 
     switch (frmt) {
@@ -3927,8 +3933,15 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	n_frm++;
       } //if (opt.dsp[ipls.Chan])
       break;
+    case 6:
+      //cout << "frmt6: " << (int) ch << " " << data << endl;
+      npulses3[ch]=data;
+      break;
+    case 7:
+      break;
     default:
-      cout << "bad frmt: " << frmt << endl;
+      ++errors[3];
+      //cout << "bad frmt: " << frmt << endl;
     } //switch (frmt);
 
     //idx8++;
@@ -4366,7 +4379,7 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
     return;
   }
 
-  npulses2[pls->Chan]++;
+  ++npulses2[pls->Chan];
 
   if (Elist->empty()) {
     //if (Tstart64<0) {

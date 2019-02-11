@@ -78,9 +78,9 @@ extern CRS* crs;
 extern ParParDlg *parpar;
 extern EventFrame* EvtFrm;
 
-extern ULong_t fGreen;
-extern ULong_t fRed;
-extern ULong_t fCyan;
+//extern ULong_t fGreen;
+//extern ULong_t fRed;
+//extern ULong_t fCyan;
 
 Float_t xgr[DSIZE]; // x coordinate for graph
 Float_t ygr[DSIZE]; // y coordinate for graph

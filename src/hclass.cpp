@@ -8,9 +8,9 @@ extern CRS* crs;
 extern ParParDlg *parpar;
 extern Coptions cpar;
 
-extern ULong_t fGreen;
-extern ULong_t fRed;
-extern ULong_t fCyan;
+// extern ULong_t fGreen;
+// extern ULong_t fRed;
+// extern ULong_t fCyan;
 
 //extern TH1F *hrms;
 //extern TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)

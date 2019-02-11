@@ -196,7 +196,9 @@ RQ_OBJECT("CRS")
   Long64_t nbuffers; //total number of buffers (zero at Reset (Start button))
   //double mb_rate;
   //double ev_rate;
-  Int_t npulses2[MAX_CH]; //number of pulses per channel
+  Long64_t npulses2[MAX_CH]; //number of pulses per channel (softw)
+  Long64_t npulses3[MAX_CH]; //number of pulses per channel (hardw)
+
   Int_t npulses_bad[MAX_CH]; //number of bad pulses per channel
 
   //bool b_usbbuf;
@@ -216,49 +218,9 @@ RQ_OBJECT("CRS")
   Long64_t Pstamp64; //previous tstamp (only for decode_adcm)
   Long64_t Offset64; //Tstamp offset in case of bad events
 
-  //vars for decoding...
-
-  //for adcm
-  // int idx; //index for Decode_adcm (in 32bit words, rbuf4)
-  // int rLen; // length of one m-link frame
-  // //int BufLength; //length of the read buffer
-  // int idnext; //next expected idx pointing to new syncw
-  // int lastfl; //transient last fragment flag
-  // //UInt_t* rbuf4; //only for decode_adcm
-  // //UShort_t* rbuf2; //only for decode_adcm
-  
-  //for crs32...
-  //ULong64_t *buf8; //buffer for 8-byte words
-  //unsigned char *buf1; //buffer for 1-byte words
-  //int r_buf8; //length of the buffer (in 8-byte words)
-  //int idx8; // current index in the buffer (in 8-byte words) 
-  //int idx1; // current index in the buffer (in 1-byte words)
-
-  //for crs2...
-  //unsigned short* buf2; //buffer for 2-byte words
-  //int r_buf2; //length of the buffer (in 2-byte words)
-  //int idx2; // current index in the buffer (in 2-byte words)
-  
-  //int frmt; //data format (byte 6)
-  //int cnt[MAX_CH]; // last 4 bits of the counter
-  //int cnt_prev[MAX_CH]; //previous cnt (may be used for counter consistency)
-  //int nsmp; //temporary Nsamp
-
   //ULong64_t istamp64; //temporary tstamp64
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   Long64_t Tstart0; //Tstamp of the ntof start pulses
-
-  //Long64_t rTime; //Tstamp of decoded event
-  //Char_t rState; //State of decoded event
-
-  // rpeak_type73 rP73;
-  // std::vector<rpeak_type73> rPeaks73;
-  // rpeak_type74 rP74;
-  // std::vector<rpeak_type74> rPeaks74;
-
-  //bool b_maintrig; //true if maintrig (formula) is not empty
-  //bool cut_main; //main trigger - set for each event in fillhist
-  //TFormula maintrig;
 
   peak_type dummy_peak;
   PulseClass dummy_pulse;
@@ -267,6 +229,14 @@ RQ_OBJECT("CRS")
   Int_t b_len[MAX_CH],
     p_len[MAX_CH],
     w_len[MAX_CH]; //length of window for bkg, peak and width integration in DSP
+
+  Long64_t errors[MAX_ERR];
+  Long64_t Counter[MAX_CH];
+  //0 - bad buf start
+  //1 - ch>=Nchan
+  //2 - channel mismatch
+  //3 - bad frmt
+
   //--------functions---------
 
   //void Dummy_trd();
