@@ -1991,24 +1991,34 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
 
 
   if (i<=MAX_CH) {
-    fStat[i] = new TGTextEntry(cframe[i], "");
-    fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedSize|kSunkenFrame);
+    fStat2[i] = new TGTextEntry(cframe[i], "");
+    fStat2[i]->ChangeOptions(fStat2[i]->GetOptions()|kFixedSize|kSunkenFrame);
 
-    fStat[i]->SetState(false);
-    //fStat[i]->SetMargins(10,0,0,0);
-    //fStat[i]->SetTextJustify(kTextLeft|kTextCenterY);
-    fStat[i]->SetToolTipText(ttip1[kk]);
+    fStat2[i]->SetState(false);
+    fStat2[i]->SetToolTipText(ttip1[kk]);
 
-    fStat[i]->Resize(70,20);
+    fStat2[i]->Resize(70,20);
     int col=gROOT->GetColor(19)->GetPixel();
-    fStat[i]->SetBackgroundColor(col);
-    fStat[i]->SetText(0);
-    //fbar[i]->SetParts(parts, nparts);
-    //fBar2->SetParts(nparts);
-    //fStat[i]->Draw3DCorner(kFALSE);
-    //fbar[i]->DrawBorder();
-    cframe[i]->AddFrame(fStat[i],com->fL8);
+    fStat2[i]->SetBackgroundColor(col);
+    fStat2[i]->SetText(0);
+    cframe[i]->AddFrame(fStat2[i],com->fL8);
   }
+  kk++;
+
+  if (i<=MAX_CH) {
+    fStat3[i] = new TGTextEntry(cframe[i], "");
+    fStat3[i]->ChangeOptions(fStat3[i]->GetOptions()|kFixedSize|kSunkenFrame);
+
+    fStat3[i]->SetState(false);
+    fStat3[i]->SetToolTipText(ttip1[kk]);
+
+    fStat3[i]->Resize(70,20);
+    int col=gROOT->GetColor(19)->GetPixel();
+    fStat3[i]->SetBackgroundColor(col);
+    fStat3[i]->SetText(0);
+    cframe[i]->AddFrame(fStat3[i],com->fL8);
+  }
+  /*
   kk++;
 
   if (i<=MAX_CH) {
@@ -2024,7 +2034,7 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     fStatBad[i]->SetText(0);
     cframe[i]->AddFrame(fStatBad[i],com->fL8);
   }
-
+  */
 
 }
 
@@ -2085,27 +2095,27 @@ void CrsParDlg::ResetStatus() {
 */
 void CrsParDlg::UpdateStatus(int rst) {
 
-  static Long64_t allpulses2;
-  static Long64_t allpulses3;
+  //static Long64_t allpulses2;
+  //static Long64_t allpulses3;
   static Long64_t allbad;
   static double t1;
-  static Long64_t npulses2a[MAX_CH];
-  static Long64_t npulses3a[MAX_CH];
+  static Long64_t npulses2o[MAX_CH];
+  static Long64_t npulses3o[MAX_CH];
   static double rate2[MAX_CH];
   static double rate_all2;
   static double rate3[MAX_CH];
   static double rate_all3;
 
   if (rst) {
-    allpulses2=0;
+    //allpulses2=0;
     allbad=0;
     t1=0;
-    memset(npulses2a,0,sizeof(npulses2a));
-    memset(npulses3a,0,sizeof(npulses3a));
+    memset(npulses2o,0,sizeof(npulses2o));
+    memset(npulses3o,0,sizeof(npulses3o));
     memset(rate2,0,sizeof(rate2));
-    rate_all2=0;
+    //rate_all2=0;
     memset(rate3,0,sizeof(rate3));
-    rate_all3=0;
+    //rate_all3=0;
   }
 
   TGString txt;
@@ -2114,29 +2124,41 @@ void CrsParDlg::UpdateStatus(int rst) {
 
   //cout << "DT: " << dt << endl;
   allbad=0;
+  rate_all2=0;
+  rate_all3=0;
   if (dt>0.1) {
     for (int i=0;i<opt.Nchan;i++) {
-      rate2[i] = (crs->npulses2[i]-npulses2a[i])/dt;
-      npulses2a[i]=crs->npulses2[i];
+      rate2[i] = (crs->npulses2[i]-npulses2o[i])/dt;
+      npulses2o[i]=crs->npulses2[i];
+      rate3[i] = (crs->npulses3[i]-npulses3o[i])/dt;
+      npulses3o[i]=crs->npulses3[i];
+
+      rate_all2+=rate2[i];
+      rate_all3+=rate3[i];
       allbad+=crs->npulses_bad[i];
     }
-    rate_all2 = (crs->npulses-allpulses2)/dt;
-    allpulses2=crs->npulses;
+    //rate_all2 = (crs->npulses-allpulses2)/dt;
+    //allpulses2=crs->npulses;
+    //rate_all3 = (crs->npulses-allpulses2)/dt;
+    //allpulses2=crs->npulses;
 
     t1=opt.T_acq;
   }
 
   for (int i=0;i<opt.Nchan;i++) {
     txt.Form("%0.0f",rate2[i]);
-    //txt.Form("%lld",crs->npulses2[i]);
-    fStat[i]->SetText(txt);
-    txt.Form("%d",crs->npulses_bad[i]);
-    fStatBad[i]->SetText(txt);
+    fStat2[i]->SetText(txt);
+    txt.Form("%0.0f",rate3[i]);
+    fStat3[i]->SetText(txt);
+    //txt.Form("%d",crs->npulses_bad[i]);
+    //fStatBad[i]->SetText(txt);
   }
   txt.Form("%0.0f",rate_all2);
-  fStat[MAX_CH]->SetText(txt);
-  txt.Form("%lld",allbad);
-  fStatBad[MAX_CH]->SetText(txt);
+  fStat2[MAX_CH]->SetText(txt);
+  txt.Form("%0.0f",rate_all3);
+  fStat3[MAX_CH]->SetText(txt);
+  //txt.Form("%lld",allbad);
+  //fStatBad[MAX_CH]->SetText(txt);
 
 }
 

@@ -212,7 +212,8 @@ class CrsParDlg: public ChanParDlg {
 
 public:
   int trig;
-  TGTextEntry *fStat[MAX_CH+1];
+  TGTextEntry *fStat2[MAX_CH+1];
+  TGTextEntry *fStat3[MAX_CH+1];
   TGTextEntry *fStatBad[MAX_CH+1];
 
 public:

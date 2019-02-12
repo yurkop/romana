@@ -2621,6 +2621,11 @@ void CRS::EndAna(int all) {
       Ana2(1);
     }
   }
+  cout << "EndAna: " << endl;
+  for (int i=0;i<opt.Nchan;i++) {
+    cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
+  }
+
 }
 
 void CRS::FAnalyze2(bool nobatch) {
