@@ -2127,8 +2127,8 @@ void CrsParDlg::UpdateStatus(int rst) {
   }
 
   for (int i=0;i<opt.Nchan;i++) {
-    //txt.Form("%0.0f",rate2[i]);
-    txt.Form("%lld",crs->npulses2[i]);
+    txt.Form("%0.0f",rate2[i]);
+    //txt.Form("%lld",crs->npulses2[i]);
     fStat[i]->SetText(txt);
     txt.Form("%d",crs->npulses_bad[i]);
     fStatBad[i]->SetText(txt);
