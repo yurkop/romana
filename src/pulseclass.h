@@ -83,6 +83,7 @@ const unsigned char P_BADCH=4;
 const unsigned char P_BADTST=8;
 const unsigned char P_BADSZ=16;
 const unsigned char P_BADCNT=32;
+const unsigned char P_STARTCH=64;
 const unsigned char P_BADPULSE=128;
 //-----------------------------------------------
 

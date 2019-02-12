@@ -1010,23 +1010,7 @@ void CRS::DoResetUSB() {
 int CRS::Detect_device() {
 
   int r;
-
-  //module=0;
-  //chan_in_module=32;
-  ver_po=0;
-
-  //b_usbbuf=false;
-  /*
-    for (int i=0;i<ntrans;i++) {
-    if (transfer[i]) {
-    cout << "transfer : " << i << " " << transfer[i] << endl;
-    libusb_free_transfer(transfer[i]);
-    }
-    }
-  */
-
-  //int ch=getche();
-  //sleep(1000);
+  //Short_t firmw=0;
 
   r = cyusb_open();
 
@@ -1071,57 +1055,51 @@ int CRS::Detect_device() {
   }
   else printf("Successfully claimed interface\n");
 
-  //int r1 = pthread_create(&tid1, NULL, handle_events_func, NULL);
-  //if (r1) {
-  //cout << "Error creating thread: " << r1 << endl;
-  //}
-
-#ifdef CYUSB
+  //#ifdef CYUSB
   event_thread_run=1;
   trd_crs = new TThread("trd_crs", handle_events_func, (void*) 0);
   trd_crs->Run();
-#endif
+  //#endif
 
-  // trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
-  // trd_stat->Run();
-
-  // trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
-  // trd_evt->Run();
-
-
-  //memset(buf_out,'\0',64);
-  //memset(buf_in,'\0',64);
-
-  //buf_out[0] = 1; //get card info
   Command2(4,0,0,0);
 
   int sz;
+  memset(buf_in,0,sizeof(buf_in));
   sz = Command32(1,0,0,0);
 
-  cout << "Info: " << sz << endl;
-  cout << "Device code: " << int(buf_in[1]) << endl;
-  cout << "Serial Nr: " << int(buf_in[2]) << endl;
-  cout << "Number of working plates: " << int(buf_in[3]) << endl;
-  cout << "Firmware version: " << int(buf_in[4]) << endl;
+  Short_t device_code=buf_in[1];
+  Short_t Serial_n=buf_in[2];
+  Short_t nplates=buf_in[3];
+  Short_t ver_po=buf_in[4];
+
+  //cout << "Info: " << sz << endl;
+  cout << "Device code: " << device_code << endl;
+  cout << "Serial Nr: " << Serial_n << endl;
+  cout << "Number of working plates: " << nplates << endl;
+  cout << "Firmware version: " << ver_po << endl;
   //cout << "PO version: " << int(buf_in[4]) << endl;
 
   //for (int i=0;i<sz;i++) {
   //cout << int(buf_in[i]) << " ";
   //}
   //cout << endl;
-  ver_po=buf_in[4];
 
-  if (buf_in[1]==3) { //serial Nr=3 -> crs2
-    module=2;
-    chan_in_module=2;
-    opt.Nchan=2;
-    for (int j=0;j<chan_in_module;j++) {
-      type_ch[j]=0;
+  if (ver_po==0) { //serial Nr=3 -> crs2
+    if (device_code==3) {
+      module=2;
+      chan_in_module=2;
+      opt.Nchan=2;
+      for (int j=0;j<chan_in_module;j++) {
+	type_ch[j]=0;
+      }
+    }
+    else {
+      cout << "unknown device: " << endl;
+      exit(1);
     }
   }
-  else { //crs32
+  else { //crs32/16/6
     module=32;
-    int nplates= buf_in[3];
     chan_in_module=nplates*4;
     if (ver_po==1) {//версия ПО=1
       for (int i=0;i<nplates;i++) {
@@ -1155,7 +1133,8 @@ int CRS::Detect_device() {
 	module=34;
       }
     }
-  }
+  } //crs32
+  
 
   cout << "module: " << module << " chan_in_module: " << chan_in_module << endl;
 
@@ -3716,12 +3695,6 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     frmt = (frmt & 0xF0)>>4;
     data = buf8[idx1/8] & sixbytes;
     unsigned char ch = GLBuf[idx1+7];
-
-    //cout << "data: " << idx << " " << frmt << " " << n_frm << " " << data << endl;
-    // if (vv->size()<4) {
-    //   cout << "idx: " << idx1 << " " << vv->size() << " " << frmt << " " << (int) ch << " " << (int) ipls->Chan << endl;
-    // }
-
 
     if (frmt && Blist->empty()) {
       ++errors[0];
