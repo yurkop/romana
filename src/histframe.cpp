@@ -1013,7 +1013,7 @@ void HistFrame::Y_Slider(TH1* hh) {
       x2=hh->GetYaxis()->GetXmax();
     }
     else {
-      x1=hh->GetBinContent(hh->GetMinimumBin());
+      x1=hh->GetBinContent(hh->GetMinimumBin())*1.05;
       x2=hh->GetBinContent(hh->GetMaximumBin())*1.05;
     }
     double rr = x2-x1;
@@ -1451,6 +1451,7 @@ void HistFrame::DrawStack() {
   //create hstack
   delete hstack;
   hstack=new THStack();
+
   //hstack->GetHists()->Clear();
   int cc=0;
   TGListTreeItem *idir = fListTree->GetFirstItem();
@@ -1468,6 +1469,10 @@ void HistFrame::DrawStack() {
 	  //cout << "cols: " << hcols[cc%nhcols] << endl;
 	  if (hh->GetDimension()==1) {
 	    hh->SetLineColor(hcols[cc%nhcols]);
+	    if (opt.b_norm) {	    
+	      double sc = hh->GetNbinsX()/hh->Integral();
+	      hh->Scale(sc);
+	    }
 	    hstack->Add(hh);
 	    cc++;
 	  }
@@ -1484,7 +1489,6 @@ void HistFrame::DrawStack() {
   cv->Divide(1,1);
   cv->SetLogy(opt.b_logy);
 
-
   hstack->Draw("nostack");
 
   Float_t h1,h2;
@@ -1497,17 +1501,29 @@ void HistFrame::DrawStack() {
   hstack->GetXaxis()->SetRangeUser(a1,a2);
 
   Float_t v1,v2;
-  fVslider->GetPosition(v1,v2);
-  double y1=hstack->GetYaxis()->GetXmin();
-  double y2=hstack->GetYaxis()->GetXmax();
-  double rr2 = y2-y1;
-  double b1 = y1+rr2*v1;
-  double b2 = y1+rr2*v2;
-  hstack->GetYaxis()->SetRangeUser(b1,b2);
+  fVslider->GetPosition(v2,v1);
+  v1=1-v1;
+  v2=1-v2;
+  if (v2-v1<1) {
+    double y1=hstack->GetMinimum()*1.05;
+    double y2=hstack->GetMaximum()*1.05;
+    double rr2 = y2-y1;
+    double b1 = y1+rr2*v1;
+    double b2 = y1+rr2*v2;
+    hstack->SetMaximum(b2);
+    hstack->SetMinimum(b1);
+  }
+  else {
+    hstack->SetMaximum();
+    hstack->SetMinimum();
+  }
 
-  //cout << "Vslider: " << b1 << " " << b2 << endl;
-  hstack->Draw("nostack");
 
+
+
+  //cout << "Vslider: " << b1 << " " << b2 << " " << y1 << " " << y2 << endl;
+  hstack->Draw("nostackhist");
+  /*
   if (opt.b_norm) {
     TIter next(hstack->GetHists());
     TObject* obj;
@@ -1517,10 +1533,12 @@ void HistFrame::DrawStack() {
       hh->Scale(sc);
     }
     //cout << "DrawStack: " << endl;
-    hstack->Draw("nostack");  
+    //hstack->Draw("nostack");  
   }
-
-  cv->BuildLegend(0.65,0.75,0.95,0.95);
+  */
+  if (opt.b_stat) {
+    cv->BuildLegend(0.30,0.75,0.60,0.95);
+  }
   cv->Update();
 
 }
