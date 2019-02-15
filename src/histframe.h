@@ -52,7 +52,9 @@ public:
   TGListTreeItem         *iWork_cut[MAXCUTS];
   TGListTreeItem         *iWork_MT;
   TList* hlist;
-  THStack* hstack;
+  //THStack* hstack;
+  TList* st_list;    //stack list
+  TH1F* st_plot;    //histogram for plotting stack;
 
   TGCheckButton* chknorm;
   TGCheckButton* chklog;
@@ -102,8 +104,10 @@ public:
   void DoRadio();
   void DoButton();
   void DoSlider();
-  void X_Slider(TH1* hh);
-  void Y_Slider(TH1* hh);
+  void GetHMinMax(TH1* hh, double x1, double x2,
+		  double &y1, double &y2);
+  void X_Slider(TH1* hh, double &a1, double &a2);
+  void Y_Slider(TH1* hh, double a1, double a2, double y1, double y2);
   void AddCutG(TPolyLine *pl, TObject* hobj);
   void MakeCutG(TPolyLine *pl, TObject* hobj);
   void DoCutG();

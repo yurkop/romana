@@ -2621,10 +2621,10 @@ void CRS::EndAna(int all) {
       Ana2(1);
     }
   }
-  cout << "EndAna: " << endl;
-  for (int i=0;i<opt.Nchan;i++) {
-    cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
-  }
+  // cout << "EndAna: " << endl;
+  // for (int i=0;i<opt.Nchan;i++) {
+  //   cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
+  // }
 
 }
 
@@ -3912,7 +3912,9 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       } //if (opt.dsp[ipls.Chan])
       break;
     case 6:
-      //cout << "frmt6: " << (int) ch << " " << data << endl;
+      // if (data) {
+      // 	cout << "frmt6: " << (int) ch << " " << data << " " << npulses2[ch] << endl;
+      // }
       npulses3[ch]=data;
       break;
     case 7:
