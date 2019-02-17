@@ -3701,6 +3701,36 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     data = buf8[idx1/8] & sixbytes;
     unsigned char ch = GLBuf[idx1+7];
 
+    int cnt;
+    if (nevents>2766970) {
+      //const char* tx[] = {""," #"," $"};
+      bool st1=0,st2=0;
+      frmt=GLBuf[idx1+6];
+      cnt = frmt & 0x0F;
+      frmt = (frmt & 0xF0)>>4;
+      if (frmt==0)
+	st1=1;
+
+      printf(" %3d %3d %3d",frmt,ch,cnt);
+      idx1+=4;
+      frmt=GLBuf[idx1+6];
+      cnt = frmt & 0x0F;
+      frmt = (frmt & 0xF0)>>4;
+      ch = GLBuf[idx1+7];
+      if (frmt==0)
+	st2=1;
+
+      printf("   %3d %3d %3d",frmt,ch,cnt);
+      idx1-=4;
+      printf("   0x%016llx",buf8[idx1/8]);
+      if (st1)
+	printf(" #");
+      if (st2)
+	printf(" $");
+      printf("\n");
+      idx1+=8;
+      continue;
+    }
     if (frmt && Blist->empty()) {
       ++errors[0];
       //cout << "dec34: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
