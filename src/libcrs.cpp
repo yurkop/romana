@@ -2628,10 +2628,10 @@ void CRS::EndAna(int all) {
       Ana2(1);
     }
   }
-  // cout << "EndAna: " << endl;
-  // for (int i=0;i<opt.Nchan;i++) {
-  //   cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
-  // }
+  cout << "EndAna: " << endl;
+  for (int i=0;i<opt.Nchan;i++) {
+    cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
+  }
 
 }
 
@@ -3698,6 +3698,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   Blist->front().Nevt=iread;
   PulseClass ipls=dummy_pulse;
 
+  Print_Buf(ibuf,"buf.dat");
+  //exit(1);
   //cout << "Decode34: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
 
   while (idx1<b_end[ibuf]) {
@@ -3746,7 +3748,6 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 
     //Print_Buf(ibuf,"error.dat");
     //exit(1);
-
 
     if (frmt && Blist->empty()) {
       ++errors[0];
@@ -4545,6 +4546,7 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   //cout << "LL: " << Levents.rbegin()->Nevt << " " << Levents.rbegin()->TT << endl;
   //UInt_t sz = Levents.size();
 
+  //merge beginning of BB and end of Levents
   if (!Levents.empty() && !BB->empty()) {
     evlist_iter it = BB->begin();
     evlist_reviter rr = Levents.rbegin();
