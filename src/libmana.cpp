@@ -673,7 +673,13 @@ int main(int argc, char **argv)
 
 #ifdef CYUSB
   if (crs->Fmode!=2) {
+    bool d = opt.decode;
+    bool w = opt.raw_write;
+    opt.decode=0;
+    opt.raw_write=0;
     crs->Detect_device();
+    opt.decode=d;
+    opt.raw_write=w;
   }
 #endif
 

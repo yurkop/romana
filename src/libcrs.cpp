@@ -4,6 +4,7 @@
 #include <fstream>
 #include <zlib.h>
 #include <sys/stat.h>
+#include <iomanip>
 
 #ifdef CYUSB
 #include "cyusb.h"
@@ -183,6 +184,7 @@ void *handle_events_func(void *ctx)
 
 static void cback(libusb_transfer *trans) {
 
+  //cout << "cback: " << trans->actual_length << endl;
   //static TTimeStamp t1;
 
   //TTimeStamp t2;
@@ -1309,6 +1311,11 @@ int CRS::Init_Transfer() {
   }
   */
 
+  //cout << "reset_usb: " << endl;
+  //Command32(7,0,0,0); //reset usb command
+  //gSystem->Sleep(250);
+
+  cout << "submit" << endl;
   Submit_all(MAXTRANS2);
 
   /*
@@ -1628,7 +1635,7 @@ void CRS::Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
 
 void CRS::AllParameters34()
 {
-  cout << "AllParameters34(): " << endl;
+  //cout << "AllParameters34(): " << endl;
 
   //enable start channel by default
   Command32(2,255,11,1); //enabled
@@ -3737,6 +3744,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     }
     */
 
+    //Print_Buf(ibuf,"error.dat");
+    //exit(1);
 
 
     if (frmt && Blist->empty()) {
@@ -3752,8 +3761,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     }
     else if (frmt<6) {
       if (ch>=opt.Nchan) { //bad channel
-	Print_Buf(ibuf,"error.dat");
-	exit(1);
+	//Print_Buf(ibuf,"error.dat");
+	//exit(1);
 
 	++errors[1];
 	ipls.ptype|=P_BADCH;
@@ -3961,6 +3970,9 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     case 7:
       break;
     default:
+      //Print_Buf(ibuf,"error.dat");
+      //exit(1);
+
       ++errors[3];
       //cout << "bad frmt: " << frmt << endl;
     } //switch (frmt);
