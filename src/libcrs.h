@@ -344,6 +344,8 @@ RQ_OBJECT("CRS")
 
   //void Print_Pulses();
   void Print_Events(const char* file=0);
+  void Print_b1(int idx1, std::ostream *out);
+  void Print_Buf(UInt_t ibuf, const char* file=0);
   ClassDef(CRS, 0)
 };
 

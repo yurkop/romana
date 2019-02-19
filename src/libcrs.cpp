@@ -3701,6 +3701,10 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     data = buf8[idx1/8] & sixbytes;
     unsigned char ch = GLBuf[idx1+7];
 
+
+    //Print_Buf(ibuf,"error.dat");
+    //exit(1);
+    /*
     int cnt;
     if (nevents>2766970) {
       //const char* tx[] = {""," #"," $"};
@@ -3712,7 +3716,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	st1=1;
 
       printf(" %3d %3d %3d",frmt,ch,cnt);
-      idx1+=4;
+      idx1-=4;
       frmt=GLBuf[idx1+6];
       cnt = frmt & 0x0F;
       frmt = (frmt & 0xF0)>>4;
@@ -3721,7 +3725,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	st2=1;
 
       printf("   %3d %3d %3d",frmt,ch,cnt);
-      idx1-=4;
+      idx1+=4;
       printf("   0x%016llx",buf8[idx1/8]);
       if (st1)
 	printf(" #");
@@ -3731,6 +3735,10 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       idx1+=8;
       continue;
     }
+    */
+
+
+
     if (frmt && Blist->empty()) {
       ++errors[0];
       //cout << "dec34: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
@@ -3743,13 +3751,16 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       continue;      
     }
     else if (frmt<6) {
-      if (ch>=opt.Nchan) {
+      if (ch>=opt.Nchan) { //bad channel
+	Print_Buf(ibuf,"error.dat");
+	exit(1);
+
 	++errors[1];
 	ipls.ptype|=P_BADCH;
 	idx1+=8;
 	continue;
       }
-      if (frmt && ch!=ipls.Chan) {
+      if (frmt && ch!=ipls.Chan) { //channel mismatch
 	++errors[2];
 	ipls.ptype|=P_BADCH;
 	idx1+=8;
@@ -4365,10 +4376,67 @@ void CRS::Print_Events(const char* file) {
 	//printf("-- %d %f\n",i,pp.sData[i]);
       }
       
-      //out << " " << (int)it->pulses.at(i).Chan<< "," << it->pulses.at(i).Tstamp64<< "," << it->pulses.at(i).Peaks.back().Time;
     }
     //out << endl;
   }
+
+  of.close();
+}
+
+void CRS::Print_b1(int idx1, std::ostream *out) {
+  ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
+  unsigned short frmt;
+  int cnt;
+  int ch;
+  ULong64_t data;
+
+  frmt=GLBuf[idx1+6];
+  cnt = frmt & 0x0F;
+  frmt = (frmt & 0xF0)>>4;
+  ch = GLBuf[idx1+7];
+  data = buf8[idx1/8] & sixbytes;
+
+  *out << setw(4) << frmt
+       << setw(4) << ch
+      << setw(4) << cnt
+      << setw(15) << hex << data << dec;
+}
+
+void CRS::Print_Buf(UInt_t ibuf, const char* file) {
+  std::streambuf * buf;
+  std::ofstream of;
+
+  if (file) {
+    of.open(file);
+    buf = of.rdbuf();
+  }
+  else {
+    buf = std::cout.rdbuf();
+  }
+  std::ostream *out = new std::ostream(buf);
+
+  ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
+
+  int idx1=b_start[ibuf];
+
+  int goodch=999;
+  if (idx1-1>=b_start[ibuf])
+    goodch = GLBuf[idx1+7];
+  cout << "Most probably error in ch: " << goodch << endl;
+
+  while (idx1<b_end[ibuf]) {
+
+    Print_b1(idx1,out);
+    if (idx1>=4) {
+      idx1-=4;
+      Print_b1(idx1,out);
+      idx1+=4;
+    }
+    *out << hex << setw(17) << buf8[idx1/8] << dec << endl;
+    idx1+=8;
+  }
+
+  of.close();
 }
 
 void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
