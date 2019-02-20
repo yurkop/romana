@@ -2462,7 +2462,8 @@ ErrFrame::ErrFrame(const TGWindow *p,UInt_t w,UInt_t h)
     "Bad buf start:",
     "Bad channel:",
     "Channel mismatch:",
-    "Bad frmt:"
+    "Bad frmt:",
+    "Zero data"
   };
   for (int i=0;i<MAX_ERR;i++) {
     TGHorizontalFrame* cframe = new TGHorizontalFrame(fcont1,10,10);

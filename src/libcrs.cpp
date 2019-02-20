@@ -3698,9 +3698,11 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   Blist->front().Nevt=iread;
   PulseClass ipls=dummy_pulse;
 
-  Print_Buf(ibuf,"buf.dat");
+  //Print_Buf(ibuf,"buf.dat");
   //exit(1);
   //cout << "Decode34: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
+
+  //bool st=0;
 
   while (idx1<b_end[ibuf]) {
     frmt = GLBuf[idx1+6];
@@ -3710,44 +3712,23 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     data = buf8[idx1/8] & sixbytes;
     unsigned char ch = GLBuf[idx1+7];
 
-
     //Print_Buf(ibuf,"error.dat");
     //exit(1);
+
     /*
-    int cnt;
-    if (nevents>2766970) {
-      //const char* tx[] = {""," #"," $"};
-      bool st1=0,st2=0;
-      frmt=GLBuf[idx1+6];
-      cnt = frmt & 0x0F;
-      frmt = (frmt & 0xF0)>>4;
-      if (frmt==0)
-	st1=1;
-
-      printf(" %3d %3d %3d",frmt,ch,cnt);
-      idx1-=4;
-      frmt=GLBuf[idx1+6];
-      cnt = frmt & 0x0F;
-      frmt = (frmt & 0xF0)>>4;
-      ch = GLBuf[idx1+7];
-      if (frmt==0)
-	st2=1;
-
-      printf("   %3d %3d %3d",frmt,ch,cnt);
-      idx1+=4;
-      printf("   0x%016llx",buf8[idx1/8]);
-      if (st1)
-	printf(" #");
-      if (st2)
-	printf(" $");
-      printf("\n");
-      idx1+=8;
-      continue;
+    if (frmt>=6) {
+      st=1;
+    }
+    else if (st) {
+      st=0;
+      cout << "Start_ch: " << frmt << " " << (int) ch << endl;
+      for (int i=0;i<opt.Nchan;i++) {
+	if (npulses2[i] || npulses3[i])
+	  cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
+      }
     }
     */
 
-    //Print_Buf(ibuf,"error.dat");
-    //exit(1);
 
     if (frmt && Blist->empty()) {
       ++errors[0];
@@ -3780,6 +3761,12 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 
     switch (frmt) {
     case 0:
+      if (buf8[idx1/8]==0) {
+	++errors[4];
+	idx1+=8;
+	continue;
+      }
+      
       //analyze previous pulse
       if (ipls.ptype==0) {
 	PulseAna(ipls);

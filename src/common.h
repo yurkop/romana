@@ -30,7 +30,7 @@ const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to
 const int MAX_PCUTS=11; //maximal number of points in cutG
 const int MAX_PADS=64; //maximal number of sub-pads in histframe
 
-const int MAX_ERR=4; //maximal number of error types;
+const int MAX_ERR=5; //maximal number of error types;
 
 #define MAX_R 4 //number of channel types (gam,ng,nim,off)
 #define MAX_L 6 //line types (gam,neu,tail,unkn,pileup,frame)
