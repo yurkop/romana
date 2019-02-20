@@ -285,6 +285,11 @@ Toptions::Toptions() {
 
   memset(Filename,0,sizeof(Filename));
 
+  const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
+			    "NIM","Other","Copy",""};
+  for (int i=0;i<ADDCH;i++) {
+    strcpy(tnames[i],types[i]);
+  }
   // memset(fname_raw,0,sizeof(fname_raw));
   // memset(fname_dec,0,sizeof(fname_dec));
   // memset(fname_root,0,sizeof(fname_root));

@@ -104,7 +104,7 @@ char** ttip7;
 // const char* types[ADDCH+2]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
 // 			    "NIM","Other","Copy",""};
 const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
-			    "NIM","Other","Copy",""};
+		     "NIM","Other","Copy",""};
 
 //-----------
 const int nchtype=9;
@@ -219,7 +219,7 @@ void ParDlg::DoNum() {
 
 void ParDlg::SetChk(pmap pp, Bool_t num) {
   if (pp.type==p_chk) {
-      *(Bool_t*) pp.data = (Bool_t) num;
+    *(Bool_t*) pp.data = (Bool_t) num;
   }
   else {
     cout << "(DoChk) Wrong type: " << (int) pp.type << endl;
@@ -233,11 +233,11 @@ void ParDlg::DoChk() {
   pmap pp = Plist[id-1];
 
   /*
-  cout << "DoChk: ";
-  cout << id << " ";
-  cout << *(Bool_t*) pp.data << " ";
-  cout << (Int_t) pp.type << " ";
-  cout << te->GetState() << endl;
+    cout << "DoChk: ";
+    cout << id << " ";
+    cout << *(Bool_t*) pp.data << " ";
+    cout << (Int_t) pp.type << " ";
+    cout << te->GetState() << endl;
   */
 
   SetChk(pp,(Bool_t)te->GetState());
@@ -465,7 +465,7 @@ void ParDlg::DoTxt() {
 
 }
 /*
-void ParDlg::DoTxt() {
+  void ParDlg::DoTxt() {
 
   const char *r_ext[] = {".raw",".dec",".root"};
   //const int len[] = {4,4,5};
@@ -475,10 +475,10 @@ void ParDlg::DoTxt() {
   Int_t id = te->WidgetId();
   Int_t i2=-1;
   for (int i=0;i<3;i++) {
-    if (id==id_write[i]) {
-      i2=i;
-      break;
-    }
+  if (id==id_write[i]) {
+  i2=i;
+  break;
+  }
   }
 
   //int sel = te->GetSelected();
@@ -489,45 +489,45 @@ void ParDlg::DoTxt() {
   //cout << r_ext[i2] << endl;
 
   if (i2>=0) {
-    string ss(te->GetText());
-    SplitFilename (ss,dir,name,ext);
+  string ss(te->GetText());
+  SplitFilename (ss,dir,name,ext);
 
-    if (!TString(ext).EqualTo(r_ext[i2],TString::kIgnoreCase)) {
-      ss=dir;
-      ss.append(name);
-      ss.append(r_ext[i2]);
-    }
+  if (!TString(ext).EqualTo(r_ext[i2],TString::kIgnoreCase)) {
+  ss=dir;
+  ss.append(name);
+  ss.append(r_ext[i2]);
+  }
 
-    int pos = te->GetCursorPosition();
-    te->SetText(ss.c_str(),false);
-    //te->SetCursorPosition(ss.length()-len[i2]);
-    te->SetCursorPosition(pos);
-    //cout << ss.length() << endl;
+  int pos = te->GetCursorPosition();
+  te->SetText(ss.c_str(),false);
+  //te->SetCursorPosition(ss.length()-len[i2]);
+  te->SetCursorPosition(pos);
+  //cout << ss.length() << endl;
   }
 
   SetTxt(pp,te->GetText());
 
   if (pp.all==1) {
-    if (nfld) {
-      int kk = (id-1)%nfld;
-      for (int i=0;i<MAX_CH;i++) {
-	pmap p2 = Plist[i*nfld+kk];
-	SetTxt(p2,te->GetText());
-	TGTextEntry *te2 = (TGTextEntry*) p2.field;
-	te2->SetText(te->GetText());      
-      }
-    }
-    // int kk;
-    // (nfld ? (kk=(id-1)%nfld) : (kk=0));
-    // for (int i=0;i<opt.Nchan;i++) {
-    //   pmap p2 = Plist[i*nfld+kk];
-    //   SetTxt(p2,te->GetText());
-    //   TGTextEntry *te2 = (TGTextEntry*) p2.field;
-    //   te2->SetText(te->GetText());      
-    // }
+  if (nfld) {
+  int kk = (id-1)%nfld;
+  for (int i=0;i<MAX_CH;i++) {
+  pmap p2 = Plist[i*nfld+kk];
+  SetTxt(p2,te->GetText());
+  TGTextEntry *te2 = (TGTextEntry*) p2.field;
+  te2->SetText(te->GetText());      
+  }
+  }
+  // int kk;
+  // (nfld ? (kk=(id-1)%nfld) : (kk=0));
+  // for (int i=0;i<opt.Nchan;i++) {
+  //   pmap p2 = Plist[i*nfld+kk];
+  //   SetTxt(p2,te->GetText());
+  //   TGTextEntry *te2 = (TGTextEntry*) p2.field;
+  //   te2->SetText(te->GetText());      
+  // }
   }
 
-}
+  }
 */
 void ParDlg::CopyParLine(int sel, int line) {
   if (sel<0) { //inverse copy - from current ch to group
@@ -596,102 +596,102 @@ void ParDlg::UpdateField(int nn) {
   //cout << "updatefield: " << nn << " " << pp->type << " " << p_chk << " " << p_cmb << " " << gROOT << endl;
 
   switch (pp->type) {
-    case p_inum: {
-      TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      Int_t *dat = (Int_t*) pp->data;
-      if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
-      	// cout << "IUpdMax: " << te->WidgetId() << " " << te->GetNumLimits()
-	//      << " " << lim
-	//      << " " << te->GetNumMax() << " " << *dat << endl;
-      	*dat = te->GetNumMax();
-      }
-      if (te->GetNumLimits()==lim && *dat < te->GetNumMin()) {
-      	//cout << "IUpdMin: " << te->GetNumMin() << " " << *dat << endl;
-      	*dat = te->GetNumMin();
-      }
-      te->SetNumber(*dat);
+  case p_inum: {
+    TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
+    Int_t *dat = (Int_t*) pp->data;
+    if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
+      // cout << "IUpdMax: " << te->WidgetId() << " " << te->GetNumLimits()
+      //      << " " << lim
+      //      << " " << te->GetNumMax() << " " << *dat << endl;
+      *dat = te->GetNumMax();
     }
-      break;
-    case p_fnum: {
-      TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      Float_t *dat = (Float_t*) pp->data;
-      if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
-      	cout << "FUpdMax: " << te->GetNumMax() << " " << *dat << endl;
-      	*dat = te->GetNumMax();
-      }
-      if (te->GetNumLimits()==lim && *dat < te->GetNumMin()) {
-      	//cout << "FUpdMin: " << te->GetNumMin() << " " << *dat << endl;
-      	*dat = te->GetNumMin();
-      }
-      te->SetNumber(*dat);
+    if (te->GetNumLimits()==lim && *dat < te->GetNumMin()) {
+      //cout << "IUpdMin: " << te->GetNumMin() << " " << *dat << endl;
+      *dat = te->GetNumMin();
+    }
+    te->SetNumber(*dat);
+  }
+    break;
+  case p_fnum: {
+    TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
+    Float_t *dat = (Float_t*) pp->data;
+    if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
+      cout << "FUpdMax: " << te->GetNumMax() << " " << *dat << endl;
+      *dat = te->GetNumMax();
+    }
+    if (te->GetNumLimits()==lim && *dat < te->GetNumMin()) {
+      //cout << "FUpdMin: " << te->GetNumMin() << " " << *dat << endl;
+      *dat = te->GetNumMin();
+    }
+    te->SetNumber(*dat);
 
-      if (TString(te->GetName()).EqualTo("Tstop",TString::kIgnoreCase)) {
-	//bool ww = 
-	//cout << "Upd: " << te->GetName() << " " << nn << endl;
-	if (opt.Tstop) {
-	  te->ChangeBackground(gROOT->GetColor(kYellow)->GetPixel());
-	}
-	else {
-	  te->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
-	}
+    if (TString(te->GetName()).EqualTo("Tstop",TString::kIgnoreCase)) {
+      //bool ww = 
+      //cout << "Upd: " << te->GetName() << " " << nn << endl;
+      if (opt.Tstop) {
+	te->ChangeBackground(gROOT->GetColor(kYellow)->GetPixel());
       }
-      //te->SetNumber(*(Float_t*) pp->data);
+      else {
+	te->ChangeBackground(gROOT->GetColor(kWhite)->GetPixel());
+      }
     }
-      break;
-    case p_chk: {
-      TGCheckButton *te = (TGCheckButton*) pp->field;
-      Bool_t bb = *(Bool_t*) pp->data;
-      EButtonState st = te->GetState();
-      te->SetState((EButtonState) bb);
-      if (st==kButtonDisabled) {
-	te->SetEnabled(false);
-      }
+    //te->SetNumber(*(Float_t*) pp->data);
+  }
+    break;
+  case p_chk: {
+    TGCheckButton *te = (TGCheckButton*) pp->field;
+    Bool_t bb = *(Bool_t*) pp->data;
+    EButtonState st = te->GetState();
+    te->SetState((EButtonState) bb);
+    if (st==kButtonDisabled) {
+      te->SetEnabled(false);
+    }
 
-      TString str = TString(te->GetName());
-      if (str.Contains("write",TString::kIgnoreCase)) {
-	if (bb) {
-	  te->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
-	}
-	else {
-	  te->ChangeBackground(gROOT->GetColor(18)->GetPixel());
-	}
+    TString str = TString(te->GetName());
+    if (str.Contains("write",TString::kIgnoreCase)) {
+      if (bb) {
+	te->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
       }
-      if (str.Contains("b_hist",TString::kIgnoreCase)) {
-	for (int i=0;i<3;i++) {
-	  pp = &Plist[nn+i+1];
-	  //TGWidget* wg = (TGWidget*) pp->field;
-	  TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
-	  //cout << "upd: " << i << " " << te2->GetName() << " " << st << endl;
-	  te2->SetState(bb);
-	}
+      else {
+	te->ChangeBackground(gROOT->GetColor(18)->GetPixel());
       }
     }
-      break;
-    case p_cmb: {
-      //cout << "cmb1: " << endl;
-      TGComboBox *te = (TGComboBox*) pp->field;
-      int line = nn/nfld;
-      int sel = *(ChDef*) pp->data;
-      //cout << "cmb2: " << sel << " " << line << endl;
-      if (line<MAX_CH) {
-	clab[line]->ChangeBackground(tcol[sel-1]);
-	cframe[line]->ChangeBackground(tcol[sel-1]);
+    if (str.Contains("b_hist",TString::kIgnoreCase)) {
+      for (int i=0;i<3;i++) {
+	pp = &Plist[nn+i+1];
+	//TGWidget* wg = (TGWidget*) pp->field;
+	TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
+	//cout << "upd: " << i << " " << te2->GetName() << " " << st << endl;
+	te2->SetState(bb);
       }
-      //cout << "cmb3: " << tcol[sel-1] << endl;
-      te->Select(sel,false);
-      //cout << "cmb4: " << tcol[sel-1] << endl;
     }
-      break;
-    case p_txt: {
-      TGTextEntry *te = (TGTextEntry*) pp->field;
-      te->SetText((char*) pp->data);
+  }
+    break;
+  case p_cmb: {
+    //cout << "cmb1: " << endl;
+    TGComboBox *te = (TGComboBox*) pp->field;
+    int line = nn/nfld;
+    int sel = *(ChDef*) pp->data;
+    //cout << "cmb2: " << sel << " " << line << endl;
+    if (line<MAX_CH) {
+      clab[line]->ChangeBackground(tcol[sel-1]);
+      cframe[line]->ChangeBackground(tcol[sel-1]);
     }
-      break;
-    case p_open:
-      break;
-    default:
-      cout << "unknown pp->type: " << pp->type << endl;
-    } //switch
+    //cout << "cmb3: " << tcol[sel-1] << endl;
+    te->Select(sel,false);
+    //cout << "cmb4: " << tcol[sel-1] << endl;
+  }
+    break;
+  case p_txt: {
+    TGTextEntry *te = (TGTextEntry*) pp->field;
+    te->SetText((char*) pp->data);
+  }
+    break;
+  case p_open:
+    break;
+  default:
+    cout << "unknown pp->type: " << pp->type << endl;
+  } //switch
 
   tq->BlockAllSignals(false);
 
@@ -763,21 +763,21 @@ void ParDlg::SelectEnabled(bool state, const char* text) {
 
   for (UInt_t i=0;i<Plist.size();i++) {
 
-     pmap* pp = &Plist[i];
-     switch (pp->type) {
-     case p_inum:
-     case p_fnum:
-     case p_txt: {
-       TGTextEntry *te = (TGTextEntry*) pp->field;
-       //cout << "enable3: " << te->GetName() << " " << te->GetTitle() << endl;
-       if (TString(te->GetName()).Contains(text)) {
-	 //cout << "enable1: " << te->GetName() << " " << te->GetTitle() << endl;
-	 te->SetEnabled(state);
-       }
-     }
-       break;
-     default: ;
-     } //switch
+    pmap* pp = &Plist[i];
+    switch (pp->type) {
+    case p_inum:
+    case p_fnum:
+    case p_txt: {
+      TGTextEntry *te = (TGTextEntry*) pp->field;
+      //cout << "enable3: " << te->GetName() << " " << te->GetTitle() << endl;
+      if (TString(te->GetName()).Contains(text)) {
+	//cout << "enable1: " << te->GetName() << " " << te->GetTitle() << endl;
+	te->SetEnabled(state);
+      }
+    }
+      break;
+    default: ;
+    } //switch
   }
 }
 
@@ -850,7 +850,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 }
 void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
-			 Int_t* compr) {
+		       Int_t* compr) {
   int id;
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(frame,10,10);
@@ -1036,10 +1036,10 @@ void ParParDlg::AddLogic(TGCompositeFrame* frame) {
 	      0,0,0,MAXCUTS);
 
   /*
-  tip1= "This condition is used for selecting events which are written as decoded events\nSee Histograms->Cuts for making conditions\nUse arithmetic/logic operations on existing cuts or leave it empty to record all events\nPress Enter or Check button to check if the syntaxis is correct";
-  label="Main Trigger conditions";
-  ww=150;
-  AddLine_txt(fF6,ww,opt.maintrig, tip1, label);
+    tip1= "This condition is used for selecting events which are written as decoded events\nSee Histograms->Cuts for making conditions\nUse arithmetic/logic operations on existing cuts or leave it empty to record all events\nPress Enter or Check button to check if the syntaxis is correct";
+    label="Main Trigger conditions";
+    ww=150;
+    AddLine_txt(fF6,ww,opt.maintrig, tip1, label);
   */
 
   fF6->Resize();
@@ -1088,8 +1088,8 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   frame1d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame2->AddFrame(frame1d, com->fL6);
 
-   // 2 column, n rows
-   //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
+  // 2 column, n rows
+  //frame->SetLayoutManager(new TGMatrixLayout(frame, 0, 3, 7));
 
 
 
@@ -1171,8 +1171,8 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   cmb1->Resize(60, 20);
   TGNumberEntry* fNum1 =
     new TGNumberEntry(h2fr, 0, 0, 111, k_int,
-			   TGNumberFormat::kNEAAnyNumber,
-			   TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
+		      TGNumberFormat::kNEAAnyNumber,
+		      TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
 
   fNum1->SetWidth(45);
   h2fr->AddFrame(fNum1,com->fL8a);
@@ -1184,8 +1184,8 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
   TGNumberEntry* fNum2 =
     new TGNumberEntry(h2fr, 0, 0, 112, k_int,
-			   TGNumberFormat::kNEAAnyNumber,
-			   TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
+		      TGNumberFormat::kNEAAnyNumber,
+		      TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
 
   fNum2->SetWidth(45);
   h2fr->AddFrame(fNum2,com->fL8a);
@@ -1238,15 +1238,15 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   // AddLine_2d(frame,&opt.h_width_12,tip1,label);
 
   /*
-  tip1= "Bins per channel for Width";
-  tip2= "Length of Width (in channels)";
-  label="Width";
-  AddLine_opt(frame,ww,&opt.rms_bins,&opt.rms_max,tip1,tip2,label,k_r0);
+    tip1= "Bins per channel for Width";
+    tip2= "Length of Width (in channels)";
+    label="Width";
+    AddLine_opt(frame,ww,&opt.rms_bins,&opt.rms_max,tip1,tip2,label,k_r0);
 
-  tip1= "Bins per nanosecond for TOF";
-  tip2= "Length of TOF (in nanoseconds)";
-  label="TOF";
-  AddLine_opt(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
+    tip1= "Bins per nanosecond for TOF";
+    tip2= "Length of TOF (in nanoseconds)";
+    label="TOF";
+    AddLine_opt(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
   */
 
 }
@@ -1261,12 +1261,12 @@ void ParParDlg::Add2d() {
 }
 
 void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
-		      const char* tip1, const char* tip2, const char* label,
-		      TGNumberFormat::EStyle style1, 
-		      TGNumberFormat::EStyle style2, 
-			 //TGNumberFormat::EAttribute attr, 
-			 double min1, double max1,
-			 double min2, double max2, char* connect)
+			    const char* tip1, const char* tip2, const char* label,
+			    TGNumberFormat::EStyle style1, 
+			    TGNumberFormat::EStyle style2, 
+			    //TGNumberFormat::EAttribute attr, 
+			    double min1, double max1,
+			    double min2, double max2, char* connect)
 {
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
@@ -1355,9 +1355,9 @@ void ParParDlg::AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2,
 }
 
 /*
-void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
-			    const char* tip1, const char* label)
-{
+  void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
+  const char* tip1, const char* label)
+  {
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1);
@@ -1384,11 +1384,11 @@ void ParParDlg::AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname,
   TGLabel* fLabel = new TGLabel(hfr1, label);
   hfr1->AddFrame(fLabel,com->fL7);
 
-}
+  }
 */
 
 void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
-		  const char* tip, const char* label) {
+			     const char* tip, const char* label) {
 
   double ww1=50;
   double ww=70;
@@ -1424,7 +1424,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel");
   fNum1->SetWidth(ww1);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				     "DoNum()");
+				   "DoNum()");
   hfr1->AddFrame(fNum1,com->fL8a);
 
   //xlow
@@ -1436,7 +1436,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   fNum2->GetNumberEntry()->SetToolTipText("Low edge");
   fNum2->SetWidth(ww);
   fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				     "DoNum()");
+				   "DoNum()");
   hfr1->AddFrame(fNum2,com->fL8a);
 
   //xup
@@ -1448,7 +1448,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   fNum3->GetNumberEntry()->SetToolTipText("Upper edge");
   fNum3->SetWidth(ww);
   fNum3->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				     "DoNum()");
+				   "DoNum()");
   hfr1->AddFrame(fNum3,com->fL8a);
 
 
@@ -1466,7 +1466,7 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 }
 
 void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
-		  const char* tip, const char* label) {
+			   const char* tip, const char* label) {
 
   double ww1=50;
   double ww=90;
@@ -1501,19 +1501,19 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel on X-axis");
   fNum1->SetWidth(ww1);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				     "DoNum()");
+				   "DoNum()");
   hfr1->AddFrame(fNum1,com->fL8a);
 
   //nbins2 (y-axis)
   id = Plist.size()+1;
   fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
-  					   TGNumberFormat::kNEAAnyNumber,
-  					   lim,0,1000);
+			    TGNumberFormat::kNEAAnyNumber,
+			    lim,0,1000);
   DoMap(fNum1->GetNumberEntry(),&hd->bins2,p_fnum,0);
   fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel on Y-axis");
   fNum1->SetWidth(ww1);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-  				     "DoNum()");
+				   "DoNum()");
   hfr1->AddFrame(fNum1,com->fL8a);
 
   //hint
@@ -1537,7 +1537,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 }
 
 void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,
-			 const char* tip, const char* label)
+			     const char* tip, const char* label)
 {
   char name[20];
 
@@ -1624,10 +1624,10 @@ void ParParDlg::DoNum_SetBuf() {
     }
     crs->DoReset();
     /*
-    if (crs->Fbuf2) delete[] crs->Fbuf2;
-    crs->Fbuf2 = new UChar_t[bsize];
-    crs->Fbuf = crs->Fbuf2+boffset;
-    memset(crs->Fbuf2,0,boffset);
+      if (crs->Fbuf2) delete[] crs->Fbuf2;
+      crs->Fbuf2 = new UChar_t[bsize];
+      crs->Fbuf = crs->Fbuf2+boffset;
+      memset(crs->Fbuf2,0,boffset);
     */
   }
 
@@ -1659,25 +1659,25 @@ void ParParDlg::DoCheckPulse() {
 }
 
 /*
-void ParParDlg::CheckFormula() {
+  void ParParDlg::CheckFormula() {
   //cout << "Check: " << opt.maintrig << endl;
   Pixel_t color;
 
   int ires = crs->Set_Trigger();
   if (ires==0) {// no formula
-    gClient->GetColorByName("white", color);
-    tTrig->SetBackgroundColor(color);
+  gClient->GetColorByName("white", color);
+  tTrig->SetBackgroundColor(color);
   }
   else if (ires==1) {// bad formula
-    gClient->GetColorByName("red", color);
-    tTrig->SetBackgroundColor(color);
+  gClient->GetColorByName("red", color);
+  tTrig->SetBackgroundColor(color);
   }
   else { //good formula
-    gClient->GetColorByName("green", color);
-    tTrig->SetBackgroundColor(color);
+  gClient->GetColorByName("green", color);
+  tTrig->SetBackgroundColor(color);
   }
 
-}
+  }
 */
 
 void ParParDlg::Update() {
@@ -1699,11 +1699,11 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGCanvas *fCanvas = new TGCanvas(fMain,10,10);
   TGCompositeFrame *fcont = new TGCompositeFrame(fCanvas->GetViewPort(), 
-  				100, 100, kVerticalFrame);
+						 100, 100, kVerticalFrame);
   fCanvas->SetContainer(fcont);
   fCanvas->SetScrolling(TGCanvas::kCanvasScrollHorizontal);
   fMain->AddFrame(fCanvas,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
-                                             kLHintsExpandX, 0, 0, 1, 1));
+					    kLHintsExpandX, 0, 0, 1, 1));
 
 
   //AddHeader();
@@ -1737,7 +1737,7 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 
   fH1->AddFrame(fCanvas1,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
-                                          kLHintsExpandX, 0, 0, 1, 1));
+					   kLHintsExpandX, 0, 0, 1, 1));
 
 
   fCanvas2 = new TGCanvas(fH2,10,10);
@@ -1746,7 +1746,7 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fCanvas2->SetContainer(fcont2);
   fCanvas2->SetScrolling(TGCanvas::kCanvasScrollVertical);
   fH2->AddFrame(fCanvas2,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
-                                             kLHintsExpandX, 0, 0, 1, 1));
+					   kLHintsExpandX, 0, 0, 1, 1));
 
 }
 
@@ -1778,42 +1778,59 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
   }
 
   id = Plist.size()+1;
-  TGComboBox* fCombo=new TGComboBox(cframe[i],id);
-  //fCombo->SetToolTipText(ttip1[kk]);
-  cframe[i]->AddFrame(fCombo,com->fL0);
-  kk++;
 
-  for (int j = 0; j < ADDCH; j++) {
-    fCombo->AddEntry(types[j], j+1);
-  }
-
-  fCombo->Resize(tlen1[1], 20);
-
-  if (i==MAX_CH) {
-    fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
-  }
-  else {
-    fCombo->AddEntry(types[ADDCH], ADDCH+1);
-  }
 
   if (i<=MAX_CH) {
+    TGComboBox* fCombo=new TGComboBox(cframe[i],id);
+    //fCombo->SetToolTipText(ttip1[kk]);
+    cframe[i]->AddFrame(fCombo,com->fL0);
+    kk++;
+
+    for (int j = 0; j < ADDCH; j++) {
+      fCombo->AddEntry(types[j], j+1);
+    }
+
+    fCombo->Resize(tlen1[1], 20);
+
+    if (i==MAX_CH) {
+      fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
+    }
+    else {
+      fCombo->AddEntry(types[ADDCH], ADDCH+1);
+    }
+
+    //if (i<=MAX_CH) {
     DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
+    fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
   }
   else {
-    DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
-    fCombo->Select(i-MAX_CH,false);
-    fCombo->SetEnabled(false);
+    int i7=i-MAX_CH-1;
+    TGTextEntry* tgtxt=new TGTextEntry(cframe[i], opt.tnames[i7],id);
+    //tgtxt->SetHeight(20);
+    tgtxt->SetWidth(tlen1[1]);
+    tgtxt->SetMaxLength(5);
+    //tgtxt->SetToolTipText(ttip1[kk]);
+    //tgtxt->SetState(false);
+    cframe[i]->AddFrame(tgtxt,com->fL0a);
+    kk++;
+
+    DoMap(tgtxt,opt.tnames[i7],p_txt,0);
+    //DoChanMap(tgtxt,opt.tnames[i7],p_txt,all,0,0);
+    tgtxt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+    //fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
+    // DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
+    // fCombo->Select(i-MAX_CH,false);
+    // fCombo->SetEnabled(false);
     cframe[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
     clab[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);    
   }
 
-  fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
   //end AddChCombo
 
 }
 
 void ChanParDlg::DoChanMap(TGWidget *f, void *d, P_Def t, int all,
-		       byte cmd, byte chan, void* d2) {
+			   byte cmd, byte chan, void* d2) {
   ParDlg::DoMap(f,d,t,all);
   Plist.back().cmd=cmd;
   Plist.back().chan=chan;
@@ -1829,7 +1846,7 @@ void ChanParDlg::DoChanNum() {
 //}
 
 void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
-			void* apar, double min, double max, P_Def ptype) {
+			    void* apar, double min, double max, P_Def ptype) {
 
   //opt.GetPar(name,crs->module,i,par,min,max);
 
@@ -2019,9 +2036,9 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     cframe[i]->AddFrame(fStat3[i],com->fL8);
   }
   /*
-  kk++;
+    kk++;
 
-  if (i<=MAX_CH) {
+    if (i<=MAX_CH) {
     fStatBad[i] = new TGTextEntry(cframe[i], "");
     fStatBad[i]->ChangeOptions(fStatBad[i]->GetOptions()|kFixedSize|kSunkenFrame);
 
@@ -2033,13 +2050,13 @@ void CrsParDlg::AddLine_crs(int i, TGCompositeFrame* fcont1) {
     fStatBad[i]->SetBackgroundColor(col);
     fStatBad[i]->SetText(0);
     cframe[i]->AddFrame(fStatBad[i],com->fL8);
-  }
+    }
   */
 
 }
 
 void CrsParDlg::AddNumCrs(int i, int kk, int all, TGHorizontalFrame *hframe1,
-			 const char* name, void* apar, void* apar2) {  //const char* name) {
+			  const char* name, void* apar, void* apar2) {  //const char* name) {
 
   int par, min, max;
 
@@ -2079,19 +2096,19 @@ void CrsParDlg::AddNumCrs(int i, int kk, int all, TGHorizontalFrame *hframe1,
 }
 
 /*
-void CrsParDlg::ResetStatus() {
+  void CrsParDlg::ResetStatus() {
 
   TGString txt="0";
 
   for (int i=0;i<opt.Nchan;i++) {
-      fStat[i]->SetText(txt);
-      fStatBad[i]->SetText(txt);
+  fStat[i]->SetText(txt);
+  fStatBad[i]->SetText(txt);
   }
 
   fStat[MAX_CH]->SetText(txt);
   fStatBad[MAX_CH]->SetText(txt);
 
-}
+  }
 */
 void CrsParDlg::UpdateStatus(int rst) {
 
@@ -2439,13 +2456,13 @@ ErrFrame::ErrFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fDock->SetWindowName("Errors");  
   /*
-  TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
+    TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 
-  fDock = new TGDockableFrame(this);
-  AddFrame(fDock, fLay1);
-  fDock->SetWindowName("Events");  
-  //fDock->SetBackgroundColor(com->fRed);
-  fDock->SetFixedSize(kFALSE);
+    fDock = new TGDockableFrame(this);
+    AddFrame(fDock, fLay1);
+    fDock->SetWindowName("Events");  
+    //fDock->SetBackgroundColor(com->fRed);
+    fDock->SetFixedSize(kFALSE);
   */
   
   TGCompositeFrame *fMain=fDock->GetContainer();
