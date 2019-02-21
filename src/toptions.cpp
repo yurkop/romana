@@ -241,7 +241,8 @@ Toptions::Toptions() {
 
   //cout << "toptions" << endl;
   for (int i=0;i<MAX_CH+ADDCH;i++) {
-    chtype[i]=ch_NIM;
+    chtype[i]=1;
+    //chtype[i]=ch_NIM;
     dsp[i]=false;
     St[i]=true;
     //Mrk[i]=false;
@@ -288,7 +289,7 @@ Toptions::Toptions() {
   const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
 			    "NIM","Other","Copy",""};
   for (int i=0;i<ADDCH;i++) {
-    strcpy(tnames[i],types[i]);
+    strcpy(ch_name[i],types[i]);
   }
   // memset(fname_raw,0,sizeof(fname_raw));
   // memset(fname_dec,0,sizeof(fname_dec));

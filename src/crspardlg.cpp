@@ -101,10 +101,8 @@ char ttip_g[NGRP][100];
 int* tlen7;
 char** ttip7;
 
-// const char* types[ADDCH+2]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
-// 			    "NIM","Other","Copy",""};
-const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
-		     "NIM","Other","Copy",""};
+// const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
+// 		     "NIM","Other","Copy",""};
 
 //-----------
 const int nchtype=9;
@@ -375,8 +373,8 @@ void ParDlg::DoCombo() {
 
       //if (old!=ADDCH) {
       const char* name = te->GetListBox()->GetEntry(old)->GetTitle();
+      //cout << "Copy: " << sel << " " << old << " " << nline << endl;
       if (!TString(name).EqualTo("other",TString::kIgnoreCase)) {
-	//cout << "Copy: " << sel << " " << old << " " << nline << endl;
 	crspar->CopyParLine(-old,nline);
 	anapar->CopyParLine(-old,nline);
 	pikpar->CopyParLine(-old,nline);
@@ -451,6 +449,7 @@ void ParDlg::DoTxt() {
 
   SetTxt(pp,te->GetText());
 
+  /*
   if (pp.all==1) {
     if (nfld) {
       int kk = (id-1)%nfld;
@@ -462,73 +461,30 @@ void ParDlg::DoTxt() {
       }
     }
   }
-
+  */
 }
-/*
-  void ParDlg::DoTxt() {
 
-  const char *r_ext[] = {".raw",".dec",".root"};
-  //const int len[] = {4,4,5};
-  string dir, name, ext;
+void ParDlg::DoTypes() {
 
   TGTextEntry *te = (TGTextEntry*) gTQSender;
   Int_t id = te->WidgetId();
-  Int_t i2=-1;
-  for (int i=0;i<3;i++) {
-  if (id==id_write[i]) {
-  i2=i;
-  break;
-  }
-  }
 
-  //int sel = te->GetSelected();
+  cout << "DoTypes: " << id << endl;
+  DoTxt();
 
   pmap pp = Plist[id-1];
-
-  //cout << "DoTxt: " << id << " " << i2 << " " << te->GetText() << endl;
-  //cout << r_ext[i2] << endl;
-
-  if (i2>=0) {
-  string ss(te->GetText());
-  SplitFilename (ss,dir,name,ext);
-
-  if (!TString(ext).EqualTo(r_ext[i2],TString::kIgnoreCase)) {
-  ss=dir;
-  ss.append(name);
-  ss.append(r_ext[i2]);
+  for (int i=0;i<ADDCH;i++) {
+    if (pp.data==(void*) opt.ch_name[i]) {
+      cout << i << " " << opt.ch_name[i] << endl;
+      for (int j=0;j<=MAX_CH;j++) {
+	TGTextLBEntry* ent=
+	  (TGTextLBEntry*)fCombo[j]->GetListBox()->GetEntry(i+1);
+	ent->SetTitle(opt.ch_name[i]);
+      }
+    }
   }
+}
 
-  int pos = te->GetCursorPosition();
-  te->SetText(ss.c_str(),false);
-  //te->SetCursorPosition(ss.length()-len[i2]);
-  te->SetCursorPosition(pos);
-  //cout << ss.length() << endl;
-  }
-
-  SetTxt(pp,te->GetText());
-
-  if (pp.all==1) {
-  if (nfld) {
-  int kk = (id-1)%nfld;
-  for (int i=0;i<MAX_CH;i++) {
-  pmap p2 = Plist[i*nfld+kk];
-  SetTxt(p2,te->GetText());
-  TGTextEntry *te2 = (TGTextEntry*) p2.field;
-  te2->SetText(te->GetText());      
-  }
-  }
-  // int kk;
-  // (nfld ? (kk=(id-1)%nfld) : (kk=0));
-  // for (int i=0;i<opt.Nchan;i++) {
-  //   pmap p2 = Plist[i*nfld+kk];
-  //   SetTxt(p2,te->GetText());
-  //   TGTextEntry *te2 = (TGTextEntry*) p2.field;
-  //   te2->SetText(te->GetText());      
-  // }
-  }
-
-  }
-*/
 void ParDlg::CopyParLine(int sel, int line) {
   if (sel<0) { //inverse copy - from current ch to group
     //cout << "CopyParLine: " << line << " " << MAX_CH-sel << endl;
@@ -671,7 +627,16 @@ void ParDlg::UpdateField(int nn) {
     //cout << "cmb1: " << endl;
     TGComboBox *te = (TGComboBox*) pp->field;
     int line = nn/nfld;
-    int sel = *(ChDef*) pp->data;
+    int sel = *(Int_t*) pp->data;
+
+
+    for (int i=0;i<ADDCH;i++) {
+      TGTextLBEntry* ent=
+	(TGTextLBEntry*)te->GetListBox()->GetEntry(i+1);
+	ent->SetTitle(opt.ch_name[i]);
+    }
+    te->Layout();
+
     //cout << "cmb2: " << sel << " " << line << endl;
     if (line<MAX_CH) {
       clab[line]->ChangeBackground(tcol[sel-1]);
@@ -1781,31 +1746,33 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
 
 
   if (i<=MAX_CH) {
-    TGComboBox* fCombo=new TGComboBox(cframe[i],id);
+    fCombo[i]=new TGComboBox(cframe[i],id);
     //fCombo->SetToolTipText(ttip1[kk]);
-    cframe[i]->AddFrame(fCombo,com->fL0);
+    cframe[i]->AddFrame(fCombo[i],com->fL0);
     kk++;
 
     for (int j = 0; j < ADDCH; j++) {
-      fCombo->AddEntry(types[j], j+1);
+      fCombo[i]->AddEntry(opt.ch_name[j], j+1);
     }
 
-    fCombo->Resize(tlen1[1], 20);
+    fCombo[i]->Resize(tlen1[1], 20);
 
     if (i==MAX_CH) {
-      fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
+      fCombo[i]->AddEntry(" ", ADDCH+2);
+      //fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
     }
     else {
-      fCombo->AddEntry(types[ADDCH], ADDCH+1);
+      fCombo[i]->AddEntry("Copy", ADDCH+1);
+      //fCombo->AddEntry(types[ADDCH], ADDCH+1);
     }
 
     //if (i<=MAX_CH) {
-    DoChanMap(fCombo,&opt.chtype[i],p_cmb,all,0,0);
-    fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
+    DoChanMap(fCombo[i],&opt.chtype[i],p_cmb,all,0,0);
+    fCombo[i]->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
   }
   else {
     int i7=i-MAX_CH-1;
-    TGTextEntry* tgtxt=new TGTextEntry(cframe[i], opt.tnames[i7],id);
+    TGTextEntry* tgtxt=new TGTextEntry(cframe[i], opt.ch_name[i7],id);
     //tgtxt->SetHeight(20);
     tgtxt->SetWidth(tlen1[1]);
     tgtxt->SetMaxLength(5);
@@ -1814,15 +1781,10 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
     cframe[i]->AddFrame(tgtxt,com->fL0a);
     kk++;
 
-    DoMap(tgtxt,opt.tnames[i7],p_txt,0);
-    //DoChanMap(tgtxt,opt.tnames[i7],p_txt,all,0,0);
-    tgtxt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
-    //fCombo->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
-    // DoChanMap(fCombo,&combotype[i-MAX_CH],p_cmb,all,0,0);
-    // fCombo->Select(i-MAX_CH,false);
-    // fCombo->SetEnabled(false);
-    cframe[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);
-    clab[i]->SetBackgroundColor(tcol[i-MAX_CH-1]);    
+    DoMap(tgtxt,opt.ch_name[i7],p_txt,0);
+    tgtxt->Connect("TextChanged(char*)", "ParDlg", this, "DoTypes()");
+    cframe[i]->SetBackgroundColor(tcol[i7]);
+    clab[i]->SetBackgroundColor(tcol[i7]);
   }
 
   //end AddChCombo

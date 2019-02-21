@@ -24,6 +24,7 @@ const int dstep = 10;
 
 const int MAX_CH=64; //max number of channels
 const int ADDCH=9; //9: nai, bgo, si1, si2, stlb, demon, hpge, NIM, other
+//const int ADDCH=9; //9: nai, bgo, si1, si2, stlb, demon, hpge, NIM, other
 const int NGRP=4; //number of groups of channels
 
 const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to nr-1 of bits in hmap::bitwk; 
@@ -36,6 +37,7 @@ const int MAX_ERR=5; //maximal number of error types;
 #define MAX_L 6 //line types (gam,neu,tail,unkn,pileup,frame)
 #define MAX_P 5 //particle types (gam,neu,tail,unkn,pileup)
 
+/*
 enum ChannelDef {
   ch_off2,
   ch_nim,
@@ -56,6 +58,7 @@ enum ChDef {
   ch_other,
   ch_empty
 };
+*/
 
 //#define BSIZE 131072 //1024*128
 //#define BOFFSET 131072 //1024*128

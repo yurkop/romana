@@ -2299,7 +2299,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
 void CRS::SaveParGz(gzFile &ff, Short_t mod) {
 
-  cout << "savepargz: " << opt.tnames[0] << endl;
+  //cout << "savepargz: " << opt.tnames[0] << endl;
   char buf[100000];
   UShort_t sz=0;
 

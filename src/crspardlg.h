@@ -50,6 +50,8 @@ public:
 protected:
 
   ULong_t tcol[ADDCH];
+  TGComboBox* fCombo[MAX_CH+1];
+  TGTextEntry* cname[ADDCH];
 
   // TGLayoutHints* fL0;
   // TGLayoutHints* fL1;
@@ -87,6 +89,7 @@ public:
   void DoChk();
   void DoCombo();
   void DoTxt();
+  void DoTypes();
   void DoChkWrite();
   void DoOpen();
   void CopyParLine(int sel, int line);
