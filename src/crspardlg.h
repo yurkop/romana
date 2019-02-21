@@ -53,15 +53,6 @@ protected:
   TGComboBox* fCombo[MAX_CH+1];
   TGTextEntry* cname[ADDCH];
 
-  // TGLayoutHints* fL0;
-  // TGLayoutHints* fL1;
-  // TGLayoutHints* fL2;
-  // TGLayoutHints* fL3;
-  // TGLayoutHints* fL4;
-  // TGLayoutHints* fL5;
-  // TGLayoutHints* fL6;
-  // TGLayoutHints* fLexp;
-
   TGCanvas* fCanvas1;
   TGCompositeFrame* fcont1;
 

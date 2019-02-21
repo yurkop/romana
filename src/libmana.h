@@ -58,8 +58,8 @@ public:
   TGTextButton *fAna;
   TGTextButton *fNb;
 
-  TGLayoutHints* Lay11;
-  TGLayoutHints* Lay12;
+  //TGLayoutHints* Lay11;
+  //TGLayoutHints* Lay12;
 
   TGTab                *fTab;
   TGCompositeFrame     *tabfr[10];

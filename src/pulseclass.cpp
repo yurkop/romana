@@ -840,7 +840,7 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
 void EventClass::FillHist(Bool_t first) {
   double DT = crs->period*1e-9;
   Double_t tt;
-  Double_t ee;
+  Double_t ee,sqee;
   //int mult=0;
   Long64_t tm;
 
@@ -1026,7 +1026,7 @@ void EventClass::FillHist(Bool_t first) {
       // }
       if (j==0) { //only for the first peak
 	//ntof
-	if (opt.h_ntof.b || opt.h_etof.b) {
+	if (opt.h_ntof.b || opt.h_etof.b || opt.h_ltof.b) {
 	  if (ch==opt.start_ch) {
 	    //crs->Tstart0 = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	    crs->Tstart0 = Tstmp + Long64_t(pk->Time);
@@ -1051,6 +1051,11 @@ void EventClass::FillHist(Bool_t first) {
 		  ee = 72.298*opt.Flpath/(tt-opt.TofZero);
 		  ee= ee*ee;
 		  Fill1d(first,hcl->m_etof,ch,ee);
+		}
+		if (opt.h_ltof.b) {
+		  sqee = 72.298*opt.Flpath/(tt-opt.TofZero);
+		  double lambda = 0.286*sqee;
+		  Fill1d(first,hcl->m_ltof,ch,lambda);
 		}
 	      } //if tt>0
 	    }

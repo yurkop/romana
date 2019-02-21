@@ -91,30 +91,42 @@ public:
   Pixel_t fOrng;
   Pixel_t fBlue;
 
-  TGLayoutHints* fL0;
-  TGLayoutHints* fL0a;
-  TGLayoutHints* fL1;
+  TGLayoutHints* LayCC0;
+  TGLayoutHints* LayCC0a;
 
-  TGLayoutHints* fL2;
-  TGLayoutHints* fL2a;
-  TGLayoutHints* fL3;
-  TGLayoutHints* fL4;
-  TGLayoutHints* fL5;
-  TGLayoutHints* fL6;
-  TGLayoutHints* fL7;
-  TGLayoutHints* fL8;
-  TGLayoutHints* fL8a;
-  TGLayoutHints* fLexp;
+  TGLayoutHints* LayCT1;
+  TGLayoutHints* LayET1;
 
-  TGLayoutHints* fL50;
-  TGLayoutHints* fL31;
-  TGLayoutHints* fL32;
-  TGLayoutHints* fL33;
-  TGLayoutHints* fL21;
-  TGLayoutHints* fL9;
+  TGLayoutHints* LayLE0;
+  //TGLayoutHints* fL2a;
+  TGLayoutHints* LayCC1;
+  TGLayoutHints* LayCC2;
+  //TGLayoutHints* LayET2;
+  TGLayoutHints* LayET3;
+  TGLayoutHints* LayLT4;
+  TGLayoutHints* LayLT5;
+  TGLayoutHints* LayLT2;
+  TGLayoutHints* LayLT3;
+  TGLayoutHints* LayEE0;
 
+  TGLayoutHints* LayET0;
+  TGLayoutHints* LayLC1;
+  TGLayoutHints* LayLC2;
+  TGLayoutHints* LayLC3;
+  TGLayoutHints* LayLE1;
+  TGLayoutHints* LayCB0;
 
+  TGLayoutHints* LayL1;
+  TGLayoutHints* LayE1;
 
+  TGLayoutHints* LayEE1;
+  TGLayoutHints* LayEE2;
+
+  TGLayoutHints* LayCLE2;
+  TGLayoutHints* LayLT0;
+
+  TGLayoutHints* LayEC3;
+  TGLayoutHints* LayCB5;
 
   Common();
   ~Common();

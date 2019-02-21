@@ -212,6 +212,7 @@ public:
   Hdef h_tof;
   Hdef h_ntof;
   Hdef h_etof;
+  Hdef h_ltof;
   Hdef h_per;
   Hdef h_width;
   Hdef h_width2;

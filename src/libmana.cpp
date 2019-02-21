@@ -1055,14 +1055,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //fEv=NULL;
 
-  TGLayoutHints* l_Gr = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
-  //TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY,0,0,5,5);
-  TGLayoutHints* l_But = new TGLayoutHints(kLHintsExpandX | kLHintsTop,0,0,5,5);
-  //TGLayoutHints* l_But2 = new TGLayoutHints(kLHintsExpandX | kLHintsTop,0,0,0,0);
-  TGLayoutHints* lay2 = new TGLayoutHints(kLHintsLeft | kLHintsTop,1,1,1,1);
-
-  Lay11 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
-  Lay12 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,3,3);
   //bRun = false;
 
   fMenuBar = new TGMenuBar(this, 35, 50, kHorizontalFrame);
@@ -1099,17 +1091,17 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		     "HandleMenu(Int_t)");
 
   fMenuBar->AddPopup("&File", fMenuFile, 
-		     new TGLayoutHints(kLHintsTop|kLHintsLeft,0,4,0,0));
+		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
   /*
     fMenuBar->AddPopup("&Options", fMenuOptions, 
-    new TGLayoutHints(kLHintsTop|kLHintsLeft));
+    new TGLayoutHints(kLHintsLeft|kLHintsTop));
 
     fMenuBar->AddPopup("Histograms", fMenuHist, 
-    new TGLayoutHints(kLHintsTop|kLHintsLeft));
+    new TGLayoutHints(kLHintsLeft|kLHintsTop));
 
     fMenuBar->AddPopup("Analysis", fMenuAna, 
-    new TGLayoutHints(kLHintsTop|kLHintsLeft));
+    new TGLayoutHints(kLHintsLeft|kLHintsTop));
   */
   
   fMenuBar->AddPopup("&Help", fMenuHelp,
@@ -1159,7 +1151,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGGroupFrame* fGr1 = new TGGroupFrame(vframe1, "Acquisition", kVerticalFrame);
   fGr1->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  vframe1->AddFrame(fGr1, l_Gr);
+  vframe1->AddFrame(fGr1, com->LayCT1);
 
   fStart = new TGTextButton(fGr1,"Start");
   //fStart->SetToggleButton(true);
@@ -1172,7 +1164,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fStart->ChangeBackground(com->fGreen);
 
   fStart->Connect("Clicked()","MainFrame",this,"DoStartStop()");
-  fGr1->AddFrame(fStart, l_But);
+  fGr1->AddFrame(fStart, com->LayET1);
 
   fReset = new TGTextButton(fGr1,"Reset");
   fReset->SetFont(tfont,false);
@@ -1184,11 +1176,11 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fReset->ChangeBackground(com->fCyan);
 
   fReset->Connect("Clicked()","MainFrame",this,"DoReset()");
-  fGr1->AddFrame(fReset, l_But);
+  fGr1->AddFrame(fReset, com->LayET1);
 
   TGGroupFrame* fGr2 = new TGGroupFrame(vframe1, "Analysis", kVerticalFrame);
   fGr2->SetTitlePos(TGGroupFrame::kCenter);
-  vframe1->AddFrame(fGr2, l_Gr);
+  vframe1->AddFrame(fGr2, com->LayCT1);
 
   TGPopupMenu* fPopMenu = new TGPopupMenu(gClient->GetRoot());
   fPopMenu->AddEntry("Open+", 1);
@@ -1206,7 +1198,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
   fOpen->ChangeBackground(com->fOrng);
   fOpen->Connect("ItemClicked(Int_t)", "MainFrame", this, "DoOpen(Int_t)");
-  fGr2->AddFrame(fOpen, l_But);
+  fGr2->AddFrame(fOpen, com->LayET1);
 
   TGTextButton *fClose = new TGTextButton(fGr2,new TGHotString("&Close"));
   fClose->SetFont(tfont,false);
@@ -1214,7 +1206,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fClose->ChangeOptions(fClose->GetOptions() | kFixedSize);
   fClose->ChangeBackground(com->fBlue);
   fClose->Connect("Clicked()","MainFrame",this,"DoClose()");
-  fGr2->AddFrame(fClose, l_But);
+  fGr2->AddFrame(fClose, com->LayET1);
 
   TGTextButton *fReset2 = new TGTextButton(fGr2,new TGHotString("&Reset"));
   fReset2->SetFont(tfont,false);
@@ -1223,7 +1215,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fReset2->ChangeBackground(com->fCyan);
   fReset2->Connect("Clicked()","MainFrame",this,"DoReset()");
   //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
-  fGr2->AddFrame(fReset2, l_But);
+  fGr2->AddFrame(fReset2, com->LayET1);
 
   fAna = new TGTextButton(fGr2,"&Analyze");
   fAna->SetFont(tfont,false);
@@ -1231,7 +1223,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fAna->ChangeOptions(fAna->GetOptions() | kFixedSize);
   fAna->ChangeBackground(com->fGreen);
   fAna->Connect("Clicked()","MainFrame",this,"DoAna()");
-  fGr2->AddFrame(fAna, l_But);
+  fGr2->AddFrame(fAna, com->LayET1);
 
   TGTextButton* f1b = new TGTextButton(fGr2,new TGHotString("&1 buf"));
   f1b->SetFont(tfont,false);
@@ -1239,16 +1231,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   f1b->ChangeOptions(f1b->GetOptions() | kFixedSize);
   f1b->ChangeBackground(com->fGreen);
   f1b->Connect("Clicked()","MainFrame",this,"Do1buf()");
-  fGr2->AddFrame(f1b, l_But);
+  fGr2->AddFrame(f1b, com->LayET1);
 
   TGLabel *ver = new TGLabel(vframe1,VERSION);
 
-  //fMenuBar->AddFrame(ver,new TGLayoutHints(kLHintsCenterY|kLHintsRight,0,4,0,0));
   vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
   fTab = new TGTab(hframe1, 300, 300);
-  //TGLayoutHints *fL5 = new TGLayoutHints(kLHintsTop | kLHintsExpandX |
-  //                                        kLHintsExpandY, 2, 2, 5, 1);
   hframe1->AddFrame(fTab, new TGLayoutHints(kLHintsExpandX |
 					    kLHintsExpandY,3,3,2,2));
 
@@ -1271,7 +1260,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //parpar = new ParParDlg(tabfr[0], 600, 500);
   //parpar->Update();
-  //tabfr[0]->AddFrame(parpar, Lay11);
+  //tabfr[0]->AddFrame(parpar, LayEE1);
 
   MakeTabs();
   //fremake=true;
@@ -1297,18 +1286,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
       te->SetEnabled(false);
   }
 
-
-  //cout << "hifrm3: " << endl;
-
-
-  //TGCompositeFrame *tab6 = fTab->AddTab("Histograms2");
-  //TGColorPick* tg = new TGColorPick(tab6);
-  //tab6->AddFrame(tg, new TGLayoutHints(kLHintsExpandX| kLHintsExpandY,
-  //					     2,2,2,2));
-  //ntab++;
-
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
-  fGr2->AddFrame(hfr1, l_But);
+  fGr2->AddFrame(hfr1, com->LayET1);
 
   int id;
   id = parpar->Plist.size()+1;
@@ -1321,7 +1300,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fNum1->Resize(65, fNum1->GetDefaultHeight());
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
 				   "DoNum()");
-  hfr1->AddFrame(fNum1,lay2);
+  hfr1->AddFrame(fNum1,com->LayLT3);
 
   fNb = new TGTextButton(hfr1,new TGHotString("&N buf"));
   //fNb->SetFont(tfont,false);
@@ -1329,7 +1308,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fNb->ChangeOptions(fNb->GetOptions() | kFixedSize);
   fNb->ChangeBackground(com->fGreen);
   fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
-  hfr1->AddFrame(fNb, lay2);
+  hfr1->AddFrame(fNb, com->LayLT3);
 
   parpar->Update();
 
@@ -1339,29 +1318,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //HiFrm->Update();
   fTab->SetTab(opt.seltab);
 
-  TGLayoutHints* fbHints = 
-    new TGLayoutHints(kLHintsTop |kLHintsExpandX,0,0,0,0);
-
   tfont=gClient->GetResourcePool()->GetStatusFont()->GetFontStruct();
-  //gClient->GetResourcePool()->GetStatusFont()->Print();
-  /*
-
-    font = pool->GetFont("*helvetica*", -11);
-    font->Print();
-    tfont = 0;
-
-    if (font) {
-    tfont = font->GetFontStruct();
-    }
-  */
-
-  TGLayoutHints* fL11 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
-  TGLayoutHints* fL12 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
 
   TGHorizontalFrame *fStatFrame1 = new TGHorizontalFrame(this,10,10);
   TGHorizontalFrame *fStatFrame2 = new TGHorizontalFrame(this,10,10);
-  AddFrame(fStatFrame1, fbHints);
-  AddFrame(fStatFrame2, fbHints);
+  AddFrame(fStatFrame1, com->LayET0);
+  AddFrame(fStatFrame2, com->LayET0);
 
   const int fwid=120;
 
@@ -1405,14 +1367,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     if (i==0) {
       fLab[i]->SetWidth(fwid);
       fLab[i]->ChangeOptions(fLab[i]->GetOptions()|kFixedWidth);
-      fStatFrame1->AddFrame(fLab[i],fL11);
+      fStatFrame1->AddFrame(fLab[i],com->LayL1);
       fStat[i]->SetWidth(fwid);
       fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedWidth);
-      fStatFrame2->AddFrame(fStat[i],fL11);
+      fStatFrame2->AddFrame(fStat[i],com->LayL1);
     }
     else {
-      fStatFrame1->AddFrame(fLab[i],fL12);
-      fStatFrame2->AddFrame(fStat[i],fL12);
+      fStatFrame1->AddFrame(fLab[i],com->LayE1);
+      fStatFrame2->AddFrame(fStat[i],com->LayE1);
     }
 
   }
@@ -1493,41 +1455,41 @@ void MainFrame::MakeTabs() {
 
   parpar = new ParParDlg(tabfr[0], 600, 500);
   parpar->Update();
-  tabfr[0]->AddFrame(parpar, Lay11);
+  tabfr[0]->AddFrame(parpar, com->LayEE1);
   ntab++;
 
   //cout << "tab2: " << endl;
   crspar = new CrsParDlg(tabfr[1], 600, 500);
   crspar->Make_crspar(tabfr[1], 600, 210);
-  tabfr[1]->AddFrame(crspar, Lay12);
+  tabfr[1]->AddFrame(crspar, com->LayEE2);
   ntab++;
   crspar->Update();
   //cout << "tab3: " << endl;
 
   anapar = new AnaParDlg(tabfr[2], 600, 500);
   anapar->Make_AnaPar(tabfr[2], 600, 210);
-  tabfr[2]->AddFrame(anapar, Lay12);
+  tabfr[2]->AddFrame(anapar, com->LayEE2);
   ntab++;
   anapar->Update();
 
   pikpar = new DspParDlg(tabfr[3], 600, 500);
   pikpar->Make_DspPar(tabfr[3], 600, 210);
-  tabfr[3]->AddFrame(pikpar, Lay12);
+  tabfr[3]->AddFrame(pikpar, com->LayEE2);
   ntab++;
   pikpar->Update();
 
   EvtFrm = new EventFrame(tabfr[4], 620, 500,ntab);
-  tabfr[4]->AddFrame(EvtFrm, Lay11);
+  tabfr[4]->AddFrame(EvtFrm, com->LayEE1);
   ntab++;
 
   HiFrm = new HistFrame(tabfr[5], 800, 500,ntab);
   HiFrm->HiReset();
-  tabfr[5]->AddFrame(HiFrm, Lay11);
+  tabfr[5]->AddFrame(HiFrm, com->LayEE1);
   ntab++;
 
   ErrFrm = new ErrFrame(tabfr[6], 800, 500);
   //HiFrm->HiReset();
-  tabfr[6]->AddFrame(ErrFrm, Lay11);
+  tabfr[6]->AddFrame(ErrFrm, com->LayEE1);
   ntab++;
 
   local_nch=opt.Nchan;
@@ -2460,31 +2422,47 @@ Common::Common() {
   fBlue = TColor::RGB2Pixel(135,92,231);
   fRed10=gROOT->GetColor(kRed-10)->GetPixel();
 
-  fL0   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,0,0);
-  fL0a  = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,1,1);
-  fL3   = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
-  fL4   = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 5, 5);
-  fL9   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
+  LayCC0   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,0,0);
+  LayCC0a  = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,1,1);
+  LayCC1   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 4, 4, 0, 0);
+  LayCC2   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0, 0, 5, 5);
 
-  fL1   = new TGLayoutHints(kLHintsTop|kLHintsLeft, 0,0,0,0);
-  fL7   = new TGLayoutHints(kLHintsTop | kLHintsLeft, 11, 1, 1, 1);
-  fL8   = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 1, 1, 1);
-  fL8a  = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 1, 1, 0);
+  LayCB0   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
+  LayCB5 = new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5);
+ 
+  LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
 
-  fL2   = new TGLayoutHints(kLHintsLeft | kLHintsExpandY);
-  fL21  = new TGLayoutHints(kLHintsLeft | kLHintsExpandY,3,0,0,0);
+  LayCLE2 = new TGLayoutHints(kLHintsCenterY|kLHintsLeft|kLHintsExpandX, 4, 2, 2, 2);
 
-  fL2a  = new TGLayoutHints(kLHintsLeft | kLHintsBottom,0,0,5,0);
+  LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
+  LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
+  LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
+  //LayET2   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 0, 0, 2, 2);
+  LayET3   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 2, 2, 0, 0);
 
-  fL31  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
-  fL32  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,0,0,0);
-  fL33  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
+  LayLT0   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 0,0,0,0);
+  LayLT2  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 0);
+  LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
+  LayLT4   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 11, 1, 1, 1);
+  LayLT5   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 1);
+ 
+  LayLE0   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY);
+  LayLE1  = new TGLayoutHints(kLHintsLeft|kLHintsExpandY,3,0,0,0);
 
-  fL50  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
-  fL5   = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 2, 2);
-  fL6   = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 2, 2, 0, 0);
+  LayLC1  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
+  LayLC2  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,0,0,0);
+  LayLC3  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
 
-  fLexp = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
+  LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
+  
+
+  LayEC3 = new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 3, 3, 0, 0);
+
+  LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
+  LayEE1 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
+  LayEE2 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,3,3);
+
+  //fL2a  = new TGLayoutHints(kLHintsLeft|kLHintsBottom,0,0,5,0);
 
 }
 Common::~Common() {
@@ -2519,23 +2497,18 @@ ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
 
   cout << "ColorBox: " << endl;
 
-  TGLayoutHints* fL1 = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 3, 3, 0, 0);
-  TGLayoutHints* fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
-  TGLayoutHints* fL4 = new TGLayoutHints(kLHintsCenterY | kLHintsLeft | kLHintsExpandX,
-					 4, 2, 2, 2);
- 
   TGHorizontalFrame* fButtonFrame = new TGHorizontalFrame(this, 100, 20, kFixedWidth);
-  AddFrame(fButtonFrame, fL2);
+  AddFrame(fButtonFrame, com->LayCB5);
   TGVerticalFrame* fLabelFrame = new TGVerticalFrame(this, 60, 20);
-  AddFrame(fLabelFrame, fL2);
+  AddFrame(fLabelFrame, com->LayCB5);
 
   TGTextButton* fOK = new TGTextButton(fButtonFrame, new TGHotString("&OK"), 1);
   //fOK->Associate(this);
-  fButtonFrame->AddFrame(fOK, fL1);
+  fButtonFrame->AddFrame(fOK, com->LayEC3);
   //width = TMath::Max(width, fOK->GetDefaultWidth());
   TGTextButton* fCancel = new TGTextButton(fButtonFrame, new TGHotString("&Cancel"), 2);
   //fCancel->Associate(this);
-  fButtonFrame->AddFrame(fCancel, fL1);
+  fButtonFrame->AddFrame(fCancel, com->LayEC3);
   //    width = TMath::Max(width, fCancel->GetDefaultWidth()); ++nb;
 
   //width = TMath::Max(width, fOK->GetDefaultWidth());
@@ -2547,7 +2520,7 @@ ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
 
   this->SetBackgroundColor(com->fOrng);
 
-  fLabelFrame->AddFrame(label, fL4);
+  fLabelFrame->AddFrame(label, com->LayCLE2);
 
   MapSubwindows();
 

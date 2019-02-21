@@ -235,7 +235,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGTextButton* but;
 
   fDock = new TGDockableFrame(this);
-  AddFrame(fDock, com->fLexp);
+  AddFrame(fDock, com->LayEE0);
   fDock->SetWindowName("Histograms/Cuts");
   fDock->SetFixedSize(kFALSE);
 
@@ -245,21 +245,21 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor1 = new TGHorizontalFrame(fMain, 10, 10);
   fHor2 = new TGHorizontalFrame(fMain, 10, 10);
 
-  fMain->AddFrame(fHor1, com->fLexp);
-  fMain->AddFrame(fHor2, com->fL50);
+  fMain->AddFrame(fHor1, com->LayEE0);
+  fMain->AddFrame(fHor2, com->LayET0);
 
   fVer0 = new TGVerticalFrame(fHor1, 10, 10);
-  fHor1->AddFrame(fVer0, com->fLexp);
+  fHor1->AddFrame(fVer0, com->LayEE0);
 
   //fEc = new TRootEmbeddedCanvas("Hcanvas", fHor1, 10, 10);
-  //fHor1->AddFrame(fEc, com->fLexp);
+  //fHor1->AddFrame(fEc, com->LayEE0);
   fEc = new TRootEmbeddedCanvas("Hcanvas", fVer0, 10, 10);
-  fVer0->AddFrame(fEc, com->fLexp);
+  fVer0->AddFrame(fEc, com->LayEE0);
 
   fHslider = new TGDoubleHSlider(fVer0, 10, kDoubleScaleBoth,0);
   fHslider->SetRange(0,1);
   fHslider->SetPosition(0,1);
-  fVer0->AddFrame(fHslider, com->fL50);
+  fVer0->AddFrame(fHslider, com->LayET0);
   fHslider->Connect("PositionChanged()", "HistFrame", 
    		    this, "DoSlider()");
 
@@ -267,19 +267,19 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fVslider->SetRange(0,1);
   fVslider->SetPosition(0,1);
   //fVslider->SetWidth(10);
-  fHor1->AddFrame(fVslider, com->fL2);
+  fHor1->AddFrame(fVslider, com->LayLE0);
   fVslider->Connect("PositionChanged()", "HistFrame", 
    		    this, "DoSlider()");
 
 
   TGTab* fTab = new TGTab(fHor1);
-  fHor1->AddFrame(fTab, com->fL21);
+  fHor1->AddFrame(fTab, com->LayLE1);
   TGCompositeFrame* tab1 = fTab->AddTab(" Histograms ");
   TGCompositeFrame* tab2 = fTab->AddTab(" Cuts ");
   gCanvas = new TGCanvas(tab1, 150, 100);
-  tab1->AddFrame(gCanvas, com->fL2);
+  tab1->AddFrame(gCanvas, com->LayLE0);
   gCanvas2 = new TGCanvas(tab2, 150, 100);
-  tab2->AddFrame(gCanvas2, com->fL2);
+  tab2->AddFrame(gCanvas2, com->LayLE0);
 
   fListTree = new TGListTree(gCanvas, kVerticalFrame);
   fListTree->SetCheckMode(TGListTree::kRecursive);
@@ -292,51 +292,51 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
    		     "CutClick(TGListTreeItem*,Int_t)");
   
   fHor3 = new TGHorizontalFrame(tab2, 10, 10);
-  tab2->AddFrame(fHor3, com->fL50);
+  tab2->AddFrame(fHor3, com->LayET0);
 
 
   but = new TGTextButton(fHor3,"Add",1);
   but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
-  fHor3->AddFrame(but, com->fL31);
+  fHor3->AddFrame(but, com->LayLC1);
 
   but = new TGTextButton(fHor3,"Cancel",2);
   but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
-  fHor3->AddFrame(but, com->fL31);
+  fHor3->AddFrame(but, com->LayLC1);
 
   but = new TGTextButton(fHor3,"Clear",4);
   but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
-  fHor3->AddFrame(but, com->fL31);
+  fHor3->AddFrame(but, com->LayLC1);
 
   const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
 
-  tab2->AddFrame(new TGLabel(tab2, "--Formula--"), com->fL50);
+  tab2->AddFrame(new TGLabel(tab2, "--Formula--"), com->LayET0);
   TGHorizontalFrame *fHor7 = new TGHorizontalFrame(tab2, 10, 10);
-  tab2->AddFrame(fHor7, com->fL9);
+  tab2->AddFrame(fHor7, com->LayCB0);
 
   but = new TGTextButton(fHor7,"Form",7);
   but->Connect("Clicked()", "HistFrame", this, "AddFormula()");
   but->SetToolTipText(ttip);
-  fHor7->AddFrame(but, com->fL1);
+  fHor7->AddFrame(but, com->LayLT0);
   
   tForm    = new TGTextEntry(fHor7,"",8);;
   tForm->SetWidth(110);
   tForm->SetToolTipText(ttip);
   tForm->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
-  fHor7->AddFrame(tForm,com->fL50);
+  fHor7->AddFrame(tForm,com->LayET0);
 
   const char* rlab[2] = {"Stack/N","X/Y:"};
   Rb[0] = new TGRadioButton(fHor2,rlab[0],1);
-  fHor2->AddFrame(Rb[0], com->fL32);
+  fHor2->AddFrame(Rb[0], com->LayLC2);
   Rb[0]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
   Rb[0]->SetToolTipText("Draw all histograms in WORK* folders as a stack");
   
   chknorm = new TGCheckButton(fHor2,"",11);
   chknorm->Connect("Clicked()", "HistFrame", this, "DoNorm()");
-  fHor2->AddFrame(chknorm, com->fL32);
+  fHor2->AddFrame(chknorm, com->LayLC2);
   chknorm->SetToolTipText("Normalize stacked histograms");
 
   Rb[1] = new TGRadioButton(fHor2,rlab[1],2);
-  fHor2->AddFrame(Rb[1], com->fL31);
+  fHor2->AddFrame(Rb[1], com->LayLC1);
   Rb[1]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
   Rb[1]->SetToolTipText("Draw histograms in separate subwindows");
 
@@ -354,38 +354,38 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
     fNum[i]->GetNumberEntry()->SetToolTipText(ttip2[i]);
   }
 
-  fHor2->AddFrame(fNum[0], com->fL32);
-  fHor2->AddFrame(fNum[1], com->fL33);
+  fHor2->AddFrame(fNum[0], com->LayLC2);
+  fHor2->AddFrame(fNum[1], com->LayLC3);
 
   but = new TGTextButton(fHor2," < ",1);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
-  fHor2->AddFrame(but, com->fL31);
+  fHor2->AddFrame(but, com->LayLC1);
   but->SetToolTipText("One histogram backward");
 
   but = new TGTextButton(fHor2," > ",2);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
-  fHor2->AddFrame(but, com->fL31);
+  fHor2->AddFrame(but, com->LayLC1);
   but->SetToolTipText("One histogram forward");
 
   but = new TGTextButton(fHor2," << ",3);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
-  fHor2->AddFrame(but, com->fL31);
+  fHor2->AddFrame(but, com->LayLC1);
   but->SetToolTipText("N histograms backward");
 
   but = new TGTextButton(fHor2," >> ",4);
   but->Connect("Clicked()", "HistFrame", this, "DoButton()");
-  fHor2->AddFrame(but, com->fL31);
+  fHor2->AddFrame(but, com->LayLC1);
   but->SetToolTipText("N histograms forward");
 
   //TGCheckButton* chk;
   chklog = new TGCheckButton(fHor2,"Log",11);
   chklog->Connect("Clicked()", "HistFrame", this, "DoLog()");
-  fHor2->AddFrame(chklog, com->fL31);
+  fHor2->AddFrame(chklog, com->LayLC1);
   chklog->SetToolTipText("Log scale");
 
   chkstat = new TGCheckButton(fHor2,"Stat",12);
   chkstat->Connect("Clicked()", "HistFrame", this, "DoStat()");
-  fHor2->AddFrame(chkstat, com->fL31);
+  fHor2->AddFrame(chkstat, com->LayLC1);
   chkstat->SetToolTipText("Show stats");
 
   /*
@@ -398,38 +398,38 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
    new TGTextButton(cuts, "Clear", 3);
    //horizontal->SetButton(kTextCenterX);
    //horizontal->Connect("Pressed(Int_t)", "ButtonWindow", this, "DoHPosition(Int_t)");
-   fHor2->AddFrame(cuts, com->fL31);
+   fHor2->AddFrame(cuts, com->LayLC1);
   */
 
   /*
-  fHor2->AddFrame(new TGLabel(fHor2, "Cuts:"), com->fL31);
+  fHor2->AddFrame(new TGLabel(fHor2, "Cuts:"), com->LayLC1);
 
   but = new TGTextButton(fHor2,"Add",1);
   but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
-  fHor2->AddFrame(but, com->fL31);
+  fHor2->AddFrame(but, com->LayLC1);
 
   but = new TGTextButton(fHor2,"Cancel",2);
   but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
-  fHor2->AddFrame(but, com->fL31);
+  fHor2->AddFrame(but, com->LayLC1);
 
   //but = new TGTextButton(fHor2,"Show",3);
   //but->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
-  //fHor2->AddFrame(but, com->fL31);
+  //fHor2->AddFrame(but, com->LayLC1);
 
   but = new TGTextButton(fHor2,"Clear",4);
   but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
-  fHor2->AddFrame(but, com->fL31);
+  fHor2->AddFrame(but, com->LayLC1);
   */
 
   //TGCheckButton* chk;
   chkgcuts = new TGCheckButton(fHor2,"Cuts",5);
   chkgcuts->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
-  fHor2->AddFrame(chkgcuts, com->fL31);
+  fHor2->AddFrame(chkgcuts, com->LayLC1);
   chkgcuts->SetToolTipText("Draw cuts");
 
   but = new TGTextButton(fHor2,"Peaks",4);
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
-  fHor2->AddFrame(but, com->fL31);
+  fHor2->AddFrame(but, com->LayLC1);
   but->SetToolTipText("Find peaks in all visible windows (works only in X/Y mode");
 
   //DoReset();

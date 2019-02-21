@@ -441,6 +441,7 @@ void HClass::Make_hist() {
   Make_1d("Tof","tof",";t(ns);Counts",m_tof,&opt.h_tof);
   Make_1d("Ntof","ntof",";t(mks);Counts",m_ntof,&opt.h_ntof);
   Make_1d("Etof","etof",";Energy(eV);Counts",m_etof,&opt.h_etof);
+  Make_1d("Ltof","Ltof",";Lambda(A);Counts",m_ltof,&opt.h_ltof);
   Make_1d("Period","period",";t(mks);Counts",m_per,&opt.h_per);
   Make_1d("Width","width",";width(a.u.);Counts",m_width,&opt.h_width);
   Make_1d("Width2","width2",";width(a.u.);Counts",m_width2,&opt.h_width2);
