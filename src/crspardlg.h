@@ -79,6 +79,7 @@ public:
   void DoNum();
   void DoChk();
   void DoCombo();
+  void DoCombo2(Event_t*);
   void DoTxt();
   void DoTypes();
   void DoChkWrite();

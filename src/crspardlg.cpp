@@ -357,12 +357,13 @@ void ParDlg::DoCombo() {
 
   int sel = te->GetSelected();
 
+  cout << "DoCombo: " << id << " " << sel << endl; 
   pmap pp = Plist[id-1];
 
   int nline = id/nfld;
 
   if (nline < MAX_CH) {
-    // cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
+    //cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
     // 	 << " " << nfld << " " << *(Int_t*) pp.data
     // 	 << " " << sel << " " << (opt.Nchan+sel)*nfld
     // 	 << endl;
@@ -429,6 +430,16 @@ void ParDlg::DoCombo() {
 
   //cout << "DoCombo chtype: " << opt.chtype[0] << " " << id << endl;
 
+}
+
+void ParDlg::DoCombo2(Event_t* evt) {
+
+  TGComboBox *te = (TGComboBox*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  if (evt->fType==14 && evt->fCode==65) {
+    cout << "DoCombo2: " << id << " " << evt->fType << " " << evt->fCode << " " << te->GetSelected() << endl;
+  }
 }
 
 void ParDlg::SetTxt(pmap pp, const char* txt) {
@@ -1100,7 +1111,7 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   AddLine_hist(frame1d,&opt.h_etof,tip1,label);
 
   tip1= "Neutron wavelength from NTOF, in A";
-  label="ltof";
+  label="Ltof";
   AddLine_hist(frame1d,&opt.h_ltof,tip1,label);
 
   tip1= "Pulse period (distance between two consecutive pulses), in mks";
@@ -1756,6 +1767,8 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
     cframe[i]->AddFrame(fCombo[i],com->LayCC0);
     kk++;
 
+    //fCombo[i]->EnableTextInput(true);
+
     for (int j = 0; j < ADDCH; j++) {
       fCombo[i]->AddEntry(opt.ch_name[j], j+1);
     }
@@ -1773,7 +1786,9 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
 
     //if (i<=MAX_CH) {
     DoChanMap(fCombo[i],&opt.chtype[i],p_cmb,all,0,0);
+    fCombo[i]->Connect("ProcessedEvent(Event_t*)", "ParDlg", this, "DoCombo2(Event_t*)");
     fCombo[i]->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
+    //fCombo[i]->Connect("ReturnPressed()", "ParDlg", this, "DoCombo2()");
   }
   else {
     int i7=i-MAX_CH-1;
