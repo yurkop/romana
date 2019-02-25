@@ -41,23 +41,23 @@ public:
   //Version_t ver;
   // parameters of the crs32 or crs2 module
 
-  //Int_t chtype[MAX_CH+ADDCH]; //channel type
-  UInt_t smooth[MAX_CH+ADDCH]; //Hardware Smooth - SS=0..10; S=2^SS
-  UInt_t deadTime[MAX_CH+ADDCH]; // B = 1..16383
-  Int_t preWr[MAX_CH+ADDCH]; // pre-length M = 0..4094
-  UInt_t durWr[MAX_CH+ADDCH]; // total length N = 1…32763 (internally - multiple of 4)
-  //Int_t delay[MAX_CH+ADDCH]; //hardware delay in samples
-  UInt_t trg[MAX_CH+ADDCH]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
-  UInt_t kderiv[MAX_CH+ADDCH]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
-  Int_t threshold[MAX_CH+ADDCH]; // T = –2048 .. +2047
-  UInt_t adcGain[MAX_CH+ADDCH]; // G = 0..12
-  Bool_t acdc[MAX_CH+ADDCH]; // AC-1; DC-0
-  Bool_t inv[MAX_CH+ADDCH]; //0 - no inversion; 1 - inversion (individual)
+  //Int_t chtype[MAX_CH+MAX_TP]; //channel type
+  UInt_t smooth[MAX_CH+MAX_TP]; //Hardware Smooth - SS=0..10; S=2^SS
+  UInt_t deadTime[MAX_CH+MAX_TP]; // B = 1..16383
+  Int_t preWr[MAX_CH+MAX_TP]; // pre-length M = 0..4094
+  UInt_t durWr[MAX_CH+MAX_TP]; // total length N = 1…32763 (internally - multiple of 4)
+  //Int_t delay[MAX_CH+MAX_TP]; //hardware delay in samples
+  UInt_t trg[MAX_CH+MAX_TP]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
+  UInt_t kderiv[MAX_CH+MAX_TP]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
+  Int_t threshold[MAX_CH+MAX_TP]; // T = –2048 .. +2047
+  UInt_t adcGain[MAX_CH+MAX_TP]; // G = 0..12
+  Bool_t acdc[MAX_CH+MAX_TP]; // AC-1; DC-0
+  Bool_t inv[MAX_CH+MAX_TP]; //0 - no inversion; 1 - inversion (individual)
   // 0 - only triggered channel is written; 
   // 1 - both channels are written with any trigger
-  Bool_t enabl[MAX_CH+ADDCH]; //1 - enabled; 0 - disabled
-  Bool_t pls[MAX_CH+ADDCH]; //1 - send pulses (format 2,3); 0 - don't send
-  //UInt_t Mask[MAX_CH+ADDCH];
+  Bool_t enabl[MAX_CH+MAX_TP]; //1 - enabled; 0 - disabled
+  Bool_t pls[MAX_CH+MAX_TP]; //1 - send pulses (format 2,3); 0 - don't send
+  //UInt_t Mask[MAX_CH+MAX_TP];
   Bool_t forcewr; //only for crs2
   UInt_t DTW; //Start deat time window
 
@@ -75,38 +75,38 @@ public:
   Toptions();
   virtual ~Toptions() {};
 
-  Int_t chtype[MAX_CH+ADDCH]; //channel type
-  Bool_t dsp[MAX_CH+ADDCH]; //true - use dsp for data analysis
-  Bool_t St[MAX_CH+ADDCH]; //[Start]
-  //Bool_t Nt[MAX_CH+ADDCH]; //[Mrk] flag to use channel for ntof
-  Bool_t Grp[MAX_CH+ADDCH][NGRP]; // flag to use channel in group histograms
-  //UInt_t ch_flag[MAX_CH+ADDCH];
-  Int_t sS[MAX_CH+ADDCH]; //[nsmoo] software smoothing 0..100
-  Int_t Drv[MAX_CH+ADDCH]; //[kdrv] parameter of derivative
-  Int_t Thr[MAX_CH+ADDCH];//[thresh]
-  Float_t Delay[MAX_CH+ADDCH]; //[delay]
-  //Int_t Delay[MAX_CH+ADDCH]; //[delay]
-  Int_t Base1[MAX_CH+ADDCH]; //[bkg1]
-  Int_t Base2[MAX_CH+ADDCH]; //[bkg2]
-  Int_t Peak1[MAX_CH+ADDCH]; //[peak1]
-  Int_t Peak2[MAX_CH+ADDCH]; //[peak2]
-  Int_t dT[MAX_CH+ADDCH];//[deadT]
-  Int_t Pile[MAX_CH+ADDCH]; //[pile]
-  //Int_t pile2[MAX_CH+ADDCH];
-  Int_t sTg[MAX_CH+ADDCH]; // [strg] Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
-  Int_t timing[MAX_CH+ADDCH];
-  Int_t T1[MAX_CH+ADDCH]; // [twin1]
-  Int_t T2[MAX_CH+ADDCH]; // [twin2]
-  Int_t W1[MAX_CH+ADDCH]; // [wwin1]
-  Int_t W2[MAX_CH+ADDCH]; // [wwin2]
+  Int_t chtype[MAX_CH+MAX_TP]; //channel type
+  Bool_t dsp[MAX_CH+MAX_TP]; //true - use dsp for data analysis
+  Bool_t St[MAX_CH+MAX_TP]; //[Start]
+  //Bool_t Nt[MAX_CH+MAX_TP]; //[Mrk] flag to use channel for ntof
+  Bool_t Grp[MAX_CH+MAX_TP][NGRP]; // flag to use channel in group histograms
+  //UInt_t ch_flag[MAX_CH+MAX_TP];
+  Int_t sS[MAX_CH+MAX_TP]; //[nsmoo] software smoothing 0..100
+  Int_t Drv[MAX_CH+MAX_TP]; //[kdrv] parameter of derivative
+  Int_t Thr[MAX_CH+MAX_TP];//[thresh]
+  Float_t Delay[MAX_CH+MAX_TP]; //[delay]
+  //Int_t Delay[MAX_CH+MAX_TP]; //[delay]
+  Int_t Base1[MAX_CH+MAX_TP]; //[bkg1]
+  Int_t Base2[MAX_CH+MAX_TP]; //[bkg2]
+  Int_t Peak1[MAX_CH+MAX_TP]; //[peak1]
+  Int_t Peak2[MAX_CH+MAX_TP]; //[peak2]
+  Int_t dT[MAX_CH+MAX_TP];//[deadT]
+  Int_t Pile[MAX_CH+MAX_TP]; //[pile]
+  //Int_t pile2[MAX_CH+MAX_TP];
+  Int_t sTg[MAX_CH+MAX_TP]; // [strg] Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
+  Int_t timing[MAX_CH+MAX_TP];
+  Int_t T1[MAX_CH+MAX_TP]; // [twin1]
+  Int_t T2[MAX_CH+MAX_TP]; // [twin2]
+  Int_t W1[MAX_CH+MAX_TP]; // [wwin1]
+  Int_t W2[MAX_CH+MAX_TP]; // [wwin2]
 
-  Float_t E0[MAX_CH+ADDCH]; // [emult0]
-  Float_t E1[MAX_CH+ADDCH]; // [emult]
-  Float_t E2[MAX_CH+ADDCH]; // [emult2]
-  Float_t Bc[MAX_CH+ADDCH]; // [bcor]
+  Float_t E0[MAX_CH+MAX_TP]; // [emult0]
+  Float_t E1[MAX_CH+MAX_TP]; // [emult]
+  Float_t E2[MAX_CH+MAX_TP]; // [emult2]
+  Float_t Bc[MAX_CH+MAX_TP]; // [bcor]
 
-  Float_t elim1[MAX_CH+ADDCH];
-  Float_t elim2[MAX_CH+ADDCH];
+  Float_t elim1[MAX_CH+MAX_TP];
+  Float_t elim2[MAX_CH+MAX_TP];
 
 
   //Int_t channels[MAX_CH+1]; //+all
@@ -163,7 +163,7 @@ public:
   //char fname_root[199];
   char Filename[199];
 
-  char ch_name[ADDCH][6];
+  char ch_name[MAX_TP][6];
 
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list

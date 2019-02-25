@@ -886,7 +886,7 @@ CRS::CRS() {
   dummy_peak.Time=-100;
   dummy_peak.Pos=0;
 
-  for (int i=0;i<MAX_CH+ADDCH;i++) {
+  for (int i=0;i<MAX_CH+MAX_TP;i++) {
     type_ch[i]=255;
   }
 
@@ -2260,6 +2260,13 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
       }
     }
   }
+
+  for (int i=0;i<MAX_CH+MAX_TP;i++) {
+    if (opt.chtype[i]>MAX_TP) {
+      opt.chtype[i]=1;
+    }
+  }
+
 
   if (m1) {
     //T_start = opt.F_start;

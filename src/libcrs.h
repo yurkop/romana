@@ -80,7 +80,7 @@ RQ_OBJECT("CRS")
   //--------variables---------
 
   int MAXTRANS2; //real maxtrans, depends on usb_size
-  //Int_t Pre[MAX_CH+ADDCH]; // pre-length for the analysys
+  //Int_t Pre[MAX_CH+MAX_TP]; // pre-length for the analysys
   //Pre = opt.preWr for crs2/32; Pre=0 for adcm
   
   gzFile f_raw;
@@ -163,7 +163,7 @@ RQ_OBJECT("CRS")
   Short_t module;
   //1-ADCM raw, 2 - crs2; 32 - old crs32, 33 - new crs32 with dsp
 
-  Int_t type_ch[MAX_CH+ADDCH]; //0-   4-11bit; 1-   2-16bit
+  Int_t type_ch[MAX_CH+MAX_TP]; //0-   4-11bit; 1-   2-16bit
   //Short_t ver_po;
   Int_t period;
 

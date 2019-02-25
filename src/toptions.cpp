@@ -22,7 +22,7 @@ Coptions::Coptions() {
 
 void Coptions::InitPar(int zero) {
 
-  for (int i=0;i<MAX_CH+ADDCH;i++) {
+  for (int i=0;i<MAX_CH+MAX_TP;i++) {
     enabl[i]=true;
     acdc[i]=true;
     inv[i]=false;
@@ -240,7 +240,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
 Toptions::Toptions() {
 
   //cout << "toptions" << endl;
-  for (int i=0;i<MAX_CH+ADDCH;i++) {
+  for (int i=0;i<MAX_CH+MAX_TP;i++) {
     chtype[i]=1;
     //chtype[i]=ch_NIM;
     dsp[i]=false;
@@ -272,7 +272,7 @@ Toptions::Toptions() {
     Bc[i]=0;
   }
 
-  // for (int i=MAX_CH;i<MAX_CH+ADDCH;i++) {
+  // for (int i=MAX_CH;i<MAX_CH+MAX_TP;i++) {
   //   chtype[i]=ch_other;
   // }
 
@@ -288,7 +288,7 @@ Toptions::Toptions() {
 
   const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
 			    "NIM","Other","Copy",""};
-  for (int i=0;i<ADDCH;i++) {
+  for (int i=0;i<MAX_TP;i++) {
     strcpy(ch_name[i],types[i]);
   }
   // memset(fname_raw,0,sizeof(fname_raw));

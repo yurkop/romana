@@ -49,9 +49,11 @@ public:
 
 protected:
 
-  ULong_t tcol[ADDCH];
+  //MAX_TP [MAX_TP+1] - Other
+  //MAX_TP+1 [MAX_TP+2] - Copy
+  ULong_t tcol[MAX_TP+1];
   TGComboBox* fCombo[MAX_CH+1];
-  TGTextEntry* cname[ADDCH];
+  TGTextEntry* cname[MAX_TP];
 
   TGCanvas* fCanvas1;
   TGCompositeFrame* fcont1;
@@ -63,8 +65,8 @@ protected:
 public:
   std::vector<pmap> Plist;
 
-  TGHorizontalFrame *cframe[MAX_CH+ADDCH];
-  TGTextEntry* clab[MAX_CH+ADDCH];
+  TGHorizontalFrame *cframe[MAX_CH+MAX_TP+1];
+  TGTextEntry* clab[MAX_CH+MAX_TP+1];
 
 public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);

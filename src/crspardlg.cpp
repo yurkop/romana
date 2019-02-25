@@ -13,8 +13,9 @@
 
 //const char* t_raw = "Write raw data";
 
+//colors of ch_types
 namespace CP {
-  //Float_t RGB[ADDCH][3] =
+  //Float_t RGB[MAX_TP][3] =
   Float_t RGB[][3] =
     {
       {1,1,0}, //0
@@ -23,7 +24,7 @@ namespace CP {
       {0.4,0.4,1},
       {1,0.8,0.8}, //4
       {0,1,0},
-      {1,0.7,0.4},
+      //{1,0.7,0.4},
       {0.2,0.8,0.6},
       {1,1,1}//8
     };
@@ -105,8 +106,8 @@ char** ttip7;
 // 		     "NIM","Other","Copy",""};
 
 //-----------
-const int nchtype=9;
-Int_t combotype[nchtype];
+// const int nchtype=9;
+// Int_t combotype[nchtype];
 
 extern Common* com;
 extern CRS* crs;
@@ -126,16 +127,21 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //fDock->SetWindowName("Events");  
   fDock->SetFixedSize(kFALSE);
 
-  for (int i=0;i<nchtype;i++) {
-    combotype[i]=i;
-  }
+  // for (int i=0;i<nchtype;i++) {
+  //   combotype[i]=i;
+  // }
 
   nfld=0;
 
-  for (int i=0;i<ADDCH;i++) {
-    Int_t cc=TColor::GetColor(TColor::RGB2Pixel(CP::RGB[i][0],CP::RGB[i][1],CP::RGB[i][2]));
+  Int_t cc;
+  for (int i=0;i<=MAX_TP;i++) {
+    cc=TColor::GetColor(TColor::RGB2Pixel(CP::RGB[i][0],CP::RGB[i][1],CP::RGB[i][2]));
     tcol[i]=gROOT->GetColor(cc)->GetPixel();
   }
+
+  //other - while color
+  //cc=TColor::GetColor(TColor::RGB2Pixel(1,1,1));
+  //tcol[MAX_TP]=gROOT->GetColor(cc)->GetPixel();
 
 }
 ParDlg::~ParDlg() {
@@ -357,25 +363,19 @@ void ParDlg::DoCombo() {
 
   int sel = te->GetSelected();
 
-  cout << "DoCombo: " << id << " " << sel << endl; 
   pmap pp = Plist[id-1];
 
   int nline = id/nfld;
 
   if (nline < MAX_CH) {
-    //cout << "DoCombo: " << id << " " << nline << " " << (int) pp.all 
-    // 	 << " " << nfld << " " << *(Int_t*) pp.data
-    // 	 << " " << sel << " " << (opt.Nchan+sel)*nfld
-    // 	 << endl;
-    // cout << this << " " << crspar << " " << anapar << endl;
 
-    if (sel==ADDCH+1) {
+    if (sel-1==MAX_TP+1) { //Copy
       int old=*(Int_t*) pp.data;
 
-      //if (old!=ADDCH) {
+      //if (old!=MAX_TP) {
       const char* name = te->GetListBox()->GetEntry(old)->GetTitle();
       //cout << "Copy: " << sel << " " << old << " " << nline << endl;
-      if (!TString(name).EqualTo("other",TString::kIgnoreCase)) {
+      if (!TString(name).EqualTo("Other",TString::kIgnoreCase)) {
 	crspar->CopyParLine(-old,nline);
 	anapar->CopyParLine(-old,nline);
 	pikpar->CopyParLine(-old,nline);
@@ -393,7 +393,8 @@ void ParDlg::DoCombo() {
   }
 
   if (pp.all==1) {
-    if (nfld) {
+    cout << "all: " << nfld << " " << sel << endl;
+    if (nfld && sel<MAX_TP+2) {
       int kk = (id-1)%nfld;
       for (int i=0;i<MAX_CH;i++) {
 	pmap p2 = Plist[i*nfld+kk];
@@ -404,28 +405,8 @@ void ParDlg::DoCombo() {
 	crspar->CopyParLine(sel,i);
 	anapar->CopyParLine(sel,i);
 	pikpar->CopyParLine(sel,i);
-
-	// if (sel<ADDCH) {
-	//   for (int j=1;j<nfld;j++) {
-	//     CopyField((opt.Nchan+sel)*nfld+j,i*nfld+kk+j);
-	//   }
-	// }
       }
     }
-    // int kk;
-    // (nfld ? (kk=(id-1)%nfld) : (kk=0));
-    // for (int i=0;i<opt.Nchan;i++) {
-    //   pmap p2 = Plist[i*nfld+kk];
-    //   SetCombo(p2,te->GetSelected());
-    //   TGComboBox *te2 = (TGComboBox*) p2.field;
-    //   te2->Select(te->GetSelected(),false);
-
-    //   if (sel<ADDCH) {
-    // 	for (int j=1;j<nfld;j++) {
-    // 	  CopyField((opt.Nchan+sel)*nfld+j,i*nfld+kk+j);
-    // 	}
-    //   }
-    // }
   }
 
   //cout << "DoCombo chtype: " << opt.chtype[0] << " " << id << endl;
@@ -478,25 +459,27 @@ void ParDlg::DoTxt() {
 void ParDlg::DoTypes() {
 
   TGTextEntry *te = (TGTextEntry*) gTQSender;
-  Int_t id = te->WidgetId();
+  //Int_t id = te->WidgetId();
 
-  cout << "DoTypes: " << id << endl;
+  //cout << "DoTypes: " << id << endl;
   DoTxt();
 
-  pmap pp = Plist[id-1];
-  for (int i=0;i<ADDCH;i++) {
-    if (pp.data==(void*) opt.ch_name[i]) {
-      cout << i << " " << opt.ch_name[i] << endl;
-      for (int j=0;j<=MAX_CH;j++) {
-	TGTextLBEntry* ent=
-	  (TGTextLBEntry*)fCombo[j]->GetListBox()->GetEntry(i+1);
-	ent->SetTitle(opt.ch_name[i]);
-      }
-    }
+  //pmap pp = Plist[id-1];
+
+  int i = TString(te->GetName())(0,1).String().Atoi();
+  for (int j=0;j<=MAX_CH;j++) {
+
+    int sel = fCombo[j]->GetListBox()->GetSelected();
+    //cout << i+1 << " " << opt.ch_name[i] << " " << sel << endl;
+    fCombo[j]->RemoveEntry(i+1);
+    fCombo[j]->InsertEntry(opt.ch_name[i],i+1,i);
+    if (sel==i+1)
+      fCombo[j]->Select(sel,false);
   }
 }
 
 void ParDlg::CopyParLine(int sel, int line) {
+  cout << "CopyParLine1: " << line << " " << sel << endl;
   if (sel<0) { //inverse copy - from current ch to group
     //cout << "CopyParLine: " << line << " " << MAX_CH-sel << endl;
     //return;
@@ -504,14 +487,20 @@ void ParDlg::CopyParLine(int sel, int line) {
       CopyField(line*nfld+j,(MAX_CH-sel)*nfld+j);
     }
   }
-  else if (sel<ADDCH) { //normal copy from group to current ch
+  else if (sel<MAX_TP+1) { //normal copy from group to current ch
     for (int j=1;j<nfld;j++) {
       CopyField((MAX_CH+sel)*nfld+j,line*nfld+j);
+    }
+    if (line>=0) {
+      cout << "Copyparline: " << line << " " << clab[line]->GetText() << endl;
+    }
+    else {
+      cout << "Copyparline: " << line << " " << clab[line] << endl;
     }
     clab[line]->ChangeBackground(tcol[sel-1]);
     cframe[line]->ChangeBackground(tcol[sel-1]);
   }
-  else if (sel==ADDCH) { //other - just change color
+  else if (sel==MAX_TP+1) { //other - just change color
     clab[line]->ChangeBackground(tcol[sel-1]);
     cframe[line]->ChangeBackground(tcol[sel-1]);
   }
@@ -641,7 +630,7 @@ void ParDlg::UpdateField(int nn) {
     int sel = *(Int_t*) pp->data;
 
 
-    for (int i=0;i<ADDCH;i++) {
+    for (int i=0;i<MAX_TP;i++) {
       TGTextLBEntry* ent=
 	(TGTextLBEntry*)te->GetListBox()->GetEntry(i+1);
       ent->SetText(new TGString(opt.ch_name[i]));
@@ -649,7 +638,9 @@ void ParDlg::UpdateField(int nn) {
     }
     te->Layout();
 
-    //cout << "cmb2: " << sel << " " << line << endl;
+    //cout << "cmb2: " << sel << " " << line << " " << tcol[sel-1] << endl;
+    if (line==0)
+      cout << "clab1: " << line << " " << clab[line]->GetText() << endl;
     if (line<MAX_CH) {
       clab[line]->ChangeBackground(tcol[sel-1]);
       cframe[line]->ChangeBackground(tcol[sel-1]);
@@ -675,6 +666,8 @@ void ParDlg::UpdateField(int nn) {
 }
 
 void ParDlg::Update() {
+  if (this==crspar)
+    cout << "update1: " << clab[0]->GetText() << endl;
   //cout << "update1: " << Plist.size() << endl;
   for (UInt_t i=0;i<Plist.size();i++) {
     UpdateField(i);
@@ -682,7 +675,8 @@ void ParDlg::Update() {
   MapSubwindows();
   Layout();
   //Rebuild();
-  //cout << "update2: " << endl;
+  if (this==crspar)
+    cout << "update2: " << clab[0]->GetText() << endl;
 }
 
 void ParDlg::EnableField(int nn, bool state) {
@@ -1753,6 +1747,9 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
   clab[i]->SetState(false);
   cframe[i]->AddFrame(clab[i],com->LayCC0a);
   kk++;
+  if (i==0)
+    //cout << "clab1: " << line << " " << clab[line]->GetText() << endl;
+    cout << "clab2: " << i << " " << clab[i]->GetText() << endl;
 
   if (!nfld && Plist.size()) {
     nfld=Plist.size();
@@ -1767,32 +1764,29 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
     cframe[i]->AddFrame(fCombo[i],com->LayCC0);
     kk++;
 
-    //fCombo[i]->EnableTextInput(true);
-
-    for (int j = 0; j < ADDCH; j++) {
+    for (int j = 0; j < MAX_TP; j++) {
       fCombo[i]->AddEntry(opt.ch_name[j], j+1);
     }
+    fCombo[i]->AddEntry("Other", MAX_TP+1);
 
     fCombo[i]->Resize(tlen1[1], 20);
 
     if (i==MAX_CH) {
-      fCombo[i]->AddEntry(" ", ADDCH+2);
-      //fCombo->AddEntry(types[ADDCH+1], ADDCH+2);
+      fCombo[i]->AddEntry(" ", MAX_TP+2);
     }
     else {
-      fCombo[i]->AddEntry("Copy", ADDCH+1);
-      //fCombo->AddEntry(types[ADDCH], ADDCH+1);
+      fCombo[i]->AddEntry("Copy", MAX_TP+2);
     }
 
     //if (i<=MAX_CH) {
     DoChanMap(fCombo[i],&opt.chtype[i],p_cmb,all,0,0);
     fCombo[i]->Connect("ProcessedEvent(Event_t*)", "ParDlg", this, "DoCombo2(Event_t*)");
     fCombo[i]->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
-    //fCombo[i]->Connect("ReturnPressed()", "ParDlg", this, "DoCombo2()");
   }
   else {
     int i7=i-MAX_CH-1;
     TGTextEntry* tgtxt=new TGTextEntry(cframe[i], opt.ch_name[i7],id);
+    tgtxt->SetName(TString::Format("%02dtxt",i7).Data());
     //tgtxt->SetHeight(20);
     tgtxt->SetWidth(tlen1[1]);
     tgtxt->SetMaxLength(5);
@@ -1805,9 +1799,8 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
     tgtxt->Connect("TextChanged(char*)", "ParDlg", this, "DoTypes()");
     cframe[i]->SetBackgroundColor(tcol[i7]);
     clab[i]->SetBackgroundColor(tcol[i7]);
+    cout << "clab3: " << i << " " << clab[i]->GetText() << " " << clab[0]->GetText() << endl;
   }
-
-  //end AddChCombo
 
 }
 
@@ -1875,13 +1868,15 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
     //cout << "crs: addLine1: " << Plist.size() << endl; 
   }
 
+  cout << "make1: " << clab[0]->GetText() << endl;
   AddLine_crs(MAX_CH,fcont2);
 
-  for (int i=1;i<ADDCH;i++) {
+  cout << "make2: " << clab[0]->GetText() << endl;
+  for (int i=1;i<=MAX_TP;i++) {
     AddLine_crs(MAX_CH+i,fcont2);
-    //cout << "crs2: addLine1: " << Plist.size() << endl; 
   }
 
+  cout << "make3: " << clab[0]->GetText() << endl;
   if (crs->module==2) {
     TGHorizontalFrame *hforce = new TGHorizontalFrame(fcont1,10,10);
     fcont1->AddFrame(hforce,com->LayLT0);
@@ -1896,6 +1891,7 @@ void CrsParDlg::Make_crspar(const TGWindow *p,UInt_t w,UInt_t h) {
     hforce->AddFrame(lforce,com->LayLT0);
   }
 
+  cout << "make4: " << clab[0]->GetText() << endl;
 }
 
 void CrsParDlg::AddHeader() {
@@ -2226,7 +2222,7 @@ void AnaParDlg::Make_AnaPar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   AddLine_Ana(MAX_CH,fcont2);
 
-  for (int i=1;i<ADDCH;i++) {
+  for (int i=1;i<=MAX_TP;i++) {
     AddLine_Ana(MAX_CH+i,fcont2);
   }
 
@@ -2350,7 +2346,7 @@ void DspParDlg::Make_DspPar(const TGWindow *p,UInt_t w,UInt_t h) {
 
   AddLine_Dsp(MAX_CH,fcont2);
 
-  for (int i=1;i<ADDCH;i++) {
+  for (int i=1;i<=MAX_TP;i++) {
     AddLine_Dsp(MAX_CH+i,fcont2);
   }
 
