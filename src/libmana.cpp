@@ -1262,7 +1262,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //parpar->Update();
   //tabfr[0]->AddFrame(parpar, LayEE1);
 
+  //cout << "Maketabs1: " << endl;
   MakeTabs();
+  //cout << "Maketabs2: " << endl;
   //fremake=true;
 
   TGTabElement* tab6 = fTab->GetTabTab("Errors");
@@ -1443,8 +1445,10 @@ void MainFrame::Rebuild() {
   anapar->Rebuild();
   pikpar->Rebuild();
   Resize(GetDefaultSize());
+  //MapSubwindows();
   Layout();
 
+  //cout << "main::Rebuild2: " << endl;
 }
 
 void MainFrame::MakeTabs() {
