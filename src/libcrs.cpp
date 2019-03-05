@@ -3803,8 +3803,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       }
       //else {
       for (int i=0;i<4;i++) {
-	iii = data & 0xFFF;
-	ipls.sData.push_back((iii<<20)>>20);
+	iii = data & 0x7FF;
+	ipls.sData.push_back((iii<<21)>>21);
 	data>>=12;
       }
       //}

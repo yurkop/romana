@@ -80,7 +80,7 @@ public:
   void SetTxt(pmap pp, const char* txt);
   void DoNum();
   void DoChk();
-  void DoCombo();
+  void DoCombo(bool cp);
   void DoCombo2(Event_t*);
   void DoTxt();
   void DoTypes();

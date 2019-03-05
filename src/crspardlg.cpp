@@ -356,7 +356,7 @@ void ParDlg::SetCombo(pmap pp, Int_t num) {
   }
 }
 
-void ParDlg::DoCombo() {
+void ParDlg::DoCombo(bool cp) {
 
   TGComboBox *te = (TGComboBox*) gTQSender;
   Int_t id = te->WidgetId();
@@ -374,11 +374,81 @@ void ParDlg::DoCombo() {
 
       //if (old!=MAX_TP) {
       const char* name = te->GetListBox()->GetEntry(old)->GetTitle();
-      //cout << "Copy: " << sel << " " << old << " " << nline << endl;
+      //cout << "Copy: " << sel << " " << old << " " << nline << " " << nline%MAX_TP << endl;
       if (!TString(name).EqualTo("Other",TString::kIgnoreCase)) {
 	crspar->CopyParLine(-old,nline);
 	anapar->CopyParLine(-old,nline);
 	pikpar->CopyParLine(-old,nline);
+      }
+      else {//copy other to last
+	crspar->CopyParLine(-(MAX_TP-1),nline);
+	anapar->CopyParLine(-(MAX_TP-1),nline);
+	pikpar->CopyParLine(-(MAX_TP-1),nline);
+      }
+
+      te->Select(old);
+      return;
+    }
+
+    SetCombo(pp,sel);
+    if (cp) {
+      crspar->CopyParLine(sel,nline);
+      anapar->CopyParLine(sel,nline);
+      pikpar->CopyParLine(sel,nline);
+    }
+
+  }
+
+  if (pp.all==1) {
+    //cout << "all: " << nfld << " " << sel << endl;
+    if (nfld && sel<MAX_TP+2) {
+      int kk = (id-1)%nfld;
+      for (int i=0;i<MAX_CH;i++) {
+	pmap p2 = Plist[i*nfld+kk];
+	SetCombo(p2,te->GetSelected());
+	TGComboBox *te2 = (TGComboBox*) p2.field;
+	te2->Select(te->GetSelected(),false);
+
+	crspar->CopyParLine(sel,i);
+	anapar->CopyParLine(sel,i);
+	pikpar->CopyParLine(sel,i);
+      }
+    }
+  }
+
+  //cout << "DoCombo chtype: " << opt.chtype[0] << " " << id << " " << cp << endl;
+
+}
+
+/*
+void ParDlg::DoCombo2(Event_t* evt) {
+
+  if (evt->fType==2 && evt->fCode==65) {
+
+  TGComboBox *te = (TGComboBox*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  int sel = te->GetSelected();
+  pmap pp = Plist[id-1];
+  int nline = id/nfld;
+
+  if (nline < MAX_CH) {
+
+    if (sel-1==MAX_TP+1) { //Copy
+      int old=*(Int_t*) pp.data;
+
+      //if (old!=MAX_TP) {
+      const char* name = te->GetListBox()->GetEntry(old)->GetTitle();
+      cout << "Copy: " << sel << " " << old << " " << nline << " " << nline%MAX_TP << endl;
+      if (!TString(name).EqualTo("Other",TString::kIgnoreCase)) {
+	crspar->CopyParLine(-old,nline);
+	anapar->CopyParLine(-old,nline);
+	pikpar->CopyParLine(-old,nline);
+      }
+      else {//copy other to last
+	crspar->CopyParLine(-(MAX_TP-1),nline);
+	anapar->CopyParLine(-(MAX_TP-1),nline);
+	pikpar->CopyParLine(-(MAX_TP-1),nline);
       }
 
       te->Select(old);
@@ -409,17 +479,24 @@ void ParDlg::DoCombo() {
     }
   }
 
-  //cout << "DoCombo chtype: " << opt.chtype[0] << " " << id << endl;
+  cout << "DoCombo chtype: " << opt.chtype[0] << " " << id << endl;
 
 }
-
+*/
 void ParDlg::DoCombo2(Event_t* evt) {
 
-  TGComboBox *te = (TGComboBox*) gTQSender;
-  Int_t id = te->WidgetId();
+  //TGComboBox *te = (TGComboBox*) gTQSender;
+  //Int_t id = te->WidgetId();
 
-  if (evt->fType==14 && evt->fCode==65) {
-    cout << "DoCombo2: " << id << " " << evt->fType << " " << evt->fCode << " " << te->GetSelected() << endl;
+  //cout << "DoCombo2: " << id << " " << evt->fType << " " << evt->fCode << " " << te->GetSelected() << endl;
+  if (evt->fType==14) {
+    if (evt->fCode==65) {
+      //cout << "DoCombo7: " << id << " " << evt->fType << " " << evt->fCode << " " << te->GetSelected() << endl;
+      DoCombo(false);
+    }
+    else {
+      DoCombo(true);
+    }
   }
 }
 
@@ -1767,8 +1844,8 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
 
     //if (i<=MAX_CH) {
     DoChanMap(fCombo[i],&opt.chtype[i],p_cmb,all,0,0);
+    //fCombo[i]->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
     fCombo[i]->Connect("ProcessedEvent(Event_t*)", "ParDlg", this, "DoCombo2(Event_t*)");
-    fCombo[i]->Connect("Selected(Int_t)", "ParDlg", this, "DoCombo()");
   }
   else {
     int i7=i-MAX_CH-1;
