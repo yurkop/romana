@@ -22,6 +22,7 @@
 //TSemaphore sem;
 #include "TThread.h"
 #include "TMutex.h"
+#include "TRandom.h"
 
 //TMutex Emut3;
 TMutex stat_mut;
@@ -49,6 +50,10 @@ extern int debug; // for printing debug messages
 
 extern char startdir[200];
 const double MB = 1024*1024;
+
+MemInfo_t info;
+
+TRandom rnd;
 
 //Int_t ev_max;
 
@@ -308,11 +313,19 @@ void *handle_decode(void *ctx) {
       crs->FindLast(ibuf);
     }
 
+    // gSystem->GetMemInfo(&info);
+    // cout << "\033[35m";
+    // cout << "dec1: " << info.fMemUsed << endl;
+    // cout << "\033[0m";
+
     switch (crs->module) {
     case 32:
     case 33:
     case 34:
       crs->Decode34(dec_iread[ibuf]-1,ibuf);
+      break;
+    case 79:
+      crs->Decode79(dec_iread[ibuf]-1,ibuf);
       break;
     case 78:
       crs->Decode78(dec_iread[ibuf]-1,ibuf);
@@ -335,6 +348,11 @@ void *handle_decode(void *ctx) {
     default:
       break;
     }
+
+    // gSystem->GetMemInfo(&info);
+    // cout << "\033[35m";
+    // cout << "dec2: " << info.fMemUsed << endl;
+    // cout << "\033[0m";
 
     // if (crs->module>=32 && crs->module<=33) {
     //   crs->Decode33(dec_iread[ibuf]-1,ibuf);
@@ -368,9 +386,16 @@ void *handle_mkev(void *ctx) {
   // cmut.UnLock();
   //UInt_t ibuf=gl_ibuf;
   //CRS::plist_iter it;
+
   std::list<CRS::eventlist>::iterator BB;
   
   while (mkev_thread_run) {
+
+    // gSystem->GetMemInfo(&info);
+    // cout << "\033[33m";
+    // cout << "Make_events1: " << gl_ivect << " " << crs->Bufevents.size()
+    // 	 << " " << crs->Levents.size() << " " << info.fMemUsed << endl;
+    // cout << "\033[0m";
 
     bool fdec=false; //proper dec.. finished
     while(!fdec && mkev_thread_run) {
@@ -390,13 +415,20 @@ void *handle_mkev(void *ctx) {
       break;
     }
 
+    // gSystem->GetMemInfo(&info);
+    // cout << "\033[34m";
+    // cout << "Make_events2: " << gl_ivect << " " << crs->Bufevents.size()
+    // 	 << " " << crs->Levents.size() << " " << info.fMemUsed << endl;
+    // cout << "\033[0m";
+
     //if (crs->Vpulses[ibuf].size()>2) {
     crs->Make_Events(BB);
     //}
 
-    // cout << "\033[31m";
+    // gSystem->GetMemInfo(&info);
+    // cout << "\033[32m";
     // cout << "Make_events33: " << gl_ivect << " " << crs->Bufevents.size()
-    // 	 << " " << crs->Levents.size() << endl;
+    // 	 << " " << crs->Levents.size() << " " << info.fMemUsed << endl;
     // cout << "\033[0m";
 
     gl_ivect++;
@@ -408,7 +440,8 @@ void *handle_mkev(void *ctx) {
     //   ana_cond.Signal();
     // }
 
-  }
+  } //while (mkev_thread_run)
+
   // cmut.Lock();
   // cout << "Mkev thread deleted: " << endl;
   // cmut.UnLock();
@@ -442,9 +475,9 @@ void *handle_ana(void *ctx) {
 
     int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
 
-    //cmut.Lock();
-    //cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
-    //cmut.UnLock();
+    // cmut.Lock();
+    // cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
+    // cmut.UnLock();
 
     if (m_event==crs->Levents.end()) {
       m_event=crs->Levents.begin();
@@ -477,7 +510,8 @@ void *handle_ana(void *ctx) {
 	    //crs->Fill_Dec75(&(*m_event));
 	    //crs->Fill_Dec76(&(*m_event));
 	    //crs->Fill_Dec77(&(*m_event));
-	    crs->Fill_Dec78(&(*m_event));
+	    //crs->Fill_Dec78(&(*m_event));
+	    crs->Fill_Dec79(&(*m_event));
 	  }
 	}
 	++m_event;
@@ -488,18 +522,19 @@ void *handle_ana(void *ctx) {
       }
     }
 
+    //cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
+
     // erase events if the list is too long
     for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
       it=crs->Levents.erase(it);
     }
 
-    //cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
 
     if (ana_all && opt.dec_write) {
       crs->Flush_Dec();
     }
 
-    //cout << "Levents4: " << crs->Levents.size() << " " << nevents << endl;
+    //cout << "Levents4: " << crs->Levents.size() << " " << crs->nevents << endl;
 
     // fill Tevents for EvtFrm::DrawEvent2
     if (EvtFrm) {
@@ -706,7 +741,8 @@ void CRS::Ana2(int all) {
 	  //crs->Fill_Dec75(&(*m_event));
 	  //crs->Fill_Dec76(&(*m_event));
 	  //crs->Fill_Dec77(&(*m_event));
-	  crs->Fill_Dec78(&(*m_event));
+	  //crs->Fill_Dec78(&(*m_event));
+	  crs->Fill_Dec79(&(*m_event));
 	}
       }
       ++m_event;
@@ -1859,7 +1895,8 @@ int CRS::DoStartStop() {
       //Reset_Dec(75);
       //Reset_Dec(76);
       //Reset_Dec(77);
-      Reset_Dec(78);
+      //Reset_Dec(78);
+      Reset_Dec(79);
       // sprintf(dec_opt,"wb%d",opt.dec_compr);
 
       // f_dec = gzopen(opt.fname_dec,dec_opt);
@@ -2659,7 +2696,8 @@ void CRS::FAnalyze2(bool nobatch) {
     //Reset_Dec(75);
     //Reset_Dec(76);
     //Reset_Dec(77);
-    Reset_Dec(78);
+    //Reset_Dec(78);
+    Reset_Dec(79);
   }
   juststarted=false;
 
@@ -2715,7 +2753,8 @@ void CRS::DoNBuf2(int nb) {
     //Reset_Dec(75);
     //Reset_Dec(76);
     //Reset_Dec(77);
-    Reset_Dec(78);
+    //Reset_Dec(78);
+    Reset_Dec(79);
   }
   juststarted=false;
 
@@ -2843,6 +2882,9 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   case 33:
   case 34:
     crs->Decode34(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 79:
+    crs->Decode79(dec_iread[ibuf]-1,ibuf);
     break;
   case 78:
     crs->Decode78(dec_iread[ibuf]-1,ibuf);
@@ -2991,6 +3033,7 @@ void CRS::FindLast(UInt_t ibuf) {
   case 76:
   case 77:
   case 78:
+  case 79:
     for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==1 -> this is the start of a pulse
       frmt = GLBuf[i+7] & 0x80; //event start bit
@@ -3127,6 +3170,68 @@ void CRS::PulseAna(PulseClass &ipls) {
     }
   }
 }
+
+void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
+  //Decode79 - the same as 78, but different factor for Area
+
+  //ibuf - current sub-buffer
+
+  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  UChar_t frmt;
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  dec_mut.Lock();
+  Bufevents.push_back(eventlist());
+  Blist = &Bufevents.back();
+  dec_mut.UnLock();
+
+  Blist->push_back(EventClass());
+  Blist->front().Nevt=iread;
+
+  while (idx1<b_end[ibuf]) {
+    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+
+    if (frmt && Blist->empty()) {
+      cout << "dec33: bad buf start: " << idx1 << " " << (int ) frmt << endl;
+      idx1+=8;
+      continue;
+    }
+
+    if (frmt) { //event start
+      ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+
+      evt = &*Blist->insert(Blist->end(),EventClass());
+      evt->Nevt=nevents;
+      nevents++;
+
+      evt->Tstmp = (*buf8) & sixbytes;
+      evt->State = Bool_t((*buf8) & 0x1000000000000);
+    }
+    else {
+      Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+      UShort_t* buf2u = (UShort_t*) buf2;
+      pulse_vect::iterator ipls =
+	evt->pulses.insert(evt->pulses.end(),PulseClass());
+      ipls->Peaks.push_back(peak_type());
+      peak_type *pk = &ipls->Peaks.back();
+      pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+      pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01;
+      pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+      ipls->Chan = buf2[3];
+      if (opt.St[ipls->Chan] && pk->Time < evt->T0) {
+	evt->T0=pk->Time;
+      }
+    }
+
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+  Blist->front().State=123;
+
+} //decode79
 
 void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
   //Decode78 - the same as 77, but different factors for Time and Width
@@ -4819,7 +4924,7 @@ void CRS::Fill_Dec77(EventClass* evt) {
 } //Fill_Dec77
 
 void CRS::Fill_Dec78(EventClass* evt) {
-  //Decode78 - the same as 77, but different factors for Time and Width
+  //Fill_Dec78 - the same as 77, but different factors for Time and Width
 
   // fill_dec is not thread safe!!!
   //format of decoded data:
@@ -4862,6 +4967,60 @@ void CRS::Fill_Dec78(EventClass* evt) {
   }
 
 } //Fill_Dec78
+
+void CRS::Fill_Dec79(EventClass* evt) {
+  //Fill_Dec79 - the same as 78, but different factor for Area
+
+  // fill_dec is not thread safe!!!
+  //format of decoded data:
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - State
+  // 2) N 8-byte words, each containing one peak
+  //    1st (lowest) 2 bytes - (unsigned) Area*5+1
+  //    2 bytes - Time*100
+  //    2 bytes - Width*1000
+  //    1 byte - channel
+
+  *DecBuf8 = 1;
+  *DecBuf8<<=63;
+  *DecBuf8 |= evt->Tstmp & sixbytes;
+  if (evt->State) {
+    *DecBuf8 |= 0x1000000000000;
+  }
+
+  ++DecBuf8;
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+      *DecBuf8=0;
+      Short_t* Decbuf2 = (Short_t*) DecBuf8;
+      UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
+      if (pk->Area<0) {
+	*Decbuf2u = 0;
+      }
+      else if (pk->Area>13106){
+	*Decbuf2u = 65535;
+      }
+      else {
+	*Decbuf2u = pk->Area*5+1;
+      }
+      Decbuf2[1] = pk->Time*100;
+      Decbuf2[2] = pk->Width*1000;
+      Decbuf2[3] = evt->pulses[i].Chan;
+      ++DecBuf8;
+    }
+  }
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    Flush_Dec();
+    DecBuf8 = (ULong64_t*) DecBuf;
+  }
+
+} //Fill_Dec79
 
 void CRS::Flush_Dec() {
 

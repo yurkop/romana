@@ -1851,7 +1851,7 @@ void MainFrame::DoReadRoot() {
     strcpy(rname,fi.fFilename);
 
     readpar_root(rname);
-    //reset();
+    DoReset();
     //new_hist();
 
     readroot(rname);

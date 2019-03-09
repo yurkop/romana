@@ -19,6 +19,20 @@ struct pmap2 {
 
 
 //------------------------------------
+/*
+class HBuf {
+public:
+  HBuf() {};
+  virtual ~HBuf() {};
+
+  UShort_t mod;
+  UShort_t sz;
+
+  char *buf; //[sz]
+  ClassDef(HBuf, 1)
+};
+*/
+//------------------------------------
 class Hdef {
 public:
   Hdef();
@@ -65,7 +79,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 3)
+  ClassDef(Coptions, 114)
 };
 
 //------------------------------------
@@ -236,7 +250,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 113)
+  ClassDef(Toptions, 114)
 };
 
 //ClassImp(Toptions)
