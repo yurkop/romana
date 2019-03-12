@@ -2491,7 +2491,8 @@ ErrFrame::ErrFrame(const TGWindow *p,UInt_t w,UInt_t h)
   :ParDlg(p,w,h)
 {
 
-  fDock->SetWindowName("Errors");  
+  errflag=0;
+  fDock->SetWindowName("Errors");
   /*
     TGLayoutHints* fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
 
@@ -2557,6 +2558,13 @@ void ErrFrame::ErrUpdate() {
   for (int i=0;i<MAX_ERR;i++) {
     txt.Form("%lld",crs->errors[i]);
     fErr[i]->SetText(txt);
+    if (crs->errors[i]) {
+      errflag=1;
+      // if (errflag==0)
+      // 	errflag=1;
+      // else if (errfla==1)
+      // 	errflag=2;
+    }
   }
 }
 

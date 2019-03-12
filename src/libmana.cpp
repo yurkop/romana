@@ -1963,6 +1963,7 @@ void MainFrame::DoReset() {
     local_nch=opt.Nchan;
   }
 
+  ErrFrm->errflag=0;
   //else {
   HiFrm->HiReset();
   parpar->Update();
@@ -2196,6 +2197,8 @@ void MainFrame::DoTab(Int_t num) {
     if (!crs->b_acq)
       HiFrm->Update();
     //HiFrm->ReDraw();
+  }
+  else if (name.Contains("Errors",TString::kIgnoreCase)) {
   }
 }
 

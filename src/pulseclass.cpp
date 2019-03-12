@@ -723,6 +723,8 @@ void EventClass::Fill_Time_Extend(HMap* map) {
 void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   // if first -> check cuts and set cut_flag
   if (first) {
+    //int bin = map[ch]->hst->FindFixBin(x);
+    //map[ch]->hst->AddBinContent(bin);
     map[ch]->hst->Fill(x);
     if (opt.ncuts) {
       for (int i=1;i<opt.ncuts;i++) {
@@ -740,6 +742,8 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   else if (*(map[ch]->wrk)) {
     for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
+	//int bin = map[ch]->h_cuts[i]->hst->FindFixBin(x);
+	//map[ch]->h_cuts[i]->hst->AddBinContent(bin);
 	map[ch]->h_cuts[i]->hst->Fill(x);
       }
     }
@@ -815,6 +819,8 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
 
 void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
   if (first) {
+    //int bin = map->hst->FindFixBin(x,y);
+    //map->hst->AddBinContent(bin);
     map->hst->Fill(x,y);
     if (opt.ncuts) {
       for (int i=1;i<opt.ncuts;i++) {
@@ -831,8 +837,11 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
   }
   else if (*(map->wrk)) {
     for (int i=1;i<opt.ncuts;i++) {
-      if (hcl->cut_flag[i])
-	map->h_cuts[i]->hst->Fill(x,y);      
+      if (hcl->cut_flag[i]) {
+	//int bin = map->h_cuts[i]->hst->FindFixBin(x,y);
+	//map->h_cuts[i]->hst->AddBinContent(bin);
+	map->h_cuts[i]->hst->Fill(x,y);
+      }
     }
   }
 }

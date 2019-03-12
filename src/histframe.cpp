@@ -1520,7 +1520,7 @@ void HistFrame::DrawStack() {
 	  //cout << "cols: " << hcols[cc%nhcols] << endl;
 	  if (hh->GetDimension()==1) {
 	    hh->SetLineColor(hcols[cc%nhcols]);
-	    if (opt.b_norm) {	    
+	    if (opt.b_norm) {
 	      double sc = hh->GetNbinsX()/hh->Integral();
 	      hh->Scale(sc);
 	    }
@@ -1554,6 +1554,7 @@ void HistFrame::DrawStack() {
   double a1,a2;
   X_Slider(st_plot,a1,a2);
 
+  //cout << "x12: " << x1 << " " << x2 << " " << a1 << " " << a2 << endl;
   //determine y-axis ranges
 
   TIter next(st_list);
