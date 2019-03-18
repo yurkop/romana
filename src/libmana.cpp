@@ -420,11 +420,12 @@ int main(int argc, char **argv)
   //cout << "startdir: " << startdir << endl;
 
   cout << "----------------------------------------------" << endl;
-  cout << "Usage: ./romana.x [filename] [+parname] [-p parname] [-b]" << endl;
-  cout << "filename - read data and parameters from filename" << endl;
-  cout << "+parname or" << endl;
-  cout << "-p parname - read parameters from parname, parameters of filename are ignored" << endl;
-  cout << "-b - analyze file in batch mode (without gui) and exit" << endl;
+  cout << "Usage: ./romana.x [-h] [filename] [-p parname] [-b] [-f] " << endl;
+  cout << "-h: print usage and exit" << endl;
+  cout << "filename: read data and parameters from filename" << endl;
+  cout << "-p parname: read parameters from parname, parameters of filename are ignored" << endl;
+  cout << "-b: analyze file in batch mode (without gui) and exit" << endl;
+  cout << "-f: force overwriting .dec and/or .root files in batch mode (use carefully)" << endl;
   cout << "----------------------------------------------" << endl;
 
   strcpy(pr_name,argv[0]);
@@ -453,9 +454,16 @@ int main(int argc, char **argv)
       if (sarg[0]=='-') {
 	//cout << "sarg: " << i << " " << sarg << " " << (int) sarg[1] << endl;
 	switch (sarg[1]) {
+	case 'h':
+	case 'H':
+	  exit(0);
 	case 'b':
 	case 'B':
 	  crs->batch=true;
+	  continue;
+	case 'f':
+	case 'F':
+
 	  continue;
 	case 'p':
 	case 'P':
@@ -984,6 +992,10 @@ bool TestFile() {
   crs->decname.append(".dec");
   crs->rootname.append(".root");
 
+  // cout << "rawname: " << crs->rawname << " " << opt.raw_write << endl;
+  // cout << "decname: " << crs->decname << " " << opt.dec_write << endl;
+  // cout << "rootname: " << crs->rootname << " " << opt.root_write << endl;
+  // exit(0);
   if (!crs->juststarted) return true;
 
   //EMsgBoxIcon icontype = kMBIconStop;
