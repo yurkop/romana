@@ -1271,6 +1271,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Area_Width2";
   AddLine_2d(frame2d,&opt.h_area_width2,tip1,label);
 
+  tip1= "2-dimensional histogram (Profilometer)";
+  label="Prof";
+  AddLine_prof(frame2d,&opt.h_prof,tip1,label);
+
   // tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
   // label="Area_Width3";
   // AddLine_2d(frame2d,&opt.h_area_width3,tip1,label);
@@ -1576,6 +1580,49 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
   hfr1->AddFrame(fLabel,com->LayLT2);
+}
+
+void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
+			   const char* tip, const char* label) {
+
+  double ww=90;
+  //char name[20];
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
+  //double zz;
+  int id;
+  //int id0;
+
+  //checkbutton
+  id = Plist.size()+1;
+  TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
+  //sprintf(name,"b_hist%d",id);
+  //chk_hist->SetName(name);
+  DoMap(chk_hist,&hd->b,p_chk,0);
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
+  hfr1->AddFrame(chk_hist,com->LayCC1);
+  //id0=id;
+
+  //hint
+  TGLabel* tt = new TGLabel(hfr1,"");
+  //TGTextEntry* tt = new TGTextEntry(hfr1," ", 0);
+  //tt->SetToolTipText("Min Max are taken from the corresponding 1d histograms");
+  tt->ChangeOptions(tt->GetOptions()|kFixedWidth);
+  tt->SetWidth(ww);
+  hfr1->AddFrame(tt,com->LayLT2);
+
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  //fLabel->SetWidth();
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText(tip);
+  fLabel->SetAlignment(kTextCenterY);
+
+  //TGLabel* fLabel = new TGLabel(hfr1, label);
+  //fLabel->SetToolTipText(tip);
+  hfr1->AddFrame(fLabel,com->LayLT6);
 }
 
 void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,

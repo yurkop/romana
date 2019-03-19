@@ -2464,6 +2464,7 @@ Common::Common() {
   LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
   LayLT4   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 11, 1, 1, 1);
   LayLT5   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 1);
+  LayLT6  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 150, 1, 1, 0);
  
   LayLE0   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY);
   LayLE1  = new TGLayoutHints(kLHintsLeft|kLHintsExpandY,3,0,0,0);

@@ -241,6 +241,34 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
 
 }
 
+void HClass::
+Make_prof(int npix, const char* dname, const char* name,
+	  const char* title, HMap* map[], Hdef* hd) {
+
+  if (!hd->b) return;
+
+  char name2[100];
+  char title2[100];
+
+  int nn = sqrt(npix);
+  for (int i=0;i<nn;i++) {
+    for (int j=0;j<nn;j++) {
+      sprintf(name2,"%s_%d_%d",name,i+1,j+1);
+      sprintf(title2,"%s_%d_%d%s",name,i+1,j+1,title);
+      //NameTitle(name2,title2,i,0,name,title);
+
+      int n1=8;
+      int n2=8;
+      TH2F* hh=new TH2F(name2,title2,n1,0.5,8.5,n2,0.5,8.5);
+
+      map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
+      map_list->Add(map[i]);
+      hist_list->Add(map[i]->hst);
+    }
+  }
+
+}
+
 void HClass::Make_a0a1(const char* dname, const char* name, const char* title,
 		     HMap* map[], Hdef* hd) {
 
@@ -414,8 +442,6 @@ void HClass::Make_hist() {
   //opt.cut_per[9*MAXCUTS+4]=17;
   
   //char title[100];
-  //char name[100];
-  //char title[100];
 
   memset(T_prev,0,sizeof(T_prev));
 
@@ -460,6 +486,7 @@ void HClass::Make_hist() {
   //Make_2d("Area_Width3","Area_Width3",";Channel;Width (a.u.)",m_area_width3,&opt.h_area_width3,&opt.h_area,&opt.h_width3);
   //Make_2d("Width_12","Width_12",";Width(a.u.);Width2(a.u.)",m_width_12,&opt.h_width_12,&opt.h_width,&opt.h_width2);
 
+  Make_prof(64,"Prof","Prof",";X_strip;Y_strip",m_prof,&opt.h_prof);
 
   b_formula=false;
   if (opt.ncuts)
@@ -468,21 +495,23 @@ void HClass::Make_hist() {
   //cout << "make_cuts3: " << endl;
   //cout << "hist_list: " << m_ampl[0]->h_cuts[0]->hst << endl;
   //hist_list->ls();
+
   /*
-    //Profilometer
-    for (int i=0; i<64; i++){
-      //sprintf(name,"Profile_strip%02d",i);
-      //sprintf(title,"Profile_strip%02d;X_strip;Y_strip",i);
-      h2_prof_strip[i] = new TH2F(name,title,8,0,8,8,0,8);
-    }
+  //Profilometer
+  char name[100];
+  char title[100];
+  for (int i=0; i<64; i++){
+    sprintf(name,"Profile_strip%02d",i);
+    sprintf(title,"Profile_strip%02d;X_strip;Y_strip",i);
+    h2_prof_strip[i] = new TH2F(name,title,8,0,8,8,0,8);
+  }
 
-    for (int i=0; i<64; i++){
-      //sprintf(name,"profile_real%02d",i);
-      //sprintf(title,"Profile_real%02d;X (mm);Y (mm)",i);
-      h2_prof_real[i] = new TH2F(name,title,8,0,120,8,0,120); 
-    }
-    */
-
+  for (int i=0; i<64; i++){
+    sprintf(name,"profile_real%02d",i);
+    sprintf(title,"Profile_real%02d;X (mm);Y (mm)",i);
+    h2_prof_real[i] = new TH2F(name,title,8,0,120,8,0,120); 
+  }
+  */
     /*
     //ibr2 - 2d
     if (cc) {

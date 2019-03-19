@@ -74,6 +74,7 @@ class HClass {
   HMap* m_area_time[MAX_CH];
   HMap* m_area_width[MAX_CH];
   HMap* m_area_width2[MAX_CH];
+  HMap* m_prof[64];
   //HMap* m_area_width3[MAX_CH];
   //HMap* m_width_12[MAX_CH];
 
@@ -111,6 +112,8 @@ class HClass {
    	       HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2);
   void Make_a0a1(const char* dname, const char* name, const char* title,
 	       HMap* map[], Hdef* hd);
+  void Make_prof(int npix,const char* dname,const char* name,
+		 const char* title,HMap* map[],Hdef* hd);
   void Make_hist();
   void Clone_Hist(HMap* map);
   void Remove_Clones(HMap* map);

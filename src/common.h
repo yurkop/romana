@@ -107,6 +107,9 @@ public:
   TGLayoutHints* LayLT5;
   TGLayoutHints* LayLT2;
   TGLayoutHints* LayLT3;
+
+  TGLayoutHints* LayLT6;
+
   TGLayoutHints* LayEE0;
 
   TGLayoutHints* LayET0;

@@ -1116,33 +1116,35 @@ void EventClass::FillHist(Bool_t first) {
     }
   */
 
-  /*
+  if (opt.h_prof.b) {
     int ax=0,ay=0,px=0,py=0;
     if (pulses.size()==4) {
-    for (UInt_t i=0;i<pulses.size();i++) {
-    int ch = pulses[i].Chan;
-    if (ch<8) { //prof_x
-    px=PROF::prof_ch[ch];
-    }
-    else if (ch<16) { //prof y
-    py=PROF::prof_ch[ch];
-    }
-    else if (ch<24) { //alpha y
-    ay=PROF::prof_ch[ch];
-    }
-    else { //alpha x
-    ax=PROF::prof_ch[ch];
-    }
-    }
+      for (UInt_t i=0;i<pulses.size();i++) {
+	int ch = pulses[i].Chan;
+	if (ch<8) { //prof_x
+	  px=PROF::prof_ch[ch];
+	}
+	else if (ch<16) { //prof y
+	  py=PROF::prof_ch[ch];
+	}
+	else if (ch<24) { //alpha y
+	  ay=PROF::prof_ch[ch];
+	}
+	else { //alpha x
+	  ax=PROF::prof_ch[ch];
+	}
+      }
 
-    int ch_alpha = ax + ay*8;
+      int ch_alpha = ax + ay*8;
 
-    //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
+      //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
 
-    hcl->h2_prof_strip[ch_alpha]->Fill(px,py);
-    hcl->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
+      Fill2d(first,hcl->m_prof[ch_alpha],px,py);
+
+      //hcl->h2_prof_strip[ch_alpha]->Fill(px,py);
+      //hcl->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
     }
-  */
+  }
 
   if (first) {
     // for (int i=0;i<opt.ncuts;i++) {

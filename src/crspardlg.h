@@ -155,6 +155,8 @@ public:
 		    const char* tip, const char* label);
   void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
+  void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
+		    const char* tip, const char* label);
   // void AddLine_hist(TGGroupFrame* frame, Bool_t* b1,
   // 		    Float_t *x1, Float_t *x2, Float_t *x3, 
   // 		    const char* tip, const char* label);
