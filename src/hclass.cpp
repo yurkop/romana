@@ -251,15 +251,14 @@ Make_prof(int npix, const char* dname, const char* name,
   char title2[100];
 
   int nn = sqrt(npix);
-  for (int i=0;i<nn;i++) {
-    for (int j=0;j<nn;j++) {
-      sprintf(name2,"%s_%d_%d",name,i+1,j+1);
-      sprintf(title2,"%s_%d_%d%s",name,i+1,j+1,title);
+  for (int j=nn-1;j>=0;j--) {
+    for (int k=0;k<nn;k++) {
+      sprintf(name2,"%s_%d_%d",name,k+1,j+1);
+      sprintf(title2,"%s_%d_%d%s",name,k+1,j+1,title);
       //NameTitle(name2,title2,i,0,name,title);
 
-      int n1=8;
-      int n2=8;
-      TH2F* hh=new TH2F(name2,title2,n1,0.5,8.5,n2,0.5,8.5);
+      int i=k+(nn-j-1)*nn;
+      TH2F* hh=new TH2F(name2,title2,nn,0,120,nn,0,120);
 
       map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
       map_list->Add(map[i]);
@@ -486,7 +485,7 @@ void HClass::Make_hist() {
   //Make_2d("Area_Width3","Area_Width3",";Channel;Width (a.u.)",m_area_width3,&opt.h_area_width3,&opt.h_area,&opt.h_width3);
   //Make_2d("Width_12","Width_12",";Width(a.u.);Width2(a.u.)",m_width_12,&opt.h_width_12,&opt.h_width,&opt.h_width2);
 
-  Make_prof(64,"Prof","Prof",";X_strip;Y_strip",m_prof,&opt.h_prof);
+  Make_prof(64,"Prof","Prof",";X (mm);Y (mm)",m_prof,&opt.h_prof);
 
   b_formula=false;
   if (opt.ncuts)

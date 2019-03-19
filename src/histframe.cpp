@@ -1651,7 +1651,7 @@ void HistFrame::DrawHist() {
   if (opt.b_stack)
     cv->Divide(1,1);
   else
-    cv->Divide(opt.xdiv,opt.ydiv);
+    cv->Divide(opt.xdiv,opt.ydiv,0.001,0.001);
 
   //cout << "DrawHist2: " << hlist->GetSize() << endl;
   int nn=1;

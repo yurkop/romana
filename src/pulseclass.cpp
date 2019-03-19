@@ -33,7 +33,7 @@ namespace PROF {
   const int prof_ch[32] = {
     0, 1, 2, 3, 4, 5, 6, 7,
     7, 6, 5, 4, 3, 2, 1, 0,
-    7, 5, 3, 1, 6, 4, 2, 0,
+    0, 2, 4, 6, 1, 3, 5, 7,
     0, 2, 4, 6, 1, 3, 5, 7
   };
 
@@ -1116,6 +1116,7 @@ void EventClass::FillHist(Bool_t first) {
     }
   */
 
+
   if (opt.h_prof.b) {
     int ax=0,ay=0,px=0,py=0;
     if (pulses.size()==4) {
@@ -1135,16 +1136,17 @@ void EventClass::FillHist(Bool_t first) {
 	}
       }
 
-      int ch_alpha = ax + ay*8;
+      int ch_alpha = ax + (8-ay-1)*8;
 
       //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
 
-      Fill2d(first,hcl->m_prof[ch_alpha],px,py);
+      Fill2d(first,hcl->m_prof[ch_alpha],px*15+1,py*15+1);
 
       //hcl->h2_prof_strip[ch_alpha]->Fill(px,py);
       //hcl->h2_prof_real[ch_alpha]->Fill(px*15,py*15);    
     }
   }
+
 
   if (first) {
     // for (int i=0;i<opt.ncuts;i++) {
