@@ -349,7 +349,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 				TGNumberFormat::kNESInteger,
 				TGNumberFormat::kNEAAnyNumber,
 				TGNumberFormat::kNELLimitMinMax,
-				1,8);
+				1,16);
     fNum[i]->GetNumberEntry()->Connect("TextChanged(char*)", "HistFrame", this, "DoNum()");
     fNum[i]->GetNumberEntry()->SetToolTipText(ttip2[i]);
   }
@@ -1648,10 +1648,14 @@ void HistFrame::DrawHist() {
   TCanvas *cv=fEc->GetCanvas();
   cv->Clear();
   memset(padmap,0,sizeof(padmap));
+  double mg=0.001;
+  if (opt.xdiv+opt.ydiv>16)
+    mg=0;
   if (opt.b_stack)
     cv->Divide(1,1);
-  else
-    cv->Divide(opt.xdiv,opt.ydiv,0.001,0.001);
+  else {
+    cv->Divide(opt.xdiv,opt.ydiv,mg,mg);
+  }
 
   //cout << "DrawHist2: " << hlist->GetSize() << endl;
   int nn=1;
