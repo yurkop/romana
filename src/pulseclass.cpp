@@ -28,16 +28,16 @@ extern Coptions cpar;
 
 const double mks=0.001;
 
-namespace PROF {
+// namespace PROF {
 
-  const int prof_ch[32] = {
-    0, 1, 2, 3, 4, 5, 6, 7,
-    7, 6, 5, 4, 3, 2, 1, 0,
-    0, 2, 4, 6, 1, 3, 5, 7,
-    0, 2, 4, 6, 1, 3, 5, 7
-  };
+//   const int prof_ch[32] = {
+//     0, 1, 2, 3, 4, 5, 6, 7,
+//     7, 6, 5, 4, 3, 2, 1, 0,
+//     0, 2, 4, 6, 1, 3, 5, 7,
+//     0, 2, 4, 6, 1, 3, 5, 7
+//   };
 
-}
+// }
 
 //Double_t initcuts[MAXCUTS];
 

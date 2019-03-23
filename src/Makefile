@@ -6,6 +6,9 @@ OBJ_D = obj
 
 #LIB_D = ../libcrs
 
+HELP := \"$(abspath $(SRC_D)/help.pdf)\"
+CPPFLAGS += -DHELP=$(HELP)
+
 SRC := $(wildcard $(SRC_D)/*.cpp)
 OBJ := $(addprefix $(OBJ_D)/,$(notdir $(SRC:.cpp=.o)))
 #SRCL := $(wildcard $(LIB_D)/*.cpp)
@@ -23,14 +26,14 @@ ifdef TIMES
   CPPFLAGS += -D TIMES=1
 endif
 
-CPPFLAGS += $(LFS) -MD -MP -D LINUX=1 -I. #-I$(LIB_D)
+CPPFLAGS += $(LFS) -MD -MP -DLINUX=1 -I. #-I$(LIB_D)
 CXXFLAGS += -O3 -Wall -Wno-maybe-uninitialized #-Wextra
 #LDFLAGS += -lz -l cyusb -l usb-1.0
 LDFLAGS += -lz
 #SVNVER=\"$(shell svnversion)\"
 
 ifdef CYUSB_ROOT
-CPPFLAGS += -D CYUSB=1
+CPPFLAGS += -DCYUSB=1
 LDFLAGS += -l cyusb -l usb-1.0
 endif
 

@@ -326,6 +326,9 @@ Toptions::Toptions() {
   Flpath=10;
   TofZero=0;
 
+  prof_nx=8;
+  prof_ny=8;
+
   Tstart=0;
   Tstop=0;
 

@@ -78,6 +78,7 @@ enum MENU_COM {
   M_RESET_USB,
   M_EXPORT,
   M_FILE_EXIT,
+  M_EDIT_CHMAP,
   M_HELP,
 };
 
@@ -108,7 +109,7 @@ public:
   TGLayoutHints* LayLT2;
   TGLayoutHints* LayLT3;
 
-  TGLayoutHints* LayLT6;
+  //TGLayoutHints* LayLT6;
 
   TGLayoutHints* LayEE0;
 

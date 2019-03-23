@@ -196,6 +196,10 @@ public:
   Float_t Flpath;
   Float_t TofZero;
 
+  Int_t prof_nx;
+  Int_t prof_ny;
+  Int_t 
+
   Int_t num_events;
   Int_t num_buf; //number of buffers to analyze in DoNbuf
 

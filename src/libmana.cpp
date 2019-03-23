@@ -1071,7 +1071,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fMenuBar = new TGMenuBar(this, 35, 50, kHorizontalFrame);
 
-  fMenuFile = new TGPopupMenu(gClient->GetRoot());
+  TGPopupMenu* fMenuFile = new TGPopupMenu(gClient->GetRoot());
 
   fMenuFile->AddEntry("Read Parameters", M_READINIT);
   fMenuFile->AddEntry("Save Parameters", M_SAVEINIT);
@@ -1095,15 +1095,23 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
+  fMenuBar->AddPopup("&File", fMenuFile, 
+		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
-  fMenuHelp = new TGPopupMenu(gClient->GetRoot());
+  TGPopupMenu* fMenuProf = new TGPopupMenu(gClient->GetRoot());
+  fMenuProf->AddEntry("Edit Ing-27 channel map", M_EDIT_CHMAP);
+
+  fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
+		     "HandleMenu(Int_t)");
+
+  fMenuBar->AddPopup("&Profilometer", fMenuProf, 
+  		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
+
+  TGPopupMenu* fMenuHelp = new TGPopupMenu(gClient->GetRoot());
   fMenuHelp->AddEntry("Display Help file", M_HELP);
   //fMenuHelp->AddEntry("Test", M_TEST);
   fMenuHelp->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
-
-  fMenuBar->AddPopup("&File", fMenuFile, 
-		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
   /*
     fMenuBar->AddPopup("&Options", fMenuOptions, 
@@ -1781,7 +1789,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 
   //printf("TGFile:\n");
 
-  new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
+  new TGFileDialog(gClient->GetRoot(), this, nn, &fi);
 
   if (fi.fFilename != NULL) {
     strcpy(pname,fi.fFilename);
@@ -2147,7 +2155,7 @@ void MainFrame::DoSave() {
   fi.fFilename  = StrDup(s_name.c_str());
 
   //TGFileDialog *gfsave = 
-  new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
+  new TGFileDialog(gClient->GetRoot(), this, kFDSave, &fi);
 
   if (fi.fFilename) {
     Int_t retval=kMBOk;
@@ -2355,10 +2363,18 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
     //break;
 
+  case M_EDIT_CHMAP:
+    {
+      cout << "ed: " << endl;
+      Editor *ed = new Editor(this, 600, 400);
+      //ed->LoadBuffer(editortxt1);
+      ed->Popup();
+    }
+    break;
   case M_HELP:
 
     strcpy(command,"xdg-open ");
-    strcat(command,"src/help.pdf");
+    strcat(command,HELP);
     status = system( command );
     if (status == -1) {
       cout << "Return value of system(command): " << status << endl;
@@ -2464,7 +2480,7 @@ Common::Common() {
   LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
   LayLT4   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 11, 1, 1, 1);
   LayLT5   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 1);
-  LayLT6  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 150, 1, 1, 0);
+  //LayLT6  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 150, 1, 1, 0);
  
   LayLE0   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY);
   LayLE1  = new TGLayoutHints(kLHintsLeft|kLHintsExpandY,3,0,0,0);
@@ -2720,4 +2736,129 @@ void TGMatrixLayout2::SavePrimitive(ostream &out, Option_t *)
       << fSep << ","
       << fHints <<")";
 
+}
+
+
+Editor::Editor(const TGWindow *main, UInt_t w, UInt_t h)
+{
+   // Create an editor in a dialog.
+
+   fMain = new TGTransientFrame(gClient->GetRoot(), main, w, h);
+   fMain->Connect("CloseWindow()", "Editor", this, "CloseWindow()");
+   fMain->DontCallClose(); // to avoid double deletions.
+
+   // use hierarchical cleaning
+   fMain->SetCleanup(kDeepCleanup);
+
+   fEdit = new TGTextEdit(fMain, w, h, kSunkenFrame | kDoubleBorder);
+   fL1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3);
+   fMain->AddFrame(fEdit, fL1);
+   fEdit->Connect("Opened()", "Editor", this, "DoOpen()");
+   fEdit->Connect("Saved()",  "Editor", this, "DoSave()");
+   fEdit->Connect("Closed()", "Editor", this, "DoClose()");
+
+   // set selected text colors
+   Pixel_t pxl;
+   gClient->GetColorByName("#3399ff", pxl);
+   fEdit->SetSelectBack(pxl);
+   fEdit->SetSelectFore(TGFrame::GetWhitePixel());
+
+   fOK = new TGTextButton(fMain, "  &OK  ");
+   fOK->Connect("Clicked()", "Editor", this, "DoOK()");
+   fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
+   fMain->AddFrame(fOK, fL2);
+
+   SetTitle();
+
+   fMain->MapSubwindows();
+
+   fMain->Resize();
+
+   // editor covers right half of parent window
+   fMain->CenterOnParent(kTRUE, TGTransientFrame::kRight);
+}
+
+Editor::~Editor()
+{
+   // Delete editor dialog.
+
+   fMain->DeleteWindow();  // deletes fMain
+}
+
+void Editor::SetTitle()
+{
+   // Set title in editor window.
+
+   TGText *txt = GetEditor()->GetText();
+   Bool_t untitled = !strlen(txt->GetFileName()) ? kTRUE : kFALSE;
+
+   char title[256];
+   if (untitled)
+      sprintf(title, "ROOT Editor - Untitled");
+   else
+      sprintf(title, "ROOT Editor - %s", txt->GetFileName());
+
+   fMain->SetWindowName(title);
+   fMain->SetIconName(title);
+}
+
+void Editor::Popup()
+{
+   // Show editor.
+
+   fMain->MapWindow();
+}
+
+void Editor::LoadBuffer(const char *buffer)
+{
+   // Load a text buffer in the editor.
+
+   fEdit->LoadBuffer(buffer);
+}
+
+void Editor::LoadFile(const char *file)
+{
+   // Load a file in the editor.
+
+   fEdit->LoadFile(file);
+}
+
+void Editor::AddBuffer(const  char *buffer)
+{
+   // Add text to the editor.
+
+   TGText txt;
+   txt.LoadBuffer(buffer);
+   fEdit->AddText(&txt);
+}
+
+void Editor::CloseWindow()
+{
+   // Called when closed via window manager action.
+
+   delete this;
+}
+
+void Editor::DoOK()
+{
+   // Handle ok button.
+
+   CloseWindow();
+}
+
+void Editor::DoOpen()
+{
+   SetTitle();
+}
+
+void Editor::DoSave()
+{
+   SetTitle();
+}
+
+void Editor::DoClose()
+{
+   // Handle close button.
+
+   CloseWindow();
 }

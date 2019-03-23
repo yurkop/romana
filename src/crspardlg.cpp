@@ -1239,6 +1239,10 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
 
 
+  tip1= "2-dimensional histogram (Profilometer)";
+  label="Profilometer";
+  AddLine_prof(frame2d,&opt.h_prof,tip1,label);
+
   tip1= "2-dimensional histogram (area0-area1), calibrated (see Channels->EM for calibration)";
   label="A0A1";
   AddLine_hist(frame2d,&opt.h_a0a1,tip1,label);
@@ -1270,10 +1274,6 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   tip1= "2-dimensional histogram (Area_Width2)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Width2";
   AddLine_2d(frame2d,&opt.h_area_width2,tip1,label);
-
-  tip1= "2-dimensional histogram (Profilometer)";
-  label="Prof";
-  AddLine_prof(frame2d,&opt.h_prof,tip1,label);
 
   // tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
   // label="Area_Width3";
@@ -1515,7 +1515,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 			   const char* tip, const char* label) {
 
   double ww1=50;
-  double ww=90;
+  //double ww=90;
   //char name[20];
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
@@ -1562,13 +1562,11 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 				   "DoNum()");
   hfr1->AddFrame(fNum1,com->LayLT2);
 
-  //hint
-  TGLabel* tt = new TGLabel(hfr1,"");
-  //TGTextEntry* tt = new TGTextEntry(hfr1," ", 0);
-  //tt->SetToolTipText("Min Max are taken from the corresponding 1d histograms");
-  tt->ChangeOptions(tt->GetOptions()|kFixedWidth);
-  tt->SetWidth(ww);
-  hfr1->AddFrame(tt,com->LayLT2);
+  // - just to take space
+  // TGLabel* tt = new TGLabel(hfr1,"");
+  // tt->ChangeOptions(tt->GetOptions()|kFixedWidth);
+  // tt->SetWidth(ww);
+  // hfr1->AddFrame(tt,com->LayLT2);
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
   //fLabel->SetWidth();
@@ -1585,8 +1583,10 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 			   const char* tip, const char* label) {
 
-  double ww=90;
+  double ww1=40;
+  //double ww=90;
   //char name[20];
+  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1);
@@ -1605,13 +1605,32 @@ void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
   hfr1->AddFrame(chk_hist,com->LayCC1);
   //id0=id;
 
-  //hint
-  TGLabel* tt = new TGLabel(hfr1,"");
-  //TGTextEntry* tt = new TGTextEntry(hfr1," ", 0);
-  //tt->SetToolTipText("Min Max are taken from the corresponding 1d histograms");
-  tt->ChangeOptions(tt->GetOptions()|kFixedWidth);
-  tt->SetWidth(ww);
-  hfr1->AddFrame(tt,com->LayLT2);
+
+  //NX (x-axis)
+  id = Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_int, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   lim,1,16);
+  DoMap(fNum1->GetNumberEntry(),&opt.prof_nx,p_inum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of X-strips from ING-27");
+  fNum1->SetWidth(ww1);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoNum()");
+  hfr1->AddFrame(fNum1,com->LayLT2);
+
+  //NY (y-axis)
+  id = Plist.size()+1;
+  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_int, 
+			    TGNumberFormat::kNEAAnyNumber,
+			    lim,1,16);
+  DoMap(fNum1->GetNumberEntry(),&opt.prof_ny,p_inum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of Y-strips from ING-27");
+  fNum1->SetWidth(ww1);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoNum()");
+  hfr1->AddFrame(fNum1,com->LayLT2);
+
+
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
   //fLabel->SetWidth();
@@ -1622,7 +1641,7 @@ void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
-  hfr1->AddFrame(fLabel,com->LayLT6);
+  hfr1->AddFrame(fLabel,com->LayLT2);
 }
 
 void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,
