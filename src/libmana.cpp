@@ -17,6 +17,7 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 //#include <TTree.h>
 #include <TClass.h>
@@ -2365,8 +2366,9 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
   case M_EDIT_CHMAP:
     {
-      cout << "ed: " << endl;
-      Editor *ed = new Editor(this, 600, 400);
+      //cout << "ed: " << endl;
+      Editor *ed = new Editor(this, 200, 400);
+      ed->LoadPar();
       //ed->LoadBuffer(editortxt1);
       ed->Popup();
     }
@@ -2741,124 +2743,160 @@ void TGMatrixLayout2::SavePrimitive(ostream &out, Option_t *)
 
 Editor::Editor(const TGWindow *main, UInt_t w, UInt_t h)
 {
-   // Create an editor in a dialog.
+  // Create an editor in a dialog.
 
-   fMain = new TGTransientFrame(gClient->GetRoot(), main, w, h);
-   fMain->Connect("CloseWindow()", "Editor", this, "CloseWindow()");
-   fMain->DontCallClose(); // to avoid double deletions.
+  str = new TString();
 
-   // use hierarchical cleaning
-   fMain->SetCleanup(kDeepCleanup);
+  fMain = new TGTransientFrame(gClient->GetRoot(), main, w, h);
+  fMain->Connect("CloseWindow()", "Editor", this, "CloseWindow()");
+  fMain->DontCallClose(); // to avoid double deletions.
 
-   fEdit = new TGTextEdit(fMain, w, h, kSunkenFrame | kDoubleBorder);
-   fL1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3);
-   fMain->AddFrame(fEdit, fL1);
-   fEdit->Connect("Opened()", "Editor", this, "DoOpen()");
-   fEdit->Connect("Saved()",  "Editor", this, "DoSave()");
-   fEdit->Connect("Closed()", "Editor", this, "DoClose()");
+  // use hierarchical cleaning
+  fMain->SetCleanup(kDeepCleanup);
 
-   // set selected text colors
-   Pixel_t pxl;
-   gClient->GetColorByName("#3399ff", pxl);
-   fEdit->SetSelectBack(pxl);
-   fEdit->SetSelectFore(TGFrame::GetWhitePixel());
+  fEdit = new TGTextEdit(fMain, w, h, kSunkenFrame | kDoubleBorder);
+  fL1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3);
+  fMain->AddFrame(fEdit, fL1);
+  fEdit->Connect("Opened()", "Editor", this, "DoOpen()");
+  fEdit->Connect("Saved()",  "Editor", this, "DoSave()");
+  fEdit->Connect("Closed()", "Editor", this, "DoClose()");
 
-   fOK = new TGTextButton(fMain, "  &OK  ");
-   fOK->Connect("Clicked()", "Editor", this, "DoOK()");
-   fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
-   fMain->AddFrame(fOK, fL2);
+  // set selected text colors
+  Pixel_t pxl;
+  gClient->GetColorByName("#3399ff", pxl);
+  fEdit->SetSelectBack(pxl);
+  fEdit->SetSelectFore(TGFrame::GetWhitePixel());
 
-   SetTitle();
+  // TGTextButton* fRead = new TGTextButton(fMain, "  &Read  ");
+  // fRead->Connect("Clicked()", "Editor", this, "DoOpen()");
+  // fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
+  // fMain->AddFrame(fRead, fL2);
 
-   fMain->MapSubwindows();
+  TGTextButton* fOK = new TGTextButton(fMain, "  &OK  ");
+  fOK->Connect("Clicked()", "Editor", this, "DoOK()");
+  fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
+  fMain->AddFrame(fOK, fL2);
 
-   fMain->Resize();
+  SetTitle();
 
-   // editor covers right half of parent window
-   fMain->CenterOnParent(kTRUE, TGTransientFrame::kRight);
+  fMain->MapSubwindows();
+
+  fMain->Resize();
+
+  // editor covers right half of parent window
+  fMain->CenterOnParent(kTRUE, TGTransientFrame::kRight);
 }
 
 Editor::~Editor()
 {
-   // Delete editor dialog.
+  // Delete editor dialog.
 
-   fMain->DeleteWindow();  // deletes fMain
+  fMain->DeleteWindow();  // deletes fMain
 }
 
 void Editor::SetTitle()
 {
-   // Set title in editor window.
+  // Set title in editor window.
 
-   TGText *txt = GetEditor()->GetText();
-   Bool_t untitled = !strlen(txt->GetFileName()) ? kTRUE : kFALSE;
+  TGText *txt = GetEditor()->GetText();
+  Bool_t untitled = !strlen(txt->GetFileName()) ? kTRUE : kFALSE;
 
-   char title[256];
-   if (untitled)
-      sprintf(title, "ROOT Editor - Untitled");
-   else
-      sprintf(title, "ROOT Editor - %s", txt->GetFileName());
+  char title[256];
+  if (untitled)
+    sprintf(title, "Channel map");
+  else
+    sprintf(title, "%s", txt->GetFileName());
 
-   fMain->SetWindowName(title);
-   fMain->SetIconName(title);
+  fMain->SetWindowName(title);
+  fMain->SetIconName(title);
 }
 
 void Editor::Popup()
 {
-   // Show editor.
+  // Show editor.
 
-   fMain->MapWindow();
+  fMain->MapWindow();
 }
 
-void Editor::LoadBuffer(const char *buffer)
-{
-   // Load a text buffer in the editor.
+// void Editor::LoadBuffer(const char *buffer)
+// {
+//   // Load a text buffer in the editor.
 
-   fEdit->LoadBuffer(buffer);
-}
+//   fEdit->LoadBuffer(buffer);
+// }
 
 void Editor::LoadFile(const char *file)
 {
-   // Load a file in the editor.
-
-   fEdit->LoadFile(file);
+  // Load a file in the editor.
+  fEdit->LoadFile(file);
 }
 
-void Editor::AddBuffer(const  char *buffer)
+void Editor::LoadPar()
 {
-   // Add text to the editor.
-
-   TGText txt;
-   txt.LoadBuffer(buffer);
-   fEdit->AddText(&txt);
+  char ss[100];
+  //fEdit->LoadBuffer("# Lines starting with # are comments");
+  fEdit->LoadBuffer("#Ing  N X-ch Y-ch");
+  for (int i=0;i<16;i++) {
+    sprintf(ss,"Ing  %2d %2d %2d",i,opt.Ing_x[i],opt.Ing_y[i]);
+    fEdit->AddLine(ss);
+  }
+  fEdit->AddLine("#Prof N X-ch Y-ch");
+  //fEdit->AddLine("#");
+  for (int i=0;i<8;i++) {
+    sprintf(ss,"Prof %2d %2d %2d",i,opt.Prof_x[i],opt.Prof_y[i]);
+    fEdit->AddLine(ss);
+  }
 }
 
 void Editor::CloseWindow()
 {
-   // Called when closed via window manager action.
+  // Called when closed via window manager action.
 
-   delete this;
+  delete this;
 }
 
 void Editor::DoOK()
 {
-   // Handle ok button.
+  // Handle ok button.
 
-   CloseWindow();
+  TGText* txt = fEdit->GetText();
+  //cout << txt->RowCount() << endl;
+  for (int i=0;i<txt->RowCount();i++) {
+    char* chr = txt->GetLine(TGLongPosition(0,i),100);
+    if (chr) {
+      std::stringstream ss(chr);
+      TString ts;
+      int j,xx,yy;
+      ss >> ts >> j >> xx >> yy;
+      //cout << i << " " << chr << " " << ts << " " << a << " " << b << " " << c << endl;
+      delete chr;
+      if (ts.EqualTo("Ing",TString::kIgnoreCase) && j>=0 && j<16) {
+	opt.Ing_x[j]=xx;
+	opt.Ing_y[j]=yy;
+      }
+      else if (ts.EqualTo("Prof",TString::kIgnoreCase) && j>=0 && j<8) {
+	opt.Prof_x[j]=xx;
+	opt.Prof_y[j]=yy;
+      }
+    }
+  }
+
+  CloseWindow();
 }
 
 void Editor::DoOpen()
 {
-   SetTitle();
+  SetTitle();
 }
 
 void Editor::DoSave()
 {
-   SetTitle();
+  SetTitle();
 }
 
 void Editor::DoClose()
 {
-   // Handle close button.
+  // Handle close button.
 
-   CloseWindow();
+  CloseWindow();
 }

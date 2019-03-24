@@ -29,7 +29,7 @@ const int NGRP=4; //number of groups of channels
 
 const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to nr-1 of bits in hmap::bitwk; 
 const int MAX_PCUTS=11; //maximal number of points in cutG
-const int MAX_PADS=64; //maximal number of sub-pads in histframe
+const int MAX_PADS=256; //maximal number of sub-pads in histframe
 
 const int MAX_ERR=5; //maximal number of error types;
 

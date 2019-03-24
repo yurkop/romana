@@ -198,7 +198,12 @@ public:
 
   Int_t prof_nx;
   Int_t prof_ny;
-  Int_t 
+  Int_t Ing_x[16];
+  Int_t Ing_y[16];
+  Int_t Prof_x[8];
+  Int_t Prof_y[8];
+
+  //Int_t prof_ch[MAX_CH];
 
   Int_t num_events;
   Int_t num_buf; //number of buffers to analyze in DoNbuf

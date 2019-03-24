@@ -44,6 +44,38 @@ void setbit(int &n, int bit, int set);
 bool TestFile();
 
 //-----------------------------------------------
+class Editor {
+
+private:
+   TGTransientFrame *fMain;   // main frame of this widget
+   TGTextEdit       *fEdit;   // text edit widget
+   TGLayoutHints    *fL1;     // layout of TGTextEdit
+   TGLayoutHints    *fL2;     // layout of OK button
+
+   TString          *str;
+public:
+   Editor(const TGWindow *main, UInt_t w, UInt_t h);
+   virtual ~Editor();
+
+   void   LoadFile(const char *file);
+   void   LoadPar();
+   //void   LoadBuffer(const char *buffer);
+   //void   AddBuffer(const char *buffer);
+
+   TGTextEdit *GetEditor() const { return fEdit; }
+
+   void   SetTitle();
+   void   Popup();
+
+   // slots
+   void   CloseWindow();
+   void   DoOK();
+   void   DoOpen();
+   void   DoSave();
+   void   DoClose();
+};
+
+//-----------------------------------------------
 class MainFrame : public TGMainFrame {
 
   //public:
@@ -157,36 +189,5 @@ public:
 
    ClassDef(TGMatrixLayout2,0)  // Matrix layout manager
 };
-
-class Editor {
-
-private:
-   TGTransientFrame *fMain;   // main frame of this widget
-   TGTextEdit       *fEdit;   // text edit widget
-   TGTextButton     *fOK;     // OK button
-   TGLayoutHints    *fL1;     // layout of TGTextEdit
-   TGLayoutHints    *fL2;     // layout of OK button
-
-public:
-   Editor(const TGWindow *main, UInt_t w, UInt_t h);
-   virtual ~Editor();
-
-   void   LoadFile(const char *file);
-   void   LoadBuffer(const char *buffer);
-   void   AddBuffer(const char *buffer);
-
-   TGTextEdit *GetEditor() const { return fEdit; }
-
-   void   SetTitle();
-   void   Popup();
-
-   // slots
-   void   CloseWindow();
-   void   DoOK();
-   void   DoOpen();
-   void   DoSave();
-   void   DoClose();
-};
-
 
 #endif

@@ -237,6 +237,7 @@ RQ_OBJECT("CRS")
   //2 - channel mismatch
   //3 - bad frmt
 
+  Int_t prof_ch[MAX_CH];
   //--------functions---------
 
   //void Dummy_trd();
@@ -272,6 +273,8 @@ RQ_OBJECT("CRS")
   void DoFopen(char* oname, int popt);
   int ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2);
   void SaveParGz(gzFile &ff, Short_t mod);
+  void DoProf(Int_t nn, Int_t *aa, Int_t off);
+  void Make_prof_ch();
 
   //void DoFAna();
   //void FAnalyze(bool nobatch);

@@ -2370,6 +2370,23 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
 
 }
 
+void CRS::DoProf(Int_t nn, Int_t *aa, Int_t off) {
+  if (aa[nn]>=0 && aa[nn]<MAX_CH) {
+    prof_ch[aa[nn]]=nn+off;
+  }
+}
+
+void CRS::Make_prof_ch() {
+  for (int i=0;i<8;i++) {
+    DoProf(i,opt.Prof_x,0);
+    DoProf(i,opt.Prof_y,10);
+  }
+  for (int i=0;i<16;i++) {
+    DoProf(i,opt.Ing_x,100);
+    DoProf(i,opt.Ing_y,10000);
+  }
+}
+
 /*
 int CRS::DoBuf() {
 
