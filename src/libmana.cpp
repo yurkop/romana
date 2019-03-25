@@ -2881,17 +2881,28 @@ void Editor::DoOK()
     }
   }
 
+  crs->Make_prof_ch();
   CloseWindow();
 }
 
 void Editor::DoOpen()
 {
   SetTitle();
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
 }
 
 void Editor::DoSave()
 {
   SetTitle();
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
 }
 
 void Editor::DoClose()

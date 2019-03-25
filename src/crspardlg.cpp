@@ -1630,6 +1630,34 @@ void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 				   "DoNum()");
   hfr1->AddFrame(fNum1,com->LayLT2);
 
+  //x-bins
+  hd->bins=8;
+  id = Plist.size()+1;
+  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_int, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   lim,1,1000);
+  DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of X-bins in profilometer histograms");
+  fNum1->SetWidth(ww1);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoNum()");
+  hfr1->AddFrame(fNum1,com->LayLT2);
+  fNum1->SetState(false);
+
+  //y-bins
+  hd->bins2=8;
+  id = Plist.size()+1;
+  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_int, 
+			    TGNumberFormat::kNEAAnyNumber,
+			    lim,1,1000);
+  DoMap(fNum1->GetNumberEntry(),&hd->bins2,p_fnum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of Y-bins in profilometer histograms");
+  fNum1->SetWidth(ww1);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoNum()");
+  hfr1->AddFrame(fNum1,com->LayLT2);
+  fNum1->SetState(false);
+
 
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);

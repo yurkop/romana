@@ -2303,7 +2303,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
       opt.chtype[i]=1;
     }
   }
-
+  Make_prof_ch();
 
   if (m1) {
     //T_start = opt.F_start;
@@ -2377,6 +2377,10 @@ void CRS::DoProf(Int_t nn, Int_t *aa, Int_t off) {
 }
 
 void CRS::Make_prof_ch() {
+  for (int i=0;i<MAX_CH;i++) {
+    prof_ch[i]=-1;
+  }
+
   for (int i=0;i<8;i++) {
     DoProf(i,opt.Prof_x,0);
     DoProf(i,opt.Prof_y,10);
@@ -2384,6 +2388,10 @@ void CRS::Make_prof_ch() {
   for (int i=0;i<16;i++) {
     DoProf(i,opt.Ing_x,100);
     DoProf(i,opt.Ing_y,10000);
+  }
+
+  for (int i=0;i<MAX_CH;i++) {
+    cout << "Prof: " << i << " " << prof_ch[i] << endl;
   }
 }
 
