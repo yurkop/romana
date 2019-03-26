@@ -1289,8 +1289,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //cout << "Maketabs2: " << endl;
   //fremake=true;
 
-  TGTabElement* tab6 = fTab->GetTabTab("Errors");
-  tab6->SetBackgroundColor(com->fRed);
+  //TGTabElement* tab6 = fTab->GetTabTab("Errors");
+  //tab6->SetBackgroundColor(com->fRed);
   //cout << "tab6: " << tab6 << endl;
   //exit(1);
   //MakeTabs();
@@ -1985,7 +1985,7 @@ void MainFrame::DoReset() {
     local_nch=opt.Nchan;
   }
 
-  ErrFrm->errflag=0;
+  ErrFrm->Reset();
   //else {
   HiFrm->HiReset();
   parpar->Update();

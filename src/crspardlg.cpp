@@ -2598,7 +2598,7 @@ ErrFrame::ErrFrame(const TGWindow *p,UInt_t w,UInt_t h)
   */
   
   TGCompositeFrame *fMain=fDock->GetContainer();
-  fMain->SetBackgroundColor(com->fRed10);
+  //fMain->SetBackgroundColor(com->fRed10);
   fMain->SetLayoutManager(new TGVerticalLayout(fMain));
   
   fCanvas1 = new TGCanvas(fMain,w,h);
@@ -2647,13 +2647,28 @@ ErrFrame::ErrFrame(const TGWindow *p,UInt_t w,UInt_t h)
 ErrFrame::~ErrFrame() {
 }
 
+void ErrFrame::Reset() {
+  errflag=0;
+  TGTabElement* tab6 = myM->fTab->GetTabTab("Errors");
+  tab6->SetBackgroundColor(15263976);
+  tab6->Resize();
+  tab6->Layout();
+  ErrUpdate();
+}
+
 void ErrFrame::ErrUpdate() {
   TGString txt;
+  //cout << "ErrUpdate: " << endl;
+
   for (int i=0;i<MAX_ERR;i++) {
     txt.Form("%lld",crs->errors[i]);
     fErr[i]->SetText(txt);
-    if (crs->errors[i]) {
+    if (crs->errors[i] && !errflag) {
       errflag=1;
+      TGTabElement* tab6 = myM->fTab->GetTabTab("Errors");
+      tab6->SetBackgroundColor(com->fRed);
+      tab6->Resize();
+      tab6->Layout();
       // if (errflag==0)
       // 	errflag=1;
       // else if (errfla==1)

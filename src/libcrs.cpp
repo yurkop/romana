@@ -2390,9 +2390,9 @@ void CRS::Make_prof_ch() {
     DoProf(i,opt.Ing_y,10000);
   }
 
-  for (int i=0;i<MAX_CH;i++) {
-    cout << "Prof: " << i << " " << prof_ch[i] << endl;
-  }
+  // for (int i=0;i<MAX_CH;i++) {
+  //   cout << "Prof: " << i << " " << prof_ch[i] << endl;
+  // }
 }
 
 /*
