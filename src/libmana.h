@@ -28,11 +28,11 @@ using namespace std;
 
 void debug_mess(bool cond, const char* mess, double par1, int par2=-9999);
 
-UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf);
-void BufToClass(const char* name, const char* varname, char* var, char* buf, int size);
-
 void SplitFilename(string str, string &folder, string &name);
 void SplitFilename(string str, string &folder, string &name, string &ext);
+
+UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf);
+void BufToClass(const char* name, const char* varname, char* var, char* buf, int size);
 
 void example();
 void saveroot(const char *name);

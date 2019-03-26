@@ -92,6 +92,17 @@ $(OBJ_D)/headerdict.cpp: utils/LinkDef.h
 gz_header: utils/gz_header.cpp $(OBJ_D)/headerdict.cpp
 	g++ $(CXXFLAGS) $(CPPFLAGS) -o gz_header.x utils/gz_header.cpp $(OBJ_D)/headerdict.cpp $(LDFLAGS)
 
+ifeq ($(VER2),5.) # root 5
+$(OBJ_D)/paramdict.cpp: utils/param.h utils/LinkDef.h
+	rootcint -f $(OBJ_D)/paramdict.cpp -c -p utils/param.h utils/LinkDef.h
+else # root 6+
+$(OBJ_D)/paramdict.cpp: utils/param.h utils/LinkDef.h
+	rootcling -f $(OBJ_D)/paramdict.cpp -s param.pcm -p utils/param.h utils/LinkDef.h
+endif
+
+param: $(OBJ_D)/paramdict.cpp utils/param.cpp $(SRC_D)/toptions.cpp
+	g++ $(CXXFLAGS) $(CPPFLAGS) -o param.x utils/param.cpp $(OBJ_D)/paramdict.cpp $(SRC_D)/toptions.cpp $(LDFLAGS)
+
 clean:
 	rm -f $(OBJ_D)/* $(SRC_D)/*~
 

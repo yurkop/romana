@@ -2,12 +2,14 @@
 #include "toptions.h"
 #include <TClass.h>
 #include <TSystem.h>
+#include <TDataMember.h>
 #include <cstdlib>
 
 extern Coptions cpar;
 using namespace std;
 
 extern TList listmap;
+extern int debug;
 
 Coptions::Coptions() {
   //ver = TClass::GetClass("Coptions")->GetClassVersion();

@@ -5,7 +5,7 @@
 #endif
 
 #include <signal.h>
-#include <malloc.h>
+//#include <malloc.h>
 
 #include "romana.h"
 
@@ -344,6 +344,7 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
     cout << "len: " << len << " " << sz << endl;
   
 }
+
 //--------------------------------
 
 void out_of_memory(void)

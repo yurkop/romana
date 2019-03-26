@@ -16,7 +16,7 @@ const int dstep = 10;
 #include <deque>
 #include <TGFrame.h>
 
-#include "pulseclass.h"
+//#include "pulseclass.h"
 
 //#define AVM16_MASK1 0x7ff00000  //to read new type of data
 #define AVM16_MASK1 0x00000000  //to read old type of data. Works also with new.
