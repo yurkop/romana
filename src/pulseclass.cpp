@@ -338,7 +338,8 @@ void PulseClass::PeakAna33() {
   //cout << "B2: " << pk->B1 << " " << pk->B2 << endl;
 
   if (pk->B1<0) pk->B1=0;
-  if (pk->B2<=pk->B1) pk->B2=pk->B1+1;
+  //if (pk->B2<=pk->B1) pk->B2=pk->B1+1;
+  if (pk->B2<=pk->B1) pk->B2=pk->B1; //base can be zero if B2==B1
   if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
   if (pk->P2<=pk->P1) {pk->P2=pk->P1+1; pk->Type|=P_B2;}
 
@@ -456,7 +457,7 @@ void PulseClass::PeakAna33() {
   if (nbkg)
     pk->Base/=nbkg;
   else {
-    cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+    //cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
   }
 
   int nn=0;

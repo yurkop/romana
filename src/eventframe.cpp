@@ -1194,15 +1194,19 @@ void EventFrame::ReDraw() {
 	    if (pulse->Peaks.size()) {
 	      char ss[256];
 	      peak_type *pk = &pulse->Peaks.back();
-	      sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f W2=%f",
-		      pulse->Chan,pk->Area,pk->Time,pk->Width,pk->Width2);
+	      // sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f W2=%f",
+	      // 	      pulse->Chan,pk->Area,pk->Time,pk->Width,pk->Width2);
+	      sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
+		      pulse->Chan,pk->Area,pk->Base,pk->Time,pk->Width);
+
 	      //tt.SetBBoxX1(0);
 	      //tt.SetBBoxX2(100);
 	      //tt.SetBBoxY1(0);
 	      //tt.SetBBoxY2(20);
 
 	      tt.SetTextAlign(0);
-	      tt.SetTextSize(0.03);
+	      double sz=0.025*ndiv;
+	      tt.SetTextSize(sz);
 	      tt.SetTextColor(chcol[pulse->Chan]);
 	      dd=0.74*2.0/32;
 
