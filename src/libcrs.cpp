@@ -4152,7 +4152,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
     }
     else if ((ch>=opt.Nchan) || (frmt && ch!=ipls.Chan)) {
       cout << "decode2: Bad channel: " << (int) ch
-	   << " " << (int) ipls.Chan << " " << frmt << endl;
+	   << " " << (int) ipls.Chan << " " << frmt << " " << ipls.sData.size() << endl;
       ipls.ptype|=P_BADCH;
 
       idx2++;
