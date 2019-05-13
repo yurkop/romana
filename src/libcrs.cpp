@@ -339,7 +339,7 @@ void *handle_decode(void *ctx) {
     case 75:
       crs->Decode75(dec_iread[ibuf]-1,ibuf);
       break;
-    case 2:
+    case 22:
       crs->Decode2(dec_iread[ibuf]-1,ibuf);
       break;
     case 1:
@@ -363,7 +363,7 @@ void *handle_decode(void *ctx) {
     // else if (crs->module==76) {
     //   crs->Decode76(dec_iread[ibuf]-1,ibuf);
     // }
-    // else if (crs->module==2) {
+    // else if (crs->module==22) {
     //   crs->Decode2(dec_iread[ibuf]-1,ibuf);
     // }
     // else if (crs->module==1) {
@@ -1124,7 +1124,7 @@ int CRS::Detect_device() {
 
   if (ver_po==0) { //serial Nr=3 -> crs2
     if (device_code==3) {
-      module=2;
+      module=22;
       chan_in_module=2;
       opt.Nchan=2;
       for (int j=0;j<chan_in_module;j++) {
@@ -1176,7 +1176,7 @@ int CRS::Detect_device() {
 
   cout << "module: " << module << " chan_in_module: " << chan_in_module << endl;
 
-  if (module>=2)
+  if (module>=22)
     Fmode=1;
 
   //cpar.InitPar(module);
@@ -1209,7 +1209,7 @@ int CRS::Detect_device() {
 int CRS::SetPar() {
 
   switch (module) {
-  case 2:
+  case 22:
     AllParameters2();
     break;
   case 32:
@@ -2153,7 +2153,7 @@ void CRS::DoReset() {
 
 void CRS::DoFopen(char* oname, int popt) {
   //popt: 1 - read opt from file; 0 - don't read opt from file
-  int tp=0; //1 - adcm raw; 0 - crs2/32/dec
+  int tp=0; //1 - adcm raw; 0 - crs2/32/dec; 2 - Ortec Lis
   //int bsize;
   //int boffset;
 
@@ -2170,6 +2170,9 @@ void CRS::DoFopen(char* oname, int popt) {
 
   if (TString(ext).EqualTo(".dat",TString::kIgnoreCase)) {
     tp=1;
+  }
+  else if (TString(ext).EqualTo(".lis",TString::kIgnoreCase)) {
+    tp=2;
   }
   else if (TString(ext).EqualTo(".gz",TString::kIgnoreCase)) {
     tp=0;
@@ -2200,20 +2203,7 @@ void CRS::DoFopen(char* oname, int popt) {
     return;
   }
 
-  if (tp) { //adcm raw
-    cout << "ADCM RAW File: " << Fname << endl;
-    //Fmode=2;
-    module=1;
-
-    cpar.InitPar(0);
-    //memcpy(&Pre,&cpar.preWr,sizeof(Pre));
-
-    // bsize=opt.rbuf_size*1024+4096;
-    // boffset=4096;
-    period=10;
-    //idx=0;
-  }
-  else { //crs32 or crs2 or dec
+  if (tp==0) { //crs32 or crs2 or dec
     //printhlist(7);
     if (ReadParGz(f_read,Fname,1,1,popt)) {
       gzclose(f_read);
@@ -2225,6 +2215,29 @@ void CRS::DoFopen(char* oname, int popt) {
     // opt.raw_write=false;
     // opt.dec_write=false;
     // opt.root_write=false;
+  }
+  else if (tp==1) { //adcm raw
+    cout << "ADCM RAW File: " << Fname << endl;
+    module=1;
+    cpar.InitPar(0);
+    period=10;
+  }
+  else if (tp==2) { //Ortec Lis
+    cout << "Ortec Lis File: " << Fname << endl;
+    module=3;
+    cpar.InitPar(0);
+    period=200;
+
+    char header[256];
+    gzread(f_read,header,256);
+
+    Int_t *fmt = (Int_t*) header;
+    Int_t *style = (Int_t*) &header[4];
+    Double_t *start_t = (Double_t*) &header[8];
+    char txt[80];
+    strncpy(txt,header+121,80);
+
+    printf("hdr: %d %d %f %s\n",*fmt,*style,*start_t,txt);
   }
 
   //boffset=1024*1024;
@@ -2251,7 +2264,7 @@ void CRS::DoFopen(char* oname, int popt) {
   //cout << "Dofopen2: " << endl;
   //nvp=0;
 
-  if (tp) { //adcm raw - determine durwr
+  if (tp==1) { //adcm raw - determine durwr
     // cout << "durwr1: " << nvp << " " << vv2->size() << endl;
     // DoBuf();
     // cout << "durwr2: " << nvp << " " << vv2->size() << endl;
@@ -2308,7 +2321,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   if (m1) {
     //T_start = opt.F_start;
     if (mod==2) {
-      module=2;
+      module=22;
       cout << "CRS2 File: " << Fname << " " << module << endl;
     }
     else if (mod>=32) {
@@ -2612,7 +2625,7 @@ void CRS::InitBuf() {
   else
     gl_Nbuf=8;
       
-  if (Fmode==1) { //module
+  if (Fmode==1) { //module is connected
     if (opt.usb_size<=1024) {
       tr_size=opt.usb_size*1024;
       MAXTRANS2=MAXTRANS7;
@@ -2923,7 +2936,7 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   case 75:
     crs->Decode75(dec_iread[ibuf]-1,ibuf);
     break;
-  case 2:
+  case 22:
     crs->Decode2(dec_iread[ibuf]-1,ibuf);
     break;
   case 1:
@@ -2942,7 +2955,7 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   // else if (crs->module==76) {
   //   Decode76(iread,ibuf);
   // }
-  // else if (module==2) {
+  // else if (module==22) {
   //   Decode2(iread,ibuf);
   // }
   // else if (module==1) {
@@ -3028,7 +3041,7 @@ void CRS::FindLast(UInt_t ibuf) {
     } //for i
     cout << "Error: no last event: " << ibuf << endl;
     break;
-  case 2:
+  case 22:
     for (int i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+1] & 0x70);

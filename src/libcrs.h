@@ -94,7 +94,6 @@ RQ_OBJECT("CRS")
 
   char raw_opt[5];
   char dec_opt[5];
-  Short_t Fmode; //0 - do nothing; 1 - CRS module online; 2 - file analysis
   char Fname[255];
 
   string rawname;
@@ -160,8 +159,11 @@ RQ_OBJECT("CRS")
   // 1 - after setting min. marker -> list can be cleaned if > ev_max
   // 2 - list is analyzed, but not cleaned (at the end of file etc)
 
+  Short_t Fmode; //0 - do nothing; 1 - CRS module online; 2 - file analysis
+
   Short_t module;
-  //1-ADCM raw, 2 - crs2; 32 - old crs32, 33 - new crs32 with dsp
+  //1-ADCM raw, 3 - ortec lis, 22 - crs2;
+  //32 - old crs32, 33 - new crs32 with dsp, 34 - new crs32
 
   Int_t type_ch[MAX_CH+MAX_TP]; //0-   4-11bit; 1-   2-16bit
   //Short_t ver_po;
