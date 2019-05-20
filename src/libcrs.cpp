@@ -4210,7 +4210,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
     }
 
     idx2++;
-  }
+  } //while
 
   //add last pulse to the list
   if (ipls.ptype==0) {
