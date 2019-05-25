@@ -1,4 +1,7 @@
 *~
+*.d
+*.so
+*.pcm
 /*
 !/src
 !/utils
