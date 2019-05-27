@@ -1,16 +1,13 @@
 /****************************************************************************
  *                                                                          *
- * df_decode.c: Sample decode program                                       *
- *                                                                          *
- * Compile: gcc -Wall -O2 df_decode.c -o df_decode                          *
+ * decoder.c: Sample decode program                                         *
+ * Compile: gcc -Wall -O2 decoder.c -o decoder.x                            *
  *                                                                          *
  ****************************************************************************/
 
 
 #define _LARGEFILE64_SOURCE
 #define _FILE_OFFSET_BITS 64
-
-//#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -136,6 +133,8 @@ size_t process_buf (unsigned char *buf, size_t len)
 
 int main (int argc, char *argv[])
 {
+
+
   int fd;
   struct stat statbuf;
   size_t maplen;

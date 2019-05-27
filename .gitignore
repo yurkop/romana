@@ -2,6 +2,7 @@
 *.d
 *.so
 *.pcm
+*.root
 /*
 !/src
 !/utils

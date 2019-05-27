@@ -141,13 +141,29 @@ RootClass::RootClass() {
 
   for (int i=0;i<=MAX_CH;i++) {
     sprintf(ss,"h_time_%02d",i);
-    h_energy[i] = new TH1F(ss,ss,4000,-200,200);
+    h_time[i] = new TH1F(ss,ss,4000,0,1000);
+  }
+
+  for (int i=0;i<=MAX_CH;i++) {
+    sprintf(ss,"h_tof_%02d",i);
+    h_tof[i] = new TH1F(ss,ss,4000,-200,200);
   }
 
 }
 //-----------------------------------
 void RootClass::FillHist(Event* ev) {
-  
+  h_mult->Fill(ev->peaks.size());
+  for (UInt_t i=0;i<ev->peaks.size();i++) {
+    int ch = ev->peaks[i].Chan;
+    if (ch<0 || ch>=MAX_CH) {
+      cout << "ch out of range: " << ch << endl;
+    }
+    else {
+      h_energy[ch]->Fill(ev->peaks[i].Area);
+      h_time[ch]->Fill(ev->Tstmp*1e-8);
+      h_tof[ch]->Fill(ev->peaks[i].Time);;
+    }
+  }
 }
 //-----------------------------------
 void RootClass::SaveHist(const char *name) {
