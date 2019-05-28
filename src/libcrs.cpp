@@ -2343,9 +2343,9 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   if (p2) {
     //cout << "false_gz: " << endl;
-    opt.raw_write=false;
-    opt.dec_write=false;
-    opt.root_write=false;
+    //opt.raw_write=false;
+    //opt.dec_write=false;
+    //opt.root_write=false;
   }
 
   if (HiFrm)

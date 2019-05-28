@@ -994,9 +994,9 @@ bool TestFile() {
   crs->decname.append(".dec");
   crs->rootname.append(".root");
 
-  // cout << "rawname: " << crs->rawname << " " << opt.raw_write << endl;
-  // cout << "decname: " << crs->decname << " " << opt.dec_write << endl;
-  // cout << "rootname: " << crs->rootname << " " << opt.root_write << endl;
+  cout << "rawname: " << crs->rawname << " " << opt.raw_write << endl;
+  cout << "decname: " << crs->decname << " " << opt.dec_write << endl;
+  cout << "rootname: " << crs->rootname << " " << opt.root_write << endl;
   // exit(0);
   if (!crs->juststarted) return true;
 
