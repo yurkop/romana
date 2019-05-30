@@ -59,9 +59,14 @@ void Process_event(Event* ev);
 void decoder(const char* fname) {
   const Long64_t sixbytes=0xFFFFFFFFFFFF;
   ULong64_t word;
+  UChar_t* w8 = (UChar_t*) &word;
   Event ev;
 
   gzFile ff = gzopen(fname,"rb");
+  if (!ff) {
+    cout << "Can't open file: " << fname << endl;
+    return;
+  }
 
   UShort_t sz;
   UShort_t mod;
@@ -82,7 +87,8 @@ void decoder(const char* fname) {
   int res=1;
   while (res) {
     res=gzread(ff,&word,8);
-    UChar_t frmt = word & 0x80; //event start bit
+
+    UChar_t frmt = w8[7] & 0x80; //event start bit
     if (frmt) { //event start
       if (ev.Tstmp>=0) { //if old event exists, analyze it
 	Process_event(&ev);
@@ -156,7 +162,7 @@ void RootClass::FillHist(Event* ev) {
   for (UInt_t i=0;i<ev->peaks.size();i++) {
     int ch = ev->peaks[i].Chan;
     if (ch<0 || ch>=MAX_CH) {
-      cout << "ch out of range: " << ch << endl;
+      cout << "ch out of range: " << ch << " " << ev->Tstmp << endl;
     }
     else {
       h_energy[ch]->Fill(ev->peaks[i].Area);

@@ -71,8 +71,7 @@ char* parname=(char*)"romana.par";;
 char* parname2=0;
 char* datfname=0;
 
-
-
+bool b_dec=false,b_root=false,b_force=false;
 
 char startdir[200];
 char pr_name[200];
@@ -422,12 +421,15 @@ int main(int argc, char **argv)
   //cout << "startdir: " << startdir << endl;
 
   cout << "----------------------------------------------" << endl;
-  cout << "Usage: ./romana.x [-h] [filename] [-p parname] [-b] [-f] " << endl;
+  cout << "Usage: romana [-h] [filename] [-p parname] [-b] [-d] [-r] [-f] " << endl;
   cout << "-h: print usage and exit" << endl;
   cout << "filename: read data and parameters from filename" << endl;
-  cout << "-p parname: read parameters from parname, parameters of filename are ignored" << endl;
+  cout << "-p parname: read parameters from parname, parameters from filename are ignored" << endl;
   cout << "-b: analyze file in batch mode (without gui) and exit" << endl;
-  cout << "-f: force overwriting .dec and/or .root files in batch mode (use carefully)" << endl;
+  cout << "-d (only in batch mode): create decoded .dec file in subdirectory Dec" << endl;
+  cout << "-r (only in batch mode): create .root file in subdirectory Root" << endl;
+  cout << "-f (only in batch mode): force overwriting .dec and/or .root files" << endl;
+  cout << "Options <Filename>, <Write raw/decoded/root data> are ignored in batch mode" << endl; 
   cout << "----------------------------------------------" << endl;
 
   strcpy(pr_name,argv[0]);
@@ -463,9 +465,17 @@ int main(int argc, char **argv)
 	case 'B':
 	  crs->batch=true;
 	  continue;
+	case 'd':
+	case 'D':
+	  b_dec=true;
+	  continue;
+	case 'r':
+	case 'R':
+	  b_root=true;
+	  continue;
 	case 'f':
 	case 'F':
-
+	  b_force=true;
 	  continue;
 	case 'p':
 	case 'P':
@@ -969,31 +979,51 @@ bool TestFile() {
 
   string dir, name, ext;
 
-  if (crs->batch && strlen(opt.Filename)==0) {
+  if (crs->batch) {
     //strcpy(opt.Filename,crs->Fname);
     SplitFilename (string(crs->Fname),dir,name,ext);
     dir = TString(startdir);
     //cout << "Root_dir: " << dir << endl;
-    dir.append("Root/");
+
+    crs->decname=dir;
+    crs->rootname=dir;
+    crs->decname.append("Dec/");
+    crs->rootname.append("Root/");
+
+    opt.dec_write=b_dec;
+
+    if (b_dec) {
 #ifdef LINUX
-    mkdir(dir.c_str(),0755);
+      mkdir(crs->decname.c_str(),0755);
 #else
-    _mkdir(dir.c_str());
+      _mkdir(crs->decname.c_str());
 #endif
-    opt.root_write=true;
+    }
+    
+    opt.root_write=b_root;
+    if (b_root) {
+#ifdef LINUX
+      mkdir(crs->rootname.c_str(),0755);
+#else
+      _mkdir(crs->rootname.c_str());
+#endif
+    }
+
+    crs->decname.append(name);
+    crs->rootname.append(name);
   }
   else {
     SplitFilename(string(opt.Filename),dir,name,ext);
+    dir.append(name);
+    crs->rawname=dir;
+    crs->decname=dir;
+    crs->rootname=dir;
+    crs->rawname.append(".raw");
+    crs->decname.append(".dec");
+    crs->rootname.append(".root");
   }
 
-  dir.append(name);
-  crs->rawname=dir;
-  crs->decname=dir;
-  crs->rootname=dir;
-  crs->rawname.append(".raw");
-  crs->decname.append(".dec");
-  crs->rootname.append(".root");
-
+  cout << "Fname: " << crs->Fname << " " << crs->module << endl;
   cout << "rawname: " << crs->rawname << " " << opt.raw_write << endl;
   cout << "decname: " << crs->decname << " " << opt.dec_write << endl;
   cout << "rootname: " << crs->rootname << " " << opt.root_write << endl;
@@ -1010,9 +1040,12 @@ bool TestFile() {
       (opt.dec_write && !stat(crs->decname.c_str(), &statb)) ||
       (opt.root_write && !stat(crs->rootname.c_str(), &statb))) {
 
-    if (crs->batch) {
+    if (crs->batch && !b_force) {
       cout << "file exists. Exiting..." << endl;
       exit(0);
+    }
+    else {
+    return true;
     }
 
     Int_t retval;

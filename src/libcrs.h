@@ -164,6 +164,7 @@ RQ_OBJECT("CRS")
   Short_t module;
   //1-ADCM raw, 3 - ortec lis, 22 - crs2;
   //32 - old crs32, 33 - new crs32 with dsp, 34 - new crs32
+  //72..79 - decoded file
 
   Int_t type_ch[MAX_CH+MAX_TP]; //0-   4-11bit; 1-   2-16bit
   //Short_t ver_po;

@@ -2343,9 +2343,9 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   if (p2) {
     //cout << "false_gz: " << endl;
-    //opt.raw_write=false;
-    //opt.dec_write=false;
-    //opt.root_write=false;
+    opt.raw_write=false;
+    opt.dec_write=false;
+    opt.root_write=false;
   }
 
   if (HiFrm)
@@ -5048,6 +5048,7 @@ void CRS::Fill_Dec79(EventClass* evt) {
       Decbuf2[1] = pk->Time*100;
       Decbuf2[2] = pk->Width*1000;
       Decbuf2[3] = evt->pulses[i].Chan;
+      //cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
       ++DecBuf8;
     }
   }
