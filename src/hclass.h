@@ -74,6 +74,7 @@ class HClass {
   HMap* m_area_time[MAX_CH];
   HMap* m_area_width[MAX_CH];
   HMap* m_area_width2[MAX_CH];
+  HMap* m_area_ntof[MAX_CH];
   HMap* m_prof[256];
   //HMap* m_area_width3[MAX_CH];
   //HMap* m_width_12[MAX_CH];

@@ -1019,10 +1019,10 @@ bool TestFile() {
     crs->decname=dir;
     crs->rootname=dir;
     crs->rawname.append(".raw");
-    crs->decname.append(".dec");
-    crs->rootname.append(".root");
   }
 
+  crs->decname.append(".dec");
+  crs->rootname.append(".root");
   cout << "Fname: " << crs->Fname << " " << crs->module << endl;
   cout << "rawname: " << crs->rawname << " " << opt.raw_write << endl;
   cout << "decname: " << crs->decname << " " << opt.dec_write << endl;
@@ -1045,7 +1045,7 @@ bool TestFile() {
       exit(0);
     }
     else {
-    return true;
+      return true;
     }
 
     Int_t retval;
@@ -1084,7 +1084,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gStyle->SetPadRightMargin(0.1);
   //gStyle->SetPadBottomMargin(0.15);
   //gStyle->SetPadTopMargin(0.05);
-  
 
   /*
     fDNDTypeList = new Atom_t[3];
@@ -2541,19 +2540,19 @@ Common::~Common() {
 }
 
 /*
-struct MyClass {
+  struct MyClass {
   MyClass() {std::cout <<"MyClass constructed\n";}
   ~MyClass() {std::cout <<"MyClass destroyed\n";}
-};
+  };
 
-void pointer_test() {
+  void pointer_test() {
   MyClass * pt;
   int size = 3;
 
   pt = new MyClass[size];
   delete[] pt;
 
-}
+  }
 */
 
 //-------------------------

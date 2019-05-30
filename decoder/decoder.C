@@ -167,7 +167,7 @@ void RootClass::FillHist(Event* ev) {
     else {
       h_energy[ch]->Fill(ev->peaks[i].Area);
       h_time[ch]->Fill(ev->Tstmp*1e-8);
-      h_tof[ch]->Fill(ev->peaks[i].Time);;
+      h_tof[ch]->Fill(ev->peaks[i].Time);
     }
   }
 }

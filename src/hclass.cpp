@@ -482,6 +482,7 @@ void HClass::Make_hist() {
   Make_2d("Area_Time","Area_Time",";Channel;Time (sec)",m_area_time,&opt.h_area_time,&opt.h_area,&opt.h_time);
   Make_2d("Area_Width","Area_Width",";Channel;Width (a.u.)",m_area_width,&opt.h_area_width,&opt.h_area,&opt.h_width);
   Make_2d("Area_Width2","Area_Width2",";Channel;Width (a.u.)",m_area_width2,&opt.h_area_width2,&opt.h_area,&opt.h_width2);
+  Make_2d("Area_Ntof","Area_Ntof",";Channel;t(mks)",m_area_ntof,&opt.h_area_ntof,&opt.h_area,&opt.h_ntof);
   //Make_2d("Area_Width3","Area_Width3",";Channel;Width (a.u.)",m_area_width3,&opt.h_area_width3,&opt.h_area,&opt.h_width3);
   //Make_2d("Width_12","Width_12",";Width(a.u.);Width2(a.u.)",m_width_12,&opt.h_width_12,&opt.h_width,&opt.h_width2);
 

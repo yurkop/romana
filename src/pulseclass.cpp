@@ -1034,6 +1034,7 @@ void EventClass::FillHist(Bool_t first) {
       // if (ch==7) {
       // 	cout << "ntof1: " << j << " " << ch << " " << opt.start_ch << " " << crs->Tstart0 << endl;
       // }
+
       if (j==0) { //only for the first peak
 	//ntof
 	if (opt.h_ntof.b || opt.h_etof.b || opt.h_ltof.b) {
@@ -1047,8 +1048,10 @@ void EventClass::FillHist(Bool_t first) {
 	      //tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	      tm = Tstmp + Long64_t(pk->Time);
 	      tt = (tm - crs->Tstart0)*mks*crs->period;
+
 	      if (tt>0) {
 		//cout << "ntof7: " << j << " " << ch << " " << tm << " " << crs->Tstart0 << " " << tm-crs->Tstart0 << " " << tt << endl;
+		//check for missed starts
 		if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
 		  crs->Tstart0+=Long64_t(1000*opt.ntof_period/crs->period);
 		  tt = (tm - crs->Tstart0)*mks*crs->period;
