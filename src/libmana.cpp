@@ -1113,6 +1113,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->AddEntry("Read ROOT file", M_READROOT);
   fMenuFile->AddEntry("Save ROOT file", M_SAVEROOT);
   fMenuFile->AddSeparator();
+  //fMenuFile->AddEntry("Save ASCII file", M_SAVEASCII);
+  //fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Export...", M_EXPORT);
   fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Browser\tCtrl+B", M_FILE_BROWSE);
@@ -2148,7 +2150,7 @@ void MainFrame::DoExit() {
   //gApplication->Terminate(0);
 }
 
-void MainFrame::DoSave() {
+void MainFrame::DoSaveRoot() {
 
   //cout << "Dosave: " << endl;
   //cout << "Dosave: " << datfname << endl;
@@ -2211,6 +2213,23 @@ void MainFrame::DoSave() {
 #endif
 
 }
+
+/*
+void MainFrame::DoSaveAscii() {
+
+  if (!crs->b_stop) return;
+
+
+
+
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
+
+}
+*/
 
 void MainFrame::DoTab(Int_t num) {
   //cout << "DoTab: " << num << endl;
@@ -2362,8 +2381,11 @@ void MainFrame::HandleMenu(Int_t menu_id)
     DoRWinit(kFDSave);
     break;
   case M_SAVEROOT:
-    DoSave();
+    DoSaveRoot();
     break;
+  // case M_SAVEASCII:
+  //   DoSaveAscii();
+  //   break;
   case M_READROOT:
     DoReadRoot();
     break;

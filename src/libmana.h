@@ -124,7 +124,8 @@ public:
   void Export();
   //void Export();
   void DoReset();
-  void DoSave();
+  void DoSaveRoot();
+  //void DoSaveAscii();
   void DoExit();
   //void DoResetUSB();
   //void DoStop();

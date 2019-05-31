@@ -859,6 +859,7 @@ void EventClass::FillHist(Bool_t first) {
 
   //cout << "FillHist: " << this->Nevt << endl;
 
+  // инициализация
   if (first) {
     if (crs->Tstart64<0) {
       crs->Tstart64 = Tstmp;
@@ -992,65 +993,20 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_tof,ch,tt*crs->period);
       }
 
-      /* old mtof
-      //cout << "ntof1: " << j << " " << ch << " " << crs->Tstart0 << endl;
-      if (j==0) { //only for the first peak
-	//ntof
-	if (opt.h_ntof.b || opt.h_etof.b) {
-	  if (ch==opt.start_ch) {
-	    crs->Tstart0 = pulses[i].Tstamp64 + pk->Time;
-	    //cout << "ntof2: " << j << " " << ch << " " << pulses[i].Tstamp64 << " " << crs->Tstart0 << endl;
-	  }
-	  if (opt.Mrk[ch]) {
-	    mult++;
-	  }
-	  if (mult && (i==pulses.size()-1)) { //last pulse
-	    if (crs->Tstart0>0) {
-	      if (mult>=opt.Nchan) mult=opt.Nchan-1;
-
-	      tm = pulses[i].Tstamp64 + pk->Time;
-	      tt = (tm - crs->Tstart0)*mks*crs->period;
-	      //cout << "ntof7: " << j << " " << ch << " " << crs->Tstart0 << " " << tt << endl;
-	      if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
-		crs->Tstart0+=1000*opt.ntof_period;
-		tt = (tm - crs->Tstart0)*mks*crs->period;
-	      }
-
-	      if (opt.h_ntof.b) {
-		Fill1d(first,hcl->m_ntof,mult,tt);
-		Fill1d(first,hcl->m_ntof,0,tt);
-	      }
-	      if (opt.h_etof.b) {
-		ee = 72.298*opt.Flpath/(tt-opt.TofZero);
-		ee= ee*ee;
-		Fill1d(first,hcl->m_etof,mult,ee);
-		Fill1d(first,hcl->m_etof,0,ee);
-	      }
-	    }
-	  } //if last pulse
-	} //if (opt.h_ntof.b || opt.h_etof.b)
-      */
-
-      // if (ch==7) {
-      // 	cout << "ntof1: " << j << " " << ch << " " << opt.start_ch << " " << crs->Tstart0 << endl;
-      // }
-
       if (j==0) { //only for the first peak
 	//ntof
 	if (opt.h_ntof.b || opt.h_etof.b || opt.h_ltof.b) {
+	  // определяем старт
 	  if (ch==opt.start_ch) {
-	    //crs->Tstart0 = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	    crs->Tstart0 = Tstmp + Long64_t(pk->Time);
-	    //cout << "ntof2: " << Nevt << " " << j << " " << ch << " " << Tstmp << " " << pulses[i].Tstamp64 << " " << crs->Tstart0 << endl;
 	  }
-	  if ((i==pulses.size()-1)) { //last pulse
+	  //if ((i==pulses.size()-1)) { //last pulse
 	    if (crs->Tstart0>0) {
 	      //tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	      tm = Tstmp + Long64_t(pk->Time);
 	      tt = (tm - crs->Tstart0)*mks*crs->period;
 
 	      if (tt>0) {
-		//cout << "ntof7: " << j << " " << ch << " " << tm << " " << crs->Tstart0 << " " << tm-crs->Tstart0 << " " << tt << endl;
 		//check for missed starts
 		if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
 		  crs->Tstart0+=Long64_t(1000*opt.ntof_period/crs->period);
@@ -1058,7 +1014,9 @@ void EventClass::FillHist(Bool_t first) {
 		}
 		if (opt.h_ntof.b) {
 		  Fill1d(first,hcl->m_ntof,ch,tt);
-		  //cout << "tt: " << tt << endl;
+		}
+		if (opt.h_area_ntof.b) {
+		  Fill2d(first,hcl->m_area_ntof[ch],pk->Area,tt);
 		}
 		if (opt.h_etof.b) {
 		  ee = 72.298*opt.Flpath/(tt-opt.TofZero);
@@ -1072,7 +1030,7 @@ void EventClass::FillHist(Bool_t first) {
 		}
 	      } //if tt>0
 	    }
-	  } //if last pulse
+	    //} //if last pulse
 	} //if (opt.h_ntof.b || opt.h_etof.b)
 
 	if (opt.h_a0a1.b) {
