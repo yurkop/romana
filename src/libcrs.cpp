@@ -4534,6 +4534,43 @@ void CRS::Print_Events(const char* file) {
   of.close();
 }
 
+void CRS::Print_Peaks(const char* file) {
+  std::streambuf * buf;
+  std::ofstream of;
+
+  if (file) {
+    of.open(file);
+    buf = of.rdbuf();
+  }
+  else {
+    buf = std::cout.rdbuf();
+  }
+  std::ostream out(buf);
+
+  for (std::list<EventClass>::iterator it=Levents.begin();
+       it!=Levents.end();++it) {
+    out << "--- Event: " << it->Nevt << " M: " << it->pulses.size() << " Tstamp: " << it->Tstmp << endl;
+    for (UInt_t i=0;i<it->pulses.size();i++) {
+      PulseClass pp = it->pulses.at(i);
+      out << "Ch: " << (int)pp.Chan << " Tstamp: " << pp.Tstamp64;
+      for (std::vector<peak_type>::iterator pk=pp.Peaks.begin();
+	   pk!=pp.Peaks.end();++pk) {
+	out << " Pk: " << pk->Time << " " << pk->Area << " " << pk->Width;
+      }
+      out << endl;
+
+      for (int j=0;j<(int)pp.sData.size();j++) {
+	out << j << " " << pp.sData[j] << endl;
+	//printf("-- %d %f\n",i,pp.sData[i]);
+      }
+      
+    }
+    //out << endl;
+  }
+
+  of.close();
+}
+
 void CRS::Print_b1(int idx1, std::ostream *out) {
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
   unsigned short frmt;

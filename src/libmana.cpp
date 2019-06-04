@@ -1040,12 +1040,14 @@ bool TestFile() {
       (opt.dec_write && !stat(crs->decname.c_str(), &statb)) ||
       (opt.root_write && !stat(crs->rootname.c_str(), &statb))) {
 
-    if (crs->batch && !b_force) {
-      cout << "file exists. Exiting..." << endl;
-      exit(0);
-    }
-    else {
-      return true;
+    if (crs->batch) {
+      if (!b_force) {
+	cout << "file exists. Exiting..." << endl;
+	exit(0);
+      }
+      else {
+	return true;
+      }
     }
 
     Int_t retval;

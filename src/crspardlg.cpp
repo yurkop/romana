@@ -1775,6 +1775,8 @@ void ParParDlg::DoNum_SetBuf() {
 
 void ParParDlg::DoCheckHist() {
 
+  if (!crs->b_stop) return;
+
   TGCheckButton *te = (TGCheckButton*) gTQSender;
   Int_t id = te->WidgetId();
 
@@ -1794,6 +1796,8 @@ void ParParDlg::DoCheckHist() {
 }
 
 void ParParDlg::DoCheckPulse() {
+  if (!crs->b_stop) return;
+
   DoChk();
   HiFrm->HiReset();
 }
