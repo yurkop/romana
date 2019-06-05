@@ -342,6 +342,7 @@ Toptions::Toptions() {
 
   Tstart=0;
   Tstop=0;
+  Period=10;
 
   b_deriv[0]=true;
   b_deriv[1]=false;

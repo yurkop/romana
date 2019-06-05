@@ -930,7 +930,7 @@ CRS::CRS() {
   //memset(Pre,0,sizeof(Pre));
 
   Fmode=0;
-  period=5;
+  opt.Period=5;
 
   f_raw=0;
   f_read=0;
@@ -1849,7 +1849,7 @@ int CRS::DoStartStop() {
     cout << "cyusb_reset: " << r << endl;
 
     Submit_all(ntrans);
-    period=5; //5ns for CRS module
+    opt.Period=5; //5ns for CRS module
 
     if (SetPar()) {
       return 3;
@@ -2210,7 +2210,7 @@ void CRS::DoFopen(char* oname, int popt) {
       f_read=0;
       return;
     }
-    period=5;
+    opt.Period=5;
     // cout << "false_open: " << endl;
     // opt.raw_write=false;
     // opt.dec_write=false;
@@ -2220,13 +2220,13 @@ void CRS::DoFopen(char* oname, int popt) {
     cout << "ADCM RAW File: " << Fname << endl;
     module=1;
     cpar.InitPar(0);
-    period=10;
+    opt.Period=10;
   }
   else if (tp==2) { //Ortec Lis
     cout << "Ortec Lis File: " << Fname << endl;
     module=3;
     cpar.InitPar(0);
-    period=200;
+    opt.Period=200;
 
     char header[256];
     gzread(f_read,header,256);
@@ -2446,7 +2446,7 @@ int CRS::DoBuf() {
     }
 
     //if (!b_stop) {
-    //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
+    //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*opt.Period;
     //}
 
     return nbuffers;
@@ -2507,7 +2507,7 @@ void CRS::AnaBuf() {
 	 << inputbytes/MB << endl;
   }
     //if (!b_stop) {
-    //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*period;
+    //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*opt.Period;
     //}
 
 }
@@ -3256,7 +3256,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
       ipls->Peaks.push_back(peak_type());
       peak_type *pk = &ipls->Peaks.back();
       pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-      pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01;
+      pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
       pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
       ipls->Chan = buf2[3];
       if (opt.St[ipls->Chan] && pk->Time < evt->T0) {
@@ -3318,7 +3318,7 @@ void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
       ipls->Peaks.push_back(peak_type());
       peak_type *pk = &ipls->Peaks.back();
       pk->Area = buf2[0];
-      pk->Time = buf2[1]*0.01;
+      pk->Time = buf2[1]*0.01; //in samples
       pk->Width = buf2[2]*0.001;
       ipls->Chan = buf2[3];
       if (opt.St[ipls->Chan] && pk->Time < evt->T0) {

@@ -136,6 +136,9 @@ public:
   Long64_t F_start; //start of the acuisition
   Float_t T_acq; //duration of the acquisition / file (in seconds)
 
+  Float_t Period; //inverse frequency of digitizer (in ns):
+  // 5 ns for CRS; 10 ns for adcm; ?? ns for adcm64
+
   Int_t nthreads;
   Int_t Nchan;
   Float_t Tstart,Tstop;

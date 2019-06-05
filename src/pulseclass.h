@@ -142,7 +142,7 @@ class EventClass { //event of pulses
   Char_t State; //state word from CRS module
   //Long64_t TT; //Timestamp of the earliest pulse (threshold crossig)
   Long64_t Tstmp; //Timestamp of the earliest pulse (threshold crossig)
-  Float_t T0; //time of the earliest *START* peak, relative to Tstmp
+  Float_t T0; //time of the earliest *START* peak, relative to Tstmp, in samples
   std::vector <PulseClass> pulses;
   //Bool_t Analyzed;
   //Bool_t ecut[MAXCUTS];

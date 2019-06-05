@@ -848,7 +848,7 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
 }
 
 void EventClass::FillHist(Bool_t first) {
-  double DT = crs->period*1e-9;
+  double DT = opt.Period*1e-9;
   Double_t tt;
   Double_t ee,sqee;
   //int mult=0;
@@ -990,7 +990,7 @@ void EventClass::FillHist(Bool_t first) {
 	//tt = pk->Time - T0 + dt;
 	tt = pk->Time - T0;
 	//cout << "Tof: " << Nevt << " " << pk->Time << " " << T0 << endl;
-	Fill1d(first,hcl->m_tof,ch,tt*crs->period);
+	Fill1d(first,hcl->m_tof,ch,tt*opt.Period);
       }
 
       if (j==0) { //only for the first peak
@@ -1004,13 +1004,13 @@ void EventClass::FillHist(Bool_t first) {
 	    if (crs->Tstart0>0) {
 	      //tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	      tm = Tstmp + Long64_t(pk->Time);
-	      tt = (tm - crs->Tstart0)*mks*crs->period;
+	      tt = (tm - crs->Tstart0)*mks*opt.Period;
 
 	      if (tt>0) {
 		//check for missed starts
 		if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
-		  crs->Tstart0+=Long64_t(1000*opt.ntof_period/crs->period);
-		  tt = (tm - crs->Tstart0)*mks*crs->period;
+		  crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
+		  tt = (tm - crs->Tstart0)*mks*opt.Period;
 		}
 		if (opt.h_ntof.b) {
 		  Fill1d(first,hcl->m_ntof,ch,tt);
@@ -1052,7 +1052,7 @@ void EventClass::FillHist(Bool_t first) {
 	  //tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
 	  tm = Tstmp + Long64_t(pk->Time);
 	  if (hcl->T_prev[ch] && tm!=hcl->T_prev[ch]) {
-	    tt = (tm - hcl->T_prev[ch])*mks*crs->period; //convert to mks
+	    tt = (tm - hcl->T_prev[ch])*mks*opt.Period; //convert to mks
 
 	    //int mm=tt/32;
 	    //mm*=32;

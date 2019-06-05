@@ -168,7 +168,7 @@ RQ_OBJECT("CRS")
 
   Int_t type_ch[MAX_CH+MAX_TP]; //0-   4-11bit; 1-   2-16bit
   //Short_t ver_po;
-  Int_t period;
+  //Int_t period;
 
   //buffers for sending parameters...
   byte buf_out[64];

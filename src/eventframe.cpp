@@ -672,7 +672,7 @@ void EventFrame::DoCheckPoint() {
     while (d_event!=ievt) {
       //cout << d_event->Nevt << " " << d_event->T << endl;
       par[3]=d_event->pulses.size();
-      par[2]=(d_event->Tstmp-crs->Tstart64)*crs->period*1e-9;
+      par[2]=(d_event->Tstmp-crs->Tstart64)*opt.Period*1e-9;
       par[1]=d_event->Tstmp;
 
       for (UInt_t i=0;i<d_event->pulses.size();i++) {
@@ -687,7 +687,7 @@ void EventFrame::DoCheckPoint() {
 	  //double tt = pk->Time - d_event->T0 + dt;
 	  double tt = pk->Time - d_event->T0;
 
-	  par[6]=tt*crs->period;
+	  par[6]=tt*opt.Period;
 	  res = formula->EvalPar(0,par);
 	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->Tstmp << " " << " " << par[4] << " " << res << endl;
 	  if (res) {
