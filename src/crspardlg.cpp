@@ -2615,17 +2615,10 @@ ErrFrame::ErrFrame(const TGWindow *p,UInt_t w,UInt_t h)
 				100, 100, kVerticalFrame);
   fCanvas1->SetContainer(fcont1);
 
-  const char* errlabel[MAX_ERR] = {
-    "Bad buf start:",
-    "Bad channel:",
-    "Channel mismatch:",
-    "Bad frmt:",
-    "Zero data"
-  };
   for (int i=0;i<MAX_ERR;i++) {
     TGHorizontalFrame* cframe = new TGHorizontalFrame(fcont1,10,10);
     fcont1->AddFrame(cframe,com->LayLT0);
-    TGLabel* lb = new TGLabel(cframe,errlabel[i]);
+    TGLabel* lb = new TGLabel(cframe,crs->errlabel[i]);
     lb->SetTextJustify(kTextLeft);
     lb->ChangeOptions(lb->GetOptions()|kFixedSize);
     lb->Resize(120,20);

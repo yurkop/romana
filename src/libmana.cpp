@@ -687,6 +687,10 @@ int main(int argc, char **argv)
     cout << crs->rootname << endl;
     saveroot(crs->rootname.c_str());
 
+    for (int i=0;i<MAX_ERR;i++) {
+      cout << crs->errlabel[i] << " " << crs->errors[i] << endl;
+    }
+
     return 0;
   }
 
@@ -1023,10 +1027,10 @@ bool TestFile() {
 
   crs->decname.append(".dec");
   crs->rootname.append(".root");
-  cout << "Fname: " << crs->Fname << " " << crs->module << endl;
-  cout << "rawname: " << crs->rawname << " " << opt.raw_write << endl;
-  cout << "decname: " << crs->decname << " " << opt.dec_write << endl;
-  cout << "rootname: " << crs->rootname << " " << opt.root_write << endl;
+  // cout << "Fname: " << crs->Fname << " " << crs->module << endl;
+  // cout << "rawname: " << crs->rawname << " " << opt.raw_write << endl;
+  // cout << "decname: " << crs->decname << " " << opt.dec_write << endl;
+  // cout << "rootname: " << crs->rootname << " " << opt.root_write << endl;
   // exit(0);
   if (!crs->juststarted) return true;
 

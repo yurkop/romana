@@ -2503,8 +2503,8 @@ void CRS::AnaBuf() {
   //Print_Events();
 
   if (batch) {
-    cout << "Buffers: " << nbuffers << "     Decompressed MBytes: "
-	 << inputbytes/MB << endl;
+    cout << "Buf: " << nbuffers << "  Decompr. MBytes: "
+	 << inputbytes/MB << "  Time(sec): " << opt.T_acq << endl;
   }
     //if (!b_stop) {
     //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*opt.Period;
@@ -2711,10 +2711,10 @@ void CRS::EndAna(int all) {
       Ana2(1);
     }
   }
-  cout << "EndAna: " << endl;
-  for (int i=0;i<opt.Nchan;i++) {
-    cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
-  }
+  // cout << "EndAna: " << endl;
+  // for (int i=0;i<opt.Nchan;i++) {
+  //   cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
+  // }
 
 }
 
@@ -4341,10 +4341,14 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
       nsamp=bits(header,7,17);
       if (nsamp+8!=rLen) {
-	cout << "wrong length: " << idx << " " << nsamp << " " << rLen << endl;
+	++errors[5];
+	//cout << "wrong length: " << idx << " " << nsamp << " " << bits(header,6,17) << " " << rLen << endl;
 	//idx=idnext;
 	goto next;
       }
+
+      //cout << "nsamp: " << nsamp << " " << bits(header,6,17) << " " << rLen << endl;
+
       lflag=bits(header,6,6);
       ch=bits(header,18,25);
       if ((ch>=opt.Nchan)) {
@@ -4392,7 +4396,8 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 	  //cout << "Offset64: " << Offset64 << endl;
 	  ipls.ptype|=P_BADTST;
 
-	  cout << "bad Tstamp: "<<dt<<" "<<ipls.Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
+	  ++errors[6];
+	  //cout << "bad Tstamp: "<<dt<<" "<<ipls.Tstamp64<<" "<<Pstamp64<<" "<<Offset64<<endl;
 	}
 	else {
 	  Pstamp64=ipls.Tstamp64;

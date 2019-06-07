@@ -269,6 +269,7 @@ class ErrFrame: public ParDlg {
 public:
   TGTextEntry* fErr[MAX_ERR];
   int errflag;
+
   //routines
   ErrFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ErrFrame();
