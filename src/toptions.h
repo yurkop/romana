@@ -223,8 +223,8 @@ public:
   Int_t pcuts[MAXCUTS]; //number of points in gcut
   Float_t gcut[MAXCUTS][2][MAX_PCUTS]; //20 cuts; xy; 10 points
 
-  char formula[36];
-  char cut_form[MAXCUTS][24];
+  char formula[100];
+  char cut_form[MAXCUTS][100];
   Int_t maintrig;
   //char maintrig[22];
 

@@ -278,8 +278,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof";
   //cout << "formula: " << opt.formula << endl;
-  tEnt = new TGTextEntry(fHor_but,opt.formula,0);;
+  tEnt = new TGTextEntry(fHor_but,opt.formula,0);
   tEnt->SetWidth(100);
+  tEnt->SetMaxLength(99);
   tEnt->SetToolTipText(ttip);
   //tt->SetState(false);
   fHor_but->AddFrame(tEnt,fLay4);
@@ -321,6 +322,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   fPeak[9] = new TGCheckButton(fVer_d, "Val", 9);
 
+  fPeak[10] = new TGCheckButton(fVer_d, "Stat", 10);
+  fPeak[11] = new TGCheckButton(fVer_d, "Norm", 11);
+
   //int cc;
   //cc=gROOT->GetColor(2)->GetPixel();
   fPeak[1]->SetForegroundColor(gROOT->GetColor(2)->GetPixel());
@@ -346,12 +350,14 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   fPeak[9]->SetToolTipText("Print peak values");
 
-  for (int i=0;i<10;i++) {
+  fPeak[10]->SetToolTipText("Show stats");
+  fPeak[11]->SetToolTipText("Normalize peaks");
+
+  for (int i=0;i<12;i++) {
     fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
     fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
     fVer_d->AddFrame(fPeak[i], fLay4);
   }
-
 
   fVer_ch = new TGVerticalFrame(fHor_st);
   fHor_st->AddFrame(fVer_ch, fLay4);
@@ -539,6 +545,19 @@ void EventFrame::Rebuild() {
   //fGroupCh->Layout();
 }
 
+void EventFrame::EvtUpdate() {
+  opt.b_peak[10]=opt.b_stat;
+  for (int i=0;i<12;i++) {
+    fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
+  }  
+  if (opt.b_stat) {
+    gStyle->SetOptStat(1002211);
+  }
+  else {
+    gStyle->SetOptStat(0);
+  }
+}
+
 void EventFrame::DoUndock() {
   //cout << "Event::DoUndock: " << opt.Nchan << endl;
   Rebuild();
@@ -719,7 +738,7 @@ void EventFrame::DoFormula() {
   //Int_t id = te->WidgetId();
   
   strcpy(opt.formula,te->GetText());
-  //cout << "DoFormula: " << te->GetText() << " " << opt.formula << endl;
+  //cout << "DoFormula: " << strlen(te->GetText()) << " " << te->GetText() << " " << opt.formula << endl;
 }
 
 
@@ -774,21 +793,37 @@ void EventFrame::DoChkPeak() {
   TGButton *btn = (TGButton *) gTQSender;
   Int_t id = btn->WidgetId();
 
-  opt.b_peak[id] = !opt.b_peak[id];
+  //opt.b_peak[id] = !opt.b_peak[id];
 
-  btn->SetState((EButtonState) opt.b_peak[id]);
-
-  if (id==0) {
-    for (int i=1;i<10;i++) {
-      opt.b_peak[i] = opt.b_peak[id];
-      fPeak[i]->SetState((EButtonState) opt.b_peak[id]);
+  opt.b_peak[id] = (bool) btn->GetState();
+  if (id==10) {
+    opt.b_stat=opt.b_peak[10];
+    if (opt.b_stat) {
+      gStyle->SetOptStat(1002211);
+    }
+    else {
+      gStyle->SetOptStat(0);
     }
   }
-  else {
-    if (opt.b_peak[id]) {
-      opt.b_peak[0] = true;
-      fPeak[0]->SetState((EButtonState) 1);      
+
+  //btn->SetState((EButtonState) opt.b_peak[id]);
+
+  if (id==0) {
+    if (opt.b_peak[0]) {
+      for (int i=1;i<12;i++) {
+	fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
+      }
     }
+    else {
+      for (int i=1;i<12;i++) {
+	fPeak[i]->SetState((EButtonState) 0);
+      }
+    }
+  }
+
+  if (id<10 && opt.b_peak[id]) {
+    opt.b_peak[0] = true;
+    fPeak[0]->SetState((EButtonState) 1);      
   }
 
   if (crs->b_stop)
@@ -846,7 +881,12 @@ void EventFrame::FillGraph(int dr) {
     if (dr==0) { //main pulse
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
-	Gr[dr][i]->GetY()[j]=pulse->sData[j];
+	double dd = pulse->sData[j];
+	if (fPeak[11]->IsOn() && pulse->Peaks.size()) {
+	  dd-=pulse->Peaks.back().Base;
+	  dd*=1000/pulse->Peaks.back().Area;
+	}
+	Gr[dr][i]->GetY()[j]=dd;
 
 	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
 	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
@@ -863,11 +903,18 @@ void EventFrame::FillGraph(int dr) {
       //dat = new Float_t[pulse->sData.size()];
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
+	double dd;
 	if (j<kk)
-	  Gr[dr][i]->GetY()[j]=pulse->sData[j]-pulse->sData[0];
+	  dd=pulse->sData[j]-pulse->sData[0];
 	//dat[j]=0;
 	else
-	  Gr[dr][i]->GetY()[j]=pulse->sData[j]-pulse->sData[j-kk];
+	  dd=pulse->sData[j]-pulse->sData[j-kk];
+
+	if (fPeak[11]->IsOn() && pulse->Peaks.size()) {
+	  dd*=1000/pulse->Peaks.back().Area;
+	}
+
+	Gr[dr][i]->GetY()[j]=dd;
 
 	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
 	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
@@ -889,12 +936,19 @@ void EventFrame::FillGraph(int dr) {
 	// else
 	//   Gr[dr][i]->GetY()[j]=
 	//     pulse->sData[j]-2*pulse->sData[j-1]+pulse->sData[j-2];
+
+	double dd;
 	if (j<kk+1)
-	  Gr[dr][i]->GetY()[j]=0;
+	  dd=0;
 	else
-	  Gr[dr][i]->GetY()[j]=
-	    pulse->sData[j]-pulse->sData[j-kk]-
+	  dd=pulse->sData[j]-pulse->sData[j-kk]-
 	    pulse->sData[j-1]+pulse->sData[j-kk-1];
+
+	if (fPeak[11]->IsOn() && pulse->Peaks.size()) {
+	  dd*=1000/pulse->Peaks.back().Area;
+	}
+
+	Gr[dr][i]->GetY()[j]=dd;
 
 	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
 	  gy1[dr][i]=Gr[dr][i]->GetY()[j];

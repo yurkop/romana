@@ -320,6 +320,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   
   tForm    = new TGTextEntry(fHor7,"",8);;
   tForm->SetWidth(110);
+  tForm->SetMaxLength(99);
   tForm->SetToolTipText(ttip);
   tForm->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
   fHor7->AddFrame(tForm,com->LayET0);

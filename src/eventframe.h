@@ -128,6 +128,7 @@ public:
 
   void ShPtr(int zz);
   void Rebuild();
+  void EvtUpdate();
   void AddCh();
   void DoReset();
   void FillGraph(int dr);

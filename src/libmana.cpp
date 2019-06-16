@@ -1855,24 +1855,15 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 
     }
     else { //Save pars
-      Int_t retval=kMBOk;
-      if (!stat(fi.fFilename, &statb)) {
-	new TGMsgBox(gClient->GetRoot(), this,
-		     "File exists",
-		     msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
+      gzFile ff = gzopen(pname,"wb");
+      if (ff) {
+	crs->SaveParGz(ff,crs->module);
+	gzclose(ff);
+      }
+      else {
+	cout << "Can't open file: " << pname << endl;
       }
 
-      if (retval == kMBOk) {
-	//saveinit(pname);
-	gzFile ff = gzopen(pname,"wb");
-	if (ff) {
-	  crs->SaveParGz(ff,crs->module);
-	  gzclose(ff);
-	}
-	else {
-	  cout << "Can't open file: " << pname << endl;
-	}
-      }
     } //else (save Pars)
     //newfile();
   }
@@ -2267,6 +2258,7 @@ void MainFrame::DoTab(Int_t num) {
     pikpar->Update();
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
+    EvtFrm->EvtUpdate();
     //cout << "DoTab4: " << name << endl;
     if (crs->b_stop)
       EvtFrm->DrawEvent2();
