@@ -145,6 +145,7 @@ public:
   void Last();
   void DoCheckPoint();
   void DoPrint();
+  void DoPrint2();
   void DoFormula();
   void DoSlider();
   void DoChkDeriv();

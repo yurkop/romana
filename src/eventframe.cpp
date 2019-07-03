@@ -293,6 +293,12 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPrint->Connect("Clicked()","EventFrame",this,"DoPrint()");
   fHor_but->AddFrame(fPrint, fLay4);
 
+  ttip = "Print peaks from First to Last.\nThe data are saved to file 'events.dat' in the current directory.";
+  fPrint = new TGTextButton(fHor_but,"Pr2",2);
+  fPrint->SetToolTipText(ttip);
+  fPrint->Connect("Clicked()","EventFrame",this,"DoPrint2()");
+  fHor_but->AddFrame(fPrint, fLay4);
+
   
 
   opt.b_deriv[0]=true;
@@ -733,6 +739,11 @@ void EventFrame::DoPrint() {
   //crs->Print_Events();
 }
 
+void EventFrame::DoPrint2() {
+  crs->Print_Peaks("events.dat");
+  //crs->Print_Events();
+}
+
 void EventFrame::DoFormula() {
   TGTextEntry *te = (TGTextEntry*) gTQSender;
   //Int_t id = te->WidgetId();
@@ -826,8 +837,11 @@ void EventFrame::DoChkPeak() {
     fPeak[0]->SetState((EButtonState) 1);      
   }
 
-  if (crs->b_stop)
-    ReDraw();
+  //cout << "redraw: " << endl;
+  if (crs->b_stop) {
+    //ReDraw();
+    DrawEvent2();
+  }
 
 }
 
@@ -882,7 +896,7 @@ void EventFrame::FillGraph(int dr) {
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
 	double dd = pulse->sData[j];
-	if (fPeak[11]->IsOn() && pulse->Peaks.size()) {
+	if (fPeak[11]->IsOn() && pulse->Peaks.size()) { //normalize
 	  dd-=pulse->Peaks.back().Base;
 	  dd*=1000/pulse->Peaks.back().Area;
 	}
@@ -910,7 +924,7 @@ void EventFrame::FillGraph(int dr) {
 	else
 	  dd=pulse->sData[j]-pulse->sData[j-kk];
 
-	if (fPeak[11]->IsOn() && pulse->Peaks.size()) {
+	if (fPeak[11]->IsOn() && pulse->Peaks.size()) { //normalize
 	  dd*=1000/pulse->Peaks.back().Area;
 	}
 
@@ -944,7 +958,7 @@ void EventFrame::FillGraph(int dr) {
 	  dd=pulse->sData[j]-pulse->sData[j-kk]-
 	    pulse->sData[j-1]+pulse->sData[j-kk-1];
 
-	if (fPeak[11]->IsOn() && pulse->Peaks.size()) {
+	if (fPeak[11]->IsOn() && pulse->Peaks.size()) { //normalize
 	  dd*=1000/pulse->Peaks.back().Area;
 	}
 

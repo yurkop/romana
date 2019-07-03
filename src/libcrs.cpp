@@ -4552,23 +4552,15 @@ void CRS::Print_Peaks(const char* file) {
   }
   std::ostream out(buf);
 
+  out << "Nevt Chan Tstamp(ns) Area" << endl;
   for (std::list<EventClass>::iterator it=Levents.begin();
        it!=Levents.end();++it) {
-    out << "--- Event: " << it->Nevt << " M: " << it->pulses.size() << " Tstamp: " << it->Tstmp << endl;
     for (UInt_t i=0;i<it->pulses.size();i++) {
       PulseClass pp = it->pulses.at(i);
-      out << "Ch: " << (int)pp.Chan << " Tstamp: " << pp.Tstamp64;
       for (std::vector<peak_type>::iterator pk=pp.Peaks.begin();
 	   pk!=pp.Peaks.end();++pk) {
-	out << " Pk: " << pk->Time << " " << pk->Area << " " << pk->Width;
+	out << it->Nevt << " " << (int)pp.Chan << " " << pp.Tstamp64*int(opt.Period) << " " << pk->Area << endl;
       }
-      out << endl;
-
-      for (int j=0;j<(int)pp.sData.size();j++) {
-	out << j << " " << pp.sData[j] << endl;
-	//printf("-- %d %f\n",i,pp.sData[i]);
-      }
-      
     }
     //out << endl;
   }
