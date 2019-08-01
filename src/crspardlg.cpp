@@ -2553,7 +2553,7 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
   TGCheckButton *fdsp = new TGCheckButton(cframe[i], "", id);
   DoChanMap(fdsp,&opt.dsp[i],p_chk,all,0,0);
   fdsp->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  fdsp->SetToolTipText(ttip2[kk]);
+  fdsp->SetToolTipText(ttip3[kk]);
   cframe[i]->AddFrame(fdsp,com->LayCC1);
   kk++;
 
