@@ -1132,7 +1132,20 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       peak_type *pk = &pulse->Peaks[j];
-      //cout << "drawpeak: " << (int) pulse->Chan << " " << pk->Pos << " " << pk->Time << " " << dt << endl;
+
+      if (opt.dsp[ch]) {
+	pk->Pos=cpar.preWr[ch];
+	pk->B1=pk->Pos+opt.Base1[ch];
+	pk->B2=pk->Pos+opt.Base2[ch]+1;
+	pk->P1=pk->Pos+opt.Peak1[ch];
+	pk->P2=pk->Pos+opt.Peak2[ch]+1;
+	pk->T3=pk->Pos+opt.T1[ch];
+	pk->T4=pk->Pos+opt.T2[ch]+1;
+	pk->T5=pk->Pos+opt.W1[ch];
+	pk->T6=pk->Pos+opt.W2[ch]+1;
+
+	//cout << "drawpeak: " << opt.dsp[ch] << " " << (int) pulse->Chan << " " << pk->Pos << " " << pk->Time << " " << dt << endl;
+      }
 
       if (fPeak[1]->IsOn()) // Pos
 	doXline(pk->Pos+dt,y1,y2-dy*0.3,2,1);

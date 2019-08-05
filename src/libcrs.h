@@ -349,6 +349,7 @@ RQ_OBJECT("CRS")
 
   //void NewTree();
   //void CloseTree();
+  void Reset_Raw();
   void Reset_Dec(Short_t mod);
   // void Fill_Dec73(EventClass* evt);
   // void Fill_Dec74(EventClass* evt);

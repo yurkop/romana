@@ -250,8 +250,11 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
 
   while (sz<size) {
     memcpy(&len,buf+sz,sizeof(len));
+    if (len==0) {
+      break;
+    }
     sz+=sizeof(len);
-    if (len==0 || len>=mx || sz>size) {
+    if (len>=mx || sz>size) {
       cout << "br1: " << endl;
       break;
     }
@@ -1032,6 +1035,7 @@ bool TestFile() {
   // cout << "decname: " << crs->decname << " " << opt.dec_write << endl;
   // cout << "rootname: " << crs->rootname << " " << opt.root_write << endl;
   // exit(0);
+
   if (!crs->juststarted) return true;
 
   //EMsgBoxIcon icontype = kMBIconStop;
@@ -1343,11 +1347,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     fStart->SetEnabled(false);
     fReset->SetEnabled(false);
 
+    /*
     opt.raw_write=false;
     //parpar->Update();
     TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
     if (te) 
       te->SetEnabled(false);
+    */
   }
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
@@ -1690,9 +1696,11 @@ void MainFrame::DoClose() {
 
     //opt.raw_write=false;
     //parpar->Update();
+    /*
     TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
     if (te) 
       te->SetEnabled(true);
+    */
   }
 #endif
 

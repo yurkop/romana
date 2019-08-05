@@ -1873,43 +1873,12 @@ int CRS::DoStartStop() {
 
     opt.F_start = gSystem->Now();
     //T_start = opt.F_start;
+
     if (opt.raw_write) {
-      sprintf(raw_opt,"wb%d",opt.raw_compr);
-
-      f_raw = gzopen(crs->rawname.c_str(),raw_opt);
-      if (f_raw) {
-	cout << "Writing parameters... : " << crs->rawname.c_str() << endl;
-	SaveParGz(f_raw,module);
-	gzclose(f_raw);
-	}
-      else {
-	cout << "Can't open file: " << crs->rawname.c_str() << endl;
-      }
-
-      sprintf(raw_opt,"ab%d",opt.raw_compr);
+      Reset_Raw();
     }   
-
     if (opt.dec_write) {
-      //Reset_Dec(73);
-      //Reset_Dec(74);
-      //Reset_Dec(75);
-      //Reset_Dec(76);
-      //Reset_Dec(77);
-      //Reset_Dec(78);
       Reset_Dec(79);
-      // sprintf(dec_opt,"wb%d",opt.dec_compr);
-
-      // f_dec = gzopen(opt.fname_dec,dec_opt);
-      // if (f_dec) {
-      // 	cout << "Writing parameters... : " << opt.fname_dec << endl;
-      // 	SaveParGz(f_dec);
-      // 	gzclose(f_dec);
-      // 	}
-      // else {
-      // 	cout << "Can't open file: " << opt.fname_dec << endl;
-      // }
-
-      // sprintf(dec_opt,"ab%d",opt.dec_compr);
     }   
 
     //cout << "Acquisition started" << endl;
@@ -2253,7 +2222,8 @@ void CRS::DoFopen(char* oname, int popt) {
   //list_min=opt.ev_max-opt.ev_min;
 
   Fmode=2;
-  opt.raw_write=false;
+
+  //opt.raw_write=false;
 
   //cout << "smooth 0-39: " << cpar.smooth[39] << " " << opt.smooth[39] << endl;
 
@@ -2283,12 +2253,10 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   //p1 - read cpar (1/0); p2 - read opt (1/0)
   UShort_t sz;
 
+  cout << "ReadParGz: " << pname << endl;
+
   UShort_t mod;
   gzread(ff,&mod,sizeof(mod));
-
-  cout << "ReadParGz: " << pname << endl;
-  //cout << "ReadParGz1 Fmode: " << Fmode << endl;
-
   gzread(ff,&sz,sizeof(sz));
 
   char buf[100000];
@@ -2360,6 +2328,7 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
   char buf[100000];
   UShort_t sz=0;
 
+  memset(buf,0,sizeof(buf));
   sz+=ClassToBuf("Coptions","cpar",(char*) &cpar, buf+sz);
   sz+=ClassToBuf("Toptions","opt",(char*) &opt, buf+sz);
 
@@ -2374,6 +2343,9 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
     }
   }
 
+  //sz/=8;
+  //sz=(sz+1)*8;
+  sz = (sz/8+1)*8;
 
   gzwrite(ff,&mod,sizeof(mod));
   gzwrite(ff,&sz,sizeof(sz));
@@ -2524,6 +2496,18 @@ int CRS::DoBuf() {
 
   int length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
   b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
+
+  if (opt.raw_write) {
+    crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
+    if (crs->f_raw) {
+      int res=gzwrite(crs->f_raw,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
+      gzclose(crs->f_raw);
+      crs->rawbytes+=res;
+    }
+    else {
+      cout << "Can't open file: " << crs->rawname.c_str() << endl;
+    }
+  }
 
   // cout << "gzread: " << Fmode << " " << module << " "
   //      << gl_iread << " " << gl_ibuf << " " << gl_Nbuf << " " << length
@@ -2728,14 +2712,13 @@ void CRS::FAnalyze2(bool nobatch) {
   }
   TCanvas *cv=0;
   //cout << "FAnalyze: " << gztell(f_read) << endl;
-  if (juststarted && opt.dec_write) {
-    //Reset_Dec(73);
-    //Reset_Dec(74);
-    //Reset_Dec(75);
-    //Reset_Dec(76);
-    //Reset_Dec(77);
-    //Reset_Dec(78);
-    Reset_Dec(79);
+  if (juststarted) {
+    if (opt.raw_write) {
+      Reset_Raw();
+    }   
+    if (opt.dec_write) {
+      Reset_Dec(79);
+    }   
   }
   juststarted=false;
 
@@ -2785,14 +2768,13 @@ void CRS::DoNBuf2(int nb) {
     return;
   }
 
-  if (juststarted && opt.dec_write) {
-    //Reset_Dec(73);
-    //Reset_Dec(74);
-    //Reset_Dec(75);
-    //Reset_Dec(76);
-    //Reset_Dec(77);
-    //Reset_Dec(78);
-    Reset_Dec(79);
+  if (juststarted) {
+    if (opt.raw_write) {
+      Reset_Raw();
+    }   
+    if (opt.dec_write) {
+      Reset_Dec(79);
+    }   
   }
   juststarted=false;
 
@@ -3928,6 +3910,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       npulses++;
       ipls.Chan=ch;
       ipls.Tstamp64=data+(Long64_t)opt.Delay[ch];// - cpar.preWr[ch];
+      //cout << "Tstmp64: " << ipls.Tstamp64 << " " << Blist->back().Tstmp << " " << Blist->size() << endl;
       n_frm=0;
       break;
     case 1:
@@ -4766,6 +4749,22 @@ void CRS::Select_Event(EventClass *evt) {
   //EvtFrm->d_event=m_event;
   //cout << "Select: " << EvtFrm->d_event->T << endl;
 
+}
+
+void CRS::Reset_Raw() {
+  sprintf(raw_opt,"wb%d",opt.raw_compr);
+
+  f_raw = gzopen(crs->rawname.c_str(),raw_opt);
+  if (f_raw) {
+    cout << "Writing parameters... : " << crs->rawname.c_str() << endl;
+    SaveParGz(f_raw,module);
+    gzclose(f_raw);
+  }
+  else {
+    cout << "Can't open file: " << crs->rawname.c_str() << endl;
+  }
+
+  sprintf(raw_opt,"ab%d",opt.raw_compr);
 }
 
 void CRS::Reset_Dec(Short_t mod) {
