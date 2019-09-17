@@ -1041,6 +1041,13 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   label="Event_list size / Event lag";
   AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,k_int,1,1000000,1,1000000);
 
+  if (crs->module==41) {
+    tip1= "Sampling rate, MHz (0->100; 1->50; 2->25; 3->10; 4->5; 5->2.5; 6->1; 7->0.5)";
+    tip2= "FIR filter (corresponds to the sampling rate)";
+    label="Sampling Rate / FIR Filter";
+    AddLine_opt(fF6,ww,&cpar.Smpl,&cpar.FIR,tip1,tip2,label,k_int,k_int,0,7,0,7);
+  }
+
   fF6->Resize();
 
 }
@@ -2569,7 +2576,7 @@ void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
   ttip7 = (char**) ttip3;
 
   int amax=1023;
-  if (crs->type_ch[i]==1)
+  if (crs->type_ch[i]>=1)
     amax=511;
 
   //cout << "module: " << crs->module << " " << i << " " << crs->type_ch[i] << " " << amax << endl;

@@ -44,6 +44,8 @@ void Coptions::InitPar(int zero) {
   }
   forcewr=false;
   DTW=1;
+  Smpl=0;
+  FIR=0;
 
 }
 
@@ -58,11 +60,6 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       par = smooth[i];
       min = 0;
       max=10;
-    }
-    else if (!strcmp(name,"dt")) {
-      par = deadTime[i];
-      min = 1;
-      max=16383;
     }
     else if (!strcmp(name,"pre")) {
       par = preWr[i];
@@ -161,7 +158,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       exit(-1);
     }
   }
-  //CRS-33 [CRS-32, firmware>=3] --------------------------
+  //CRS-33 and higher [CRS-32, firmware>=3, CRS-8/16] --------------------------
   else if (module>=33) {
     if (!strcmp(name,"smooth")) {
       par = smooth[i];
@@ -186,7 +183,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     else if (!strcmp(name,"len")) {
       par = durWr[i];
       min = 1;
-      if (type_ch==1) {
+      if (type_ch>=1) {
 	max=3048;
       }
       else {
@@ -205,7 +202,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
     else if (!strcmp(name,"thresh")) {
       par = threshold[i];
-      if (type_ch==1) {
+      if (type_ch>=1) {
 	min = -65536;
 	max= 65535;
       }
@@ -216,7 +213,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
     else if (!strcmp(name,"gain")) {
       par = adcGain[i];
-      if (type_ch==1) {
+      if (type_ch>=1) {
 	min = 0;
 	max=3;
       }

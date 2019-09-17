@@ -73,7 +73,9 @@ public:
   Bool_t pls[MAX_CH+MAX_TP]; //1 - send pulses (format 2,3); 0 - don't send
   //UInt_t Mask[MAX_CH+MAX_TP];
   Bool_t forcewr; //only for crs2
-  UInt_t DTW; //Start deat time window
+  UInt_t DTW; //Start dead time window
+  UInt_t Smpl; //Sampling rate divider
+  UInt_t FIR; //FIR filter
 
 public:
   void InitPar(int zero);

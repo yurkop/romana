@@ -322,6 +322,7 @@ void *handle_decode(void *ctx) {
     case 32:
     case 33:
     case 34:
+    case 41:
       crs->Decode34(dec_iread[ibuf]-1,ibuf);
       break;
     case 79:
@@ -1121,22 +1122,22 @@ int CRS::Detect_device() {
   //cout << int(buf_in[i]) << " ";
   //}
   //cout << endl;
-
-  if (ver_po==0) { //serial Nr=3 -> crs2
-    if (device_code==3) {
+  
+  switch (device_code) {
+  case 1: //crs-32
+  case 2: //crs-6/16
+  case 3: //crs-16 or crs-2
+    if (ver_po==0) { // -> crs2
       module=22;
       chan_in_module=2;
       opt.Nchan=2;
       for (int j=0;j<chan_in_module;j++) {
 	type_ch[j]=0;
       }
+      break;
     }
-    else {
-      cout << "unknown device: " << endl;
-      exit(1);
-    }
-  }
-  else { //crs32/16/6
+
+    //crs32/16/6
     module=32;
     chan_in_module=nplates*4;
     if (ver_po==1) {//версия ПО=1
@@ -1171,8 +1172,23 @@ int CRS::Detect_device() {
 	module=34;
       }
     }
-  } //crs32
+
+    break;
   
+  case 4: //crs-8/16
+    module=41;
+    chan_in_module=nplates*8;
+    for (int j=0;j<chan_in_module;j++) {
+      type_ch[j]=2;
+      cout << " " << type_ch[j];
+    }
+    cout << endl;
+    break;
+
+  default:
+    cout << "unknown device: " << endl;
+    exit(1);
+  }
 
   cout << "module: " << module << " chan_in_module: " << chan_in_module << endl;
 
@@ -1220,6 +1236,9 @@ int CRS::SetPar() {
       break;
   case 34:
       AllParameters34();
+      break;
+  case 41:
+      AllParameters41();
       break;
   default:
     cout << "SetPar Error! No module found" << endl;
@@ -1669,6 +1688,65 @@ void CRS::Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
   //<< " " << a2 << " " << len << endl;
 }
 
+void CRS::AllParameters41()
+{
+  //cout << "AllParameters34(): " << endl;
+
+  //enable start channel by default
+  Command32(2,255,11,1); //enabled
+
+  for (byte chan = 0; chan < chan_in_module; chan++) {
+    Command32(2,chan,11,(int) cpar.enabl[chan]); //enabled
+
+    if (cpar.enabl[chan]) {
+      Command32(2,chan,0,(int)cpar.acdc[chan]);
+      Command32(2,chan,1,(int)cpar.inv[chan]);
+      Command32(2,chan,2,(int)cpar.smooth[chan]);
+      Command32(2,chan,3,(int)cpar.deadTime[chan]);
+      Command32(2,chan,4,(int)-cpar.preWr[chan]);
+      Command32(2,chan,5,(int)cpar.durWr[chan]);
+      Command32(2,chan,6,(int)cpar.kderiv[chan]);
+      Command32(2,chan,7,(int)cpar.threshold[chan]);
+      Command32(2,chan,8,(int)cpar.adcGain[chan]);
+      // new commands
+      //Command32(2,chan,9,(int)cpar.delay[chan]); //delay
+      //Command32(2,chan,9,0); //delay
+      //Command32(2,chan,10,0); //test signal is off
+      Command32(2,chan,12,(int) cpar.trg[chan]); //trigger type
+
+      //Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
+      //Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      //Check33(17,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      //Check33(19,chan,opt.T1[chan],opt.T2[chan],1,4095);
+      //Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
+
+      //cpar.Mask[chan]=0xFF;
+      UInt_t mask=0xC3; //11000011 - write tst,count40,count48,overflow
+      if (opt.dsp[chan]) {//add 110000
+	mask|=0x30; // write DSP data
+      }
+      if (cpar.pls[chan]) {//add 1100
+	mask|=0xC; // write pulse
+      }
+      Command32(2,chan,23,mask); //bitmask
+      //UInt_t mask = 0xFF;
+      //Command32(2,chan,23,(UInt_t) mask); //bitmask
+    }
+
+  } //for
+
+  // Start dead time DT
+  if (cpar.DTW==0) cpar.DTW=1;
+  byte type = cpar.DTW>>24;
+  Command32(11,0,type,(UInt_t) cpar.DTW);
+
+  // Sampling rate
+  Command32(11,1,0,cpar.Smpl);
+  // FIR Filter
+  Command32(11,2,0,cpar.FIR);
+
+}
+
 void CRS::AllParameters34()
 {
   //cout << "AllParameters34(): " << endl;
@@ -1933,7 +2011,7 @@ void CRS::ProcessCrs() {
 
   //decode_thread_run=1;
   //tt1[3].Set();
-  if (crs->module>=32 && crs->module<=34) {
+  if (crs->module>=32 && crs->module<=41 /*34*/) {
     Command32(8,0,0,0); //сброс сч./буф.
     Command32(9,0,0,0); //сброс времени
   }
@@ -2901,6 +2979,7 @@ void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
   case 32:
   case 33:
   case 34:
+  case 41:
     crs->Decode34(dec_iread[ibuf]-1,ibuf);
     break;
   case 79:
@@ -3038,6 +3117,7 @@ void CRS::FindLast(UInt_t ibuf) {
   case 32:
   case 33:
   case 34:
+  case 41:
     for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);

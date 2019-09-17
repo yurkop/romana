@@ -267,10 +267,11 @@ RQ_OBJECT("CRS")
   void Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max);
   int Command2(byte cmd, byte ch, byte type, int par);
   //void Command_crs(byte cmd, byte chan);
+  void AllParameters2(); // load all parameters
+  void AllParameters41(); // load all parameters
   void AllParameters34(); // load all parameters
   void AllParameters33(); // load all parameters
   void AllParameters32(); // load all parameters
-  void AllParameters2(); // load all parameters
   int DoStartStop(); // start-stop acquisition
   void ProcessCrs(); // new process events in dostartstop
   //void ProcessCrs_old(); // old process events in dostartstop
