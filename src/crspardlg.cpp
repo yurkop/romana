@@ -2625,7 +2625,7 @@ ErrFrame::ErrFrame(const TGWindow *p,UInt_t w,UInt_t h)
   for (int i=0;i<MAX_ERR;i++) {
     TGHorizontalFrame* cframe = new TGHorizontalFrame(fcont1,10,10);
     fcont1->AddFrame(cframe,com->LayLT0);
-    TGLabel* lb = new TGLabel(cframe,crs->errlabel[i]);
+    TGLabel* lb = new TGLabel(cframe,crs->errlabel[i].c_str());
     lb->SetTextJustify(kTextLeft);
     lb->ChangeOptions(lb->GetOptions()|kFixedSize);
     lb->Resize(120,20);

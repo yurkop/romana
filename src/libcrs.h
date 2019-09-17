@@ -239,7 +239,18 @@ RQ_OBJECT("CRS")
   //1 - ch>=Nchan
   //2 - channel mismatch
   //3 - bad frmt
-  const char* errlabel[MAX_ERR] = {
+
+  // const char errlabel[MAX_ERR][50] = {
+  //   "Bad buf start:",
+  //   "Bad channel:",
+  //   "Channel mismatch:",
+  //   "Bad frmt:",
+  //   "Zero data:",
+  //   "Wrong ADCM length:",
+  //   "Bad ADCM Tstamp:"
+  // };
+
+  string errlabel[MAX_ERR] = {
     "Bad buf start:",
     "Bad channel:",
     "Channel mismatch:",
@@ -248,7 +259,6 @@ RQ_OBJECT("CRS")
     "Wrong ADCM length:",
     "Bad ADCM Tstamp:"
   };
-
   Int_t prof_ch[MAX_CH];
   //--------functions---------
 
