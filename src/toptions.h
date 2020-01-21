@@ -9,6 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
+/*
 struct pmap2 {
   void* par; //address of the parameter
   // P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
@@ -16,7 +17,7 @@ struct pmap2 {
   // byte cmd; //for Command_crs
   // byte chan; //for Command_crs
 };
-
+*/
 
 //------------------------------------
 /*

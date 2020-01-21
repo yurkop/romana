@@ -42,7 +42,7 @@ extern HistFrame* HiFrm;
 extern ErrFrame* ErrFrm;
 extern HClass* hcl;
 extern ParParDlg *parpar;
-extern CrsParDlg *crspar;
+extern DaqParDlg *daqpar;
 extern AnaParDlg *anapar;
 extern DspParDlg *pikpar;
 
@@ -1710,7 +1710,7 @@ void CRS::AllParameters41()
       Command32(2,chan,8,(int)cpar.adcGain[chan]);
       // new commands
       //Command32(2,chan,9,(int)cpar.delay[chan]); //delay
-      //Command32(2,chan,9,0); //delay
+      Command32(2,chan,9,0); //delay
       //Command32(2,chan,10,0); //test signal is off
       Command32(2,chan,12,(int) cpar.trg[chan]); //trigger type
 
@@ -1743,7 +1743,7 @@ void CRS::AllParameters41()
   // Sampling rate
   Command32(11,1,0,cpar.Smpl);
   // FIR Filter
-  Command32(11,2,0,cpar.FIR);
+  //Command32(11,2,0,cpar.FIR);
 
 }
 
@@ -1912,7 +1912,7 @@ int CRS::DoStartStop() {
     //juststarted=true; already set in doreset
 
     parpar->Update();
-    crspar->Update();
+    daqpar->Update();
     anapar->Update();
     pikpar->Update();
 
@@ -2183,9 +2183,9 @@ void CRS::DoReset() {
 
   //printhlist(6);
   // parpar->Update();
-  if (crspar) {
-    crspar->UpdateStatus(1);
-    //crspar->ResetStatus();
+  if (daqpar) {
+    daqpar->UpdateStatus(1);
+    //daqpar->ResetStatus();
   }
   //if (HiFrm)
   //cout << "DoReset2: " << endl;
@@ -2320,7 +2320,7 @@ void CRS::DoFopen(char* oname, int popt) {
 
   if (myM) {
     myM->SetTitle(Fname);
-    crspar->AllEnabled(false);
+    daqpar->AllEnabled(false);
     //myM->fTab->SetEnabled(1,false);
     //cout << "fTab: " << myM->fTab << endl;
   }
@@ -2932,11 +2932,11 @@ void CRS::Show(bool force) {
       // else {
       // 	TString name = TString(myM->fTab->GetCurrentTab()->GetString());
       // 	if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
-      // 	  crspar->UpdateStatus();
+      // 	  daqpar->UpdateStatus();
       // 	}
       // }
     }
-    crspar->UpdateStatus();
+    daqpar->UpdateStatus();
     myM->UpdateStatus();
     ErrFrm->ErrUpdate();
 #ifdef TIMES

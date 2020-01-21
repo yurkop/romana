@@ -6,7 +6,7 @@
 #pragma link C++ class ParDlg+;
 #pragma link C++ class ParParDlg+;
 #pragma link C++ class ChanParDlg+;
-#pragma link C++ class CrsParDlg+;
+#pragma link C++ class DaqParDlg+;
 #pragma link C++ class AnaParDlg+;
 #pragma link C++ class DspParDlg+;
 #pragma link C++ class CRS+;

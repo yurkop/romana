@@ -37,13 +37,14 @@ struct pmap {
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
   char all; //1 - all parameters, >1 - channel type
   byte cmd; //for Command_crs (1 - start/stop crs; 0 - do nothing)
-  byte chan; //for Command_crs
+  //byte chan; //for Command_crs :seems to be not needed (21.01.2020)
 };
 
 //-----------------------------------------------
 class ParDlg: public TGCompositeFrame {
 
 public:
+  int jtrig;
 
   TGDockableFrame        *fDock;
 
@@ -72,7 +73,7 @@ public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ParDlg();
 
-  void DoMap(TGWidget *f, void *d, P_Def t, int all, void *d2=0);
+  void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd=0, void *d2=0);
 
   void SetNum(pmap pp, Double_t num);
   void SetChk(pmap pp, Bool_t num);
@@ -148,7 +149,7 @@ public:
 		   TGNumberFormat::EStyle style2, 
 		   //TGNumberFormat::EAttribute attr, 
 		   double min1=0, double max1=0,
-		   double min2=0, double max2=0, char* connect=NULL);
+		   double min2=0, double max2=0, int iconnect=0);
   // void AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
   // 		   const char* tip1, const char* label);
   void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
@@ -172,6 +173,7 @@ public:
   void AddLogic(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
   void DoParNum();
+  void DoParNum_Daq();
   void DoNum_SetBuf();
   void DoCheckHist();
   void DoCheckPulse();
@@ -197,8 +199,7 @@ public:
   virtual ~ChanParDlg() {};
 
   void AddChCombo(int i, int &id, int &kk, int &all);
-  void DoChanMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, byte chan,
-	     void* d2=0);
+  //void DoChanMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, //byte chan, void* d2=0);
   void DoChanNum();
   void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       void* apar, double min, double max, P_Def ptype);
@@ -207,30 +208,29 @@ public:
 };
 
 //-----------------------------------------------
-class CrsParDlg: public ChanParDlg {
+class DaqParDlg: public ChanParDlg {
 
 public:
-  int trig;
   TGTextEntry *fStat2[MAX_CH+1];
   TGTextEntry *fStat3[MAX_CH+1];
   TGTextEntry *fStatBad[MAX_CH+1];
 
 public:
-  CrsParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~CrsParDlg() {};
+  DaqParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~DaqParDlg() {};
 
-  void Make_crspar(const TGWindow *p,UInt_t w,UInt_t h);
+  void Make_daqpar(const TGWindow *p,UInt_t w,UInt_t h);
   void AddHeader();
-  void AddLine_crs(int i, TGCompositeFrame* fcont1);
-  void AddNumCrs(int i, int kk, int all, TGHorizontalFrame *hframe1,
+  void AddLine_daq(int i, TGCompositeFrame* fcont1);
+  void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       const char* name, void* apar, void* apar2=0);
   //void ResetStatus();
   void UpdateStatus(int rst=0);
-  void DoCrsNum();
+  void DoDaqNum();
   void DoCheck();
 
   //void Update();
-  ClassDef(CrsParDlg, 0)
+  ClassDef(DaqParDlg, 0)
 };
 
 //-----------------------------------------------

@@ -60,7 +60,7 @@ ErrFrame* ErrFrm;
 HClass* hcl;
 
 ParParDlg *parpar;
-CrsParDlg *crspar;
+DaqParDlg *daqpar;
 AnaParDlg *anapar;
 DspParDlg *pikpar;
 
@@ -1340,7 +1340,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //MakeTabs();
 
   if (crs->Fmode!=1) { //no CRS present
-    crspar->AllEnabled(false);
+    daqpar->AllEnabled(false);
 
     //TGTabElement *tabdaq = fTab->GetTabTab("DAQ");
     //tabdaq->SetEnabled(false);
@@ -1509,7 +1509,7 @@ void MainFrame::Rebuild() {
   //cout << "main::Rebuild: " << endl;
 
   EvtFrm->Rebuild();
-  crspar->Rebuild();
+  daqpar->Rebuild();
   anapar->Rebuild();
   pikpar->Rebuild();
   Resize(GetDefaultSize());
@@ -1531,11 +1531,11 @@ void MainFrame::MakeTabs() {
   ntab++;
 
   //cout << "tab2: " << endl;
-  crspar = new CrsParDlg(tabfr[1], 600, 500);
-  crspar->Make_crspar(tabfr[1], 600, 210);
-  tabfr[1]->AddFrame(crspar, com->LayEE2);
+  daqpar = new DaqParDlg(tabfr[1], 600, 500);
+  daqpar->Make_daqpar(tabfr[1], 600, 210);
+  tabfr[1]->AddFrame(daqpar, com->LayEE2);
   ntab++;
-  crspar->Update();
+  daqpar->Update();
   //cout << "tab3: " << endl;
 
   anapar = new AnaParDlg(tabfr[2], 600, 500);
@@ -1651,7 +1651,7 @@ void MainFrame::DoOpen(Int_t id) {
     crs->DoFopen(fi.fFilename,id);//1 - read toptions
 
     parpar->Update();
-    crspar->Update();
+    daqpar->Update();
     anapar->Update();
     pikpar->Update();
 
@@ -1679,17 +1679,17 @@ void MainFrame::DoClose() {
   // }
 
   myM->SetTitle((char*)"");
-  crspar->AllEnabled(true);
+  daqpar->AllEnabled(true);
 
   parpar->Update();
-  crspar->Update();
+  daqpar->Update();
   anapar->Update();
   pikpar->Update();
 
 #ifdef CYUSB
   crs->Detect_device();
   if (crs->Fmode==1) { //CRS is present
-    crspar->AllEnabled(true);
+    daqpar->AllEnabled(true);
 
     fStart->SetEnabled(true);
     fReset->SetEnabled(true);
@@ -1813,7 +1813,7 @@ void MainFrame::DoNbuf() {
 
 // void MainFrame::ParLock() {
 //   cout << "ParLock: " << endl;
-//   crspar->SelectEnabled(false,"pre");
+//   daqpar->SelectEnabled(false,"pre");
 // }
 
 // void MainFrame::ParUnLock() {
@@ -1857,7 +1857,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
       }
 
       parpar->Update();
-      crspar->Update();
+      daqpar->Update();
       anapar->Update();
       pikpar->Update();
 
@@ -1918,7 +1918,7 @@ void MainFrame::DoReadRoot() {
     readroot(rname);
 
     parpar->Update();
-    crspar->Update();
+    daqpar->Update();
     anapar->Update();
     pikpar->Update();
     HiFrm->Update();
@@ -2028,7 +2028,7 @@ void MainFrame::DoReset() {
   //else {
   HiFrm->HiReset();
   parpar->Update();
-  crspar->Update();
+  daqpar->Update();
   anapar->Update();
   pikpar->Update();
   //}
@@ -2255,7 +2255,7 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
     //cout << "DoTab2: " << name << endl;
-    crspar->Update();
+    daqpar->Update();
   }
   else if (name.EqualTo("Analysis",TString::kIgnoreCase)) {
     //cout << "DoTab3: " << name << endl;
