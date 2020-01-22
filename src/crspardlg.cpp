@@ -2034,11 +2034,11 @@ void ChanParDlg::DoChanMap(TGWidget *f, void *d, P_Def t, int all,
   //Plist.back().chan=chan;
   Plist.back().data2= d2;
 }
-
+*/
 void ChanParDlg::DoChanNum() {
   ParDlg::DoNum();
 }
-*/
+
 
 //void ChanParDlg::DoCheck() {
 //ParDlg::DoChk();
