@@ -28,3 +28,6 @@ git checkout 06d6d2b45929bfe1cec688d5821109e8241943a4 .
 
 добавить метку:
 git tag -a v1.4 -m 'version 1.4'
+
+посмотреть текущие метки:
+git tag
