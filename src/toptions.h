@@ -173,6 +173,7 @@ public:
   Bool_t checkdsp;
 
   Bool_t raw_write;
+  Bool_t raw_flag; //0 - write direct raw stream; 1 - write processed events
   Bool_t dec_write;
   Bool_t root_write;
   Int_t raw_compr; //raw data compr level

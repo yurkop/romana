@@ -276,6 +276,7 @@ Toptions::Toptions() {
   // }
 
   raw_write=false;
+  raw_flag=false;
   dec_write=false;
   root_write=false;
 

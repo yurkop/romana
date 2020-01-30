@@ -891,7 +891,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 }
 void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
-		       Int_t* compr) {
+		       Int_t* compr, Bool_t* rflag) {
   int id;
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(frame,10,10);
@@ -923,6 +923,22 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   fNum1->GetNumberEntry()->SetToolTipText("Compression factor [0-9]: 0 - no compression (fast); 9- maximum compression (slow)");
   TGLabel* fLabel = new TGLabel(hframe1, "compr.");
   hframe1->AddFrame(fLabel,com->LayCC1);
+
+  //raw_flag
+  if (rflag) {
+    id = Plist.size()+1;
+    TGCheckButton *fchk2 = new TGCheckButton(hframe1, "Proc", id);
+    fchk2->SetToolTipText("Checked - write processed events; unchecked - write direct raw stream");
+    //fchk2->SetName(txt);
+    //fchk2->ChangeOptions(fchk2->GetOptions()|kFixedWidth);
+    //fchk2->SetWidth(230);
+
+    hframe1->AddFrame(fchk2,com->LayCC1);
+    DoMap(fchk2,rflag,p_chk,0);
+    //fchk2->Connect("Clicked()", "ParDlg", this, "DoChk()");
+    fchk2->Connect("Clicked()", "ParDlg", this, "DoChkWrite()");
+    //fchk->SetState(kButtonDown,false);
+  }
 
 }
 
@@ -966,9 +982,9 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
 
 
-  AddChk(fF6,"Write raw data [Filename].raw",&opt.raw_write,&opt.raw_compr);
-  AddChk(fF6,"Write decoded data [Filename].dec",&opt.dec_write,&opt.dec_compr);
-  AddChk(fF6,"Write root histograms [Filename].root",&opt.root_write,&opt.root_compr);
+  AddChk(fF6,"Write raw data [Filename].raw",&opt.raw_write,&opt.raw_compr,&opt.raw_flag);
+  AddChk(fF6,"Write decoded data [Filename].dec",&opt.dec_write,&opt.dec_compr,0);
+  AddChk(fF6,"Write root histograms [Filename].root",&opt.root_write,&opt.root_compr,0);
 
 
 

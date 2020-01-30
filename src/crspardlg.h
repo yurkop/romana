@@ -166,7 +166,7 @@ public:
   // void AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   // 		Int_t* compr, char* opt_fname);
   void AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
-	      Int_t* compr);
+	      Int_t* compr, Bool_t* rflag);
   void AddFiles(TGCompositeFrame* frame);
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
