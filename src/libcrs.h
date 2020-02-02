@@ -75,6 +75,7 @@ RQ_OBJECT("CRS")
   //static const int MAXTRANS=7;
   static const int MAXTRANS7=7;
   static const int DECSIZE=1048576; //1 MB
+  static const int RAWSIZE=10485760; //10 MB
 
   //static const Int_t MAXEV=1000; //maximal number of events in Levents
   //--------variables---------
@@ -102,8 +103,11 @@ RQ_OBJECT("CRS")
 
   UChar_t* DecBuf;
   ULong64_t* DecBuf8;
-
   Int_t idec; //index of DecBuf;
+
+  UChar_t* RawBuf;
+  ULong64_t* RawBuf8;
+  Int_t iraw; //index of RawBuf;
 
   // struct Pstruct {
   //   UInt_t num;
@@ -370,6 +374,9 @@ RQ_OBJECT("CRS")
   void Fill_Dec78(EventClass* evt);
   void Fill_Dec79(EventClass* evt);
   void Flush_Dec();
+
+  void Fill_Raw(EventClass* evt);
+  void Flush_Raw();
 
   //void Print_Pulses();
   void Print_Events(const char* file=0);

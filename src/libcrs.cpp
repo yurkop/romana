@@ -222,7 +222,7 @@ static void cback(libusb_transfer *trans) {
       }
     } //if decode
 
-    if (opt.raw_write) {
+    if (opt.raw_write && !opt.raw_flag) {
       crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
       if (crs->f_raw) {
     	int res=gzwrite(crs->f_raw,trans->buffer,trans->actual_length);
@@ -514,6 +514,9 @@ void *handle_ana(void *ctx) {
 	    //crs->Fill_Dec78(&(*m_event));
 	    crs->Fill_Dec79(&(*m_event));
 	  }
+	  if (opt.raw_write && opt.raw_flag) {
+	    crs->Fill_Raw(&(*m_event));
+	  }
 	}
 	++m_event;
       }
@@ -531,8 +534,13 @@ void *handle_ana(void *ctx) {
     }
 
 
-    if (ana_all && opt.dec_write) {
-      crs->Flush_Dec();
+    if (ana_all) {
+      if (opt.dec_write) {
+	crs->Flush_Dec();
+      }
+      if (opt.raw_write && opt.raw_flag) {
+	//crs->Flush_Raw();
+      }
     }
 
     //cout << "Levents4: " << crs->Levents.size() << " " << crs->nevents << endl;
@@ -745,6 +753,9 @@ void CRS::Ana2(int all) {
 	  //crs->Fill_Dec78(&(*m_event));
 	  crs->Fill_Dec79(&(*m_event));
 	}
+	if (opt.raw_write && opt.raw_flag) {
+	  crs->Fill_Raw(&(*m_event));
+	}
       }
       ++m_event;
     }
@@ -761,8 +772,13 @@ void CRS::Ana2(int all) {
 
   //cout << "Levents3: " << Levents.size() << " " << nevents << endl;
 
-  if (all && opt.dec_write) {
-    Flush_Dec();
+  if (all) {
+    if (opt.dec_write) {
+      crs->Flush_Dec();
+    }
+    if (opt.raw_write && opt.raw_flag) {
+      //crs->Flush_Raw();
+    }
   }
 
   //cout << "Levents4: " << Levents.size() << " " << nevents << endl;
@@ -949,7 +965,8 @@ CRS::CRS() {
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
 
-  DecBuf=new UChar_t[2*DECSIZE]; //1 MB
+  DecBuf=new UChar_t[2*DECSIZE]; //2*1 MB
+  RawBuf=new UChar_t[RAWSIZE]; //10 MB
 
   //strcpy(Fname," ");
   memset(Fname,0,sizeof(Fname));
@@ -1009,6 +1026,7 @@ CRS::~CRS() {
   DoExit();
   cout << "~CRS()" << endl;
   delete[] DecBuf;
+  delete[] RawBuf;
   delete[] GLBuf2;
 
 }
@@ -2173,7 +2191,7 @@ void CRS::DoReset() {
   //idnext=0;
   //lastfl=1;
 
-  idec=0;
+  //idec=0;
 
   //printhlist(5);
   //cout << "f_read: " << f_read << endl;
@@ -2575,7 +2593,7 @@ int CRS::DoBuf() {
   int length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
   b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
-  if (opt.raw_write) {
+  if (opt.raw_write && !opt.raw_flag) {
     crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
     if (crs->f_raw) {
       int res=gzwrite(crs->f_raw,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
@@ -4845,6 +4863,9 @@ void CRS::Reset_Raw() {
   }
 
   sprintf(raw_opt,"ab%d",opt.raw_compr);
+
+  RawBuf8 = (ULong64_t*) RawBuf;
+  iraw=0;
 }
 
 void CRS::Reset_Dec(Short_t mod) {
@@ -4863,6 +4884,7 @@ void CRS::Reset_Dec(Short_t mod) {
   sprintf(dec_opt,"ab%d",opt.dec_compr);
 
   DecBuf8 = (ULong64_t*) DecBuf;
+  idec=0;
 }
 
 /*
@@ -5197,5 +5219,103 @@ void CRS::Flush_Dec() {
 
   gzclose(f_dec);
   f_dec=0;
+
+}
+
+void CRS::Fill_Raw(EventClass* evt) {
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    PulseClass *ipls = &evt->pulses[i];
+    if (iraw + ipls->sData.size()/3 + 10 > RAWSIZE) {//+10 - с запасом
+      Flush_Raw();
+      RawBuf8 = (ULong64_t*) RawBuf;
+    }
+
+    *RawBuf8=ipls->Tstamp64;
+    RawBuf[iraw+6]=ipls->Counter & 0xF;
+    RawBuf[iraw+7]=ipls->Chan;
+
+    *(RawBuf8+1)=ipls->Counter;
+    RawBuf[iraw+13]=ipls->State;
+    RawBuf[iraw+14]=ipls->Counter & 0xF;
+    RawBuf[iraw+15]=ipls->Chan;
+    
+  }
+  /*
+  //Fill_Dec79 - the same as 78, but different factor for Area
+
+  // fill_dec is not thread safe!!!
+  //format of decoded data:
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - State
+  // 2) N 8-byte words, each containing one peak
+  //    1st (lowest) 2 bytes - (unsigned) Area*5+1
+  //    2 bytes - Time*100
+  //    2 bytes - Width*1000
+  //    1 byte - channel
+
+  *DecBuf8 = 1;
+  *DecBuf8<<=63;
+  *DecBuf8 |= evt->Tstmp & sixbytes;
+  if (evt->State) {
+    *DecBuf8 |= 0x1000000000000;
+  }
+
+  ++DecBuf8;
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      peak_type* pk = &evt->pulses[i].Peaks[j];
+      *DecBuf8=0;
+      Short_t* Decbuf2 = (Short_t*) DecBuf8;
+      UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
+      if (pk->Area<0) {
+	*Decbuf2u = 0;
+      }
+      else if (pk->Area>13106){
+	*Decbuf2u = 65535;
+      }
+      else {
+	*Decbuf2u = pk->Area*5+1;
+      }
+      Decbuf2[1] = pk->Time*100;
+      Decbuf2[2] = pk->Width*1000;
+      Decbuf2[3] = evt->pulses[i].Chan;
+      //cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
+      ++DecBuf8;
+    }
+  }
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    Flush_Dec();
+    DecBuf8 = (ULong64_t*) DecBuf;
+  }
+  */
+} //Fill_Raw
+
+void CRS::Flush_Raw() {
+
+  /*
+  sprintf(dec_opt,"ab%d",opt.dec_compr);
+  f_dec = gzopen(crs->decname.c_str(),dec_opt);
+  if (!f_dec) {
+    cout << "Can't open file: " << crs->decname.c_str() << endl;
+    idec=0;
+    return;
+  }
+
+  int res=gzwrite(f_dec,DecBuf,idec);
+  if (res!=idec) {
+    cout << "Error writing to file: " << crs->decname.c_str() << " " 
+	 << res << " " << idec << endl;
+  }
+  idec=0;
+  decbytes+=res;
+
+  gzclose(f_dec);
+  f_dec=0;
+  */
 
 }
