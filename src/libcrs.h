@@ -106,7 +106,7 @@ RQ_OBJECT("CRS")
   Int_t idec; //index of DecBuf;
 
   UChar_t* RawBuf;
-  ULong64_t* RawBuf8;
+  //ULong64_t* RawBuf8;
   Int_t iraw; //index of RawBuf;
 
   // struct Pstruct {

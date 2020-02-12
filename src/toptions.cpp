@@ -55,7 +55,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
   max=0;
 
   //CRS-2 ------------------------------------
-  if (module==2) {
+  if (module==22) {
     if (!strcmp(name,"smooth")) {
       par = smooth[i];
       min = 0;
@@ -90,6 +90,11 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       par = adcGain[i];
       min = 5;
       max=12;
+    }
+    else if (!strcmp(name,"dt")) {
+      par = deadTime[i];
+      min = 1;
+      max=1;
     }
     else {
       cout << "GetPar: wrong name: " << name << " " << i << endl;

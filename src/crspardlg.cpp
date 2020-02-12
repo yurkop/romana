@@ -2114,7 +2114,7 @@ void DaqParDlg::Make_daqpar(const TGWindow *p,UInt_t w,UInt_t h) {
     AddLine_daq(MAX_CH+i,fcont2);
   }
 
-  if (crs->module==2) {
+  if (crs->module==22) {
     TGHorizontalFrame *hforce = new TGHorizontalFrame(fcont1,10,10);
     fcont1->AddFrame(hforce,com->LayLT0);
 
@@ -2211,7 +2211,7 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   AddNumDaq(i,kk++,all,cframe[i],"dt"    ,&cpar.deadTime[i]);
   AddNumDaq(i,kk++,all,cframe[i],"pre"   ,&cpar.preWr[i]);
   AddNumDaq(i,kk++,all,cframe[i],"len"   ,&cpar.durWr[i]);
-  if (crs->module==2) 
+  if (crs->module==22) 
     AddNumDaq(i,kk++,1,cframe[i],"gain"  ,&cpar.adcGain[i]);
   else
     AddNumDaq(i,kk++,all,cframe[i],"gain"  ,&cpar.adcGain[i]);

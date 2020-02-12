@@ -82,7 +82,7 @@ std::list<EventClass>::iterator m_event; //важный параметр
 
 //int MT=1;
 
-const Long64_t sixbytes=0xFFFFFFFFFFFF;
+const ULong64_t sixbytes=0xFFFFFFFFFFFF;
 
 //const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
 const Long64_t GLBSIZE=1024*1024*1024; //1024 MB
@@ -539,7 +539,7 @@ void *handle_ana(void *ctx) {
 	crs->Flush_Dec();
       }
       if (opt.raw_write && opt.raw_flag) {
-	//crs->Flush_Raw();
+	crs->Flush_Raw();
       }
     }
 
@@ -772,14 +772,15 @@ void CRS::Ana2(int all) {
 
   //cout << "Levents3: " << Levents.size() << " " << nevents << endl;
 
-  if (all) {
-    if (opt.dec_write) {
-      crs->Flush_Dec();
-    }
-    if (opt.raw_write && opt.raw_flag) {
-      //crs->Flush_Raw();
-    }
-  }
+  // removed on 06.02.2020
+  // if (all) {
+  //   if (opt.dec_write) {
+  //     crs->Flush_Dec();
+  //   }
+  //   if (opt.raw_write && opt.raw_flag) {
+  //     crs->Flush_Raw();
+  //   }
+  // }
 
   //cout << "Levents4: " << Levents.size() << " " << nevents << endl;
 
@@ -1145,6 +1146,7 @@ int CRS::Detect_device() {
   case 1: //crs-32
   case 2: //crs-6/16
   case 3: //crs-16 or crs-2
+    //crs2
     if (ver_po==0) { // -> crs2
       module=22;
       chan_in_module=2;
@@ -1183,10 +1185,10 @@ int CRS::Detect_device() {
 	sz--;
 	//cout << i << " " << sz << endl;
       }
-      if (ver_po==3) {//версия ПО=3 или выше
+      if (ver_po==3) {//версия ПО=3
 	module=33;
       }
-      else if (ver_po>=4) {//версия ПО=3 или выше
+      else if (ver_po>=4) {//версия ПО=4 или выше
 	module=34;
       }
     }
@@ -2384,7 +2386,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   if (m1) {
     //T_start = opt.F_start;
-    if (mod==2) {
+    if (mod==2 || mod==22) {
       module=22;
       cout << "CRS2 File: " << Fname << " " << module << endl;
     }
@@ -2795,6 +2797,14 @@ void CRS::EndAna(int all) {
   // for (int i=0;i<opt.Nchan;i++) {
   //   cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
   // }
+
+  //new (06.02.2020)
+  if (opt.dec_write) {
+    crs->Flush_Dec();
+  }
+  if (opt.raw_write && opt.raw_flag) {
+    crs->Flush_Raw();
+  }
 
 }
 
@@ -4854,8 +4864,13 @@ void CRS::Reset_Raw() {
 
   f_raw = gzopen(crs->rawname.c_str(),raw_opt);
   if (f_raw) {
-    cout << "Writing parameters... : " << crs->rawname.c_str() << endl;
-    SaveParGz(f_raw,module);
+    cout << "Writing parameters... : " << crs->rawname.c_str() << " " << module << endl;
+    if (opt.raw_flag) {
+      SaveParGz(f_raw,34);
+    }
+    else {
+      SaveParGz(f_raw,module);
+    }
     gzclose(f_raw);
   }
   else {
@@ -4864,7 +4879,7 @@ void CRS::Reset_Raw() {
 
   sprintf(raw_opt,"ab%d",opt.raw_compr);
 
-  RawBuf8 = (ULong64_t*) RawBuf;
+  //RawBuf8 = (ULong64_t*) RawBuf;
   iraw=0;
 }
 
@@ -5201,6 +5216,7 @@ void CRS::Flush_Dec() {
   //idec=0;
   //return;
 
+  if (!idec) return;
   sprintf(dec_opt,"ab%d",opt.dec_compr);
   f_dec = gzopen(crs->decname.c_str(),dec_opt);
   if (!f_dec) {
@@ -5222,100 +5238,128 @@ void CRS::Flush_Dec() {
 
 }
 
+void p_buf8(int id,ULong64_t* buf8) {
+  //ULong64_t* buf8 = (ULong64_t*) buf;
+
+  Long64_t ibuf = buf8 - (ULong64_t*)crs->RawBuf;
+
+  ULong64_t data;
+  unsigned short frmt,ch;
+  UChar_t* buf = (UChar_t*) buf8;
+
+  frmt = buf[6];
+  frmt = (frmt & 0xF0)>>4;
+  ch = buf[7];
+  data = *buf8 & sixbytes;
+  
+  printf("%1d: %6lld %4d %3d %16lld %20lld\n",id,ibuf,ch,frmt,data,*buf8);
+  ibuf++;
+
+}
+
 void CRS::Fill_Raw(EventClass* evt) {
+  const ULong64_t fmt1 = 1ull<<52;
+
+  ULong64_t r8;
+  ULong64_t rdata=0;
+  UShort_t Mask;
+  int shft;
+
+  //cout << "Fill_Raw: " << iraw << endl;
   for (UInt_t i=0;i<evt->pulses.size();i++) {
     PulseClass *ipls = &evt->pulses[i];
     if (iraw + ipls->sData.size()/3 + 10 > RAWSIZE) {//+10 - с запасом
       Flush_Raw();
-      RawBuf8 = (ULong64_t*) RawBuf;
+      //RawBuf8 = (ULong64_t*) RawBuf;
     }
 
+    ULong64_t* RawBuf8 = (ULong64_t*) (RawBuf+iraw);
+    //UShort_t* RawBuf2 = (UShort_t*) (RawBuf+6);
+
+    //Tstamp - fmt0
     *RawBuf8=ipls->Tstamp64;
     RawBuf[iraw+6]=ipls->Counter & 0xF;
     RawBuf[iraw+7]=ipls->Chan;
+    r8=(*RawBuf8)&0xFFFF000000000000;
 
-    *(RawBuf8+1)=ipls->Counter;
+    //p_buf8(0,RawBuf8);
+
+    //Counter - fmt1
+    ++RawBuf8;
+    *RawBuf8=ipls->Counter & 0xFFFFFFFFFF;
     RawBuf[iraw+13]=ipls->State;
-    RawBuf[iraw+14]=ipls->Counter & 0xF;
-    RawBuf[iraw+15]=ipls->Chan;
+    r8+=fmt1;
+    *RawBuf8|=r8;
+
+    //p_buf8(1,RawBuf8);
     
-  }
-  /*
-  //Fill_Dec79 - the same as 78, but different factor for Area
-
-  // fill_dec is not thread safe!!!
-  //format of decoded data:
-  // 1) one 8byte header word:
-  //    bit63=1 - start of event
-  //    lowest 6 bytes - Tstamp
-  //    byte 7 - State
-  // 2) N 8-byte words, each containing one peak
-  //    1st (lowest) 2 bytes - (unsigned) Area*5+1
-  //    2 bytes - Time*100
-  //    2 bytes - Width*1000
-  //    1 byte - channel
-
-  *DecBuf8 = 1;
-  *DecBuf8<<=63;
-  *DecBuf8 |= evt->Tstmp & sixbytes;
-  if (evt->State) {
-    *DecBuf8 |= 0x1000000000000;
-  }
-
-  ++DecBuf8;
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      peak_type* pk = &evt->pulses[i].Peaks[j];
-      *DecBuf8=0;
-      Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
-      if (pk->Area<0) {
-	*Decbuf2u = 0;
-      }
-      else if (pk->Area>13106){
-	*Decbuf2u = 65535;
+    //Data - fmt2 or fmt3
+    int f_dat=3;//data format (2 or 3)
+    if (f_dat==2) { //11 bits per data
+      r8+=fmt1; //bytes 6,7 -> fmt2
+      shft=12;
+      Mask=0x7FF;
+    }
+    else { //16 bits per data
+      r8+=fmt1*2; //bytes 6,7 -> fmt3
+      shft=16;
+      Mask=0xFFFF;
+    }
+    ++RawBuf8;
+    *RawBuf8=r8;
+    int ish=0;
+    for (int j=0;j<(int)ipls->sData.size();j++) {
+      rdata=ipls->sData[j];
+      rdata&=Mask;
+      rdata<<=ish;
+      *RawBuf8|=rdata;
+      //cout << "rdata: " << *RawBuf8 << " " << rdata << endl;
+      if (ish>30) { //32 or 36
+	//p_buf8(f_dat,RawBuf8);
+	RawBuf8++;
+	*RawBuf8=r8;
+	//cout << "r8: " << *RawBuf8 << " " << r8 << endl;
+	ish=0;
       }
       else {
-	*Decbuf2u = pk->Area*5+1;
+	ish+=shft;
       }
-      Decbuf2[1] = pk->Time*100;
-      Decbuf2[2] = pk->Width*1000;
-      Decbuf2[3] = evt->pulses[i].Chan;
-      //cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
-      ++DecBuf8;
     }
+    UChar_t* last = (UChar_t*) RawBuf8;
+    iraw = last - RawBuf;
   }
-
-  idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
-    Flush_Dec();
-    DecBuf8 = (ULong64_t*) DecBuf;
-  }
-  */
 } //Fill_Raw
 
 void CRS::Flush_Raw() {
 
   /*
-  sprintf(dec_opt,"ab%d",opt.dec_compr);
-  f_dec = gzopen(crs->decname.c_str(),dec_opt);
-  if (!f_dec) {
-    cout << "Can't open file: " << crs->decname.c_str() << endl;
-    idec=0;
+  cout << "Flush_Raw: " << iraw << endl;
+  Long64_t i8=0;
+  ULong64_t* buf8 = (ULong64_t*) RawBuf;
+  while (i8<iraw/8) {
+    printf("%6lld %20lld\n",i8,buf8[i8]);
+    ++i8;
+  }
+  */
+
+  if (!iraw) return;
+  sprintf(raw_opt,"ab%d",opt.raw_compr);
+  f_raw = gzopen(crs->rawname.c_str(),raw_opt);
+  if (!f_raw) {
+    cout << "Can't open file: " << crs->rawname.c_str() << endl;
+    iraw=0;
     return;
   }
 
-  int res=gzwrite(f_dec,DecBuf,idec);
-  if (res!=idec) {
-    cout << "Error writing to file: " << crs->decname.c_str() << " " 
-	 << res << " " << idec << endl;
+  int res=gzwrite(f_raw,RawBuf,iraw);
+  if (res!=iraw) {
+    cout << "Error writing to file: " << crs->rawname.c_str() << " " 
+	 << res << " " << iraw << endl;
   }
-  idec=0;
-  decbytes+=res;
+  iraw=0;
+  rawbytes+=res;
 
-  gzclose(f_dec);
-  f_dec=0;
-  */
+  gzclose(f_raw);
+  f_raw=0;
 
 }

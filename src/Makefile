@@ -80,6 +80,9 @@ $(OBJ_D)/romdict.o: $(OBJ_D)/romdict.cpp
 $(OBJ_D):
 	mkdir -p $(OBJ_D)
 
+dec34: utils/dec34.cpp
+	g++ $(CXXFLAGS) $(CPPFLAGS) -o dec34.x utils/dec34.cpp $(LDFLAGS)
+
 r2a: utils/root2ascii.cxx
 	g++ $(CXXFLAGS) $(CPPFLAGS) -o r2a.x utils/root2ascii.cxx $(LDFLAGS)
 
