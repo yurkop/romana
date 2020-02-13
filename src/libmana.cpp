@@ -1161,8 +1161,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
   TGPopupMenu* fMenuProf = new TGPopupMenu(gClient->GetRoot());
-  fMenuProf->AddEntry("Edit Ing-27 channel map", M_EDIT_CHMAP);
 
+  fMenuProf->AddEntry("Edit Ing-27/Prof8x8 channel map", M_EDIT_PROF8);
+  fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
+		     "HandleMenu(Int_t)");
+
+  fMenuProf->AddEntry("Edit Ing-27/Prof64/64 channel map", M_EDIT_PROF64);
   fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
@@ -1492,6 +1496,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   Move(-100,-100);
 
+  p_ed=0;
   //cout << "2222" << endl;
 }
 
@@ -2441,15 +2446,30 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
     //break;
 
-  case M_EDIT_CHMAP:
+  case M_EDIT_PROF8:
     {
-      //cout << "ed: " << endl;
-      Editor *ed = new Editor(this, 200, 400);
-      ed->LoadPar();
-      //ed->LoadBuffer(editortxt1);
-      ed->Popup();
+      if (!p_ed) {
+	//cout << "p_ed: " << p_ed << endl;
+	p_ed = new PEditor(this, 200, 400);
+	p_ed->LoadPar();
+	//ed->LoadBuffer(editortxt1);
+	p_ed->Popup();
+      }
     }
     break;
+
+  case M_EDIT_PROF64:
+    {
+      if (!p_ed) {
+	//cout << "p_ed: " << p_ed << endl;
+	p_ed = new PEditor(this, 200, 400);
+	p_ed->LoadPar();
+	//ed->LoadBuffer(editortxt1);
+	p_ed->Popup();
+      }
+    }
+    break;
+
   case M_HELP:
 
     strcpy(command,"xdg-open ");
@@ -2818,14 +2838,14 @@ void TGMatrixLayout2::SavePrimitive(ostream &out, Option_t *)
 }
 
 
-Editor::Editor(const TGWindow *main, UInt_t w, UInt_t h)
+PEditor::PEditor(const TGWindow *main, UInt_t w, UInt_t h)
 {
   // Create an editor in a dialog.
 
   str = new TString();
 
   fMain = new TGTransientFrame(gClient->GetRoot(), main, w, h);
-  fMain->Connect("CloseWindow()", "Editor", this, "CloseWindow()");
+  fMain->Connect("CloseWindow()", "PEditor", this, "CloseWindow()");
   fMain->DontCallClose(); // to avoid double deletions.
 
   // use hierarchical cleaning
@@ -2834,9 +2854,9 @@ Editor::Editor(const TGWindow *main, UInt_t w, UInt_t h)
   fEdit = new TGTextEdit(fMain, w, h, kSunkenFrame | kDoubleBorder);
   fL1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3);
   fMain->AddFrame(fEdit, fL1);
-  fEdit->Connect("Opened()", "Editor", this, "DoOpen()");
-  fEdit->Connect("Saved()",  "Editor", this, "DoSave()");
-  fEdit->Connect("Closed()", "Editor", this, "DoClose()");
+  fEdit->Connect("Opened()", "PEditor", this, "DoOpen()");
+  fEdit->Connect("Saved()",  "PEditor", this, "DoSave()");
+  fEdit->Connect("Closed()", "PEditor", this, "DoClose()");
 
   // set selected text colors
   Pixel_t pxl;
@@ -2845,12 +2865,12 @@ Editor::Editor(const TGWindow *main, UInt_t w, UInt_t h)
   fEdit->SetSelectFore(TGFrame::GetWhitePixel());
 
   // TGTextButton* fRead = new TGTextButton(fMain, "  &Read  ");
-  // fRead->Connect("Clicked()", "Editor", this, "DoOpen()");
+  // fRead->Connect("Clicked()", "PEditor", this, "DoOpen()");
   // fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
   // fMain->AddFrame(fRead, fL2);
 
   TGTextButton* fOK = new TGTextButton(fMain, "  &OK  ");
-  fOK->Connect("Clicked()", "Editor", this, "DoOK()");
+  fOK->Connect("Clicked()", "PEditor", this, "DoOK()");
   fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
   fMain->AddFrame(fOK, fL2);
 
@@ -2864,14 +2884,14 @@ Editor::Editor(const TGWindow *main, UInt_t w, UInt_t h)
   fMain->CenterOnParent(kTRUE, TGTransientFrame::kRight);
 }
 
-Editor::~Editor()
+PEditor::~PEditor()
 {
   // Delete editor dialog.
 
   fMain->DeleteWindow();  // deletes fMain
 }
 
-void Editor::SetTitle()
+void PEditor::SetTitle()
 {
   // Set title in editor window.
 
@@ -2888,27 +2908,27 @@ void Editor::SetTitle()
   fMain->SetIconName(title);
 }
 
-void Editor::Popup()
+void PEditor::Popup()
 {
   // Show editor.
 
   fMain->MapWindow();
 }
 
-// void Editor::LoadBuffer(const char *buffer)
+// void PEditor::LoadBuffer(const char *buffer)
 // {
 //   // Load a text buffer in the editor.
 
 //   fEdit->LoadBuffer(buffer);
 // }
 
-void Editor::LoadFile(const char *file)
+void PEditor::LoadFile(const char *file)
 {
   // Load a file in the editor.
   fEdit->LoadFile(file);
 }
 
-void Editor::LoadPar()
+void PEditor::LoadPar()
 {
   char ss[100];
   //fEdit->LoadBuffer("# Lines starting with # are comments");
@@ -2925,14 +2945,15 @@ void Editor::LoadPar()
   }
 }
 
-void Editor::CloseWindow()
+void PEditor::CloseWindow()
 {
   // Called when closed via window manager action.
 
   delete this;
+  myM->p_ed=0;
 }
 
-void Editor::DoOK()
+void PEditor::DoOK()
 {
   // Handle ok button.
 
@@ -2962,7 +2983,7 @@ void Editor::DoOK()
   CloseWindow();
 }
 
-void Editor::DoOpen()
+void PEditor::DoOpen()
 {
   SetTitle();
 #ifdef LINUX
@@ -2972,7 +2993,7 @@ void Editor::DoOpen()
 #endif
 }
 
-void Editor::DoSave()
+void PEditor::DoSave()
 {
   SetTitle();
 #ifdef LINUX
@@ -2982,7 +3003,7 @@ void Editor::DoSave()
 #endif
 }
 
-void Editor::DoClose()
+void PEditor::DoClose()
 {
   // Handle close button.
 

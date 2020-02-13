@@ -44,7 +44,7 @@ void setbit(int &n, int bit, int set);
 bool TestFile();
 
 //-----------------------------------------------
-class Editor {
+class PEditor {
 
 private:
    TGTransientFrame *fMain;   // main frame of this widget
@@ -54,8 +54,8 @@ private:
 
    TString          *str;
 public:
-   Editor(const TGWindow *main, UInt_t w, UInt_t h);
-   virtual ~Editor();
+   PEditor(const TGWindow *main, UInt_t w, UInt_t h);
+   virtual ~PEditor();
 
    void   LoadFile(const char *file);
    void   LoadPar();
@@ -91,6 +91,7 @@ public:
   TGTextButton *fAna;
   TGTextButton *fNb;
 
+  PEditor* p_ed;
   //TGLayoutHints* Lay11;
   //TGLayoutHints* Lay12;
 

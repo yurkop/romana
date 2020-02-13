@@ -79,7 +79,8 @@ enum MENU_COM {
   M_RESET_USB,
   M_EXPORT,
   M_FILE_EXIT,
-  M_EDIT_CHMAP,
+  M_EDIT_PROF8,
+  M_EDIT_PROF64,
   M_HELP,
 };
 
