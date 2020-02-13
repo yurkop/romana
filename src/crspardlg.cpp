@@ -1091,7 +1091,8 @@ void ParParDlg::AddLogic(TGCompositeFrame* frame) {
   tip2= "Maximal multiplicity";
   label="Multiplicity (min, max)";
   AddLine_opt(fF6,ww,&opt.mult1,&opt.mult2,tip1,tip2,label,k_int,k_int,
-	      1,MAX_CH,1,MAX_CH);
+	      //1,MAX_CH,1,MAX_CH);
+	      1,9999,1,9999);
 
   tip1= "";
   tip2= "Main trigegr condition (cut).\nThis condition is used for selecting events which are written as decoded events\nSee Histograms->Cuts for making conditions\nUse this cut number as a main trigger condition.\nIf set to zero - write all events.";
