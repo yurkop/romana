@@ -1085,7 +1085,7 @@ void ParParDlg::AddLogic(TGCompositeFrame* frame) {
   tip1= "Coincidence window for making events (in samples)";
   tip2= "Veto window (in samples): \nsubsequent pulses from the same channel coming within this window are ignored";
   label="Coincidence (smp), veto (smp)";
-  AddLine_opt(fF6,ww,&opt.tgate,&opt.tveto,tip1,tip2,label,k_int,k_int,0,1000,0,1000);
+  AddLine_opt(fF6,ww,&opt.tgate,&opt.tveto,tip1,tip2,label,k_int,k_int,0,10000,0,1000);
 
   tip1= "Minimal multiplicity";
   tip2= "Maximal multiplicity";
