@@ -44,7 +44,7 @@ extern HClass* hcl;
 extern ParParDlg *parpar;
 extern DaqParDlg *daqpar;
 extern AnaParDlg *anapar;
-extern DspParDlg *pikpar;
+extern PikParDlg *pikpar;
 
 extern int debug; // for printing debug messages
 

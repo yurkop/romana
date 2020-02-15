@@ -62,7 +62,7 @@ HClass* hcl;
 ParParDlg *parpar;
 DaqParDlg *daqpar;
 AnaParDlg *anapar;
-DspParDlg *pikpar;
+PikParDlg *pikpar;
 
 //const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
@@ -722,7 +722,9 @@ int main(int argc, char **argv)
   //EvtFrm->StartThread();
   //gClient->GetColorByName("yellow", yellow);
   //cout << "Init end2" << endl;
+
   theApp.Run();
+
   //cout << "Init end3" << endl;
   //return 0;
 
@@ -1092,6 +1094,22 @@ bool TestFile() {
 
 }
 
+void prtime(const char* txt, bool set) {
+  static TTimeStamp tt1,tt2,tt0;
+  if (set) {
+    tt0.Set();
+    tt1 = tt0;
+    tt2 = tt0;
+  }
+  tt1=tt2;
+  tt2.Set();
+  printf("%s: %9d %8.3f\n",txt,int((tt2.AsDouble()-tt1.AsDouble())*1e6),
+	 tt2.AsDouble()-tt0.AsDouble());
+  // cout << txt << " " << tt2.AsDouble()-tt1.AsDouble() << " "
+  //      << tt2.AsDouble()-tt0.AsDouble() << endl;
+  
+}
+
 //----- MainFrame ----------------
 
 MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
@@ -1166,7 +1184,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
-  fMenuProf->AddEntry("Edit Ing-27/Prof64/64 channel map", M_EDIT_PROF64);
+  fMenuProf->AddEntry("Edit Ing-27/Prof64x64 channel map", M_EDIT_PROF64);
   fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
@@ -1321,6 +1339,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGLabel *ver = new TGLabel(vframe1,VERSION);
 
+  //prtime("zero",true);
+  
   vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
   fTab = new TGTab(hframe1, 300, 300);
@@ -1348,7 +1368,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //parpar->Update();
   //tabfr[0]->AddFrame(parpar, LayEE1);
 
-  //cout << "Maketabs1: " << endl;
   MakeTabs();
   //cout << "Maketabs2: " << endl;
   //fremake=true;
@@ -1497,7 +1516,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   Move(-100,-100);
 
   p_ed=0;
-  //cout << "2222" << endl;
+  //prtime("MainFrame_end");
 }
 
 MainFrame::~MainFrame() {
@@ -1553,20 +1572,20 @@ void MainFrame::MakeTabs() {
 
   //cout << "tab2: " << endl;
   daqpar = new DaqParDlg(tabfr[1], 600, 500);
-  daqpar->Make_daqpar(tabfr[1], 600, 210);
+  //daqpar->Build(tabfr[1], 600, 210);
   tabfr[1]->AddFrame(daqpar, com->LayEE2);
   ntab++;
   daqpar->Update();
   //cout << "tab3: " << endl;
 
   anapar = new AnaParDlg(tabfr[2], 600, 500);
-  anapar->Make_AnaPar(tabfr[2], 600, 210);
+  //anapar->Build(tabfr[2], 600, 210);
   tabfr[2]->AddFrame(anapar, com->LayEE2);
   ntab++;
   anapar->Update();
 
-  pikpar = new DspParDlg(tabfr[3], 600, 500);
-  pikpar->Make_DspPar(tabfr[3], 600, 210);
+  pikpar = new PikParDlg(tabfr[3], 600, 500);
+  //pikpar->Build(tabfr[3], 600, 210);
   tabfr[3]->AddFrame(pikpar, com->LayEE2);
   ntab++;
   pikpar->Update();
@@ -2023,6 +2042,7 @@ void MainFrame::Export() {
 
 void MainFrame::DoReset() {
 
+  //prtime("Main::DoReset");
   //printhlist(4);
   
   // if (HiFrm)
@@ -2276,14 +2296,32 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
     //cout << "DoTab2: " << name << endl;
+    if (daqpar->notbuilt) {
+      daqpar->Build();
+      Resize(GetDefaultSize());
+      MapSubwindows();
+      Layout();
+    }
     daqpar->Update();
   }
   else if (name.EqualTo("Analysis",TString::kIgnoreCase)) {
     //cout << "DoTab3: " << name << endl;
+    if (anapar->notbuilt) {
+      anapar->Build();
+      //Resize(GetDefaultSize());
+      MapSubwindows();
+      //Layout();
+    }
     anapar->Update();
   }
   else if (name.EqualTo("Peaks",TString::kIgnoreCase)) {
-    //cout << "DoTab3: " << name << endl;
+    //cout << "DoTab3: Peaks: " << name << endl;
+    if (pikpar->notbuilt) {
+      pikpar->Build();
+      //Resize(GetDefaultSize());
+      MapSubwindows();
+      //Layout();
+    }
     pikpar->Update();
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
@@ -2450,8 +2488,8 @@ void MainFrame::HandleMenu(Int_t menu_id)
     {
       if (!p_ed) {
 	//cout << "p_ed: " << p_ed << endl;
-	p_ed = new PEditor(this, 200, 400);
-	p_ed->LoadPar();
+	p_ed = new PEditor(this, 400, 400);
+	p_ed->LoadPar8();
 	//ed->LoadBuffer(editortxt1);
 	p_ed->Popup();
       }
@@ -2462,8 +2500,8 @@ void MainFrame::HandleMenu(Int_t menu_id)
     {
       if (!p_ed) {
 	//cout << "p_ed: " << p_ed << endl;
-	p_ed = new PEditor(this, 200, 400);
-	p_ed->LoadPar();
+	p_ed = new PEditor(this, 400, 400);
+	p_ed->LoadPar64();
 	//ed->LoadBuffer(editortxt1);
 	p_ed->Popup();
       }
@@ -2928,15 +2966,37 @@ void PEditor::LoadFile(const char *file)
   fEdit->LoadFile(file);
 }
 
-void PEditor::LoadPar()
+void PEditor::Load_Ing(const char* header)
 {
   char ss[100];
-  //fEdit->LoadBuffer("# Lines starting with # are comments");
-  fEdit->LoadBuffer("#Ing  N X-ch Y-ch");
+  fEdit->LoadBuffer(header);
+  fEdit->AddLine("# N: strip number");
+  fEdit->AddLine("# X-ch: DAQ channel for the given X-strip");
+  fEdit->AddLine("# Y-ch: DAQ channel for the given Y-strip");
+  fEdit->AddLine("# Set to -1 of the strip is absent/not used");
+  fEdit->AddLine("# Ing  N X-ch Y-ch");
   for (int i=0;i<16;i++) {
     sprintf(ss,"Ing  %2d %2d %2d",i,opt.Ing_x[i],opt.Ing_y[i]);
     fEdit->AddLine(ss);
   }
+}
+
+void PEditor::LoadPar8()
+{
+  char ss[100];
+  Load_Ing("# Settings for 8x8 profilometer");
+  fEdit->AddLine("#Prof N X-ch Y-ch");
+  //fEdit->AddLine("#");
+  for (int i=0;i<8;i++) {
+    sprintf(ss,"Prof %2d %2d %2d",i,opt.Prof_x[i],opt.Prof_y[i]);
+    fEdit->AddLine(ss);
+  }
+}
+
+void PEditor::LoadPar64()
+{
+  char ss[100];
+  Load_Ing("# Settings for 64x64 profilometer");
   fEdit->AddLine("#Prof N X-ch Y-ch");
   //fEdit->AddLine("#");
   for (int i=0;i<8;i++) {

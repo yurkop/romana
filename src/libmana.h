@@ -43,6 +43,8 @@ void setbit(int &n, int bit, int set);
 
 bool TestFile();
 
+void prtime(const char* txt, bool set=false);
+
 //-----------------------------------------------
 class PEditor {
 
@@ -58,7 +60,9 @@ public:
    virtual ~PEditor();
 
    void   LoadFile(const char *file);
-   void   LoadPar();
+   void   Load_Ing(const char* header);
+   void   LoadPar8();
+   void   LoadPar64();
    //void   LoadBuffer(const char *buffer);
    //void   AddBuffer(const char *buffer);
 

@@ -33,7 +33,7 @@ namespace CP {
 extern ParParDlg *parpar;
 extern DaqParDlg *daqpar;
 extern AnaParDlg *anapar;
-extern DspParDlg *pikpar;
+extern PikParDlg *pikpar;
 
 const int ndaqpar=15;
 
@@ -123,6 +123,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 {
 
   jtrig=0;
+  notbuilt=true;
 
   fDock = new TGDockableFrame(this);
   AddFrame(fDock, com->LayEE0);
@@ -949,10 +950,6 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "Files", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, com->LayET3);
-
-
-
-
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
   fF6->AddFrame(hframe1,com->LayLT0);
@@ -2078,8 +2075,8 @@ void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
   TGNumberEntryField* fNum =
     new TGNumberEntryField(hframe1, id, 0, style,
-			   TGNumberFormat::kNEAAnyNumber,
-			   TGNumberFormat::kNELLimitMinMax,min,max);
+  			   TGNumberFormat::kNEAAnyNumber,
+  			   TGNumberFormat::kNELLimitMinMax,min,max);
 
   //DoChanMap(fNum,apar,ptype, all,0);
   DoMap(fNum,apar,ptype, all,0);
@@ -2100,7 +2097,9 @@ DaqParDlg::DaqParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fDock->SetWindowName("DAQ");  
 }
 
-void DaqParDlg::Make_daqpar(const TGWindow *p,UInt_t w,UInt_t h) {
+void DaqParDlg::Build() {
+
+  notbuilt=false;
 
   AddHeader();
 
@@ -2455,7 +2454,9 @@ AnaParDlg::AnaParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 {
 }
 
-void AnaParDlg::Make_AnaPar(const TGWindow *p,UInt_t w,UInt_t h) {
+void AnaParDlg::Build() {
+
+  notbuilt=false;
 
   AddHeader();
 
@@ -2468,7 +2469,6 @@ void AnaParDlg::Make_AnaPar(const TGWindow *p,UInt_t w,UInt_t h) {
   for (int i=1;i<MAX_TP;i++) {
     AddLine_Ana(MAX_CH+i,fcont2);
   }
-
 
 }
 
@@ -2573,32 +2573,38 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
 }
 
-//------ DspParDlg -------
+//------ PikParDlg -------
 
-DspParDlg::DspParDlg(const TGWindow *p,UInt_t w,UInt_t h)
+PikParDlg::PikParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :ChanParDlg(p,w,h)
 {
   fDock->SetWindowName("Peaks");  
 }
 
-void DspParDlg::Make_DspPar(const TGWindow *p,UInt_t w,UInt_t h) {
+void PikParDlg::Build() {
+
+  notbuilt=false;
 
   AddHeader();
 
+  //prtime("DS1--");
   for (int i=0;i<MAX_CH;i++) {
-    AddLine_Dsp(i,fcont1);
+    AddLine_Pik(i,fcont1);
   }
 
-  AddLine_Dsp(MAX_CH,fcont2);
+  //prtime("DS2--");
+  AddLine_Pik(MAX_CH,fcont2);
 
+  //prtime("DS3--");
   for (int i=1;i<MAX_TP;i++) {
-    AddLine_Dsp(MAX_CH+i,fcont2);
+    AddLine_Pik(MAX_CH+i,fcont2);
   }
+  //prtime("DS4--");
 
 
 }
 
-void DspParDlg::AddHeader() {
+void PikParDlg::AddHeader() {
 
   //TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
   //AddFrame(hframe1,com->LayLT0);
@@ -2616,7 +2622,7 @@ void DspParDlg::AddHeader() {
 
 }
 
-void DspParDlg::AddLine_Dsp(int i, TGCompositeFrame* fcont1) {
+void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   //char txt[255];
   int kk=0;
   int all=0;

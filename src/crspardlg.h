@@ -45,6 +45,7 @@ class ParDlg: public TGCompositeFrame {
 
 public:
   int jtrig;
+  bool notbuilt;
 
   TGDockableFrame        *fDock;
 
@@ -219,7 +220,7 @@ public:
   DaqParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~DaqParDlg() {};
 
-  void Make_daqpar(const TGWindow *p,UInt_t w,UInt_t h);
+  void Build();
   void AddHeader();
   void AddLine_daq(int i, TGCompositeFrame* fcont1);
   void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
@@ -240,7 +241,7 @@ public:
   AnaParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~AnaParDlg() {};
 
-  void Make_AnaPar(const TGWindow *p,UInt_t w,UInt_t h);
+  void Build();
 
   void AddHeader();
   void AddLine_Ana(int i, TGCompositeFrame* fcont1);
@@ -250,18 +251,18 @@ public:
 };
 
 //-----------------------------------------------
-class DspParDlg: public ChanParDlg {
+class PikParDlg: public ChanParDlg {
 
 public:
-  DspParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~DspParDlg() {};
+  PikParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~PikParDlg() {};
 
-  void Make_DspPar(const TGWindow *p,UInt_t w,UInt_t h);
+  void Build();
 
   void AddHeader();
-  void AddLine_Dsp(int i, TGCompositeFrame* fcont1);
+  void AddLine_Pik(int i, TGCompositeFrame* fcont1);
 
-  ClassDef(DspParDlg, 0)
+  ClassDef(PikParDlg, 0)
 };
 
 //--------------------------------------
