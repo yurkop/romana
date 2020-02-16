@@ -1505,8 +1505,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   MapSubwindows();
   // Initialize the layout algorithm
-  Rebuild();
-  //Resize(GetDefaultSize());
+  //Rebuild();
+  Resize(GetDefaultSize());
   // Map main frame
   MapWindow();
 
@@ -1544,19 +1544,79 @@ MainFrame::~MainFrame() {
   gApplication->Terminate(0);
 }
 
+/*
 void MainFrame::Rebuild() {
 
   //cout << "main::Rebuild: " << endl;
 
   EvtFrm->Rebuild();
-  daqpar->Rebuild();
-  anapar->Rebuild();
-  pikpar->Rebuild();
+
+
+  //daqpar->Rebuild();
+  //anapar->Rebuild();
+  //pikpar->Rebuild();
+
+  tabfr[2]->RemoveAll();
+  delete anapar;
+  cout << "anapar2: " << anapar << " " << anapar->pmax << endl;
+  // delete tabfr[2];
+  // cout << "anapar1: " << anapar << " " << anapar->pmax << endl;
+  // delete anapar;
+  // anapar = new AnaParDlg(tabfr[2], 600, 500);
+  // anapar->Build();
+  //tabfr[2]->AddFrame(anapar, com->LayEE2);
+
+
   Resize(GetDefaultSize());
-  //MapSubwindows();
+  MapSubwindows();
   Layout();
 
   //cout << "main::Rebuild2: " << endl;
+}
+*/
+
+void MainFrame::Rebuild() {
+
+  //cout << "main::Rebuild1: " << endl;
+
+  //tabfr[2]->GetList()->ls();
+
+  for (int i=0;i<7;i++) {
+    tabfr[i]->RemoveAll();
+  }
+
+  /*
+  delete parpar;
+  delete daqpar;
+  delete anapar;
+  delete pikpar;
+  delete EvtFrm;
+  delete HiFrm;
+  delete ErrFrm;
+  */
+  
+  //tabfr[2]->RemoveAll();
+  //delete anapar;
+  //anapar = new AnaParDlg(tabfr[2], 600, 500);
+  //anapar->Build();
+  //tabfr[2]->AddFrame(anapar, com->LayEE2);
+  //ntab++;
+
+
+  //anapar->ClearLines();
+  //anapar->Update();
+
+  //cout << "main::Rebuild2: " << anapar << endl;
+
+  //tabfr[2]->GetList()->ls();
+
+  MakeTabs();
+
+  Resize(GetDefaultSize());
+  MapSubwindows();
+  Layout();
+
+  //cout << "main::Rebuild3: " << endl;
 }
 
 void MainFrame::MakeTabs() {
@@ -1572,20 +1632,20 @@ void MainFrame::MakeTabs() {
 
   //cout << "tab2: " << endl;
   daqpar = new DaqParDlg(tabfr[1], 600, 500);
-  //daqpar->Build(tabfr[1], 600, 210);
+  daqpar->Build();
   tabfr[1]->AddFrame(daqpar, com->LayEE2);
   ntab++;
   daqpar->Update();
   //cout << "tab3: " << endl;
 
   anapar = new AnaParDlg(tabfr[2], 600, 500);
-  //anapar->Build(tabfr[2], 600, 210);
+  anapar->Build();
   tabfr[2]->AddFrame(anapar, com->LayEE2);
   ntab++;
   anapar->Update();
 
   pikpar = new PikParDlg(tabfr[3], 600, 500);
-  //pikpar->Build(tabfr[3], 600, 210);
+  pikpar->Build();
   tabfr[3]->AddFrame(pikpar, com->LayEE2);
   ntab++;
   pikpar->Update();
@@ -2056,7 +2116,12 @@ void MainFrame::DoReset() {
   crs->DoReset();
 
   if (local_nch!=opt.Nchan) {
+    //for (int k=0;k<100000;k++) {
+    debug=99;
     Rebuild();
+    gSystem->Sleep(10000);
+    //cout << "Rebuild: " << k << endl;
+    //}
 
     //Resize(GetDefaultSize());
     //MapSubwindows();
@@ -2296,32 +2361,40 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
     //cout << "DoTab2: " << name << endl;
+    /*
     if (daqpar->notbuilt) {
       daqpar->Build();
       Resize(GetDefaultSize());
       MapSubwindows();
       Layout();
     }
+    */
     daqpar->Update();
   }
   else if (name.EqualTo("Analysis",TString::kIgnoreCase)) {
     //cout << "DoTab3: " << name << endl;
+    /*
     if (anapar->notbuilt) {
       anapar->Build();
       //Resize(GetDefaultSize());
       MapSubwindows();
       //Layout();
     }
+    */
+    //cout << "Ana3: " << endl;
     anapar->Update();
+    //cout << "Ana4: " << endl;
   }
   else if (name.EqualTo("Peaks",TString::kIgnoreCase)) {
     //cout << "DoTab3: Peaks: " << name << endl;
+    /*
     if (pikpar->notbuilt) {
       pikpar->Build();
       //Resize(GetDefaultSize());
       MapSubwindows();
       //Layout();
     }
+    */
     pikpar->Update();
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {

@@ -498,7 +498,7 @@ void EventFrame::AddCh() {
   //fGroupCh->SetLayoutManager(new TGTileLayout(fGroupCh, 5));
   //fGroupCh->SetLayoutManager(new TGTableLayout(fGroupCh, 16, 0, kFALSE, 2, kLHintsLeft));
 
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     frCh[i] = new TGHorizontalFrame(fGroupCh);
     fGroupCh->AddFrame(frCh[i]);
 

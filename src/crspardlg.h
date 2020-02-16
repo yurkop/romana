@@ -46,6 +46,7 @@ class ParDlg: public TGCompositeFrame {
 public:
   int jtrig;
   bool notbuilt;
+  int pmax; //максимальный канал (вместо MAX_CH), который записан в параметрах
 
   TGDockableFrame        *fDock;
 
@@ -190,7 +191,7 @@ public:
 //-----------------------------------------------
 class ChanParDlg: public ParDlg {
 
-protected:
+public:
   TGCanvas* fCanvas2;
   TGCompositeFrame* fcont2;
   TGHorizontalFrame *head_frame;
@@ -204,6 +205,7 @@ public:
   void DoChanNum();
   void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 	       void* apar, double min, double max, P_Def ptype);
+  void ClearLines();
 
   ClassDef(ChanParDlg, 0)
 };

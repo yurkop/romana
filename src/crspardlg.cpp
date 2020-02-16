@@ -124,6 +124,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   jtrig=0;
   notbuilt=true;
+  pmax=0;
 
   fDock = new TGDockableFrame(this);
   AddFrame(fDock, com->LayEE0);
@@ -203,7 +204,7 @@ void ParDlg::DoNum() {
     if (nfld) {
       int kk = (id-1)%nfld;
       //cout << "donum: " << kk << " " << te->GetNumber() << endl;
-      for (int i=0;i<MAX_CH;i++) {
+      for (int i=0;i<pmax;i++) {
 	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  TGNumberEntryField *te2 = (TGNumberEntryField*) p2.field;
@@ -255,7 +256,7 @@ void ParDlg::DoChk() {
   if (pp.all>0) {
     if (nfld) {
       int kk = (id-1)%nfld;
-      for (int i=0;i<MAX_CH;i++) {
+      for (int i=0;i<pmax;i++) {
 	if (pp.all==1 || opt.chtype[i]==pp.all-1) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetChk(p2,te->GetState());
@@ -371,7 +372,7 @@ void ParDlg::DoCombo(bool cp) {
 
   int nline = id/nfld;
 
-  if (nline < MAX_CH) {
+  if (nline < pmax) {
 
     if (sel-1==MAX_TP+1) { //Copy
       int old=*(Int_t*) pp.data;
@@ -407,7 +408,7 @@ void ParDlg::DoCombo(bool cp) {
     //cout << "all: " << nfld << " " << sel << endl;
     if (nfld && sel<MAX_TP+2) {
       int kk = (id-1)%nfld;
-      for (int i=0;i<MAX_CH;i++) {
+      for (int i=0;i<pmax;i++) {
 	pmap p2 = Plist[i*nfld+kk];
 	SetCombo(p2,te->GetSelected());
 	TGComboBox *te2 = (TGComboBox*) p2.field;
@@ -424,69 +425,6 @@ void ParDlg::DoCombo(bool cp) {
 
 }
 
-/*
-void ParDlg::DoCombo2(Event_t* evt) {
-
-  if (evt->fType==2 && evt->fCode==65) {
-
-  TGComboBox *te = (TGComboBox*) gTQSender;
-  Int_t id = te->WidgetId();
-
-  int sel = te->GetSelected();
-  pmap pp = Plist[id-1];
-  int nline = id/nfld;
-
-  if (nline < MAX_CH) {
-
-    if (sel-1==MAX_TP+1) { //Copy
-      int old=*(Int_t*) pp.data;
-
-      //if (old!=MAX_TP) {
-      const char* name = te->GetListBox()->GetEntry(old)->GetTitle();
-      cout << "Copy: " << sel << " " << old << " " << nline << " " << nline%MAX_TP << endl;
-      if (!TString(name).EqualTo("Other",TString::kIgnoreCase)) {
-	daqpar->CopyParLine(-old,nline);
-	anapar->CopyParLine(-old,nline);
-	pikpar->CopyParLine(-old,nline);
-      }
-      else {//copy other to last
-	daqpar->CopyParLine(-(MAX_TP-1),nline);
-	anapar->CopyParLine(-(MAX_TP-1),nline);
-	pikpar->CopyParLine(-(MAX_TP-1),nline);
-      }
-
-      te->Select(old);
-      return;
-    }
-
-    SetCombo(pp,sel);
-    daqpar->CopyParLine(sel,nline);
-    anapar->CopyParLine(sel,nline);
-    pikpar->CopyParLine(sel,nline);
-
-  }
-
-  if (pp.all==1) {
-    //cout << "all: " << nfld << " " << sel << endl;
-    if (nfld && sel<MAX_TP+2) {
-      int kk = (id-1)%nfld;
-      for (int i=0;i<MAX_CH;i++) {
-	pmap p2 = Plist[i*nfld+kk];
-	SetCombo(p2,te->GetSelected());
-	TGComboBox *te2 = (TGComboBox*) p2.field;
-	te2->Select(te->GetSelected(),false);
-
-	daqpar->CopyParLine(sel,i);
-	anapar->CopyParLine(sel,i);
-	pikpar->CopyParLine(sel,i);
-      }
-    }
-  }
-
-  cout << "DoCombo chtype: " << opt.chtype[0] << " " << id << endl;
-
-}
-*/
 void ParDlg::DoCombo2(Event_t* evt) {
 
   //TGComboBox *te = (TGComboBox*) gTQSender;
@@ -550,14 +488,15 @@ void ParDlg::DoTypes() {
   int i = TString(te->GetName())(0,1).String().Atoi();
   int i0=i-1;
   if (i0==0) i0=-1;
-  for (int j=0;j<=MAX_CH;j++) {
-
+  for (int j=0;j<=pmax;j++) {
+    //if (j<opt.Nchan || j==MAX_CH) {
     int sel = fCombo[j]->GetListBox()->GetSelected();
     //cout << "Dotypes: " << j << " " << i << " " << opt.ch_name[i-1] << " " << sel << endl;
     fCombo[j]->RemoveEntry(i);
     fCombo[j]->InsertEntry(opt.ch_name[i-1],i,i0);
     if (sel==i)
       fCombo[j]->Select(sel,false);
+    //}
   }
 }
 
@@ -566,12 +505,13 @@ void ParDlg::CopyParLine(int sel, int line) {
     //cout << "CopyParLine: " << line << " " << MAX_CH-sel << endl;
     //return;
     for (int j=1;j<nfld;j++) {
-      CopyField(line*nfld+j,(MAX_CH-sel)*nfld+j);
+      CopyField(line*nfld+j,(pmax-sel)*nfld+j);
     }
   }
   else if (sel<MAX_TP+1) { //normal copy from group to current ch
+    cout << "CopyParLine: " << line << " " << sel << " " << pmax+sel << " " << nfld << endl;
     for (int j=1;j<nfld;j++) {
-      CopyField((MAX_CH+sel)*nfld+j,line*nfld+j);
+      CopyField((pmax+sel)*nfld+j,line*nfld+j);
     }
     clab[line]->ChangeBackground(tcol[sel-1]);
     cframe[line]->ChangeBackground(tcol[sel-1]);
@@ -589,8 +529,9 @@ void ParDlg::CopyField(int from, int to) {
 
   //cout << "copyfield: " << p1 << " " << p2 << endl;
   if (p1->type!=p2->type) {
-    cout << "CopyField bad type: "
-	 << (int) p1->type << " " << (int) p2->type << endl; 
+    cout << "CopyField bad type: " << from << " " << to << " "
+	 << (int) p1->type << " " << (int) p2->type << endl;
+    return;
   }
   
   switch (p1->type) {
@@ -715,7 +656,7 @@ void ParDlg::UpdateField(int nn) {
     te->Layout();
 
     //cout << "cmb2: " << sel << " " << line << " " << tcol[sel-1] << endl;
-    if (line<MAX_CH) {
+    if (line<pmax) {
       clab[line]->ChangeBackground(tcol[sel-1]);
       cframe[line]->ChangeBackground(tcol[sel-1]);
     }
@@ -744,6 +685,7 @@ void ParDlg::Update() {
   for (UInt_t i=0;i<Plist.size();i++) {
     UpdateField(i);
   }
+  //cout << "update2: " << Plist.size() << endl;  
   //MapSubwindows();
   //Layout();
   //Rebuild();
@@ -834,6 +776,7 @@ TGWidget *ParDlg::FindWidget(void* p) {
 }
 
 void ParDlg::Rebuild() {
+  /*
   for (int i=0;i<MAX_CH;i++) {
     //cout << "rebuild: " << i << " " << opt.Nchan << endl;
     if (i<opt.Nchan) {
@@ -843,6 +786,7 @@ void ParDlg::Rebuild() {
       fcont1->HideFrame(cframe[i]);
     }
   }
+  */
 }
 
 //------ ParParDlg -------
@@ -1968,15 +1912,15 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
   //start AddChCombo
   char txt[255];
 
-  if (i<MAX_CH)
+  if (i<opt.Nchan)
     sprintf(txt,"%2d  ",i);
-  else if (i==MAX_CH) {
+  else if (i==opt.Nchan) {
     sprintf(txt,"all");
     all=1;
   }
   else {
     sprintf(txt," ");
-    all=i-MAX_CH+1;
+    all=i-opt.Nchan+1;
   }
 
   clab[i]=new TGTextEntry(cframe[i], txt);
@@ -1994,7 +1938,7 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
   id = Plist.size()+1;
 
 
-  if (i<=MAX_CH) {
+  if (i<=opt.Nchan) {
     fCombo[i]=new TGComboBox(cframe[i],id);
     //fCombo->SetToolTipText(ttip1[kk]);
     cframe[i]->AddFrame(fCombo[i],com->LayCC0);
@@ -2007,7 +1951,7 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
 
     fCombo[i]->Resize(tlen1[1], 20);
 
-    if (i==MAX_CH) {
+    if (i==opt.Nchan) {
       fCombo[i]->AddEntry(" ", MAX_TP+2);
     }
     else {
@@ -2021,7 +1965,7 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
     fCombo[i]->Connect("ProcessedEvent(Event_t*)", "ParDlg", this, "DoCombo2(Event_t*)");
   }
   else {
-    int i7=i-MAX_CH-1;
+    int i7=i-opt.Nchan-1;
     TGTextEntry* tgtxt=new TGTextEntry(cframe[i], opt.ch_name[i7],id);
     tgtxt->SetName(TString::Format("%02dtxt",i7+1).Data());
     //tgtxt->SetHeight(20);
@@ -2089,6 +2033,18 @@ void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
 }
 
+void ChanParDlg::ClearLines() {
+  pmax=0;
+  for (int i=0;i<opt.Nchan;i++) {
+    fcont1->RemoveFrame(cframe[i]);
+  }
+
+  fcont1->RemoveFrame(cframe[opt.Nchan]);
+
+  for (int i=1;i<MAX_TP;i++) {
+    fcont1->RemoveFrame(cframe[opt.Nchan+i]);
+  }
+}
 //------ DaqParDlg -------
 
 DaqParDlg::DaqParDlg(const TGWindow *p,UInt_t w,UInt_t h)
@@ -2100,18 +2056,19 @@ DaqParDlg::DaqParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 void DaqParDlg::Build() {
 
   notbuilt=false;
+  pmax=opt.Nchan;
 
   AddHeader();
 
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     AddLine_daq(i,fcont1);
     //cout << "crs: addLine1: " << Plist.size() << endl; 
   }
 
-  AddLine_daq(MAX_CH,fcont2);
+  AddLine_daq(opt.Nchan,fcont2);
 
   for (int i=1;i<MAX_TP;i++) {
-    AddLine_daq(MAX_CH+i,fcont2);
+    AddLine_daq(opt.Nchan+i,fcont2);
   }
 
   if (crs->module==22) {
@@ -2157,6 +2114,7 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   int kk=0;
   int all=0;
   int id;
+  int col;
 
   //static bool start=true;
 
@@ -2226,7 +2184,7 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   AddNumDaq(i,kk++,all,cframe[i],"thresh",&cpar.threshold[i],&opt.Thr[i]);
 
 
-  if (i<=MAX_CH) {
+  if (i<=opt.Nchan) {
     fStat2[i] = new TGTextEntry(cframe[i], "");
     fStat2[i]->ChangeOptions(fStat2[i]->GetOptions()|kFixedSize|kSunkenFrame);
 
@@ -2234,14 +2192,14 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
     fStat2[i]->SetToolTipText(ttip1[kk]);
 
     fStat2[i]->Resize(70,20);
-    int col=gROOT->GetColor(19)->GetPixel();
+    col=gROOT->GetColor(19)->GetPixel();
     fStat2[i]->SetBackgroundColor(col);
     fStat2[i]->SetText(0);
     cframe[i]->AddFrame(fStat2[i],com->LayLT5);
-  }
-  kk++;
+    //}
+    kk++;
 
-  if (i<=MAX_CH) {
+  //if (i<=opt.Nchan) {
     fStat3[i] = new TGTextEntry(cframe[i], "");
     fStat3[i]->ChangeOptions(fStat3[i]->GetOptions()|kFixedSize|kSunkenFrame);
 
@@ -2249,7 +2207,7 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
     fStat3[i]->SetToolTipText(ttip1[kk]);
 
     fStat3[i]->Resize(70,20);
-    int col=gROOT->GetColor(19)->GetPixel();
+    col=gROOT->GetColor(19)->GetPixel();
     fStat3[i]->SetBackgroundColor(col);
     fStat3[i]->SetText(0);
     cframe[i]->AddFrame(fStat3[i],com->LayLT5);
@@ -2364,7 +2322,7 @@ void DaqParDlg::UpdateStatus(int rst) {
   rate_all2=0;
   rate_all3=0;
   if (dt>0.1) {
-    for (int i=0;i<opt.Nchan;i++) {
+    for (int i=0;i<pmax;i++) {
       rate2[i] = (crs->npulses2[i]-npulses2o[i])/dt;
       npulses2o[i]=crs->npulses2[i];
       rate3[i] = (crs->npulses3[i]-npulses3o[i])/dt;
@@ -2382,7 +2340,7 @@ void DaqParDlg::UpdateStatus(int rst) {
     t1=opt.T_acq;
   }
 
-  for (int i=0;i<opt.Nchan;i++) {
+  for (int i=0;i<pmax;i++) {
     txt.Form("%0.0f",rate2[i]);
     fStat2[i]->SetText(txt);
     txt.Form("%0.0f",rate3[i]);
@@ -2391,11 +2349,11 @@ void DaqParDlg::UpdateStatus(int rst) {
     //fStatBad[i]->SetText(txt);
   }
   txt.Form("%0.0f",rate_all2);
-  fStat2[MAX_CH]->SetText(txt);
+  fStat2[pmax]->SetText(txt);
   txt.Form("%0.0f",rate_all3);
-  fStat3[MAX_CH]->SetText(txt);
+  fStat3[pmax]->SetText(txt);
   //txt.Form("%lld",allbad);
-  //fStatBad[MAX_CH]->SetText(txt);
+  //fStatBad[pmax]->SetText(txt);
 
 }
 
@@ -2457,19 +2415,22 @@ AnaParDlg::AnaParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 void AnaParDlg::Build() {
 
   notbuilt=false;
+  pmax=opt.Nchan;
 
   AddHeader();
 
-  for (int i=0;i<MAX_CH;i++) {
+  //cout << "ana1: " << endl;
+  for (int i=0;i<opt.Nchan;i++) {
     AddLine_Ana(i,fcont1);
   }
 
-  AddLine_Ana(MAX_CH,fcont2);
+  AddLine_Ana(opt.Nchan,fcont2);
 
   for (int i=1;i<MAX_TP;i++) {
-    AddLine_Ana(MAX_CH+i,fcont2);
+    AddLine_Ana(opt.Nchan+i,fcont2);
   }
 
+  //cout << "ana2: " << endl;
 }
 
 void AnaParDlg::AddHeader() {
@@ -2584,20 +2545,21 @@ PikParDlg::PikParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 void PikParDlg::Build() {
 
   notbuilt=false;
+  pmax=opt.Nchan;
 
   AddHeader();
 
   //prtime("DS1--");
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<opt.Nchan;i++) {
     AddLine_Pik(i,fcont1);
   }
 
   //prtime("DS2--");
-  AddLine_Pik(MAX_CH,fcont2);
+  AddLine_Pik(opt.Nchan,fcont2);
 
   //prtime("DS3--");
   for (int i=1;i<MAX_TP;i++) {
-    AddLine_Pik(MAX_CH+i,fcont2);
+    AddLine_Pik(opt.Nchan+i,fcont2);
   }
   //prtime("DS4--");
 
