@@ -93,7 +93,7 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
-int debug=6; //2|4; //=1 or 2 or 6// for printing debug messages
+int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
 
 //int *opt_id[MXNUM];
 

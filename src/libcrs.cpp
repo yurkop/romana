@@ -2349,15 +2349,37 @@ void CRS::DoFopen(char* oname, int popt) {
 int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   //m1 - read module (1/0); 1 - read from raw/dec file; 0 - read from par file
   //p1 - read cpar (1/0); p2 - read opt (1/0)
-  UShort_t sz;
+
+  // 2 bytes: fmt - формат par файла
+  //        if (fmt>128) {
+  //           fmt - определяет номер формата записи par файла
+  //           2 bytes - module (Short_t)
+  //           4 bytes - sz (Int_t)
+  //           sz bytes - buf
+  //        }
+  //        else {
+  //           fmt=module (Short_t)
+  //           2 bytes - sz (UShort_t)
+  //           sz bytes - buf
+  //        }
+
+  UShort_t fmt;
+  UShort_t mod;
+  Int_t sz;
 
   cout << "ReadParGz: " << pname << endl;
 
-  UShort_t mod;
-  gzread(ff,&mod,sizeof(mod));
-  gzread(ff,&sz,sizeof(sz));
+  gzread(ff,&fmt,sizeof(Short_t));
+  if (fmt>128) {
+    gzread(ff,&mod,sizeof(Short_t));
+    gzread(ff,&sz,sizeof(Int_t));
+  }
+  else {
+    mod=fmt;
+    gzread(ff,&sz,sizeof(UShort_t));
+  }
 
-  char buf[500000];
+  char* buf = new char[sz];
   gzread(ff,buf,sz);
 
   if (p1) 
@@ -2397,6 +2419,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     else {
       Fmode=0;
       cout << "Unknown file type: " << Fname << " " << mod << endl;
+      delete[] buf;
       return 1;
     }
   }
@@ -2417,16 +2440,20 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   if (HiFrm)
     HiFrm->HiReset();
 
+  delete[] buf;
   return 0;
 }
 
 void CRS::SaveParGz(gzFile &ff, Short_t mod) {
+  //see ReadParGz for format of the header
 
   //cout << "savepargz: " << opt.tnames[0] << endl;
-  char buf[500000];
-  UShort_t sz=0;
+  const int ZZ=500000;
+  Short_t fmt = 129;
+  char* buf = new char[ZZ];
+  Int_t sz=0;
 
-  memset(buf,0,sizeof(buf));
+  memset(buf,0,ZZ);
   sz+=ClassToBuf("Coptions","cpar",(char*) &cpar, buf+sz);
   sz+=ClassToBuf("Toptions","opt",(char*) &opt, buf+sz);
 
@@ -2445,11 +2472,13 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
   //sz=(sz+1)*8;
   sz = (sz/8+1)*8;
 
-  gzwrite(ff,&mod,sizeof(mod));
-  gzwrite(ff,&sz,sizeof(sz));
+  gzwrite(ff,&fmt,sizeof(Short_t));
+  gzwrite(ff,&mod,sizeof(Short_t));
+  gzwrite(ff,&sz,sizeof(Int_t));
   gzwrite(ff,buf,sz);
 
-  //cout << "SavePar_gz: " << sz << endl;
+  delete[] buf;
+  cout << "SavePar_gz: " << sz << endl;
 
 }
 

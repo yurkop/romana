@@ -77,10 +77,10 @@ const char* ttip2[n_apar]={
 };
 
 
-const int n_dpar=14;
-const int tlen3[n_dpar]={26,60,24,26,32,40,40,40,42,42,35,35,35,35};
-const char* tlab3[n_dpar]={"Ch","Type","dsp","sTg","Drv","Thr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
-const char* ttip3[n_dpar]={
+const int n_ppar=14;
+const int tlen3[n_ppar]={26,60,24,26,32,40,40,40,42,42,35,35,35,35};
+const char* tlab3[n_ppar]={"Ch","Type","dsp","sTg","Drv","Thr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
+const char* ttip3[n_ppar]={
   "Channel number",
   "Channel type",
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
@@ -2132,7 +2132,6 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
 
   id = Plist.size()+1;
   TGCheckButton *f_en = new TGCheckButton(cframe[i], "", id);
-  //DoChanMap(f_en,&cpar.enabl[i],p_chk,all,1);
   DoMap(f_en,&cpar.enabl[i],p_chk,all,1);
   f_en->SetToolTipText(ttip1[kk]);
   f_en->Connect("Clicked()", "DaqParDlg", this, "DoCheck()");
@@ -2141,7 +2140,6 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
 
   id = Plist.size()+1;
   TGCheckButton *f_inv = new TGCheckButton(cframe[i], "", id);
-  //DoChanMap(f_inv,&cpar.inv[i],p_chk,all,1);
   DoMap(f_inv,&cpar.inv[i],p_chk,all,1);
   f_inv->SetToolTipText(ttip1[kk]);
   f_inv->Connect("Clicked()", "DaqParDlg", this, "DoCheck()");
@@ -2150,7 +2148,6 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
 
   id = Plist.size()+1;
   TGCheckButton *f_acdc = new TGCheckButton(cframe[i], "", id);
-  //DoChanMap(f_acdc,&cpar.acdc[i],p_chk,all,1);
   DoMap(f_acdc,&cpar.acdc[i],p_chk,all,1);
   f_acdc->SetToolTipText(ttip1[kk]);
   f_acdc->Connect("Clicked()", "DaqParDlg", this, "DoCheck()");
@@ -2159,7 +2156,6 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
 
   id = Plist.size()+1;
   TGCheckButton *f_pls = new TGCheckButton(cframe[i], "", id);
-  //DoChanMap(f_pls,&cpar.pls[i],p_chk,all,1);
   DoMap(f_pls,&cpar.pls[i],p_chk,all,1);
   f_pls->SetToolTipText(ttip1[kk]);
   f_pls->Connect("Clicked()", "DaqParDlg", this, "DoCheck()");
@@ -2574,7 +2570,7 @@ void PikParDlg::AddHeader() {
 
   TGTextEntry* tt;
 
-  for (int i=0;i<n_dpar;i++) {
+  for (int i=0;i<n_ppar;i++) {
     tt=new TGTextEntry(head_frame, tlab3[i]);
     tt->SetWidth(tlen3[i]);
     tt->SetState(false);
@@ -2604,7 +2600,6 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
 
   id = Plist.size()+1;
   TGCheckButton *fdsp = new TGCheckButton(cframe[i], "", id);
-  //DoChanMap(fdsp,&opt.dsp[i],p_chk,all,0);
   DoMap(fdsp,&opt.dsp[i],p_chk,all,0);
   fdsp->Connect("Clicked()", "ParDlg", this, "DoChk()");
   fdsp->SetToolTipText(ttip3[kk]);
