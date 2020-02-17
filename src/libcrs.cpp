@@ -2357,7 +2357,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   gzread(ff,&mod,sizeof(mod));
   gzread(ff,&sz,sizeof(sz));
 
-  char buf[100000];
+  char buf[500000];
   gzread(ff,buf,sz);
 
   if (p1) 
@@ -2423,7 +2423,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 void CRS::SaveParGz(gzFile &ff, Short_t mod) {
 
   //cout << "savepargz: " << opt.tnames[0] << endl;
-  char buf[100000];
+  char buf[500000];
   UShort_t sz=0;
 
   memset(buf,0,sizeof(buf));

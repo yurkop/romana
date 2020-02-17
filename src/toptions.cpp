@@ -334,6 +334,9 @@ Toptions::Toptions() {
   prof_nx=8;
   prof_ny=8;
 
+  for (int i=0;i<4;i++) {
+    Prof64[i]=-1;
+  }
   for (int i=0;i<8;i++) {
     Prof_x[i]=-1;
     Prof_y[i]=-1;

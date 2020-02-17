@@ -93,7 +93,7 @@ MyMainFrame *myM;
 
 Coptions cpar;
 Toptions opt;
-int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
+int debug=6; //2|4; //=1 or 2 or 6// for printing debug messages
 
 //int *opt_id[MXNUM];
 
@@ -168,16 +168,16 @@ UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf)
   sz+=len;
 
   if (debug&0x2)
-    cout << "Save class: " << name << endl;
+    cout << "\033[1;31mSave class var: \033[0m" << name << " " << varname << endl;
 
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
-    if (debug&0x2) {
-      // if (!dm->GetDataType()) {
-      cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetClass()->GetName() << endl;
-      // }
-    }
+    // if (debug&0x2) {
+    //   // if (!dm->GetDataType()) {
+    //   cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetClass()->GetName() << endl;
+    //   // }
+    //}
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -193,12 +193,12 @@ UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf)
       memcpy(buf+sz,var+dm->GetOffset(),len);
       sz+=len;
       if (debug&0x2)
-	cout << dm->GetName() << " " << len << " " << sz << endl;
+	cout << "member: " << dm->GetName() << " " << len << " " << sz << endl;
     }
   }
 
-  if (debug&0x2)
-    cout << "size: " << sz << endl;
+  // if (debug&0x2)
+  //   cout << "size: " << sz << endl;
   return sz;
 
 }
@@ -209,8 +209,8 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
   //copies all data members from a buffer, size - size of the buffer
   //buffer should exist. Only data members with matching names are copied
 
-  if (debug&0x2)
-    cout <<"BufToClass:: " << size << endl;
+  //if (debug&0x2)
+  //cout <<"BufToClass:: " << size << endl;
 
   TList* lst = TClass::GetClass(name)->GetListOfDataMembers();
   if (!lst) {
@@ -281,7 +281,7 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
       strcpy(clname,data);
       if (debug&0x2)
 	if (strcmp(clname,name)==0) { //the same class
-	  cout << "Read class: " << clname << " " << name << endl;
+	  cout << "\033[1;31mRead class: \033[0m" << clname << " " << name << endl;
 	}
       continue;
     }
@@ -290,7 +290,7 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
       strcpy(vname,data);
       if (debug&0x2)
 	if (strcmp(vname,varname)==0) { //the same class
-	  cout << "Read var: " << vname << " " << varname << endl;
+	  cout << "\033[1;32mRead var: \033[0m" << vname << " " << varname << endl;
 	}
       continue;
     }
@@ -319,9 +319,9 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
 	}
 	//cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
       }
-      // cout << "dm2: " << dm << endl;
+      //cout << "dm2: " << dm << endl;
       // if (dm) {
-      //  	cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+      // 	cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
       // }
       //dm = (TDataMember*) lst->FindObject(memname);
       if (dm) {
@@ -342,8 +342,8 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
 
   }
 
-  if (debug&0x2)
-    cout << "len: " << len << " " << sz << endl;
+  //if (debug&0x2)
+  //cout << "len: " << len << " " << sz << endl;
   
 }
 
@@ -1094,9 +1094,9 @@ bool TestFile() {
 
 }
 
-void prtime(const char* txt, bool set) {
+void prtime(const char* txt, int set) {
   static TTimeStamp tt1,tt2,tt0;
-  if (set) {
+  if (set<0) {
     tt0.Set();
     tt1 = tt0;
     tt2 = tt0;
@@ -1107,7 +1107,8 @@ void prtime(const char* txt, bool set) {
 	 tt2.AsDouble()-tt0.AsDouble());
   // cout << txt << " " << tt2.AsDouble()-tt1.AsDouble() << " "
   //      << tt2.AsDouble()-tt0.AsDouble() << endl;
-  
+  if (set>0 && debug==99)
+    gSystem->Sleep(set); 
 }
 
 //----- MainFrame ----------------
@@ -1339,7 +1340,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGLabel *ver = new TGLabel(vframe1,VERSION);
 
-  //prtime("zero",true);
+  //prtime("zero",-1); //set time to zero
   
   vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
@@ -1581,11 +1582,18 @@ void MainFrame::Rebuild() {
 
   //tabfr[2]->GetList()->ls();
 
-  for (int i=0;i<7;i++) {
-    tabfr[i]->RemoveAll();
-  }
-
-  /*
+  // for (int i=0;i<7;i++) {
+  //   tabfr[i]->RemoveAll();
+  // }
+ 
+  tabfr[0]->RemoveAll();
+  tabfr[1]->RemoveAll();
+  tabfr[2]->RemoveAll();
+  tabfr[3]->RemoveAll();
+  tabfr[4]->RemoveAll();
+  tabfr[5]->RemoveAll();
+  tabfr[6]->RemoveAll();
+ /*
   delete parpar;
   delete daqpar;
   delete anapar;
@@ -1610,6 +1618,7 @@ void MainFrame::Rebuild() {
 
   //tabfr[2]->GetList()->ls();
 
+  //debug=99;
   MakeTabs();
 
   Resize(GetDefaultSize());
@@ -2117,10 +2126,8 @@ void MainFrame::DoReset() {
 
   if (local_nch!=opt.Nchan) {
     //for (int k=0;k<100000;k++) {
-    debug=99;
+    //debug=99;
     Rebuild();
-    gSystem->Sleep(10000);
-    //cout << "Rebuild: " << k << endl;
     //}
 
     //Resize(GetDefaultSize());
@@ -2131,13 +2138,11 @@ void MainFrame::DoReset() {
   }
 
   ErrFrm->Reset();
-  //else {
   HiFrm->HiReset();
   parpar->Update();
   daqpar->Update();
   anapar->Update();
   pikpar->Update();
-  //}
 
   UpdateStatus(1);
 
@@ -3046,7 +3051,7 @@ void PEditor::Load_Ing(const char* header)
   fEdit->AddLine("# N: strip number");
   fEdit->AddLine("# X-ch: DAQ channel for the given X-strip");
   fEdit->AddLine("# Y-ch: DAQ channel for the given Y-strip");
-  fEdit->AddLine("# Set to -1 of the strip is absent/not used");
+  fEdit->AddLine("# Set to -1 if the strip is absent/not used");
   fEdit->AddLine("# Ing  N X-ch Y-ch");
   for (int i=0;i<16;i++) {
     sprintf(ss,"Ing  %2d %2d %2d",i,opt.Ing_x[i],opt.Ing_y[i]);
@@ -3058,7 +3063,7 @@ void PEditor::LoadPar8()
 {
   char ss[100];
   Load_Ing("# Settings for 8x8 profilometer");
-  fEdit->AddLine("#Prof N X-ch Y-ch");
+  fEdit->AddLine("# Prof N X-ch Y-ch");
   //fEdit->AddLine("#");
   for (int i=0;i<8;i++) {
     sprintf(ss,"Prof %2d %2d %2d",i,opt.Prof_x[i],opt.Prof_y[i]);
@@ -3070,10 +3075,10 @@ void PEditor::LoadPar64()
 {
   char ss[100];
   Load_Ing("# Settings for 64x64 profilometer");
-  fEdit->AddLine("#Prof N X-ch Y-ch");
+  fEdit->AddLine("# Prof64: four channels for Prof64 position signals");
   //fEdit->AddLine("#");
-  for (int i=0;i<8;i++) {
-    sprintf(ss,"Prof %2d %2d %2d",i,opt.Prof_x[i],opt.Prof_y[i]);
+  for (int i=0;i<4;i++) {
+    sprintf(ss,"Prof64 %d",opt.Prof64[i]);
     fEdit->AddLine(ss);
   }
 }
@@ -3092,6 +3097,7 @@ void PEditor::DoOK()
 
   TGText* txt = fEdit->GetText();
   //cout << txt->RowCount() << endl;
+  int kk=0;
   for (int i=0;i<txt->RowCount();i++) {
     char* chr = txt->GetLine(TGLongPosition(0,i),100);
     if (chr) {
@@ -3104,6 +3110,10 @@ void PEditor::DoOK()
       if (ts.EqualTo("Ing",TString::kIgnoreCase) && j>=0 && j<16) {
 	opt.Ing_x[j]=xx;
 	opt.Ing_y[j]=yy;
+      }
+      else if (ts.EqualTo("Prof64",TString::kIgnoreCase) && kk>=0 && kk<4) {
+	opt.Prof64[kk]=j;
+	++kk;
       }
       else if (ts.EqualTo("Prof",TString::kIgnoreCase) && j>=0 && j<8) {
 	opt.Prof_x[j]=xx;

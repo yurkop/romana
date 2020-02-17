@@ -22,7 +22,7 @@ const int dstep = 10;
 #define AVM16_MASK1 0x00000000  //to read old type of data. Works also with new.
 #define AVM16_MASK2 0x000fffff //complementary to MASK1
 
-const int MAX_CH=64; //max number of channels
+const int MAX_CH=256; //max number of channels
 const int MAX_TP=7; //9: nai, bgo, si1, si2, stlb, demon, hpge, NIM, other
 //const int MAX_TP=9; //9: nai, bgo, si1, si2, stlb, demon, hpge, NIM, other
 const int NGRP=4; //number of groups of channels

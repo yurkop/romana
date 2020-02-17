@@ -219,8 +219,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   memset(wrk_check,1,sizeof(wrk_check));
   wrk_check_MT=1;
 
-  //if (debug==99)
-  //return;
   //Frames.....
 
   TGHorizontalFrame      *fHor1; //contains canvas and list of histograms

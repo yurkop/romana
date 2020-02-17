@@ -122,6 +122,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   :TGCompositeFrame(p,w,h,kVerticalFrame)
 {
 
+  //SetCleanup(kDeepCleanup);
   jtrig=0;
   notbuilt=true;
   pmax=0;

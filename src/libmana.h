@@ -43,7 +43,7 @@ void setbit(int &n, int bit, int set);
 
 bool TestFile();
 
-void prtime(const char* txt, bool set=false);
+void prtime(const char* txt, int set=0);
 
 //-----------------------------------------------
 class PEditor {
