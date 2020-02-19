@@ -2367,6 +2367,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   UShort_t mod;
   Int_t sz;
 
+  //prtime("ReadParGz1");
   cout << "ReadParGz: " << pname << endl;
 
   gzread(ff,&fmt,sizeof(Short_t));
@@ -2379,7 +2380,8 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  char* buf = new char[sz];
+  char buf[500000];
+  //char* buf = new char[sz];
   gzread(ff,buf,sz);
 
   if (p1) 
@@ -2419,14 +2421,10 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     else {
       Fmode=0;
       cout << "Unknown file type: " << Fname << " " << mod << endl;
-      delete[] buf;
+      //delete[] buf;
       return 1;
     }
   }
-
-  //cout << "ReadParGz: " << sz << " " << pname << endl;
-
-  //cout << "ReadParGz2: " << sz << " " << pname << " " << HiFrm << endl;
 
   //Set_Trigger();
 
@@ -2440,7 +2438,8 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   if (HiFrm)
     HiFrm->HiReset();
 
-  delete[] buf;
+  //delete[] buf;
+  //prtime("ReadParGz2");
   return 0;
 }
 
@@ -2450,7 +2449,8 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
   //cout << "savepargz: " << opt.tnames[0] << endl;
   const int ZZ=500000;
   Short_t fmt = 129;
-  char* buf = new char[ZZ];
+  char buf[500000];
+  //char* buf = new char[ZZ];
   Int_t sz=0;
 
   memset(buf,0,ZZ);
@@ -2477,7 +2477,7 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
   gzwrite(ff,&sz,sizeof(Int_t));
   gzwrite(ff,buf,sz);
 
-  delete[] buf;
+  //delete[] buf;
   cout << "SavePar_gz: " << sz << endl;
 
 }

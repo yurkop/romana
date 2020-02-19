@@ -261,6 +261,10 @@ public:
   Hdef h_area_width2;
   Hdef h_area_ntof;
   Hdef h_prof;
+  Hdef h_prof_x;
+  Hdef h_prof_y;
+  Hdef h_prof_ax;
+  Hdef h_prof_ay;
   //Hdef h_area_width3;
   //Hdef h_width_12;
 public:

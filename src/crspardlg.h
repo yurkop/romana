@@ -158,12 +158,19 @@ public:
 		    const char* tip, const char* label);
   void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
-  void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
-		    const char* tip, const char* label);
+  // void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
+  // 		    const char* tip, const char* label);
+
+
+
   // void AddLine_hist(TGGroupFrame* frame, Bool_t* b1,
   // 		    Float_t *x1, Float_t *x2, Float_t *x3, 
   // 		    const char* tip, const char* label);
-  void AddLine_mean(TGGroupFrame* frame, Hdef* hd,
+  void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
+		    const char* tip, const char* label);
+  void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
+		    P_Def pp, const char* tip);
+  void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 		    const char* tip, const char* label);
   // void AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   // 		Int_t* compr, char* opt_fname);
@@ -179,6 +186,8 @@ public:
   void DoNum_SetBuf();
   void DoCheckHist();
   void DoCheckPulse();
+  void DoCheckProf();
+  void DoNumProf();
   //void CheckFormula();
 
   void Add2d();

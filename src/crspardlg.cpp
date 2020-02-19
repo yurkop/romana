@@ -1160,13 +1160,24 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   // label="Width3";
   // AddLine_hist(frame1d,&opt.h_width3,tip1,label);
 
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame1d);
+  frame1d->AddFrame(hfr1);
+
   tip1= "Average pulse shape";
   label="Mean_pulses";
-  AddLine_mean(frame1d,&opt.h_pulse,tip1,label);
+  AddLine_mean(hfr1,&opt.h_pulse,tip1,label);
 
   tip1= "Derivative of Average pulse shape";
   label="Mean_deriv";
-  AddLine_mean(frame1d,&opt.h_deriv,tip1,label);
+  AddLine_mean(hfr1,&opt.h_deriv,tip1,label);
+
+  tip1= "1d and 2d histograms for Profilometer";
+  label="Profilometer";
+  AddLine_prof(frame1d,&opt.h_prof,tip1,label);
+
+  // tip1= "2-dimensional histogram (Profilometer)";
+  // label="Profilometer";
+  // AddLine_prof(frame2d,&opt.h_prof,tip1,label);
 
 
   frame2d = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
@@ -1208,9 +1219,9 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 
 
 
-  tip1= "2-dimensional histogram (Profilometer)";
-  label="Profilometer";
-  AddLine_prof(frame2d,&opt.h_prof,tip1,label);
+  // tip1= "2-dimensional histogram (Profilometer)";
+  // label="Profilometer";
+  // AddLine_prof(frame2d,&opt.h_prof,tip1,label);
 
   tip1= "2-dimensional histogram (area0-area1), calibrated (see Channels->EM for calibration)";
   label="A0A1";
@@ -1563,85 +1574,90 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   hfr1->AddFrame(fLabel,com->LayLT2);
 }
 
+void ParParDlg::Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
+			     P_Def pp, const char* tip) {
+  double ww1=26;
+  int id;
+  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
+
+  id = Plist.size()+1;
+  TGNumberEntryField* fNum1 = new TGNumberEntryField(hfr1, id, 0, k_int, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   lim,1,max);
+  DoMap(fNum1,nnn,pp,0);
+  fNum1->SetToolTipText(tip);
+  fNum1->SetWidth(ww1);
+  fNum1->Connect("TextChanged(char*)", "ParParDlg", this,
+				   "DoNumProf()");
+  hfr1->AddFrame(fNum1,com->LayLT3);
+}
+
 void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 			   const char* tip, const char* label) {
 
-  double ww1=40;
-  //double ww=90;
-  //char name[20];
-  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
+  //double ww1=40;
+  //TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1);
 
-  //double zz;
   int id;
-  //int id0;
 
-  //checkbutton
+  //main checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
   //sprintf(name,"b_hist%d",id);
   //chk_hist->SetName(name);
   DoMap(chk_hist,&hd->b,p_chk,0);
-  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckProf()");
   hfr1->AddFrame(chk_hist,com->LayCC1);
   //id0=id;
 
+  Add_prof_num(hfr1,&opt.prof_nx,16,p_inum,"Number of X-strips from ING-27");
+  Add_prof_num(hfr1,&opt.prof_ny,16,p_inum,"Number of Y-strips from ING-27");
+  Add_prof_num(hfr1,&hd->bins,64,p_fnum,"Number of X-bins in profilometer histograms");
+  Add_prof_num(hfr1,&hd->bins2,64,p_fnum,"Number of Y-bins in profilometer histograms");
 
-  //NX (x-axis)
+  //1d checkbutton
   id = Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_int, 
-					   TGNumberFormat::kNEAAnyNumber,
-					   lim,1,16);
-  DoMap(fNum1->GetNumberEntry(),&opt.prof_nx,p_inum,0);
-  fNum1->GetNumberEntry()->SetToolTipText("Number of X-strips from ING-27");
-  fNum1->SetWidth(ww1);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoNum()");
-  hfr1->AddFrame(fNum1,com->LayLT2);
+  TGCheckButton *chk_1d = new TGCheckButton(hfr1, "+1D", id);
+  chk_1d->SetToolTipText("Also create 1d histograms");
+  char name[12];
+  sprintf(name,"1d%d",id);
+  chk_1d->SetName(name);
+  DoMap(chk_1d,&opt.h_prof_x.b,p_chk,0);
+  chk_1d->Connect("Clicked()", "ParParDlg", this, "DoCheckProf()");
+  hfr1->AddFrame(chk_1d,com->LayCC1);
+  //id0=id;
 
-  //NY (y-axis)
+  
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  //fLabel->SetWidth();
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText(tip);
+  fLabel->SetAlignment(kTextCenterY);
+
+  //TGLabel* fLabel = new TGLabel(hfr1, label);
+  //fLabel->SetToolTipText(tip);
+  hfr1->AddFrame(fLabel,com->LayLT4);
+}
+
+void ParParDlg::AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
+			     const char* tip, const char* label)
+{
+  char name[20];
+
+  int id;
+
+  //checkbutton
   id = Plist.size()+1;
-  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_int, 
-			    TGNumberFormat::kNEAAnyNumber,
-			    lim,1,16);
-  DoMap(fNum1->GetNumberEntry(),&opt.prof_ny,p_inum,0);
-  fNum1->GetNumberEntry()->SetToolTipText("Number of Y-strips from ING-27");
-  fNum1->SetWidth(ww1);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoNum()");
-  hfr1->AddFrame(fNum1,com->LayLT2);
-
-  //x-bins
-  hd->bins=8;
-  id = Plist.size()+1;
-  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_int, 
-					   TGNumberFormat::kNEAAnyNumber,
-					   lim,1,1000);
-  DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0);
-  fNum1->GetNumberEntry()->SetToolTipText("Number of X-bins in profilometer histograms");
-  fNum1->SetWidth(ww1);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoNum()");
-  hfr1->AddFrame(fNum1,com->LayLT2);
-  fNum1->SetState(false);
-
-  //y-bins
-  hd->bins2=8;
-  id = Plist.size()+1;
-  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_int, 
-			    TGNumberFormat::kNEAAnyNumber,
-			    lim,1,1000);
-  DoMap(fNum1->GetNumberEntry(),&hd->bins2,p_fnum,0);
-  fNum1->GetNumberEntry()->SetToolTipText("Number of Y-bins in profilometer histograms");
-  fNum1->SetWidth(ww1);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoNum()");
-  hfr1->AddFrame(fNum1,com->LayLT2);
-  fNum1->SetState(false);
-
-
+  TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
+  sprintf(name,"b_pulse%d",id);
+  chk_hist->SetName(name);
+  DoMap(chk_hist,&hd->b,p_chk,0);
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
+  hfr1->AddFrame(chk_hist,com->LayCC1);
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
   //fLabel->SetWidth();
@@ -1652,10 +1668,12 @@ void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
-  hfr1->AddFrame(fLabel,com->LayLT2);
+  hfr1->AddFrame(fLabel,com->LayLT5);
+
 }
 
-void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,
+/*
+void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 			     const char* tip, const char* label)
 {
   char name[20];
@@ -1686,7 +1704,7 @@ void ParParDlg::AddLine_mean(TGGroupFrame* frame, Hdef* hd,
   hfr1->AddFrame(fLabel,com->LayLT5);
 
 }
-
+*/
 void ParParDlg::DoParNum() {
   ParDlg::DoNum();
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
@@ -1815,6 +1833,37 @@ void ParParDlg::DoCheckPulse() {
 
   DoChk();
   HiFrm->HiReset();
+}
+
+void ParParDlg::DoCheckProf() {
+
+  if (!crs->b_stop) return;
+
+  TGCheckButton *te = (TGCheckButton*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  DoChk();
+
+  TString str = TString(te->GetName());
+  if (!str.BeginsWith("1d",TString::kIgnoreCase)) {
+    cout << "2d: " << str << endl;
+    Bool_t state = (Bool_t) te->GetState();      
+    pmap *pp;
+    for (int i=0;i<4;i++) {
+      pp = &Plist[id+i];
+      TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
+      te2->SetState(state);
+    }
+  }
+  else
+    cout << "1d: " << str << endl;
+  
+
+  HiFrm->HiReset();
+}
+
+void ParParDlg::DoNumProf() {
+  ParDlg::DoNum();
 }
 
 /*
