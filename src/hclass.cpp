@@ -76,7 +76,7 @@ HMap::~HMap() {
   //list_h_cuts=0;
 }
 
-HMap::HMap(const HMap& other) {
+HMap::HMap(const HMap& other) : TNamed(other) {
   hst = other.hst;
   chk = other.chk;
   wrk = other.wrk;
@@ -268,12 +268,16 @@ Make_prof(const char* dname, const char* name,
 
   if (!hd2->b) return;
 
+  int bb=hd->bins;
   const char* name3[] = {"Prof_x","Prof_y","Prof_ax","Prof_ay"};
   for (int i=0;i<4;i++) {
     sprintf(name2,"%s",name3[i]);
     sprintf(title2,"%s;N strip",name3[i]);
 
-    TH1F* hh=new TH1F(name2,title2,hd->bins,0,hd->bins);
+    if (i%2)
+      bb=hd->bins2;
+
+    TH1F* hh=new TH1F(name2,title2,bb,0,bb);
 
     map2[i] = new HMap("Prof1d",hh,hd2->c+i,hd2->w+i,hd2->cut+i);
     map_list->Add(map2[i]);

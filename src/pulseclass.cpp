@@ -1083,11 +1083,12 @@ void EventClass::FillHist(Bool_t first) {
     int ax=999,ay=999,px=999,py=999;
     if (pulses.size()==4) {
       for (UInt_t i=0;i<pulses.size();i++) {
-	int ch = pulses[i].Chan;
-	UInt_t pp = crs->prof_ch[ch];
-	if (pp<0) {
-	}
-	else if (pp<10)
+	//int ch = pulses[i].Chan;
+	UInt_t pp = crs->prof_ch[pulses[i].Chan];
+	//if (pp<0) {
+	//}
+	//else
+	if (pp<10)
 	  px = pp;
 	else if (pp<100)
 	  py = pp-10;

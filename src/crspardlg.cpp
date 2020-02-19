@@ -1618,18 +1618,6 @@ void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
   Add_prof_num(hfr1,&hd->bins,64,p_fnum,"Number of X-bins in profilometer histograms");
   Add_prof_num(hfr1,&hd->bins2,64,p_fnum,"Number of Y-bins in profilometer histograms");
 
-  //1d checkbutton
-  id = Plist.size()+1;
-  TGCheckButton *chk_1d = new TGCheckButton(hfr1, "+1D", id);
-  chk_1d->SetToolTipText("Also create 1d histograms");
-  char name[12];
-  sprintf(name,"1d%d",id);
-  chk_1d->SetName(name);
-  DoMap(chk_1d,&opt.h_prof_x.b,p_chk,0);
-  chk_1d->Connect("Clicked()", "ParParDlg", this, "DoCheckProf()");
-  hfr1->AddFrame(chk_1d,com->LayCC1);
-  //id0=id;
-
   
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
   //fLabel->SetWidth();
@@ -1641,6 +1629,22 @@ void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
   hfr1->AddFrame(fLabel,com->LayLT4);
+
+
+  //1d checkbutton
+  id = Plist.size()+1;
+  TGCheckButton *chk_1d = new TGCheckButton(hfr1, "New", id);
+  chk_1d->SetToolTipText("Also create 1d histograms");
+  char name[12];
+  sprintf(name,"New%d",id);
+  chk_1d->SetName(name);
+  DoMap(chk_1d,&opt.h_prof_x.b,p_chk,0);
+  chk_1d->Connect("Clicked()", "ParParDlg", this, "DoCheckProf()");
+  hfr1->AddFrame(chk_1d,com->LayCC1);
+  //id0=id;
+
+
+
 }
 
 void ParParDlg::AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
@@ -1845,7 +1849,7 @@ void ParParDlg::DoCheckProf() {
   DoChk();
 
   TString str = TString(te->GetName());
-  if (!str.BeginsWith("1d",TString::kIgnoreCase)) {
+  if (!str.BeginsWith("new",TString::kIgnoreCase)) {
     cout << "2d: " << str << endl;
     Bool_t state = (Bool_t) te->GetState();      
     pmap *pp;
