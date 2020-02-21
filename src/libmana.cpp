@@ -2122,7 +2122,6 @@ void MainFrame::DoReset() {
 
   if (!crs->b_stop) return;
 
-  prtime("Reset0");
   crs->DoReset();
 
   if (local_nch!=opt.Nchan) {
@@ -2139,19 +2138,12 @@ void MainFrame::DoReset() {
     local_nch=opt.Nchan;
   }
 
-  prtime("Reset1");
   ErrFrm->Reset();
-  prtime("Reset2");
   HiFrm->HiReset();
-  prtime("Reset3");
   parpar->Update();
-  prtime("Reset4");
   daqpar->Update();
-  prtime("Reset5");
   anapar->Update();
-  prtime("Reset6");
   pikpar->Update();
-  prtime("Reset7");
 
   UpdateStatus(1);
 

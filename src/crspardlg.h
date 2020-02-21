@@ -91,6 +91,7 @@ public:
   void DoOpen();
   void CopyParLine(int sel, int line);
   void CopyField(int from, int to);
+  void NumField1(int nn, bool bb);
   void UpdateField(int nn);
   void Update();
   void EnableField(int nn, bool state);

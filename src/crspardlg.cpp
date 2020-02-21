@@ -558,6 +558,16 @@ void ParDlg::CopyField(int from, int to) {
   //cout << "copyfield2: " << p1 << " " << p2 << endl;
 }
 
+void ParDlg::NumField1(int nn, bool bb) {
+  pmap* pp = &Plist[nn];
+  TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
+  te2->SetEnabled(bb);
+  if (bb)
+    te2->ChangeBackground(gROOT->GetColor(19)->GetPixel());
+  else
+    te2->ChangeBackground(gROOT->GetColor(17)->GetPixel());
+}
+
 void ParDlg::UpdateField(int nn) {
 
   TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
@@ -574,13 +584,9 @@ void ParDlg::UpdateField(int nn) {
     TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
     Int_t *dat = (Int_t*) pp->data;
     if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
-      // cout << "IUpdMax: " << te->WidgetId() << " " << te->GetNumLimits()
-      //      << " " << lim
-      //      << " " << te->GetNumMax() << " " << *dat << endl;
       *dat = te->GetNumMax();
     }
     if (te->GetNumLimits()==lim && *dat < te->GetNumMin()) {
-      //cout << "IUpdMin: " << te->GetNumMin() << " " << *dat << endl;
       *dat = te->GetNumMin();
     }
     te->SetNumber(*dat);
@@ -623,21 +629,34 @@ void ParDlg::UpdateField(int nn) {
 
     TString str = TString(te->GetName());
     if (str.Contains("write",TString::kIgnoreCase)) {
-      if (bb) {
+      if (bb)
 	te->ChangeBackground(gROOT->GetColor(kPink-9)->GetPixel());
-      }
-      else {
+      else
 	te->ChangeBackground(gROOT->GetColor(18)->GetPixel());
-      }
     }
     if (str.Contains("b_hist",TString::kIgnoreCase)) {
       for (int i=0;i<3;i++) {
-	pp = &Plist[nn+i+1];
-	//TGWidget* wg = (TGWidget*) pp->field;
-	TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
-	//cout << "upd: " << i << " " << te2->GetName() << " " << st << endl;
-	te2->SetState(bb);
+	NumField1(nn+i+1,bb);
+	// pp = &Plist[nn+i+1];
+	// TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
+	// te2->SetEnabled(bb);
+	// if (bb)
+	//   te2->ChangeBackground(gROOT->GetColor(19)->GetPixel());
+	// else
+	//   te2->ChangeBackground(gROOT->GetColor(17)->GetPixel());
       }
+    }
+    if (str.BeginsWith("PRof")) {//,TString::kIgnoreCase)) {
+      //cout << "nn1: " << nn << endl;
+      for (int i=0;i<4;i++) {
+	NumField1(nn+i+1,bb);
+      	// pp = &Plist[nn+i+1];
+      	// TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
+      	// te2->SetEnabled(bb);
+      }
+      pp = &Plist[nn+5];
+      TGCheckButton *te3 = (TGCheckButton*) pp->field;
+      te3->SetEnabled(bb);
     }
   }
     break;
@@ -704,23 +723,16 @@ void ParDlg::EnableField(int nn, bool state) {
   case p_fnum:
   case p_txt: {
     TGTextEntry *te = (TGTextEntry*) pp->field;
-    //cout << "enable1: " << te->GetName() << " " << te->GetTitle() << endl;
     te->SetEnabled(state);
   }
     break;
   case p_chk: {
     TGCheckButton *te = (TGCheckButton*) pp->field;
-    //cout << "enable2: " << te->GetName() << " " << te->GetTitle() << endl;
-    // if (state)
-    //   te->SetState(kButtonUp);
-    // else
     te->SetEnabled(state);
-    //cout << "p_chk: " << te->GetState() << endl;
   }
     break;
   case p_cmb: {
     TGComboBox *te = (TGComboBox*) pp->field;
-    //cout << "enable3: " << te->GetName() << " " << te->GetTitle() << endl;
     te->SetEnabled(state);
   }
     break;
@@ -1606,8 +1618,9 @@ void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
   //main checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
-  //sprintf(name,"b_hist%d",id);
-  //chk_hist->SetName(name);
+  char name[12];
+  sprintf(name,"PRof%d",id);
+  chk_hist->SetName(name);
   DoMap(chk_hist,&hd->b,p_chk,0);
   chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckProf()");
   hfr1->AddFrame(chk_hist,com->LayCC1);
@@ -1634,10 +1647,7 @@ void ParParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
   //1d checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_1d = new TGCheckButton(hfr1, "New", id);
-  chk_1d->SetToolTipText("Also create 1d histograms");
-  char name[12];
-  sprintf(name,"New%d",id);
-  chk_1d->SetName(name);
+  chk_1d->SetToolTipText("Create histograms for new profilometer (+1D)");
   DoMap(chk_1d,&opt.h_prof_x.b,p_chk,0);
   chk_1d->Connect("Clicked()", "ParParDlg", this, "DoCheckProf()");
   hfr1->AddFrame(chk_1d,com->LayCC1);
@@ -1821,14 +1831,16 @@ void ParParDlg::DoCheckHist() {
 
   //cout << "DoCheckHist: " << Plist.size() << " " << id << " " << opt.b_time << endl;
 
-  Bool_t state = (Bool_t) te->GetState();      
-  pmap *pp;
-  for (int i=0;i<3;i++) {
-    pp = &Plist[id+i];
-    TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
-    //cout << i << " " << te2->GetNumber() << endl;
-    te2->SetState(state);
-  }
+  UpdateField(id-1);
+
+  // Bool_t state = (Bool_t) te->GetState();      
+  // pmap *pp;
+  // for (int i=0;i<3;i++) {
+  //   pp = &Plist[id+i];
+  //   TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
+  //   //cout << i << " " << te2->GetNumber() << endl;
+  //   te2->SetState(state);
+  // }
   HiFrm->HiReset();
 }
 
@@ -1848,21 +1860,9 @@ void ParParDlg::DoCheckProf() {
 
   DoChk();
 
-  TString str = TString(te->GetName());
-  if (!str.BeginsWith("new",TString::kIgnoreCase)) {
-    cout << "2d: " << str << endl;
-    Bool_t state = (Bool_t) te->GetState();      
-    pmap *pp;
-    for (int i=0;i<4;i++) {
-      pp = &Plist[id+i];
-      TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
-      te2->SetState(state);
-    }
-  }
-  else
-    cout << "1d: " << str << endl;
-  
-
+  //TString str = TString(te->GetName());
+  //cout << "nn2: " << id << " " << str << " " << endl;
+  UpdateField(id-1);
   HiFrm->HiReset();
 }
 
