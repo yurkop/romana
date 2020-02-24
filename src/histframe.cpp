@@ -647,7 +647,8 @@ void HistFrame::Clear_Ltree()
   
 }
 
-TGListTreeItem* HistFrame::FindItem(TGListTree* lTree, const char* name) {
+TGListTreeItem* HistFrame::FindItem(const char* name) {
+  TGListTree* lTree = fListTree;;
   TGListTreeItem *idir = lTree->GetFirstItem();
   TGListTreeItem *item = 0;
   while (idir) {

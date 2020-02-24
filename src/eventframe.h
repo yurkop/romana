@@ -81,8 +81,6 @@ protected:
 
   TFormula               *formula;
 
-  TGLayoutHints          *fLay1;
-  TGLayoutHints          *fLay2;
   TGLayoutHints          *fLay3;
   TGLayoutHints          *fLay4;
   TGLayoutHints          *fLay5;

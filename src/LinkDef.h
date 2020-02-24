@@ -3,6 +3,8 @@
 #pragma link C++ class EventFrame+;
 #pragma link C++ class HistFrame+;
 #pragma link C++ class ErrFrame+;
+//#pragma link C++ class PopFrame+;
+
 #pragma link C++ class ParDlg+;
 #pragma link C++ class ParParDlg+;
 #pragma link C++ class ChanParDlg+;

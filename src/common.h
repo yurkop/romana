@@ -81,6 +81,7 @@ enum MENU_COM {
   M_FILE_EXIT,
   M_EDIT_PROF8,
   M_EDIT_PROF64,
+  M_PROF_TIME,
   M_HELP,
 };
 
@@ -133,6 +134,8 @@ public:
 
   TGLayoutHints* LayEC3;
   TGLayoutHints* LayCB5;
+
+  TGLayoutHints* LayEy0;
 
   Common();
   ~Common();

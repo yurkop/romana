@@ -1,5 +1,6 @@
 //----- EventFrame ----------------
 #include "romana.h"
+#include "common.h"
 
 #include <TColor.h>
 #include <TCanvas.h>
@@ -77,6 +78,7 @@ extern MyMainFrame *myM;
 extern CRS* crs;
 extern ParParDlg *parpar;
 extern EventFrame* EvtFrm;
+extern Common* com;
 
 //extern ULong_t fGreen;
 //extern ULong_t fRed;
@@ -153,8 +155,6 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //cout << "EventFrame: " << p->GetName() << endl;
   
-  fLay1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY);
-  fLay2 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
   fLay3 = new TGLayoutHints(kLHintsExpandX,2,2,2,2);
   fLay4 = new TGLayoutHints(kLHintsLeft,2,2,2,2);
   fLay5 = new TGLayoutHints(kLHintsLeft,20,2,2,2);
@@ -168,7 +168,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //Frames.....
 
   fDock = new TGDockableFrame(this);
-  AddFrame(fDock, fLay1);
+  AddFrame(fDock, com->LayEE0);
   fDock->SetWindowName("Events");  
   fDock->SetFixedSize(kFALSE);
   fDock->Connect("Docked()","EventFrame",this,"Rebuild()");
@@ -181,8 +181,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   separator1 = new TGVertical3DLine(fMain);
   fVer_st = new TGVerticalFrame(fMain, 10, 10);
 
-  fMain->AddFrame(fVer0, fLay1);
-  fMain->AddFrame(separator1, fLay2);
+  fMain->AddFrame(fVer0, com->LayEE0);
+  fMain->AddFrame(separator1, com->LayEy0);
   fMain->AddFrame(fVer_st, fLay4);
 
   fHor_st = new TGHorizontalFrame(fVer_st, 10, 10);
@@ -193,10 +193,10 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor_st->AddFrame(fVer_d, fLay4);
 
   TGHorizontalFrame* fHor2 = new TGHorizontalFrame(fVer0, 10, 10);
-  fVer0->AddFrame(fHor2, fLay1);
+  fVer0->AddFrame(fHor2, com->LayEE0);
 
   fCanvas = new TRootEmbeddedCanvas("Events",fHor2,w,h);
-  fHor2->AddFrame(fCanvas, fLay1);
+  fHor2->AddFrame(fCanvas, com->LayEE0);
 
   fHslider = new TGDoubleHSlider(fVer0, 10, kDoubleScaleBoth,0);
   fHslider->SetRange(0,1);

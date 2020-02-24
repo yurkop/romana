@@ -8,6 +8,7 @@
 //#include <malloc.h>
 
 #include "romana.h"
+#include "popframe.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -321,7 +322,7 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
       }
       //cout << "dm2: " << dm << endl;
       // if (dm) {
-      // 	cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+      //  cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
       // }
       //dm = (TDataMember*) lst->FindObject(memname);
       if (dm) {
@@ -344,7 +345,7 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
 
   //if (debug&0x2)
   //cout << "len: " << len << " " << sz << endl;
-  
+	
 }
 
 //--------------------------------
@@ -404,7 +405,7 @@ int main(int argc, char **argv)
   // cout << "sizeof(TDatime): " << sizeof(TDatime) << endl;
   // cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
   // cout << "sizeof(opt): " << sizeof(opt) << endl;
-  
+	
   hcl = new HClass();
   crs = new CRS();
 
@@ -420,7 +421,7 @@ int main(int argc, char **argv)
   _getcwd(startdir,150);
   strcat(startdir,"\\");
 #endif
-  
+	
   //cout << "startdir: " << startdir << endl;
 
   cout << "----------------------------------------------" << endl;
@@ -456,7 +457,7 @@ int main(int argc, char **argv)
       //int argnn=1;
       //while (argnn<argc) {
       // cout << "argnn: " << argc << " " << argnn << " " << argv[argnn] << " "
-      // 	   << argv[argnn]+1 << endl;
+      //     << argv[argnn]+1 << endl;
       TString sarg=TString(argv[i]);
 
       if (sarg[0]=='-') {
@@ -633,7 +634,7 @@ int main(int argc, char **argv)
 	continue;
       }
     }
-      
+		
     //lst->ls();
     //}
     // catch (const std::invalid_argument& ia) {
@@ -1189,8 +1190,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
+  fMenuProf->AddEntry("Profilometer time calibration", M_PROF_TIME);
+  fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
+		     "HandleMenu(Int_t)");
+
   fMenuBar->AddPopup("&Profilometer", fMenuProf, 
-  		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
+		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
   TGPopupMenu* fMenuHelp = new TGPopupMenu(gClient->GetRoot());
   fMenuHelp->AddEntry("Display Help file", M_HELP);
@@ -1208,7 +1213,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     fMenuBar->AddPopup("Analysis", fMenuAna, 
     new TGLayoutHints(kLHintsLeft|kLHintsTop));
   */
-  
+	
   fMenuBar->AddPopup("&Help", fMenuHelp,
 		     new TGLayoutHints(kLHintsTop|kLHintsRight,0,4,0,0));
 
@@ -1341,7 +1346,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGLabel *ver = new TGLabel(vframe1,VERSION);
 
   //prtime("zero",-1); //set time to zero
-  
+	
   vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
   fTab = new TGTab(hframe1, 300, 300);
@@ -1388,10 +1393,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     fReset->SetEnabled(false);
 
     /*
-    opt.raw_write=false;
-    //parpar->Update();
-    TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
-    if (te) 
+      opt.raw_write=false;
+      //parpar->Update();
+      TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
+      if (te) 
       te->SetEnabled(false);
     */
   }
@@ -1488,7 +1493,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     }
 
   }
-  
+	
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
   //UpdateStatus();
 
@@ -1517,6 +1522,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   Move(-100,-100);
 
   p_ed=0;
+  p_pop=0;
   //prtime("MainFrame_end");
 }
 
@@ -1546,7 +1552,7 @@ MainFrame::~MainFrame() {
 }
 
 /*
-void MainFrame::Rebuild() {
+  void MainFrame::Rebuild() {
 
   //cout << "main::Rebuild: " << endl;
 
@@ -1573,7 +1579,7 @@ void MainFrame::Rebuild() {
   Layout();
 
   //cout << "main::Rebuild2: " << endl;
-}
+  }
 */
 
 void MainFrame::Rebuild() {
@@ -1585,7 +1591,7 @@ void MainFrame::Rebuild() {
   // for (int i=0;i<7;i++) {
   //   tabfr[i]->RemoveAll();
   // }
- 
+	
   tabfr[0]->RemoveAll();
   tabfr[1]->RemoveAll();
   tabfr[2]->RemoveAll();
@@ -1593,16 +1599,16 @@ void MainFrame::Rebuild() {
   tabfr[4]->RemoveAll();
   tabfr[5]->RemoveAll();
   tabfr[6]->RemoveAll();
- /*
-  delete parpar;
-  delete daqpar;
-  delete anapar;
-  delete pikpar;
-  delete EvtFrm;
-  delete HiFrm;
-  delete ErrFrm;
+  /*
+    delete parpar;
+    delete daqpar;
+    delete anapar;
+    delete pikpar;
+    delete EvtFrm;
+    delete HiFrm;
+    delete ErrFrm;
   */
-  
+	
   //tabfr[2]->RemoveAll();
   //delete anapar;
   //anapar = new AnaParDlg(tabfr[2], 600, 500);
@@ -1806,8 +1812,8 @@ void MainFrame::DoClose() {
     //opt.raw_write=false;
     //parpar->Update();
     /*
-    TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
-    if (te) 
+      TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
+      if (te) 
       te->SetEnabled(true);
     */
   }
@@ -1862,7 +1868,7 @@ void MainFrame::DoAna() {
   }
 
   //cout << "mainframe::doana: " << endl;
-  
+	
   //crs->DoFAna();
 }
 
@@ -2101,19 +2107,19 @@ void MainFrame::Export() {
 
     if (retval == kMBOk) {
       cout << "OK: " << fi.fFilename <<  " " << TImage::GetImageFileTypeFromFilename(fi.fFilename) << endl;
-      //TGCompositeFrame*	frame = fTab->GetCurrentContainer();
+      //TGCompositeFrame* frame = fTab->GetCurrentContainer();
       //frame->SaveAs(fi.fFilename);
       cv->SaveAs(fi.fFilename);
     }
   }
-  
+	
 }
 
 void MainFrame::DoReset() {
 
   //prtime("Main::DoReset");
   //printhlist(4);
-  
+	
   // if (HiFrm)
   //   cout << "DoReset_main: " << HiFrm->h_time[1]->GetName() << endl;
 
@@ -2332,20 +2338,20 @@ void MainFrame::DoSaveRoot() {
 }
 
 /*
-void MainFrame::DoSaveAscii() {
+  void MainFrame::DoSaveAscii() {
 
   if (!crs->b_stop) return;
 
 
 
 
-#ifdef LINUX
+  #ifdef LINUX
   if (chdir(startdir)) {}
-#else
+  #else
   _chdir(startdir);
-#endif
+  #endif
 
-}
+  }
 */
 
 void MainFrame::DoTab(Int_t num) {
@@ -2368,24 +2374,24 @@ void MainFrame::DoTab(Int_t num) {
   else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
     //cout << "DoTab2: " << name << endl;
     /*
-    if (daqpar->notbuilt) {
+      if (daqpar->notbuilt) {
       daqpar->Build();
       Resize(GetDefaultSize());
       MapSubwindows();
       Layout();
-    }
+      }
     */
     daqpar->Update();
   }
   else if (name.EqualTo("Analysis",TString::kIgnoreCase)) {
     //cout << "DoTab3: " << name << endl;
     /*
-    if (anapar->notbuilt) {
+      if (anapar->notbuilt) {
       anapar->Build();
       //Resize(GetDefaultSize());
       MapSubwindows();
       //Layout();
-    }
+      }
     */
     //cout << "Ana3: " << endl;
     anapar->Update();
@@ -2394,12 +2400,12 @@ void MainFrame::DoTab(Int_t num) {
   else if (name.EqualTo("Peaks",TString::kIgnoreCase)) {
     //cout << "DoTab3: Peaks: " << name << endl;
     /*
-    if (pikpar->notbuilt) {
+      if (pikpar->notbuilt) {
       pikpar->Build();
       //Resize(GetDefaultSize());
       MapSubwindows();
       //Layout();
-    }
+      }
     */
     pikpar->Update();
   }
@@ -2527,9 +2533,9 @@ void MainFrame::HandleMenu(Int_t menu_id)
   case M_SAVEROOT:
     DoSaveRoot();
     break;
-  // case M_SAVEASCII:
-  //   DoSaveAscii();
-  //   break;
+    // case M_SAVEASCII:
+    //   DoSaveAscii();
+    //   break;
   case M_READROOT:
     DoReadRoot();
     break;
@@ -2567,7 +2573,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
     {
       if (!p_ed) {
 	//cout << "p_ed: " << p_ed << endl;
-	p_ed = new PEditor(this, 400, 400);
+	p_ed = new PEditor(this, 400, 500);
 	p_ed->LoadPar8();
 	//ed->LoadBuffer(editortxt1);
 	p_ed->Popup();
@@ -2579,11 +2585,28 @@ void MainFrame::HandleMenu(Int_t menu_id)
     {
       if (!p_ed) {
 	//cout << "p_ed: " << p_ed << endl;
-	p_ed = new PEditor(this, 400, 400);
+	p_ed = new PEditor(this, 400, 500);
 	p_ed->LoadPar64();
 	//ed->LoadBuffer(editortxt1);
 	p_ed->Popup();
       }
+    }
+    break;
+
+  case M_PROF_TIME:
+    {
+      //cout << "cal1: " << p_time_cal << endl;
+      if (!p_pop) {
+	p_pop = new PopFrame(this,800,600);
+	//pop->Popup;
+	// TCanvas* cc = new TCanvas();
+	// //cout << "p_ed: " << p_ed << endl;
+	// p_ed = new PEditor(this, 400, 400);
+	// p_ed->LoadPar64();
+	// //ed->LoadBuffer(editortxt1);
+	// p_ed->Popup();
+      }
+      //cout << "cal2: " << p_pop << endl;
     }
     break;
 
@@ -2680,7 +2703,7 @@ Common::Common() {
 
   LayCB0   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
   LayCB5 = new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5);
- 
+	
   LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
 
   LayCLE2 = new TGLayoutHints(kLHintsCenterY|kLHintsLeft|kLHintsExpandX, 4, 2, 2, 2);
@@ -2697,7 +2720,7 @@ Common::Common() {
   LayLT4   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 11, 1, 1, 1);
   LayLT5   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 1);
   //LayLT6  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 150, 1, 1, 0);
- 
+	
   LayLE0   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY);
   LayLE1  = new TGLayoutHints(kLHintsLeft|kLHintsExpandY,3,0,0,0);
 
@@ -2706,13 +2729,15 @@ Common::Common() {
   LayLC3  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
 
   LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
-  
+	
 
   LayEC3 = new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 3, 3, 0, 0);
 
   LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
   LayEE1 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
   LayEE2 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,3,3);
+
+  LayEy0 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
 
   //fL2a  = new TGLayoutHints(kLHintsLeft|kLHintsBottom,0,0,5,0);
 
@@ -2969,8 +2994,7 @@ PEditor::PEditor(const TGWindow *main, UInt_t w, UInt_t h)
   fMain->SetCleanup(kDeepCleanup);
 
   fEdit = new TGTextEdit(fMain, w, h, kSunkenFrame | kDoubleBorder);
-  fL1 = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 3, 3, 3, 3);
-  fMain->AddFrame(fEdit, fL1);
+  fMain->AddFrame(fEdit, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
   fEdit->Connect("Opened()", "PEditor", this, "DoOpen()");
   fEdit->Connect("Saved()",  "PEditor", this, "DoSave()");
   fEdit->Connect("Closed()", "PEditor", this, "DoClose()");
@@ -2988,8 +3012,7 @@ PEditor::PEditor(const TGWindow *main, UInt_t w, UInt_t h)
 
   TGTextButton* fOK = new TGTextButton(fMain, "  &OK  ");
   fOK->Connect("Clicked()", "PEditor", this, "DoOK()");
-  fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
-  fMain->AddFrame(fOK, fL2);
+  fMain->AddFrame(fOK, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
 
   SetTitle();
 
@@ -3049,7 +3072,7 @@ void PEditor::Load_Ing(const char* header)
 {
   char ss[100];
   fEdit->LoadBuffer(header);
-  fEdit->AddLine("# N: strip number");
+  fEdit->AddLine("# N: Ing27 strip number");
   fEdit->AddLine("# X-ch: DAQ channel for the given X-strip");
   fEdit->AddLine("# Y-ch: DAQ channel for the given Y-strip");
   fEdit->AddLine("# Set to -1 if the strip is absent/not used");
@@ -3082,6 +3105,14 @@ void PEditor::LoadPar64()
     sprintf(ss,"Prof64 %d",opt.Prof64[i]);
     fEdit->AddLine(ss);
   }
+  sprintf(ss,"Prof64_T %d # Channel for Time calibration",opt.Prof64[4]);
+  fEdit->AddLine(ss);
+  sprintf(ss,"Prof64_OFF %d # Time Offset",opt.Prof64_TC[0]);
+  fEdit->AddLine(ss);
+  sprintf(ss,"Prof64_PER %d # Period",opt.Prof64_TC[1]);
+  fEdit->AddLine(ss);
+  
+  fEdit->AddLine("# Run Profilometer time calibration for offset and period");
 }
 
 void PEditor::CloseWindow()
@@ -3112,13 +3143,23 @@ void PEditor::DoOK()
 	opt.Ing_x[j]=xx;
 	opt.Ing_y[j]=yy;
       }
+      else if (ts.EqualTo("Prof",TString::kIgnoreCase) && j>=0 && j<8) {
+	opt.Prof_x[j]=xx;
+	opt.Prof_y[j]=yy;
+      }
       else if (ts.EqualTo("Prof64",TString::kIgnoreCase) && kk>=0 && kk<4) {
 	opt.Prof64[kk]=j;
 	++kk;
       }
-      else if (ts.EqualTo("Prof",TString::kIgnoreCase) && j>=0 && j<8) {
-	opt.Prof_x[j]=xx;
-	opt.Prof_y[j]=yy;
+      else if (ts.EqualTo("Prof64_T",TString::kIgnoreCase)) {
+	opt.Prof64[4]=j;
+	++kk;
+      }
+      else if (ts.EqualTo("Prof64_OFF",TString::kIgnoreCase)) {
+	opt.Prof64_TC[0]=j;
+      }
+      else if (ts.EqualTo("Prof64_PER",TString::kIgnoreCase)) {
+	opt.Prof64_TC[1]=j;
       }
     }
   }

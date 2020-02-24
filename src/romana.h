@@ -8,6 +8,7 @@
 #include "eventframe.h"
 #include "histframe.h"
 #include "hclass.h"
+//#include "popframe.h"
 
 //--------------------------------------
 //class MyMainFrame: public MainFrame {

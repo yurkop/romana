@@ -2,6 +2,7 @@
 #define libmana_H 1
 
 #include "common.h"
+#include "popframe.h"
 #include <TGDockableFrame.h>
 #include <TGTextEdit.h>
 
@@ -48,35 +49,33 @@ void prtime(const char* txt, int set=0);
 //-----------------------------------------------
 class PEditor {
 
-private:
-   TGTransientFrame *fMain;   // main frame of this widget
-   TGTextEdit       *fEdit;   // text edit widget
-   TGLayoutHints    *fL1;     // layout of TGTextEdit
-   TGLayoutHints    *fL2;     // layout of OK button
+ private:
+  TGTransientFrame *fMain;   // main frame of this widget
+  TGTextEdit       *fEdit;   // text edit widget
 
-   TString          *str;
-public:
-   PEditor(const TGWindow *main, UInt_t w, UInt_t h);
-   virtual ~PEditor();
+  TString          *str;
+ public:
+  PEditor(const TGWindow *main, UInt_t w, UInt_t h);
+  virtual ~PEditor();
 
-   void   LoadFile(const char *file);
-   void   Load_Ing(const char* header);
-   void   LoadPar8();
-   void   LoadPar64();
-   //void   LoadBuffer(const char *buffer);
-   //void   AddBuffer(const char *buffer);
+  void   LoadFile(const char *file);
+  void   Load_Ing(const char* header);
+  void   LoadPar8();
+  void   LoadPar64();
+  //void   LoadBuffer(const char *buffer);
+  //void   AddBuffer(const char *buffer);
 
-   TGTextEdit *GetEditor() const { return fEdit; }
+  TGTextEdit *GetEditor() const { return fEdit; }
 
-   void   SetTitle();
-   void   Popup();
+  void   SetTitle();
+  void   Popup();
 
-   // slots
-   void   CloseWindow();
-   void   DoOK();
-   void   DoOpen();
-   void   DoSave();
-   void   DoClose();
+  // slots
+  void   CloseWindow();
+  void   DoOK();
+  void   DoOpen();
+  void   DoSave();
+  void   DoClose();
 };
 
 //-----------------------------------------------
@@ -84,7 +83,7 @@ class MainFrame : public TGMainFrame {
 
   //public:
   //TGMainFrame          *fMain;
-public:
+ public:
   TRootEmbeddedCanvas  *fEcanvas;
 
   TGMenuBar            *fMenuBar;     // main menu bar
@@ -96,6 +95,7 @@ public:
   TGTextButton *fNb;
 
   PEditor* p_ed;
+  PopFrame* p_pop;
   //TGLayoutHints* Lay11;
   //TGLayoutHints* Lay12;
 
@@ -112,7 +112,7 @@ public:
   static const Int_t n_stat=11;
   TGTextEntry* fStat[n_stat];
 
-public:
+ public:
   MainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MainFrame();
 
@@ -150,19 +150,19 @@ public:
   void HandleMenu(Int_t);
 
   ClassDef(MainFrame, 0)
-};
+    };
 
 //--------------------------------------
 class MyMainFrame: public MainFrame {
-public:
+ public:
   MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MyMainFrame();
   ClassDef(MyMainFrame, 0)
-};
+    };
 
 //--------------------------------------
 class ColorMsgBox: public TGTransientFrame {
-public:
+ public:
   ColorMsgBox(const TGWindow *p, const TGWindow *main,
 	      const char *title, const char *msg, EMsgBoxIcon icon,
 	      Int_t buttons, Int_t *ret_code);
@@ -173,27 +173,27 @@ public:
 //////////////////////////////////////////////////////////////////////////
 class TGMatrixLayout2 : public TGLayoutManager {
 
-private:
-   TGMatrixLayout2(const TGMatrixLayout2&);
-   TGMatrixLayout2& operator=(const TGMatrixLayout2&);
+ private:
+  TGMatrixLayout2(const TGMatrixLayout2&);
+  TGMatrixLayout2& operator=(const TGMatrixLayout2&);
 
-protected:
-   TGCompositeFrame *fMain;      // container frame
-   TList            *fList;      // list of frames to arrange
+ protected:
+  TGCompositeFrame *fMain;      // container frame
+  TList            *fList;      // list of frames to arrange
 
-public:
-   Int_t   fSep;                      // interval between frames
-   Int_t   fHints;                    // layout hints (currently not used)
-   UInt_t  fRows;                     // number of rows
-   UInt_t  fColumns;                  // number of columns
+ public:
+  Int_t   fSep;                      // interval between frames
+  Int_t   fHints;                    // layout hints (currently not used)
+  UInt_t  fRows;                     // number of rows
+  UInt_t  fColumns;                  // number of columns
 
-   TGMatrixLayout2(TGCompositeFrame *main, UInt_t r, UInt_t c, Int_t s=0, Int_t h=0);
+  TGMatrixLayout2(TGCompositeFrame *main, UInt_t r, UInt_t c, Int_t s=0, Int_t h=0);
 
-   virtual void Layout();
-   virtual TGDimension GetDefaultSize() const;
-   virtual void SavePrimitive(ostream &out, Option_t * = "");
+  virtual void Layout();
+  virtual TGDimension GetDefaultSize() const;
+  virtual void SavePrimitive(ostream &out, Option_t * = "");
 
-   ClassDef(TGMatrixLayout2,0)  // Matrix layout manager
-};
+  ClassDef(TGMatrixLayout2,0)  // Matrix layout manager
+    };
 
 #endif

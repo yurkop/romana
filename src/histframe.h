@@ -90,7 +90,7 @@ public:
   TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
   void Make_Ltree();
   void Clear_Ltree();
-  TGListTreeItem* FindItem(TGListTree* lTree, const char* name);
+  TGListTreeItem* FindItem(const char* name);
   void Clone_Ltree(HMap* hmap);
   void DoClick(TGListTreeItem* item,Int_t but);
   void CutClick(TGListTreeItem* item,Int_t but);
