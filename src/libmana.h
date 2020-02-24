@@ -72,7 +72,8 @@ class PEditor {
 
   // slots
   void   CloseWindow();
-  void   DoOK();
+  void   DoSavePar();
+  void   DoExit();
   void   DoOpen();
   void   DoSave();
   void   DoClose();
@@ -84,6 +85,17 @@ class MainFrame : public TGMainFrame {
   //public:
   //TGMainFrame          *fMain;
  public:
+
+  Pixel_t fGreen;
+  Pixel_t fRed;
+  // Pixel_t fRed10;
+  Pixel_t fCyan;
+  Pixel_t fOrng;
+  Pixel_t fBlue;
+
+  TGLayoutHints* LayEE1;
+  TGLayoutHints* LayEE2;
+
   TRootEmbeddedCanvas  *fEcanvas;
 
   TGMenuBar            *fMenuBar;     // main menu bar

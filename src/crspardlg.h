@@ -44,6 +44,27 @@ struct pmap {
 class ParDlg: public TGCompositeFrame {
 
 public:
+
+  Pixel_t fGreen;
+  Pixel_t fRed;
+  Pixel_t fRed10;
+  Pixel_t fCyan;
+  Pixel_t fOrng;
+  Pixel_t fBlue;
+
+  TGLayoutHints* LayCC0 ;
+  TGLayoutHints* LayCC0a;
+  TGLayoutHints* LayCC1 ;
+  TGLayoutHints* LayET3 ;
+  TGLayoutHints* LayLT0 ;
+  TGLayoutHints* LayLT2 ;
+  TGLayoutHints* LayLT3 ;
+  TGLayoutHints* LayLT4 ;
+  TGLayoutHints* LayLT5 ;
+  TGLayoutHints* LayLE0 ;
+  TGLayoutHints* LayEE0 ;
+
+
   int jtrig;
   bool notbuilt;
   int pmax; //максимальный канал (вместо MAX_CH), который записан в параметрах

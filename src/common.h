@@ -84,7 +84,7 @@ enum MENU_COM {
   M_PROF_TIME,
   M_HELP,
 };
-
+/*
 class Common {
 
 public:
@@ -140,5 +140,5 @@ public:
   Common();
   ~Common();
 };
-
+*/
 #endif

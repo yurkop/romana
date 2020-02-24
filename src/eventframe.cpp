@@ -57,6 +57,7 @@ Long64_t markt[10];
 
 TLine ln;
 TMarker mk;
+TBox bx;
 
 //                     1                        11 
 // = {1,2,3,4,6,7,8,9,406,426,596,606,636,796,816,856,
@@ -78,7 +79,7 @@ extern MyMainFrame *myM;
 extern CRS* crs;
 extern ParParDlg *parpar;
 extern EventFrame* EvtFrm;
-extern Common* com;
+//extern Common* com;
 
 //extern ULong_t fGreen;
 //extern ULong_t fRed;
@@ -111,6 +112,12 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kHorizontalFrame)
    //:TGCompositeFrame(p,w,h,kVerticalFrame)
 {
+
+
+  TGLayoutHints* LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
+  TGLayoutHints* LayEy0 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
+
+
 
   Float_t rr[3];
   for (int i=0;i<MAX_CH;i++) {
@@ -168,7 +175,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //Frames.....
 
   fDock = new TGDockableFrame(this);
-  AddFrame(fDock, com->LayEE0);
+  AddFrame(fDock, LayEE0);
   fDock->SetWindowName("Events");  
   fDock->SetFixedSize(kFALSE);
   fDock->Connect("Docked()","EventFrame",this,"Rebuild()");
@@ -181,8 +188,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   separator1 = new TGVertical3DLine(fMain);
   fVer_st = new TGVerticalFrame(fMain, 10, 10);
 
-  fMain->AddFrame(fVer0, com->LayEE0);
-  fMain->AddFrame(separator1, com->LayEy0);
+  fMain->AddFrame(fVer0, LayEE0);
+  fMain->AddFrame(separator1, LayEy0);
   fMain->AddFrame(fVer_st, fLay4);
 
   fHor_st = new TGHorizontalFrame(fVer_st, 10, 10);
@@ -193,10 +200,10 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor_st->AddFrame(fVer_d, fLay4);
 
   TGHorizontalFrame* fHor2 = new TGHorizontalFrame(fVer0, 10, 10);
-  fVer0->AddFrame(fHor2, com->LayEE0);
+  fVer0->AddFrame(fHor2, LayEE0);
 
   fCanvas = new TRootEmbeddedCanvas("Events",fHor2,w,h);
-  fHor2->AddFrame(fCanvas, com->LayEE0);
+  fHor2->AddFrame(fCanvas, LayEE0);
 
   fHslider = new TGDoubleHSlider(fVer0, 10, kDoubleScaleBoth,0);
   fHslider->SetRange(0,1);
@@ -1305,6 +1312,36 @@ void EventFrame::ReDraw() {
 	}
       } //for (UInt_t j=0;j<d_event->pulses.size();j++) {
 
+      
+      if (opt.h_prof.b && opt.h_prof_x.b) { //profilometer
+	bx.SetFillStyle(3013);
+	bx.SetFillColor(3);
+	//bx.SetLineColor(3);
+	for (int kk=-1;kk<31;kk++) {
+	  double x1 = d_event->Tstmp+opt.Prof64_W[0]+opt.Prof64_W[1]*kk;
+	  double x2 = x1 + opt.Prof64_W[2];
+	  bx.DrawBox(x1,y1,x2,y2);
+
+	  for (UInt_t j=0;j<d_event->pulses.size();j++) {
+	    PulseClass *pulse = &d_event->pulses.at(j);
+	    if (fChn[pulse->Chan]->IsOn()) {
+	      int dt=(pulse->Tstamp64-d_event->Tstmp)-cpar.preWr[pulse->Chan];
+	      cout << "dt: " << j << " " << (int)pulse->Chan << " " << dt << endl;
+	      cout << "dt2: "<< Gr[i][j]->GetN() << " " << Gr[i][j]->GetX()[-dt] << " " << Gr[i][j]->GetY()[-dt] << endl;
+	      // for (int l=0;l<Gr[i][j]->GetN();l++) {
+	      // 	cout << "ll: " << l << " " << Gr[i][j]->GetX()[l] << " "
+	      // 	     << Gr[i][j]->GetY()[l] << endl;
+	      // }
+	      //TGraph* gg = new TGraph(10,Gr[i][j]->GetX()+dt,Gr[i][j]->GetY()+dt);
+	      //gg->SetLineColor(chcol[pulse->Chan]);
+	      //gg->Draw("l*");
+	      
+	    }
+	  }
+
+	}
+	
+      }
       // for (UInt_t j=0;j<32;j++) {
       // 	PulseClass *pulse = &d_event->pulses.at(0);
       // 	pulse->Chan=j;

@@ -210,7 +210,7 @@ public:
   Int_t Prof_x[8];
   Int_t Prof_y[8];
   Int_t Prof64[5];
-  Int_t Prof64_TC[2]; //time calibration: offset, period (in smp)
+  Int_t Prof64_W[3]; //Windows: offset, period, width (in smp)
 
   //Int_t prof_ch[MAX_CH];
 

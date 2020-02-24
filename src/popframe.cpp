@@ -8,7 +8,7 @@
 #include <TCanvas.h>
 #include <TPolyMarker.h>
 
-extern Common* com;
+//extern Common* com;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
 extern Toptions opt;
@@ -101,8 +101,9 @@ void PopFrame::DoOK()
     hh->Draw();
     cv->cd(2);
     gr->Draw("AL*");
-    opt.Prof64_TC[0]=fit->GetParameters()[0]/opt.Period;
-    opt.Prof64_TC[1]=fit->GetParameters()[1]/opt.Period;
+    //opt.Prof64_W[0]=fit->GetParameters()[0]/opt.Period;
+    opt.Prof64_W[1]=fit->GetParameters()[1]/opt.Period;
+    //opt.Prof64_W[2]=10;
   }
   else {
     cv->cd(2);
