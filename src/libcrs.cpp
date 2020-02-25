@@ -2491,8 +2491,12 @@ void CRS::DoProf(Int_t nn, Int_t *aa, Int_t off) {
 void CRS::Make_prof_ch() {
   for (int i=0;i<MAX_CH;i++) {
     prof_ch[i]=-1;
+    //cout << "prof_ch: " << i << " " << prof_ch[i] << endl;
   }
 
+  for (int i=0;i<5;i++) {
+    DoProf(i,opt.Prof64,1000000);
+  }
   for (int i=0;i<8;i++) {
     DoProf(i,opt.Prof_x,0);
     DoProf(i,opt.Prof_y,10);

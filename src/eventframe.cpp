@@ -1318,30 +1318,45 @@ void EventFrame::ReDraw() {
 	bx.SetFillColor(3);
 	//bx.SetLineColor(3);
 	for (int kk=-1;kk<31;kk++) {
-	  double x1 = d_event->Tstmp+opt.Prof64_W[0]+opt.Prof64_W[1]*kk;
-	  double x2 = x1 + opt.Prof64_W[2];
+	  int x1 = 0+opt.Prof64_W[0]+opt.Prof64_W[1]*kk;
+	  int x2 = x1 + opt.Prof64_W[2]-1;
 	  bx.DrawBox(x1,y1,x2,y2);
-
+	  //cout << "x1: " << x1 << " " << x2 << endl;
 	  for (UInt_t j=0;j<d_event->pulses.size();j++) {
 	    PulseClass *pulse = &d_event->pulses.at(j);
 	    if (fChn[pulse->Chan]->IsOn()) {
 	      int dt=(pulse->Tstamp64-d_event->Tstmp)-cpar.preWr[pulse->Chan];
-	      cout << "dt: " << j << " " << (int)pulse->Chan << " " << dt << endl;
-	      cout << "dt2: "<< Gr[i][j]->GetN() << " " << Gr[i][j]->GetX()[-dt] << " " << Gr[i][j]->GetY()[-dt] << endl;
-	      // for (int l=0;l<Gr[i][j]->GetN();l++) {
-	      // 	cout << "ll: " << l << " " << Gr[i][j]->GetX()[l] << " "
-	      // 	     << Gr[i][j]->GetY()[l] << endl;
-	      // }
-	      //TGraph* gg = new TGraph(10,Gr[i][j]->GetX()+dt,Gr[i][j]->GetY()+dt);
-	      //gg->SetLineColor(chcol[pulse->Chan]);
-	      //gg->Draw("l*");
-	      
-	    }
-	  }
+	      //cout << "dt: " << j << " " << (int)pulse->Chan << " " << dt; //<< endl;
+	      //cout << " "<< Gr[i][j]->GetN() << " " << Gr[i][j]->GetX()[-dt] << " " << Gr[i][j]->GetY()[-dt] << endl;
 
-	}
+	      int xmin = TMath::Max(-dt+x1,0);
+	      //xmin = TMath::Min(xmin,Gr[i][j]->GetN()-1);
+	      int xmax = TMath::Min(Gr[i][j]->GetN(),-dt+x1+opt.Prof64_W[2]);
+	      int nnn = xmax-xmin;
+	      // cout << "Gr: " << j << " " << (int)pulse->Chan << " " << dt
+	      // 	   << " " << -dt+x1
+	      // 	   << " " << nnn << " " << xmin << " " << xmax << endl;
+	      if (nnn>0) {
+		TGraph* gg = new TGraph(nnn,Gr[i][j]->GetX()+xmin,Gr[i][j]->GetY()+xmin);
+		gg->SetMarkerColor(chcol[pulse->Chan]);
+		gg->Draw("*");
+		
+		double sum=0;
+		for (int l=0;l<gg->GetN();l++) {
+		  sum+=gg->GetY()[l];
+		}
+		//cout << "sum/N: " << j << " " << (int)pulse->Chan << " " << kk << " " << sum/gg->GetN() << endl;
+
+	      }
+	      if (nnn>opt.Prof64_W[2]) {
+		cout << "nnn is too big: " << nnn << endl;
+	      }
+	    }  //if
+	  } //for j
+
+	} //for kk
 	
-      }
+      } //if
       // for (UInt_t j=0;j<32;j++) {
       // 	PulseClass *pulse = &d_event->pulses.at(0);
       // 	pulse->Chan=j;

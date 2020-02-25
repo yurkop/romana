@@ -54,7 +54,6 @@ const double MB = 1024*1024;
 
 extern CRS* crs;
 
-//Common* com;
 EventFrame* EvtFrm;
 HistFrame* HiFrm;
 ErrFrame* ErrFrm;
@@ -713,7 +712,6 @@ int main(int argc, char **argv)
   TApplication theApp("App",&argc,argv);
   //example();
 
-  //com = new Common();
   myM=0;
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
 
@@ -2705,67 +2703,6 @@ void MainFrame::HandleMenu(Int_t menu_id)
 //
 //
 
-/*
-//-------------------------
-Common::Common() {
-
-  gClient->GetColorByName("green", fGreen);
-  gClient->GetColorByName("red", fRed);
-  gClient->GetColorByName("cyan", fCyan);
-  //gClient->GetColorByName("BlueViolet",fBluevio);
-  fOrng=TColor::RGB2Pixel(255,114,86);
-  fBlue = TColor::RGB2Pixel(135,92,231);
-  fRed10=gROOT->GetColor(kRed-10)->GetPixel();
-
-  LayCC0   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,0,0);
-  LayCC0a  = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,1,1);
-  LayCC1   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 4, 4, 0, 0);
-  LayCC2   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0, 0, 5, 5);
-
-  LayCB0   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
-  LayCB5 = new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5);
-	
-  LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
-
-  LayCLE2 = new TGLayoutHints(kLHintsCenterY|kLHintsLeft|kLHintsExpandX, 4, 2, 2, 2);
-
-  LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
-  LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
-  LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
-  //LayET2   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 0, 0, 2, 2);
-  LayET3   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 2, 2, 0, 0);
-
-  LayLT0   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 0,0,0,0);
-  LayLT2  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 0);
-  LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
-  LayLT4   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 11, 1, 1, 1);
-  LayLT5   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 1);
-  //LayLT6  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 150, 1, 1, 0);
-	
-  LayLE0   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY);
-  LayLE1  = new TGLayoutHints(kLHintsLeft|kLHintsExpandY,3,0,0,0);
-
-  LayLC1  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
-  LayLC2  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,0,0,0);
-  LayLC3  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
-
-  LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
-	
-
-  LayEC3 = new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 3, 3, 0, 0);
-
-  LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
-  LayEE1 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
-  LayEE2 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,3,3);
-
-  LayEy0 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
-
-  //fL2a  = new TGLayoutHints(kLHintsLeft|kLHintsBottom,0,0,5,0);
-
-}
-Common::~Common() {
-}
-*/
 
 /*
   struct MyClass {

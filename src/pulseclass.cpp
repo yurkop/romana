@@ -1080,6 +1080,13 @@ void EventClass::FillHist(Bool_t first) {
 
 
   if (opt.h_prof.b) {
+    if (opt.h_prof_x.b) { //new profilometer
+      
+    }
+
+
+
+
     int ax=999,ay=999,px=999,py=999;
     if (pulses.size()==4) {
       for (UInt_t i=0;i<pulses.size();i++) {
