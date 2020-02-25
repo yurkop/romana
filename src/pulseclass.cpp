@@ -28,17 +28,6 @@ extern Coptions cpar;
 
 const double mks=0.001;
 
-// namespace PROF {
-
-//   const int prof_ch[32] = {
-//     0, 1, 2, 3, 4, 5, 6, 7,
-//     7, 6, 5, 4, 3, 2, 1, 0,
-//     0, 2, 4, 6, 1, 3, 5, 7,
-//     0, 2, 4, 6, 1, 3, 5, 7
-//   };
-
-// }
-
 //Double_t initcuts[MAXCUTS];
 
 using namespace std;
@@ -1080,6 +1069,8 @@ void EventClass::FillHist(Bool_t first) {
 
 
   if (opt.h_prof.b) {
+    int ax=999,ay=999,px=999,py=999,p64=0;
+
     if (opt.h_prof_x.b) { //new profilometer
       
     }
@@ -1087,23 +1078,22 @@ void EventClass::FillHist(Bool_t first) {
 
 
 
-    int ax=999,ay=999,px=999,py=999;
     if (pulses.size()==4) {
       for (UInt_t i=0;i<pulses.size();i++) {
-	//int ch = pulses[i].Chan;
-	UInt_t pp = crs->prof_ch[pulses[i].Chan];
-	//if (pp<0) {
-	//}
-	//else
-	if (pp<10)
-	  px = pp;
-	else if (pp<100)
-	  py = pp-10;
-	else if (pp<10000)
-	  ax = pp-100;
-	else
-	  ay = pp-10000;
-      }
+	Int_t pp = crs->prof_ch[pulses[i].Chan];
+
+	if (pp>=crs->PROF_64)
+	  p64=pp-crs->PROF_64;
+	else if (pp>=crs->ING_Y)
+	  ay=pp-crs->ING_Y;
+	else if (pp>=crs->ING_X)
+	  ax=pp-crs->ING_X;
+	else if (pp>=crs->PROF_Y)
+	  py=pp-crs->PROF_Y;
+	else if (pp>=crs->PROF_X)
+	  px=pp-crs->PROF_X;
+	//cout << "prof: " << (int)pulses[i].Chan << " " << pp << " " << p64 << endl;
+      } //for
 
       int ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
 

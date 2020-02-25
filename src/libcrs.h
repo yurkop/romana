@@ -263,13 +263,19 @@ RQ_OBJECT("CRS")
     "Wrong ADCM length:",
     "Bad ADCM Tstamp:"
   };
-  UInt_t prof_ch[MAX_CH];
+  Int_t prof_ch[MAX_CH];
   // -1: nothing;
   // 0..10: Prof8_x
   // 10..100: Prof8_y
   // 100..10000: Ing_x
   // 10000..1000000: Ing_y
   // >1000000: Prof64
+  const Int_t PROF_X=0;
+  const Int_t PROF_Y=10;
+  const Int_t ING_X=100;
+  const Int_t ING_Y=10000;
+  const Int_t PROF_64=1000000;
+
   //--------functions---------
 
   //void Dummy_trd();

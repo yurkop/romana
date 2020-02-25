@@ -2484,7 +2484,10 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
 
 void CRS::DoProf(Int_t nn, Int_t *aa, Int_t off) {
   if (aa[nn]>=0 && aa[nn]<MAX_CH) {
-    prof_ch[aa[nn]]=nn+off;
+    if (prof_ch[aa[nn]]<0)
+      prof_ch[aa[nn]]=nn+off;
+    else
+      cout << "Profilometer: chan " << aa[nn] << " is already used" << endl; 
   }
 }
 
@@ -2495,20 +2498,20 @@ void CRS::Make_prof_ch() {
   }
 
   for (int i=0;i<5;i++) {
-    DoProf(i,opt.Prof64,1000000);
+    DoProf(i,opt.Prof64,PROF_64);
   }
   for (int i=0;i<8;i++) {
-    DoProf(i,opt.Prof_x,0);
-    DoProf(i,opt.Prof_y,10);
+    DoProf(i,opt.Prof_x,PROF_X);
+    DoProf(i,opt.Prof_y,PROF_Y);
   }
   for (int i=0;i<16;i++) {
-    DoProf(i,opt.Ing_x,100);
-    DoProf(i,opt.Ing_y,10000);
+    DoProf(i,opt.Ing_x,ING_X);
+    DoProf(i,opt.Ing_y,ING_Y);
   }
 
-  // for (int i=0;i<MAX_CH;i++) {
-  //   cout << "Prof: " << i << " " << prof_ch[i] << endl;
-  // }
+  for (int i=0;i<MAX_CH;i++) {
+    cout << "Prof: " << i << " " << prof_ch[i] << endl;
+  }
 }
 
 /*
