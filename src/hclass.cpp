@@ -251,6 +251,7 @@ Make_prof(const char* dname, const char* name,
   char name2[100];
   char title2[100];
 
+  //2d
   for (int j=opt.prof_ny-1;j>=0;j--) {
     for (int k=0;k<opt.prof_nx;k++) {
       sprintf(name2,"%s_%d_%d",name,k+1,j+1);
@@ -268,14 +269,16 @@ Make_prof(const char* dname, const char* name,
 
   if (!hd2->b) return;
 
-  int bb=hd->bins;
+  //1d
+  int bb=64;
+  //int bb=hd->bins;
   const char* name3[] = {"Prof_x","Prof_y","Prof_ax","Prof_ay"};
   for (int i=0;i<4;i++) {
     sprintf(name2,"%s",name3[i]);
     sprintf(title2,"%s;N strip",name3[i]);
 
-    if (i%2)
-      bb=hd->bins2;
+    // if (i%2)
+    //   bb=hd->bins2;
 
     TH1F* hh=new TH1F(name2,title2,bb,0,bb);
 

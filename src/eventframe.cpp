@@ -1345,7 +1345,8 @@ void EventFrame::ReDraw() {
 		for (int l=0;l<gg->GetN();l++) {
 		  sum+=gg->GetY()[l];
 		}
-		//cout << "sum/N: " << j << " " << (int)pulse->Chan << " " << kk << " " << sum/gg->GetN() << endl;
+		// if (kk==1)
+		//   cout << "sum/N: " << d_event->Nevt << " " << j << " " << (int)pulse->Chan << " " << kk << " " << sum/gg->GetN() << endl;
 
 	      }
 	      if (nnn>opt.Prof64_W[2]) {

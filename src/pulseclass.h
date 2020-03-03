@@ -158,7 +158,8 @@ class EventClass { //event of pulses
   void Fill_Time_Extend(HMap* map);
   void Fill1d(Bool_t first, HMap* map[], int ch, Float_t x);
   void Fill_Mean_Pulse(Bool_t first, HMap* map,  PulseClass* pls, int ideriv);
-  void Fill_Mean1(TH1F* hh,  PulseClass* pls, UInt_t nbins, int ideriv);
+  void Fill_Mean1(TH1F* hh,  Float_t* Data, Int_t nbins, int ideriv);
+  //void Fill_Mean1(TH1F* hh,  PulseClass* pls, UInt_t nbins, int ideriv);
   void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);
   void FillHist(Bool_t first);
   void FillHist_old();

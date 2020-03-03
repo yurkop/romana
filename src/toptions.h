@@ -57,15 +57,15 @@ public:
   // parameters of the crs32 or crs2 module
 
   //Int_t chtype[MAX_CH+MAX_TP]; //channel type
-  UInt_t smooth[MAX_CH+MAX_TP]; //Hardware Smooth - SS=0..10; S=2^SS
-  UInt_t deadTime[MAX_CH+MAX_TP]; // B = 1..16383
+  Int_t smooth[MAX_CH+MAX_TP]; //Hardware Smooth - SS=0..10; S=2^SS
+  Int_t deadTime[MAX_CH+MAX_TP]; // B = 1..16383
   Int_t preWr[MAX_CH+MAX_TP]; // pre-length M = 0..4094
-  UInt_t durWr[MAX_CH+MAX_TP]; // total length N = 1…32763 (internally - multiple of 4)
+  Int_t durWr[MAX_CH+MAX_TP]; // total length N = 1…32763 (internally - multiple of 4)
   //Int_t delay[MAX_CH+MAX_TP]; //hardware delay in samples
-  UInt_t trg[MAX_CH+MAX_TP]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
-  UInt_t kderiv[MAX_CH+MAX_TP]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
+  Int_t trg[MAX_CH+MAX_TP]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
+  Int_t kderiv[MAX_CH+MAX_TP]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t threshold[MAX_CH+MAX_TP]; // T = –2048 .. +2047
-  UInt_t adcGain[MAX_CH+MAX_TP]; // G = 0..12
+  Int_t adcGain[MAX_CH+MAX_TP]; // G = 0..12
   Bool_t acdc[MAX_CH+MAX_TP]; // AC-1; DC-0
   Bool_t inv[MAX_CH+MAX_TP]; //0 - no inversion; 1 - inversion (individual)
   // 0 - only triggered channel is written; 
@@ -74,9 +74,9 @@ public:
   Bool_t pls[MAX_CH+MAX_TP]; //1 - send pulses (format 2,3); 0 - don't send
   //UInt_t Mask[MAX_CH+MAX_TP];
   Bool_t forcewr; //only for crs2
-  UInt_t DTW; //Start dead time window
-  UInt_t Smpl; //Sampling rate divider
-  UInt_t FIR; //FIR filter
+  Int_t DTW; //Start dead time window
+  Int_t Smpl; //Sampling rate divider
+  Int_t FIR; //FIR filter
 
 public:
   void InitPar(int zero);

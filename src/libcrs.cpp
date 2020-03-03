@@ -2478,7 +2478,7 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
   gzwrite(ff,buf,sz);
 
   //delete[] buf;
-  cout << "SavePar_gz: " << sz << endl;
+  //cout << "SavePar_gz: " << sz << endl;
 
 }
 
@@ -2509,9 +2509,9 @@ void CRS::Make_prof_ch() {
     DoProf(i,opt.Ing_y,ING_Y);
   }
 
-  for (int i=0;i<MAX_CH;i++) {
-    cout << "Prof: " << i << " " << prof_ch[i] << endl;
-  }
+  // for (int i=0;i<MAX_CH;i++) {
+  //   cout << "Prof: " << i << " " << prof_ch[i] << endl;
+  // }
 }
 
 /*
@@ -3747,7 +3747,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     }
     else if (frmt==2) {
 
-      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
+      if ((int)ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "32: ERROR Nsamp: "
 	//      << " " << (ipls.Counter & 0x0F)
 	//      << " " << ipls.sData.size() << " " << cpar.durWr[ipls.Chan]
@@ -3770,7 +3770,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     }
     else if (frmt==3) {
 
-      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
+      if ((int)ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "33: ERROR Nsamp: "
 	//      << " " << (ipls.Counter & 0x0F)
 	//      << " " << ipls.sData.size() << " " << cpar.durWr[ipls.Chan]
@@ -4062,7 +4062,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       ipls.Counter = data & 0xFFFFFFFFFF;
       break;
     case 2:
-      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
+      if ((int)ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "32: ERROR Nsamp: "
 	//      << " " << (ipls.Counter & 0x0F)
 	//      << " " << ipls.sData.size() << " " << cpar.durWr[ipls.Chan]
@@ -4080,7 +4080,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       //}
       break;
     case 3:
-      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
+      if ((int)ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "34: ERROR Nsamp: "
 	//      << " " << (ipls.Counter & 0x0F)
 	//      << " " << ipls.sData.size() << " " << cpar.durWr[ipls.Chan]
@@ -4323,7 +4323,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
       ipls.Counter=data;
     }
     else if (frmt==5) {
-      if (ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
+      if ((int)ipls.sData.size()>=cpar.durWr[ipls.Chan]) {
 	// cout << "2: Nsamp error: " << ipls.sData.size()
 	//      << " " << (int) ch << " " << (int) ipls.Chan
 	//      << " " << idx2

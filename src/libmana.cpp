@@ -3073,10 +3073,14 @@ void PEditor::LoadPar64()
   Load_Ing("# Settings for 64x64 profilometer");
   fEdit->AddLine("# Prof64: four channels for Prof64 position signals");
   //fEdit->AddLine("#");
-  for (int i=0;i<4;i++) {
-    sprintf(ss,"Prof64 %d",opt.Prof64[i]);
-    fEdit->AddLine(ss);
-  }
+  sprintf(ss,"Prof64 %d # P+(33-64)",opt.Prof64[0]);
+  fEdit->AddLine(ss);
+  sprintf(ss,"Prof64 %d # P+(1-32)",opt.Prof64[1]);
+  fEdit->AddLine(ss);
+  sprintf(ss,"Prof64 %d # N+(33-64)",opt.Prof64[2]);
+  fEdit->AddLine(ss);
+  sprintf(ss,"Prof64 %d # N+(1-32)",opt.Prof64[3]);
+  fEdit->AddLine(ss);
   sprintf(ss,"Prof64_T %d # Channel for Time calibration",opt.Prof64[4]);
   fEdit->AddLine(ss);
   sprintf(ss,"Prof64_OFF %d # Time Offset",opt.Prof64_W[0]);

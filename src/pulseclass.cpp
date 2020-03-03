@@ -749,16 +749,18 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   }
 }
 
-void EventClass::Fill_Mean1(TH1F* hh, PulseClass* pls, UInt_t nbins, int ideriv) {
+void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
   Float_t zz=0;
   Float_t* arr = hh->GetArray();
   int nent=hh->GetEntries();
-  for (UInt_t j=0;j<nbins;j++) {
+  int min = TMath::Min(hh->fN-2,nbins);
+  //cout << "min: " << hh->fN << " " << nbins << " " << min << endl;
+  for (Int_t j=0;j<min;j++) {
     if (ideriv==0) {
-      zz = pls->sData[j];
+      zz = Data[j];
     }
     else if (ideriv==1) {
-      if (j) zz = pls->sData[j]-pls->sData[j-1];
+      if (j) zz = Data[j]-Data[j-1];
       else zz=0;
     }
 
@@ -769,7 +771,6 @@ void EventClass::Fill_Mean1(TH1F* hh, PulseClass* pls, UInt_t nbins, int ideriv)
   // cout << "Pulse_Mean: " << (int) pls->Chan << " "
   // 	 << map->hst->GetEntries() << endl;  
 }
-
 void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
 				 int ideriv) {
 
@@ -781,14 +782,13 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
   // 	 << " " << pls->sData.size() << endl;
   //   return;
   // }
-
   if (first) {
     int newsz = pls->sData.size();
     if (map->hst->GetNbinsX() < newsz) {
       map->hst->
 	SetBins(pls->sData.size(),-cpar.preWr[ch],newsz-cpar.preWr[ch]);
     }
-    Fill_Mean1((TH1F*)map->hst, pls, newsz, ideriv);
+    Fill_Mean1((TH1F*)map->hst, &pls->sData[0], newsz, ideriv);
   } //if first
   else if (*(map->wrk)) {
     for (int i=1;i<opt.ncuts;i++) {
@@ -799,7 +799,7 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
 	    SetBins(cpar.durWr[ch],-cpar.preWr[ch],cpar.durWr[ch]-cpar.preWr[ch]);
 	}
 
-	Fill_Mean1((TH1F*)map->h_cuts[i]->hst, pls, cpar.durWr[ch], ideriv);
+	Fill_Mean1((TH1F*)map->h_cuts[i]->hst, &pls->sData[0], cpar.durWr[ch], ideriv);
 
       }
     }
@@ -1069,42 +1069,121 @@ void EventClass::FillHist(Bool_t first) {
 
 
   if (opt.h_prof.b) {
-    int ax=999,ay=999,px=999,py=999,p64=0;
-
-    if (opt.h_prof_x.b) { //new profilometer
-      
-    }
-
-
-
-
-    if (pulses.size()==4) {
+    if (first) {
+      memset(hcl->h_sum,0,sizeof(hcl->h_sum));
       for (UInt_t i=0;i<pulses.size();i++) {
+	Int_t pp = crs->prof_ch[pulses[i].Chan];
+	hcl->h_xy=-1;
+	hcl->h_off=1;
+	if (pp>=crs->PROF_64) {
+	  pp-=crs->PROF_64;
+	  switch (pp) {
+	  case 0: //P+(33-64) (X)
+	    //hcl->h_p=hcl->m_prof_x[0];
+	    //hcl->h_a=hcl->m_prof_x[2];
+	    hcl->h_xy=0;
+	    hcl->h_off=33;
+	    break;
+	  case 1: //P+(1-32) (X)
+	    //hcl->h_p=hcl->m_prof_x[0];
+	    //hcl->h_a=hcl->m_prof_x[2];
+	    hcl->h_xy=0;
+	    break;
+	  case 2: //N+(33-64) (Y)
+	    //hcl->h_p=hcl->m_prof_x[1];
+	    //hcl->h_a=hcl->m_prof_x[3];
+	    hcl->h_xy=1;
+	    hcl->h_off=33;
+	    break;
+	  case 3: //N+(1-32) (Y)
+	    //hcl->h_p=hcl->m_prof_x[1];
+	    //hcl->h_a=hcl->m_prof_x[3];
+	    hcl->h_xy=1;
+	    break;
+	  case 4:
+	    // do nothing
+	    break;
+	  default:
+	    cout << "wrong prof channel: " << pp << " " << pulses[i].Chan << endl;
+	  } //switch
+
+	  //cout << "hcl: " << i << " " << pp << " " << hcl->h_xy << " " << hcl->h_off << endl;
+	  if (hcl->h_xy>=0) {//one of Prof64 position channels
+	    PulseClass *pulse = &pulses[i];	
+	    int dt=(pulse->Tstamp64-Tstmp)-cpar.preWr[pulse->Chan];
+	    int size = pulse->sData.size();
+
+	    for (int kk=-1;kk<31;kk++) {
+	      int x1 = 0+opt.Prof64_W[0]+opt.Prof64_W[1]*kk;
+	      //int x2 = x1 + opt.Prof64_W[2];
+	      int xmin = TMath::Max(-dt+x1,0);
+	      int xmax = TMath::Min(size,-dt+x1+opt.Prof64_W[2]);
+	      //double sum=0;
+	      for (int j=xmin;j<xmax;j++) {
+		// if (j<0 || j>=size) {
+		//   cout << "j!!! sise!: " << j << " " << size << endl;
+		// }
+		hcl->h_sum[hcl->h_xy][hcl->h_off+kk]+=pulse->sData[j];
+	      }
+	      if (xmax-xmin>0) {
+		hcl->h_sum[hcl->h_xy][hcl->h_off+kk]/=(xmax-xmin);
+	      }
+
+	      // if (kk==1 && pp>=0 && pp<=3)
+	      //   cout << "sum2/N2: " << Nevt << " " << i << " " << (int)pulse->Chan << " " << kk << " " << sum << " " << xmax-xmin << " " << pp << " " << first << endl;
+	    } //for kk
+	  } //if xy>0	
+	} //if pp
+
+	// else if (pp>=crs->ING_Y)
+	// 	ay=pp-crs->ING_Y;
+	// else if (pp>=crs->ING_X)
+	// 	ax=pp-crs->ING_X;
+	// else if (pp>=crs->PROF_Y)
+	// 	py=pp-crs->PROF_Y;
+	// else if (pp>=crs->PROF_X)
+	// 	px=pp-crs->PROF_X;
+	//cout << "prof: " << (int)pulses[i].Chan << " " << pp << " " << p64 << endl;
+      } //for i pulses.size()
+
+      if (!opt.h_prof_x.b) { //old profilometer
+	int ax=999,ay=999,px=999,py=999;//,p64=0;
+
+      	if (pulses.size()==4) {
+	for (UInt_t i=0;i<pulses.size();i++) {
 	Int_t pp = crs->prof_ch[pulses[i].Chan];
 
 	if (pp>=crs->PROF_64)
-	  p64=pp-crs->PROF_64;
+	  ;//p64=pp-crs->PROF_64;
 	else if (pp>=crs->ING_Y)
-	  ay=pp-crs->ING_Y;
+	ay=pp-crs->ING_Y;
 	else if (pp>=crs->ING_X)
-	  ax=pp-crs->ING_X;
+	ax=pp-crs->ING_X;
 	else if (pp>=crs->PROF_Y)
-	  py=pp-crs->PROF_Y;
+	py=pp-crs->PROF_Y;
 	else if (pp>=crs->PROF_X)
-	  px=pp-crs->PROF_X;
+	px=pp-crs->PROF_X;
 	//cout << "prof: " << (int)pulses[i].Chan << " " << pp << " " << p64 << endl;
-      } //for
+	} //for
 
-      int ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
+	int ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
 
-      //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
-      if (ch_alpha>=0 && ch_alpha<opt.prof_ny*opt.prof_nx)
+	//cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
+	if (ch_alpha>=0 && ch_alpha<opt.prof_ny*opt.prof_nx)
 	Fill2d(first,hcl->m_prof[ch_alpha],px*15+1,py*15+1);
-      //else {
-      //}
+	//else {
+	//}
 
+	} //if size==4
+      }//if old
+      //cout << "sum: " << hcl->h_sum[0][15] << " " << hcl->h_sum[1][15] << endl;
+      Fill_Mean1((TH1F*)hcl->m_prof_x[2]->hst, hcl->h_sum[0], 64, 0); //X
+      Fill_Mean1((TH1F*)hcl->m_prof_x[3]->hst, hcl->h_sum[1], 64, 0); //Y
+    } //if first
+    else {
     }
-  }
+
+  } //if h_prof.b
 
 
   if (first) {

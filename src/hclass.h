@@ -104,6 +104,16 @@ class HClass {
 
   Bool_t wfalse;
 
+  //profilometer:
+  std::vector<int> px;
+  std::vector<int> py;
+  std::vector<int> ax;
+  std::vector<int> ay;
+  HMap *h_p,*h_a;
+  int h_off;
+  int h_xy;
+  Float_t h_sum[2][64]; //[xy][pos]
+  
  public:
 
   HClass();
