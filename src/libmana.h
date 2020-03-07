@@ -6,6 +6,22 @@
 #include <TGDockableFrame.h>
 #include <TGTextEdit.h>
 
+enum MENU_COM {
+  M_READINIT,
+  M_SAVEINIT,
+  M_READROOT,
+  M_SAVEROOT,
+  //M_SAVEASCII,
+  M_FILE_BROWSE,
+  M_RESET_USB,
+  M_EXPORT,
+  M_FILE_EXIT,
+  M_EDIT_PROF8,
+  M_EDIT_PROF64,
+  M_PROF_TIME,
+  M_HELP,
+};
+
 using namespace std;
 
 //#include "mainframe.h"

@@ -44,20 +44,4 @@ const int MAX_ERR=7; //maximal number of error types;
 #define MXLN 40
 #define MXNUM 60
 
-
-enum MENU_COM {
-  M_READINIT,
-  M_SAVEINIT,
-  M_READROOT,
-  M_SAVEROOT,
-  //M_SAVEASCII,
-  M_FILE_BROWSE,
-  M_RESET_USB,
-  M_EXPORT,
-  M_FILE_EXIT,
-  M_EDIT_PROF8,
-  M_EDIT_PROF64,
-  M_PROF_TIME,
-  M_HELP,
-};
 #endif

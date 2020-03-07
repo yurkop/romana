@@ -5,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <src/toptions.h>
 
 typedef char           Char_t;      //Signed Character 1 byte (char)
 typedef unsigned char  UChar_t;     //Unsigned Character 1 byte (unsigned char)
@@ -18,10 +19,12 @@ typedef unsigned int   UInt_t;      //Unsigned integer 4 bytes (unsigned int)
 typedef float          Float_t;     //Float 4 bytes (float)
 
 const ULong64_t sixbytes=0xFFFFFFFFFFFF;
-const int MAX_ERR=7; //maximal number of error types;
+//const int MAX_ERR=7; //maximal number of error types;
 Long64_t errors[MAX_ERR];
 const unsigned char P_BADPULSE=128;
 
+Coptions cpar;
+Toptions opt;
 
 Long64_t npulses;
 
@@ -40,13 +43,54 @@ int mwhat=0;
 
 using namespace std;
 
+class peak_type {
+ public:
+  Float_t Base; //baseline
+  Float_t Area0; //area+background
+  Float_t Area; //pure area (Area0-Base)
+  Float_t Slope1;
+  Float_t Slope2;
+  //Float_t Noise1;
+  //Float_t Noise2;
+  Float_t Height; //maximum of pulse in the same region as Area
+  Float_t Width; //peak width - Alpatov (in 1st deriv)
+  Float_t Width2; //peak width2 - romana3a
+  //Float_t Width3; //peak width3 - Alpatov2 (in pulse)
+  Float_t Time; //exact time relative to pulse start (from 1st deriv), also relative to event start, in samples
+  //Float_t Time2; //exact time (from 2nd deriv)
+  Short_t Pos; //position relative to pulse start (in samples)
+  Short_t Pos2; //position of the 1st maximum in 1st derivative after threshold
+  Short_t B1; //left background window
+  Short_t B2; //right background window
+  Short_t P1; //left peak window
+  Short_t P2; //right peak window
+  Short_t T1; //left zero crossing of deriv
+  Short_t T2; //right zero crossing of deriv
+  Short_t T3; //left timing window
+  Short_t T4; //right timing window
+  Short_t T5; //left timing window
+  Short_t T6; //right timing window
+
+  //Pos,T1,T2 - relative to pulse start, in samples
+  //Time - relative to discriminator (+preWr), in samples
+
+  UShort_t Type; //peak type
+  //Char_t ch;
+ public:
+  peak_type() {Type=0;};
+  virtual ~peak_type() {};
+  
+};
+
+peak_type dummy_peak;
+
 class PulseClass {
 
  public:
   Long64_t Tstamp64; //64-bit timestamp (corrected for overflows)
   Long64_t Counter; //pulse counter
   std::vector <Float_t> sData; //(maybe smoothed) pulse data
-  //std::vector <peak_type> Peaks;
+  std::vector <peak_type> Peaks;
   UChar_t Chan; //channel number
   UChar_t State; //channel state word (Control word - external input in crs32)
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
@@ -163,7 +207,7 @@ void print_buf8(char* buf, Long64_t size) {
   Long64_t idx8=0;
 
   ULong64_t data;
-  unsigned short frmt,ch;
+  UChar_t frmt,ch;
 
   while (idx8<size/8) {
     frmt = buf[idx8*8+6];
@@ -171,9 +215,11 @@ void print_buf8(char* buf, Long64_t size) {
     ch = buf[idx8*8+7];
     data = buf8[idx8] & sixbytes;
     
-    printf("%6lld %4d %3d %16lld %20lld\n",idx8,ch,frmt,data,buf8[idx8]);
+    printf("%6lld %4d %3d %16lld %16llx\n",idx8,ch,frmt,data,buf8[idx8]);
     //printf("%lld %lld %lld %lld\n",idx8,size,size/8,buf8[idx8]);
     ++idx8;
+    if (idx8>1000)
+      exit(1);
   }
 }
 
@@ -187,13 +233,11 @@ void decode34(char* buf, Long64_t &idx1, Long64_t size) {
   Int_t iii; // temporary var. to convert signed nbit var. to signed 32bit int
   int n_frm=0; //counter for frmt4 and frmt5
 
-  /*
   Short_t sss; // temporary var. to convert signed nbit var. to signed 16bit int
   Long64_t lll; //Long temporary var.
-  //peak_type *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
+  peak_type *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
   //Double_t QX=0,QY=0,RX,RY;
   Double_t QX=0,RX,AY;
-  */
 
   while (idx1<size) {
     frmt = buf[idx1+6];
@@ -285,7 +329,7 @@ void decode34(char* buf, Long64_t &idx1, Long64_t size) {
       break;
     case 4:
       /*
-      if (opt.dsp[ipls.Chan]) {
+      //if (opt.dsp[ipls.Chan]) {
 	if (ipls.Peaks.size()==0) {
 	  ipls.Peaks.push_back(peak_type());
 	  ipk=&ipls.Peaks[0];
@@ -347,9 +391,9 @@ void decode34(char* buf, Long64_t &idx1, Long64_t size) {
 	  ;
 	} //switch
 	n_frm++;
-      } //if (opt.dsp[ipls.Chan])
-      */
+	//} //if (opt.dsp[ipls.Chan])
       break;
+      */
     case 5:
       /*
       if (opt.dsp[ipls.Chan]) {
@@ -470,9 +514,18 @@ int main(int argc, char **argv)
   }
   //exit(0);
 
-  short mod,sz;
-  gzread(zf,&mod,sizeof(mod));
-  gzread(zf,&sz,sizeof(sz));
+  UShort_t fmt;
+  UShort_t mod;
+  Int_t sz;
+  gzread(zf,&fmt,sizeof(Short_t));
+  if (fmt>128) {
+    gzread(zf,&mod,sizeof(Short_t));
+    gzread(zf,&sz,sizeof(Int_t));
+  }
+  else {
+    mod=fmt;
+    gzread(zf,&sz,sizeof(UShort_t));
+  }
   gzread(zf,buf,sz);
 
   //cout << "mod: " << mod << " " << sz << endl;

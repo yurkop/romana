@@ -8,8 +8,8 @@
 extern Coptions cpar;
 using namespace std;
 
-extern TList listmap;
-extern int debug;
+//extern TList listmap;
+//extern int debug;
 
 Coptions::Coptions() {
   //ver = TClass::GetClass("Coptions")->GetClassVersion();
