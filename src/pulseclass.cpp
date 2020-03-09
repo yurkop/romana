@@ -766,6 +766,7 @@ void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
 
     Float_t val = arr[j+1]*nent+zz;
     arr[j+1]=val/(nent+1);
+    //hh->SetBinError(j+1,10);
   }
   hh->SetEntries(nent+1);
   // cout << "Pulse_Mean: " << (int) pls->Chan << " "
