@@ -142,6 +142,10 @@ RQ_OBJECT("CRS")
   typedef std::list<EventClass>::reverse_iterator evlist_reviter;
 
   eventlist Levents; //list of events
+  //Double_t DT4; // Время, затраченное на 1 цикл handle_ana
+  Double_t L4; //Levents.size at L4 (after erase in handle_ana)
+  Int_t N4; //количество раз, при которых L4 было >2.0
+  Int_t SLP; //sleep: increased if N4>3
   std::list<eventlist> Bufevents;
   
   //EventClass mean_event;
@@ -167,7 +171,8 @@ RQ_OBJECT("CRS")
 
   Short_t module;
   //1-ADCM raw, 3 - ortec lis, 22 - crs2;
-  //32 - old crs32, 33 - new crs32 with dsp, 34 - new crs32, 41 - crs-8/16
+  //32 - old crs32, 33 - new crs32 with dsp, 34 - new crs32
+  //41 - crs-8/16
   //72..79 - decoded file
 
   Int_t type_ch[MAX_CH+MAX_TP]; //0-   4-11bit; 1-   2-16bit
@@ -211,6 +216,7 @@ RQ_OBJECT("CRS")
   //bool b_usbbuf;
 
   bool batch;
+  bool silent;
   bool b_fstart; // 
   
   bool b_acq; // true - acquisition is running
@@ -239,20 +245,6 @@ RQ_OBJECT("CRS")
 
   Long64_t errors[MAX_ERR];
   Long64_t Counter[MAX_CH];
-  //0 - bad buf start
-  //1 - ch>=Nchan
-  //2 - channel mismatch
-  //3 - bad frmt
-
-  // const char errlabel[MAX_ERR][50] = {
-  //   "Bad buf start:",
-  //   "Bad channel:",
-  //   "Channel mismatch:",
-  //   "Bad frmt:",
-  //   "Zero data:",
-  //   "Wrong ADCM length:",
-  //   "Bad ADCM Tstamp:"
-  // };
 
   string errlabel[MAX_ERR] = {
     "Bad buf start:",
@@ -261,7 +253,8 @@ RQ_OBJECT("CRS")
     "Bad frmt:",
     "Zero data:",
     "Wrong ADCM length:",
-    "Bad ADCM Tstamp:"
+    "Bad ADCM Tstamp:",
+    "Slow Analysis:"
   };
   Int_t prof_ch[MAX_CH];
   // -1: nothing;
@@ -329,9 +322,10 @@ RQ_OBJECT("CRS")
   //void AllParameters32_old(); // load all parameters
   //void Decode_any(UChar_t** buffer, int length, int itr);
 
+  void Decode_switch(UInt_t ibuf);
   void Decode_any_MT(UInt_t iread, UInt_t ibuf);
+  void Decode_any(UInt_t ibuf);
 
-  void Decode_any(UInt_t iread, UInt_t ibuf);
   // FindLast* находит конец текущего буфера b_end[ibuf],
   // что является одновременно началом следующего b_start[ibuf2]
   void FindLast(UInt_t ibuf);

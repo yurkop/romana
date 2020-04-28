@@ -4,6 +4,7 @@
 #include <direct.h>
 #endif
 
+//#include "colors.h"
 #include <signal.h>
 //#include <malloc.h>
 
@@ -51,6 +52,10 @@
 #include "libcrs.h"
 
 const double MB = 1024*1024;
+
+MemInfo_t minfo;
+ProcInfo_t pinfo;
+double rmem;
 
 extern CRS* crs;
 
@@ -420,15 +425,16 @@ int main(int argc, char **argv)
   _getcwd(startdir,150);
   strcat(startdir,"\\");
 #endif
-	
+
   //cout << "startdir: " << startdir << endl;
 
   cout << "----------------------------------------------" << endl;
-  cout << "Usage: romana [-h] [filename] [-p parname] [-b] [-w] [-d] [-r] [-f] " << endl;
+  cout << "Usage: romana [-h] [filename] [-p parname] [-b] [-w] [-d] [-r] [-f] [-s]" << endl;
   cout << "-h: print usage and exit" << endl;
   cout << "filename: read data and parameters from filename" << endl;
   cout << "-p parname: read parameters from parname, parameters from filename are ignored" << endl;
   cout << "-b: analyze file in batch mode (without gui) and exit" << endl;
+  cout << "-s: suppress batch screen output" << endl;
   cout << "-w (only in batch mode): create processed .raw file in subdirectory Raw" << endl;
   cout << "-d (only in batch mode): create decoded .dec file in subdirectory Dec" << endl;
   cout << "-r (only in batch mode): create .root file in subdirectory Root" << endl;
@@ -438,6 +444,8 @@ int main(int argc, char **argv)
 
   strcpy(pr_name,argv[0]);
   strcpy(maintitle,pr_name);
+
+  prtime("Time zero",-1); //set time to zero
 
   //parname = (char*)"romana.par";
   gzFile ff = gzopen(parname,"rb");
@@ -466,6 +474,9 @@ int main(int argc, char **argv)
 	  exit(0);
 	case 'b':
 	  crs->batch=true;
+	  continue;
+	case 's':
+	  crs->silent=true;
 	  continue;
 	case 'w':
 	  b_raw=true;
@@ -674,6 +685,7 @@ int main(int argc, char **argv)
     }
 
     hcl->Make_hist();
+    CheckMem(0);
 
     crs->b_fana=true;
     crs->b_stop=false;
@@ -685,8 +697,10 @@ int main(int argc, char **argv)
 
     //allevents();
 
-    cout << crs->rootname << endl;
-    saveroot(crs->rootname.c_str());
+    if (b_root) {
+      cout << "Histograms are saved in: " << crs->rootname << endl;
+      saveroot(crs->rootname.c_str());
+    }
 
     for (int i=0;i<MAX_ERR;i++) {
       cout << crs->errlabel[i] << " " << crs->errors[i] << endl;
@@ -1093,7 +1107,39 @@ bool TestFile() {
 
 }
 
-void prtime(const char* txt, int set) {
+//---------------------------------
+bool CheckMem(int t) {
+  //return true if memory is too low
+  //t=0 (default) - check 50%
+  //t=1 - check 70%
+
+  gSystem->GetMemInfo(&minfo);
+  gSystem->GetProcInfo(&pinfo);
+  rmem=1e-3*pinfo.fMemResident/minfo.fMemTotal;
+  // cout << "CheckMem: " << pinfo.fMemResident << " " << minfo.fMemTotal
+  //      << " " << rmem << " " << (1-rmem)*minfo.fMemTotal
+  //      << endl;
+  if (t==0) {
+    if (minfo.fMemTotal<4000) {
+      if (rmem>0.5)
+	return true;
+    }
+    else if ((1-rmem)*minfo.fMemTotal<4000)
+      return true;
+  }
+  if (t==1) {
+    if (minfo.fMemTotal<4000) {
+      if (rmem>0.8)
+	return true;
+    }
+    else if ((1-rmem)*minfo.fMemTotal<1500)
+      return true;
+  }
+
+  return false;
+}
+//---------------------------------
+TTimeStamp prtime(const char* txt, int set) {
   static TTimeStamp tt1,tt2,tt0;
   if (set<0) {
     tt0.Set();
@@ -1102,12 +1148,16 @@ void prtime(const char* txt, int set) {
   }
   tt1=tt2;
   tt2.Set();
-  printf("%s: %9d %8.3f\n",txt,int((tt2.AsDouble()-tt1.AsDouble())*1e6),
-	 tt2.AsDouble()-tt0.AsDouble());
-  // cout << txt << " " << tt2.AsDouble()-tt1.AsDouble() << " "
-  //      << tt2.AsDouble()-tt0.AsDouble() << endl;
+  if (set!=0)
+    printf("%s: %8.3f\n",txt, tt2.AsDouble()-tt0.AsDouble());
+
+    // printf("%s: %9d %8.3f\n",txt,int((tt2.AsDouble()-tt1.AsDouble())*1e6),
+    // 	   tt2.AsDouble()-tt0.AsDouble());
+    // cout << txt << " " << tt2.AsDouble()-tt1.AsDouble() << " "
+    //      << tt2.AsDouble()-tt0.AsDouble() << endl;
   if (set>0 && debug==99)
-    gSystem->Sleep(set); 
+    gSystem->Sleep(set);
+  return tt2;
 }
 
 //----- MainFrame ----------------
@@ -1362,8 +1412,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fGr2->AddFrame(f1b, LayET1);
 
   TGLabel *ver = new TGLabel(vframe1,VERSION);
-
-  //prtime("zero",-1); //set time to zero
 	
   vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
@@ -1866,7 +1914,7 @@ void MainFrame::DoAna() {
       //cout << "hAna: " << hAna->GetString() << " " << hPause->GetString() << endl;
       //fAna->SetText(new TGHotString("&Pause"));
       fAna->ChangeText("P&ause");
-      //fAna->ChangeBackground(fRed);
+      fAna->ChangeBackground(fRed);
       crs->b_fana=true;
       crs->b_stop=false;
 
@@ -1874,7 +1922,7 @@ void MainFrame::DoAna() {
 
       //fAna->SetText(new TGHotString("&Analyze"));
       fAna->ChangeText("&Analyze");
-      //fAna->ChangeBackground(fGreen);
+      fAna->ChangeBackground(fGreen);
       crs->b_fana=false;
       crs->b_stop=true;
 

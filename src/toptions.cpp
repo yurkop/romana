@@ -45,7 +45,7 @@ void Coptions::InitPar(int zero) {
   forcewr=false;
   DTW=1;
   Smpl=0;
-  FIR=0;
+  SPeriod=0;
 
 }
 

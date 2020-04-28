@@ -1,6 +1,7 @@
 #include "libcrs.h"
 
 //#include <iostream>
+#include "colors.h"
 #include <fstream>
 #include <zlib.h>
 #include <sys/stat.h>
@@ -36,6 +37,10 @@ const int BFMAX=999999999;
 
 using namespace std;
 
+extern MemInfo_t minfo;
+extern ProcInfo_t pinfo;
+extern double rmem;
+
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
@@ -51,7 +56,7 @@ extern int debug; // for printing debug messages
 extern char startdir[200];
 const double MB = 1024*1024;
 
-MemInfo_t info;
+//MemInfo_t info;
 
 TRandom rnd;
 
@@ -309,70 +314,10 @@ void *handle_decode(void *ctx) {
     // cout << "dec_working: " << ibuf << endl;
     // cmut.UnLock();
 
-    if (ibuf!=gl_Nbuf-1) {
-      crs->FindLast(ibuf);
-    }
+    crs->Decode_switch(ibuf);
 
-    // gSystem->GetMemInfo(&info);
-    // cout << "\033[35m";
-    // cout << "dec1: " << info.fMemUsed << endl;
-    // cout << "\033[0m";
-
-    switch (crs->module) {
-    case 32:
-    case 33:
-    case 34:
-    case 41:
-      crs->Decode34(dec_iread[ibuf]-1,ibuf);
-      break;
-    case 79:
-      crs->Decode79(dec_iread[ibuf]-1,ibuf);
-      break;
-    case 78:
-      crs->Decode78(dec_iread[ibuf]-1,ibuf);
-      break;
-    case 77:
-      crs->Decode77(dec_iread[ibuf]-1,ibuf);
-      break;
-    case 76:
-      crs->Decode76(dec_iread[ibuf]-1,ibuf);
-      break;
-    case 75:
-      crs->Decode75(dec_iread[ibuf]-1,ibuf);
-      break;
-    case 22:
-      crs->Decode2(dec_iread[ibuf]-1,ibuf);
-      break;
-    case 1:
-      crs->Decode_adcm(dec_iread[ibuf]-1,ibuf);
-      break;
-    default:
-      break;
-    }
-
-    // gSystem->GetMemInfo(&info);
-    // cout << "\033[35m";
-    // cout << "dec2: " << info.fMemUsed << endl;
-    // cout << "\033[0m";
-
-    // if (crs->module>=32 && crs->module<=33) {
-    //   crs->Decode33(dec_iread[ibuf]-1,ibuf);
-    // }
-    // else if (crs->module==75) {
-    //   crs->Decode75(dec_iread[ibuf]-1,ibuf);
-    // }
-    // else if (crs->module==76) {
-    //   crs->Decode76(dec_iread[ibuf]-1,ibuf);
-    // }
-    // else if (crs->module==22) {
-    //   crs->Decode2(dec_iread[ibuf]-1,ibuf);
-    // }
-    // else if (crs->module==1) {
-    //   crs->Decode_adcm(dec_iread[ibuf]-1,ibuf);
-    // }
-
-    dec_iread[ibuf]=0;
   } //while
+
   // cmut.Lock();
   // cout << "Decode thread deleted: " << ibuf << endl;
   // cmut.UnLock();
@@ -424,6 +369,7 @@ void *handle_mkev(void *ctx) {
 
     //if (crs->Vpulses[ibuf].size()>2) {
     crs->Make_Events(BB);
+    //cout << KYEL << "Make_Ev: " << crs->Levents.size() << " " << crs->nevents << RST << endl;
     //}
 
     // gSystem->GetMemInfo(&info);
@@ -452,6 +398,7 @@ void *handle_mkev(void *ctx) {
 
 void *handle_ana(void *ctx) {
 
+  //TTimeStamp tt1,tt2;
   //return 0;
 
   // cmut.Lock();
@@ -495,6 +442,10 @@ void *handle_ana(void *ctx) {
       //std::advance(m_end,-opt.ev_min);
     }
 
+    //cout << KBLU << "Levents2: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << RST << endl;
+    //tt1.Set();
+    //int n1=crs->nevents2;
+
     // analyze events from m_event to m_end
     while (m_event!=m_end) {
       if (m_event->pulses.size()>=opt.mult1 &&
@@ -526,7 +477,12 @@ void *handle_ana(void *ctx) {
       }
     }
 
-    //cout << "Levents3: " << crs->Levents.size() << " " << crs->nevents << endl;
+    //tt2.Set();
+    //crs->DT4=tt2.AsDouble()-tt1.AsDouble();
+    //double tt=tt2.AsDouble()-tt1.AsDouble();
+    //int n2=crs->nevents2-n1;
+    //cout << KRED << "Levents3: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << " " << tt << " " << tt/n2*1e7 << RST << endl;
+    //cout << RST << endl;
 
     // erase events if the list is too long
     for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
@@ -543,7 +499,18 @@ void *handle_ana(void *ctx) {
       }
     }
 
-    //cout << "Levents4: " << crs->Levents.size() << " " << crs->nevents << endl;
+    //tt2.Set();
+    //crs->DT4=tt2.AsDouble()-tt1.AsDouble();
+
+
+    crs->L4=double(crs->Levents.size())/opt.ev_max;
+    if (crs->L4>2) {
+      ++crs->N4;
+    }
+    else {
+      crs->N4=0;
+    }
+    //cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << " " << crs->L4 << " " << crs->N4 << RST << endl;
 
     // fill Tevents for EvtFrm::DrawEvent2
     if (EvtFrm) {
@@ -957,6 +924,7 @@ CRS::CRS() {
   //Tree=0;
 
   batch=false;
+  silent=false;
   b_acq=false;
   b_fana=false;
   b_stop=true;
@@ -2134,6 +2102,9 @@ void CRS::DoReset() {
   }
 
   Levents.clear();
+  //L4=1;
+  N4=0;
+  SLP=0;
   // вставляем dum евент, чтобы Levents не был пустой  // не делаем, это плохо
   //m_event=Levents.insert(Levents.end(),EventClass());
   m_event=Levents.end();
@@ -2598,8 +2569,10 @@ void CRS::AnaBuf() {
       Decode_any_MT(gl_iread, gl_ibuf);
     }
     else {
-      Decode_any(gl_iread, gl_ibuf);
+      Decode_any(gl_ibuf);
     }
+    //cout << "Sleep..." << endl;
+    //gSystem->Sleep(10);
   }
   gl_iread++;
   gl_ibuf=gl_iread%gl_Nbuf;
@@ -2608,9 +2581,54 @@ void CRS::AnaBuf() {
 
   //Print_Events();
 
-  if (batch) {
-    cout << "Buf: " << nbuffers << "  Decompr. MBytes: "
-	 << inputbytes/MB << "  Time(sec): " << opt.T_acq << endl;
+  /*
+  if (L4>2) {
+    if (L4>L3) {
+      ++n4;
+    }
+    if (L4<L3) {
+      --n4;
+    }
+    L3=L4;
+
+    if (n4>6) {
+      slp+=10;
+    }
+    if (n4<4) {
+      slp-=10;
+    }
+  }
+  // else {
+  //   n4=0;
+  //   slp-=10;
+  // }
+  */
+
+  if (N4>3) {
+    SLP+=10;
+    ++errors[7]; //slow analysis
+  }
+  else {
+    if (SLP>0)
+      SLP-=10;
+  }
+
+  if (SLP>0)
+    gSystem->Sleep(SLP);
+
+  //cout << "L4: " << L4 << " " << N4 << " " << SLP << endl;
+  if (CheckMem(1)) {
+    cout << "Memory is too low. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
+    EndAna(1);
+    //DoExit();
+    exit(-1);
+    //myM->DoExit();
+  }
+
+  if (batch && !silent) {
+    cout << "Buf: " << nbuffers << "  Dec. MB: "
+	 << inputbytes/MB << "  T(s): " << int(opt.T_acq*10)*0.1
+	 << " %mem: " << int(rmem*1000)*0.1 << " slp: " << SLP << endl;
   }
     //if (!b_stop) {
     //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*opt.Period;
@@ -3018,6 +3036,47 @@ void CRS::Show(bool force) {
   //cout << "Show end" << endl;
 }
 
+void CRS::Decode_switch(UInt_t ibuf) {
+  if (ibuf!=gl_Nbuf-1) {
+    FindLast(ibuf);
+  }
+
+  switch (module) {
+  case 32:
+  case 33:
+  case 34:
+  case 41:
+    Decode34(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 79:
+    Decode79(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 78:
+    Decode78(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 77:
+    Decode77(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 76:
+    Decode76(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 75:
+    Decode75(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 22:
+    Decode2(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 1:
+    Decode_adcm(dec_iread[ibuf]-1,ibuf);
+    break;
+  default:
+    break;
+  }
+
+  dec_iread[ibuf]=0;
+  //--------end
+}
+
 void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf) {
   //-----decode
   //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
@@ -3028,106 +3087,47 @@ void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf) {
 
 }
 
-void CRS::Decode_any(UInt_t iread, UInt_t ibuf) {
-  //-----decode
-  //cout << "Decode_MT: " << ibuf << " " << buf_len[ibuf] << endl;
-  //cout << "Decode_any: " << ibuf << " " << crs->module << endl;
-#ifdef TIMES
-  tt1[1].Set();
-#endif
-  if (ibuf!=gl_Nbuf-1) {
-    crs->FindLast(ibuf);
-  }
+void CRS::Decode_any(UInt_t ibuf) {
+// #ifdef TIMES
+//   tt1[1].Set();
+// #endif
 
-  switch (crs->module) {
-  case 32:
-  case 33:
-  case 34:
-  case 41:
-    crs->Decode34(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 79:
-    crs->Decode79(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 78:
-    crs->Decode78(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 77:
-    crs->Decode77(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 76:
-    crs->Decode76(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 75:
-    crs->Decode75(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 22:
-    crs->Decode2(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 1:
-    crs->Decode_adcm(dec_iread[ibuf]-1,ibuf);
-    break;
-  default:
-    break;
-  }
+  Decode_switch(ibuf);
 
-  // if (module>=32 && module<=33) {
-  //   Decode33(iread,ibuf);
-  // }
-  // else if (crs->module==75) {
-  //   Decode75(iread,ibuf);
-  // }
-  // else if (crs->module==76) {
-  //   Decode76(iread,ibuf);
-  // }
-  // else if (module==22) {
-  //   Decode2(iread,ibuf);
-  // }
-  // else if (module==1) {
-  //   Decode_adcm(iread,ibuf);
-  // }
+// #ifdef TIMES
+//   tt2[1].Set();
+//   dif = tt2[1].GetSec()-tt1[1].GetSec()+
+//     (tt2[1].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
+//   ttm[1]+=dif;
 
-  dec_iread[ibuf]=0;
+//   //-----Make_events
+//   tt1[2].Set();
+// #endif
 
-#ifdef TIMES
-  tt2[1].Set();
-  dif = tt2[1].GetSec()-tt1[1].GetSec()+
-    (tt2[1].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
-  ttm[1]+=dif;
-
-  //-----Make_events
-  tt1[2].Set();
-#endif
-
-  //cout << "Make_1: " << endl;
   Make_Events(Bufevents.begin());
-  //cout << "Make_2: " << endl;
 
+// #ifdef TIMES
+//   tt2[2].Set();
+//   dif = tt2[2].GetSec()-tt1[2].GetSec()+
+//     (tt2[2].GetNanoSec()-tt1[2].GetNanoSec())*1e-9;
+//   ttm[2]+=dif;
 
-#ifdef TIMES
-  tt2[2].Set();
-  dif = tt2[2].GetSec()-tt1[2].GetSec()+
-    (tt2[2].GetNanoSec()-tt1[2].GetNanoSec())*1e-9;
-  ttm[2]+=dif;
+//   //-----Analyze
+//   tt1[3].Set();
+// #endif
 
-  //-----Analyze
-  tt1[3].Set();
-#endif
-
-  //cout << "Ana2_1: " << endl; 
   crs->Ana2(0);
-  //cout << "Ana2_2: " << endl; 
   
-#ifdef TIMES
-  tt2[3].Set();
-  dif = tt2[3].GetSec()-tt1[3].GetSec()+
-    (tt2[3].GetNanoSec()-tt1[3].GetNanoSec())*1e-9;
-  ttm[3]+=dif;
+// #ifdef TIMES
+//   tt2[3].Set();
+//   dif = tt2[3].GetSec()-tt1[3].GetSec()+
+//     (tt2[3].GetNanoSec()-tt1[3].GetNanoSec())*1e-9;
+//   ttm[3]+=dif;
 
-  dif = tt2[3].GetSec()-tt1[1].GetSec()+
-    (tt2[3].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
-  ttm[4]+=dif;
-#endif
+//   dif = tt2[3].GetSec()-tt1[1].GetSec()+
+//     (tt2[3].GetNanoSec()-tt1[1].GetNanoSec())*1e-9;
+//   ttm[4]+=dif;
+// #endif
 
 }
 

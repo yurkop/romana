@@ -76,7 +76,7 @@ public:
   Bool_t forcewr; //only for crs2
   Int_t DTW; //Start dead time window
   Int_t Smpl; //Sampling rate divider
-  Int_t FIR; //FIR filter
+  Int_t SPeriod; //Start imitator frequency
 
 public:
   void InitPar(int zero);

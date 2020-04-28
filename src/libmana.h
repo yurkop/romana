@@ -5,6 +5,7 @@
 #include "popframe.h"
 #include <TGDockableFrame.h>
 #include <TGTextEdit.h>
+#include <TTimeStamp.h>
 
 enum MENU_COM {
   M_READINIT,
@@ -60,7 +61,8 @@ void setbit(int &n, int bit, int set);
 
 bool TestFile();
 
-void prtime(const char* txt, int set=0);
+TTimeStamp prtime(const char* txt, int set=1);
+bool CheckMem(int t=0);
 
 //-----------------------------------------------
 class PEditor {

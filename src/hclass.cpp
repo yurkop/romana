@@ -238,6 +238,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
   }
+  //cout << "mem: " << name << " " << GetMem() << endl;
 
 }
 

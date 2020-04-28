@@ -35,10 +35,10 @@ extern DaqParDlg *daqpar;
 extern AnaParDlg *anapar;
 extern PikParDlg *pikpar;
 
-const int ndaqpar=15;
+const int ndaqpar=16;
 
-const int tlen1[ndaqpar+1]={26,60,24,25,24,24,21,45,40,40,25,25,36,45,75,80};
-const char* tlab1[ndaqpar+1]={"Ch","Type","on","Inv","AC","pls","hS","Dt","Pre","Len","G","Trg","Drv","Thr","Pulse/sec","BadPulse"};
+const int tlen1[ndaqpar+1]={26,60,24,25,24,24,24,21,45,40,40,25,25,36,45,75,80};
+const char* tlab1[ndaqpar+1]={"Ch","Type","on","Inv","AC","pls","dsp","hS","Dt","Pre","Len","G","Trg","Drv","Thr","Pulse/sec","BadPulse"};
 const char* ttip1[ndaqpar+1]={
   "Channel number",
   "Channel type",
@@ -46,6 +46,7 @@ const char* ttip1[ndaqpar+1]={
   "Inversion",
   "AC coupling",
   "Send/don't send pulse data",
+  "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
   "Hardware smoothing: Smooth=2^hS",
   "Dead time - no new trigger on the current channel within dead time from the old trigger",
   "Number of samples before the trigger",
@@ -77,13 +78,12 @@ const char* ttip2[n_apar]={
 };
 
 
-const int n_ppar=14;
-const int tlen3[n_ppar]={26,60,24,26,32,40,40,40,42,42,35,35,35,35};
-const char* tlab3[n_ppar]={"Ch","Type","dsp","sTg","Drv","Thr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
+const int n_ppar=13;
+const int tlen3[n_ppar]={26,60,26,32,40,40,40,42,42,35,35,35,35};
+const char* tlab3[n_ppar]={"Ch","Type","sTg","Drv","Thr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
 const char* ttip3[n_ppar]={
   "Channel number",
   "Channel type",
-  "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
   "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - threshold crossing of derivative, use 2nd deriv for timing;\n-1 - use hardware trigger",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
@@ -583,13 +583,18 @@ void ParDlg::CopyField(int from, int to) {
 }
 
 void ParDlg::NumField1(int nn, bool bb) {
+  /*
   pmap* pp = &Plist[nn];
   TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
-  te2->SetEnabled(bb);
+  //te2->SetEnabled(bb);
   if (bb)
-    te2->ChangeBackground(gROOT->GetColor(19)->GetPixel());
+    te2->ChangeBackground(gROOT->GetColor(0)->GetPixel());
   else
     te2->ChangeBackground(gROOT->GetColor(17)->GetPixel());
+  */
+  //cout << "Enab: " << nn << " " << bb << " " << te2->GetName() << endl;
+  EnableField(nn,bb);
+
 }
 
 void ParDlg::UpdateField(int nn) {
@@ -660,6 +665,11 @@ void ParDlg::UpdateField(int nn) {
     }
     if (str.Contains("b_hist",TString::kIgnoreCase)) {
       for (int i=0;i<3;i++) {
+	NumField1(nn+i+1,bb);
+      }
+    }
+    if (str.Contains("b_2d",TString::kIgnoreCase)) {
+      for (int i=0;i<2;i++) {
 	NumField1(nn+i+1,bb);
 	// pp = &Plist[nn+i+1];
 	// TGNumberEntryField *te2 = (TGNumberEntryField*) pp->field;
@@ -745,10 +755,25 @@ void ParDlg::EnableField(int nn, bool state) {
   switch (pp->type) {
   case p_inum:
   case p_fnum:
-  case p_txt: {
-    TGTextEntry *te = (TGTextEntry*) pp->field;
-    te->SetEnabled(state);
-  }
+    {
+      TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
+      TString str = TString(te->GetParent()->GetName());
+      //cout << "Field1: " << str << endl;
+      if (str.Contains("NumberEntry")) {
+	//cout << "Field2: " << str << endl;
+	TGNumberEntry *ww = (TGNumberEntry*) te->GetParent();
+	ww->SetState(state);
+      }
+      else {
+	te->SetState(state);
+      }
+    }
+    break;
+  case p_txt:
+    {
+      TGTextEntry *te = (TGTextEntry*) pp->field;
+      te->SetEnabled(state);
+    }
     break;
   case p_chk: {
     TGCheckButton *te = (TGCheckButton*) pp->field;
@@ -1038,11 +1063,18 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   label="Event_list size / Event lag";
   AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,k_int,1,1000000,1,1000000);
 
-  if (crs->module==41) {
-    tip1= "Sampling rate, MHz (0->100; 1->50; 2->25; 3->10; 4->5; 5->2.5; 6->1; 7->0.5)";
-    tip2= "FIR filter (corresponds to the sampling rate)";
-    label="Sampling Rate / FIR Filter";
-    AddLine_opt(fF6,ww,&cpar.Smpl,&cpar.FIR,tip1,tip2,label,k_int,k_int,0,14,0,7, 2);
+  tip1= "[CRS-8/16] Sampling rate, MHz (0: 100, 1: 50, 2: 25 .. 14: ~0.006)";
+  tip2= "[CRS-8/16] Soft start (imitator) period: (0->use lemo input)\n"
+    "1: 0.08, 2: 0.17, 3: 0.33, 4: 0.67, 5: 1.34, 6: 2.68, 7: 5.36, 8: 10.7";
+  label="Sampling Rate / Start period";
+  AddLine_opt(fF6,ww,&cpar.Smpl,&cpar.SPeriod,tip1,tip2,label,k_int,k_int,0,14,0,7, 2);
+
+
+  if (crs->module<41 || crs->module>70) {
+    int id = Plist.size()-1;
+    //cout << "Enabl_id: " << id << endl;
+    EnableField(id,false);
+    EnableField(id-1,false);
   }
 
   fF6->Resize();
@@ -1546,7 +1578,7 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 
   double ww1=50;
   //double ww=90;
-  //char name[20];
+  char name[20];
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1);
@@ -1561,10 +1593,10 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
   //checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
-  //sprintf(name,"b_hist%d",id);
-  //chk_hist->SetName(name);
+  sprintf(name,"b_2d%d",id);
+  chk_hist->SetName(name);
   DoMap(chk_hist,&hd->b,p_chk,0);
-  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckPulse()");
+  chk_hist->Connect("Clicked()", "ParParDlg", this, "DoCheckHist()");
   hfr1->AddFrame(chk_hist,LayCC1);
   //id0=id;
 
@@ -2239,6 +2271,14 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   cframe[i]->AddFrame(f_pls,LayCC1);
   kk++;
 
+  id = Plist.size()+1;
+  TGCheckButton *fdsp = new TGCheckButton(cframe[i], "", id);
+  DoMap(fdsp,&opt.dsp[i],p_chk,all,0);
+  fdsp->Connect("Clicked()", "ParDlg", this, "DoChk()");
+  fdsp->SetToolTipText(ttip3[kk]);
+  cframe[i]->AddFrame(fdsp,LayCC1);
+  kk++;
+
   AddNumDaq(i,kk++,all,cframe[i],"smooth",&cpar.smooth[i]);
   AddNumDaq(i,kk++,all,cframe[i],"dt"    ,&cpar.deadTime[i]);
   AddNumDaq(i,kk++,all,cframe[i],"pre"   ,&cpar.preWr[i]);
@@ -2674,14 +2714,6 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   //cframe[i]->ChangeBackground(yellow);
 
   AddChCombo(i,id,kk,all);
-
-  id = Plist.size()+1;
-  TGCheckButton *fdsp = new TGCheckButton(cframe[i], "", id);
-  DoMap(fdsp,&opt.dsp[i],p_chk,all,0);
-  fdsp->Connect("Clicked()", "ParDlg", this, "DoChk()");
-  fdsp->SetToolTipText(ttip3[kk]);
-  cframe[i]->AddFrame(fdsp,LayCC1);
-  kk++;
 
   // id = Plist.size()+1;
   // TGCheckButton *fpls = new TGCheckButton(cframe[i], "", id);
