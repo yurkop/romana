@@ -69,6 +69,17 @@ DaqParDlg *daqpar;
 AnaParDlg *anapar;
 PikParDlg *pikpar;
 
+Pixel_t fWhite;
+Pixel_t fYellow;
+Pixel_t fGreen;
+Pixel_t fRed;
+Pixel_t fCyan;
+Pixel_t fOrng;
+Pixel_t fBlue;
+Pixel_t fRed10;
+
+Pixel_t fCol[7];// = {fYellow,fGreen,fRed,fRed10,fCyan,fOrng,fBlue};
+
 //const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
 //TString parname,lastpar;
@@ -450,7 +461,7 @@ int main(int argc, char **argv)
   //parname = (char*)"romana.par";
   gzFile ff = gzopen(parname,"rb");
   if (!ff) {
-    cout << "Can't open par file: " << parname << endl;
+    cout << "Can't open romana.par file. Using default parameters: " << parname << endl;
   }
   else {
     crs->ReadParGz(ff,parname,0,1,1);
@@ -1166,12 +1177,25 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   : TGMainFrame(p,w,h) {
   // Create a main frame
 
+  gClient->GetColorByName("white", fWhite);
+
+  gClient->GetColorByName("yellow", fYellow);
   gClient->GetColorByName("green", fGreen);
   gClient->GetColorByName("red", fRed);
   gClient->GetColorByName("cyan", fCyan);
+//gClient->GetColorByName("BlueViolet",fBluevio);
   fOrng=TColor::RGB2Pixel(255,114,86);
   fBlue = TColor::RGB2Pixel(135,92,231);
-  // fRed10=gROOT->GetColor(kRed-10)->GetPixel();
+  fRed10=gROOT->GetColor(kPink-9)->GetPixel();
+
+  fCol[0] = fYellow; // 1
+  fCol[1] = fGreen;  // 2
+  fCol[2] = fRed;    // 3
+  fCol[3] = fCyan;   // 4
+  fCol[4] = fOrng;   // 5
+  fCol[5] = fBlue;   // 6
+  fCol[6] = fRed10;  // 7
+  //cout << "fCol: " << gROOT->GetColor(kWhite)->GetPixel() << endl;
 
   TGLayoutHints* LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
   TGLayoutHints* LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);

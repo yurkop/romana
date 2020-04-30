@@ -61,7 +61,7 @@ public:
   Int_t deadTime[MAX_CH+MAX_TP]; // B = 1..16383
   Int_t preWr[MAX_CH+MAX_TP]; // pre-length M = 0..4094
   Int_t durWr[MAX_CH+MAX_TP]; // total length N = 1…32763 (internally - multiple of 4)
-  //Int_t delay[MAX_CH+MAX_TP]; //hardware delay in samples
+  Int_t delay[MAX_CH+MAX_TP]; //hardware delay in samples
   Int_t trg[MAX_CH+MAX_TP]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
   Int_t kderiv[MAX_CH+MAX_TP]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t threshold[MAX_CH+MAX_TP]; // T = –2048 .. +2047
@@ -74,9 +74,10 @@ public:
   Bool_t pls[MAX_CH+MAX_TP]; //1 - send pulses (format 2,3); 0 - don't send
   //UInt_t Mask[MAX_CH+MAX_TP];
   Bool_t forcewr; //only for crs2
+  Bool_t St_trig; //force trigger on start
   Int_t DTW; //Start dead time window
   Int_t Smpl; //Sampling rate divider
-  Int_t SPeriod; //Start imitator frequency
+  Int_t SPeriod; //Start imitator period
 
 public:
   void InitPar(int zero);
@@ -102,7 +103,6 @@ public:
   Int_t Drv[MAX_CH+MAX_TP]; //[kdrv] parameter of derivative
   Int_t Thr[MAX_CH+MAX_TP];//[thresh]
   Float_t Delay[MAX_CH+MAX_TP]; //[delay]
-  //Int_t Delay[MAX_CH+MAX_TP]; //[delay]
   Int_t Base1[MAX_CH+MAX_TP]; //[bkg1]
   Int_t Base2[MAX_CH+MAX_TP]; //[bkg2]
   Int_t Peak1[MAX_CH+MAX_TP]; //[peak1]

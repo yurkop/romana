@@ -44,7 +44,7 @@ void Coptions::InitPar(int zero) {
   }
   forcewr=false;
   DTW=1;
-  Smpl=0;
+  Smpl=5;
   SPeriod=0;
 
 }
@@ -54,8 +54,9 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
   min=0;
   max=0;
 
-  //CRS-2 ------------------------------------
-  if (module==22) {
+  switch (module) {
+    //CRS-2 ------------------------------------
+  case 22: {
     if (!strcmp(name,"smooth")) {
       par = smooth[i];
       min = 0;
@@ -102,7 +103,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
   }//CRS-2
   //CRS-32, firmware<=2 --------------------------
-  else if (module==32) {
+  case 32: {
     if (!strcmp(name,"smooth")) {
       par = smooth[i];
       min = 0;
@@ -162,9 +163,11 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       cout << "GetPar: wrong name: " << name << " " << i << endl;
       exit(-1);
     }
-  }
+  } //32
   //CRS-33 and higher [CRS-32, firmware>=3, CRS-8/16] --------------------------
-  else if (module>=33) {
+  case 33:
+  case 34:
+  case 41: {
     if (!strcmp(name,"smooth")) {
       par = smooth[i];
       min = 0;
@@ -176,29 +179,35 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       max=16383;
     }
     else if (!strcmp(name,"pre")) {
+      //!! знак противоположный тому, что в Протоколе!!!
+      // здесь отрицательный знак означает начало записи
+      // "после" срабатывания дискриминатора
       par = preWr[i];
-      min =-1024;
-      if (type_ch==1) {
-	max=511;
-      }
-      else {
-	max=1023;
+      max = 1024;
+      switch (type_ch) {
+      case 0:
+      case 2:
+	min=-1023;
+	break;
+      case 1:
+	min=-511;
+	break;
       }
     }
     else if (!strcmp(name,"len")) {
       par = durWr[i];
       min = 1;
-      if (type_ch>=1) {
-	max=3048;
-      }
-      else {
+      switch (type_ch) {
+      case 0:
 	max=4068;
+	break;
+      case 1:
+	max=3048;
+	break;
+      case 2:
+	max=6114;
+	break;
       }
-    }
-    else if (!strcmp(name,"trig")) {
-      par = trg[i];
-      min = 0;
-      max=3;
     }
     else if (!strcmp(name,"deriv")) {
       par = kderiv[i];
@@ -207,32 +216,58 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
     else if (!strcmp(name,"thresh")) {
       par = threshold[i];
-      if (type_ch>=1) {
-	min = -65536;
+      switch (type_ch) {
+      case 0:
+	min=-2048;
+	max=2047;
+	break;
+      case 1:
+      case 2:
+	min= -65536;
 	max= 65535;
-      }
-      else {
-	min = -2048;
-	max = 2047;
+	break;
       }
     }
     else if (!strcmp(name,"gain")) {
       par = adcGain[i];
-      if (type_ch>=1) {
-	min = 0;
-	max=3;
-      }
-      else {
-	min = 5;
+      switch (type_ch) {
+      case 0:
+	min=5;
 	max=12;
+	break;
+      case 1:
+      case 2:
+	min=0;
+	max=3;
+	break;
       }
+    }
+    else if (!strcmp(name,"delay")) {
+      par = delay[i];
+      min=0;
+      switch (type_ch) {
+      case 0:
+	max=4075;
+	break;
+      case 1:
+	max=4092;
+	break;
+      case 2:
+	max=1023;
+	break;
+      }
+    }
+    else if (!strcmp(name,"trig")) {
+      par = trg[i];
+      min=0;
+      max=3;
     }
     else {
       cout << "GetPar: wrong name: " << name << " " << i << endl;
       exit(-1);
     }
-  }
-
+  } //33
+  } //switch
 
   if (type_ch==255) {
     min = -65536;

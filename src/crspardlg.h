@@ -36,7 +36,15 @@ struct pmap {
   void* data2; //address of the second (parallel) parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
   char all; //1 - all parameters, >1 - channel type
-  byte cmd; //for Command_crs (1 - start/stop crs; 0 - do nothing)
+  byte cmd; //опции (биты)
+  //0x1: (bit0) 1: start/stop DAQ
+  //0xE: (bit1-3) change color
+  //0xF0: (bit4-7) action:
+  // 1 - SetBuf (in dodaqnum)
+  // 2 - 2d hist (2 fields)
+  // 3 - 1d hist (3 fields)
+  // 4 - profilometer hist
+
   //byte chan; //for Command_crs :seems to be not needed (21.01.2020)
 };
 
@@ -44,13 +52,6 @@ struct pmap {
 class ParDlg: public TGCompositeFrame {
 
 public:
-
-  Pixel_t fGreen;
-  Pixel_t fRed;
-  Pixel_t fRed10;
-  Pixel_t fCyan;
-  Pixel_t fOrng;
-  Pixel_t fBlue;
 
   TGLayoutHints* LayCC0 ;
   TGLayoutHints* LayCC0a;
@@ -60,6 +61,7 @@ public:
   TGLayoutHints* LayLT2 ;
   TGLayoutHints* LayLT3 ;
   TGLayoutHints* LayLT4 ;
+  TGLayoutHints* LayLC1 ;
   TGLayoutHints* LayLT5 ;
   TGLayoutHints* LayLE0 ;
   TGLayoutHints* LayEE0 ;
@@ -103,7 +105,9 @@ public:
   void SetCombo(pmap pp, Int_t num);
   void SetTxt(pmap pp, const char* txt);
   void DoNum();
+  void DoDaqNum();
   void DoChk();
+  void DoDaqChk();
   void DoCombo(bool cp);
   void DoCombo2(Event_t*);
   void DoTxt();
@@ -112,7 +116,6 @@ public:
   void DoOpen();
   void CopyParLine(int sel, int line);
   void CopyField(int from, int to);
-  void NumField1(int nn, bool bb);
   void UpdateField(int nn);
   void Update();
   void EnableField(int nn, bool state);
@@ -148,14 +151,16 @@ protected:
   const char* label;
   //void *x1,*x2;
 
-  int id_usb;
+  //int id_read;
   //int id_tstop;
 
   TGNumberFormat::EStyle k_int;
   TGNumberFormat::EStyle k_r0;
   TGNumberFormat::EStyle k_r1;
-  TGNumberFormat::EStyle k_r2;
-  TGNumberFormat::EStyle k_r3;
+  //TGNumberFormat::EStyle k_r2;
+  //TGNumberFormat::EStyle k_r3;
+
+  TGNumberFormat::EStyle k_mon;
 
   TGTextEntry* tTrig;
 
@@ -167,50 +172,37 @@ public:
     //TGNumberFormat::EAttribute attr, 
     double min=0, double max=0);
   */
+
+  void One_opt(TGHorizontalFrame *hfr1, int width, void* x1,
+    const char* tip1, TGNumberFormat::EStyle style1,
+    double min1, double max1, byte cmd1);
+
   void AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
-		   const char* tip1, const char* tip2, const char* label,
-		   TGNumberFormat::EStyle style1, 
-		   TGNumberFormat::EStyle style2, 
+   const char* tip1, const char* tip2, const char* label,
+   TGNumberFormat::EStyle style1, 
+   TGNumberFormat::EStyle style2, 
 		   //TGNumberFormat::EAttribute attr, 
-		   double min1=0, double max1=0,
-		   double min2=0, double max2=0, int iconnect=0);
-  // void AddLine_txt(TGGroupFrame* frame, int width, char* opt_fname, 
-  // 		   const char* tip1, const char* label);
+   double min1=0, double max1=0,
+   double min2=0, double max2=0, byte cmd1=0, byte cmd2=0);
   void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
-		    const char* tip, const char* label);
+    const char* tip, const char* label);
   void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
-		    const char* tip, const char* label);
-  // void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
-  // 		    const char* tip, const char* label);
-
-
-
-  // void AddLine_hist(TGGroupFrame* frame, Bool_t* b1,
-  // 		    Float_t *x1, Float_t *x2, Float_t *x3, 
-  // 		    const char* tip, const char* label);
+    const char* tip, const char* label);
   void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
-		    const char* tip, const char* label);
+    const char* tip, const char* label);
   void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
-		    P_Def pp, const char* tip);
+    P_Def pp, const char* tip);
   void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
-		    const char* tip, const char* label);
-  // void AddWrite(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
-  // 		Int_t* compr, char* opt_fname);
+    const char* tip, const char* label);
   void AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
-	      Int_t* compr, Bool_t* rflag);
+   Int_t* compr, Bool_t* rflag);
   void AddFiles(TGCompositeFrame* frame);
   void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
   void AddLogic(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
-  void DoParNum();
-  void DoParNum_Daq();
-  void DoNum_SetBuf();
   void DoCheckHist();
-  void DoCheckPulse();
-  void DoCheckProf();
-  void DoNumProf();
-  //void CheckFormula();
+  // void DoCheckPulse();
 
   void Add2d();
 
@@ -232,10 +224,10 @@ public:
   virtual ~ChanParDlg() {};
 
   void AddChCombo(int i, int &id, int &kk, int &all);
-  //void DoChanMap(TGWidget *f, void *d, P_Def t, int all, byte cmd, //byte chan, void* d2=0);
-  void DoChanNum();
+  void AddChkPar(int &kk, TGHorizontalFrame *cframe,
+  Bool_t* dat, int all, int cmd=0);
   void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
-	       void* apar, double min, double max, P_Def ptype);
+    void* apar, double min, double max, P_Def ptype, byte cmd=0);
   void ClearLines();
 
   ClassDef(ChanParDlg, 0)
@@ -257,13 +249,9 @@ public:
   void AddHeader();
   void AddLine_daq(int i, TGCompositeFrame* fcont1);
   void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
-	       const char* name, void* apar, void* apar2=0);
-  //void ResetStatus();
+    const char* name, void* apar, void* apar2=0);
   void UpdateStatus(int rst=0);
-  void DoDaqNum();
-  void DoCheck();
 
-  //void Update();
   ClassDef(DaqParDlg, 0)
 };
 

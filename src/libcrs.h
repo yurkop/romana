@@ -175,7 +175,11 @@ RQ_OBJECT("CRS")
   //41 - crs-8/16
   //72..79 - decoded file
 
-  Int_t type_ch[MAX_CH+MAX_TP]; //0-   4-11bit; 1-   2-16bit
+  Int_t type_ch[MAX_CH+MAX_TP];
+  //0: 4-11bit;
+  //1: crs-6/16 2-16bit;
+  //2: crs-8/16 (16bit)
+
   //Short_t ver_po;
   //Int_t period;
 
