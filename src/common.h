@@ -22,8 +22,8 @@ const int dstep = 10;
 #define AVM16_MASK1 0x00000000  //to read old type of data. Works also with new.
 #define AVM16_MASK2 0x000fffff //complementary to MASK1
 
-const int MAX_CH=256; //max number of channels
-const int MAX_TP=7; //9: nai, bgo, si1, si2, stlb, demon, hpge, NIM, other
+const int MAX_CH=256; //256; //max number of channels
+const int MAX_TP=8; // all(*); 6 types; ALL
 const int NGRP=4; //number of groups of channels
 
 const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to nr-1 of bits in hmap::bitwk; 
@@ -31,6 +31,8 @@ const int MAX_PCUTS=11; //maximal number of points in cutG
 const int MAX_PADS=256; //maximal number of sub-pads in histframe
 
 const int MAX_ERR=8; //maximal number of error types;
+
+const int A0A1_MAX=2; // maximal umber of input channels used in A0A1 2d hists
 
 #define MAX_R 4 //number of channel types (gam,ng,nim,off)
 #define MAX_L 6 //line types (gam,neu,tail,unkn,pileup,frame)

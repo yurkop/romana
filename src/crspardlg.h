@@ -77,22 +77,19 @@ protected:
 
   //MAX_TP [MAX_TP+1] - Other
   //MAX_TP+1 [MAX_TP+2] - Copy
-  ULong_t tcol[MAX_TP+1];
-  TGComboBox* fCombo[MAX_CH+1];
+  ULong_t tcol[MAX_TP+2];
+  TGComboBox* fCombo[MAX_CH+2];
   TGTextEntry* cname[MAX_TP];
+  TGHorizontalFrame *cframe[MAX_CH+MAX_TP];
+  TGTextEntry* clab[MAX_CH+MAX_TP];
 
   TGCanvas* fCanvas1;
   TGCompositeFrame* fcont1;
 
   int nfld; //number of fields in a line
 
-  //int id_write[3]; //id of different *write* text fields
-
 public:
   std::vector<pmap> Plist;
-
-  TGHorizontalFrame *cframe[MAX_CH+MAX_TP+1];
-  TGTextEntry* clab[MAX_CH+MAX_TP+1];
 
 public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);
@@ -108,11 +105,11 @@ public:
   void DoDaqNum();
   void DoChk();
   void DoDaqChk();
-  void DoCombo(bool cp);
-  void DoCombo2(Event_t*);
+  void DoCheckHist();
+  void DoCombo();
+  // void DoCombo2(Event_t*);
   void DoTxt();
   void DoTypes();
-  void DoChkWrite();
   void DoOpen();
   void CopyParLine(int sel, int line);
   void CopyField(int from, int to);
@@ -122,7 +119,7 @@ public:
   void AllEnabled(bool state);
   void SelectEnabled(bool state, const char* text);
   TGWidget *FindWidget(void* p);
-  void Rebuild();
+  // void Rebuild();
 
   ClassDef(ParDlg, 0)
 };
@@ -201,7 +198,6 @@ public:
   void AddOpt(TGCompositeFrame* frame);
   void AddLogic(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
-  void DoCheckHist();
   // void DoCheckPulse();
 
   void Add2d();
@@ -228,7 +224,7 @@ public:
   Bool_t* dat, int all, int cmd=0);
   void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
     void* apar, double min, double max, P_Def ptype, byte cmd=0);
-  void ClearLines();
+  // void ClearLines();
 
   ClassDef(ChanParDlg, 0)
 };

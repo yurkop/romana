@@ -317,7 +317,7 @@ RQ_OBJECT("CRS")
   void InitBuf();
   void EndAna(int all);
   void FAnalyze2(bool nobatch);
-  void AnaBuf();
+  void AnaBuf(int loc_ibuf);
   int DoBuf();
   //void DoNBuf(int nb);
   void DoNBuf2(int nb);
@@ -327,12 +327,12 @@ RQ_OBJECT("CRS")
   //void Decode_any(UChar_t** buffer, int length, int itr);
 
   void Decode_switch(UInt_t ibuf);
-  void Decode_any_MT(UInt_t iread, UInt_t ibuf);
+  void Decode_any_MT(UInt_t iread, UInt_t ibuf, int loc_ibuf);
   void Decode_any(UInt_t ibuf);
 
   // FindLast* находит конец текущего буфера b_end[ibuf],
   // что является одновременно началом следующего b_start[ibuf2]
-  void FindLast(UInt_t ibuf);
+  void FindLast(UInt_t ibuf, int loc_ibuf, int what);
 
   // void FindLast75(UInt_t ibuf);
   // void FindLast76(UInt_t ibuf);

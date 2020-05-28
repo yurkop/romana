@@ -128,7 +128,7 @@ void PulseClass::FindPeaks() {
 	break;
       }
       // else {
-      // 	break;
+      //    break;
       // }
       Dpr=D[j];
     }
@@ -146,7 +146,7 @@ void PulseClass::FindPeaks() {
 	jj=1;
       }
       // else {
-      // 	break;
+      //    break;
       // }
       //Dpr=D[j];
     }
@@ -164,7 +164,7 @@ void PulseClass::FindPeaks() {
 
 
 /*
-void PulseClass::FindPeaks() {
+  void PulseClass::FindPeaks() {
   // always K-th derivative (D) is used
   // T1 - D>0, D(-1)<=0 (left zero-crossing of D)
   // T2 - D<=0, d(-1)>0 (right zero-crossing of D)
@@ -181,7 +181,7 @@ void PulseClass::FindPeaks() {
 
 
   if (sData.size()<2)
-    return;
+  return;
 
   UInt_t kk=opt.Drv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
@@ -199,65 +199,65 @@ void PulseClass::FindPeaks() {
   D[0]=0;
   UInt_t j;
   for (j=kk;j<sData.size();j++) {
-    D[j]=sData[j]-sData[j-kk];
-    if (!in_peak) {
-      if (D[j] >= opt.Thr[Chan]) {
-	in_peak=true;
-	Peaks.push_back(peak_type());
-	pk = &Peaks.back();
-	pk->T1=0;
-	for (int n=j;n>0;n--) {
-	  if (D[n]>0 && D[n-1]<=0) {
-	    pk->T1=n;
-	    break;
-	  }
-	}
-	jmax=D[j];
-	pk->Pos=j;
-	pk->Pos2=j;
-      }
-    }
-    else { //in_peak
-      if (D[j]>jmax) {//maximum of D -> peak position
-	jmax=D[j];
-	pk->Pos2=j;
-	//printf("in_peak: %lld %d %d %d %0.1f %0.1f\n",crs->nevents,Chan,j,kk,D[j],jmax);
-	// peakpos[Npeaks]=jmax=j-1;
-	// Npeaks++;
-	// if (deadtime) {
-	//   j+=deadtime;
-	//   in_peak=false;
-	//   continue;
-	// }
-      }
-      else if (D[j]<=0) { //zero crossing -> end of the peak
-	in_peak=false;
-	pk->T2=j-1;
-	//cout << "T2: " << sData[pk->T2]-sData[pk->T2-kk] << endl;
-	//pk->Height=jmax;
-	jmax=0;
-	if (Peaks.size()>1) { //this is at least second peak
-	  p_prev = pk-1;
-	  if (pk->Pos - p_prev->Pos < opt.dT[Chan])
-	    Peaks.pop_back();
-	  else if (pk->Pos - p_prev->Pos < opt.Pile[Chan]) {
-	    p_prev->Type|=P_PILE1;
-	    pk->Type|=P_PILE2;
-	  }
-	}
-      }
-    }
-    //pD=D;
+  D[j]=sData[j]-sData[j-kk];
+  if (!in_peak) {
+  if (D[j] >= opt.Thr[Chan]) {
+  in_peak=true;
+  Peaks.push_back(peak_type());
+  pk = &Peaks.back();
+  pk->T1=0;
+  for (int n=j;n>0;n--) {
+  if (D[n]>0 && D[n-1]<=0) {
+  pk->T1=n;
+  break;
+  }
+  }
+  jmax=D[j];
+  pk->Pos=j;
+  pk->Pos2=j;
+  }
+  }
+  else { //in_peak
+  if (D[j]>jmax) {//maximum of D -> peak position
+  jmax=D[j];
+  pk->Pos2=j;
+  //printf("in_peak: %lld %d %d %d %0.1f %0.1f\n",crs->nevents,Chan,j,kk,D[j],jmax);
+  // peakpos[Npeaks]=jmax=j-1;
+  // Npeaks++;
+  // if (deadtime) {
+  //   j+=deadtime;
+  //   in_peak=false;
+  //   continue;
+  // }
+  }
+  else if (D[j]<=0) { //zero crossing -> end of the peak
+  in_peak=false;
+  pk->T2=j-1;
+  //cout << "T2: " << sData[pk->T2]-sData[pk->T2-kk] << endl;
+  //pk->Height=jmax;
+  jmax=0;
+  if (Peaks.size()>1) { //this is at least second peak
+  p_prev = pk-1;
+  if (pk->Pos - p_prev->Pos < opt.dT[Chan])
+  Peaks.pop_back();
+  else if (pk->Pos - p_prev->Pos < opt.Pile[Chan]) {
+  p_prev->Type|=P_PILE1;
+  pk->Type|=P_PILE2;
+  }
+  }
+  }
+  }
+  //pD=D;
   }
 
   if (in_peak) { //end of the pulse -> peak has no end
-    pk->T2=sData.size();
-    //pk->Type|=P_B22;
+  pk->T2=sData.size();
+  //pk->Type|=P_B22;
   }
   
   //for (UInt_t i=0;i<Peaks.size();i++) {
   //cout << "FindPeaks: " << crs->nevents << " " << i << " " 
-  //	 << Peaks.at(i).Pos << endl;
+  //   << Peaks.at(i).Pos << endl;
   //}
 
   // Peaks = new peak_type[Npeaks];
@@ -269,7 +269,7 @@ void PulseClass::FindPeaks() {
 
   delete[] D;
 
-}
+  }
 */
 //-----------------------------
 
@@ -288,9 +288,9 @@ void PulseClass::PeakAna33() {
   if (kk<1 || kk>=sz-1) kk=1;
 
   if (sData.size()<=2) {
-  //   Peaks.push_back(peak_type());
-  //   Peaks.back().Pos=cpar.preWr[Chan];
-  //   Peaks.back().Time=0;
+    //   Peaks.push_back(peak_type());
+    //   Peaks.back().Pos=cpar.preWr[Chan];
+    //   Peaks.back().Time=0;
     return;
   }
 
@@ -387,9 +387,9 @@ void PulseClass::PeakAna33() {
 
 
   /*
-  pk->Width=0;
-  sum=0;
-  for (int j=pk->T5;j<pk->T6;j++) {
+    pk->Width=0;
+    sum=0;
+    for (int j=pk->T5;j<pk->T6;j++) {
     //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
     Float_t dif=sData[j]-sData[j-kk]+gRandom->Rndm();
     //Float_t dif=sData[j];//-sData[j-kk];
@@ -397,19 +397,19 @@ void PulseClass::PeakAna33() {
     sum+=dif;
     //}
     //nt++;
-  }
-  if (abs(sum)>1e-5) {
+    }
+    if (abs(sum)>1e-5) {
     //sum+=gRandom->Rndm();
     //pk->Width+=gRandom->Rndm();
     pk->Width/=sum;
-  }
-  else
+    }
+    else
     //pk->Width=-999+pk->Pos;
     pk->Width=(pk->T5+pk->T6)*0.5;
 
-  //pk->Width-=pk->Pos;
-  pk->Width-=cpar.preWr[Chan];
-*/
+    //pk->Width-=pk->Pos;
+    pk->Width-=cpar.preWr[Chan];
+  */
 
   double bkg2=(sData[pk->P2]+sData[pk->P1])/2;
   //double sum2=0;
@@ -452,7 +452,7 @@ void PulseClass::PeakAna33() {
   int nn=0;
   //peak Area & Height
   pk->Area0=0;
-  pk->Height=0;
+  pk->Height=-1e30;
   for (int j=pk->P1;j<pk->P2;j++) {
     pk->Area0+=sData[j];
     if (sData[j]>pk->Height) pk->Height = sData[j];
@@ -490,7 +490,7 @@ void PulseClass::PeakAna33() {
     else {
       cout << "zero Width: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
     }
-  
+  	
     pk->Width-=pk->Base;
     pk->Width=opt.E0[Chan] + opt.E1[Chan]*pk->Width +
       opt.E2[Chan]*pk->Width*pk->Width;
@@ -521,11 +521,11 @@ void PulseClass::PeakAna33() {
 
 
   // printf(ANSI_COLOR_RED
-  // 	 "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
-  // 	 Counter,Bg,Ar,Ht,Tm,Wd);
+  //   "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
+  //   Counter,Bg,Ar,Ht,Tm,Wd);
   // printf(ANSI_COLOR_GREEN
-  // 	 "Kop: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
-  // 	 Counter,pk->Base,pk->Area0,pk->Height,pk->Time,Wd);
+  //   "Kop: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
+  //   Counter,pk->Base,pk->Area0,pk->Height,pk->Time,Wd);
 
 } //PeakAna33()
 
@@ -554,12 +554,12 @@ void PulseClass::CheckDSP() {
   if (bad) {
     printf(ANSI_COLOR_YELLOW"Error!\n");
     printf(ANSI_COLOR_RED
-	   "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f %4d\n" ANSI_COLOR_RESET,
-	   Counter,Peaks[0].Base,Peaks[0].Area0,Peaks[0].Height,
+	   "Alp: %d E:%lld B:%8.1f A0:%8.1f H:%8.1f T:%8.1f W:%8.1f P:%4d\n" ANSI_COLOR_RESET,
+	   Chan,Counter,Peaks[0].Base,Peaks[0].Area0,Peaks[0].Height,
 	   Peaks[0].Time,Peaks[0].Width,Peaks[1].Pos);
     printf(ANSI_COLOR_GREEN
-	   "Kop: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f %4d\n" ANSI_COLOR_RESET,
-	   Counter,Peaks[1].Base,Peaks[1].Area0,Peaks[1].Height,
+	   "Kop: %d E:%lld B:%8.1f A0:%8.1f H:%8.1f T:%8.1f W:%8.1f P:%4d\n" ANSI_COLOR_RESET,
+	   Chan,Counter,Peaks[1].Base,Peaks[1].Area0,Peaks[1].Height,
 	   Peaks[1].Time,Peaks[1].Width,Peaks[1].Pos);
   }
   else {
@@ -567,7 +567,7 @@ void PulseClass::CheckDSP() {
   }
 
   Peaks.pop_back();
-  
+	
 }
 
 EventClass::EventClass() {
@@ -578,49 +578,49 @@ EventClass::EventClass() {
 }
 
 /*
-void EventClass::Make_Mean_Event() {
+  void EventClass::Make_Mean_Event() {
   for (int i=0;i<MAX_CH;i++) {
-    PulseClass pp = PulseClass();
-    pp.ptype=0;
-    pp.Chan=i;
-    pp.Counter=0;
-    for (UInt_t j=0;j<cpar.durWr[i];j++) {
-      pp.sData.push_back(0);
-    }
-    pulses.push_back(pp);
+  PulseClass pp = PulseClass();
+  pp.ptype=0;
+  pp.Chan=i;
+  pp.Counter=0;
+  for (UInt_t j=0;j<cpar.durWr[i];j++) {
+  pp.sData.push_back(0);
+  }
+  pulses.push_back(pp);
   }
 
   //cout << "Make_mean: " << pulses.size() << endl; 
 
-}
+  }
 
-void EventClass::Pulse_Mean_Add(PulseClass *pls) {
+  void EventClass::Pulse_Mean_Add(PulseClass *pls) {
 
   //cout << "Pulse_Mean_Add1: " << pulses.size() << " " << (int) pls->Chan << endl; 
   if (pls->Chan >=opt.Nchan) {
-    cout << "Pulse_Mean_Add: wrong channel: " << (int) pls->Chan << endl; 
+  cout << "Pulse_Mean_Add: wrong channel: " << (int) pls->Chan << endl; 
   }
   PulseClass *pp = &pulses.at(pls->Chan);
 
   if (pp->sData.size() != cpar.durWr[pls->Chan]) {
-    pp->sData.resize(cpar.durWr[pls->Chan]);
-    cout << "Pulse_Mean_Add: resize: " << (int) pls->Chan
-	 << " " << pp->sData.size() << endl;     
+  pp->sData.resize(cpar.durWr[pls->Chan]);
+  cout << "Pulse_Mean_Add: resize: " << (int) pls->Chan
+  << " " << pp->sData.size() << endl;     
   }
 
   if (pls->sData.size()  != cpar.durWr[pls->Chan]) {
-    cout << "Error: " << (int) pls->Chan << " " << pls->Counter
-	 << " " << pls->sData.size() << endl;
-    return;
+  cout << "Error: " << (int) pls->Chan << " " << pls->Counter
+  << " " << pls->sData.size() << endl;
+  return;
   }
   for (UInt_t j=0;j<cpar.durWr[pls->Chan];j++) {
-    pp->sData[j]+=pls->sData[j];
+  pp->sData[j]+=pls->sData[j];
   }
 
   pp->Counter++;
   //cout << "Pulse_Mean_Add2: " << (int) pls->Chan << endl; 
 
-}
+  }
 */
 void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   //void EventClass::Pulse_Ana_Add(pulse_vect::iterator pls) {
@@ -630,7 +630,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   // }
   //Float_t dt;
   //Long64_t dt;
-  
+
   for (UInt_t i=0;i<pulses.size();i++) {
     if (pls->Chan == pulses[i].Chan &&
 	TMath::Abs(pls->Tstamp64-pulses[i].Tstamp64) < opt.tveto) {
@@ -655,7 +655,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
       pk->Time+=pls->Tstamp64 - Tstmp;
     }
   }
- 
+
   pulses.push_back(*pls);
 
   // if (Tstmp==-9999999999) { //this is the first pulse in the event
@@ -682,8 +682,8 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 	T0=pk->Time;
       }
       // cout << "Peak: " << Nevt << " " << (int) pls->Chan
-      // 	   << " " << pk->Time << " " 
-      // 	   << pk->Pos << " " << T0 << endl;
+      //       << " " << pk->Time << " " 
+      //       << pk->Pos << " " << T0 << endl;
     }
   }
 
@@ -742,11 +742,10 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
     // }
   }
 
-  for (int j=0;j<NGRP;j++) {
-    if (opt.Grp[ch][j] && ch<MAX_CH) {
-      Fill1d(first,map,MAX_CH+j,x);
-    }
-  }
+  if (ch<MAX_CH)
+    for (int j=0;j<NGRP;j++)
+      if (opt.Grp[ch][j])
+        Fill1d(first,map,MAX_CH+j,x);
 }
 
 void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
@@ -770,17 +769,17 @@ void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
   }
   hh->SetEntries(nent+1);
   // cout << "Pulse_Mean: " << (int) pls->Chan << " "
-  // 	 << map->hst->GetEntries() << endl;  
+  //   << map->hst->GetEntries() << endl;  
 }
 void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
 				 int ideriv) {
 
   //HMap* map = hcl->m_pulse[n];
   int ch = pls->Chan;
-  
+	
   // if (pls->sData.size() < cpar.durWr[pls->Chan]) {
   //   cout << "Error: " << (int) pls->Chan << " " << pls->Counter
-  // 	 << " " << pls->sData.size() << endl;
+  //   << " " << pls->sData.size() << endl;
   //   return;
   // }
   if (first) {
@@ -844,8 +843,7 @@ void EventClass::FillHist(Bool_t first) {
   //int mult=0;
   Long64_t tm;
 
-  int nn=0;
-  Float_t area[2] = {0,0};
+  Float_t AA[A0A1_MAX+1] = {}; //initialize to zero
 
   //cout << "FillHist: " << this->Nevt << endl;
 
@@ -855,7 +853,7 @@ void EventClass::FillHist(Bool_t first) {
       crs->Tstart64 = Tstmp;
       //cout << "Tstart64: " << crs->Tstart64 << endl;
     }
-    
+  	
     opt.T_acq=(Tstmp - crs->Tstart64)*DT;
 
     if (opt.Tstop && (opt.T_acq > opt.Tstop || opt.T_acq < opt.Tstart)) {
@@ -892,8 +890,8 @@ void EventClass::FillHist(Bool_t first) {
       peak_type* pk = &pulses[i].Peaks[j];
 
       // if (opt.elim2[ch]>0 &&
-      // 	  (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
-      // 	continue;
+      //      (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
+      //    continue;
       // }
 
       if (opt.h_time.b) {
@@ -932,7 +930,7 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       // if (opt.h_width3.b) {
-      // 	Fill1d(first,hcl->m_width3,ch,pk->Width3/pk->Area);
+      //    Fill1d(first,hcl->m_width3,ch,pk->Width3/pk->Area);
       // }
 
       if (opt.h_area_base.b) {
@@ -964,11 +962,11 @@ void EventClass::FillHist(Bool_t first) {
       }
 
       // if (opt.h_area_width3.b) {
-      // 	Fill2d(first,hcl->m_area_width3[ch],pk->Area,pk->Width3/pk->Area);
+      //    Fill2d(first,hcl->m_area_width3[ch],pk->Area,pk->Width3/pk->Area);
       // }
 
       // if (opt.h_width_12.b) {
-      // 	Fill2d(first,hcl->m_width_12[ch],pk->Width,pk->Width2);
+      //    Fill2d(first,hcl->m_width_12[ch],pk->Width,pk->Width2);
       // }
 
       if (opt.h_hei.b) {
@@ -991,51 +989,40 @@ void EventClass::FillHist(Bool_t first) {
 	    crs->Tstart0 = Tstmp + Long64_t(pk->Time);
 	  }
 	  //if ((i==pulses.size()-1)) { //last pulse
-	    if (crs->Tstart0>0) {
-	      //tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
-	      tm = Tstmp + Long64_t(pk->Time);
-	      tt = (tm - crs->Tstart0)*mks*opt.Period;
+	  if (crs->Tstart0>0) {
+	    //tm = pulses[i].Tstamp64 + Long64_t(pk->Time);
+	    tm = Tstmp + Long64_t(pk->Time);
+	    tt = (tm - crs->Tstart0)*mks*opt.Period;
 
-	      if (tt>0) {
-		//check for missed starts
-		if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
-		  crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
-		  tt = (tm - crs->Tstart0)*mks*opt.Period;
-		}
-		if (opt.h_ntof.b) {
-		  Fill1d(first,hcl->m_ntof,ch,tt);
-		}
-		if (opt.h_area_ntof.b) {
-		  Fill2d(first,hcl->m_area_ntof[ch],pk->Area,tt);
-		}
-		if (opt.h_etof.b) {
-		  ee = 72.298*opt.Flpath/(tt-opt.TofZero);
-		  ee= ee*ee;
-		  Fill1d(first,hcl->m_etof,ch,ee);
-		}
-		if (opt.h_ltof.b) {
-		  sqee = 72.298*opt.Flpath/(tt-opt.TofZero);
-		  double lambda = 0.286*sqee;
-		  Fill1d(first,hcl->m_ltof,ch,lambda);
-		}
-	      } //if tt>0
-	    }
-	    //} //if last pulse
+	    if (tt>0) {
+	      //check for missed starts
+	      if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
+		crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
+		tt = (tm - crs->Tstart0)*mks*opt.Period;
+	      }
+	      if (opt.h_ntof.b) {
+		Fill1d(first,hcl->m_ntof,ch,tt);
+	      }
+	      if (opt.h_area_ntof.b) {
+		Fill2d(first,hcl->m_area_ntof[ch],pk->Area,tt);
+	      }
+	      if (opt.h_etof.b) {
+		ee = 72.298*opt.Flpath/(tt-opt.TofZero);
+		ee= ee*ee;
+		Fill1d(first,hcl->m_etof,ch,ee);
+	      }
+	      if (opt.h_ltof.b) {
+		sqee = 72.298*opt.Flpath/(tt-opt.TofZero);
+		double lambda = 0.286*sqee;
+		Fill1d(first,hcl->m_ltof,ch,lambda);
+	      }
+	    } //if tt>0
+	  }
+	  //} //if last pulse
 	} //if (opt.h_ntof.b || opt.h_etof.b)
 
-	if (opt.h_a0a1.b) {
-	  if (ch==0) {
-	    area[0]=pk->Area;
-	    nn++;
-	  }
-	  if (ch==1) {
-	    area[1]=pk->Area;
-	    nn++;
-	  }
-	  if (nn==2) {
-	    Fill2d(first,hcl->m_a0a1[0],area[0],area[1]);
-	    nn++;
-	  }
+	if (opt.h_a0a1.b && (ch<=A0A1_MAX)) {
+	  AA[ch]=pk->Area;
 	}
 
 	if (opt.h_per.b) {
@@ -1054,10 +1041,20 @@ void EventClass::FillHist(Bool_t first) {
 	  hcl->T_prev[ch]=tm;
 	}
       } // if (j==0) only for 1st peak
-
     } //for peaks...
-
   } //for (UInt_t i=0;i<pulses.size()...
+
+  int ii=0;
+  if (opt.h_a0a1.b) {
+    for (int i=0;i<=A0A1_MAX;i++) {
+      for (int j=i+1;j<=A0A1_MAX;j++) {
+	if (AA[i] && AA[j]) {
+	  Fill2d(first,hcl->m_a0a1[ii],AA[i],AA[j]);
+	}
+	ii++;
+      }
+    }
+  }
 
   /*
     if (opt.dec_write) {
@@ -1110,7 +1107,7 @@ void EventClass::FillHist(Bool_t first) {
 
 	  //cout << "hcl: " << i << " " << pp << " " << hcl->h_xy << " " << hcl->h_off << endl;
 	  if (hcl->h_xy>=0) {//one of Prof64 position channels
-	    PulseClass *pulse = &pulses[i];	
+	    PulseClass *pulse = &pulses[i];  
 	    int dt=(pulse->Tstamp64-Tstmp)-cpar.preWr[pulse->Chan];
 	    int size = pulse->sData.size();
 
@@ -1133,47 +1130,47 @@ void EventClass::FillHist(Bool_t first) {
 	      // if (kk==1 && pp>=0 && pp<=3)
 	      //   cout << "sum2/N2: " << Nevt << " " << i << " " << (int)pulse->Chan << " " << kk << " " << sum << " " << xmax-xmin << " " << pp << " " << first << endl;
 	    } //for kk
-	  } //if xy>0	
+	  } //if xy>0  
 	} //if pp
 
 	// else if (pp>=crs->ING_Y)
-	// 	ay=pp-crs->ING_Y;
+	//    ay=pp-crs->ING_Y;
 	// else if (pp>=crs->ING_X)
-	// 	ax=pp-crs->ING_X;
+	//    ax=pp-crs->ING_X;
 	// else if (pp>=crs->PROF_Y)
-	// 	py=pp-crs->PROF_Y;
+	//    py=pp-crs->PROF_Y;
 	// else if (pp>=crs->PROF_X)
-	// 	px=pp-crs->PROF_X;
+	//    px=pp-crs->PROF_X;
 	//cout << "prof: " << (int)pulses[i].Chan << " " << pp << " " << p64 << endl;
       } //for i pulses.size()
 
       if (!opt.h_prof_x.b) { //old profilometer
 	int ax=999,ay=999,px=999,py=999;//,p64=0;
 
-      	if (pulses.size()==4) {
-	for (UInt_t i=0;i<pulses.size();i++) {
-	Int_t pp = crs->prof_ch[pulses[i].Chan];
+	if (pulses.size()==4) {
+	  for (UInt_t i=0;i<pulses.size();i++) {
+	    Int_t pp = crs->prof_ch[pulses[i].Chan];
 
-	if (pp>=crs->PROF_64)
-	  ;//p64=pp-crs->PROF_64;
-	else if (pp>=crs->ING_Y)
-	ay=pp-crs->ING_Y;
-	else if (pp>=crs->ING_X)
-	ax=pp-crs->ING_X;
-	else if (pp>=crs->PROF_Y)
-	py=pp-crs->PROF_Y;
-	else if (pp>=crs->PROF_X)
-	px=pp-crs->PROF_X;
-	//cout << "prof: " << (int)pulses[i].Chan << " " << pp << " " << p64 << endl;
-	} //for
+	    if (pp>=crs->PROF_64)
+	      ;//p64=pp-crs->PROF_64;
+	    else if (pp>=crs->ING_Y)
+	      ay=pp-crs->ING_Y;
+	    else if (pp>=crs->ING_X)
+	      ax=pp-crs->ING_X;
+	    else if (pp>=crs->PROF_Y)
+	      py=pp-crs->PROF_Y;
+	    else if (pp>=crs->PROF_X)
+	      px=pp-crs->PROF_X;
+	    //cout << "prof: " << (int)pulses[i].Chan << " " << pp << " " << p64 << endl;
+	  } //for
 
-	int ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
+	  int ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
 
-	//cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
-	if (ch_alpha>=0 && ch_alpha<opt.prof_ny*opt.prof_nx)
-	Fill2d(first,hcl->m_prof[ch_alpha],px*15+1,py*15+1);
-	//else {
-	//}
+	  //cout << "prof: " << crs->nevents << " " << ch_alpha << endl;
+	  if (ch_alpha>=0 && ch_alpha<opt.prof_ny*opt.prof_nx)
+	    Fill2d(first,hcl->m_prof[ch_alpha],px*15+1,py*15+1);
+	  //else {
+	  //}
 
 	} //if size==4
       }//if old

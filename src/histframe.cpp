@@ -1425,11 +1425,6 @@ void HistFrame::HiReset()
 
   in_gcut=false;
 
-  TCanvas *cv=fEc->GetCanvas();
-  //cv->SetEditable(true);
-  cv->Clear();
-  //cv->SetEditable(false);
-
   //cout << "Make_hist():: " << endl;
   Clear_Ltree();
   //cout << "Make_hist2():: " << endl;
@@ -1440,7 +1435,11 @@ void HistFrame::HiReset()
 
   Update();
 
-  cv->Draw();
+  TCanvas *cv=fEc->GetCanvas();
+  //cv->SetEditable(true);
+  cv->Clear();
+  //cv->SetEditable(false);
+  //cv->Draw();
   cv->Update();
 
   //cout << "HiReset2: " << endl;

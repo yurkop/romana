@@ -44,7 +44,7 @@ void Coptions::InitPar(int zero) {
   }
   forcewr=false;
   DTW=1;
-  Smpl=5;
+  Smpl=0;
   SPeriod=0;
 
 }
@@ -53,7 +53,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
 
   min=0;
   max=0;
-
+  //cout << "GetPAr7: " << module << " " << name << endl;
   switch (module) {
     //CRS-2 ------------------------------------
   case 22: {
@@ -97,10 +97,16 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       min = 1;
       max=1;
     }
+    else if (!strcmp(name,"delay")) {
+      par = delay[i];
+      min=0;
+      max=4075;
+    }
     else {
       cout << "GetPar: wrong name: " << name << " " << i << endl;
       exit(-1);
     }
+    break;
   }//CRS-2
   //CRS-32, firmware<=2 --------------------------
   case 32: {
@@ -163,6 +169,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       cout << "GetPar: wrong name: " << name << " " << i << endl;
       exit(-1);
     }
+    break;
   } //32
   //CRS-33 and higher [CRS-32, firmware>=3, CRS-8/16] --------------------------
   case 33:
@@ -266,6 +273,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       cout << "GetPar: wrong name: " << name << " " << i << endl;
       exit(-1);
     }
+    break;
   } //33
   } //switch
 
@@ -326,7 +334,7 @@ Toptions::Toptions() {
 
   memset(Filename,0,sizeof(Filename));
 
-  const char* types[]={"NaI","BGO","Si 1","Si 2","Stilb","Demon","HPGe",
+  const char* types[]={"NaI","BGO","HPGe","Si","Stilb","Demon"," ",
 			    "NIM","Other","Copy",""};
   for (int i=0;i<MAX_TP;i++) {
     strcpy(ch_name[i],types[i]);

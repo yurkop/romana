@@ -461,7 +461,7 @@ int main(int argc, char **argv)
   //parname = (char*)"romana.par";
   gzFile ff = gzopen(parname,"rb");
   if (!ff) {
-    cout << "Can't open romana.par file. Using default parameters: " << parname << endl;
+    cout << "Can't open " << parname << " file. Using default parameters." << endl;
   }
   else {
     crs->ReadParGz(ff,parname,0,1,1);
@@ -736,7 +736,6 @@ int main(int argc, char **argv)
 
   TApplication theApp("App",&argc,argv);
   //example();
-
   myM=0;
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
 
@@ -1674,7 +1673,7 @@ MainFrame::~MainFrame() {
 
 void MainFrame::Rebuild() {
 
-  //cout << "main::Rebuild1: " << endl;
+  // cout << "main::Rebuild1: " << endl;
 
   //tabfr[2]->GetList()->ls();
 
@@ -1710,21 +1709,21 @@ void MainFrame::Rebuild() {
   //anapar->ClearLines();
   //anapar->Update();
 
-  //cout << "main::Rebuild2: " << anapar << endl;
+  // cout << "main::Rebuild2: " << anapar << endl;
 
   //tabfr[2]->GetList()->ls();
 
   //debug=99;
-  MakeTabs();
+  MakeTabs(true);
 
   Resize(GetDefaultSize());
   MapSubwindows();
   Layout();
 
-  //cout << "main::Rebuild3: " << endl;
+  // cout << "main::Rebuild3: " << endl;
 }
 
-void MainFrame::MakeTabs() {
+void MainFrame::MakeTabs(bool reb) {
 
   int ntab=0;
 
@@ -2218,10 +2217,12 @@ void MainFrame::DoReset() {
 
   if (!crs->b_stop) return;
 
+  // cout << "Reset1: " << endl;
   crs->DoReset();
+  // cout << "Reset2: " << endl;
 
   if (local_nch!=opt.Nchan) {
-    cout << "Rebuild: " << endl;
+    // cout << "Rebuild: " << endl;
     //for (int k=0;k<100000;k++) {
     //debug=99;
     Rebuild();

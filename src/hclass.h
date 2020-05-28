@@ -66,7 +66,7 @@ class HClass {
   HMap* m_pulse[MAX_CH]; // pulse shape
   HMap* m_deriv[MAX_CH]; // pulse shape (deriv)
 
-  HMap* m_a0a1[1];
+  HMap* m_a0a1[A0A1_MAX*(A0A1_MAX+1)/2];
   HMap* m_area_base[MAX_CH];
   HMap* m_area_sl1[MAX_CH];
   HMap* m_area_sl2[MAX_CH];
@@ -127,7 +127,7 @@ class HClass {
   void Make_2d(const char* dname, const char* name, const char* title,
    	       HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2);
   void Make_a0a1(const char* dname, const char* name, const char* title,
-	       HMap* map[], Hdef* hd);
+	       HMap* map[], Hdef* hd, int nmax);
   void Make_prof(const char* dname,const char* name,
 		 const char* title,HMap* map[],Hdef* hd,
 		 HMap* map2[],Hdef* hd2);

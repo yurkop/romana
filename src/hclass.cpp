@@ -175,14 +175,21 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 
 
   for (int j=0;j<NGRP;j++) {
-    sprintf(name2,"%s_g%d",name,j+1);
-    sprintf(title2,"%s_g%d%s",name,j+1,title);
-    int nn=hd->bins*(hd->max - hd->min);
-    TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-    map[MAX_CH+j] = new HMap(dname,hh,hd->c+MAX_CH+j,hd->w+MAX_CH+j,
-			     hd->cut+MAX_CH+j);
-    map_list->Add(map[MAX_CH+j]);
-    hist_list->Add(map[MAX_CH+j]->hst);
+
+    for (int ch=0;ch<opt.Nchan;ch++) {
+      if (opt.Grp[ch][j]) {
+        sprintf(name2,"%s_g%d",name,j+1);
+        sprintf(title2,"%s_g%d%s",name,j+1,title);
+        int nn=hd->bins*(hd->max - hd->min);
+        TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
+        map[MAX_CH+j] = new HMap(dname,hh,hd->c+MAX_CH+j,hd->w+MAX_CH+j,
+         hd->cut+MAX_CH+j);
+        map_list->Add(map[MAX_CH+j]);
+        hist_list->Add(map[MAX_CH+j]->hst);
+        break;
+      }
+    }
+
   }
 
 }
@@ -242,8 +249,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
 
 }
 
-void HClass::
-Make_prof(const char* dname, const char* name,
+void HClass::Make_prof(const char* dname, const char* name,
 	  const char* title, HMap* map[], Hdef* hd,
 		 HMap* map2[],Hdef* hd2) {
 
@@ -291,23 +297,28 @@ Make_prof(const char* dname, const char* name,
 }
 
 void HClass::Make_a0a1(const char* dname, const char* name, const char* title,
-		     HMap* map[], Hdef* hd) {
+		     HMap* map[], Hdef* hd, int nmax) {
 
   if (!hd->b) return;
 
   char name2[100];
   char title2[100];
 
-  sprintf(name2,"%s",name);
-  sprintf(title2,"%s%s",name,title);
+  int ii=0;
+  for (int i=0;i<=nmax;i++) {
+    for (int j=i+1;j<=nmax;j++) {
+      sprintf(name2,"%s%d%s%d",name,i,name,j);
+      sprintf(title2,"%s%s",name2,title);
 
-  int nn=hd->bins*(hd->max - hd->min);
-  TH2F* hh=new TH2F(name2,title2,nn,hd->min,hd->max,nn,hd->min,hd->max);
+      int nn=hd->bins*(hd->max - hd->min);
+      TH2F* hh=new TH2F(name2,title2,nn,hd->min,hd->max,nn,hd->min,hd->max);
 
-  map[0] = new HMap(dname,hh,hd->c+0,hd->w+0,hd->cut+0);
-  map_list->Add(map[0]);
-  hist_list->Add(map[0]->hst);
-
+      map[ii] = new HMap(dname,hh,hd->c+ii,hd->w+ii,hd->cut+ii);
+      map_list->Add(map[ii]);
+      hist_list->Add(map[ii]->hst);
+      ii++;
+    }
+  }
 }
 
 void HClass::Clone_Hist(HMap* map) {
@@ -496,7 +507,7 @@ void HClass::Make_hist() {
   Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,&opt.h_pulse);
   Make_1d_pulse("Deriv","deriv",";samples;Amplitude",m_deriv,&opt.h_deriv);
 
-  Make_a0a1("A0A1","A0A1",";Channel;Channel",m_a0a1,&opt.h_a0a1);
+  Make_a0a1("A0A1","A",";Channel;Channel",m_a0a1,&opt.h_a0a1,A0A1_MAX);
   Make_2d("Area_Base","Area_Base",";Channel;Channel",m_area_base,&opt.h_area_base,&opt.h_area,&opt.h_base);
   Make_2d("Area_Sl1","Area_Sl1",";Channel;Channel",m_area_sl1,&opt.h_area_sl1,&opt.h_area,&opt.h_slope1);
   Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);

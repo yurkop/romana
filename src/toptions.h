@@ -83,7 +83,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 114)
+  ClassDef(Coptions, 115)
 };
 
 //------------------------------------
@@ -274,7 +274,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 114)
+  ClassDef(Toptions, 115)
 };
 
 //ClassImp(Toptions)

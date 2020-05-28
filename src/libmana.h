@@ -139,7 +139,7 @@ class MainFrame : public TGMainFrame {
   MainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MainFrame();
 
-  void MakeTabs();
+  void MakeTabs(bool reb=false);
   void Rebuild();
   void SetTitle(char* fname);
   void DoStartStop();
