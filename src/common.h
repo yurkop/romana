@@ -32,7 +32,7 @@ const int MAX_PADS=256; //maximal number of sub-pads in histframe
 
 const int MAX_ERR=8; //maximal number of error types;
 
-const int A0A1_MAX=2; // maximal umber of input channels used in A0A1 2d hists
+// const int A0A1_MAX=2; // maximal number of input channels used in A0A1 2d hists
 
 #define MAX_R 4 //number of channel types (gam,ng,nim,off)
 #define MAX_L 6 //line types (gam,neu,tail,unkn,pileup,frame)

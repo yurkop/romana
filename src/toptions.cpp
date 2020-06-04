@@ -56,57 +56,57 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
   //cout << "GetPAr7: " << module << " " << name << endl;
   switch (module) {
     //CRS-2 ------------------------------------
-  case 22: {
-    if (!strcmp(name,"smooth")) {
-      par = smooth[i];
-      min = 0;
-      max=10;
-    }
-    else if (!strcmp(name,"pre")) {
-      par = preWr[i];
-      min = 0;
-      max=8184;
-    }
-    else if (!strcmp(name,"len")) {
-      par = durWr[i];
-      min = 1;
-      max=16379;
-    }
-    else if (!strcmp(name,"trig")) {
-      par = trg[i];
-      min = 1;
-      max=1;
-    }
-    else if (!strcmp(name,"deriv")) {
-      par = kderiv[i];
-      min = 0;
-      max=1023;
-    }
-    else if (!strcmp(name,"thresh")) {
-      par = threshold[i];
-      min = -2048;
-      max = 2047;
-    }
-    else if (!strcmp(name,"gain")) {
-      par = adcGain[i];
-      min = 5;
-      max=12;
-    }
-    else if (!strcmp(name,"dt")) {
-      par = deadTime[i];
-      min = 1;
-      max=1;
-    }
-    else if (!strcmp(name,"delay")) {
-      par = delay[i];
-      min=0;
-      max=4075;
-    }
-    else {
-      cout << "GetPar: wrong name: " << name << " " << i << endl;
-      exit(-1);
-    }
-    break;
+    case 22: {
+      if (!strcmp(name,"smooth")) {
+        par = smooth[i];
+        min = 0;
+        max=10;
+      }
+      else if (!strcmp(name,"pre")) {
+        par = preWr[i];
+        min = 0;
+        max=8184;
+      }
+      else if (!strcmp(name,"len")) {
+        par = durWr[i];
+        min = 1;
+        max=16379;
+      }
+      else if (!strcmp(name,"trig")) {
+        par = trg[i];
+        min = 1;
+        max=1;
+      }
+      else if (!strcmp(name,"deriv")) {
+        par = kderiv[i];
+        min = 0;
+        max=1023;
+      }
+      else if (!strcmp(name,"thresh")) {
+        par = threshold[i];
+        min = -2048;
+        max = 2047;
+      }
+      else if (!strcmp(name,"gain")) {
+        par = adcGain[i];
+        min = 5;
+        max=12;
+      }
+      else if (!strcmp(name,"dt")) {
+        par = deadTime[i];
+        min = 1;
+        max=1;
+      }
+      else if (!strcmp(name,"delay")) {
+        par = delay[i];
+        min=0;
+        max=4075;
+      }
+      else {
+        cout << "GetPar: wrong name: " << name << " " << i << endl;
+        exit(-1);
+      }
+      break;
   }//CRS-2
   //CRS-32, firmware<=2 --------------------------
   case 32: {
@@ -124,52 +124,52 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       par = preWr[i];
       min = 0;
       if (type_ch==0)
-	max=4094;
-      else if (type_ch==1)
-	max=4093;
-    }
-    else if (!strcmp(name,"len")) {
-      par = durWr[i];
-      min = 1;
-      max=32763;
-    }
-    else if (!strcmp(name,"trig")) {
-      par = trg[i];
-      min = 1;
-      max=1;
-    }
-    else if (!strcmp(name,"deriv")) {
-      par = kderiv[i];
-      min = 0;
-      max=1023;
-    }
-    else if (!strcmp(name,"thresh")) {
-      par = threshold[i];
-      if (type_ch==1) {
-	min = -65536;
-	max= 65535;
-      }
-      else {
-	min = -2048;
-	max = 2047;
-      }
-    }
-    else if (!strcmp(name,"gain")) {
-      par = adcGain[i];
-      if (type_ch==1) {
-	min = 0;
-	max=3;
-      }
-      else {
-	min = 5;
-	max=12;
-      }
-    }
-    else {
-      cout << "GetPar: wrong name: " << name << " " << i << endl;
-      exit(-1);
-    }
-    break;
+       max=4094;
+     else if (type_ch==1)
+       max=4093;
+   }
+   else if (!strcmp(name,"len")) {
+    par = durWr[i];
+    min = 1;
+    max=32763;
+  }
+  else if (!strcmp(name,"trig")) {
+    par = trg[i];
+    min = 1;
+    max=1;
+  }
+  else if (!strcmp(name,"deriv")) {
+    par = kderiv[i];
+    min = 0;
+    max=1023;
+  }
+  else if (!strcmp(name,"thresh")) {
+    par = threshold[i];
+    if (type_ch==1) {
+     min = -65536;
+     max= 65535;
+   }
+   else {
+     min = -2048;
+     max = 2047;
+   }
+ }
+ else if (!strcmp(name,"gain")) {
+  par = adcGain[i];
+  if (type_ch==1) {
+   min = 0;
+   max=3;
+ }
+ else {
+   min = 5;
+   max=12;
+ }
+}
+else {
+  cout << "GetPar: wrong name: " << name << " " << i << endl;
+  exit(-1);
+}
+break;
   } //32
   //CRS-33 and higher [CRS-32, firmware>=3, CRS-8/16] --------------------------
   case 33:
@@ -192,28 +192,28 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       par = preWr[i];
       max = 1024;
       switch (type_ch) {
-      case 0:
-      case 2:
-	min=-1023;
-	break;
-      case 1:
-	min=-511;
-	break;
+        case 0:
+        case 2:
+        min=-1023;
+        break;
+        case 1:
+        min=-511;
+        break;
       }
     }
     else if (!strcmp(name,"len")) {
       par = durWr[i];
       min = 1;
       switch (type_ch) {
-      case 0:
-	max=4068;
-	break;
-      case 1:
-	max=3048;
-	break;
-      case 2:
-	max=6114;
-	break;
+        case 0:
+        max=4068;
+        break;
+        case 1:
+        max=3048;
+        break;
+        case 2:
+        max=6114;
+        break;
       }
     }
     else if (!strcmp(name,"deriv")) {
@@ -224,50 +224,53 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     else if (!strcmp(name,"thresh")) {
       par = threshold[i];
       switch (type_ch) {
-      case 0:
-	min=-2048;
-	max=2047;
-	break;
-      case 1:
-      case 2:
-	min= -65536;
-	max= 65535;
-	break;
+        case 0:
+        min=-2048;
+        max=2047;
+        break;
+        case 1:
+        case 2:
+        min= -65536;
+        max= 65535;
+        break;
       }
     }
     else if (!strcmp(name,"gain")) {
       par = adcGain[i];
       switch (type_ch) {
-      case 0:
-	min=5;
-	max=12;
-	break;
-      case 1:
-      case 2:
-	min=0;
-	max=3;
-	break;
+        case 0:
+        min=5;
+        max=12;
+        break;
+        case 1:
+        case 2:
+        min=0;
+        max=3;
+        break;
       }
     }
     else if (!strcmp(name,"delay")) {
       par = delay[i];
       min=0;
       switch (type_ch) {
-      case 0:
-	max=4075;
-	break;
-      case 1:
-	max=4092;
-	break;
-      case 2:
-	max=1023;
-	break;
+        case 0:
+        max=4075;
+        break;
+        case 1:
+        max=4092;
+        break;
+        case 2:
+        max=1023;
+        break;
       }
     }
     else if (!strcmp(name,"trig")) {
       par = trg[i];
       min=0;
-      max=3;
+      if (module==41)
+        max=4;
+      else
+        max=3;
     }
     else {
       cout << "GetPar: wrong name: " << name << " " << i << endl;
@@ -335,7 +338,7 @@ Toptions::Toptions() {
   memset(Filename,0,sizeof(Filename));
 
   const char* types[]={"NaI","BGO","HPGe","Si","Stilb","Demon"," ",
-			    "NIM","Other","Copy",""};
+  "NIM","Other","Copy",""};
   for (int i=0;i<MAX_TP;i++) {
     strcpy(ch_name[i],types[i]);
   }

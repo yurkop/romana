@@ -91,7 +91,7 @@ class PEditor {
   // slots
   void   CloseWindow();
   void   DoSavePar();
-  void   DoExit();
+  void   DoPExit();
   void   DoOpen();
   void   DoSave();
   void   DoClose();
@@ -154,6 +154,7 @@ class MainFrame : public TGMainFrame {
   void DoReset();
   void DoSaveRoot();
   //void DoSaveAscii();
+  void CloseWindow();
   void DoExit();
   //void DoResetUSB();
   //void DoStop();
@@ -165,7 +166,7 @@ class MainFrame : public TGMainFrame {
   //void ParUnLock();
 
   void EventInfo(Int_t, Int_t, Int_t, TObject*);
-  void DoCross();
+  // void DoCross();
 
   void UpdateStatus(int rst=0);
 

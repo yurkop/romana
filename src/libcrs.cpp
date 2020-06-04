@@ -1661,15 +1661,16 @@ void CRS::AllParameters41()
 			}
 
 			// mask=0xFF;
-			cout << "mask: " << (int) chan << " " << hex << mask << dec << endl;
+			// cout << "mask: " << (int) chan << " " << hex << mask << dec << endl;
 			Command32(2,chan,23,mask); //bitmask for discriminator
 			Command32(2,chan,24,mask); //bitmask for START
 			//UInt_t mask = 0xFF;
 			//Command32(2,chan,23,(UInt_t) mask); //bitmask
 			mask=cpar.St_trig ? 2 : 1;
 			// mask=0xFF;
-			cout << "mch: " << (int) chan << " " << mask << endl;
+			// cout << "mch: " << (int) chan << " " << mask << endl;
 			Command32(2,chan,25,mask); //bitmask for START
+			Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L
 
 		}
 
@@ -1688,13 +1689,13 @@ void CRS::AllParameters41()
 	//Start source
 	mask=cpar.SPeriod ? 1 : 0;
 	// mask=0xFF;
-	cout << "start source: " << mask << endl;
+	// cout << "start source: " << mask << endl;
 	Command32(11,2,0,mask);
 
 	//Start imitator period
 	mask=cpar.SPeriod;
 	if (mask) mask--;
-	cout << "start period: " << mask << endl;
+	// cout << "start period: " << mask << endl;
 	Command32(11,3,0,mask);
 
 }
@@ -2027,18 +2028,7 @@ void CRS::DoExit()
 		}
 	}
 #endif
-	//if (trd_stat) {
-	//trd_stat->Delete();
-	//}
-	//if (trd_evt) {
-	//trd_evt->Delete();
-	//}
-	//if (trd_ana) {
-	//trd_ana->Delete();
-	//}
-	//pthread_join(tid1,NULL);
-	//gzclose(fp);
-	//exit(-1);
+
 }
 
 void CRS::DoReset() {
@@ -2538,10 +2528,18 @@ void CRS::AnaBuf(int loc_ibuf) {
 	//cout << "L4: " << L4 << " " << N4 << " " << SLP << endl;
 	if (CheckMem(1)) {
 		cout << "Memory is too low. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
-		EndAna(1);
-		//DoExit();
-		exit(-1);
-		//myM->DoExit();
+		DoStartStop();
+
+		myM->CloseWindow();
+		
+
+
+
+		// EndAna(1);
+		// delete myM;
+		// DoExit();
+		//exit(-1);
+		// myM->DoExit();
 	}
 
 	if (batch && !silent) {

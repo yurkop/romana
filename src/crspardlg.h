@@ -35,7 +35,7 @@ struct pmap {
   void* data; //address of the parameter
   void* data2; //address of the second (parallel) parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
-  char all; //1 - all parameters, >1 - channel type
+  char all; //1 - all parameters; >1,<99 - channel type; 99 - ALL
   byte cmd; //опции (биты)
   //0x1: (bit0) 1: start/stop DAQ
   //0xE: (bit1-3) change color
@@ -44,6 +44,8 @@ struct pmap {
   // 2 - 2d hist (2 fields)
   // 3 - 1d hist (3 fields)
   // 4 - profilometer hist
+
+  // 2 - Hireset in DoDaqNum
 
   //byte chan; //for Command_crs :seems to be not needed (21.01.2020)
 };
@@ -184,7 +186,7 @@ public:
   void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
     const char* tip, const char* label);
   void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
-    const char* tip, const char* label);
+    const char* tip, const char* label, int type);
   void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
     const char* tip, const char* label);
   void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,

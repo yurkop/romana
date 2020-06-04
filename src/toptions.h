@@ -252,7 +252,7 @@ public:
   Hdef h_pulse;
   Hdef h_deriv;
 
-  Hdef h_a0a1;
+  Hdef h_axay;
   Hdef h_area_base;
   Hdef h_area_sl1;
   Hdef h_area_sl2;

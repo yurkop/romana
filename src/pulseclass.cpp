@@ -843,7 +843,7 @@ void EventClass::FillHist(Bool_t first) {
   //int mult=0;
   Long64_t tm;
 
-  Float_t AA[A0A1_MAX+1] = {}; //initialize to zero
+  Float_t AA[MAX_CH+1] = {}; //initialize to zero
 
   //cout << "FillHist: " << this->Nevt << endl;
 
@@ -1021,7 +1021,7 @@ void EventClass::FillHist(Bool_t first) {
 	  //} //if last pulse
 	} //if (opt.h_ntof.b || opt.h_etof.b)
 
-	if (opt.h_a0a1.b && (ch<=A0A1_MAX)) {
+	if (opt.h_axay.b && (ch<=opt.h_axay.bins2)) {
 	  AA[ch]=pk->Area;
 	}
 
@@ -1044,17 +1044,18 @@ void EventClass::FillHist(Bool_t first) {
     } //for peaks...
   } //for (UInt_t i=0;i<pulses.size()...
 
-  int ii=0;
-  if (opt.h_a0a1.b) {
-    for (int i=0;i<=A0A1_MAX;i++) {
-      for (int j=i+1;j<=A0A1_MAX;j++) {
-	if (AA[i] && AA[j]) {
-	  Fill2d(first,hcl->m_a0a1[ii],AA[i],AA[j]);
-	}
-	ii++;
-      }
-    }
-  }
+  if (opt.h_axay.b) {
+    int ii=0;
+    int nmax=opt.h_axay.bins2;
+    for (int i=0;i<=nmax;i++) {
+      for (int j=i+1;j<=nmax;j++) {
+       if (AA[i] && AA[j]) {
+         Fill2d(first,hcl->m_axay[ii],AA[i],AA[j]);
+       }
+       ii++;
+     }
+   }
+ }
 
   /*
     if (opt.dec_write) {

@@ -67,7 +67,7 @@ const char* ttip1[ndaqpar+1]={
 	"Number of samples before the trigger",
 	"Total length of the pulse in samples",
 	"Additional Gain",
-	"Trigget type: 0 - threshold crossing of pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative;",
+	"Trigget type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative (only for CRS-8/16)",
 	"Parameter of derivative: S(i) - S(i-Drv)",
 	"Trigger threshold",
 	"Pulse rate",
@@ -271,8 +271,13 @@ void ParDlg::DoDaqNum() {
 
 	int act = pp->cmd>>4;
 	if (act==1 && crs->b_stop) {
-		cout << "Act_SetBuf: " << endl;
+		// cout << "Act_SetBuf: " << endl;
 		crs->DoReset();
+	}
+
+	if (act==2 && crs->b_stop) {
+		// cout << "Act_HiReset: " << endl;
+		HiFrm->HiReset();
 	}
 
 }
@@ -1328,61 +1333,49 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
 	// label="Profilometer";
 	// AddLine_prof(frame2d,&opt.h_prof,tip1,label);
 
-	tip1= "2-dimensional histogram (area0-area1), calibrated (see Channels->EM for calibration)";
-	label="A0A1";
-	AddLine_hist(frame2d,&opt.h_a0a1,tip1,label);
+	tip1= "2-dimensional histogram AreaX-AreaY)";
+	label="AXAY";
+	AddLine_2d(frame2d,&opt.h_axay,tip1,label,2);
 
 	tip1= "2-dimensional histogram (Area_Base)\nMin Max are taken from the corresponding 1d histograms";
 	label="Area_Base";
-	AddLine_2d(frame2d,&opt.h_area_base,tip1,label);
+	AddLine_2d(frame2d,&opt.h_area_base,tip1,label,1);
 
 	tip1= "2-dimensional histogram (Area_Slope1)\nMin Max are taken from the corresponding 1d histograms";
 	label="Area_Sl1";
-	AddLine_2d(frame2d,&opt.h_area_sl1,tip1,label);
+	AddLine_2d(frame2d,&opt.h_area_sl1,tip1,label,1);
 
 	tip1= "2-dimensional histogram (Area_Slope2)\nMin Max are taken from the corresponding 1d histograms";
 	label="Area_Sl2";
-	AddLine_2d(frame2d,&opt.h_area_sl2,tip1,label);
+	AddLine_2d(frame2d,&opt.h_area_sl2,tip1,label,1);
 
 	tip1= "2-dimensional histogram (Slope1-Slope2)\nMin Max are taken from the corresponding 1d histograms";
 	label="Slope_12";
-	AddLine_2d(frame2d,&opt.h_slope_12,tip1,label);
+	AddLine_2d(frame2d,&opt.h_slope_12,tip1,label,1);
 
 	tip1= "2-dimensional histogram (Area_Time)\nMin Max are taken from the corresponding 1d histograms";
 	label="Area_Time";
-	AddLine_2d(frame2d,&opt.h_area_time,tip1,label);
+	AddLine_2d(frame2d,&opt.h_area_time,tip1,label,1);
 
 	tip1= "2-dimensional histogram (Area_Width)\nMin Max are taken from the corresponding 1d histograms";
 	label="Area_Width";
-	AddLine_2d(frame2d,&opt.h_area_width,tip1,label);
+	AddLine_2d(frame2d,&opt.h_area_width,tip1,label,1);
 
 	tip1= "2-dimensional histogram (Area_Width2)\nMin Max are taken from the corresponding 1d histograms";
 	label="Area_Width2";
-	AddLine_2d(frame2d,&opt.h_area_width2,tip1,label);
+	AddLine_2d(frame2d,&opt.h_area_width2,tip1,label,1);
 
 	tip1= "2-dimensional histogram (Area_Ntof)\nMin Max are taken from the corresponding 1d histograms";
 	label="Area_Ntof";
-	AddLine_2d(frame2d,&opt.h_area_ntof,tip1,label);
+	AddLine_2d(frame2d,&opt.h_area_ntof,tip1,label,1);
 
 	// tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
 	// label="Area_Width3";
-	// AddLine_2d(frame2d,&opt.h_area_width3,tip1,label);
+	// AddLine_2d(frame2d,&opt.h_area_width3,tip1,label,1);
 
 	// tip1= "2-dimensional histogram (Width_12)\nMin Max are taken from the corresponding 1d histograms";
 	// label="Width_12";
-	// AddLine_2d(frame,&opt.h_width_12,tip1,label);
-
-	/*
-		tip1= "Bins per channel for Width";
-		tip2= "Length of Width (in channels)";
-		label="Width";
-		AddLine_opt(frame,ww,&opt.rms_bins,&opt.rms_max,tip1,tip2,label,k_r0);
-
-		tip1= "Bins per nanosecond for TOF";
-		tip2= "Length of TOF (in nanoseconds)";
-		label="TOF";
-		AddLine_opt(frame,ww,&opt.tof_bins,&opt.tof_max,tip1,tip2,label,k_r0);
-	*/
+	// AddLine_2d(frame,&opt.h_width_12,tip1,label,1);
 
 }
 
@@ -1390,7 +1383,7 @@ void ParParDlg::Add2d() {
 	cout << "Add2d: " << endl;
 	tip1= "2-dimensional histogram (Area_Width)\nMin Max are taken from the corresponding 1d histograms";
 	label="Area_Width4";
-	AddLine_2d(frame2d,&opt.h_area_width,tip1,label);
+	AddLine_2d(frame2d,&opt.h_area_width,tip1,label,1);
 	MapSubwindows();
 	Layout();
 }
@@ -1521,12 +1514,12 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 	id = Plist.size()+1;
 	TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 		TGNumberFormat::kNEAAnyNumber,
-		lim,0,1000);
-	DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0);
+		lim,0.0001,10000);
+	DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0,2<<4);
 	fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel");
 	fNum1->SetWidth(ww1);
 	fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-		"DoNum()");
+		"DoDaqNum()");
 	hfr1->AddFrame(fNum1,LayLT2);
 
 	//xlow
@@ -1534,11 +1527,11 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 	TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 		TGNumberFormat::kNEAAnyNumber,
 		nolim);
-	DoMap(fNum2->GetNumberEntry(),&hd->min,p_fnum,0);
+	DoMap(fNum2->GetNumberEntry(),&hd->min,p_fnum,0,2<<4);
 	fNum2->GetNumberEntry()->SetToolTipText("Low edge");
 	fNum2->SetWidth(ww);
 	fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-		"DoNum()");
+		"DoDaqNum()");
 	hfr1->AddFrame(fNum2,LayLT2);
 
 	//xup
@@ -1546,11 +1539,11 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 	TGNumberEntry* fNum3 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 		TGNumberFormat::kNEAAnyNumber,
 		nolim);
-	DoMap(fNum3->GetNumberEntry(),&hd->max,p_fnum,0);
+	DoMap(fNum3->GetNumberEntry(),&hd->max,p_fnum,0,2<<4);
 	fNum3->GetNumberEntry()->SetToolTipText("Upper edge");
 	fNum3->SetWidth(ww);
 	fNum3->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-		"DoNum()");
+		"DoDaqNum()");
 	hfr1->AddFrame(fNum3,LayLT2);
 
 
@@ -1568,10 +1561,27 @@ void ParParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
 }
 
 void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
-	const char* tip, const char* label) {
+	const char* tip, const char* label, int type) {
 
 	double ww1=50;
-	//double ww=90;
+	int min2=0.0001;
+	int max2=10000;
+	char *tip11, *tip22;
+	// byte cmd=0;
+
+	if (type==1) { //normal 2d
+		tip11= (char*) "Number of bins per channel on X-axis";
+		tip22= (char*) "Number of bins per channel on Y-axis";
+	}
+	else { //AXAY
+		ww1=60;
+		min2=0;
+		max2=opt.Nchan-1;
+		// cmd=2<<4;
+		tip11= (char*) "Number of bins per channel on X and Y axis";
+		tip22= (char*) "Maximal channel number";
+	}
+
 
 	TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
 	frame->AddFrame(hfr1);
@@ -1595,24 +1605,24 @@ void ParParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 	id = Plist.size()+1;
 	TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 		TGNumberFormat::kNEAAnyNumber,
-		lim,0,1000);
-	DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0);
-	fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel on X-axis");
+		lim,0.0001,10000);
+	DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0,2<<4);
+	fNum1->GetNumberEntry()->SetToolTipText(tip11);
 	fNum1->SetWidth(ww1);
 	fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-		"DoNum()");
+		"DoDaqNum()");
 	hfr1->AddFrame(fNum1,LayLT2);
 
 	//nbins2 (y-axis)
 	id = Plist.size()+1;
-	fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
+	fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0,
 		TGNumberFormat::kNEAAnyNumber,
-		lim,0,1000);
-	DoMap(fNum1->GetNumberEntry(),&hd->bins2,p_fnum,0);
-	fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel on Y-axis");
+		lim,min2,max2);
+	DoMap(fNum1->GetNumberEntry(),&hd->bins2,p_fnum,0,2<<4);
+	fNum1->GetNumberEntry()->SetToolTipText(tip22);
 	fNum1->SetWidth(ww1);
 	fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-		"DoNum()");
+		"DoDaqNum()");
 	hfr1->AddFrame(fNum1,LayLT2);
 
 	// - just to take space

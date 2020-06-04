@@ -105,7 +105,7 @@ typedef std::list<TString>::iterator l_iter;
 
 //TList listmap2;
 
-MyMainFrame *myM;
+MyMainFrame *myM=0;
 
 Coptions cpar;
 Toptions opt;
@@ -365,22 +365,38 @@ void BufToClass(const char* name, const char* varname, char* var, char* buf, int
 
 //--------------------------------
 
-void out_of_memory(void)
-{
-  std::cerr << "Out of memory. Please go out and buy some more." << std::endl;
-  exit(-1);
-}
+// void out_of_memory(void)
+// {
+//   std::cerr << "Out of memory. Please go out and buy some more." << std::endl;
+//   exit(-1);
+// }
 
 void ctrl_c_handler(int s){
   printf("Caught signal %d\n",s);
-  delete myM;
-  exit(1); 
+
+  if (crs->b_acq && crs->Fmode==1) {
+    // fStart->Emit("Clicked()");
+    myM->DoStartStop();
+    gSystem->Sleep(300);
+    return;
+  }
+
+  if (crs->b_fana) {
+    myM->DoAna();
+    gSystem->Sleep(300);
+    return;
+  }
+
+  gApplication->Terminate(0);
+  // delete myM;
+  // exit(1); 
 }
 
 void segfault_c_handler(int signal, siginfo_t *si, void *arg) {
   printf("Caught segfault %d\n",signal);
-  delete myM;
-  exit(-1);
+  gApplication->Terminate(0);
+  // delete myM;
+  // exit(-1);
   //exit(1); 
 }
 
@@ -736,7 +752,7 @@ int main(int argc, char **argv)
 
   TApplication theApp("App",&argc,argv);
   //example();
-  myM=0;
+  // myM=0;
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
 
   //gSystem->Sleep(100);
@@ -1125,7 +1141,7 @@ bool CheckMem(int t) {
 
   gSystem->GetMemInfo(&minfo);
   gSystem->GetProcInfo(&pinfo);
-  rmem=1e-3*pinfo.fMemResident/minfo.fMemTotal;
+  rmem=1e-3*pinfo.fMemResident/minfo.fMemTotal; // fraction of memory used by romana
   // cout << "CheckMem: " << pinfo.fMemResident << " " << minfo.fMemTotal
   //      << " " << rmem << " " << (1-rmem)*minfo.fMemTotal
   //      << endl;
@@ -1139,7 +1155,7 @@ bool CheckMem(int t) {
   }
   if (t==1) {
     if (minfo.fMemTotal<4000) {
-      if (rmem>0.8)
+      if (rmem>0.7)
 	return true;
     }
     else if ((1-rmem)*minfo.fMemTotal<1500)
@@ -1239,6 +1255,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fEv=NULL;
 
   //bRun = false;
+
+  Connect("CloseWindow()", "MainFrame", this, "CloseWindow()");
 
   fMenuBar = new TGMenuBar(this, 35, 50, kHorizontalFrame);
 
@@ -1616,28 +1634,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 }
 
 MainFrame::~MainFrame() {
-
-  //cout << "end: module: " << crs->module << endl;
-
-  if (crs->b_acq && crs->Fmode==1) {
-    DoStartStop();
-    gSystem->Sleep(300);
-  }
-
-  if (crs->b_fana) {
-    DoAna();
-    gSystem->Sleep(300);
-  }
-
-  delete crs;
-  delete EvtFrm;
-
-  // Clean up used widgets: frames, buttons, layouthints
-  //printf("end\n");
-  Cleanup();
-  //DoExit();
-  //delete fMain;
-  gApplication->Terminate(0);
 }
 
 /*
@@ -2333,6 +2329,46 @@ void MainFrame::UpdateStatus(int rst) {
 //   printf("test %d\n",opt.num_buf);
 // }
 
+void MainFrame::CloseWindow() {
+
+  static int cc=0;
+  // cout << "CloseWindow: " << cc << endl;
+
+  if (cc) {
+    cc=0;
+    return;
+  }
+
+  if (crs->b_acq && crs->Fmode==1) {
+    cc=1;
+    // fStart->Emit("Clicked()");
+    // cout << "dostartstop7: " << endl;
+    crs->DoStartStop();
+    gSystem->Sleep(300);
+    // cout << "dostartstop8: " << endl;
+    return;
+  }
+
+  if (crs->b_fana) {
+    cc=1;
+    DoAna();
+    gSystem->Sleep(300);
+    return;
+  }
+
+  // return;
+
+  // delete crs;
+  // delete EvtFrm;
+
+  // Clean up used widgets: frames, buttons, layouthints
+  //printf("end\n");
+  // Cleanup();
+  //DoExit();
+  delete this;
+  gApplication->Terminate(0);
+}
+
 void MainFrame::DoExit() {
   //int i;
   //double it[4];
@@ -2575,6 +2611,7 @@ void MainFrame::EventInfo(Int_t event, Int_t px, Int_t py, TObject *selected)
   */
 }
 
+/*
 void MainFrame::DoCross() {
 
   static bool bcross=false;
@@ -2594,6 +2631,7 @@ void MainFrame::DoCross() {
   }
 
 }
+*/
 
 void MainFrame::HandleMenu(Int_t menu_id)
 {
@@ -2601,7 +2639,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
   char command[128];
   int status;
 
-  if (!crs->b_stop) return;
+  if (!crs->b_stop && menu_id!=M_HELP) return;
 
   //cout << menu_id << endl;
 
@@ -3056,7 +3094,7 @@ PEditor::PEditor(const TGWindow *main, UInt_t w, UInt_t h)
   fHor->AddFrame(fSave, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 10, 0, 0));
 
   TGTextButton* fExit = new TGTextButton(fHor, "  Save && &Exit  ");
-  fExit->Connect("Clicked()", "PEditor", this, "DoExit()");
+  fExit->Connect("Clicked()", "PEditor", this, "DoPExit()");
   fHor->AddFrame(fExit, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 10, 0, 0, 0));
 
   SetTitle();
@@ -3222,7 +3260,7 @@ void PEditor::DoSavePar()
   crs->Make_prof_ch();
 }
 
-void PEditor::DoExit()
+void PEditor::DoPExit()
 {
   // Handle Save&Exit button.
 
