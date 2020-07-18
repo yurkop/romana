@@ -51,10 +51,10 @@ extern PikParDlg *pikpar;
 const char* tool_type = "Channel type:\nOther - dummy type\nCopy - copy from channel to group\nSwap - first select swap, then change parameter, then change to new type";
 
 
-const int ndaqpar=18;
-const int tlen1[ndaqpar+1]={24,26,70,24,25,24,24,24,21,36,40,36,36,24,24,36,40,77,77};
-const char* tlab1[ndaqpar+1]={"*","Ch","Type","on","Inv","AC","pls","dsp","hS","hD","Dt","Pre","Len","G","Trg","Drv","Thr","Pulse/sec","BadPulse"};
-const char* ttip1[ndaqpar+1]={
+const int ndaqpar=20;
+const int tlen1[ndaqpar]={24,26,70,24,25,24,24,24,21,36,40,36,36,24,24,36,40,77,77,77};
+const char* tlab1[ndaqpar]={"*","Ch","Type","on","Inv","AC","pls","dsp","hS","hD","Dt","Pre","Len","G","Trg","Drv","Thr","Pls/sec (sw)","Pls/sec (hw)","BadPulses"};
+const char* ttip1[ndaqpar]={
   "Select",
   "Channel number",
   tool_type,
@@ -72,8 +72,9 @@ const char* ttip1[ndaqpar+1]={
   "Trigget type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative (only for CRS-8/16)",
   "Parameter of derivative: S(i) - S(i-Drv) (0 - trigger on pulse)",
   "Trigger threshold",
-  "Pulse rate",
-  "Number of Bad pulses"
+  "Pulse rate (software)",
+  "Pulse rate (hardware)",
+  "Number of bad pulses"
 };
 
 const int n_apar=12;
@@ -2043,9 +2044,9 @@ void DaqParDlg::AddHeader() {
   //TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
   //AddFrame(hframe1,LayLT0);
 
-  TGTextEntry* tt[ndaqpar+1];
+  TGTextEntry* tt[ndaqpar];
 
-  for (int i=0;i<=ndaqpar;i++) {
+  for (int i=0;i<ndaqpar;i++) {
     // if (!strcmp(tlab1[i],"Trg") && crs->module<33) {
     //   continue;
     // }
@@ -2064,7 +2065,6 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   int kk=0;
   int all=0;
   int id;
-  int col;
 
   //static bool start=true;
 
@@ -2107,6 +2107,10 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
 
 
   if (i<=MAX_CH) {
+    AddStat_daq(fStat2[i],cframe[i],ttip1[kk]);kk++;
+    AddStat_daq(fStat3[i],cframe[i],ttip1[kk]);kk++;
+    AddStat_daq(fStatBad[i],cframe[i],ttip1[kk]);kk++;
+    /*
     fStat2[i] = new TGTextEntry(cframe[i], "");
     fStat2[i]->ChangeOptions(fStat2[i]->GetOptions()|kFixedSize|kSunkenFrame);
 
@@ -2133,6 +2137,7 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
     fStat3[i]->SetBackgroundColor(col);
     fStat3[i]->SetText(0);
     cframe[i]->AddFrame(fStat3[i],LayLT5);
+    */
   }
   /*
     kk++;
@@ -2195,11 +2200,27 @@ void DaqParDlg::AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
 }
 
+void DaqParDlg::AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
+			    const char* ttip) {
+  int col;
+
+  fStat = new TGTextEntry(cframe, "");
+  fStat->ChangeOptions(fStat->GetOptions()|kFixedSize|kSunkenFrame);
+
+  fStat->SetState(false);
+  fStat->SetToolTipText(ttip);
+
+  fStat->Resize(70,20);
+  col=gROOT->GetColor(19)->GetPixel();
+  fStat->SetBackgroundColor(col);
+  fStat->SetText(0);
+  cframe->AddFrame(fStat,LayLT5);
+
+}
+
 void DaqParDlg::UpdateStatus(int rst) {
 
-  // cout << "Updatestatus1: " << pmax << endl;
-  //static Long64_t allpulses2;
-  //static Long64_t allpulses3;
+  //cout << "Updatestatus1: " << pmax << endl;
   static Long64_t allbad;
   static double t1;
   static Long64_t npulses2o[MAX_CH];
@@ -2210,15 +2231,12 @@ void DaqParDlg::UpdateStatus(int rst) {
   static double rate_all3;
 
   if (rst) {
-    //allpulses2=0;
     allbad=0;
     t1=0;
     memset(npulses2o,0,sizeof(npulses2o));
     memset(npulses3o,0,sizeof(npulses3o));
     memset(rate2,0,sizeof(rate2));
-    //rate_all2=0;
     memset(rate3,0,sizeof(rate3));
-    //rate_all3=0;
   }
 
   TGString txt;
@@ -2240,32 +2258,27 @@ void DaqParDlg::UpdateStatus(int rst) {
       rate_all3+=rate3[i];
       allbad+=crs->npulses_bad[i];
     }
-    //rate_all2 = (crs->npulses-allpulses2)/dt;
-    //allpulses2=crs->npulses;
-    //rate_all3 = (crs->npulses-allpulses2)/dt;
-    //allpulses2=crs->npulses;
-
     t1=opt.T_acq;
   }
 
-  // cout << "Updatestatus2: " << pmax << endl;
+  //cout << "Updatestatus2: " << pmax << endl;
   for (int i=0;i<pmax;i++) {
     txt.Form("%0.0f",rate2[i]);
     fStat2[i]->SetText(txt);
     txt.Form("%0.0f",rate3[i]);
     fStat3[i]->SetText(txt);
-    //txt.Form("%d",crs->npulses_bad[i]);
-    //fStatBad[i]->SetText(txt);
+    txt.Form("%d",crs->npulses_bad[i]);
+    fStatBad[i]->SetText(txt);
   }
-  // cout << "Updatestatus2a: " << pmax << endl;
+  //cout << "Updatestatus2a: " << pmax << endl;
   txt.Form("%0.0f",rate_all2);
   fStat2[MAX_CH]->SetText(txt);
   txt.Form("%0.0f",rate_all3);
   fStat3[MAX_CH]->SetText(txt);
-  //txt.Form("%lld",allbad);
-  //fStatBad[pmax]->SetText(txt);
+  txt.Form("%lld",allbad);
+  fStatBad[MAX_CH]->SetText(txt);
 
-  // cout << "Updatestatus3: " << pmax << endl;
+  //cout << "Updatestatus3: " << pmax << endl;
 }
 
 // void DaqParDlg::Update() {

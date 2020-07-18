@@ -250,6 +250,8 @@ public:
   void AddLine_daq(int i, TGCompositeFrame* fcont1);
   void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
     const char* name, void* apar, void* apar2=0);
+  void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
+		   const char* ttip);
   void UpdateStatus(int rst=0);
 
   ClassDef(DaqParDlg, 0)
