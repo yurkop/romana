@@ -46,6 +46,7 @@
 #include <TDataMember.h>
 #include "TThread.h"
 #include "TImage.h"
+#include "TMutex.h"
 
 //#include <TGColorDialog.h>
 
@@ -55,9 +56,10 @@ const double MB = 1024*1024;
 
 MemInfo_t minfo;
 ProcInfo_t pinfo;
-double rmem;
+// double rmem;
 
 extern CRS* crs;
+extern TMutex cmut;
 
 EventFrame* EvtFrm;
 HistFrame* HiFrm;
@@ -74,6 +76,7 @@ Pixel_t fYellow;
 Pixel_t fGreen;
 Pixel_t fRed;
 Pixel_t fCyan;
+Pixel_t fMagenta;
 Pixel_t fOrng;
 Pixel_t fBlue;
 Pixel_t fRed10;
@@ -82,9 +85,11 @@ Pixel_t fCol[7];// = {fYellow,fGreen,fRed,fRed10,fCyan,fOrng,fBlue};
 
 //const int maxsamp = 16500;// константу 16500 надо будет заменить на переменную
 
-//TString parname,lastpar;
-char* parname=(char*)"romana.par";;
-char* parname2=0;
+gzFile ff;
+
+//TString parfile,lastpar;
+char* parfile=(char*)"romana.par";;
+char* parfile2=0;
 char* datfname=0;
 
 bool b_raw=false,b_dec=false,b_root=false,b_force=false;
@@ -97,10 +102,8 @@ char maintitle[200];
 struct stat statb;
 const char* msg_exists = "Output file already exists.\nPress OK to overwrite it";
 
-
-//std::list<string> listpar;
-//typedef std::list<string>::iterator l_iter;
 std::list<TString> listpar;
+//std::list<TString> listshow;
 typedef std::list<TString>::iterator l_iter;
 
 //TList listmap2;
@@ -113,23 +116,72 @@ int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
 
 //int *opt_id[MXNUM];
 
-/*
-  void *handle_dum(void* ptr)
-  {
-
-  gSystem->Sleep(1000);
-  cout << myM << endl;
-  cout << HiFrm << endl;
-  HiFrm->Emit("Upd()");
-  //HiFrm->ReDraw();
-  ////cout << "Dum: " << endl;
-
-  return NULL;
-
-  }
-*/
-
 //void printhlist(int n);
+
+using namespace std;
+
+void prnt(const char* fmt...)
+{
+  //format:
+  // d - integer
+  // s - char*
+  // f - double
+  // [0..9] - set width (only 1 digit)
+  // . - set precision (e.g 3.2 - width3.precision2)
+  // ; - endl;
+  cmut.Lock();
+
+  va_list args;
+  va_start(args, fmt);
+
+  int ww=0;
+  int pp=-1;
+
+
+  while (*fmt != '\0') {
+    if (*fmt == ' ') {
+      std::cout << " ";
+    }
+    else if (*fmt == 'd') {
+      int i = va_arg(args, int);
+      std::cout << i;
+      ww=0;pp=-1;
+    }
+    else if (*fmt == 's') {
+      char* s = va_arg(args, char*);
+      std::cout << s;
+      ww=0;pp=-1;
+    } 
+    else if (*fmt == 'f') {
+      double d = va_arg(args, double);
+      std::cout << d;
+      ww=0;pp=-1;
+    }
+    else if (isdigit(*fmt)) {
+      char c = *fmt - '0';
+      if (pp<0) { //width
+        ww=ww*10+c;
+        std::cout << std::setw(ww);
+      }
+      else { //precision
+        pp=pp*10+c;
+        std::cout << std::fixed;
+        std::cout << std::setprecision(pp);
+      }
+    }
+    else if (*fmt == '.') {
+      pp=0;
+    }
+    else if (*fmt == ';') {
+      std::cout << endl;
+    }
+    ++fmt;
+  }
+
+  std::cout << std::setprecision(-1);
+  va_end(args);
+  cmut.UnLock();
+}
 
 void debug_mess(bool cond, const char* mess, double par1, int par2) {
   if (cond) {
@@ -140,41 +192,290 @@ void debug_mess(bool cond, const char* mess, double par1, int par2) {
   }
 }
 
+void print_var(int tp, TDataMember *dm, TString vname, TString memname, int len=0, int len2=0) {
+  const char* dmname = "--";
+  const char* col=BGRN;
+  if (tp) { //найдено
+    dmname=dm->GetName();
+    if (tp==2)
+      col=BCYN;
+    prnt("ssss",col,vname.Data(),".",dmname);
+    for (int i=0;i<dm->GetArrayDim();i++) {
+      int mx=dm->GetMaxIndex(i);
+      //cout << " dm: " << dm->GetArrayDim() << " " << mx << " ";
+      prnt("sds","[",mx,"]");
+    }
+    if (len!=len2) {
+      len2/=dm->GetUnitSize();
+      len/=dm->GetUnitSize();
+      prnt("ssd d dss",BMAG,"[",len2,len,dm->GetMaxIndex(0),"]",col);      
+    }
+    int tt=dm->GetDataType()->GetType();
+    const char* nn = dm->GetDataType()->GetTypeName();
+    prnt(" d ss;",tt,nn,RST);
+  }
+  else {
+    col=BRED;
+    prnt("ss ssss;",col,"#",vname.Data(),".",memname.Data(),RST);
+  }	
+}
+
+void evalpar() {
+  //cout << "listpar: " << listpar.size() << endl;
+  for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
+    //try {
+    TString par, // parameter name
+      p0, //parameter with []
+      p2, //index
+      sdata; //value
+    int index;
+    Ssiz_t ll,len;
+    char sbuf[1024];
+    int buflen=0;
+    char* var = (char*) &opt;
+
+    ll = it->First("=");
+    p0 = (*it)(0,ll);
+    sdata=(*it)(ll+1,it->Length());
+
+    ll = p0.First("[");
+    len = p0.First("]");
+
+    if (ll==kNPOS || len==kNPOS) {
+      par=p0;
+      index=-1;
+    }
+    else {
+      len=len-ll-1;
+      par=p0(0,ll);
+      p2=p0(ll+1,len);
+      index=p2.Atoi();
+    }
+
+    //cout << "par: " << par << " " << index << endl;
+
+    TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
+    TDataMember* dm = (TDataMember*) lst->FindObject(par.Data());
+    if (dm) {
+      TString tp = dm->GetTypeName();
+      int dim=dm->GetArrayDim();
+      int maxindex = dm->GetMaxIndex(0);
+      int unit = dm->GetUnitSize();
+      Long_t off = dm->GetOffset();
+      if (tp.Contains("int",TString::kIgnoreCase)) {
+	int d=sdata.Atoi();
+	buflen=sizeof(int);
+	memcpy(sbuf,&d,buflen);
+      }
+      else if (tp.Contains("bool",TString::kIgnoreCase)) {
+	bool d=sdata.Atoi();
+	buflen=sizeof(bool);
+	memcpy(sbuf,&d,buflen);
+      }
+      else if (tp.Contains("float",TString::kIgnoreCase)) {
+	float d=sdata.Atof();
+	buflen=sizeof(float);
+	memcpy(sbuf,&d,buflen);
+      }
+      else if (tp.Contains("char",TString::kIgnoreCase)) {
+	buflen=sdata.Length();
+	memset(var+off,0,maxindex);
+	memcpy(var+off,sdata.Data(),TMath::Min(buflen,maxindex));
+	continue;
+      }
+      else {
+	cout << "Error: unknown type of parameter: "
+	     << par << " " << tp << endl;
+	continue;
+      }
+
+      if (dim==0) { //only one parameter
+	memcpy(var+off,sbuf,TMath::Min(buflen,unit));
+	cout << "par: " << par << "=" << sdata << endl;
+      }
+      else if (dim==1) { //array [text was copied in the if("char") ]
+	if (index<0) {
+	  for (int j=0;j<maxindex;j++) {
+	    memcpy(var+off+j*unit,sbuf,TMath::Min(buflen,unit));
+	  }
+	  cout << "par: " << par << "[]=" << sdata << endl;
+	}
+	else if (index<maxindex) {
+	  memcpy(var+off+index*unit,sbuf,TMath::Min(buflen,unit));
+	  cout << "par: " << par << "[" <<index<<"]=" << sdata << endl;
+	}
+	else {
+	  cout << "Error: index is out of range : "
+	       << par << " " << index << " " << maxindex << endl;
+	  continue;
+	}
+      }
+      else { //2-dim of more - ignore
+	cout << "Error: parameter with dimension >1 : "
+	     << par << " " << dim << endl;
+	continue;
+      }
+    } //if dm
+    else {
+      cout << "Parameter " << par.Data() << " not found" << endl;
+    }
+  } //for l_iter
+}
+
+/*
+void showpar() {
+  //cout << "listshow: " << listshow.size() << endl;
+  for (l_iter it=listshow.begin(); it!=listshow.end(); ++it) {
+    //try {
+    TString par, // parameter name
+      p0, //parameter with []
+      p2, //index
+      sdata; //value
+    int index;
+    Ssiz_t ll,len;
+    char sbuf[1024];
+    int buflen=0;
+    char* var = (char*) &opt;
+
+    it->Remove(TString::kTrailing,':');
+
+    cout << "it: " << *it << endl;
+    
+    ll = it->First("=");
+    p0 = (*it)(0,ll);
+    sdata=(*it)(ll+1,it->Length());
+
+    ll = p0.First("[");
+    len = p0.First("]");
+
+    if (ll==kNPOS || len==kNPOS) {
+      par=p0;
+      index=-1;
+    }
+    else {
+      len=len-ll-1;
+      par=p0(0,ll);
+      p2=p0(ll+1,len);
+      index=p2.Atoi();
+    }
+
+    //cout << "par: " << par << " " << index << endl;
+
+    TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
+    TDataMember* dm = (TDataMember*) lst->FindObject(par.Data());
+    if (dm) {
+      TString tp = dm->GetTypeName();
+      int dim=dm->GetArrayDim();
+      int maxindex = dm->GetMaxIndex(0);
+      int unit = dm->GetUnitSize();
+      Long_t off = dm->GetOffset();
+      if (tp.Contains("int",TString::kIgnoreCase)) {
+	int d=sdata.Atoi();
+	buflen=sizeof(int);
+	memcpy(sbuf,&d,buflen);
+      }
+      else if (tp.Contains("bool",TString::kIgnoreCase)) {
+	bool d=sdata.Atoi();
+	buflen=sizeof(bool);
+	memcpy(sbuf,&d,buflen);
+      }
+      else if (tp.Contains("float",TString::kIgnoreCase)) {
+	float d=sdata.Atof();
+	buflen=sizeof(float);
+	memcpy(sbuf,&d,buflen);
+      }
+      else if (tp.Contains("char",TString::kIgnoreCase)) {
+	buflen=sdata.Length();
+	memset(var+off,0,maxindex);
+	memcpy(var+off,sdata.Data(),TMath::Min(buflen,maxindex));
+	continue;
+      }
+      else {
+	cout << "Error: unknown type of parameter: "
+	     << par << " " << tp << endl;
+	continue;
+      }
+
+      if (dim==0) { //only one parameter
+	memcpy(var+off,sbuf,TMath::Min(buflen,unit));
+	cout << "par: " << par << "=" << sdata << endl;
+      }
+      else if (dim==1) { //array [text was copied in the if("char") ]
+	if (index<0) {
+	  for (int j=0;j<maxindex;j++) {
+	    memcpy(var+off+j*unit,sbuf,TMath::Min(buflen,unit));
+	  }
+	  cout << "par: " << par << "[]=" << sdata << endl;
+	}
+	else if (index<maxindex) {
+	  memcpy(var+off+index*unit,sbuf,TMath::Min(buflen,unit));
+	  cout << "par: " << par << "[" <<index<<"]=" << sdata << endl;
+	}
+	else {
+	  cout << "Error: index is out of range : "
+	       << par << " " << index << " " << maxindex << endl;
+	  continue;
+	}
+      }
+      else { //2-dim of more - ignore
+	cout << "Error: parameter with dimension >1 : "
+	     << par << " " << dim << endl;
+	continue;
+      }
+    } //if dm
+    else {
+      cout << "Parameter " << par.Data() << " not found" << endl;
+    }
+		
+    //lst->ls();
+    //}
+    // catch (const std::invalid_argument& ia) {
+    //   std::cerr << "Invalid argument: " << ia.what() << '\n';
+    // }
+
+  }
+}
+*/
+
 //-------------------------------------
-UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf) {
+// void * Findstr(const char* name, const char* varname, char* var, char* buf) {
+//   }
+
+//-------------------------------------
+Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer
   //buffer should exist and have sufficient size to allocate all data
 
   //cout << "ClassToBuf: " << name << endl;
-  TList* lst = TClass::GetClass(name)->GetListOfDataMembers();
+  TList* lst = TClass::GetClass(clname)->GetListOfDataMembers();
   if (!lst) {
-    cout <<"Class " << name << " doesn't exist" << endl;
+    cout <<"Class " << clname << " doesn't exist" << endl;
     return 0;
   }
 
   Int_t sz=0;
   Short_t len=0;
 
-  char cname[100];
-  strcpy(cname,"class");
+  char vname[100];
+  strcpy(vname,"class");
 
-  len = strlen(cname)+1;
+  len = strlen(vname)+1;
   memcpy(buf+sz,&len,sizeof(len));
   sz+=sizeof(len);
-  memcpy(buf+sz,cname,len);
+  memcpy(buf+sz,vname,len);
   sz+=len;
 
-  len = strlen(name)+1;
+  len = strlen(clname)+1;
   memcpy(buf+sz,&len,sizeof(len));
   sz+=sizeof(len);
-  memcpy(buf+sz,name,len);
+  memcpy(buf+sz,clname,len);
   sz+=len;
 
-  strcpy(cname,"var");
-  len = strlen(cname)+1;
+  strcpy(vname,"var");
+  len = strlen(vname)+1;
   memcpy(buf+sz,&len,sizeof(len));
   sz+=sizeof(len);
-  memcpy(buf+sz,cname,len);
+  memcpy(buf+sz,vname,len);
   sz+=len;
 
   len = strlen(varname)+1;
@@ -184,16 +485,11 @@ UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf)
   sz+=len;
 
   if (debug&0x2)
-    cout << "\033[1;31mSave class var: \033[0m" << name << " " << varname << endl;
+    cout << "\033[1;31mSave class var: \033[0m" << clname << " " << varname << endl;
 
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
-    // if (debug&0x2) {
-    //   // if (!dm->GetDataType()) {
-    //   cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetClass()->GetName() << endl;
-    //   // }
-    //}
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -201,6 +497,7 @@ UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf)
       memcpy(buf+sz,dm->GetName(),len);
       sz+=len;
       len=dm->GetUnitSize();
+
       for (int i=0;i<dm->GetArrayDim();i++) {
 	len*=dm->GetMaxIndex(i);
       }
@@ -209,160 +506,279 @@ UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf)
       memcpy(buf+sz,var+dm->GetOffset(),len);
       sz+=len;
       if (debug&0x2)
-	cout << "member: " << dm->GetName() << " " << len << " " << sz << endl;
+	cout << "member: " << dm->GetName() << " " << len << " " << sz << " " << dm->GetDataType()->GetType() << " " << dm->GetDataType()->GetTypeName() << endl;
     }
   }
 
-  // if (debug&0x2)
-  //   cout << "size: " << sz << endl;
   return sz;
 
 }
 
-//------------------------------------
+int BufToClass(const char* clname, char* varname, char* var, char* &buf, char* buf2) {
+  // Ищет класс с именем clname в буфере buf
+  // прекращает поиск либо в конце буфера (buf2),
+  // либо если находит слово "class"
+  // Записывает найденное имя переменной класса в varname
+  // Копирует все найденные в буфере и в то же время существующие
+  // в декларации класса члены в переменную var
+  // ищет и копирует также старые названия членов в комментариях []
+  // (см. toptions.h)
+  //
+  // varname должна существовать и иметь размер не менее 20
+  // var должна существовать как тип clname
+  //
+  // Возвращает 1 - если класс найден и копирование успешно
+  //            0 - если класс не найден или произошла ошибка
+  //            2 - если найдена длина 0 (=конец буфера)
+  //
+  // При выходе из функции buf увеличивается и
+  // указывает на первый необработанный байт
+  // Т.е. та часть буфера, в которой уже происходил поиск,
+  // при повторном вызове не учитывается
 
-void BufToClass(const char* name, const char* varname, char* var, char* buf, int size) {
-  //copies all data members from a buffer, size - size of the buffer
-  //buffer should exist. Only data members with matching names are copied
-
-  //if (debug&0x2)
-  //cout <<"BufToClass:: " << size << endl;
-
-  TList* lst = TClass::GetClass(name)->GetListOfDataMembers();
+  TList* lst = TClass::GetClass(clname)->GetListOfDataMembers();
+  //список членов класса (clname), который хотим считать
   if (!lst) {
-    cout <<"Class " << name << " doesn't exist" << endl;
-    return;
+    cout << "Class " << clname << " doesn't exist" << endl;
+    return 0;
   }
 
-  // TList* lst;
-  // TIter nextd(lst);
-  // TDataMember *dm;
-  // while ((dm = (TDataMember *) nextd())) {
-  // }
-
-  //= (TList*)lst1->Clone("lst2");
-  //cout << "lst: " << lst->GetName() << endl;
-  //exit(1);
-
-  Int_t sz=0;
+  //Int_t sz=0;
   UShort_t len=0;
   UShort_t len2=0;
   TDataMember *dm;
-  char memname[100];
-  char clname[100]; //class name
-  char vname[100]; //class var name
+  //TString memname;
   const UShort_t mx=50000;
   char data[mx];
 
-  if (TString(name).EqualTo("Toptions",TString::kIgnoreCase)) {
-    strcpy(vname,"opt");
-  }
-  else if (TString(name).EqualTo("Coptions",TString::kIgnoreCase)) {
-    strcpy(vname,"cpar");
-  }
-  else {
-    strcpy(vname,"");
+  char *cl=buf;
+  
+  cl = (char*) memmem(cl,buf2-cl,"class",strlen("class"));
+  if (cl)
+    cl = (char*) memmem(cl,buf2-cl,clname,strlen(clname));
+  if (cl)
+    cl = (char*) memmem(cl,buf2-cl,"var",strlen("var"));
+
+  if (!cl) {
+    //cout << "ReadPar: class or var not found: " << clname << " " << buf2-buf << endl;
+    return 0;
   }
 
-  while (sz<size) {
-    memcpy(&len,buf+sz,sizeof(len));
+  cl+=strlen(cl)+3; // cl указывает на имя переменной varname
+  if (strlen(cl)>18) {
+    cout << "ReadPar: varname is too long" << endl;
+    return 0;
+  }
+  strncpy(varname,cl,19);
+  
+  //cout << "varname: " << varname << " " << strlen(varname) << endl;  
+  //cout << "cl: " << cl-buf << " " << cl << endl;
+
+  
+  //cout << "newbuf: " << (int) buf[0] << " " << (int) buf[1] << " " << (int) buf[2] << " " << (int) buf[3] << " " << buf+2 << endl;
+		     
+  buf = cl+strlen(cl)+1; // buf указывает на длину первого члена класса
+
+  while (buf<buf2) {
+    //cout << "bb: " << buf2-buf << endl;
+    // memname
+    memcpy(&len,buf,sizeof(len)); //считываем длину записи имени в буфере
+				  
     if (len==0) {
+      //cout << "br0: " << buf2-buf << endl;
+      return 2;
+    }
+    else if (len>=mx || buf+len>buf2) {
+      cout << "br1: " << buf2-buf << endl;
+      return 0;
+    }
+    buf+=sizeof(len);
+    //char* memname = buf; //memname указывает на имя члена класса
+    TString memname = TString(buf,len-1); //считываем имя в буфере
+    // или "class"
+    if (memname.EqualTo("class")) {
       break;
     }
-    sz+=sizeof(len);
-    if (len>=mx || sz>size) {
-      cout << "br1: " << endl;
-      break;
-    }
-    memcpy(memname,buf+sz,len);
-    sz+=len;
-    if (sz>size) {
-      cout << "br2: " << endl;
-      break;
-    }
-    memcpy(&len,buf+sz,sizeof(len));
-    sz+=sizeof(len);
-    if (len==0 || len>=mx || sz>size) {
-      cout << "br3: " << endl;
-      break;
-    }
-    memcpy(data,buf+sz,len);
-    sz+=len;
-    if (sz>size) {
-      cout << "br4: " << sz << " " << size << endl;
-      break;
-    }
+    buf+=len;
 
-    if (strcmp(memname,"class")==0) {
-      strcpy(clname,data);
-      if (debug&0x2)
-	if (strcmp(clname,name)==0) { //the same class
-	  cout << "\033[1;31mRead class: \033[0m" << clname << " " << name << endl;
-	}
-      continue;
+    // data
+    memcpy(&len,buf,sizeof(len)); //считываем длину данных в буфере
+    if (len==0 || len>=mx || buf+len>buf2) {
+      cout << "br2: " << buf2-buf << endl;
+      return 0;
     }
+    buf+=sizeof(len);
+    memcpy(data,buf,len); //считываем данные в буфере
+    buf+=len;
+    
+    // ищем соответствующий член класса
+    int tp=0;
+    // тип находки:
+    // tp==0 - не найдено
+    // tp==1 - найдено
+    // tp==2 - найдено старое название //[] (в комментариях)
+    TIter nextd(lst);
+    while ((dm = (TDataMember *) nextd())) {
+      //cout << "s2: " << dm->GetName() << " " << dm->GetTitle() << endl;
+      if (memname.EqualTo(dm->GetName())) {
+	tp=1;
+	break;
+      }
+      else {
+	// ищем старое название члена класа (в комментариях []),
+	// для обратной совместимости
+	TString s1 = dm->GetTitle();
+	int a,b;
 
-    if (strcmp(memname,"var")==0) {
-      strcpy(vname,data);
-      if (debug&0x2)
-	if (strcmp(vname,varname)==0) { //the same class
-	  cout << "\033[1;32mRead var: \033[0m" << vname << " " << varname << endl;
-	}
-      continue;
-    }
-
-    if (!strcmp(clname,name) && !strcmp(vname,varname)) { //the same class & var
-      TIter nextd(lst);
-      while ((dm = (TDataMember *) nextd())) {
-	if (!strcmp(dm->GetName(),memname)) {
-	  break;
-	}
-	else {
-	  const char* s1 = strchr(dm->GetTitle(),'[');
-	  const char* s2 = strchr(dm->GetTitle(),']');
-	  if (s1 && s2) {
-	    int len=s2-s1-1;
-	    char str[999]="";
-	    strncpy(str,s1+1,len);
-	    // cout << "dm: " << dm << " " << str << " " << len << " " << dm->GetName() << " " << dm->GetTitle() << endl;
-	    // exit(-1);
-	    if (!strcmp(str,memname)) {
-	      cout << "dm2: " << dm << " " << str << " " << len << " " << dm->GetName() << " " << dm->GetTitle() << endl;
-	      //exit(-1);
+	// cout << "s2: " << s1 << endl;
+	do {
+	  a=s1.First('[');
+	  b=s1.First(']');
+	  // cout << "s3: " << s1 << " " << a << " " << b << endl;
+	  if (a>=0 && b>=0) {
+	    //int len=b-a-1;
+	    //cout << "[]: " << s1(a+1,b-a-1) << endl;
+	    if (memname.EqualTo(s1(a+1,b-a-1))) {
+	      tp=2;
 	      break;
 	    }
 	  }
-	}
-	//cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
+	  s1 = s1(b+1,999);
+	} while (b>=0);
+
+	if (tp) break;
+      } //else
+    } //while dm
+
+    if (dm) { //найдено
+      len2=dm->GetUnitSize();
+      for (int i=0;i<dm->GetArrayDim();i++) {
+	len2*=dm->GetMaxIndex(i);
       }
-      //cout << "dm2: " << dm << endl;
-      // if (dm) {
-      //  cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
-      // }
-      //dm = (TDataMember*) lst->FindObject(memname);
-      if (dm) {
-	len2=dm->GetUnitSize();
-	for (int i=0;i<dm->GetArrayDim();i++) {
-	  len2*=dm->GetMaxIndex(i);
-	}
-	if (debug&0x4)
-	  cout << "read: " << dm->GetName() << " " << len << " " << sz << endl;
-	memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
+      if (len2==len) {
+	memcpy(var+dm->GetOffset(),data,len);
       }
       else {
-	if (debug&0x2)
-	  cout << "class member not found: " << dm << " " << memname << " " 
-	       << clname << " " << name << endl;
+	if (memname.EqualTo("ch_name")) {
+	  if (strcmp(opt.gitver,"v0.73")<0) { //gitver is earlier than 0.73
+	    int z1 = 6;
+	    int z2 = len2/MAX_TP;
+	    // cout << "zzzz: " << memname << " " << len << " " << len2
+	    // 	 << " " << MAX_CHTP << " gitver: " << opt.gitver
+	    // 	 << " " << strcmp(opt.gitver,"v0.73")
+	    // 	 << " " << z1 << " " << z2 << endl;
+	    for (int i=0;i<6;i++) {
+	      // cout << "a: " << i << " " << var+dm->GetOffset()+z2*i << endl;
+	      memcpy(var+dm->GetOffset()+z2*i,data+z1*i,z1);
+	      // cout << "b: " << i << " " << data+z1*i << " " << opt.ch_name[i] << endl;
+	    }
+	  }
+	} //ch_name
+	else {
+	  // int ll = len2/dm->GetUnitSize();
+	  // cout << "zzzz: " << memname << " " << len << " " << len2 << " " << ll
+	  //      << " " << MAX_CHTP << " gitver: " << opt.gitver << endl;
+	  memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
+	}
+      }
+      if (debug&0x4) {
+	print_var(tp,dm,varname,memname,len,len2);
+      }
+    }
+    else {
+      if (debug&0x4) {
+	print_var(tp,dm,varname,memname);
       }
     }
 
+  } //while sz<size
+  return 1;
+}
+//--------------------------------
+
+void SaveClassTxt(ofstream &fout, const char* clname,
+		  const char* varname, char* var) {
+
+  TDataMember *dm;
+  TList* lst = TClass::GetClass(clname)->GetListOfDataMembers();
+  //список членов класса (clname), который хотим считать
+  if (!lst) {
+    cout << "Class " << clname << " doesn't exist" << endl;
+    return;
   }
 
-  //if (debug&0x2)
-  //cout << "len: " << len << " " << sz << endl;
-	
+  TIter nextd(lst);
+  while ((dm = (TDataMember *) nextd())) {
+
+    char* cc = var+dm->GetOffset();
+    Int_t* ivar = (Int_t*) cc;
+    Float_t* fvar = (Float_t*) cc;
+    int usz = dm->GetUnitSize();
+    int adim = dm->GetArrayDim();
+    int len=1;
+    
+    int tp=0;
+    if (dm->GetDataType()) {
+      tp = dm->GetDataType()->GetType();
+
+      if (tp==1 && adim>0) { //char
+	--adim;
+	usz=dm->GetMaxIndex(adim);
+      }
+      fout << varname << "." << dm->GetName();
+      for (int i=0;i<adim;i++) {
+	fout << '[' << dm->GetMaxIndex(i) << ']';
+	len*=dm->GetMaxIndex(i);
+      }
+      if (!strcmp(dm->GetName(),"F_start")) {
+	char txt[100];
+	time_t tt = (opt.F_start+788907600000)*0.001;
+	struct tm *ptm = localtime(&tt);
+	//struct tm *ptm = gmtime(&tt);
+	strftime(txt,sizeof(txt),"%F %T",ptm);
+	fout << " " << txt << endl;
+	continue;
+      }
+      //cout << " " << len << " " << adim << " " << usz << endl;
+      for (int i=0;i<len;i++) {
+	switch (tp) {
+	case 1: { //char*
+	  fout << " " << cc+i*usz;
+	  break; }
+	case 3: { //int
+	  fout << " " << ivar[i];
+	  break; }
+	case 5: { //float
+	  fout << " " << fvar[i];
+	  break; }
+	case 18: { //bool
+	  fout << " " << (int)cc[i];
+	  break; }
+	default: {
+	  fout << "# unknown type of class member" << endl; }
+	}
+      }
+      fout << endl;
+      // cout << "var: " << clname << " " << dm->GetName()
+      // 	   << " " << dm->GetTypeName() << " " << tp
+      // 	   << " " << usz << " " << adim << endl;
+    }
+
+  }
 }
 
+void SaveParTxt(string fname) {
+  // string name,ext,txtname;
+  // size_t found = fname.find_last_of(".");
+  // name = fname.substr(0,found);
+  // if (found!=string::npos) {
+  //   ext = fname.substr(found);
+  // }
+  string txtname = fname+".txt";
+  //cout <<"Txt: " << fname << " " << name << " " << ext << " " << txtname << endl;
+  ofstream fout(txtname);
+  SaveClassTxt(fout,"Toptions","opt",(char*) &opt);
+} //SaveParTxt
 //--------------------------------
 
 // void out_of_memory(void)
@@ -404,7 +820,7 @@ int main(int argc, char **argv)
 {
 
   //common_init();
-  //printf("Version: %s\n", VERSION);
+  //printf("Version: %s\n", GITVERSION);
   //exit(1);
   string s_name, dir, name, ext;
 
@@ -453,38 +869,36 @@ int main(int argc, char **argv)
   strcat(startdir,"\\");
 #endif
 
-  //cout << "startdir: " << startdir << endl;
+  const char* help =
+    "----------------------------------------------\n"
+    "Usage: romana [filename] [options] (or romana [options] [filename])\n"
+    "filename: read data and parameters from filename\n"
+    "options: \n"
+    "-h: print usage and exit\n"
+    "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
+    "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
+    "-b: analyze file in batch mode (without gui) and exit\n"
+    "-s: suppress batch screen output\n"
+    "-w (only in batch mode): create processed .raw file in subdirectory Raw\n"
+    "-d (only in batch mode): create decoded .dec file in subdirectory Dec\n"
+    "-r (only in batch mode): create .root file in subdirectory Root\n"
+    "-f (only in batch mode): force overwriting .dec and/or .root files\n"
+    " Parameters <Filename>, <Write raw/decoded/root data> are ignored in batch mode\n"
+    "[par=val] - set parameter par to val (see toptions.h for parameter names)\n"
+    "   examples: Tstop=10 (set time limit to 10 sec)\n"
+    "             Thr[5]=20 (set threshold for ch5 to 20)\n"
+    "             Thr=20 (set threshold for all channels to 20)\n"
+    "   works only with Toptions class; doesn't work with 2d/3d parameters\n"
+    //"[par:] - print value(s) of the parameter par\n"
+    "----------------------------------------------";
 
-  cout << "----------------------------------------------" << endl;
-  cout << "Usage: romana [-h] [filename] [-p parname] [-b] [-w] [-d] [-r] [-f] [-s]" << endl;
-  cout << "-h: print usage and exit" << endl;
-  cout << "filename: read data and parameters from filename" << endl;
-  cout << "-p parname: read parameters from parname, parameters from filename are ignored" << endl;
-  cout << "-b: analyze file in batch mode (without gui) and exit" << endl;
-  cout << "-s: suppress batch screen output" << endl;
-  cout << "-w (only in batch mode): create processed .raw file in subdirectory Raw" << endl;
-  cout << "-d (only in batch mode): create decoded .dec file in subdirectory Dec" << endl;
-  cout << "-r (only in batch mode): create .root file in subdirectory Root" << endl;
-  cout << "-f (only in batch mode): force overwriting .dec and/or .root files" << endl;
-  cout << "Options <Filename>, <Write raw/decoded/root data> are ignored in batch mode" << endl; 
-  cout << "----------------------------------------------" << endl;
+  cout << help << endl;
 
   strcpy(pr_name,argv[0]);
   strcpy(maintitle,pr_name);
 
-  prtime("Time zero",-1); //set time to zero
-
-  //parname = (char*)"romana.par";
-  gzFile ff = gzopen(parname,"rb");
-  if (!ff) {
-    cout << "Can't open " << parname << " file. Using default parameters." << endl;
-  }
-  else {
-    crs->ReadParGz(ff,parname,0,1,1);
-    gzclose(ff);
-  }
-
   listpar.clear();
+  //listshow.clear();
   //process command line parameters
   if (argc > 1) {
     for (int i=1;i<argc;i++) {
@@ -520,9 +934,28 @@ int main(int argc, char **argv)
 	case 'p':
 	  ++i;
 	  if (i<argc) {
-	    parname2 = argv[i];
+	    parfile2 = argv[i];
 	  }
-	  //cout << "parname2: " << parname2 << endl;
+	  //cout << "parfile2: " << parfile2 << endl;
+	  continue;
+	case 't':
+	  ++i;
+	  if (i<argc) {
+	    parfile2 = argv[i];
+	  }
+	  //cout << "parfile2: " << parfile2 << endl;
+	  if (parfile2) {
+	    ff = gzopen(parfile2,"rb");
+	    if (!ff) {
+	      cout << "Can't open par file: " << parfile2 << endl;
+	    }
+	    else {
+	      crs->ReadParGz(ff,parfile2,0,1,1);
+	      gzclose(ff);
+	      SaveParTxt(string(parfile2));
+	    }
+	  }
+	  exit(0);
 	  continue;
 	default:
 	  continue;
@@ -532,6 +965,9 @@ int main(int argc, char **argv)
       else if (sarg.First("=")>=0) {
 	listpar.push_back(sarg);
       }
+      // else if (sarg.First(":")>=0) {
+      // 	listshow.push_back(sarg);
+      // }
       else {
 	datfname = argv[i];
       }
@@ -541,7 +977,7 @@ int main(int argc, char **argv)
 	char pp = argv[i][1];
 	}
 	else if (cc=='+') { //read file of parameters
-	parname2 = argv[argnn]+1;
+	parfile2 = argv[argnn]+1;
 	}
 	else { //read file
 	datfname = argv[argnn];
@@ -551,140 +987,36 @@ int main(int argc, char **argv)
     } //for i
   }
 
-  //if (parname2) cout << "parname2: " << parname2 << endl;
+  //if (parfile2) cout << "parfile2: " << parfile2 << endl;
   //if (datfname) cout << "datfname: " << datfname << endl;
   //exit(1);
 
+  //prtime("Time zero",-1); //set time to zero
+
+  //parfile = (char*)"romana.par";
+
   int rdpar=1;
-  if (parname2) {
-    gzFile ff = gzopen(parname2,"rb");
+  if (parfile2) { //read -p par file
+    ff = gzopen(parfile2,"rb");
     if (!ff) {
-      cout << "Can't open par file: " << parname2 << endl;
+      cout << "Can't open par file: " << parfile2 << endl;
     }
     else {
-      crs->ReadParGz(ff,parname2,0,1,1);
+      crs->ReadParGz(ff,parfile2,0,1,1);
       gzclose(ff);
-      rdpar=0; // if parname2 is OK -> don't read par from file
+      rdpar=0; // if parfile2 is OK -> don't read par from file
     }
   }
-
-  //cout << "listpar: " << endl;
-  for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
-    //try {
-    TString par, // parameter name
-      p0, //parameter with []
-      p2, //index
-      sdata; //value
-    int index;
-    Ssiz_t ll,len;
-    char sbuf[1024];
-    int buflen=0;
-    char* var = (char*) &opt;
-
-    ll = it->First("=");
-    //p0 = it->substr(0,ll);
-    p0 = (*it)(0,ll);
-    //sdata=it->substr(ll+1);
-    sdata=(*it)(ll+1,it->Length());
-    //cout << "p0: " << p0 << " " << sdata << endl;
-
-    ll = p0.First("[");
-    len = p0.First("]");
-    //cout << "p0: " << " " << ll << " " << len << endl;
-    if (ll==kNPOS || len==kNPOS) {
-      par=p0;
-      index=-1;
+  else { //read default romana.par file
+    ff = gzopen(parfile,"rb");
+    if (!ff) {
+      cout << "Can't open " << parfile << " file. Using default parameters." << endl;
     }
     else {
-      len=len-ll-1;
-      //par=p0.substr(0,ll);
-      par=p0(0,ll);
-      //p2=p0.substr(ll+1,len);
-      p2=p0(ll+1,len);
-      index=p2.Atoi();
+      crs->ReadParGz(ff,parfile,0,1,1);
+      gzclose(ff);
     }
-
-    //strcpy(opt.Filename,"qwerty");
-    //cout << "par: " << *it << " " << par << " " << p0 << " " << index << " " << sdata << endl;
-
-    TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
-    TDataMember* dm = (TDataMember*) lst->FindObject(par.Data());
-    if (dm) {
-      //cout << "dm: " << dm << " " << dm->GetName() << " " << dm->GetTitle() << endl;
-      //TDataType* tm = dm->GetDataType();
-      TString tp = dm->GetTypeName();
-      //cout << "tp: " << tp << " " <<dm->GetArrayDim() << " " << dm->GetMaxIndex(0) << endl;
-      int dim=dm->GetArrayDim();
-      int maxindex = dm->GetMaxIndex(0);
-      int unit = dm->GetUnitSize();
-      Long_t off = dm->GetOffset();
-      //cout << "off: " << var+off << " " << &opt.Filename << endl;
-      if (tp.Contains("int",TString::kIgnoreCase)) {
-	int d=sdata.Atoi();
-	buflen=sizeof(int);
-	memcpy(sbuf,&d,buflen);
-      }
-      else if (tp.Contains("bool",TString::kIgnoreCase)) {
-	bool d=sdata.Atoi();
-	buflen=sizeof(bool);
-	memcpy(sbuf,&d,buflen);
-      }
-      else if (tp.Contains("float",TString::kIgnoreCase)) {
-	float d=sdata.Atof();
-	buflen=sizeof(float);
-	memcpy(sbuf,&d,buflen);
-      }
-      else if (tp.Contains("char",TString::kIgnoreCase)) {
-	buflen=sdata.Length();
-	memset(var+off,0,maxindex);
-	memcpy(var+off,sdata.Data(),TMath::Min(buflen,maxindex));
-	//cout << "char: " << sdata.Data() << " " << buflen << " " << maxindex << endl;
-	continue;
-      }
-      else {
-	cout << "Error: unknown type of parameter: "
-	     << par << " " << tp << endl;
-	continue;
-      }
-
-      if (dim==0) { //only one parameter
-	memcpy(var+off,sbuf,TMath::Min(buflen,unit));
-      }
-      else if (dim==1) { //array [text was copied in the if("char") ]
-	if (index<0) {
-	  for (int j=0;j<maxindex;j++) {
-	    memcpy(var+off+j*unit,sbuf,TMath::Min(buflen,unit));
-	  }
-	}
-	else if (index<maxindex) {
-	  memcpy(var+off+index*unit,sbuf,TMath::Min(buflen,unit));
-	}
-	else {
-	  cout << "Error: index is out of range : "
-	       << par << " " << index << " " << maxindex << endl;
-	  continue;
-	}
-      }
-      else { //2-dim of more - ignore
-	cout << "Error: parameter with dimension >1 : "
-	     << par << " " << dim << endl;
-	continue;
-      }
-    }
-		
-    //lst->ls();
-    //}
-    // catch (const std::invalid_argument& ia) {
-    //   std::cerr << "Invalid argument: " << ia.what() << '\n';
-    // }
-
   }
-
-  //cout << "sS: " << opt.sS[1] << " " << opt.Filename << endl;
-  //exit(-1);
-  //cout << "class: " << TClass::GetClass("hdef")->GetNdata() << endl;
-  //cout << "tof_max: " << opt.h_tof.max << endl;
-  //opt.h_tof.max=100;
 
   if (datfname) {
     crs->DoFopen(datfname,rdpar); //read file and parameters from it
@@ -692,6 +1024,12 @@ int main(int argc, char **argv)
   else {
     datfname=(char*)"";
   }
+
+  //change individual parameters if listpar is not empty
+  evalpar();
+
+  //show individual parameters if listshow is not empty
+  //showpar();
 
   //cout << "strlen: " << strlen(datfname) << endl;
   //cout << "gStyle1: " << gStyle << endl;
@@ -712,7 +1050,13 @@ int main(int argc, char **argv)
     }
 
     hcl->Make_hist();
-    CheckMem(0);
+    if (CheckMem(1)>500) {
+      cout << "Not enough memory. Reduce the size of histograms. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
+      crs->DoExit();
+      exit(-1);
+      // gApplication->Terminate(0);
+    }
+    // CheckMem(50);
 
     crs->b_fana=true;
     crs->b_stop=false;
@@ -1134,35 +1478,51 @@ bool TestFile() {
 }
 
 //---------------------------------
-bool CheckMem(int t) {
-  //return true if memory is too low
-  //t=0 (default) - check 50%
-  //t=1 - check 70%
+int CheckMem(bool pr) {
+  //returns fraction of memory (in ppm) used by the program
+  /*
+  //returns true if memory is too low
+  //t=50 (default) - check 50%
+  //otherwise (t=70) - check 70%
+  */
 
   gSystem->GetMemInfo(&minfo);
   gSystem->GetProcInfo(&pinfo);
-  rmem=1e-3*pinfo.fMemResident/minfo.fMemTotal; // fraction of memory used by romana
-  // cout << "CheckMem: " << pinfo.fMemResident << " " << minfo.fMemTotal
-  //      << " " << rmem << " " << (1-rmem)*minfo.fMemTotal
-  //      << endl;
-  if (t==0) {
+  int rmem=pinfo.fMemResident/minfo.fMemTotal; // fraction of memory used by romana in %
+  if (pr) {
+    cout << "CheckMem: " << pinfo.fMemResident << " " << minfo.fMemTotal
+	 << " " << rmem << " " << (1-rmem)*minfo.fMemTotal
+	 << endl;
+  }
+  return rmem;
+  /*
+    if (rmem>t) {
+    return true;
+    }
+    else {
+    return false;
+    }
+  */
+  /*
+    if (t==0) {
     if (minfo.fMemTotal<4000) {
-      if (rmem>0.5)
-	return true;
+    if (rmem>0.5)
+    return true;
     }
     else if ((1-rmem)*minfo.fMemTotal<4000)
-      return true;
-  }
-  if (t==1) {
+    return true;
+    }
+    else { //if (t==1) {
     if (minfo.fMemTotal<4000) {
-      if (rmem>0.7)
-	return true;
+    if (rmem>0.7)
+    return true;
     }
     else if ((1-rmem)*minfo.fMemTotal<1500)
-      return true;
-  }
+    return true;		
+    }
+    return false;
+  */
 
-  return false;
 }
 //---------------------------------
 TTimeStamp prtime(const char* txt, int set) {
@@ -1177,10 +1537,10 @@ TTimeStamp prtime(const char* txt, int set) {
   if (set!=0)
     printf("%s: %8.3f\n",txt, tt2.AsDouble()-tt0.AsDouble());
 
-    // printf("%s: %9d %8.3f\n",txt,int((tt2.AsDouble()-tt1.AsDouble())*1e6),
-    // 	   tt2.AsDouble()-tt0.AsDouble());
-    // cout << txt << " " << tt2.AsDouble()-tt1.AsDouble() << " "
-    //      << tt2.AsDouble()-tt0.AsDouble() << endl;
+  // printf("%s: %9d %8.3f\n",txt,int((tt2.AsDouble()-tt1.AsDouble())*1e6),
+  // 	   tt2.AsDouble()-tt0.AsDouble());
+  // cout << txt << " " << tt2.AsDouble()-tt1.AsDouble() << " "
+  //      << tt2.AsDouble()-tt0.AsDouble() << endl;
   if (set>0 && debug==99)
     gSystem->Sleep(set);
   return tt2;
@@ -1198,7 +1558,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gClient->GetColorByName("green", fGreen);
   gClient->GetColorByName("red", fRed);
   gClient->GetColorByName("cyan", fCyan);
-//gClient->GetColorByName("BlueViolet",fBluevio);
+  gClient->GetColorByName("magenta", fMagenta);
+  //gClient->GetColorByName("BlueViolet",fBluevio);
   fOrng=TColor::RGB2Pixel(255,114,86);
   fBlue = TColor::RGB2Pixel(135,92,231);
   fRed10=gROOT->GetColor(kPink-9)->GetPixel();
@@ -1329,7 +1690,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   AddFrame(fMenuBar, 
 	   new TGLayoutHints(kLHintsTop | kLHintsExpandX, 2, 2, 2, 5));
 
-  //TGLabel *ver = new TGLabel(fMenuBar,VERSION);
+  //TGLabel *ver = new TGLabel(fMenuBar,GITVERSION);
   //fMenuBar->AddFrame(ver,new TGLayoutHints(kLHintsCenterY|kLHintsRight,0,4,0,0));
 
   //fcanvas=NULL;
@@ -1452,7 +1813,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   f1b->Connect("Clicked()","MainFrame",this,"Do1buf()");
   fGr2->AddFrame(f1b, LayET1);
 
-  TGLabel *ver = new TGLabel(vframe1,VERSION);
+  TGLabel *ver = new TGLabel(vframe1,GITVERSION);
+  cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
 	
   vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
@@ -1725,41 +2087,41 @@ void MainFrame::MakeTabs(bool reb) {
 
   //cout << "tab0: " << endl;
 
-  parpar = new ParParDlg(tabfr[0], 600, 500);
+  parpar = new ParParDlg(tabfr[0], 600, MAIN_HEIGHT);
   parpar->Update();
   tabfr[0]->AddFrame(parpar, LayEE1);
   ntab++;
 
   //cout << "tab2: " << endl;
-  daqpar = new DaqParDlg(tabfr[1], 600, 500);
+  daqpar = new DaqParDlg(tabfr[1], 600, MAIN_HEIGHT);
   daqpar->Build();
   tabfr[1]->AddFrame(daqpar, LayEE2);
   ntab++;
   daqpar->Update();
   //cout << "tab3: " << endl;
 
-  anapar = new AnaParDlg(tabfr[2], 600, 500);
+  anapar = new AnaParDlg(tabfr[2], 600, MAIN_HEIGHT);
   anapar->Build();
   tabfr[2]->AddFrame(anapar, LayEE2);
   ntab++;
   anapar->Update();
 
-  pikpar = new PikParDlg(tabfr[3], 600, 500);
+  pikpar = new PikParDlg(tabfr[3], 600, MAIN_HEIGHT);
   pikpar->Build();
   tabfr[3]->AddFrame(pikpar, LayEE2);
   ntab++;
   pikpar->Update();
 
-  EvtFrm = new EventFrame(tabfr[4], 620, 500,ntab);
+  EvtFrm = new EventFrame(tabfr[4], 620, MAIN_HEIGHT,ntab);
   tabfr[4]->AddFrame(EvtFrm, LayEE1);
   ntab++;
 
-  HiFrm = new HistFrame(tabfr[5], 800, 500,ntab);
+  HiFrm = new HistFrame(tabfr[5], 800, MAIN_HEIGHT,ntab);
   HiFrm->HiReset();
   tabfr[5]->AddFrame(HiFrm, LayEE1);
   ntab++;
 
-  ErrFrm = new ErrFrame(tabfr[6], 800, 500);
+  ErrFrm = new ErrFrame(tabfr[6], 800, MAIN_HEIGHT);
   //HiFrm->HiReset();
   tabfr[6]->AddFrame(ErrFrm, LayEE1);
   ntab++;
@@ -2270,6 +2632,7 @@ void MainFrame::UpdateStatus(int rst) {
   //   DoStartStop();
   // }
 
+  //convert btw gSystem->Now and time_t
   time_t tt = (opt.F_start+788907600000)*0.001;
   struct tm *ptm = localtime(&tt);
   //struct tm *ptm = gmtime(&tt);
@@ -2376,20 +2739,20 @@ void MainFrame::DoExit() {
 
   cout << "DoExit" << endl;
 
-  //saveinit(parname);
+  //saveinit(parfile);
 #ifdef LINUX
   if (chdir(startdir)) {}
 #else
   _chdir(startdir);
 #endif
-  //parname = (char*)"romana.par";
-  gzFile ff = gzopen(parname,"wb");
+  //parfile = (char*)"romana.par";
+  gzFile ff = gzopen(parfile,"wb");
   if (ff) {
     crs->SaveParGz(ff,crs->module);
     gzclose(ff);
   }
   else {
-    cout << "Can't open file: " << parname << endl;
+    cout << "Can't open file: " << parfile << endl;
   }
 
   // printf("%lld bytes\n",recd*2);
@@ -2612,7 +2975,7 @@ void MainFrame::EventInfo(Int_t event, Int_t px, Int_t py, TObject *selected)
 }
 
 /*
-void MainFrame::DoCross() {
+  void MainFrame::DoCross() {
 
   static bool bcross=false;
 
@@ -2621,16 +2984,16 @@ void MainFrame::DoCross() {
   cout << "bcross: " << bcross << endl;
 
   if (bcross) {
-    fEcanvas->GetCanvas()->
-      Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)","MainFrame",
-	      this, "EventInfo(Int_t,Int_t,Int_t,TObject*)");
+  fEcanvas->GetCanvas()->
+  Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)","MainFrame",
+  this, "EventInfo(Int_t,Int_t,Int_t,TObject*)");
   }
   else {
-    fEcanvas->GetCanvas()->
-      Disconnect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)");
+  fEcanvas->GetCanvas()->
+  Disconnect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)");
   }
 
-}
+  }
 */
 
 void MainFrame::HandleMenu(Int_t menu_id)

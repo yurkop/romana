@@ -175,7 +175,7 @@ RQ_OBJECT("CRS")
   //41 - crs-8/16
   //72..79 - decoded file
 
-  Int_t type_ch[MAX_CH+MAX_TP];
+  Int_t type_ch[MAX_CHTP];
   //0: 4-11bit;
   //1: crs-6/16 2-16bit;
   //2: crs-8/16 (16bit)
@@ -226,6 +226,7 @@ RQ_OBJECT("CRS")
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
   bool b_stop; // true if acquisition and analysis are stopped
+  // bool b_mem; // true if memmory is low
   Int_t b_run; // used for trd_ana
   // b_run=0 - stop analysis immediately (pause)
   // b_run=1 - analyze events normally
@@ -251,14 +252,16 @@ RQ_OBJECT("CRS")
   Long64_t Counter[MAX_CH];
 
   string errlabel[MAX_ERR] = {
-    "Bad buf start:",
+    "Bad buf start (obsolete):",
     "Bad channel:",
     "Channel mismatch:",
     "Bad frmt:",
     "Zero data:",
     "Wrong ADCM length:",
     "Bad ADCM Tstamp:",
-    "Slow Analysis:"
+    "Slow analysis:",
+    "Slow decoding:",
+    "Event lag exceeded:"
   };
   Int_t prof_ch[MAX_CH];
   // -1: nothing;
@@ -301,7 +304,6 @@ RQ_OBJECT("CRS")
 #endif
 
 
-
   void DoExit();
   //int Command_old(int len_out, int len_in); //send and receive command
   //void SendParametr(const char* name, int len_out); //send one parameter
@@ -315,6 +317,7 @@ RQ_OBJECT("CRS")
   //void DoFAna();
   //void FAnalyze(bool nobatch);
   void InitBuf();
+  void StopThreads(int all);
   void EndAna(int all);
   void FAnalyze2(bool nobatch);
   void AnaBuf(int loc_ibuf);
@@ -340,6 +343,8 @@ RQ_OBJECT("CRS")
   // void FindLast2(UInt_t ibuf);
   // void FindLast_adcm(UInt_t ibuf);
   void PulseAna(PulseClass &ipls);
+  void Dec_Init(eventlist* &Blist, UChar_t frmt);
+  void Dec_End(eventlist* &Blist, UInt_t iread);
   void Decode79(UInt_t iread, UInt_t ibuf);
   void Decode78(UInt_t iread, UInt_t ibuf);
   void Decode77(UInt_t iread, UInt_t ibuf);

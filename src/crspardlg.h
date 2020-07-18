@@ -27,7 +27,7 @@ enum P_Def {
   p_chk,
   p_cmb,
   p_txt,
-  p_open
+  p_but
 };
 
 struct pmap {
@@ -35,7 +35,7 @@ struct pmap {
   void* data; //address of the parameter
   void* data2; //address of the second (parallel) parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
-  char all; //1 - all parameters; >1,<99 - channel type; 99 - ALL
+  char all; //1 - all/ALL/* parameters; >1 - channel type
   byte cmd; //опции (биты)
   //0x1: (bit0) 1: start/stop DAQ
   //0xE: (bit1-3) change color
@@ -77,13 +77,12 @@ public:
 
 protected:
 
-  //MAX_TP [MAX_TP+1] - Other
-  //MAX_TP+1 [MAX_TP+2] - Copy
-  ULong_t tcol[MAX_TP+2];
-  TGComboBox* fCombo[MAX_CH+2];
-  TGTextEntry* cname[MAX_TP];
-  TGHorizontalFrame *cframe[MAX_CH+MAX_TP];
-  TGTextEntry* clab[MAX_CH+MAX_TP];
+  ULong_t tcol[MAX_TP+3]; //MAX_TP, other, copy, swap
+  TGComboBox* fCombo[MAX_CH+1]; //MAX_CH, all
+  //TGTextEntry* cname[MAX_TP];
+  TGHorizontalFrame *cframe[MAX_CHTP];
+  TGTextEntry* clab[MAX_CHTP];
+  TGTextButton* cbut;
 
   TGCanvas* fCanvas1;
   TGCompositeFrame* fcont1;
@@ -103,16 +102,19 @@ public:
   void SetChk(pmap pp, Bool_t num);
   void SetCombo(pmap pp, Int_t num);
   void SetTxt(pmap pp, const char* txt);
+  bool Chk_all(int all, int i);
   void DoNum();
   void DoDaqNum();
-  void DoChk();
-  void DoDaqChk();
-  void DoCheckHist();
+  void DoChk(Bool_t on);
+  void DoDaqChk(Bool_t on);
+  void DoCheckHist(Bool_t on);
   void DoCombo();
   // void DoCombo2(Event_t*);
   void DoTxt();
+  void DoOneType(int i);
   void DoTypes();
   void DoOpen();
+  void DoAll();
   void CopyParLine(int sel, int line);
   void CopyField(int from, int to);
   void UpdateField(int nn);
@@ -223,7 +225,7 @@ public:
 
   void AddChCombo(int i, int &id, int &kk, int &all);
   void AddChkPar(int &kk, TGHorizontalFrame *cframe,
-  Bool_t* dat, int all, int cmd=0);
+		 Bool_t* dat, int all, const char* ttip, int cmd=0);
   void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
     void* apar, double min, double max, P_Def ptype, byte cmd=0);
   // void ClearLines();

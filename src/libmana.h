@@ -2,6 +2,7 @@
 #define libmana_H 1
 
 #include "common.h"
+#include "colors.h"
 #include "popframe.h"
 #include <TGDockableFrame.h>
 #include <TGTextEdit.h>
@@ -44,13 +45,17 @@ using namespace std;
 #include <TGFileDialog.h>
 #include "TGMsgBox.h"
 
+void prnt(const char* fmt, ...);
 void debug_mess(bool cond, const char* mess, double par1, int par2=-9999);
 
 void SplitFilename(string str, string &folder, string &name);
 void SplitFilename(string str, string &folder, string &name, string &ext);
 
-UShort_t ClassToBuf(const char* name, const char* varname, char* var, char* buf);
-void BufToClass(const char* name, const char* varname, char* var, char* buf, int size);
+Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf);
+int BufToClass(const char* clname, char* varname, char* var, char* &buf, char* buf2);
+void SaveClassTxt(ofstream &fout, const char* clname,
+		  const char* varname, char* var);
+void SaveParTxt(const char* fname);
 
 void example();
 void saveroot(const char *name);
@@ -62,7 +67,7 @@ void setbit(int &n, int bit, int set);
 bool TestFile();
 
 TTimeStamp prtime(const char* txt, int set=1);
-bool CheckMem(int t=0);
+int CheckMem(bool pr=false);
 
 //-----------------------------------------------
 class PEditor {

@@ -14,7 +14,7 @@ OBJ := $(addprefix $(OBJ_D)/,$(notdir $(SRC:.cpp=.o)))
 #SRCL := $(wildcard $(LIB_D)/*.cpp)
 #OBJL := $(addprefix $(OBJ_D)/,$(notdir $(SRCL:.cpp=.oo)))
 
-CPPFLAGS += -DVERSION=\"$(GIT_VERSION)\"
+CPPFLAGS += -DGITVERSION=\"$(GIT_VERSION)\"
 
 LFS=$(shell getconf LFS_CFLAGS)
 

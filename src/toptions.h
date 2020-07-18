@@ -9,41 +9,19 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-/*
-struct pmap2 {
-  void* par; //address of the parameter
-  // P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
-  // char all; //1 - all parameters, >1 - channel type
-  // byte cmd; //for Command_crs
-  // byte chan; //for Command_crs
-};
-*/
-
-//------------------------------------
-/*
-class HBuf {
-public:
-  HBuf() {};
-  virtual ~HBuf() {};
-
-  UShort_t mod;
-  UShort_t sz;
-
-  char *buf; //[sz]
-  ClassDef(HBuf, 1)
-};
-*/
 //------------------------------------
 class Hdef {
 public:
   Hdef();
   virtual ~Hdef() {};
+  //Hdef(const Hdef& other);
+  //Hdef& operator=(const Hdef& other);
 
   Float_t bins,min,max,bins2;
   Bool_t b; //book histogram or not
-  Bool_t c[MAX_CH+NGRP];
-  Bool_t w[MAX_CH+NGRP];
-  Int_t cut[MAX_CH+NGRP];
+  Bool_t c[MAX_CH+NGRP]; //check
+  Bool_t w[MAX_CH+NGRP]; //work
+  Int_t cut[MAX_CH+NGRP]; //see cut_index in HMap
   ClassDef(Hdef, 1)
 };
 //------------------------------------
@@ -56,28 +34,30 @@ public:
   //Version_t ver;
   // parameters of the crs32 or crs2 module
 
-  //Int_t chtype[MAX_CH+MAX_TP]; //channel type
-  Int_t smooth[MAX_CH+MAX_TP]; //Hardware Smooth - SS=0..10; S=2^SS
-  Int_t deadTime[MAX_CH+MAX_TP]; // B = 1..16383
-  Int_t preWr[MAX_CH+MAX_TP]; // pre-length M = 0..4094
-  Int_t durWr[MAX_CH+MAX_TP]; // total length N = 1…32763 (internally - multiple of 4)
-  Int_t delay[MAX_CH+MAX_TP]; //hardware delay in samples
-  Int_t trg[MAX_CH+MAX_TP]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
-  Int_t kderiv[MAX_CH+MAX_TP]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
-  Int_t threshold[MAX_CH+MAX_TP]; // T = –2048 .. +2047
-  Int_t adcGain[MAX_CH+MAX_TP]; // G = 0..12
-  Bool_t acdc[MAX_CH+MAX_TP]; // AC-1; DC-0
-  Bool_t inv[MAX_CH+MAX_TP]; //0 - no inversion; 1 - inversion (individual)
+  //Int_t chtype[MAX_CHTP]; //channel type
+  //Int_t test; // [ts1] [ts2] test
+  Int_t smooth[MAX_CHTP]; // Hardware Smooth - SS=0..10; S=2^SS
+  Int_t deadTime[MAX_CHTP]; // B = 1..16383
+  Int_t preWr[MAX_CHTP]; // pre-length M = 0..4094
+  Int_t durWr[MAX_CHTP]; // total length N = 1…32763 (internally - multiple of 4)
+  Int_t delay[MAX_CHTP]; //hardware delay in samples
+  Int_t trg[MAX_CHTP]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
+  Int_t kderiv[MAX_CHTP]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
+  Int_t threshold[MAX_CHTP]; // T = –2048 .. +2047
+  Int_t adcGain[MAX_CHTP]; // G = 0..12
+  Int_t fdiv[MAX_CHTP]; //frequency divider (=2 for 16-bit/100 MHz)
+  Bool_t acdc[MAX_CHTP]; // AC-1; DC-0
+  Bool_t inv[MAX_CHTP]; //0 - no inversion; 1 - inversion (individual)
+  Bool_t enabl[MAX_CHTP]; //1 - enabled; 0 - disabled
+  Bool_t pls[MAX_CHTP]; //1 - send pulses (format 2,3); 0 - don't send
+  //UInt_t Mask[MAX_CHTP];
+  Bool_t forcewr; //only for crs2
   // 0 - only triggered channel is written; 
   // 1 - both channels are written with any trigger
-  Bool_t enabl[MAX_CH+MAX_TP]; //1 - enabled; 0 - disabled
-  Bool_t pls[MAX_CH+MAX_TP]; //1 - send pulses (format 2,3); 0 - don't send
-  //UInt_t Mask[MAX_CH+MAX_TP];
-  Bool_t forcewr; //only for crs2
   Bool_t St_trig; //force trigger on start
   Int_t DTW; //Start dead time window
   Int_t Smpl; //Sampling rate divider
-  Int_t SPeriod; //Start imitator period
+  Int_t St_Per; //Start imitator period
 
 public:
   void InitPar(int zero);
@@ -93,53 +73,52 @@ public:
   Toptions();
   virtual ~Toptions() {};
 
-  Int_t chtype[MAX_CH+MAX_TP]; //channel type
-  Bool_t dsp[MAX_CH+MAX_TP]; //true - use dsp for data analysis
-  Bool_t St[MAX_CH+MAX_TP]; //[Start]
-  //Bool_t Nt[MAX_CH+MAX_TP]; //[Mrk] flag to use channel for ntof
-  Bool_t Grp[MAX_CH+MAX_TP][NGRP]; // flag to use channel in group histograms
-  //UInt_t ch_flag[MAX_CH+MAX_TP];
-  Int_t sS[MAX_CH+MAX_TP]; //[nsmoo] software smoothing 0..100
-  Int_t Drv[MAX_CH+MAX_TP]; //[kdrv] parameter of derivative
-  Int_t Thr[MAX_CH+MAX_TP];//[thresh]
-  Float_t Delay[MAX_CH+MAX_TP]; //[delay]
-  Int_t Base1[MAX_CH+MAX_TP]; //[bkg1]
-  Int_t Base2[MAX_CH+MAX_TP]; //[bkg2]
-  Int_t Peak1[MAX_CH+MAX_TP]; //[peak1]
-  Int_t Peak2[MAX_CH+MAX_TP]; //[peak2]
-  Int_t dT[MAX_CH+MAX_TP];//[deadT]
-  Int_t Pile[MAX_CH+MAX_TP]; //[pile]
-  //Int_t pile2[MAX_CH+MAX_TP];
-  Int_t sTg[MAX_CH+MAX_TP]; // [strg] Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
-  Int_t timing[MAX_CH+MAX_TP];
-  Int_t T1[MAX_CH+MAX_TP]; // [twin1]
-  Int_t T2[MAX_CH+MAX_TP]; // [twin2]
-  Int_t W1[MAX_CH+MAX_TP]; // [wwin1]
-  Int_t W2[MAX_CH+MAX_TP]; // [wwin2]
+  char gitver[24]; //git version written in the .par file
+  Int_t maxch;
+  Int_t maxtp;
 
-  Float_t E0[MAX_CH+MAX_TP]; // [emult0]
-  Float_t E1[MAX_CH+MAX_TP]; // [emult]
-  Float_t E2[MAX_CH+MAX_TP]; // [emult2]
-  Float_t Bc[MAX_CH+MAX_TP]; // [bcor]
+  Int_t chkall; //type of "all" action
+  Bool_t star[MAX_CHTP]; //asterix
+  Int_t chtype[MAX_CHTP]; //ch type, starts from 1 (see MAX_TP in common.h)
+  Bool_t dsp[MAX_CHTP]; //true - use dsp for data analysis
+  Bool_t St[MAX_CHTP]; //[Start]
+  //Bool_t Nt[MAX_CHTP]; //[Mrk] flag to use channel for ntof
+  Bool_t Grp[MAX_CHTP][NGRP]; // flag to use channel in group histograms
+  //UInt_t ch_flag[MAX_CHTP];
+  Int_t sS[MAX_CHTP]; //[nsmoo] software smoothing 0..100
+  Int_t Drv[MAX_CHTP]; //[kdrv] parameter of derivative
+  Int_t Thr[MAX_CHTP];//[thresh]
+  Float_t Delay[MAX_CHTP]; //[delay]
+  Int_t Base1[MAX_CHTP]; //[bkg1]
+  Int_t Base2[MAX_CHTP]; //[bkg2]
+  Int_t Peak1[MAX_CHTP]; //[peak1]
+  Int_t Peak2[MAX_CHTP]; //[peak2]
+  Int_t dT[MAX_CHTP];//[deadT]
+  Int_t Pile[MAX_CHTP]; //[pile]
+  //Int_t pile2[MAX_CHTP];
+  Int_t sTg[MAX_CHTP]; // [strg] Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
+  //Int_t timing[MAX_CHTP];
+  Int_t T1[MAX_CHTP]; // [twin1]
+  Int_t T2[MAX_CHTP]; // [twin2]
+  Int_t W1[MAX_CHTP]; // [wwin1]
+  Int_t W2[MAX_CHTP]; // [wwin2]
 
-  Float_t elim1[MAX_CH+MAX_TP];
-  Float_t elim2[MAX_CH+MAX_TP];
+  Float_t E0[MAX_CHTP]; // [emult0]
+  Float_t E1[MAX_CHTP]; // [emult]
+  Float_t E2[MAX_CHTP]; // [emult2]
+  Float_t Bc[MAX_CHTP]; // [bcor]
 
-
-  //Int_t channels[MAX_CH+1]; //+all
-  //Int_t color[MAX_CH+1]; //+all
-  //Int_t lcolor[MAX_L];
-  //char chname[MAX_CH+1][16]; //+all
-
+  Float_t elim1[MAX_CHTP];
+  Float_t elim2[MAX_CHTP];
   //----------------------------------------------
   // Important common parameters
 
   //TDatime F_start,F_stop; //start and stop of the acquisition (?)
   //TTimeStamp F_start; //start and of the acquisition / start event in a file
-  Long64_t F_start; //start of the acuisition
+  Long64_t F_start; //start of the acquisition
   Float_t T_acq; //duration of the acquisition / file (in seconds)
 
-  Float_t Period; //inverse frequency of digitizer (in ns):
+  Float_t Period; //period (inversed frequency) of digitizer (in ns):
   // 5 ns for CRS; 10 ns for adcm; ?? ns for adcm64
 
   Int_t nthreads;
@@ -149,14 +128,13 @@ public:
   Int_t usb_size; //in kB
   Int_t rbuf_size; //in kB
 
-  Int_t event_buf; //length of event buffer
+  //Int_t event_buf; //length of event buffer
   //analysis starts only after filling first event_buf
+
   Int_t event_lag; //maximal lag of event analysis in mks
   // if current pulse has tstamp smaller than last event's T
   // by this value, the pulse is inserted into event_list
   // without  (if zero - calculate automatically)
-
-  //Bool_t chinv[MAX_CH+1];
 
   //Int_t sel_hdiv; //number of divisions in histframe
 
@@ -182,9 +160,12 @@ public:
   //char fname_raw[199];
   //char fname_dec[199];
   //char fname_root[199];
-  char Filename[199];
+  //TString S_Filename;
+  char Filename[100]; //->
 
-  char ch_name[MAX_TP][6];
+  //TString S_ch_name[MAX_TP];
+  char ch_name[MAX_TP][20];
+  //char ch_name2[3][4][5][MAX_TP][20]; //->
 
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list
@@ -193,8 +174,8 @@ public:
   Int_t tveto; // veto window for pulses from the same channel
   //Int_t tgate2; // coincidence window for histograms (in ...)
 
-  UInt_t mult1; // minimal multiplicity
-  UInt_t mult2; // maximal multiplicity
+  Int_t mult1; // minimal multiplicity
+  Int_t mult2; // maximal multiplicity
 
   Int_t seltab;
 
@@ -274,7 +255,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 115)
+  ClassDef(Toptions, 116)
 };
 
 //ClassImp(Toptions)

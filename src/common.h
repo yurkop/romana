@@ -23,14 +23,15 @@ const int dstep = 10;
 #define AVM16_MASK2 0x000fffff //complementary to MASK1
 
 const int MAX_CH=256; //256; //max number of channels
-const int MAX_TP=8; // all(*); 6 types; ALL
+const int MAX_TP=8; // 8 types, MAX_TP=other, MAX_TP+1=copy, MAX_TP+2=swap
+const int MAX_CHTP=MAX_CH+MAX_TP+1;
 const int NGRP=4; //number of groups of channels
 
 const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to nr-1 of bits in hmap::bitwk; 
 const int MAX_PCUTS=11; //maximal number of points in cutG
 const int MAX_PADS=256; //maximal number of sub-pads in histframe
 
-const int MAX_ERR=8; //maximal number of error types;
+const int MAX_ERR=10; //maximal number of error types;
 
 // const int A0A1_MAX=2; // maximal number of input channels used in A0A1 2d hists
 
@@ -45,5 +46,8 @@ const int MAX_ERR=8; //maximal number of error types;
 
 #define MXLN 40
 #define MXNUM 60
+
+const int MAIN_HEIGHT = 550; //height of the main window
+const int W2_HEIGHT = 210; //height of the split frame containing ch_types
 
 #endif

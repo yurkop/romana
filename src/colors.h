@@ -11,6 +11,14 @@
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
 
+#define BRED  "\033[1;31m"
+#define BGRN  "\033[1;32m"
+#define BYEL  "\033[1;33m"
+#define BBLU  "\033[1;34m"
+#define BMAG  "\033[1;35m"
+#define BCYN  "\033[1;36m"
+#define BWHT  "\033[1;37m"
+
 #define FRED(x) KRED x RST
 #define FGRN(x) KGRN x RST
 #define FYEL(x) KYEL x RST
