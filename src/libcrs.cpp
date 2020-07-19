@@ -2592,6 +2592,9 @@ int CRS::DoBuf() {
   // cout << "gzread1: " << Fmode << " " << nbuffers << " " << opt.rbuf_size*1024 << " " << gl_ibuf << " " << dec_iread[gl_ibuf] << endl;
 
   int length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
+  // if (nbuffers>100 && nbuffers<105) {
+  //   Print_Buf8(GLBuf+b_fill[gl_ibuf],length);
+  // }
   b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
   if (opt.raw_write && !opt.raw_flag) {
@@ -2946,12 +2949,12 @@ void CRS::Show(bool force) {
   if (CheckMem()>=700) {
     cout << "Memory is too low. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
 
+#ifdef CYUSB
     DoStartStop();
     // gSystem->Sleep(500);
 
     // cout << "Terminate..." << endl;
     // exit(-1);
-#ifdef CYUSB
     if (trd_crs) {
       trd_crs->Delete();
     }
@@ -3879,7 +3882,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   Dec_Init(Blist,frmt);
   PulseClass ipls=dummy_pulse;
 
-  //Print_Buf(ibuf,"buf.dat");
+  //Print_Buf_err(ibuf);
+  //Print_Buf_err(ibuf,"buf.dat");
   //exit(1);
   //cout << "Decode34: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
 
@@ -3931,6 +3935,9 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	continue;
       }
 			
+      // if (nevents>207000 && nevents<210000) {
+      // 	ipls.PrintPulse(0);
+      // }
       //analyze previous pulse
       if (ipls.ptype==0) {
 	PulseAna(ipls);
@@ -4131,7 +4138,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     case 7:
       break;
     default:
-      //Print_Buf(ibuf,"error.dat");
+      //Print_Buf_err(ibuf,"error.dat");
       //exit(1);
 
       ++errors[3];
@@ -4143,6 +4150,10 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   } //while (idx1<buf_len)
 
   //add last pulse to the list
+  // if (nevents>207000 && nevents<210000) {
+  //   cout << "last:" << endl;
+  //   ipls.PrintPulse(0);
+  // }
   if (ipls.ptype==0) {
     PulseAna(ipls);
     Event_Insert_Pulse(Blist,&ipls);
@@ -4591,10 +4602,11 @@ void CRS::Print_b1(int idx1, std::ostream *out) {
        << setw(15) << hex << data << dec;
 }
 
-void CRS::Print_Buf(UInt_t ibuf, const char* file) {
+void CRS::Print_Buf_err(UInt_t ibuf, const char* file) {
+  //использовалось для поиска ошибки со сдвигом на 4 байта
+
   std::streambuf * buf;
   std::ofstream of;
-
   if (file) {
     of.open(file);
     buf = of.rdbuf();
@@ -4603,6 +4615,7 @@ void CRS::Print_Buf(UInt_t ibuf, const char* file) {
     buf = std::cout.rdbuf();
   }
   std::ostream *out = new std::ostream(buf);
+
 
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
 
@@ -4626,6 +4639,28 @@ void CRS::Print_Buf(UInt_t ibuf, const char* file) {
   }
 
   of.close();
+}
+
+void CRS::Print_Buf8(UChar_t* buf, Long64_t size, const char* file) {
+
+  ULong64_t* buf8 = (ULong64_t*) buf;
+  Long64_t idx8=0;
+
+  ULong64_t data;
+  UChar_t frmt,ch;
+
+  while (idx8<size/8) {
+    frmt = buf[idx8*8+6];
+    frmt = (frmt & 0xF0)>>4;
+    ch = buf[idx8*8+7];
+    data = buf8[idx8] & sixbytes;
+    
+    printf("%6lld %4d %3d %16lld %16llx\n",idx8,ch,frmt,data,buf8[idx8]);
+    //printf("%lld %lld %lld %lld\n",idx8,size,size/8,buf8[idx8]);
+    ++idx8;
+    // if (idx8>1000)
+    //   exit(1);
+  }
 }
 
 void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
@@ -4663,7 +4698,7 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
   }
 
   // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
-  rit=Elist->rbegin();
+  // rit=Elist->rbegin();
   // cout << "Elist: " << nevents << " " << Elist->size() 
   // << " " << rit->Tstmp << " " << pls->Tstamp64 << endl;
 
@@ -4688,11 +4723,23 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
   }
 
   ++errors[9];//event lag exceeded
-  if (debug) {
-    cout << "!!! beginning!!! ---: "
-	 << nevents << " " << pls->Tstamp64 << " " << dt
-	 << " " << nn << " " << Elist->size() << endl;
-  }
+
+  rit=Elist->rbegin();
+  it=Elist->begin();
+  dt = rit->Tstmp - pls->Tstamp64;
+  cout << "!!! beginning !!! ---: "
+       << nevents << " " << pls->Tstamp64 << " "
+    //<< Elist->size() << " "
+       << rit->Tstmp << " "
+    //<< it->Tstmp
+       << dt
+       << endl;
+
+  // nn=opt.ev_min;
+  // for (rit=Elist->rbegin();rit!=Elist->rend() && nn>0 ;++rit,--nn) {
+  //   dt = (pls->Tstamp64 - rit->Tstmp);
+  //   cout << nn << " " << dt << " " << pls->Tstamp64 << " " << rit->Tstmp << endl;
+  // }
 
   // if the current event is too early, insert it at the end of the event list
   it=Elist->insert(Elist->end(),EventClass());

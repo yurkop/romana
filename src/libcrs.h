@@ -397,7 +397,8 @@ RQ_OBJECT("CRS")
   void Print_Events(const char* file=0);
   void Print_Peaks(const char* file=0);
   void Print_b1(int idx1, std::ostream *out);
-  void Print_Buf(UInt_t ibuf, const char* file=0);
+  void Print_Buf_err(UInt_t ibuf, const char* file=0);
+  void Print_Buf8(UChar_t* buf, Long64_t size, const char* file=0);
   ClassDef(CRS, 0)
 };
 

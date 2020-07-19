@@ -2220,7 +2220,7 @@ void DaqParDlg::AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
 
 void DaqParDlg::UpdateStatus(int rst) {
 
-  //cout << "Updatestatus1: " << pmax << endl;
+  cout << "Updatestatus1: " << pmax << endl;
   static Long64_t allbad;
   static double t1;
   static Long64_t npulses2o[MAX_CH];
@@ -2248,6 +2248,16 @@ void DaqParDlg::UpdateStatus(int rst) {
   rate_all2=0;
   rate_all3=0;
   if (dt>0.1) {
+#ifdef CYUSB
+    crs->Command32(5,0,0,0);
+    for (int j=0;j<6;j++) {
+      cout << "counter: " << j << crs->buf_in[j] << endl;
+    }
+    crs->Command32(6,0,0,0);
+    for (int j=0;j<6;j++) {
+      cout << "counter: " << j << crs->buf_in[j] << endl;
+    }
+#endif
     for (int i=0;i<pmax;i++) {
       rate2[i] = (crs->npulses2[i]-npulses2o[i])/dt;
       npulses2o[i]=crs->npulses2[i];

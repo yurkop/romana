@@ -2706,8 +2706,10 @@ void MainFrame::CloseWindow() {
     cc=1;
     // fStart->Emit("Clicked()");
     // cout << "dostartstop7: " << endl;
+#ifdef CYUSB
     crs->DoStartStop();
     gSystem->Sleep(300);
+#endif
     // cout << "dostartstop8: " << endl;
     return;
   }
