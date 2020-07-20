@@ -4130,11 +4130,22 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       } //if (opt.dsp[ipls.Chan])
       break;
     case 6:
-      // if (data) {
-      // 	cout << "frmt6: " << (int) ch << " " << data << " " << npulses2[ch] << endl;
-      // }
-      npulses3[ch]=data;
-      break;
+      {
+	// if (data) {
+	// 	cout << "frmt6: " << (int) ch << " " << data << " " << npulses2[ch] << endl;
+	// }
+	//npulses3o[ch]=npulses3[ch];
+	Double_t rate = Long64_t(data)-npulses3[ch];
+	//cout << "c1: " << (int) ch << " " << data << " " << npulses3[ch] << " " << rate << endl;
+	npulses3[ch]=data;
+	if (opt.h_counter.b) {
+	  Blist->rbegin()->Fill_Time_Extend(hcl->m_counter[ch]);
+	  //cout << "counters: " << (int) ch << " " << rate << " " << data << endl;
+	  EventClass::Fill1dw(true,hcl->m_counter,ch,opt.T_acq,rate);
+	  EventClass::Fill1dw(false,hcl->m_counter,ch,opt.T_acq,rate);
+	}
+	break;
+      }
     case 7:
       break;
     default:

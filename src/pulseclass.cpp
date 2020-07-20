@@ -694,12 +694,21 @@ void EventClass::Fill_Time_Extend(HMap* map) {
   Double_t max = hh->GetXaxis()->GetXmax();
 
   if (opt.T_acq > max) {
-    max*=2;
-    if (opt.T_acq>max) {
+    if (opt.T_acq - max > 1e4) { //larger than several hours
       cout << "Time leap is too large: " << this->Nevt << " " << opt.T_acq << " " << max << " " << crs->Tstart64 << endl;
     }
     else {
-      int nbin = hh->GetNbinsX()*2;
+      Double_t rt = opt.T_acq/max;
+
+      int nn=2;
+      while (rt>2) {
+	nn*=2;
+	rt*=0.5;
+      }
+
+      max*=nn;
+
+      int nbin = hh->GetNbinsX()*nn;
       Float_t* arr = new Float_t[nbin+2];
       memset(arr,0,sizeof(Float_t)*(nbin+2));
       Float_t* arr2 = hh->GetArray();
@@ -746,6 +755,35 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
     for (int j=0;j<NGRP;j++)
       if (opt.Grp[ch][j])
         Fill1d(first,map,MAX_CH+j,x);
+}
+
+void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
+			 Double_t w) {
+  // if first -> check cuts and set cut_flag
+  if (first) {
+    map[ch]->hst->Fill(x,w);
+    if (opt.ncuts) {
+      for (int i=1;i<opt.ncuts;i++) {
+	if (getbit(*(map[ch]->cut_index),i)) {
+	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
+	    hcl->cut_flag[i]=1;
+	  }
+	}
+      }
+    }
+  }
+  else if (*(map[ch]->wrk)) {
+    for (int i=1;i<opt.ncuts;i++) {
+      if (hcl->cut_flag[i]) {
+	map[ch]->h_cuts[i]->hst->Fill(x,w);
+      }
+    }
+  }
+
+  if (ch<MAX_CH)
+    for (int j=0;j<NGRP;j++)
+      if (opt.Grp[ch][j])
+        Fill1dw(first,map,MAX_CH+j,x,w);
 }
 
 void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
@@ -894,11 +932,11 @@ void EventClass::FillHist(Bool_t first) {
       //    continue;
       // }
 
-      if (opt.h_time.b) {
+      if (opt.h_rate.b) {
 	if (first) {
-	  Fill_Time_Extend(hcl->m_time[ch]);
+	  Fill_Time_Extend(hcl->m_rate[ch]);
 	}
-	Fill1d(first,hcl->m_time,ch,opt.T_acq);
+	Fill1d(first,hcl->m_rate,ch,opt.T_acq);
       }
 
       if (opt.h_area.b) {

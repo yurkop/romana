@@ -47,7 +47,8 @@ class HClass {
 
  public:
 
-  HMap* m_time[MAX_CH+NGRP]; // real time
+  HMap* m_rate[MAX_CH+NGRP]; // software rate in real time
+  HMap* m_counter[MAX_CH+NGRP]; // hardware counter in real time
   HMap* m_area[MAX_CH+NGRP]; //area of the peak
   HMap* m_area0[MAX_CH+NGRP]; //area of the peak w/o bkg
   HMap* m_base[MAX_CH+NGRP]; //baseline - background

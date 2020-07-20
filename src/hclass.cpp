@@ -496,7 +496,8 @@ void HClass::Make_hist() {
   map_list->SetName("map_list");
   map_list->SetOwner(true);
 
-  Make_1d("Time","time",";T(sec);Counts",m_time,&opt.h_time);
+  Make_1d("Rate","rate",";T(sec);Counts",m_rate,&opt.h_rate);
+  Make_1d("Counter","counter",";T(sec);Counts",m_counter,&opt.h_counter);
   Make_1d("Area","area",";Channel;Counts",m_area,&opt.h_area);
   Make_1d("Area0","area0",";Channel;Counts",m_area0,&opt.h_area0);
   Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);
@@ -519,7 +520,7 @@ void HClass::Make_hist() {
   Make_2d("Area_Sl1","Area_Sl1",";Channel;Channel",m_area_sl1,&opt.h_area_sl1,&opt.h_area,&opt.h_slope1);
   Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);
   Make_2d("Slope_12","Slope_12",";Channel;Channel",m_slope_12,&opt.h_slope_12,&opt.h_slope1,&opt.h_slope2);
-  Make_2d("Area_Time","Area_Time",";Channel;Time (sec)",m_area_time,&opt.h_area_time,&opt.h_area,&opt.h_time);
+  Make_2d("Area_Time","Area_Time",";Channel;Time (sec)",m_area_time,&opt.h_area_time,&opt.h_area,&opt.h_rate);
   Make_2d("Area_Width","Area_Width",";Channel;Width (a.u.)",m_area_width,&opt.h_area_width,&opt.h_area,&opt.h_width);
   Make_2d("Area_Width2","Area_Width2",";Channel;Width (a.u.)",m_area_width2,&opt.h_area_width2,&opt.h_area,&opt.h_width2);
   Make_2d("Area_Ntof","Area_Ntof",";Channel;t(mks)",m_area_ntof,&opt.h_area_ntof,&opt.h_area,&opt.h_ntof);

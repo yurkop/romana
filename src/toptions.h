@@ -215,7 +215,8 @@ public:
   Int_t maintrig;
   //char maintrig[22];
 
-  Hdef h_time;
+  Hdef h_rate;
+  Hdef h_counter;
   Hdef h_area;
   Hdef h_area0;
   Hdef h_base;
