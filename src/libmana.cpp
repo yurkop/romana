@@ -1050,7 +1050,7 @@ int main(int argc, char **argv)
     }
 
     hcl->Make_hist();
-    if (CheckMem(1)>500) {
+    if (CheckMem(1)>700) { //>70%
       cout << "Not enough memory. Reduce the size of histograms. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
       crs->DoExit();
       exit(-1);
@@ -1493,8 +1493,7 @@ int CheckMem(bool pr) {
     cout << "CheckMem: " << pinfo.fMemResident << " " << minfo.fMemTotal
 	 << " " << rmem << " " << (1-rmem)*minfo.fMemTotal
 	 << endl;
-  }
-  return rmem;
+  }  return rmem;
   /*
     if (rmem>t) {
     return true;

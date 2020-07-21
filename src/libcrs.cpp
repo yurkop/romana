@@ -25,11 +25,17 @@
 #include "TRandom.h"
 #include "TApplication.h"
 
+
+int buf_inits=0;
+int buf_erase=0;
+
+
 //TMutex Emut3;
 TMutex stat_mut;
 //TMutex ana_mut;
 
 TMutex dec_mut;
+TMutex ringdec_mut;
 
 TMutex cmut;
 
@@ -65,14 +71,6 @@ TRandom rnd;
 
 //bool bstart=true;
 //bool btest=false;
-
-int event_thread_run;//=1;
-//pthread_t tid1;
-TThread* trd_crs=0;
-//TThread* trd_stat;
-//TThread* trd_evt;
-//TThread* trd_dum;
-//TThread* trd_ana;
 
 const Long64_t P64_0=-123456789123456789;
 
@@ -110,13 +108,26 @@ UInt_t gl_ibuf; //current buffer for decode* [0 .. gl_Nbuf]
 UInt_t gl_Nbuf; //maximal number of buffers for decode*
 //int gl_ntrd=6; //number of decode threads (and also sub-buffers)
 
+int event_thread_run;//=1;
 int decode_thread_run;
 int mkev_thread_run;
 int ana_thread_run;
 int dec_nr[CRS::MAXTRANS];
 
+
+
+
+TThread* trd_crs;
 TThread* trd_dec[CRS::MAXTRANS];
 //TCondition dec_cond[CRS::MAXTRANS];
+TThread* trd_mkev;
+//TCondition mkev_cond[CRS::MAXTRANS];
+//int mkev_check[CRS::MAXTRANS];
+TThread* trd_ana;
+//TCondition ana_cond;
+//int ana_check;
+TThread* trd_dec_write;
+
 
 UInt_t dec_iread[CRS::MAXTRANS];
 // dec_iread[i]=0 в начале
@@ -125,16 +136,7 @@ UInt_t dec_iread[CRS::MAXTRANS];
 // dec_iread[i]=0 если i-й буфер обработан. В буфер можно читать.
 // Если dec_iread[i]=1, i-й буфер еще не обработан
 
-
-TThread* trd_mkev;
-//TCondition mkev_cond[CRS::MAXTRANS];
-//int mkev_check[CRS::MAXTRANS];
-
-
 int ana_all;
-TThread* trd_ana;
-//TCondition ana_cond;
-//int ana_check;
 
 
 
@@ -202,7 +204,7 @@ static void cback(libusb_transfer *trans) {
   if (trans->actual_length) {
 
     while (dec_iread[gl_ibuf]) {
-      ++crs->errors[8];
+      ++crs->errors[8]; //slow decoding
       gSystem->Sleep(1);
     }
 
@@ -240,6 +242,7 @@ static void cback(libusb_transfer *trans) {
       }
       else {
 	cout << "Can't open file: " << crs->rawname.c_str() << endl;
+	opt.raw_write=false;
       }
     }
 
@@ -509,6 +512,58 @@ void *handle_ana(void *ctx) {
   return NULL;
 } //handle_ana
 
+void *handle_dec_write(void *ctx) {
+  
+  cmut.Lock();
+  cout << "dec_write thread started: " << endl;
+  cmut.UnLock();
+
+  //return 0;
+  while (ana_thread_run) {
+
+    //YKYKYK
+    double zzz = sqrt(gRandom->Rndm());
+    continue;
+    //YKYKYK
+
+    int m2 = crs->mdec2%CRS::NDEC;
+    if (crs->b_decwrite[m2]) { //write
+
+      sprintf(crs->dec_opt,"ab%d",opt.dec_compr);
+      crs->f_dec = gzopen(crs->decname.c_str(),crs->dec_opt);
+      if (!crs->f_dec) {
+	cout << "Can't open file: " << crs->decname.c_str() << endl;
+	opt.dec_write=false;
+	//idec=0;
+	break;
+      }
+
+      UChar_t* DBuf=crs->DecBuf_ring+m2*2*CRS::DECSIZE;
+      int res=gzwrite(crs->f_dec,DBuf,crs->dec_len[m2]);
+      if (res!=crs->dec_len[m2]) {
+	cout << "Error writing to file: " << crs->decname.c_str() << " " 
+	     << res << " " << crs->dec_len[m2] << endl;
+	crs->decbytes+=res;
+	opt.dec_write=false;
+	break;
+      }
+      crs->decbytes+=res;
+
+      gzclose(crs->f_dec);
+      crs->f_dec=0;
+
+      crs->b_decwrite[m2]=false;
+      ++crs->mdec2;
+      
+    }
+    else {
+      gSystem->Sleep(5);
+    }
+
+  } //while (ana_thread_run)
+  return NULL;
+} //handle_dec_write
+
 // void *handle_ev(void *ctx) {
 //   int nvp=0;
 //   cout << "Event thread started: " << endl;
@@ -630,6 +685,11 @@ void CRS::Ana_start() {
 
     trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
     trd_ana->Run();
+
+    if (opt.dec_write) {
+      trd_dec_write = new TThread("trd_dec_write", handle_dec_write, (void*) 0);
+      trd_dec_write->Run();
+    }
     //gSystem->Sleep(5000);
 
     gSystem->Sleep(100);
@@ -919,7 +979,8 @@ CRS::CRS() {
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
 
-  DecBuf=new UChar_t[2*DECSIZE]; //2*1 MB
+  DecBuf_ring=new UChar_t[2*DECSIZE*NDEC]; //2*1*10 MB
+  DecBuf=DecBuf_ring;
   RawBuf=new UChar_t[RAWSIZE]; //10 MB
 
   //strcpy(Fname," ");
@@ -949,19 +1010,14 @@ CRS::CRS() {
     //Fbuf[i]=NULL;
   }
 
-  //cout << "creating threads... " << endl;
+  trd_crs=0;
+  trd_mkev=0;
+  trd_ana=0;
+  trd_dec_write=0;
 
-  //trd_stat = new TThread("trd_stat", handle_stat, (void*) 0);
-  //trd_stat->Run();
-  //trd_evt = new TThread("trd_evt", handle_evt, (void*) 0);
-  //trd_evt->Run();
-  //trd_ana = new TThread("trd_ana", Ana_Events, (void*) 0);
-  //trd_ana->Run();
-
-  //mTh= new TThread("memberfunction",
-  //(void(*)(void *))&Thread0,(void*) this);
-
-  //cout << "threads created... " << endl;
+  for (int i=0;i<MAXTRANS;i++) {
+    trd_dec[i]=0;
+  }
 
 }
 
@@ -1098,6 +1154,7 @@ int CRS::Detect_device() {
   case 1: //crs-32
   case 2: //crs-6/16
   case 3: //crs-16 or crs-2
+    opt.Period=5;
     //crs2
     if (ver_po==0) { // -> crs2
       module=22;
@@ -1152,6 +1209,7 @@ int CRS::Detect_device() {
 
   case 4: //crs-8/16
     module=41;
+    opt.Period=10;
     chan_in_module=nplates*8;
     for (int j=0;j<chan_in_module;j++) {
       type_ch[j]=2;
@@ -1843,7 +1901,8 @@ int CRS::DoStartStop() {
     // cout << "cyusb_reset: " << r << endl;
 
     Submit_all(ntrans);
-    opt.Period=5; //5ns for CRS module
+    cout << "Period: " << opt.Period << endl;
+    //opt.Period=5; //5ns for CRS module
 
     if (SetPar()) {
       return 3;
@@ -1948,30 +2007,6 @@ void CRS::ProcessCrs() {
 
 }
 
-/*
-  void CRS::ProcessCrs_old() {
-  b_run=1;
-  TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
-  trd_ana->Run();
-
-  Command2(3,0,0,0);
-
-  while (!crs->b_stop) {
-  Show();
-  gSystem->Sleep(10);   
-  gSystem->ProcessEvents();
-  if (opt.Tstop && opt.T_acq>opt.Tstop) {
-  //cout << "Stop1!!!" << endl;
-  DoStartStop();
-  //cout << "Stop2!!!" << endl;
-  }
-  }
-
-  trd_ana->Join();
-  trd_ana->Delete();
-  }
-*/
-
 #endif //CYUSB
 
 void CRS::DoExit()
@@ -1984,6 +2019,7 @@ void CRS::DoExit()
     cyusb_close();
     if (trd_crs) {
       trd_crs->Delete();
+      trd_crs=0;
     }
   }
 #endif
@@ -2168,7 +2204,8 @@ void CRS::DoFopen(char* oname, int popt) {
       f_read=0;
       return;
     }
-    opt.Period=5;
+    cout << "opt.Period from .par: " << opt.Period << endl; 
+    // opt.Period=5;
     // cout << "false_open: " << endl;
     // opt.raw_write=false;
     // opt.dec_write=false;
@@ -2760,27 +2797,41 @@ void CRS::StopThreads(int all) {
   for (UInt_t i=0;i<gl_Nbuf;i++) {
     dec_iread[i]=1; //=1;
     // dec_cond[i].Signal();
-    trd_dec[i]->Join();
-    trd_dec[i]->Delete();
-    trd_dec[i]=0;
+    if (trd_dec[i]) {
+      trd_dec[i]->Join();
+      trd_dec[i]->Delete();
+      trd_dec[i]=0;
+    }
     //dec_finished[i]=1;
   }
 
   gSystem->Sleep(50);
   mkev_thread_run=0;    
-		
-  trd_mkev->Join();
-  trd_mkev->Delete();
-  trd_mkev=0;
+
+  if (trd_mkev) {
+    trd_mkev->Join();
+    trd_mkev->Delete();
+    trd_mkev=0;
+  }
 
   gSystem->Sleep(50);
   ana_thread_run=0;    
   ana_all=all;
   //ana_check=1;
   //ana_cond.Signal();
-  trd_ana->Join();
-  trd_ana->Delete();
-  trd_ana=0;
+  if (trd_ana) {
+    trd_ana->Join();
+    trd_ana->Delete();
+    trd_ana=0;
+  }
+
+  if (trd_dec_write) {
+    trd_dec_write->Join();
+    trd_dec_write->Delete();
+    trd_dec_write=0;
+  }
+
+  
   //cout << "done" << endl;
 }
 
@@ -2946,7 +2997,7 @@ void CRS::Show(bool force) {
   //= gSystem->Now();
   //MemInfo_t info;
 
-  if (CheckMem()>=700) {
+  if (CheckMem()>=700) { //>70%
     cout << "Memory is too low. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
 
 #ifdef CYUSB
@@ -2957,6 +3008,7 @@ void CRS::Show(bool force) {
     // exit(-1);
     if (trd_crs) {
       trd_crs->Delete();
+      trd_crs=0;
     }
 #endif
 	
@@ -3315,6 +3367,7 @@ void CRS::PulseAna(PulseClass &ipls) {
 
 void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
   dec_mut.Lock();
+  ++buf_inits;
   Bufevents.push_back(eventlist());
   Blist = &Bufevents.back();
   dec_mut.UnLock();
@@ -4811,6 +4864,7 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   //cout << "BB1: " << Levents.size() << " " << Bufevents.size() << endl;
 
   Bufevents.erase(BB);
+  ++buf_erase;
 
   //m_end = crs->Levents.end();
   //std::advance(m_end,-opt.ev_min);  
@@ -4882,8 +4936,12 @@ void CRS::Reset_Dec(Short_t mod) {
 
   sprintf(dec_opt,"ab%d",opt.dec_compr);
 
+  DecBuf=DecBuf_ring;
   DecBuf8 = (ULong64_t*) DecBuf;
   idec=0;
+  mdec1=0;
+  mdec2=0;
+  memset(b_decwrite,0,sizeof(b_decwrite));
 }
 
 /*
@@ -5001,7 +5059,6 @@ void CRS::Fill_Dec75(EventClass* evt) {
   idec = (UChar_t*)DecBuf8-DecBuf;
   if (idec>DECSIZE) {
     Flush_Dec();
-    DecBuf8 = (ULong64_t*) DecBuf;
   }
 
 } //Fill_Dec75
@@ -5044,7 +5101,6 @@ void CRS::Fill_Dec76(EventClass* evt) {
   idec = (UChar_t*)DecBuf8-DecBuf;
   if (idec>DECSIZE) {
     Flush_Dec();
-    DecBuf8 = (ULong64_t*) DecBuf;
   }
 
 } //Fill_Dec76
@@ -5090,7 +5146,6 @@ void CRS::Fill_Dec77(EventClass* evt) {
   idec = (UChar_t*)DecBuf8-DecBuf;
   if (idec>DECSIZE) {
     Flush_Dec();
-    DecBuf8 = (ULong64_t*) DecBuf;
   }
 
 } //Fill_Dec77
@@ -5135,7 +5190,6 @@ void CRS::Fill_Dec78(EventClass* evt) {
   idec = (UChar_t*)DecBuf8-DecBuf;
   if (idec>DECSIZE) {
     Flush_Dec();
-    DecBuf8 = (ULong64_t*) DecBuf;
   }
 
 } //Fill_Dec78
@@ -5190,21 +5244,23 @@ void CRS::Fill_Dec79(EventClass* evt) {
   idec = (UChar_t*)DecBuf8-DecBuf;
   if (idec>DECSIZE) {
     Flush_Dec();
-    DecBuf8 = (ULong64_t*) DecBuf;
   }
 
 } //Fill_Dec79
 
-void CRS::Flush_Dec() {
+void CRS::Flush_Dec_old() {
 
   //idec=0;
   //return;
+
+  cout << "Flush_dec_old: " << crs->decname.c_str() << " " << idec << endl;
 
   if (!idec) return;
   sprintf(dec_opt,"ab%d",opt.dec_compr);
   f_dec = gzopen(crs->decname.c_str(),dec_opt);
   if (!f_dec) {
     cout << "Can't open file: " << crs->decname.c_str() << endl;
+    opt.dec_write=false;
     idec=0;
     return;
   }
@@ -5213,12 +5269,42 @@ void CRS::Flush_Dec() {
   if (res!=idec) {
     cout << "Error writing to file: " << crs->decname.c_str() << " " 
 	 << res << " " << idec << endl;
+    decbytes+=res;
+    opt.dec_write=false;
+    return;
   }
   idec=0;
   decbytes+=res;
 
   gzclose(f_dec);
   f_dec=0;
+  DecBuf8 = (ULong64_t*) DecBuf;
+
+}
+
+void CRS::Flush_Dec() {
+
+  //idec=0;
+  //return;
+
+  if (!idec) return;
+  
+  int m1 = mdec1%NDEC;
+
+  if (m1==0) {
+    //cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
+    cout << "YK7: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
+    buf_inits=0;
+    buf_erase=0;
+  }
+
+  b_decwrite[m1]=true;
+  dec_len[m1]=idec;
+  ++mdec1;
+
+  DecBuf=DecBuf_ring+m1*2*DECSIZE;
+  DecBuf8 = (ULong64_t*) DecBuf;
+  idec=0;
 
 }
 
@@ -5331,6 +5417,7 @@ void CRS::Flush_Raw() {
   f_raw = gzopen(crs->rawname.c_str(),raw_opt);
   if (!f_raw) {
     cout << "Can't open file: " << crs->rawname.c_str() << endl;
+    opt.raw_write=false;
     iraw=0;
     return;
   }
@@ -5339,6 +5426,9 @@ void CRS::Flush_Raw() {
   if (res!=iraw) {
     cout << "Error writing to file: " << crs->rawname.c_str() << " " 
 	 << res << " " << iraw << endl;
+    rawbytes+=res;
+    opt.raw_write=false;
+    return;
   }
   iraw=0;
   rawbytes+=res;

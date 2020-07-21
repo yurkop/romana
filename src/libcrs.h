@@ -74,8 +74,10 @@ RQ_OBJECT("CRS")
   static const int MAXTRANS=8;
   //static const int MAXTRANS=7;
   static const int MAXTRANS7=7;
-  static const int DECSIZE=1048576; //1 MB
   static const int RAWSIZE=10485760; //10 MB
+
+  static const int DECSIZE=1048576; //1 MB
+  static const int NDEC=100; // number of Dec buffers in ring
 
   //static const Int_t MAXEV=1000; //maximal number of events in Levents
   //--------variables---------
@@ -101,9 +103,15 @@ RQ_OBJECT("CRS")
   string decname;
   string rootname;
 
-  UChar_t* DecBuf;
+  UChar_t* DecBuf_ring;
+  UChar_t* DecBuf; 
   ULong64_t* DecBuf8;
   Int_t idec; //index of DecBuf;
+
+  Int_t mdec1; //index of Dec buffer in ring for decoding
+  Int_t mdec2; //index of Dec buffer in ring for writing
+  bool b_decwrite[NDEC];
+  Int_t dec_len[NDEC];
 
   UChar_t* RawBuf;
   //ULong64_t* RawBuf8;
@@ -389,6 +397,7 @@ RQ_OBJECT("CRS")
   void Fill_Dec77(EventClass* evt);
   void Fill_Dec78(EventClass* evt);
   void Fill_Dec79(EventClass* evt);
+  void Flush_Dec_old();
   void Flush_Dec();
 
   void Fill_Raw(EventClass* evt);
