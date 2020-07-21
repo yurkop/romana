@@ -521,10 +521,10 @@ void *handle_dec_write(void *ctx) {
   //return 0;
   while (ana_thread_run) {
 
-    //YKYKYK
-    double zzz = sqrt(gRandom->Rndm());
-    continue;
-    //YKYKYK
+    // //YKYKYK
+    // double zzz = sqrt(gRandom->Rndm());
+    // continue;
+    // //YKYKYK
 
     int m2 = crs->mdec2%CRS::NDEC;
     if (crs->b_decwrite[m2]) { //write
@@ -5293,7 +5293,7 @@ void CRS::Flush_Dec() {
 
   if (m1==0) {
     //cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
-    cout << "YK7: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
+    cout << "Flush_dec: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
     buf_inits=0;
     buf_erase=0;
   }
