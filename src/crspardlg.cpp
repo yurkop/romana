@@ -1284,9 +1284,9 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Height";
   AddLine_hist(frame1d,&opt.h_hei,tip1,label);
 
-  tip1= "Time of flight (relative to the starts - see Channels->St), in ns";
-  label="Tof";
-  AddLine_hist(frame1d,&opt.h_tof,tip1,label);
+  tip1= "Time (relative to the starts - see Channels->St), in ns";
+  label="Time";
+  AddLine_hist(frame1d,&opt.h_time,tip1,label);
 
   tip1= "Neutron time of flight, in mks";
   label="Ntof";

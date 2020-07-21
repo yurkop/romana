@@ -504,7 +504,7 @@ void HClass::Make_hist() {
   Make_1d("Slope1","slope1",";Channel;Counts",m_slope1,&opt.h_slope1);
   Make_1d("Slope2","slope2",";Channel;Counts",m_slope2,&opt.h_slope2);
   Make_1d("Height","height",";Channel;Counts",m_height,&opt.h_hei);
-  Make_1d("Tof","tof",";t(ns);Counts",m_tof,&opt.h_tof);
+  Make_1d("Time","time",";t(ns);Counts",m_time,&opt.h_time);
   Make_1d("Ntof","ntof",";t(mks);Counts",m_ntof,&opt.h_ntof);
   Make_1d("Etof","etof",";Energy(eV);Counts",m_etof,&opt.h_etof);
   Make_1d("Ltof","ltof",";Lambda(A);Counts",m_ltof,&opt.h_ltof);

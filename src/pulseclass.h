@@ -106,7 +106,9 @@ class PulseClass {
   //int tdif; //difference in tstamp from the event tstamp
 
   UChar_t Chan; //channel number
-  UChar_t State; //channel state word (Control word - external input in crs32)
+  UChar_t State;
+  //bit 0: channel state word (Control word - external input in crs32)
+  //bit 7: hardware counters
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
   //short *Data; //raw pulse data
 
@@ -139,8 +141,9 @@ class EventClass { //event of pulses
 
  public:
   Long64_t Nevt;
-  Char_t State; //state word from CRS module
-  //Long64_t TT; //Timestamp of the earliest pulse (threshold crossig)
+  Char_t State;
+  //bit 0: channel state word (Control word - external input in crs32)
+  //bit 7: hardware counters
   Long64_t Tstmp; //Timestamp of the earliest pulse (threshold crossig)
   Float_t T0; //time of the earliest *START* peak, relative to Tstmp, in samples
   std::vector <PulseClass> pulses;

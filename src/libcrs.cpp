@@ -2592,7 +2592,7 @@ int CRS::DoBuf() {
   // cout << "gzread1: " << Fmode << " " << nbuffers << " " << opt.rbuf_size*1024 << " " << gl_ibuf << " " << dec_iread[gl_ibuf] << endl;
 
   int length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
-  // if (nbuffers>100 && nbuffers<105) {
+  // if (nbuffers==4) {
   //   Print_Buf8(GLBuf+b_fill[gl_ibuf],length);
   // }
   b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
@@ -3881,6 +3881,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   UChar_t frmt = (GLBuf[idx1+6] & 0xF0) >> 4;
   Dec_Init(Blist,frmt);
   PulseClass ipls=dummy_pulse;
+  PulseClass start_pls;
+  double tt;
 
   //Print_Buf_err(ibuf);
   //Print_Buf_err(ibuf,"buf.dat");
@@ -3907,6 +3909,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     //   continue;
     // }
     if (ch==255) {
+      //tt = start_pls.Tstamp64*opt.Period*1e-9;
+      //cout << "c255: " << ibuf << " " << data << " " << (int) frmt << " " << tt << endl;
       //start signal
       idx1+=8;
       continue;      
@@ -4131,22 +4135,26 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       break;
     case 6:
       {
-	// if (data) {
-	// 	cout << "frmt6: " << (int) ch << " " << data << " " << npulses2[ch] << endl;
-	// }
-	//npulses3o[ch]=npulses3[ch];
-	Double_t rate = Long64_t(data)-npulses3[ch];
-	//cout << "c1: " << (int) ch << " " << data << " " << npulses3[ch] << " " << rate << endl;
+	//tt = Blist->back().Tstmp*opt.Period*1e-9;
+	
+	//cout << "c6: " << ibuf << " " << (int) ch << " " << data << " " << npulses3[ch] << " " << ipls.Tstamp64 << " " << (int) ipls.State << endl;
+	//if (!(ipls.State & 0x80)) {
+	//ipls.State|=0x80;
+	//}
 	npulses3[ch]=data;
-	if (opt.h_counter.b) {
-	  Blist->rbegin()->Fill_Time_Extend(hcl->m_counter[ch]);
-	  //cout << "counters: " << (int) ch << " " << rate << " " << data << endl;
-	  EventClass::Fill1dw(true,hcl->m_counter,ch,opt.T_acq,rate);
-	  EventClass::Fill1dw(false,hcl->m_counter,ch,opt.T_acq,rate);
-	}
+
+	/*
+	// if (opt.h_counter.b) {
+	//   Blist->rbegin()->Fill_Time_Extend(hcl->m_counter[ch]);
+	//   //cout << "counters: " << (int) ch << " " << rate << " " << data << endl;
+	//   EventClass::Fill1dw(true,hcl->m_counter,ch,opt.T_acq,rate);
+	//   EventClass::Fill1dw(false,hcl->m_counter,ch,opt.T_acq,rate);
+	// }
+	*/
 	break;
       }
     case 7:
+      //cout << "c7: " << ibuf << " " << (int) ch << " " << data << endl;
       break;
     default:
       //Print_Buf_err(ibuf,"error.dat");
@@ -4735,16 +4743,16 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
 
   ++errors[9];//event lag exceeded
 
-  rit=Elist->rbegin();
-  it=Elist->begin();
-  dt = rit->Tstmp - pls->Tstamp64;
-  cout << "!!! beginning !!! ---: "
-       << nevents << " " << pls->Tstamp64 << " "
-    //<< Elist->size() << " "
-       << rit->Tstmp << " "
-    //<< it->Tstmp
-       << dt
-       << endl;
+  // rit=Elist->rbegin();
+  // it=Elist->begin();
+  // dt = rit->Tstmp - pls->Tstamp64;
+  // cout << "!!! beginning !!! ---: "
+  //      << nevents << " " << pls->Tstamp64 << " "
+  //   //<< Elist->size() << " "
+  //      << rit->Tstmp << " "
+  //   //<< it->Tstmp
+  //      << dt
+  //      << endl;
 
   // nn=opt.ev_min;
   // for (rit=Elist->rbegin();rit!=Elist->rend() && nn>0 ;++rit,--nn) {

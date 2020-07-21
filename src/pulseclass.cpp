@@ -638,8 +638,8 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     }
   }
 
-  if (pls->State) {
-    State=1;
+  if (pls->State & 1) {
+    State|=1;
     //cout << "state: " << Nevt << " " << (int) State << endl;
   }
 
@@ -1011,12 +1011,12 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_height,ch,pk->Height);
       }
 
-      if (opt.h_tof.b && T0!=99999) {
+      if (opt.h_time.b && T0!=99999) {
 	//double dt = pulses[i].Tstamp64 - Tstmp;
 	//tt = pk->Time - T0 + dt;
 	tt = pk->Time - T0;
-	//cout << "Tof: " << Nevt << " " << pk->Time << " " << T0 << endl;
-	Fill1d(first,hcl->m_tof,ch,tt*opt.Period);
+	//cout << "Time: " << Nevt << " " << pk->Time << " " << T0 << endl;
+	Fill1d(first,hcl->m_time,ch,tt*opt.Period);
       }
 
       if (j==0) { //only for the first peak

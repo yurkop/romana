@@ -223,7 +223,7 @@ public:
   Hdef h_slope1;
   Hdef h_slope2;
   Hdef h_hei;
-  Hdef h_tof;
+  Hdef h_time;
   Hdef h_ntof;
   Hdef h_etof;
   Hdef h_ltof;
