@@ -20,46 +20,11 @@
 #include "common.h"
 
 typedef unsigned char byte;
-//typedef unsigned long long ULong64_t;
-//typedef long long Long64_t;
-
-//typedef std::vector<PulseClass> pulse_vect;
-//typedef std::list<EventClass> event_list;
-
-//typedef std::list<event_list>::iterator event_list_iter;
-//typedef std::list<event_list>::reverse_iterator event_list_reviter;
-
-//typedef std::list<pulse_vect>::iterator list_pulse_iter;
-//typedef std::list<pulse_vect>::reverse_iterator list_pulse_reviter;
 
 typedef std::list<EventClass>::iterator event_iter;
 typedef std::list<EventClass>::reverse_iterator event_reviter;
 
 using namespace std;
-
-/*
-#pragma pack (push, 1)
-struct rpeak_type73 {
-  Float_t Area;
-  //Float_t Height;
-  Float_t Width;
-  Float_t Time; //exact time relative to pulse start (from 1st deriv)
-  UChar_t Ch; //Channel number
-  //UChar_t Type; //peak type
-};
-#pragma pack (pop)
-
-#pragma pack (push, 1)
-struct rpeak_type74 {
-  Short_t Area;
-  //Float_t Height;
-  //Short_t Width;
-  Short_t Time; //exact time relative to pulse start (from 1st deriv)
-  UChar_t Ch; //Channel number
-  //UChar_t Type; //peak type
-};
-#pragma pack (pop)
-*/
 
 //---------------------------
 class CRS {
@@ -79,21 +44,14 @@ RQ_OBJECT("CRS")
   static const int DECSIZE=1048576; //1 MB
   static const int NDEC=100; // number of Dec buffers in ring
 
-  //static const Int_t MAXEV=1000; //maximal number of events in Levents
   //--------variables---------
 
   int MAXTRANS2; //real maxtrans, depends on usb_size
-  //Int_t Pre[MAX_CH+MAX_TP]; // pre-length for the analysys
-  //Pre = opt.preWr for crs2/32; Pre=0 for adcm
   
   gzFile f_raw;
   gzFile f_read;
   gzFile f_dec;
   bool juststarted;
-  //TFile* f_dec;
-
-  //TFile* f_tree;
-  //TTree* Tree;
 
   char raw_opt[5];
   char dec_opt[5];
@@ -117,51 +75,18 @@ RQ_OBJECT("CRS")
   //ULong64_t* RawBuf8;
   Int_t iraw; //index of RawBuf;
 
-  // struct Pstruct {
-  //   UInt_t num;
-  //   bool done;
-  //   pulse_vect Vpulses;
-  // };
-
-  // std::list<Pstruct> plist;
-  // typedef std::list<Pstruct>::iterator plist_iter;
-
-  //Vpulses - list of vectors of pulses for Decode*
-  // size of Vpulses can not be larger than 2
-  // (contains current vector and previous vector)
-  //std::list<pulse_vect> Vpulses;
-
-
-  //YK pulse_vect Vpulses[MAXTRANS];
-
-
-  //int nvp; //Vpulses index
-  //pulse_vect *vv; //- vector of pulses from current buffer
-  //pulse_vect *vv2; //- vector of pulses from previous buffer
-
-  //pulse_vect::iterator ipls; //pointer to the current pulse in decode*
-  //peak_type *ipk; //pointer to the current peak in the current pulse;
-  //Double_t QX,QY,RX,RY;
-  //Int_t n_frm; //counter for frmt4 and frmt5
-
-  //std::list<event_list> Levents; //list of events
   typedef std::list<EventClass> eventlist;
   typedef std::list<EventClass>::iterator evlist_iter;
   typedef std::list<EventClass>::reverse_iterator evlist_reviter;
 
-  eventlist Levents; //list of events
+  eventlist Levents; //global list of events
+  std::list<eventlist> Bufevents; //list of buffers for decoding
+
+
   //Double_t DT4; // Время, затраченное на 1 цикл handle_ana
   Double_t L4; //Levents.size at L4 (after erase in handle_ana)
   Int_t N4; //количество раз, при которых L4 было >2.0
   Int_t SLP; //sleep: increased if N4>3
-  std::list<eventlist> Bufevents;
-  
-  //EventClass mean_event;
-
-  ///////##std::list<EventClass>::iterator m_start;
-
-
-  //std::list<EventClass>::iterator m_event;
 
 
   // анализируем данные от m_start до m_event  
@@ -188,28 +113,15 @@ RQ_OBJECT("CRS")
   //1: crs-6/16 2-16bit;
   //2: crs-8/16 (16bit)
 
-  //Short_t ver_po;
-  //Int_t period;
-
   //buffers for sending parameters...
   byte buf_out[64];
   byte buf_in[64];
 
   int ntrans; //number of "simultaneous" transfers
 
-  //int ibuf;//index of Fbuf[*]
-
-  //int buf_off[MAXTRANS];
-  //int buf_len[MAXTRANS];
-  //unsigned char *buftr2[MAXTRANS];
   unsigned char *buftr[MAXTRANS];
   struct libusb_transfer *transfer[MAXTRANS];
-  //UChar_t* Fbuf[MAXTRANS];
-  //UChar_t* Fbuf2[MAXTRANS];
 
-  //timeval t_start, t_stop;
-  //Long64_t T_start; //start of the acuisition/analysis
-  //Float_t F_acq; //file acquisition time
   Long64_t inputbytes;
   Long64_t rawbytes;
   Long64_t decbytes;
@@ -226,26 +138,22 @@ RQ_OBJECT("CRS")
 
   Int_t npulses_bad[MAX_CH]; //number of bad pulses per channel
 
-  //bool b_usbbuf;
-
   bool batch;
   bool silent;
-  bool b_fstart; // 
+  bool b_fstart;
   
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
   bool b_stop; // true if acquisition and analysis are stopped
-  // bool b_mem; // true if memmory is low
+
   Int_t b_run; // used for trd_ana
   // b_run=0 - stop analysis immediately (pause)
   // b_run=1 - analyze events normally
   // b_run=2 - analyze all events, then stop 
 
-  //Long64_t T_last_good; //tstamp of the previous good event
   Long64_t Pstamp64; //previous tstamp (only for decode_adcm)
   Long64_t Offset64; //Tstamp offset in case of bad events
 
-  //ULong64_t istamp64; //temporary tstamp64
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   Long64_t Tstart0; //Tstamp of the ntof start pulses
 
@@ -301,7 +209,6 @@ RQ_OBJECT("CRS")
   int Command32(byte cmd, byte ch, byte type, int par);
   void Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max);
   int Command2(byte cmd, byte ch, byte type, int par);
-  //void Command_crs(byte cmd, byte chan);
   void AllParameters2(); // load all parameters
   void AllParameters41(); // load all parameters
   void AllParameters34(); // load all parameters
@@ -309,7 +216,6 @@ RQ_OBJECT("CRS")
   void AllParameters32(); // load all parameters
   int DoStartStop(); // start-stop acquisition
   void ProcessCrs(); // new process events in dostartstop
-  //void ProcessCrs_old(); // old process events in dostartstop
 #endif
 
 
@@ -323,20 +229,14 @@ RQ_OBJECT("CRS")
   void DoProf(Int_t nn, Int_t *aa, Int_t off);
   void Make_prof_ch();
 
-  //void DoFAna();
-  //void FAnalyze(bool nobatch);
   void InitBuf();
   void StopThreads(int all);
   void EndAna(int all);
   void FAnalyze2(bool nobatch);
   void AnaBuf(int loc_ibuf);
   int DoBuf();
-  //void DoNBuf(int nb);
   void DoNBuf2(int nb);
   void Show(bool force=false);
-
-  //void AllParameters32_old(); // load all parameters
-  //void Decode_any(UChar_t** buffer, int length, int itr);
 
   void Decode_switch(UInt_t ibuf);
   void Decode_any_MT(UInt_t iread, UInt_t ibuf, int loc_ibuf);
@@ -346,11 +246,6 @@ RQ_OBJECT("CRS")
   // что является одновременно началом следующего b_start[ibuf2]
   void FindLast(UInt_t ibuf, int loc_ibuf, int what);
 
-  // void FindLast75(UInt_t ibuf);
-  // void FindLast76(UInt_t ibuf);
-  // void FindLast33(UInt_t ibuf);
-  // void FindLast2(UInt_t ibuf);
-  // void FindLast_adcm(UInt_t ibuf);
   void PulseAna(PulseClass &ipls);
   void Dec_Init(eventlist* &Blist, UChar_t frmt);
   void Dec_End(eventlist* &Blist, UInt_t iread);
@@ -364,34 +259,19 @@ RQ_OBJECT("CRS")
   void Decode2(UInt_t iread, UInt_t ibuf);
   void Decode_adcm(UInt_t iread, UInt_t ibuf);
 
-  //void Decode32(UChar_t* buffer, int length);
-  //void Decode33(UChar_t* buffer, int length, int ivp, int ivp2);
-  //void Decode_adcm(UChar_t* buffer, int length);
-
   int Searchsync(int &idx, UInt_t* buf4, int end);
 
   //int Set_Trigger();
   void Ana_start();
   void Ana2(int all);
 
-  //void PrintPulse(int udata, bool pdata=false);
-
-  //void PEvent() { if (b_pevent) Emit("PEvent()"); } //*SIGNAL*
-  //void SigEvent() { Emit("SigEvent()"); } //*SIGNAL*
-
-  //void Event_Insert_Pulse(PulseClass* pulse);
-  //void Event_Insert_Pulse(pulse_vect::iterator pls);
   void Event_Insert_Pulse(eventlist *Elist, PulseClass* pls);
   void Make_Events(std::list<eventlist>::iterator BB);
   void Select_Event(EventClass *evt);
-  //void *Ana_Events(void* ptr);
 
-  //void NewTree();
-  //void CloseTree();
   void Reset_Raw();
   void Reset_Dec(Short_t mod);
-  // void Fill_Dec73(EventClass* evt);
-  // void Fill_Dec74(EventClass* evt);
+
   void Fill_Dec75(EventClass* evt);
   void Fill_Dec76(EventClass* evt);
   void Fill_Dec77(EventClass* evt);

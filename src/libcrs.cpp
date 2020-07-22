@@ -317,14 +317,6 @@ void *handle_decode(void *ctx) {
 }
 
 void *handle_mkev(void *ctx) {
-  //return 0;
-
-  // cmut.Lock();
-  // cout << "Mkev thread started: " << endl;
-  // cmut.UnLock();
-  //UInt_t ibuf=gl_ibuf;
-  //CRS::plist_iter it;
-
   std::list<CRS::eventlist>::iterator BB;
 	
   while (mkev_thread_run) {
@@ -337,7 +329,10 @@ void *handle_mkev(void *ctx) {
 
     bool fdec=false; //proper dec.. finished
     while(!fdec && mkev_thread_run) {
-      //cout << "mkev: " << crs->Bufevents.size() << endl;
+      // EventClass *evt = &(crs->Bufevents.begin()->back());
+      // if (evt->Nevt==gl_ivect && evt->State==123) {
+      // }
+
       for (BB = crs->Bufevents.begin(); BB!=crs->Bufevents.end();++BB) {
 	// cout << "mkev: " << crs->Bufevents.size() << BB->front().Nevt
 	//      << " " << gl_ivect << " " << (int) BB->front().State << endl;
@@ -347,12 +342,13 @@ void *handle_mkev(void *ctx) {
 	}
       }
       gSystem->Sleep(1);
-    }
 
+    }
     if (!mkev_thread_run) {
       break;
     }
 
+    //cout << "mkev: " << crs->Bufevents.size() << " " << gl_iread << " " << gl_ivect << " " << gl_ibuf << endl;
     crs->Make_Events(BB);
     gl_ivect++;
 
@@ -608,24 +604,24 @@ void *handle_dec_write(void *ctx) {
 
 /*
   int CRS::Set_Trigger() {
-  int len = strlen(opt.maintrig);
-  if (len==0) {
-  b_maintrig=false;
-  return 0;
-  }
-  else {
-  maintrig = TFormula("Trig",opt.maintrig);
-  int ires = maintrig.Compile();
-  if (ires) { //bad formula
-  b_maintrig=false;
-  return 1;
-  }
-  else {
-  crs->b_maintrig=true;
-  return 2;
-  }
-  }
-  }
+int len = strlen(opt.maintrig);
+if (len==0) {
+b_maintrig=false;
+return 0;
+}
+ else {
+maintrig = TFormula("Trig",opt.maintrig);
+int ires = maintrig.Compile();
+if (ires) { //bad formula
+b_maintrig=false;
+return 1;
+}
+ else {
+crs->b_maintrig=true;
+return 2;
+}
+}
+}
 */
 
 void CRS::Ana_start() {
@@ -2334,19 +2330,19 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
 
   /*
-  UShort_t len=0;
-  while (buf1<buf+sz) {
+    UShort_t len=0;
+    while (buf1<buf+sz) {
     memcpy(&len,buf1,sizeof(len));
     buf1+=sizeof(len);
     cout << "len: " << len << " " << buf1-buf << " " << sz << " " << buf1 << endl;
     buf1+=len;
-  }
-  // for (int i=0;i<sz;i++) {
-  //   cout << buf[i];
-  // }
-  // cout << endl;
+    }
+    // for (int i=0;i<sz;i++) {
+    //   cout << buf[i];
+    // }
+    // cout << endl;
 
-  exit(1);
+    exit(1);
   */
 
   int ret;
@@ -2388,15 +2384,15 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     } while (ret==1);
 
     /*
-    TIter nextd(lst);
-    TDataMember *dm;
-    char* popt = (char*)&opt;
-    while ((dm = (TDataMember *) nextd())) {
+      TIter nextd(lst);
+      TDataMember *dm;
+      char* popt = (char*)&opt;
+      while ((dm = (TDataMember *) nextd())) {
       if (dm->GetDataType()==0 && TString(dm->GetName()).Contains("h_")) {
-	//cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetOffset() << " " << (void*)popt+dm->GetOffset() << " " << &opt << " " << &(opt.h_time) << endl;
-	;//YK BufToClass("Hdef",dm->GetName(),popt+dm->GetOffset(),buf1,buf+sz);
+      //cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetOffset() << " " << (void*)popt+dm->GetOffset() << " " << &opt << " " << &(opt.h_time) << endl;
+      ;//YK BufToClass("Hdef",dm->GetName(),popt+dm->GetOffset(),buf1,buf+sz);
       }
-    }
+      }
     */
   } //if p2
 
@@ -2831,7 +2827,6 @@ void CRS::StopThreads(int all) {
     trd_dec_write=0;
   }
 
-  
   //cout << "done" << endl;
 }
 
@@ -3934,8 +3929,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   UChar_t frmt = (GLBuf[idx1+6] & 0xF0) >> 4;
   Dec_Init(Blist,frmt);
   PulseClass ipls=dummy_pulse;
-  PulseClass start_pls;
-  double tt;
+  //PulseClass start_pls;
+  //double tt;
 
   //Print_Buf_err(ibuf);
   //Print_Buf_err(ibuf,"buf.dat");
@@ -4576,17 +4571,17 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 */
 
 /*
-  void CRS::Print_Pulses() {
-  //std::vector<PulseClass> *vv = Vpulses+nvp;
-  //list_pulse_reviter vv = Vpulses.rbegin();
+void CRS::Print_Pulses() {
+//std::vector<PulseClass> *vv = Vpulses+nvp;
+//list_pulse_reviter vv = Vpulses.rbegin();
 
-  cout << "Pulses: " << npulses;
-  for (UInt_t i=0;i<vv->size();i++) {
-  cout << " " << (int)vv->at(i).Chan << "," << vv->at(i).Tstamp64;
-  }
-  cout << endl;
+cout << "Pulses: " << npulses;
+for (UInt_t i=0;i<vv->size();i++) {
+cout << " " << (int)vv->at(i).Chan << "," << vv->at(i).Tstamp64;
+}
+cout << endl;
 
-  }
+}
 */
 
 void CRS::Print_Events(const char* file) {
@@ -4846,19 +4841,29 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   //cout << "LL: " << Levents.rbegin()->Nevt << " " << Levents.rbegin()->TT << endl;
   //UInt_t sz = Levents.size();
 
+
+  //int n6=0;
+  //int n7=0;
   //merge beginning of BB and end of Levents
   if (!Levents.empty() && !BB->empty()) {
     evlist_iter it = BB->begin();
-    evlist_reviter rr = Levents.rbegin();
-    while (it!=BB->end() && it->Tstmp - rr->Tstmp<=opt.tgate*2) {
-      //cout << "merge: -------------" << endl;
+    Long64_t T_last = Levents.rbegin()->Tstmp + opt.tgate;
+    //evlist_reviter rr = Levents.rbegin();
+    //prnt("ssd d ds;",KGRN,"MMM: ",rr->Tstmp,it->Tstmp,it->Tstmp-rr->Tstmp,RST);
+    //while (it!=BB->end() && it->Tstmp - rr->Tstmp<=opt.tgate*2) {
+    while (it!=BB->end() && it->Tstmp <= T_last) {
+      //prnt("s d d d d;","merge: ",n6,rr->Tstmp,it->Tstmp,it->Tstmp-rr->Tstmp);
+      //++n6;
       for (UInt_t i=0;i<it->pulses.size();i++) {
 	Event_Insert_Pulse(&Levents,&it->pulses[i]);
+	//++n7;
       }
       it=BB->erase(it);
-      rr=Levents.rbegin();
+      //rr=Levents.rbegin();
     }
   }
+
+  //cout << "MakeEv: " << Bufevents.size() << " " << n6 << " " << n7 << endl;
 
   Levents.splice(Levents.end(),*BB);
   //cout << "BB1: " << Levents.size() << " " << Bufevents.size() << endl;
@@ -5291,12 +5296,14 @@ void CRS::Flush_Dec() {
   
   int m1 = mdec1%NDEC;
 
+  /*
   if (m1==0) {
     //cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
     cout << "Flush_dec: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
     buf_inits=0;
     buf_erase=0;
   }
+  */
 
   b_decwrite[m1]=true;
   dec_len[m1]=idec;
