@@ -5384,14 +5384,12 @@ void CRS::Flush_Dec() {
   
   int m1 = mdec1%NDEC;
 
-  /*
   if (m1==0) {
-    //cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
-    cout << "Flush_dec: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
+    cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
+    //cout << "Flush_dec: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
     buf_inits=0;
     buf_erase=0;
   }
-  */
 
   b_decwrite[m1]=true;
   dec_len[m1]=idec;
