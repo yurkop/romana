@@ -24,7 +24,14 @@ typedef unsigned char byte;
 typedef std::list<EventClass>::iterator event_iter;
 typedef std::list<EventClass>::reverse_iterator event_reviter;
 
+typedef std::pair<unsigned char*,int> Pair;
+
 using namespace std;
+
+/* struct pair { */
+/*   char* buf; */
+/*   size_t len; */
+/* }; */
 
 //---------------------------
 class CRS {
@@ -71,6 +78,7 @@ RQ_OBJECT("CRS")
   bool b_decwrite[NDEC];
   Int_t dec_len[NDEC];
 
+  std::list<Pair> rw_list;
   UChar_t* RawBuf;
   //ULong64_t* RawBuf8;
   Int_t iraw; //index of RawBuf;
@@ -282,6 +290,7 @@ RQ_OBJECT("CRS")
 
   void Fill_Raw(EventClass* evt);
   void Flush_Raw();
+  void Flush_Raw_MT(unsigned char* buf, int len);
 
   //void Print_Pulses();
   void Print_Events(const char* file=0);

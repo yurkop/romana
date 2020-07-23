@@ -35,7 +35,9 @@ TMutex stat_mut;
 //TMutex ana_mut;
 
 TMutex dec_mut;
-TMutex ringdec_mut;
+TMutex raw_mut;
+
+//TMutex ringdec_mut;
 
 TMutex cmut;
 
@@ -127,6 +129,7 @@ TThread* trd_ana;
 //TCondition ana_cond;
 //int ana_check;
 TThread* trd_dec_write;
+TThread* trd_raw_write;
 
 
 UInt_t dec_iread[CRS::MAXTRANS];
@@ -234,6 +237,10 @@ static void cback(libusb_transfer *trans) {
     } //if decode
 
     if (opt.raw_write && !opt.raw_flag) {
+
+      crs->Flush_Raw_MT(trans->buffer, trans->actual_length);
+
+      /*
       crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
       if (crs->f_raw) {
 	int res=gzwrite(crs->f_raw,trans->buffer,trans->actual_length);
@@ -244,6 +251,8 @@ static void cback(libusb_transfer *trans) {
 	cout << "Can't open file: " << crs->rawname.c_str() << endl;
 	opt.raw_write=false;
       }
+      */
+      
     }
 
     trans->buffer=next_buf;
@@ -529,6 +538,7 @@ void *handle_dec_write(void *ctx) {
       crs->f_dec = gzopen(crs->decname.c_str(),crs->dec_opt);
       if (!crs->f_dec) {
 	cout << "Can't open file: " << crs->decname.c_str() << endl;
+	crs->f_dec=0;
 	opt.dec_write=false;
 	//idec=0;
 	break;
@@ -541,6 +551,8 @@ void *handle_dec_write(void *ctx) {
 	     << res << " " << crs->dec_len[m2] << endl;
 	crs->decbytes+=res;
 	opt.dec_write=false;
+	gzclose(crs->f_dec);
+	crs->f_dec=0;
 	break;
       }
       crs->decbytes+=res;
@@ -559,6 +571,69 @@ void *handle_dec_write(void *ctx) {
   } //while (ana_thread_run)
   return NULL;
 } //handle_dec_write
+
+void *handle_raw_write(void *ctx) {
+
+
+  cmut.Lock();
+  cout << "raw_write thread started: " << endl;
+  cmut.UnLock();
+
+  //return 0;
+  while (ana_thread_run) {
+
+    // //YKYKYK
+    // double zzz = sqrt(gRandom->Rndm());
+    // continue;
+    // //YKYKYK
+
+    if (!crs->rw_list.empty()) { //write
+
+      Pair p=crs->rw_list.front();
+      unsigned char* buf = p.first;
+      int len = p.second;
+
+      raw_mut.Lock();
+      crs->rw_list.pop_front();
+      prnt("ss d ds;",KGRN,"raw_write: ",crs->rw_list.size(),buf-GLBuf,RST);
+      raw_mut.UnLock();
+
+      crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
+      if (crs->f_raw) {
+	int res=gzwrite(crs->f_raw,buf,len);
+	if (res!=len) {
+	  cout << "Error writing to file: " << crs->rawname.c_str() << " " 
+	       << res << " " << len << endl;
+	  crs->rawbytes+=res;
+	  opt.raw_write=false;
+	  gzclose(crs->f_raw);
+	  crs->f_raw=0;
+	  break;
+	}
+	gzclose(crs->f_raw);
+	crs->f_raw=0;
+	crs->rawbytes+=res;
+	
+      }
+      else {
+	cout << "Can't open file: " << crs->rawname.c_str() << endl;
+	opt.raw_write=false;
+      }
+      
+    }
+    else {
+      gSystem->Sleep(5);
+    }
+
+  } //while (ana_thread_run)
+
+  return NULL;
+} //handle_raw_write
+
+
+
+
+
 
 // void *handle_ev(void *ctx) {
 //   int nvp=0;
@@ -685,6 +760,11 @@ void CRS::Ana_start() {
     if (opt.dec_write) {
       trd_dec_write = new TThread("trd_dec_write", handle_dec_write, (void*) 0);
       trd_dec_write->Run();
+    }
+
+    if (opt.raw_write) {
+      trd_raw_write = new TThread("trd_raw_write", handle_raw_write, (void*) 0);
+      trd_raw_write->Run();
     }
     //gSystem->Sleep(5000);
 
@@ -1010,6 +1090,7 @@ CRS::CRS() {
   trd_mkev=0;
   trd_ana=0;
   trd_dec_write=0;
+  trd_raw_write=0;
 
   for (int i=0;i<MAXTRANS;i++) {
     trd_dec[i]=0;
@@ -2825,6 +2906,12 @@ void CRS::StopThreads(int all) {
     trd_dec_write->Join();
     trd_dec_write->Delete();
     trd_dec_write=0;
+  }
+
+  if (trd_raw_write) {
+    trd_raw_write->Join();
+    trd_raw_write->Delete();
+    trd_raw_write=0;
   }
 
   //cout << "done" << endl;
@@ -4924,6 +5011,7 @@ void CRS::Reset_Raw() {
 
   //RawBuf8 = (ULong64_t*) RawBuf;
   iraw=0;
+  rw_list.clear();
 }
 
 void CRS::Reset_Dec(Short_t mod) {
@@ -5444,3 +5532,27 @@ void CRS::Flush_Raw() {
   f_raw=0;
 
 }
+
+void CRS::Flush_Raw_MT(unsigned char* buf, int len) {
+
+  /*
+  if (m1==0) {
+    //cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
+    cout << "Flush_dec: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
+    buf_inits=0;
+    buf_erase=0;
+  }
+  */
+
+  Pair p;
+  p.first=buf;
+  p.second=len;
+  
+  raw_mut.Lock();
+  rw_list.push_back(p);
+  prnt("s d d;","Flush_raw: ",rw_list.size(),buf-GLBuf);
+  //cout << "Flush_raw: " << rw_list.size() << " " << buf-GLBuf << endl;
+  raw_mut.UnLock();
+
+}
+
