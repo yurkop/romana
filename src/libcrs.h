@@ -67,6 +67,7 @@ RQ_OBJECT("CRS")
   string rawname;
   string decname;
   string rootname;
+  string logname;
 
   UChar_t* DecBuf_ring;
   UChar_t* DecBuf; 

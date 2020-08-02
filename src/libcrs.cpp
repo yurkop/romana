@@ -26,8 +26,8 @@
 #include "TApplication.h"
 
 
-int buf_inits=0;
-int buf_erase=0;
+//int buf_inits=0;
+//int buf_erase=0;
 
 
 //TMutex Emut3;
@@ -169,6 +169,8 @@ TTimeStamp tt2[10];
 double ttm[10];
 double dif;
 #endif
+
+EventClass levt;
 
 //TCondition tcond1(0);
 
@@ -517,8 +519,60 @@ void *handle_ana(void *ctx) {
   return NULL;
 } //handle_ana
 
+
+
+
+
+void D79(UChar_t* DBuf, int len, CRS::eventlist &Blist) {
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - State
+  // 2) N 8-byte words, each containing one peak
+  //    1st (lowest) 2 bytes - (unsigned) Area*5+1
+  //    2 bytes - Time*100
+  //    2 bytes - Width*1000
+  //    1 byte - channel
+
+
+  int idx1=0;
+  UChar_t frmt = DBuf[idx1+7] & 0x80;
+  EventClass* evt = &crs->dummy_event;
+  int nevents=0;
+
+  while (idx1<len) {
+    frmt = DBuf[idx1+7] & 0x80; //event start bit
+
+    if (frmt) { //event start
+      ULong64_t* buf8 = (ULong64_t*) (DBuf+idx1);
+
+      evt = &*Blist.insert(Blist.end(),EventClass());
+      evt->Nevt=nevents;
+
+      evt->Tstmp = (*buf8) & sixbytes;
+      evt->State = Bool_t((*buf8) & 0x1000000000000);
+      // if (idx1==0) {
+      // 	prnt("ss d d l xs;",BYEL,"D79:",nevents,idx1,evt->Tstmp,*buf8,RST);
+      // }
+      nevents++;
+    }
+    else {
+    }
+
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+} //D79
+
+
+
+
+
+
 void *handle_dec_write(void *ctx) {
   
+  static int nevt=0;
+
   cmut.Lock();
   cout << "dec_write thread started: " << endl;
   cmut.UnLock();
@@ -532,6 +586,10 @@ void *handle_dec_write(void *ctx) {
     // //YKYKYK
 
     int m2 = crs->mdec2%CRS::NDEC;
+
+    // cout << "zz: " << crs->mdec2 << " " << m2 << " " << crs->b_decwrite[m2]
+    // 	   << " " << crs->dec_len[m2] << endl;
+
     if (crs->b_decwrite[m2]) { //write
 
       sprintf(crs->dec_opt,"ab%d",opt.dec_compr);
@@ -560,15 +618,31 @@ void *handle_dec_write(void *ctx) {
       gzclose(crs->f_dec);
       crs->f_dec=0;
 
+      CRS::eventlist Blist;
+      D79(DBuf,crs->dec_len[m2],Blist);
+
+      // cout << "hdw: " << crs->mdec2 << " " << m2
+      // 	   << " " << Blist.size() << endl;
+      nevt+=Blist.size();
+      prnt("ss d d d d d sx xs;",KGRN,"ndw:", crs->mdec2, m2, Blist.size(),
+	   Blist.front().Tstmp, Blist.back().Tstmp, BYEL,
+	   DBuf, *(ULong64_t*)DBuf, RST);
+      //BRED, crs->dec_len[m2], nevt, RST);
+
       crs->b_decwrite[m2]=false;
       ++crs->mdec2;
       
-    }
+    } //if (crs->b_decwrite[m2])
     else {
       gSystem->Sleep(5);
     }
 
   } //while (ana_thread_run)
+
+  cmut.Lock();
+  cout << "dec_write thread stopped: " << endl;
+  cmut.UnLock();
+
   return NULL;
 } //handle_dec_write
 
@@ -3449,7 +3523,7 @@ void CRS::PulseAna(PulseClass &ipls) {
 
 void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
   dec_mut.Lock();
-  ++buf_inits;
+  //++buf_inits;
   Bufevents.push_back(eventlist());
   Blist = &Bufevents.back();
   dec_mut.UnLock();
@@ -4956,7 +5030,7 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   //cout << "BB1: " << Levents.size() << " " << Bufevents.size() << endl;
 
   Bufevents.erase(BB);
-  ++buf_erase;
+  //++buf_erase;
 
   //m_end = crs->Levents.end();
   //std::advance(m_end,-opt.ev_min);  
@@ -5308,7 +5382,10 @@ void CRS::Fill_Dec79(EventClass* evt) {
   if (evt->State) {
     *DecBuf8 |= 0x1000000000000;
   }
-
+  //prnt("ss d l x ls;",BGRN,"Dec:",nevents,evt->Tstmp,*DecBuf8,(UChar_t*)DecBuf8-DecBuf,RST);
+  // if ((UChar_t*)DecBuf8==DecBuf) {
+  //   prnt("ss d l x ls;",BGRN,"Dec:",nevents,evt->Tstmp,*DecBuf8,(UChar_t*)DecBuf8-DecBuf,RST);
+  // }
   ++DecBuf8;
 
   for (UInt_t i=0;i<evt->pulses.size();i++) {
@@ -5336,6 +5413,13 @@ void CRS::Fill_Dec79(EventClass* evt) {
 
   idec = (UChar_t*)DecBuf8-DecBuf;
   if (idec>DECSIZE) {
+    levt=*evt;
+    CRS::eventlist Blist;
+    D79(DecBuf,idec,Blist);
+    ULong64_t* buf8 = (ULong64_t*) (GLBuf);
+    prnt("s l l l l x;", "Flush:", levt.Tstmp, Blist.size(),
+	 Blist.front().Tstmp, Blist.back().Tstmp, *buf8);
+    //cout << "Flush: " << levt.Tstmp << endl;
     Flush_Dec();
   }
 
@@ -5377,6 +5461,7 @@ void CRS::Flush_Dec_old() {
 
 void CRS::Flush_Dec() {
 
+  static int nprev=0;
   //idec=0;
   //return;
 
@@ -5385,14 +5470,28 @@ void CRS::Flush_Dec() {
   int m1 = mdec1%NDEC;
 
   if (m1==0) {
-    cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
-    //cout << "Flush_dec: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
-    buf_inits=0;
-    buf_erase=0;
+    cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << endl;
+    //" " << buf_inits << " " << buf_erase << endl;
+
+    //buf_inits=0;
+    //buf_erase=0;
   }
 
-  b_decwrite[m1]=true;
+  //gSystem->Sleep(1000);
   dec_len[m1]=idec;
+  CRS::eventlist Blist;
+  D79(DecBuf,crs->dec_len[m1],Blist);
+
+  int nevt=crs->nevents2-nprev;
+  nprev=crs->nevents2;
+  prnt("ss d d d l l sx xs;",KBLU,"yyy:", mdec1, m1, Blist.size(),
+       Blist.front().Tstmp, Blist.back().Tstmp, BYEL,
+       DecBuf, *(ULong64_t*)DecBuf, RST);
+
+  b_decwrite[m1]=true;
+
+  // cout << "yyy: " << mdec1 << " " << m1 << " " << crs->b_decwrite[m1]
+  //      << " " << crs->nevents2 << endl;
   ++mdec1;
 
   DecBuf=DecBuf_ring+m1*2*DECSIZE;

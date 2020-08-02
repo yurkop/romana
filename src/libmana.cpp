@@ -124,6 +124,8 @@ void prnt(const char* fmt...)
 {
   //format:
   // d - integer
+  // l - Long64_t
+  // x - ULong64_t hex
   // s - char*
   // f - double
   // [0..9] - set width (only 1 digit)
@@ -145,6 +147,16 @@ void prnt(const char* fmt...)
     else if (*fmt == 'd') {
       int i = va_arg(args, int);
       std::cout << i;
+      ww=0;pp=-1;
+    }
+    else if (*fmt == 'l') {
+      Long64_t i = va_arg(args, Long64_t);
+      std::cout << i;
+      ww=0;pp=-1;
+    }
+    else if (*fmt == 'x') {
+      ULong64_t i = va_arg(args, ULong64_t);
+      std::cout << hex << i << dec;
       ww=0;pp=-1;
     }
     else if (*fmt == 's') {
@@ -1460,7 +1472,7 @@ bool TestFile() {
     }
 
     Int_t retval;
-    //new ColorMsgBox(gClient->GetRoot(), this,
+    //new ColorMsgBox(gClient->GetRoot(), myM,
     new TGMsgBox(gClient->GetRoot(), myM,
 		 "File exists",
 		 msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
@@ -2251,7 +2263,6 @@ void MainFrame::DoClose() {
   crs->Detect_device();
   if (crs->Fmode==1) { //CRS is present
     daqpar->AllEnabled(true);
-
     fStart->SetEnabled(true);
     fReset->SetEnabled(true);
 
@@ -3195,6 +3206,14 @@ void MainFrame::HandleMenu(Int_t menu_id)
   }
 */
 
+//-------------------------
+// TGMsgBox2::TGMsgBox2(const TGWindow* p, const TGWindow* main, const char* title, const char* msg, EMsgBoxIcon icon, Int_t buttons, Int_t* ret_code, UInt_t options, Int_t text_align)
+//   : TGMsgBox(p, main, title, msg, icon, buttons,ret_code,options, text_align)
+// {
+//   cout << "TGM: " << endl;
+// }
+// TGMsgBox2::TGMsgBox2(const TGWindow* p, const TGWindow* main, const char* title, const char* msg, EMsgBoxIcon icon, Int_t buttons = kMBDismiss, Int_t* ret_code = 0, UInt_t options = kVerticalFrame, Int_t text_align = kTextCenterX|kTextCenterY)
+// {}
 //-------------------------
 ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
 			 const char *title, const char *msg, EMsgBoxIcon icon,
