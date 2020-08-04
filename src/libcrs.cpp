@@ -34,8 +34,9 @@
 TMutex stat_mut;
 //TMutex ana_mut;
 
-TMutex dec_mut;
+TMutex decode_mut;
 TMutex raw_mut;
+TMutex decw_mut;
 
 //TMutex ringdec_mut;
 
@@ -114,6 +115,7 @@ int event_thread_run;//=1;
 int decode_thread_run;
 int mkev_thread_run;
 int ana_thread_run;
+int wrt_thread_run;
 int dec_nr[CRS::MAXTRANS];
 
 
@@ -467,6 +469,7 @@ void *handle_ana(void *ctx) {
 
 
     if (ana_all) {
+      //cout << "ana_all: " << endl;
       if (opt.dec_write) {
 	crs->Flush_Dec();
       }
@@ -571,73 +574,31 @@ void D79(UChar_t* DBuf, int len, CRS::eventlist &Blist) {
 
 void *handle_dec_write(void *ctx) {
   
-  static int nevt=0;
-
   cmut.Lock();
   cout << "dec_write thread started: " << endl;
   cmut.UnLock();
 
-  //return 0;
-  while (ana_thread_run) {
+  while (wrt_thread_run || !crs->decw_list.empty()) {
 
-    // //YKYKYK
-    // double zzz = sqrt(gRandom->Rndm());
-    // continue;
-    // //YKYKYK
+    if (!crs->decw_list.empty()) { //write
 
-    int m2 = crs->mdec2%CRS::NDEC;
+      Pair p=crs->decw_list.front();
+      UChar_t* buf = p.first;
+      int len = p.second;
 
-    // cout << "zz: " << crs->mdec2 << " " << m2 << " " << crs->b_decwrite[m2]
-    // 	   << " " << crs->dec_len[m2] << endl;
+      decw_mut.Lock();
+      // prnt("ss d x d ls;",KGRN,"decw_write: ",crs->decw_list.size(), buf, len, crs->DecBuf-crs->DecBuf_ring,RST);
+      crs->decw_list.pop_front();
+      decw_mut.UnLock();
 
-    if (crs->b_decwrite[m2]) { //write
+      crs->Wr_Dec(buf,len);
 
-      sprintf(crs->dec_opt,"ab%d",opt.dec_compr);
-      crs->f_dec = gzopen(crs->decname.c_str(),crs->dec_opt);
-      if (!crs->f_dec) {
-	cout << "Can't open file: " << crs->decname.c_str() << endl;
-	crs->f_dec=0;
-	opt.dec_write=false;
-	//idec=0;
-	break;
-      }
-
-      UChar_t* DBuf=crs->DecBuf_ring+m2*2*CRS::DECSIZE;
-      int res=gzwrite(crs->f_dec,DBuf,crs->dec_len[m2]);
-      if (res!=crs->dec_len[m2]) {
-	cout << "Error writing to file: " << crs->decname.c_str() << " " 
-	     << res << " " << crs->dec_len[m2] << endl;
-	crs->decbytes+=res;
-	opt.dec_write=false;
-	gzclose(crs->f_dec);
-	crs->f_dec=0;
-	break;
-      }
-      crs->decbytes+=res;
-
-      gzclose(crs->f_dec);
-      crs->f_dec=0;
-
-      CRS::eventlist Blist;
-      D79(DBuf,crs->dec_len[m2],Blist);
-
-      // cout << "hdw: " << crs->mdec2 << " " << m2
-      // 	   << " " << Blist.size() << endl;
-      nevt+=Blist.size();
-      prnt("ss d d d d d sx xs;",KGRN,"ndw:", crs->mdec2, m2, Blist.size(),
-	   Blist.front().Tstmp, Blist.back().Tstmp, BYEL,
-	   DBuf, *(ULong64_t*)DBuf, RST);
-      //BRED, crs->dec_len[m2], nevt, RST);
-
-      crs->b_decwrite[m2]=false;
-      ++crs->mdec2;
-      
-    } //if (crs->b_decwrite[m2])
+    } //if (!crs->decw_list.empty())
     else {
       gSystem->Sleep(5);
     }
 
-  } //while (ana_thread_run)
+  } //while (wrt_thread_run)
 
   cmut.Lock();
   cout << "dec_write thread stopped: " << endl;
@@ -648,28 +609,22 @@ void *handle_dec_write(void *ctx) {
 
 void *handle_raw_write(void *ctx) {
 
-
   cmut.Lock();
   cout << "raw_write thread started: " << endl;
   cmut.UnLock();
 
   //return 0;
-  while (ana_thread_run) {
-
-    // //YKYKYK
-    // double zzz = sqrt(gRandom->Rndm());
-    // continue;
-    // //YKYKYK
+  while (wrt_thread_run || !crs->rw_list.empty()) {
 
     if (!crs->rw_list.empty()) { //write
 
       Pair p=crs->rw_list.front();
-      unsigned char* buf = p.first;
+      UChar_t* buf = p.first;
       int len = p.second;
 
       raw_mut.Lock();
       crs->rw_list.pop_front();
-      prnt("ss d ds;",KGRN,"raw_write: ",crs->rw_list.size(),buf-GLBuf,RST);
+      //prnt("ss d ds;",KGRN,"raw_write: ",crs->rw_list.size(),buf-GLBuf,RST);
       raw_mut.UnLock();
 
       crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
@@ -699,79 +654,14 @@ void *handle_raw_write(void *ctx) {
       gSystem->Sleep(5);
     }
 
-  } //while (ana_thread_run)
+  } //while (wrt_thread_run)
+
+  cmut.Lock();
+  cout << "raw_write thread stopped: " << endl;
+  cmut.UnLock();
 
   return NULL;
 } //handle_raw_write
-
-
-
-
-
-
-// void *handle_ev(void *ctx) {
-//   int nvp=0;
-//   cout << "Event thread started: " << endl;
-//   while (decode_thread_run) {
-//     while(!evt_check)
-//       evt_cond.Wait();
-
-//     cout << "mkevent: " << endl;
-//     evt_check=0;
-//   }
-//   return NULL;
-// }
-
-/*
-  void *handle_buf(void *ctx)
-  {
-
-  int* nmax = (int*) ctx; 
-  //cout << "handle_buf: " << *nmax << endl; 
-
-  int i=1;
-  int res;
-  while ((res=crs->DoBuf()) && crs->b_fana && i<*nmax) {
-  i++;
-  }
-
-  if (!res) { //end of file reached -> analyze all events
-  crs->b_run=2;
-  //gzclose(crs->f_read);
-  //crs->f_read=0;
-  }
-  else { //otherwise just stop the analysis
-  gSystem->Sleep(30);    
-  crs->b_run=0;
-  }
-
-  //cout << "end_buf: " << crs->nbuffers << " " << i << " " << res << " " << crs->b_run << endl;
-  crs->b_stop=true;
-  return NULL;
-  }
-*/
-
-/*
-  int CRS::Set_Trigger() {
-int len = strlen(opt.maintrig);
-if (len==0) {
-b_maintrig=false;
-return 0;
-}
- else {
-maintrig = TFormula("Trig",opt.maintrig);
-int ires = maintrig.Compile();
-if (ires) { //bad formula
-b_maintrig=false;
-return 1;
-}
- else {
-crs->b_maintrig=true;
-return 2;
-}
-}
-}
-*/
 
 void CRS::Ana_start() {
   //set initial variables for analysis
@@ -802,6 +692,7 @@ void CRS::Ana_start() {
     decode_thread_run=1;
     mkev_thread_run=1;
     ana_thread_run=1;
+    wrt_thread_run=1;
 
     //cout << "gl_Nbuf: " << gl_Nbuf << endl;
     //exit(1);
@@ -1129,7 +1020,7 @@ CRS::CRS() {
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
 
-  DecBuf_ring=new UChar_t[2*DECSIZE*NDEC]; //2*1*10 MB
+  DecBuf_ring=new UChar_t[DECSIZE*NDEC]; //1*100 MB
   DecBuf=DecBuf_ring;
   RawBuf=new UChar_t[RAWSIZE]; //10 MB
 
@@ -1186,7 +1077,7 @@ CRS::~CRS() {
 
   DoExit();
   cout << "~CRS()" << endl;
-  delete[] DecBuf;
+  delete[] DecBuf_ring;
   delete[] RawBuf;
   delete[] GLBuf2;
 
@@ -2966,7 +2857,8 @@ void CRS::StopThreads(int all) {
   }
 
   gSystem->Sleep(50);
-  ana_thread_run=0;    
+  //cout << "StopThreads: " << endl;
+  ana_thread_run=0;
   ana_all=all;
   //ana_check=1;
   //ana_cond.Signal();
@@ -2976,6 +2868,8 @@ void CRS::StopThreads(int all) {
     trd_ana=0;
   }
 
+  //gSystem->Sleep(500);
+  wrt_thread_run=0;
   if (trd_dec_write) {
     trd_dec_write->Join();
     trd_dec_write->Delete();
@@ -2995,6 +2889,7 @@ void CRS::EndAna(int all) {
   //all=1 -> finish analysis of all buffers
   //all=0 -> just stop, buffers remain not analyzed,
   //         can continue from this point on
+
   if (opt.nthreads>1) {
     gSystem->Sleep(50);
     while (!Bufevents.empty()) {
@@ -3015,12 +2910,13 @@ void CRS::EndAna(int all) {
   // }
 
   //new (06.02.2020)
-  if (opt.dec_write) {
-    crs->Flush_Dec();
-  }
-  if (opt.raw_write && opt.raw_flag) {
-    crs->Flush_Raw();
-  }
+  //removed (04.08.2020)
+  // if (opt.dec_write) {
+  //   crs->Flush_Dec();
+  // }
+  // if (opt.raw_write && opt.raw_flag) {
+  //   crs->Flush_Raw();
+  // }
 
 }
 
@@ -3522,11 +3418,11 @@ void CRS::PulseAna(PulseClass &ipls) {
 }
 
 void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
-  dec_mut.Lock();
+  decode_mut.Lock();
   //++buf_inits;
   Bufevents.push_back(eventlist());
   Blist = &Bufevents.back();
-  dec_mut.UnLock();
+  decode_mut.UnLock();
 
   // Blist->push_back(EventClass());
   // Blist->front().Nevt=iread;
@@ -3821,7 +3717,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
     //int cnt = frmt & 0x0F;
     // frmt = (frmt & 0xF0)>>4;
     data = buf8[idx1/8] & sixbytes;
-    unsigned char ch = GLBuf[idx1+7];
+    UChar_t ch = GLBuf[idx1+7];
 
     if (ch==255) {
       //start signal
@@ -4107,7 +4003,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     //int cnt = frmt & 0x0F;
     // frmt = (frmt & 0xF0)>>4;
     data = buf8[idx1/8] & sixbytes;
-    unsigned char ch = GLBuf[idx1+7];
+    UChar_t ch = GLBuf[idx1+7];
 
     // cout << "frmt: " << (int)frmt << " " << Blist->size() << " " << (int) ch << " " << (int) ipls.Chan << endl;
 
@@ -4411,7 +4307,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
     unsigned short uword = buf2[idx2];
     frmt = (uword & 0x7000)>>12;
     short data = uword & 0xFFF;
-    unsigned char ch = (uword & 0x8000)>>15;
+    UChar_t ch = (uword & 0x8000)>>15;
 
     // if (frmt && Blist->empty()) {
     //   cout << "dec2: bad buf start: " << idx2 << " " << (int) ch << " " << frmt << endl;
@@ -5106,87 +5002,12 @@ void CRS::Reset_Dec(Short_t mod) {
   DecBuf=DecBuf_ring;
   DecBuf8 = (ULong64_t*) DecBuf;
   idec=0;
-  mdec1=0;
-  mdec2=0;
-  memset(b_decwrite,0,sizeof(b_decwrite));
+  decw_list.clear();
+
+  // mdec1=0;
+  // mdec2=0;
+  // memset(b_decwrite,0,sizeof(b_decwrite));
 }
-
-/*
-  void CRS::Fill_Dec73(EventClass* evt) {
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-  //int ch = evt->pulses[i].Chan;
-  for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-  peak_type* pk = &evt->pulses[i].Peaks[j];
-  rP73.Area   = pk->Area;
-  //rP.Width  = pk->Width      ;
-  rP73.Time   = pk->Time;
-  rP73.Ch     = evt->pulses[i].Chan;
-  //rP.Type   = pk->Type       ;
-  rPeaks73.push_back(rP73);
-  }
-  }
-
-  UShort_t sz = 3 + sizeof(Long64_t) + rPeaks73.size()*sizeof(rpeak_type73);
-  if (idec+sz >= DECSIZE) {
-  Flush_Dec();
-  }
-  DecBuf[idec++] = 'D';
-  UShort_t* buf2 = (UShort_t*) (DecBuf+idec);
-  *buf2 = sz;
-  idec+=2;
-  Long64_t* buf8 = (Long64_t*) (DecBuf+idec);
-  Long64_t tt = evt->State;
-  tt <<= 48;
-  tt += evt->Tstmp;
-  *buf8 = tt;
-  idec+=sizeof(Long64_t);
-  for (UInt_t i=0; i<rPeaks73.size(); i++) {
-  rpeak_type73* buf = (rpeak_type73*) (DecBuf+idec);
-  memcpy(buf,&rPeaks73[i],sizeof(rpeak_type73));
-  idec+=sizeof(rpeak_type73);
-  }
-  rPeaks73.clear();
-
-  }
-
-  void CRS::Fill_Dec74(EventClass* evt) {
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-  for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-  peak_type* pk = &evt->pulses[i].Peaks[j];
-  rP74.Area   = pk->Area;
-  //rP.Width  = pk->Width      ;
-  rP74.Time   = pk->Time*10;
-  rP74.Ch     = evt->pulses[i].Chan;
-  //rP.Type   = pk->Type       ;
-  rPeaks74.push_back(rP74);
-  }
-  }
-
-  UShort_t sz = 3 + sizeof(Long64_t) + rPeaks74.size()*sizeof(rpeak_type74);
-  if (idec+sz >= DECSIZE) {
-  Flush_Dec();
-  }
-  DecBuf[idec++] = 'D';
-  UShort_t* buf2 = (UShort_t*) (DecBuf+idec);
-  *buf2 = sz;
-  idec+=2;
-  Long64_t* buf8 = (Long64_t*) (DecBuf+idec);
-  Long64_t tt = evt->State;
-  tt <<= 48;
-  tt += evt->Tstmp;
-  *buf8 = tt;
-  idec+=sizeof(Long64_t);
-  for (UInt_t i=0; i<rPeaks74.size(); i++) {
-  rpeak_type74* buf = (rpeak_type74*) (DecBuf+idec);
-  memcpy(buf,&rPeaks74[i],sizeof(rpeak_type74));
-  idec+=sizeof(rpeak_type74);
-  }
-  rPeaks74.clear();
-
-  } //Fill_Dec74
-*/
 
 void CRS::Fill_Dec75(EventClass* evt) {
   // fill_dec is not thread safe!!!
@@ -5413,18 +5234,51 @@ void CRS::Fill_Dec79(EventClass* evt) {
 
   idec = (UChar_t*)DecBuf8-DecBuf;
   if (idec>DECSIZE) {
-    levt=*evt;
-    CRS::eventlist Blist;
-    D79(DecBuf,idec,Blist);
-    ULong64_t* buf8 = (ULong64_t*) (GLBuf);
-    prnt("s l l l l x;", "Flush:", levt.Tstmp, Blist.size(),
-	 Blist.front().Tstmp, Blist.back().Tstmp, *buf8);
+    //levt=*evt;
+    //CRS::eventlist Blist;
+    //D79(DecBuf,idec,Blist);
+    //ULong64_t* buf8 = (ULong64_t*) (GLBuf);
+    //prnt("s l l l l x;", "Flush:", levt.Tstmp, Blist.size(),
+    // Blist.front().Tstmp, Blist.back().Tstmp, *buf8);
     //cout << "Flush: " << levt.Tstmp << endl;
     Flush_Dec();
   }
 
 } //Fill_Dec79
 
+int CRS::Wr_Dec(UChar_t* buf, int len) {
+  //return >0 if error
+  //       0 - OK
+
+  sprintf(dec_opt,"ab%d",opt.dec_compr);
+  f_dec = gzopen(decname.c_str(),dec_opt);
+  if (!f_dec) {
+    cout << "Can't open file: " << decname.c_str() << endl;
+    f_dec=0;
+    opt.dec_write=false;
+    //idec=0;
+    return 1;
+  }
+
+  int res=gzwrite(f_dec,buf,len);
+  if (res!=len) {
+    cout << "Error writing to file: " << decname.c_str() << " " 
+	 << res << " " << len << endl;
+    decbytes+=res;
+    opt.dec_write=false;
+    gzclose(f_dec);
+    f_dec=0;
+    return 2;
+  }
+  decbytes+=res;
+
+  gzclose(f_dec);
+  f_dec=0;
+  return 0;
+
+}
+
+/*
 void CRS::Flush_Dec_old() {
 
   //idec=0;
@@ -5458,18 +5312,33 @@ void CRS::Flush_Dec_old() {
   DecBuf8 = (ULong64_t*) DecBuf;
 
 }
-
+*/
 void CRS::Flush_Dec() {
 
-  static int nprev=0;
-  //idec=0;
-  //return;
+  if (opt.nthreads==1) { //single thread
+    Wr_Dec(DecBuf,idec);
+    idec=0;
+  }
+  else { //multithreading
+    Pair p(DecBuf,idec);
 
-  if (!idec) return;
-  
-  int m1 = mdec1%NDEC;
+    decw_mut.Lock();
+    decw_list.push_back(p);
+    // prnt("s d x d l l;","Flush_dec: ",decw_list.size(),DecBuf,idec,DecBuf-DecBuf_ring,DecBuf_ring+DECSIZE*NDEC-DecBuf);
+    decw_mut.UnLock();
+    
+    DecBuf+=idec;
+    if (DecBuf_ring+DECSIZE*NDEC-DecBuf<2*DECSIZE) {
+      prnt("sss;",BYEL,"---100---",RST);
+      DecBuf=DecBuf_ring;
+    }
+    DecBuf8 = (ULong64_t*) DecBuf;
+    idec=0;
+    
+  }
 
-  if (m1==0) {
+  /*
+    if (m1==0) {
     cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << endl;
     //" " << buf_inits << " " << buf_erase << endl;
 
@@ -5482,8 +5351,6 @@ void CRS::Flush_Dec() {
   CRS::eventlist Blist;
   D79(DecBuf,crs->dec_len[m1],Blist);
 
-  int nevt=crs->nevents2-nprev;
-  nprev=crs->nevents2;
   prnt("ss d d d l l sx xs;",KBLU,"yyy:", mdec1, m1, Blist.size(),
        Blist.front().Tstmp, Blist.back().Tstmp, BYEL,
        DecBuf, *(ULong64_t*)DecBuf, RST);
@@ -5497,10 +5364,10 @@ void CRS::Flush_Dec() {
   DecBuf=DecBuf_ring+m1*2*DECSIZE;
   DecBuf8 = (ULong64_t*) DecBuf;
   idec=0;
-
+  */
 }
 
-void p_buf8(int id,ULong64_t* buf8) {
+void P_buf8(int id,ULong64_t* buf8) {
   //ULong64_t* buf8 = (ULong64_t*) buf;
 
   Long64_t ibuf = buf8 - (ULong64_t*)crs->RawBuf;
@@ -5630,7 +5497,7 @@ void CRS::Flush_Raw() {
 
 }
 
-void CRS::Flush_Raw_MT(unsigned char* buf, int len) {
+void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
 
   /*
   if (m1==0) {
@@ -5647,8 +5514,7 @@ void CRS::Flush_Raw_MT(unsigned char* buf, int len) {
   
   raw_mut.Lock();
   rw_list.push_back(p);
-  prnt("s d d;","Flush_raw: ",rw_list.size(),buf-GLBuf);
-  //cout << "Flush_raw: " << rw_list.size() << " " << buf-GLBuf << endl;
+  //prnt("s d d;","Flush_raw: ",rw_list.size(),buf-GLBuf);
   raw_mut.UnLock();
 
 }

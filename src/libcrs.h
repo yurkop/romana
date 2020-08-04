@@ -73,6 +73,7 @@ RQ_OBJECT("CRS")
   UChar_t* DecBuf; 
   ULong64_t* DecBuf8;
   Int_t idec; //index of DecBuf;
+  std::list<Pair> decw_list;
 
   Int_t mdec1; //index of Dec buffer in ring for decoding
   Int_t mdec2; //index of Dec buffer in ring for writing
@@ -286,12 +287,13 @@ RQ_OBJECT("CRS")
   void Fill_Dec77(EventClass* evt);
   void Fill_Dec78(EventClass* evt);
   void Fill_Dec79(EventClass* evt);
-  void Flush_Dec_old();
+  //void Flush_Dec_old();
+  int Wr_Dec(UChar_t* buf, int len);
   void Flush_Dec();
 
   void Fill_Raw(EventClass* evt);
   void Flush_Raw();
-  void Flush_Raw_MT(unsigned char* buf, int len);
+  void Flush_Raw_MT(UChar_t* buf, int len);
 
   //void Print_Pulses();
   void Print_Events(const char* file=0);
