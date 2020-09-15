@@ -1433,7 +1433,6 @@ void HistFrame::HiReset()
   Make_Ltree();
   //cout << "Make_hist()::2 " << endl;
 
-  Update();
 
   TCanvas *cv=fEc->GetCanvas();
   //cv->SetEditable(true);
@@ -1442,6 +1441,7 @@ void HistFrame::HiReset()
   //cv->Draw();
   cv->Update();
 
+  Update();
   //cout << "HiReset2: " << endl;
 }
 

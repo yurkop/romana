@@ -1168,10 +1168,12 @@ int CRS::Detect_device() {
   trd_crs = new TThread("trd_crs", handle_events_func, (void*) 0);
   trd_crs->Run();
 
-  Command2(4,0,0,0);
+  //Command32(7,0,0,0); //reset usb command
+  //YK Command2(4,0,0,0);
 
   int sz;
   memset(buf_in,0,sizeof(buf_in));
+  sz = Command32(1,0,0,0);
   sz = Command32(1,0,0,0);
 
   Short_t device_code=buf_in[1];
@@ -1261,6 +1263,19 @@ int CRS::Detect_device() {
     cout << endl;
     break;
 
+  case 5: //crs-128
+    //cout << "case5: " << endl;
+    module=51;
+    opt.Period=10;
+    chan_in_module=nplates*16;
+    for (int j=0;j<chan_in_module;j++) {
+      type_ch[j]=3;
+      cout << " " << type_ch[j];
+      nch2++;
+    }
+    cout << endl;
+    break;
+
   default:
     cout << "unknown device: " << endl;
     exit(1);
@@ -1282,11 +1297,11 @@ int CRS::Detect_device() {
   };
 
   //Submit_all(MAXTRANS);
-  Command2(4,0,0,0);
+  //YK Command2(4,0,0,0);
 
   return 0;
 
-}
+} //Detect_device
 
 int CRS::SetPar() {
   switch (module) {
@@ -1303,6 +1318,7 @@ int CRS::SetPar() {
     AllParameters34();
     break;
   case 41:
+  case 51:
     AllParameters41();
     break;
   default:
@@ -1532,6 +1548,7 @@ int CRS::Command32_old(byte cmd, byte ch, byte type, int par) {
 }
 
 int CRS::Command32(byte cmd, byte ch, byte type, int par) {
+  //cout << "Command32: " << (int) cmd << " " << (int) ch << endl;
   //для версии ПО 2
   int transferred = 0;
   int r;
@@ -1606,6 +1623,7 @@ int CRS::Command32(byte cmd, byte ch, byte type, int par) {
 }
 
 int CRS::Command2(byte cmd, byte ch, byte type, int par) {
+  //cout << "Command2: " << (int) cmd << endl;
   int transferred = 0;
   int r;
 
@@ -1727,7 +1745,7 @@ void CRS::AllParameters41()
       // mask=0xFF;
       // cout << "mch: " << (int) chan << " " << mask << endl;
       Command32(2,chan,25,mask); //bitmask for START
-      Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L
+      Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
 
     }
 
@@ -2028,7 +2046,7 @@ void CRS::ProcessCrs() {
 
   //decode_thread_run=1;
   //tt1[3].Set();
-  if (crs->module>=32 && crs->module<=49 /*34*/) {
+  if (crs->module>=32 && crs->module<=51 /*34*/) {
     Command32(8,0,0,0); //сброс сч./буф.
     Command32(9,0,0,0); //сброс времени
   }
@@ -2246,7 +2264,7 @@ void CRS::DoFopen(char* oname, int popt) {
       f_read=0;
       return;
     }
-    cout << "opt.Period from .par: " << opt.Period << endl; 
+    cout << "opt.Period from .par: " << opt.Period << endl;
     // opt.Period=5;
     // cout << "false_open: " << endl;
     // opt.raw_write=false;
@@ -2333,8 +2351,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   //           sz bytes - buf
   //        }
 
-  UShort_t fmt;
-  UShort_t mod;
+  UShort_t fmt, mod;
   Int_t sz;
 
   char vname[20];
@@ -2356,10 +2373,6 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
 
   //char* buf = new char[sz];
   gzread(ff,buf,sz);
-
-
-
-
 
   char* buf1=buf;
   // while (buf1) {
@@ -2480,10 +2493,44 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   if (HiFrm)
     HiFrm->HiReset();
 
+
+
+  /*
+  //F_start test
+  Long64_t fstart=0;
+  time_t tt=0;
+  std::string str(buf,sz);
+  size_t pos=str.find("F_start");
+  if (pos!=std::string::npos) {
+    char* buf2 = buf+pos;
+    buf2 += strlen(buf2)+1+sizeof(short);
+    fstart = *(Long64_t*) buf2;
+
+    char txt[100];
+    tt = (fstart+788907600000)*0.001;
+    struct tm *ptm = localtime(&tt);
+    strftime(txt,sizeof(txt),"%F %T",ptm);
+
+    cout << "F_start: " << " " << txt << " " << fstart << " " << tt << endl;
+  }
+  else {
+    cout << "F_start not found" << endl;
+  }
+
+  // cout << "F_start: " << opt.F_start << " " << fstart << endl;
+  // opt.F_start = gSystem->Now();
+  // cout << "F_start2: " << opt.F_start << endl;
+
+  //end of F_start test
+  */
+
+
+
+
   //delete[] buf;
   //prtime("ReadParGz2");
   return 0;
-}
+} //ReadParGz
 
 void CRS::SaveParGz(gzFile &ff, Short_t mod) {
   //see ReadParGz for format of the header
@@ -3127,6 +3174,7 @@ void CRS::Decode_switch(UInt_t ibuf) {
   case 33:
   case 34:
   case 41:
+  case 51:
     Decode34(dec_iread[ibuf]-1,ibuf);
     break;
   case 79:
@@ -3260,6 +3308,7 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   case 33:
   case 34:
   case 41:
+  case 51:
     for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);

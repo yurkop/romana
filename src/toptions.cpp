@@ -58,8 +58,8 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     if (!strcmp(name,"smooth")) {
       par = smooth[i];
       min = 0;
-      if (module==22 || module==32)
-        max=10;
+      if (type_ch==3) //CRS-128
+	max=7;
       else
         max=9;
     }
@@ -82,13 +82,16 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         min = 0;
         max=4093;        
       }
-      else { //33,34,41
+      else { //33,34,41,51
         //!! знак противоположный тому, что в Протоколе!!!
         // здесь отрицательный знак означает начало записи
         // "после" срабатывания дискриминатора
         max = 1024;
         if (type_ch==1)
           min=-511;
+	else if (type_ch==3) { //CRS-128
+	  min=-511;
+	}
         else //0,2
           min=-1023;
       }
@@ -100,18 +103,23 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         max=16379;
       else if (module==32)
         max=32763;
-      else { //33,34,41
+      else { //33,34,41,51
         if (type_ch==0)
           max=4068;
         else if (type_ch==1)
           max=3048;
-        else //2
+        else if (type_ch==2)
           max=6114;
+        else //3
+          max=1506;
       }
     }
     else if (!strcmp(name,"deriv")) {
       par = kderiv[i];
-      max=1023;
+      if (type_ch==3)
+	max=255;
+      else
+	max=1023;
       if (module<=32) //22 or 32
         min = 0;
       else
@@ -123,7 +131,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         min=-2048;
         max=2047;
       }
-      else { //1,2
+      else { //1,2,3
         min= -65536;
         max= 65535;
       }
@@ -134,7 +142,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         min=5;
         max=12;
       }
-      else { //1,2
+      else { //1,2,3
         min=0;
         max=3;
       }
@@ -150,14 +158,16 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
           max=4075;
         else if (type_ch==1)
           max=4092;
-        else //2
+        else if (type_ch==2)
           max=1023;
+        else //3
+          max=255;
       }
     }
     else if (!strcmp(name,"trig")) {
       par = trg[i];
       min=0;
-      if (module==41)
+      if (module==41 || module==51)
         max=4;
       else if (module>=33) //33,34
         max=3;

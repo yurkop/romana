@@ -116,6 +116,7 @@ RQ_OBJECT("CRS")
   //1-ADCM raw, 3 - ortec lis, 22 - crs2;
   //32 - old crs32, 33 - new crs32 with dsp, 34 - new crs32
   //41 - crs-8/16
+  //51 - crs-128
   //72..79 - decoded file
 
   Int_t type_ch[MAX_CHTP];

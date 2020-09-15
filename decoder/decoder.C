@@ -59,6 +59,21 @@ void begin_of_file();
 void end_of_file();
 void Process_event(Event* ev);
 
+//-----------------------------------
+void begin_of_file() {
+}
+
+//-----------------------------------
+void end_of_file() {
+  //rt.SaveHist("out.root");
+}
+
+//-----------------------------------
+void Process_event(Event* ev) {
+  //cout << Nevt << " " << ev->Tstmp << endl;
+  //rt.FillHist(ev);
+  //++Nevt;
+}
 //***************************************************************
 void Decoder_class::Decode78() {
   int res=1;
@@ -124,6 +139,8 @@ void Decoder_class::Decode(const char* fname) {
   // ULong64_t word;
   // UChar_t* w8 = (UChar_t*) &word;
   // Event ev;
+  UShort_t fmt, mod;
+  Int_t sz;
 
   ff = gzopen(fname,"rb");
   if (!ff) {
@@ -131,12 +148,41 @@ void Decoder_class::Decode(const char* fname) {
     return;
   }
 
-  gzread(ff,&mod,sizeof(mod));
-  gzread(ff,&sz,sizeof(sz));
+  gzread(ff,&fmt,sizeof(Short_t));
+  if (fmt>128) {
+    gzread(ff,&mod,sizeof(Short_t));
+    gzread(ff,&sz,sizeof(Int_t));
+  }
+  else {
+    mod=fmt;
+    gzread(ff,&sz,sizeof(UShort_t));
+  }
 
   buf = new char[sz];
   gzread(ff,buf,sz);
 
+  //F_start test
+  Long64_t fstart=0;
+  time_t tt=0;
+  std::string str(buf,sz);
+  size_t pos=str.find("F_start");
+  if (pos!=std::string::npos) {
+    char* buf2 = buf+pos;
+    buf2 += strlen(buf2)+1+sizeof(short);
+    fstart = *(Long64_t*) buf2;
+
+    char txt[100];
+    tt = (fstart+788907600000)*0.001;
+    struct tm *ptm = localtime(&tt);
+    strftime(txt,sizeof(txt),"%F %T",ptm);
+
+    cout << "F_start: " << " " << txt << " " << fstart << " " << tt << endl;
+  }
+  else {
+    cout << "F_start not found" << endl;
+  }
+
+  return;
   begin_of_file();
 
   switch (mod) {

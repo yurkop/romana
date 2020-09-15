@@ -44,6 +44,7 @@
 #include <TGDockableFrame.h>
 
 #include <TDataMember.h>
+#include <TDataType.h>
 #include "TThread.h"
 #include "TImage.h"
 #include "TMutex.h"
@@ -452,7 +453,6 @@ void showpar() {
 //-------------------------------------
 // void * Findstr(const char* name, const char* varname, char* var, char* buf) {
 //   }
-
 //-------------------------------------
 Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf) {
   //copies all data members to a buffer, returns size of the buffer

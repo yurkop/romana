@@ -39,13 +39,22 @@ struct pmap {
   byte cmd; //опции (биты)
   //0x1: (bit0) 1: start/stop DAQ
   //0xE: (bit1-3) change color
+
   //0xF0: (bit4-7) action:
-  // 1 - SetBuf (in dodaqnum)
+
+  // in DoDaqNum:
+  // 1 - DoReset
+  // 2 - Hireset
+  // 5 - group4
+
+  // in DoDaqChk:
+  // 5 - group4
+
+  // in UpdateField:
   // 2 - 2d hist (2 fields)
   // 3 - 1d hist (3 fields)
   // 4 - profilometer hist
 
-  // 2 - Hireset in DoDaqNum
 
   //byte chan; //for Command_crs :seems to be not needed (21.01.2020)
 };
@@ -83,6 +92,7 @@ protected:
   TGHorizontalFrame *cframe[MAX_CHTP];
   TGTextEntry* clab[MAX_CHTP];
   TGTextButton* cbut;
+  Int_t cbut_id;
 
   TGCanvas* fCanvas1;
   TGCompositeFrame* fcont1;
@@ -249,7 +259,7 @@ public:
   void AddHeader();
   void AddLine_daq(int i, TGCompositeFrame* fcont1);
   void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
-    const char* name, void* apar, void* apar2=0);
+    const char* name, void* apar, void* apar2=0, byte cmd=1);
   void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
 		   const char* ttip);
   void UpdateStatus(int rst=0);

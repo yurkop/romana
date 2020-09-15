@@ -56,7 +56,7 @@ void end_of_file();
 void Process_event(Event* ev);
 
 //***************************************************************
-void decoder(const char* fname) {
+void decoder2(const char* fname) {
   const Long64_t sixbytes=0xFFFFFFFFFFFF;
   ULong64_t word;
   UChar_t* w8 = (UChar_t*) &word;

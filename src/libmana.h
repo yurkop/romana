@@ -51,6 +51,8 @@ void debug_mess(bool cond, const char* mess, double par1, int par2=-9999);
 void SplitFilename(string str, string &folder, string &name);
 void SplitFilename(string str, string &folder, string &name, string &ext);
 
+/* void *FindVar(const char* buf, const int sz, */
+/* 	       const char* varname, const int varlen); */
 Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf);
 int BufToClass(const char* clname, char* varname, char* var, char* &buf, char* buf2);
 void SaveClassTxt(ofstream &fout, const char* clname,
