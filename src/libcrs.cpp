@@ -431,6 +431,7 @@ void *handle_ana(void *ctx) {
 
 	m_event->FillHist(true);
 	m_event->FillHist(false);
+
 	//it->FillHist_old();
 	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
 	  ++crs->nevents2;
@@ -489,7 +490,7 @@ void *handle_ana(void *ctx) {
     else {
       crs->N4=0;
     }
-    //cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << " " << crs->L4 << " " << crs->N4 << RST << endl;
+    cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << " " << crs->L4 << " " << crs->N4 << " " << crs->SLP << RST << endl;
 
     // fill Tevents for EvtFrm::DrawEvent2
     if (EvtFrm) {
@@ -1143,12 +1144,14 @@ int CRS::Detect_device() {
     return 4;
   }
 
+  ///* YK 29.09.20
   r=cyusb_reset_device(cy_handle);
   if ( r != 0 ) {
-    printf("Can't reset device. Exitting\n");
+    printf("Can't reset device. Exitting: %d\n",r);
     cyusb_close();
     return 5;
   }
+  //*/
 
   r = cyusb_kernel_driver_active(cy_handle, 0);
   if ( r != 0 ) {
@@ -1169,7 +1172,8 @@ int CRS::Detect_device() {
   trd_crs->Run();
 
   //Command32(7,0,0,0); //reset usb command
-  //YK Command2(4,0,0,0);
+  //YK
+  //Command2(4,0,0,0);
 
   int sz;
   memset(buf_in,0,sizeof(buf_in));
@@ -1297,7 +1301,8 @@ int CRS::Detect_device() {
   };
 
   //Submit_all(MAXTRANS);
-  //YK Command2(4,0,0,0);
+  //YK
+  //Command2(4,0,0,0);
 
   return 0;
 
@@ -1393,10 +1398,12 @@ int CRS::Init_Transfer() {
 
   //Cancel_all(MAXTRANS);
 
+  ///* YK 29.09.20
   //cout << "---Init_Transfer2---" << endl;
   //int r=
   cyusb_reset_device(cy_handle);
   //cout << "cyusb_reset: " << r << endl;
+  //*/
 
   // if (opt.rbuf_size<=opt.usb_size*2) {
   //   opt.rbuf_size=opt.usb_size*2;
@@ -1956,9 +1963,11 @@ int CRS::DoStartStop() {
     //Command32(7,0,0,0); //reset usb command
     //}
 		
+    /* YK 29.09.20
     // r=
-    cyusb_reset_device(cy_handle);
+    //cyusb_reset_device(cy_handle);
     // cout << "cyusb_reset: " << r << endl;
+    */
 
     Submit_all(ntrans);
     cout << "Period: " << opt.Period << endl;
@@ -2996,9 +3005,9 @@ void CRS::FAnalyze2(bool nobatch) {
   }
   //T_start = gSystem->Now();
 
-  cout << "FAnalyze: " << gztell(f_read) << endl;
+  //cout << "FAnalyze: " << gztell(f_read) << endl;
   Ana_start();
-  cout << "FAnalyze2: " << gztell(f_read) << endl;
+  //cout << "FAnalyze2: " << gztell(f_read) << endl;
   int res;
   while ((res=crs->DoBuf()) && crs->b_fana) {
     if (nobatch) {

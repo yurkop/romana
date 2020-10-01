@@ -2111,6 +2111,8 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   int kk=0;
   int all=0;
   int id;
+  int act=1;
+  if (i<pmax) act=1|(5<<4);
 
   //static bool start=true;
 
@@ -2127,7 +2129,7 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
 
   AddChkPar(kk, cframe[i], &cpar.enabl[i], all, ttip1[kk], 1);
   AddChkPar(kk, cframe[i], &cpar.inv[i], all, ttip1[kk], 1);
-  AddChkPar(kk, cframe[i], &cpar.acdc[i], all, ttip1[kk], 1|(5<<4));
+  AddChkPar(kk, cframe[i], &cpar.acdc[i], all, ttip1[kk], act);
   AddChkPar(kk, cframe[i], &cpar.pls[i], all, ttip1[kk], 1);
   AddChkPar(kk, cframe[i], &opt.dsp[i], all, ttip1[kk], 1);
 
@@ -2140,7 +2142,7 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   if (crs->module==22) 
     AddNumDaq(i,kk++,1,cframe[i],"gain"  ,&cpar.adcGain[i]);
   else
-    AddNumDaq(i,kk++,all,cframe[i],"gain"  ,&cpar.adcGain[i],0,1|(5<<4));
+    AddNumDaq(i,kk++,all,cframe[i],"gain"  ,&cpar.adcGain[i],0,act);
 
   // if (crs->module>=33)
   //   AddNumDaq(i,kk++,all,cframe[i],"trig" ,&cpar.trg[i]);

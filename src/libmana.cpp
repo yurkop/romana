@@ -1825,7 +1825,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fGr2->AddFrame(f1b, LayET1);
 
   TGLabel *ver = new TGLabel(vframe1,GITVERSION);
-  cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
+  //cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
 	
   vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
