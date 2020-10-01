@@ -451,10 +451,10 @@ void *handle_ana(void *ctx) {
 	}
 	++m_event;
       }
-      else {
-	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
-	m_event=crs->Levents.erase(m_event);
-      }
+      // else {
+      // 	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
+      // 	m_event=crs->Levents.erase(m_event);
+      // }
     }
 
     //tt2.Set();
@@ -484,6 +484,9 @@ void *handle_ana(void *ctx) {
     //crs->DT4=tt2.AsDouble()-tt1.AsDouble();
 
 
+    cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << RST << endl;
+
+    /*
     crs->L4=double(crs->Levents.size())/opt.ev_max;
     if (crs->L4>2) {
       ++crs->N4;
@@ -492,6 +495,7 @@ void *handle_ana(void *ctx) {
       crs->N4=0;
     }
     cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << " " << crs->L4 << " " << crs->N4 << " " << crs->SLP << RST << endl;
+    */
 
     // fill Tevents for EvtFrm::DrawEvent2
     if (EvtFrm) {
@@ -2127,9 +2131,10 @@ void CRS::DoReset() {
   // cout << "Doreset1b: " << Fmode << " " << Tstart64 << endl;
 
   Levents.clear();
-  //L4=1;
-  N4=0;
+
+  //N4=0;
   SLP=0;
+
   // вставляем dum евент, чтобы Levents не был пустой  // не делаем, это плохо
   //m_event=Levents.insert(Levents.end(),EventClass());
   m_event=Levents.end();
@@ -2661,6 +2666,7 @@ void CRS::AnaBuf(int loc_ibuf) {
   gl_iread++;
   gl_ibuf=gl_iread%gl_Nbuf;
 
+  /*
   if (N4>3) {
     SLP+=10;
     ++errors[7]; //slow analysis
@@ -2672,7 +2678,7 @@ void CRS::AnaBuf(int loc_ibuf) {
 
   if (SLP>0)
     gSystem->Sleep(SLP);
-
+  */
   //cout << "L4: " << L4 << " " << N4 << " " << SLP << endl;
 
 

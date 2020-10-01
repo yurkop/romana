@@ -94,8 +94,8 @@ RQ_OBJECT("CRS")
 
 
   //Double_t DT4; // Время, затраченное на 1 цикл handle_ana
-  Double_t L4; //Levents.size at L4 (after erase in handle_ana)
-  Int_t N4; //количество раз, при которых L4 было >2.0
+  // Double_t L4; //Levents.size at L4 (after erase in handle_ana)
+  // Int_t N4; //количество раз, при которых L4 было >2.0
   Int_t SLP; //sleep: increased if N4>3
 
 
