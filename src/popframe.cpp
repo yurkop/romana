@@ -7,6 +7,7 @@
 //#include <iostream>
 #include <TCanvas.h>
 #include <TPolyMarker.h>
+#include <TF1.h>
 
 //extern Common* com;
 extern MyMainFrame *myM;

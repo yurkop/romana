@@ -4,6 +4,7 @@
 *.pcm
 *.root
 /*
+!/cyusb
 !/src
 !/utils
 !Makefile

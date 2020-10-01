@@ -28,11 +28,16 @@ endif
 
 CPPFLAGS += $(LFS) -MD -MP -DLINUX=1 -I. #-I$(LIB_D)
 CXXFLAGS += -O3 -Wall -Wno-maybe-uninitialized #-Wextra
-#LDFLAGS += -lz -l cyusb -l usb-1.0
 LDFLAGS += -lz
 #SVNVER=\"$(shell svnversion)\"
 
-ifdef CYUSB_ROOT
+ifneq ("$(wildcard /usr/local/lib/libcyusb.so)","")
+CYUSB_LIB = 1
+#else
+#CYUSB_LIB = 0
+endif
+
+ifdef CYUSB_LIB
 CPPFLAGS += -DCYUSB=1
 LDFLAGS += -l cyusb -l usb-1.0
 endif
@@ -106,6 +111,18 @@ endif
 param: $(OBJ_D)/paramdict.cpp utils/param.cpp $(SRC_D)/toptions.cpp
 	g++ $(CXXFLAGS) $(CPPFLAGS) -o param.x utils/param.cpp $(OBJ_D)/paramdict.cpp $(SRC_D)/toptions.cpp $(LDFLAGS)
 
+cyusblib:
+	cd cyusb && sudo ./install.sh
+
+install:
+	rm -f $(HOME)/bin/romana
+	rm -f $(HOME)/bin/romana_rdict.pcm
+	rm -f $(HOME)/bin/romana.x
+
+	ln -s $(PWD)/romana.x $(HOME)/bin/romana
+	ln -s $(PWD)/romana.x $(HOME)/bin/romana.x
+	ln -s $(PWD)/romana_rdict.pcm $(HOME)/bin
+
 clean:
 	rm -f $(OBJ_D)/* $(SRC_D)/*~
 
@@ -113,7 +130,8 @@ cleanx: clean
 	rm -f *.x
 
 test_target:
-ifdef CYUSB_ROOT
+	@echo $(CYUSB_LIB)
+ifdef CYUSB_LIB
 	echo "Do something"
 else
 	echo "Do nothing"

@@ -17,6 +17,7 @@
 #include <TClass.h>
 #include <TCanvas.h>
 #include <TDataMember.h>
+#include <TSystem.h>
 
 //#include <TSemaphore.h>
 //TSemaphore sem;
@@ -2298,7 +2299,7 @@ void CRS::DoFopen(char* oname, int popt) {
     Int_t *fmt = (Int_t*) header;
     Int_t *style = (Int_t*) &header[4];
     Double_t *start_t = (Double_t*) &header[8];
-    char txt[80];
+    char txt[90];
     strncpy(txt,header+121,80);
 
     printf("hdr: %d %d %f %s\n",*fmt,*style,*start_t,txt);

@@ -6,6 +6,7 @@
 
 //#include "colors.h"
 #include <signal.h>
+#include <iomanip>
 //#include <malloc.h>
 
 #include "romana.h"

@@ -13,6 +13,7 @@
 //#include <TROOT.h>
 #include <TRandom.h>
 #include <TMath.h>
+#include <TF1.h>
 
 TLine gline[2];
 TLine cline;
@@ -679,7 +680,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
   if (!crs->b_stop)
     return;
 
-  char hname[100];
+  char hname[80];
   char hname2[100]; 
   TGListTreeItem* item2;
 
