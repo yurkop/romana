@@ -449,12 +449,13 @@ void *handle_ana(void *ctx) {
 	    crs->Fill_Raw(&(*m_event));
 	  }
 	}
-	++m_event;
+	//++m_event;
       }
       // else {
       // 	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
       // 	m_event=crs->Levents.erase(m_event);
       // }
+      ++m_event;
     }
 
     //tt2.Set();
@@ -483,8 +484,14 @@ void *handle_ana(void *ctx) {
     //tt2.Set();
     //crs->DT4=tt2.AsDouble()-tt1.AsDouble();
 
+    if (crs->Levents.size()>crs->LMAX) crs->LMAX=crs->Levents.size();
 
-    cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << RST << endl;
+    static int rep=0;
+    rep++;
+    if (rep>9) {
+      cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->LMAX << " " << crs->nevents << " " << nmax << " " << rep << RST << endl;
+      rep=0;
+    }
 
     /*
     crs->L4=double(crs->Levents.size())/opt.ev_max;
@@ -2133,6 +2140,7 @@ void CRS::DoReset() {
   Levents.clear();
 
   //N4=0;
+  LMAX=0;
   SLP=0;
 
   // вставляем dum евент, чтобы Levents не был пустой  // не делаем, это плохо
@@ -5388,8 +5396,15 @@ void CRS::Flush_Dec() {
     Pair p(DecBuf,idec);
 
     decw_mut.Lock();
+
     decw_list.push_back(p);
-    // prnt("s d x d l l;","Flush_dec: ",decw_list.size(),DecBuf,idec,DecBuf-DecBuf_ring,DecBuf_ring+DECSIZE*NDEC-DecBuf);
+    static int rep=0;
+    rep++;
+    if (rep>9) {
+      prnt("s d x d l l;","Flush_dec: ",decw_list.size(),DecBuf,idec,DecBuf-DecBuf_ring,DecBuf_ring+DECSIZE*NDEC-DecBuf);
+      rep=0;
+    }
+
     decw_mut.UnLock();
     
     DecBuf+=idec;
