@@ -5594,7 +5594,7 @@ void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
   
   raw_mut.Lock();
   rw_list.push_back(p);
-  //prnt("s d d;","Flush_raw: ",rw_list.size(),buf-GLBuf);
+  prnt("s d d;","Flush_raw: ",rw_list.size(),buf-GLBuf);
   raw_mut.UnLock();
 
 }
