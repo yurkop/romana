@@ -48,6 +48,7 @@ void Coptions::InitPar(int zero) {
   Smpl=0;
   St_Per=0;
 
+  F_start = gSystem->Now();
 }
 
 void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &par, int &min, int &max) {
@@ -326,7 +327,7 @@ Toptions::Toptions() {
   //event_buf=1000;
   event_lag=10;
 
-  F_start = gSystem->Now();
+  //F_start = gSystem->Now();
   T_acq = 0;
 
   memset(formula,0,sizeof(formula));

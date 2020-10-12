@@ -51,13 +51,11 @@ void debug_mess(bool cond, const char* mess, double par1, int par2=-9999);
 void SplitFilename(string str, string &folder, string &name);
 void SplitFilename(string str, string &folder, string &name, string &ext);
 
-/* void *FindVar(const char* buf, const int sz, */
-/* 	       const char* varname, const int varlen); */
+void MakeVarList(int cp, int op);
 Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf);
-int BufToClass(const char* clname, char* varname, char* var, char* &buf, char* buf2);
-void SaveClassTxt(ofstream &fout, const char* clname,
-		  const char* varname, char* var);
+int BufToClass(char* buf, char* buf2);
 void SaveParTxt(const char* fname);
+int FindVar(char* buf, int sz, const char* name, char* var);
 
 void example();
 void saveroot(const char *name);
@@ -71,6 +69,13 @@ bool TestFile();
 TTimeStamp prtime(const char* txt, int set=1);
 int CheckMem(bool pr=false);
 
+//-----------------------------------------------
+class VarClass {
+ public:
+  TString name;
+  char* Var;
+  TDataMember *Dm;
+};
 //-----------------------------------------------
 class PEditor {
 

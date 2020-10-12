@@ -168,6 +168,7 @@ RQ_OBJECT("CRS")
 
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   Long64_t Tstart0; //Tstamp of the ntof start pulses
+  char txt_start[30]; //local text copy of F_start, start of the acquisition
 
   peak_type dummy_peak;
   PulseClass dummy_pulse;
@@ -210,6 +211,8 @@ RQ_OBJECT("CRS")
   //void Dummy_trd();
 
   void DoResetUSB();
+
+  //---CRS
 #ifdef CYUSB
   int Detect_device();
   int SetPar();
@@ -231,12 +234,13 @@ RQ_OBJECT("CRS")
 #endif
 
 
+  void Text_time();
   void DoExit();
   //int Command_old(int len_out, int len_in); //send and receive command
   //void SendParametr(const char* name, int len_out); //send one parameter
   void DoReset(); //reset BPulses
   void DoFopen(char* oname, int popt);
-  int ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2);
+  int ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op);
   void SaveParGz(gzFile &ff, Short_t mod);
   void DoProf(Int_t nn, Int_t *aa, Int_t off);
   void Make_prof_ch();

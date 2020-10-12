@@ -59,6 +59,8 @@ public:
   Int_t Smpl; //Sampling rate divider
   Int_t St_Per; //Start imitator period
 
+  Long64_t F_start; //start of the acquisition
+
 public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
@@ -113,9 +115,7 @@ public:
   //----------------------------------------------
   // Important common parameters
 
-  //TDatime F_start,F_stop; //start and stop of the acquisition (?)
-  //TTimeStamp F_start; //start and of the acquisition / start event in a file
-  Long64_t F_start; //start of the acquisition
+  //Long64_t F_start; //start of the acquisition
   Float_t T_acq; //duration of the acquisition / file (in seconds)
 
   Float_t Period; //period (inversed frequency) of digitizer (in ns):

@@ -105,7 +105,7 @@ const char* ttip3[n_ppar]={
   "Channel number",
   ttip_type,
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
-  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - threshold crossing of derivative, use 2nd deriv for timing;\n-1 - use hardware trigger",
+  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n-1 - use hardware trigger",
   "Drv>0 - trigger on differential S(i) - S(i-Drv)",
   "Trigger threshold",
   "Baseline start, relative to peak Pos (negative)",
@@ -2439,7 +2439,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   tlen7 = (int*) tlen2;
   ttip7 = (char**) ttip2;
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],0,99,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],-99,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Delay[i],-999,999,p_fnum);
   AddNumChan(i,kk++,all,cframe[i],&opt.dT[i],0,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Pile[i],0,9999,p_inum);

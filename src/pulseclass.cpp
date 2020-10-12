@@ -90,7 +90,6 @@ void PulseClass::FindPeaks() {
       }
     }
     break;
-  case 5:
   case 1: // threshold crossing of derivative;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
@@ -102,6 +101,7 @@ void PulseClass::FindPeaks() {
     }
     break;
   case 2: // maximum of derivative;
+  case 5: // or fall of 2nd derivative (it's the same)
     Dpr=-1e6;
     //int jpr;
     for (j=kk;j<sData.size();j++) {
@@ -359,6 +359,14 @@ void PulseClass::PeakAna33() {
     }
   }
   else { //use 2nd deriv
+    // 05.10.2020
+    for (int j=pk->T3;j<pk->T4;j++) {
+      Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
+      pk->Time+=dif2*j;
+      sum+=dif2;
+    }
+    
+    /*
     for (int j=pk->Pos;j>=2;j--) {
       Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
       if (dif2<=0 || j<pk->T3)
@@ -375,7 +383,7 @@ void PulseClass::PeakAna33() {
       sum+=dif2;
       //cout << "d2: " << Tstamp64 << " " << j-cpar.preWr[Chan] << " " << dif2 << endl;
     }
-
+    */
   }
   if (abs(sum)>1e-5) {
     pk->Time/=sum;
@@ -1244,6 +1252,7 @@ void EventClass::FillHist(Bool_t first) {
 
 void PulseClass::Smooth(int nn) {
 
+  int n2=abs(nn);
   //sData = new double[nsamp];
   //memset(sData,0,nsamp*sizeof(double));
 
@@ -1251,7 +1260,7 @@ void PulseClass::Smooth(int nn) {
 
   for (int i=0;i<Nsamp;i++) {
     //int ll=1;
-    for (int j=1;j<=nn;j++) {
+    for (int j=1;j<=n2;j++) {
       int k=i+j;
       if (k<Nsamp) {
 	sData[i]+=sData[k];
@@ -1260,14 +1269,16 @@ void PulseClass::Smooth(int nn) {
     }
 
     int ndiv;
-    if (Nsamp-i <= nn) {
+    if (Nsamp-i <= n2) {
       ndiv=Nsamp-i;
     }
     else {
-      ndiv=nn+1;
+      ndiv=n2+1;
     }
 
     sData[i]/=ndiv;
+    if (nn<0)
+      sData[i] = roundf(sData[i]);
     //printf("Smooth: %d %d %d %d %f\n",i,nsamp-i, opt.sS, ndiv, sData[i]);
 
   }

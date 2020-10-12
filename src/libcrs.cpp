@@ -269,10 +269,6 @@ static void cback(libusb_transfer *trans) {
 
     stat_mut.Lock();
     crs->inputbytes+=trans->actual_length;
-    //opt.T_acq = t2.GetSec()-opt.F_start.GetSec()+
-    //(t2.GetNanoSec()-opt.F_start.GetNanoSec())*1e-9;
-    //opt.T_acq = (Long64_t(gSystem->Now()) - crs->T_start)*0.001;
-    //cout << "T_acq: " << opt.T_acq << " " << crs->T_start << endl;
 
     stat_mut.UnLock();
   } // if (trans->actual_length)
@@ -2005,8 +2001,8 @@ int CRS::DoStartStop() {
     //Nsamp=0;
     //nsmp=0;
 
-    opt.F_start = gSystem->Now();
-    //T_start = opt.F_start;
+    cpar.F_start = gSystem->Now();
+    Text_time();
 
     if (opt.raw_write) {
       Reset_Raw();
@@ -2089,6 +2085,13 @@ void CRS::ProcessCrs() {
 }
 
 #endif //CYUSB
+
+void CRS::Text_time() {
+  //convert btw gSystem->Now and time_t
+  time_t tt = (cpar.F_start+788907600000)*0.001;
+  struct tm *ptm = localtime(&tt);
+  strftime(txt_start,sizeof(txt_start),"%F %T",ptm);
+}
 
 void CRS::DoExit()
 {
@@ -2288,11 +2291,6 @@ void CRS::DoFopen(char* oname, int popt) {
       return;
     }
     cout << "opt.Period from .par: " << opt.Period << endl;
-    // opt.Period=5;
-    // cout << "false_open: " << endl;
-    // opt.raw_write=false;
-    // opt.dec_write=false;
-    // opt.root_write=false;
   }
   else if (tp==1) { //adcm raw
     cout << "ADCM RAW File: " << Fname << endl;
@@ -2357,18 +2355,19 @@ void CRS::DoFopen(char* oname, int popt) {
   }
 }
 
-int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
-  //m1 - read module (1/0); 1 - read from raw/dec file; 0 - read from par file
-  //p1 - read cpar (1/0); p2 - read opt (1/0)
+int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
+  //m1 - read module (1/0) (читается только при открытии файла)
+  //cp - read cpar (1/0) (читается всегда =1)
+  //op - read opt (1/0) (не читается при открытии файла open- reopen 
 
   // 2 bytes: fmt - формат par файла
-  //        if (fmt>128) {
+  //        if (fmt>=129) { //новый формат 129
   //           fmt - определяет номер формата записи par файла
   //           2 bytes - module (Short_t)
   //           4 bytes - sz (Int_t)
   //           sz bytes - buf
   //        }
-  //        else {
+  //        else { //старый формат
   //           fmt=module (Short_t)
   //           2 bytes - sz (UShort_t)
   //           sz bytes - buf
@@ -2377,13 +2376,12 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   UShort_t fmt, mod;
   Int_t sz;
 
-  char vname[20];
   char buf[500000];
 
   //prtime("ReadParGz1");
 
   gzread(ff,&fmt,sizeof(Short_t));
-  if (fmt>128) {
+  if (fmt>=129) {
     gzread(ff,&mod,sizeof(Short_t));
     gzread(ff,&sz,sizeof(Int_t));
   }
@@ -2392,102 +2390,35 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  cout << "ReadParGz: " << pname << " " << sz << endl;
+  //cout << "ReadParGz: " << pname << " " << sz << endl;
 
   //char* buf = new char[sz];
   gzread(ff,buf,sz);
 
-  char* buf1=buf;
-  // while (buf1) {
-  //   buf1 = (char*) memmem(buf1+1,sz-1,"class",sizeof("class"));
-  //   if (buf1) {
-  //     int b1 = buf1-buf;
-  //     cout << "b1: " << b1 << " " << buf1 << " " << buf1+8 << endl;
-  //   }
-  // }
+  MakeVarList(cp,op);
+  int ret=0;
+  ret=FindVar(buf,sz,"gitver",opt.gitver);
+  if (!ret) {
+    memset(opt.gitver,0,sizeof(opt.gitver));
+  }
+  //cout << "Ret2: " << ret << " " << opt.gitver << endl;
+  ret=BufToClass(buf,buf+sz);
+  if (!ret) {
+    prnt("ssss;",BRED,"Warning: error reading parameters: ",pname,RST);
+    gSystem->Sleep(1000);
+  }
+  //exit(1);
 
-
-
-  cout << "buf: " << (void*) buf << " " << buf1-buf << " " << sz << endl;
-
-
-  /*
-    UShort_t len=0;
-    while (buf1<buf+sz) {
-    memcpy(&len,buf1,sizeof(len));
-    buf1+=sizeof(len);
-    cout << "len: " << len << " " << buf1-buf << " " << sz << " " << buf1 << endl;
-    buf1+=len;
-    }
-    // for (int i=0;i<sz;i++) {
-    //   cout << buf[i];
-    // }
-    // cout << endl;
-
-    exit(1);
-  */
-
-  int ret;
-
-  if (p1) {
-    ret=BufToClass("Coptions",vname,(char*) &cpar,buf1,buf+sz);
-    if (!ret)
-      cout << "ReadPar: class Coptions not found" << endl;
-    //cout << "buf: " << (void*) buf << " " << buf1 << " " << buf1-buf << endl;
-  } //if p1
-  if (p2) {
-    ret=BufToClass("Toptions",vname,(char*) &opt,buf1,buf+sz);
-    if (!ret)
-      cout << "ReadPar: class Toptions not found" << endl;
-    //cout << "buf: " << (void*) buf << " " << buf1 << " " << buf1-buf << endl;
-
-    TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
-    do {
-      Hdef hd;
-      ret=BufToClass("Hdef",vname,(char*) &hd,buf1,buf+sz);
-      //cout << "hh0: " << vname << " " << strlen(vname) << " " << ret << endl;
-      TDataMember* dm = (TDataMember*) lst->FindObject(vname);
-      if (dm) {
-	Hdef* hh = (Hdef*) ((char*) &opt+dm->GetOffset());
-	//cout << "off: " << &opt << " " << (char*)&opt.h_time-(char*)&opt << " " << dm->GetOffset() << endl;
-
-	  
-	//cout << "hh0a: " << vname << " " << ret << " " << hh << " " << &opt.h_time << endl;
-      	//cout << "hh1: " << vname << endl;
-
-	// for (int i=0;i<MAX_CH+NGRP;i++) {
-	//   cout << i << " " << hh->c[i] << endl;
-	// }
-
-	if (ret)
-	  (*hh)=Hdef(hd);
-      	//cout << "hh2: " << vname << endl;
-      }
-    } while (ret==1);
-
-    /*
-      TIter nextd(lst);
-      TDataMember *dm;
-      char* popt = (char*)&opt;
-      while ((dm = (TDataMember *) nextd())) {
-      if (dm->GetDataType()==0 && TString(dm->GetName()).Contains("h_")) {
-      //cout << "member: " << dm->GetName() << " " << dm->GetDataType() << " " << dm->GetOffset() << " " << (void*)popt+dm->GetOffset() << " " << &opt << " " << &(opt.h_time) << endl;
-      ;//YK BufToClass("Hdef",dm->GetName(),popt+dm->GetOffset(),buf1,buf+sz);
-      }
-      }
-    */
-  } //if p2
-
-
+  //correct "other" ch_type, if needed
   for (int i=0;i<MAX_CHTP;i++) {
     if (opt.chtype[i]>=MAX_TP+1) {
       opt.chtype[i]=MAX_TP+1;// other; was =1;
     }
   }
   Make_prof_ch();
+  Text_time();
 
   if (m1) {
-    //T_start = opt.F_start;
     if (mod==2 || mod==22) {
       module=22;
       cout << "CRS2 File: " << Fname << " " << module << endl;
@@ -2499,15 +2430,13 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
     else {
       Fmode=0;
       cout << "Unknown file type: " << Fname << " " << mod << endl;
-      //delete[] buf;
       return 1;
     }
   }
 
   //Set_Trigger();
 
-  if (p2) {
-    //cout << "false_gz: " << endl;
+  if (op) {
     opt.raw_write=false;
     opt.dec_write=false;
     opt.root_write=false;
@@ -2547,11 +2476,6 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int p1, int p2) {
   //end of F_start test
   */
 
-
-
-
-  //delete[] buf;
-  //prtime("ReadParGz2");
   return 0;
 } //ReadParGz
 
@@ -2775,70 +2699,6 @@ int CRS::DoBuf() {
 
 }
 
-/*
-  void CRS::FAnalyze(bool nobatch) {
-
-  if (gzeof(f_read)) {
-  cout << "Enf of file: " << endl;
-  return;
-  }
-  TCanvas *cv=0;
-  //cout << "FAnalyze: " << gztell(f_read) << endl;
-  if (juststarted && opt.dec_write) {
-  Reset_Dec();
-  }
-  juststarted=false;
-
-  //cout << "batch01: " << endl;
-
-  static int nmax=BFMAX-1;
-
-  if (nobatch) {
-  EvtFrm->Clear();
-  EvtFrm->Pevents = &EvtFrm->Tevents;
-
-  cv=EvtFrm->fCanvas->GetCanvas();
-  cv->SetEditable(false);
-  }
-  //T_start = gSystem->Now();
-
-  //cout << "batch02: " << endl;
-  TThread* trd_fana = new TThread("trd_fana", handle_buf, (void*) &nmax);;
-  trd_fana->Run();
-  b_run=1;
-  //cout << "batch03: " << endl;
-  TThread* trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);;
-  trd_ana->Run();
-  if (nobatch) {
-  while (!crs->b_stop) {
-  Show();
-  gSystem->Sleep(10);   
-  gSystem->ProcessEvents();
-  }
-  }
-  //cout << "batch04: " << endl;
-  trd_fana->Join();
-  trd_fana->Delete();
-
-  //cout << "batch05: " << endl;
-  trd_ana->Join();
-  trd_ana->Delete();
-
-  //cout << "batch06: " << endl;
-  //gSystem->Sleep(opt.tsleep);
-  if (nobatch) {
-  EvtFrm->Clear();
-  EvtFrm->Pevents = &Levents;
-  EvtFrm->d_event=--EvtFrm->Pevents->end();
-
-  gSystem->Sleep(10);
-  Show(true);
-  //cout << "asdfasdf" << endl;
-  cv->SetEditable(true);
-  }
-  }
-*/
-
 void CRS::InitBuf() {
   gl_iread=0;
   gl_ivect=0;
@@ -2996,7 +2856,8 @@ void CRS::FAnalyze2(bool nobatch) {
   if (gzeof(f_read)) {
     cout << "Enf of file: " << endl;
     //Ana2(1);
-    Show();
+    if (nobatch)
+      Show();
     return;
   }
   TCanvas *cv=0;
