@@ -150,9 +150,9 @@ RQ_OBJECT("CRS")
 
   Int_t npulses_bad[MAX_CH]; //number of bad pulses per channel
 
-  bool batch;
-  bool silent;
-  bool b_fstart;
+  bool batch; //batch mode
+  bool abatch; //1 - acquisition in batch; 0 - file in batch
+  bool silent; //silent in batch mode
   
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running

@@ -1959,13 +1959,20 @@ int CRS::DoStartStop() {
     DoReset();
     //juststarted=true; already set in doreset
 
-    parpar->Update();
-    daqpar->Update();
-    anapar->Update();
-    pikpar->Update();
+    TCanvas *cv;
+    
+    if (!batch) {
+      parpar->Update();
+      daqpar->Update();
+      anapar->Update();
+      pikpar->Update();
 
-    EvtFrm->Clear();
-    EvtFrm->Pevents = &EvtFrm->Tevents;
+      EvtFrm->Clear();
+      EvtFrm->Pevents = &EvtFrm->Tevents;
+
+      cv=EvtFrm->fCanvas->GetCanvas();
+      cv->SetEditable(false);
+    }
 
     //if (module==32) {
     //Command32(7,0,0,0); //reset usb command
@@ -1988,7 +1995,6 @@ int CRS::DoStartStop() {
     //buf_out[0]=3;
     b_acq=true;
     b_stop=false;
-    b_fstart=false;
     //bstart=true;
     //inputbytes=0;
     //rawbytes=0;
@@ -2014,8 +2020,6 @@ int CRS::DoStartStop() {
     //cout << "Acquisition started" << endl;
     //gettimeofday(&t_start,NULL);
 
-    TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
-    cv->SetEditable(false);
 
     //InitBuf();
 
@@ -2025,15 +2029,17 @@ int CRS::DoStartStop() {
 
 
     //cout << "startstop1: " << endl;
-    EvtFrm->Clear();
-    EvtFrm->Pevents = &Levents;
-    EvtFrm->d_event=--EvtFrm->Pevents->end();
-    //cout << "startstop2: " << endl;
+    if (!batch) {
+      EvtFrm->Clear();
+      EvtFrm->Pevents = &Levents;
+      EvtFrm->d_event=--EvtFrm->Pevents->end();
+      //cout << "startstop2: " << endl;
 
-    //gSystem->Sleep(opt.tsleep);   
-    gSystem->Sleep(10);   
-    Show(true);
-    cv->SetEditable(true);
+      //gSystem->Sleep(opt.tsleep);   
+      gSystem->Sleep(10);   
+      Show(true);
+      cv->SetEditable(true);
+    }
   } //start
   else { //stop
     buf_out[0]=4;
@@ -2069,7 +2075,12 @@ void CRS::ProcessCrs() {
   }
   Command2(3,0,0,0);
   while (!crs->b_stop) {
-    Show();
+    if (!batch) {
+      Show();
+    }
+    else {
+      ;
+    }
     gSystem->Sleep(10);   
     gSystem->ProcessEvents();
     if (opt.Tstop && opt.T_acq>opt.Tstop) {
@@ -2116,7 +2127,6 @@ void CRS::DoReset() {
 
   if (!b_stop) return;
 
-  b_fstart=false;
   opt.T_acq=0;
 
   if (module==1) {
@@ -2907,7 +2917,6 @@ void CRS::FAnalyze2(bool nobatch) {
 
     gSystem->Sleep(10);
     Show(true);
-    //cout << "asdfasdf" << endl;
     cv->SetEditable(true);
   }
 }

@@ -911,10 +911,6 @@ int main(int argc, char **argv)
   sigIntHandler.sa_flags = 0;
   sigaction(SIGINT, &sigIntHandler, NULL);
 
-
-
-
-
   // void segfault_sigaction(int signal, siginfo_t *si, void *arg)
   // {
   //     printf("Caught segfault at address %p\n", si->si_addr);
@@ -956,6 +952,7 @@ int main(int argc, char **argv)
     "-h: print usage and exit\n"
     "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
+    "-a: start acquisition in batch mode (without gui) and exit\n"
     "-b: analyze file in batch mode (without gui) and exit\n"
     "-s: suppress batch screen output\n"
     "-w (only in batch mode): create processed .raw file in subdirectory Raw\n"
@@ -976,6 +973,8 @@ int main(int argc, char **argv)
   strcpy(pr_name,argv[0]);
   strcpy(maintitle,pr_name);
 
+  crs->abatch=true; //default: acquisition (for detect_device)
+
   listpar.clear();
   //listshow.clear();
   //process command line parameters
@@ -992,8 +991,13 @@ int main(int argc, char **argv)
 	switch (tolower(sarg[1])) {
 	case 'h':
 	  exit(0);
-	case 'b':
+	case 'a': //acquisition in batch
 	  crs->batch=true;
+	  crs->abatch=true;
+	  continue;
+	case 'b': //file in batch
+	  crs->batch=true;
+	  crs->abatch=false;
 	  continue;
 	case 's':
 	  crs->silent=true;
@@ -1121,12 +1125,31 @@ int main(int argc, char **argv)
   //hcl->Make_hist();
   //cout << "gStyle2: " << gStyle << endl;
 
+  int ret=1;
+#ifdef CYUSB
+  if (crs->abatch) {
+    if (crs->Fmode!=2) {
+      bool d = opt.decode;
+      bool w = opt.raw_write;
+      opt.decode=0;
+      opt.raw_write=0;
+      ret=crs->Detect_device();
+      opt.decode=d;
+      opt.raw_write=w;
+    }
+  }
+#endif
 
   //batch loop
   EvtFrm = 0;
   if (crs->batch) {
-    if (strlen(datfname)==0) {
+    if (strlen(datfname)==0 && !crs->abatch) {
       cout << "No input file. Exiting..." << endl;
+      exit(0);
+    }
+
+    if (crs->abatch && ret) {
+      cout << "Device is not connected. Exiting..." << endl;
       exit(0);
     }
 
@@ -1143,13 +1166,18 @@ int main(int argc, char **argv)
     }
     // CheckMem(50);
 
-    crs->b_fana=true;
-    crs->b_stop=false;
-
-    crs->FAnalyze2(false);
-
-    crs->b_fana=false;
-    crs->b_stop=true;
+    if (crs->abatch) {
+      crs->DoStartStop();
+      crs->b_acq=false;
+      crs->b_stop=true;
+    }
+    else {
+      crs->b_fana=true;
+      crs->b_stop=false;
+      crs->FAnalyze2(false);
+      crs->b_fana=false;
+      crs->b_stop=true;
+    }
 
     //allevents();
 
@@ -1164,20 +1192,6 @@ int main(int argc, char **argv)
 
     return 0;
   }
-
-
-#ifdef CYUSB
-  if (crs->Fmode!=2) {
-    bool d = opt.decode;
-    bool w = opt.raw_write;
-    opt.decode=0;
-    opt.raw_write=0;
-    crs->Detect_device();
-    opt.decode=d;
-    opt.raw_write=w;
-  }
-#endif
-
 
   TApplication theApp("App",&argc,argv);
   //example();
@@ -2215,13 +2229,15 @@ void MainFrame::DoStartStop() {
 
 #ifdef CYUSB
   if (crs->b_acq) { //STOP is pressed here
-    fStart->ChangeBackground(fGreen);
-    fStart->SetText("Start");
+    if (!crs->batch) {
+      fStart->ChangeBackground(fGreen);
+      fStart->SetText("Start");
+    }
     //crs->b_stop=false;
     //crs->Show();
     crs->DoStartStop();
 
-    if (opt.root_write) {
+    if (opt.root_write || b_root) {
       saveroot(crs->rootname.c_str());
     }
 
