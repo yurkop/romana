@@ -7,6 +7,7 @@
 #include <TGDockableFrame.h>
 #include <TGTextEdit.h>
 #include <TTimeStamp.h>
+#include <TDataMember.h>
 
 enum MENU_COM {
   M_READINIT,

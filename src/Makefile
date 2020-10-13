@@ -33,8 +33,6 @@ LDFLAGS += -lz
 
 ifneq ("$(wildcard /usr/local/lib/libcyusb.so)","")
 CYUSB_LIB = 1
-#else
-#CYUSB_LIB = 0
 endif
 
 ifdef CYUSB_LIB
