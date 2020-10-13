@@ -1166,9 +1166,10 @@ int main(int argc, char **argv)
     }
     // CheckMem(50);
 
-#ifdef CYUSB
     if (crs->abatch) {
+#ifdef CYUSB
       crs->DoStartStop();
+#endif
       crs->b_acq=false;
       crs->b_stop=true;
     }
@@ -1179,7 +1180,6 @@ int main(int argc, char **argv)
       crs->b_fana=false;
       crs->b_stop=true;
     }
-#endif
 
     //allevents();
 
