@@ -94,8 +94,8 @@ RQ_OBJECT("CRS")
 
 
   //Double_t DT4; // Время, затраченное на 1 цикл handle_ana
-  // Double_t L4; //Levents.size at L4 (after erase in handle_ana)
-  // Int_t N4; //количество раз, при которых L4 было >2.0
+  Double_t L4; //Levents.size at L4 (after erase in handle_ana)
+  Int_t N4; //количество раз подряд, при которых L4 было >2.0
   size_t LMAX; //maximal length of Levents
   Int_t SLP; //sleep: increased if N4>3
 
@@ -170,7 +170,7 @@ RQ_OBJECT("CRS")
   Long64_t Tstart0; //Tstamp of the ntof start pulses
   char txt_start[30]; //local text copy of F_start, start of the acquisition
 
-  peak_type dummy_peak;
+  PeakClass dummy_peak;
   PulseClass dummy_pulse;
   EventClass dummy_event;
 

@@ -1190,7 +1190,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
     "1: 0.08, 2: 0.17, 3: 0.33, 4: 0.67, 5: 1.34, 6: 2.68, 7: 5.36, 8: 10.7";
   label="Sampling Rate / Start period";
   // cout << "Smpl: " << cpar.Smpl << endl;
-  AddLine_opt(fF6,ww,&cpar.Smpl,&cpar.St_Per,tip1,tip2,label,k_int,k_int,0,14,0,7,2<<1,6<<1);
+  AddLine_opt(fF6,ww,&cpar.Smpl,&cpar.St_Per,tip1,tip2,label,k_int,k_int,0,14,0,8,2<<1,6<<1);
 
   tip1= "[CRS-8/16] Force trigger on all active channels from START signal.\n"
     "Normal trigger is disabled";
@@ -1348,9 +1348,9 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Width";
   AddLine_hist(frame1d,&opt.h_width,tip1,label);
 
-  tip1= "Pulse width2";
-  label="Width2";
-  AddLine_hist(frame1d,&opt.h_width2,tip1,label);
+  // tip1= "Pulse width2";
+  // label="Width2";
+  // AddLine_hist(frame1d,&opt.h_width2,tip1,label);
 
   // tip1= "Pulse width3";
   // label="Width3";
@@ -1445,9 +1445,9 @@ void ParParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Area_Width";
   AddLine_2d(frame2d,&opt.h_area_width,tip1,label,1);
 
-  tip1= "2-dimensional histogram (Area_Width2)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Width2";
-  AddLine_2d(frame2d,&opt.h_area_width2,tip1,label,1);
+  // tip1= "2-dimensional histogram (Area_Width2)\nMin Max are taken from the corresponding 1d histograms";
+  // label="Area_Width2";
+  // AddLine_2d(frame2d,&opt.h_area_width2,tip1,label,1);
 
   tip1= "2-dimensional histogram (Area_Ntof)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Ntof";

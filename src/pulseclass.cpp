@@ -32,7 +32,7 @@ const double mks=0.001;
 
 using namespace std;
 
-peak_type::peak_type() {
+PeakClass::PeakClass() {
   Type=0;
   //Area=0;
   //Width=0;
@@ -68,8 +68,8 @@ void PulseClass::FindPeaks() {
   UInt_t kk=opt.Drv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
-  peak_type pk=peak_type();
-  //peak_type *p_prev=0;
+  PeakClass pk=PeakClass();
+  //PeakClass *p_prev=0;
 
   //bool in_peak=false;
   Float_t* D = new Float_t[sData.size()]();
@@ -84,7 +84,7 @@ void PulseClass::FindPeaks() {
   case 0: // hreshold crossing of pulse
     for (j=0;j<sData.size();j++) {
       if (sData[j] >= opt.Thr[Chan]) {
-	pk.Pos=j;
+	Pos=j;
 	Peaks.push_back(pk);
 	break;
       }
@@ -94,7 +94,7 @@ void PulseClass::FindPeaks() {
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (D[j] >= opt.Thr[Chan]) {
-	pk.Pos=j;
+	Pos=j;
 	Peaks.push_back(pk);
 	break;
       }
@@ -107,7 +107,7 @@ void PulseClass::FindPeaks() {
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (Dpr >= opt.Thr[Chan] && D[j]<Dpr) {
-	pk.Pos=j-1;
+	Pos=j-1;
 	Peaks.push_back(pk);
 	break;
       }
@@ -123,7 +123,7 @@ void PulseClass::FindPeaks() {
 	jj=j;
       }
       if (D[j] >= opt.Thr[Chan]) {
-	pk.Pos=jj;
+	Pos=jj;
 	Peaks.push_back(pk);
 	break;
       }
@@ -138,7 +138,7 @@ void PulseClass::FindPeaks() {
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (D[j] < 0 && jj) {
-	pk.Pos=j-1;
+	Pos=j-1;
 	Peaks.push_back(pk);
 	break;
       }
@@ -186,8 +186,8 @@ void PulseClass::FindPeaks() {
   UInt_t kk=opt.Drv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
-  peak_type *pk=0;
-  peak_type *p_prev=0;
+  PeakClass *pk=0;
+  PeakClass *p_prev=0;
 
   bool in_peak=false;
   //Float_t D,pD=0;//deriv, prev.dreiv
@@ -203,7 +203,7 @@ void PulseClass::FindPeaks() {
   if (!in_peak) {
   if (D[j] >= opt.Thr[Chan]) {
   in_peak=true;
-  Peaks.push_back(peak_type());
+  Peaks.push_back(PeakClass());
   pk = &Peaks.back();
   pk->T1=0;
   for (int n=j;n>0;n--) {
@@ -260,7 +260,7 @@ void PulseClass::FindPeaks() {
   //   << Peaks.at(i).Pos << endl;
   //}
 
-  // Peaks = new peak_type[Npeaks];
+  // Peaks = new PeakClass[Npeaks];
   // for (int i=0;i<Npeaks;i++) {
   //   Peaks[i].Pos = peakpos[i];
   // }
@@ -277,18 +277,29 @@ void PulseClass::FindPeaks() {
 
 void PulseClass::PeakAna33() {
 
+  Short_t B1; //left background window
+  Short_t B2; //right background window
+  Short_t P1; //left peak window
+  Short_t P2; //right peak window
+  //Short_t T1; //left zero crossing of deriv
+  //Short_t T2; //right zero crossing of deriv
+  Short_t T1; //left timing window
+  Short_t T2; //right timing window
+  Short_t W1; //left width window
+  Short_t W2; //right width window
+
   // if (Chan==7) {
   //   cout << "Peakana33: " << (int) Chan << " " << Peaks.size() << " " << sData.size() << endl;
   // }
 
-  peak_type *pk;
+  PeakClass *pk;
 
   int sz=sData.size();
   Int_t kk=opt.Drv[Chan];
   if (kk<1 || kk>=sz-1) kk=1;
 
   if (sData.size()<=2) {
-    //   Peaks.push_back(peak_type());
+    //   Peaks.push_back(PeakClass());
     //   Peaks.back().Pos=cpar.preWr[Chan];
     //   Peaks.back().Time=0;
     return;
@@ -299,10 +310,10 @@ void PulseClass::PeakAna33() {
   //Short_t T6; //right width window
 
   if (opt.sTg[Chan]<0) { //use hardware trigger
-    Peaks.push_back(peak_type());
+    Peaks.push_back(PeakClass());
     //pk = &Peaks.back();
     //pk->Pos=crs->Pre[Chan];
-    Peaks.back().Pos=cpar.preWr[Chan];
+    Pos=cpar.preWr[Chan];
   }
   else { //use software trigger
     FindPeaks();
@@ -315,42 +326,42 @@ void PulseClass::PeakAna33() {
   pk=&Peaks.back();
   Float_t sum;
 
-  pk->B1=pk->Pos+opt.Base1[Chan];
-  pk->B2=pk->Pos+opt.Base2[Chan]+1;
-  pk->P1=pk->Pos+opt.Peak1[Chan];
-  pk->P2=pk->Pos+opt.Peak2[Chan]+1;
-  pk->T3=pk->Pos+opt.T1[Chan];
-  pk->T4=pk->Pos+opt.T2[Chan]+1;
-  pk->T5=pk->Pos+opt.W1[Chan];
-  pk->T6=pk->Pos+opt.W2[Chan]+1;
+  B1=Pos+opt.Base1[Chan];
+  B2=Pos+opt.Base2[Chan]+1;
+  P1=Pos+opt.Peak1[Chan];
+  P2=Pos+opt.Peak2[Chan]+1;
+  T1=Pos+opt.T1[Chan];
+  T2=Pos+opt.T2[Chan]+1;
+  W1=Pos+opt.W1[Chan];
+  W2=Pos+opt.W2[Chan]+1;
 
   //cout << "B2: " << pk->B1 << " " << pk->B2 << endl;
 
-  if (pk->B1<0) pk->B1=0;
-  //if (pk->B2<=pk->B1) pk->B2=pk->B1+1;
-  if (pk->B2<=pk->B1) pk->B2=pk->B1; //base can be zero if B2==B1
-  if (pk->P1<0) {pk->P1=0; pk->Type|=P_B1;}
-  if (pk->P2<=pk->P1) {pk->P2=pk->P1+1; pk->Type|=P_B2;}
+  if (B1<0) B1=0;
+  //if (B2<=B1) B2=B1+1;
+  if (B2<=B1) B2=B1; //base can be zero if B2==B1
+  if (P1<0) {P1=0; pk->Type|=P_B1;}
+  if (P2<=P1) {P2=P1+1; pk->Type|=P_B2;}
 
-  if (pk->B1>=sz) pk->B1=sz-1;
-  if (pk->B2>sz) pk->B2=sz;
-  if (pk->P1>=sz) {pk->P1=sz-1; pk->Type|=P_B1;}
-  if (pk->P2>sz) {pk->P2=sz; pk->Type|=P_B2;}
+  if (B1>=sz) B1=sz-1;
+  if (B2>sz) B2=sz;
+  if (P1>=sz) {P1=sz-1; pk->Type|=P_B1;}
+  if (P2>sz) {P2=sz; pk->Type|=P_B2;}
 
-  if (pk->T3<(int)kk) {pk->T3=kk; pk->Type|=P_B11;}
-  if (pk->T4<=pk->T3) {pk->T4=pk->T3+1; pk->Type|=P_B11;}
-  if (pk->T5<(int)kk) {pk->T5=kk; pk->Type|=P_B22;}
-  if (pk->T6<=pk->T5) {pk->T6=pk->T5+1; pk->Type|=P_B22;}
+  if (T1<(int)kk) {T1=kk; pk->Type|=P_B11;}
+  if (T2<=T1) {T2=T1+1; pk->Type|=P_B11;}
+  if (W1<(int)kk) {W1=kk; pk->Type|=P_B22;}
+  if (W2<=W1) {W2=W1+1; pk->Type|=P_B22;}
 
-  if (pk->T3>sz) {pk->T3=sz-1; pk->Type|=P_B11;}
-  if (pk->T4>sz) {pk->T4=sz; pk->Type|=P_B11;}
-  if (pk->T5>sz) {pk->T5=sz-1; pk->Type|=P_B22;}
-  if (pk->T6>sz) {pk->T6=sz; pk->Type|=P_B22;}
+  if (T1>sz) {T1=sz-1; pk->Type|=P_B11;}
+  if (T2>sz) {T2=sz; pk->Type|=P_B11;}
+  if (W1>sz) {W1=sz-1; pk->Type|=P_B22;}
+  if (W2>sz) {W2=sz; pk->Type|=P_B22;}
 
   pk->Time=0;
   sum=0;
   if (opt.sTg[Chan]!=5) { //use 1st deriv
-    for (int j=pk->T3;j<pk->T4;j++) {
+    for (int j=T1;j<T2;j++) {
       Float_t dif=sData[j]-sData[j-kk];
       if (dif>0) {
 	pk->Time+=dif*j;
@@ -360,24 +371,24 @@ void PulseClass::PeakAna33() {
   }
   else { //use 2nd deriv
     // 05.10.2020
-    for (int j=pk->T3;j<pk->T4;j++) {
+    for (int j=T1;j<T2;j++) {
       Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
       pk->Time+=dif2*j;
       sum+=dif2;
     }
     
     /*
-    for (int j=pk->Pos;j>=2;j--) {
+    for (int j=Pos;j>=2;j--) {
       Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
-      if (dif2<=0 || j<pk->T3)
+      if (dif2<=0 || j<T1)
 	break;
       pk->Time+=dif2*j;
       sum+=dif2;
       //cout << "d1: " << Tstamp64 << " " << j-cpar.preWr[Chan] << " " << dif2 << endl;
     }
-    for (int j=pk->Pos+1;j<sz;j++) {
+    for (int j=Pos+1;j<sz;j++) {
       Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
-      if (dif2<=0 || j>pk->T4)
+      if (dif2<=0 || j>T2)
 	break;
       pk->Time+=dif2*j;
       sum+=dif2;
@@ -389,7 +400,7 @@ void PulseClass::PeakAna33() {
     pk->Time/=sum;
   }
   else
-    pk->Time=(pk->T3+pk->T4)*0.5;
+    pk->Time=(T1+T2)*0.5;
 
   pk->Time-=cpar.preWr[Chan];
 
@@ -397,7 +408,7 @@ void PulseClass::PeakAna33() {
   /*
     pk->Width=0;
     sum=0;
-    for (int j=pk->T5;j<pk->T6;j++) {
+    for (int j=W1;j<W2;j++) {
     //if (j>=0 && j<sz && j-kk>=0 && j-kk<sz) {
     Float_t dif=sData[j]-sData[j-kk]+gRandom->Rndm();
     //Float_t dif=sData[j];//-sData[j-kk];
@@ -412,21 +423,20 @@ void PulseClass::PeakAna33() {
     pk->Width/=sum;
     }
     else
-    //pk->Width=-999+pk->Pos;
-    pk->Width=(pk->T5+pk->T6)*0.5;
+    //pk->Width=-999+Pos;
+    pk->Width=(W1+W2)*0.5;
 
-    //pk->Width-=pk->Pos;
+    //pk->Width-=Pos;
     pk->Width-=cpar.preWr[Chan];
   */
 
-  double bkg2=(sData[pk->P2]+sData[pk->P1])/2;
-  //double sum2=0;
+
+  /*
+  double bkg2=(sData[P2]+sData[P1])/2;
   double asum2=0;
   double mean2=0;
   double rms2=0;
-  //int nrms=0;
-  //pk->Width2=0;
-  for (int j=pk->P1;j<pk->P2;j++) {
+  for (int j=P1;j<P2;j++) {
     double w=sData[j]-bkg2;
     double aw=fabs(w);
     //sum2+=w;
@@ -437,6 +447,9 @@ void PulseClass::PeakAna33() {
   }
   mean2=mean2/asum2;
   pk->Width2=sqrt(rms2/asum2-mean2*mean2);
+  */
+
+
 
   //cout << "Width2: " << (int) Chan << " " << Tstamp64 << " " << pk->Width2 << endl;
   //pk->Width+=0.1;
@@ -444,7 +457,7 @@ void PulseClass::PeakAna33() {
   //baseline
   pk->Base=0;
   int nbkg=0;
-  for (int j=pk->B1;j<pk->B2;j++) {
+  for (int j=B1;j<B2;j++) {
     pk->Base+=sData[j];
     nbkg++;
   }
@@ -454,14 +467,14 @@ void PulseClass::PeakAna33() {
   if (nbkg)
     pk->Base/=nbkg;
   else {
-    //cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << pk->B1 << " " << pk->B2 << endl;
+    //cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << B1 << " " << B2 << endl;
   }
 
   int nn=0;
   //peak Area & Height
   pk->Area0=0;
   pk->Height=-1e30;
-  for (int j=pk->P1;j<pk->P2;j++) {
+  for (int j=P1;j<P2;j++) {
     pk->Area0+=sData[j];
     if (sData[j]>pk->Height) pk->Height = sData[j];
     nn++;
@@ -470,7 +483,7 @@ void PulseClass::PeakAna33() {
     pk->Area0/=nn;
   }
   else {
-    cout << "zero Area: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
+    cout << "zero Area: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
   }
 
   //calibration
@@ -487,7 +500,7 @@ void PulseClass::PeakAna33() {
   pk->Width=0;
   if (pk->Area) {
     nn=0;
-    for (int j=pk->T5;j<pk->T6;j++) {
+    for (int j=W1;j<W2;j++) {
       pk->Width+=sData[j];
       nn++;
     }
@@ -496,7 +509,7 @@ void PulseClass::PeakAna33() {
       pk->Width/=nn;
     }
     else {
-      cout << "zero Width: " << this->Tstamp64 << " " << pk->Pos << " " << pk->P1 << " " << pk->P2 << endl;
+      cout << "zero Width: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
     }
   	
     pk->Width-=pk->Base;
@@ -508,7 +521,7 @@ void PulseClass::PeakAna33() {
   //slope1 (baseline)
   pk->Slope1=0;
   nbkg=0;
-  for (int j=pk->B1+1;j<pk->B2;j++) {
+  for (int j=B1+1;j<B2;j++) {
     pk->Slope1+=sData[j]-sData[j-1];
     nbkg++;
   }
@@ -519,7 +532,7 @@ void PulseClass::PeakAna33() {
   //slope2 (peak)
   pk->Slope2=0;
   nbkg=0;
-  for (int j=pk->P1+1;j<pk->P2;j++) {
+  for (int j=P1+1;j<P2;j++) {
     pk->Slope2+=sData[j]-sData[j-1];
     nbkg++;
   }
@@ -564,11 +577,11 @@ void PulseClass::CheckDSP() {
     printf(ANSI_COLOR_RED
 	   "Alp: %d E:%lld B:%8.1f A0:%8.1f H:%8.1f T:%8.1f W:%8.1f P:%4d\n" ANSI_COLOR_RESET,
 	   Chan,Counter,Peaks[0].Base,Peaks[0].Area0,Peaks[0].Height,
-	   Peaks[0].Time,Peaks[0].Width,Peaks[1].Pos);
+	   Peaks[0].Time,Peaks[0].Width,Pos);
     printf(ANSI_COLOR_GREEN
 	   "Kop: %d E:%lld B:%8.1f A0:%8.1f H:%8.1f T:%8.1f W:%8.1f P:%4d\n" ANSI_COLOR_RESET,
 	   Chan,Counter,Peaks[1].Base,Peaks[1].Area0,Peaks[1].Height,
-	   Peaks[1].Time,Peaks[1].Width,Peaks[1].Pos);
+	   Peaks[1].Time,Peaks[1].Width,Pos);
   }
   else {
     //printf("%10lld OK\n",Counter);
@@ -646,18 +659,24 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     }
   }
 
-  if (pls->State & 1) {
-    State|=1;
-    //cout << "state: " << Nevt << " " << (int) State << endl;
+  // cout << "state1: " << Nevt << " " << (int) State << " " << (int) pls->Chan
+  //      << " " << opt.Master[pls->Chan] << endl;
+  if (opt.Master[pls->Chan]) {
+    State|=2;
   }
 
+  if (pls->State & 1) {
+    State|=1;
+  }
+
+  //cout << "state2: " << Nevt << " " << (int) State << endl;
   if (pulses.empty()) { //this is the first pulse in the event
     //dt=0;
     Tstmp=pls->Tstamp64;
   }
   else {
     //dt = pls->Tstamp64 - Tstmp;
-    for (std::vector<peak_type>::reverse_iterator pk=pls->Peaks.rbegin();
+    for (std::vector<PeakClass>::reverse_iterator pk=pls->Peaks.rbegin();
 	 pk!=pls->Peaks.rend();++pk) {
       //pk->Time+=dt;
       pk->Time+=pls->Tstamp64 - Tstmp;
@@ -680,7 +699,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     if (pls->Peaks.size()) {
       //Float_t dt = pls->Tstamp64 - Tstmp;
 
-      peak_type *pk = &pls->Peaks.front();
+      PeakClass *pk = &pls->Peaks.front();
       //Float_t T2 = pk->Time - crs->Pre[pls->Chan] + dt;
       //Float_t T2 = pk->Time - cpar.preWr[pls->Chan] + dt;
       //Float_t T2 = pk->Time + dt;
@@ -933,7 +952,7 @@ void EventClass::FillHist(Bool_t first) {
     }
 
     for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
-      peak_type* pk = &pulses[i].Peaks[j];
+      PeakClass* pk = &pulses[i].Peaks[j];
 
       // if (opt.elim2[ch]>0 &&
       //      (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
@@ -971,9 +990,9 @@ void EventClass::FillHist(Bool_t first) {
 	Fill1d(first,hcl->m_width,ch,pk->Width);
       }
 
-      if (opt.h_width2.b) {
-	Fill1d(first,hcl->m_width2,ch,pk->Width2);
-      }
+      // if (opt.h_width2.b) {
+      // 	Fill1d(first,hcl->m_width2,ch,pk->Width2);
+      // }
 
       // if (opt.h_width3.b) {
       //    Fill1d(first,hcl->m_width3,ch,pk->Width3/pk->Area);
@@ -1003,9 +1022,9 @@ void EventClass::FillHist(Bool_t first) {
 	Fill2d(first,hcl->m_area_width[ch],pk->Area,pk->Width);
       }
 
-      if (opt.h_area_width2.b) {
-	Fill2d(first,hcl->m_area_width2[ch],pk->Area,pk->Width2);
-      }
+      // if (opt.h_area_width2.b) {
+      // 	Fill2d(first,hcl->m_area_width2[ch],pk->Area,pk->Width2);
+      // }
 
       // if (opt.h_area_width3.b) {
       //    Fill2d(first,hcl->m_area_width3[ch],pk->Area,pk->Width3/pk->Area);

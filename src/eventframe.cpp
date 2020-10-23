@@ -712,7 +712,7 @@ void EventFrame::DoCheckPoint() {
 	par[0]=ch;
 
 	for (UInt_t j=0;j<d_event->pulses[i].Peaks.size();j++) {
-	  peak_type* pk = &d_event->pulses[i].Peaks[j];
+	  PeakClass* pk = &d_event->pulses[i].Peaks[j];
 	  par[4]=pk->Area;
 	  par[5]=pk->Base;
 	  //double dt = d_event->pulses[i].Tstamp64 - d_event->Tstmp;
@@ -1130,6 +1130,17 @@ void EventFrame::DrawEvent2() {
 
 void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 
+  Short_t B1; //left background window
+  Short_t B2; //right background window
+  Short_t P1; //left peak window
+  Short_t P2; //right peak window
+  //Short_t T1; //left zero crossing of deriv
+  //Short_t T2; //right zero crossing of deriv
+  Short_t T1; //left timing window
+  Short_t T2; //right timing window
+  Short_t W1; //left width window
+  Short_t W2; //right width window
+
   double dy=y2-y1;
   if (dr>0) y1=0;
   
@@ -1138,44 +1149,53 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.preWr[ch];
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
-      peak_type *pk = &pulse->Peaks[j];
+      PeakClass *pk = &pulse->Peaks[j];
 
+      B1=pulse->Pos+opt.Base1[ch];
+      B2=pulse->Pos+opt.Base2[ch]+1;
+      P1=pulse->Pos+opt.Peak1[ch];
+      P2=pulse->Pos+opt.Peak2[ch]+1;
+      T1=pulse->Pos+opt.T1[ch];
+      T2=pulse->Pos+opt.T2[ch]+1;
+      W1=pulse->Pos+opt.W1[ch];
+      W2=pulse->Pos+opt.W2[ch]+1;
+
+      /*
       if (opt.dsp[ch]) {
-	pk->Pos=cpar.preWr[ch];
-	pk->B1=pk->Pos+opt.Base1[ch];
-	pk->B2=pk->Pos+opt.Base2[ch]+1;
-	pk->P1=pk->Pos+opt.Peak1[ch];
-	pk->P2=pk->Pos+opt.Peak2[ch]+1;
-	pk->T3=pk->Pos+opt.T1[ch];
-	pk->T4=pk->Pos+opt.T2[ch]+1;
-	pk->T5=pk->Pos+opt.W1[ch];
-	pk->T6=pk->Pos+opt.W2[ch]+1;
-
-	//cout << "drawpeak: " << opt.dsp[ch] << " " << (int) pulse->Chan << " " << pk->Pos << " " << pk->Time << " " << dt << endl;
+	pulse->Pos=cpar.preWr[ch];
+	pk->B1=pulse->Pos+opt.Base1[ch];
+	pk->B2=pulse->Pos+opt.Base2[ch]+1;
+	pk->P1=pulse->Pos+opt.Peak1[ch];
+	pk->P2=pulse->Pos+opt.Peak2[ch]+1;
+	pk->T3=pulse->Pos+opt.T1[ch];
+	pk->T4=pulse->Pos+opt.T2[ch]+1;
+	pk->T5=pulse->Pos+opt.W1[ch];
+	pk->T6=pulse->Pos+opt.W2[ch]+1;
       }
+      */
 
       if (fPeak[1]->IsOn()) // Pos
-	doXline(pk->Pos+dt,y1,y2-dy*0.3,2,1);
+	doXline(pulse->Pos+dt,y1,y2-dy*0.3,2,1);
       if (fPeak[2]->IsOn()) {// Time
 	//double dt2=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch];
 	//doXline(pk->Time+dt+cpar.preWr[ch],y2-dy*0.2,y2,3,1);
 	doXline(pk->Time,y2-dy*0.2,y2,3,1);
       }
       if (dr==0 && fPeak[4]->IsOn()) { // Wpeak
-	doXline(pk->P1+dt,y1,y2-dy*0.2,1,2);
-	doXline(pk->P2-1+dt,y1,y2-dy*0.1,1,2);
+	doXline(P1+dt,y1,y2-dy*0.2,1,2);
+	doXline(P2-1+dt,y1,y2-dy*0.1,1,2);
       }
       if (dr==0 && fPeak[3]->IsOn()) { // WBkgr
-	doXline(pk->B1+dt,y1,y2-dy*0.2,6,3);
-	doXline(pk->B2-1+dt,y1,y2-dy*0.1,6,3);
+	doXline(B1+dt,y1,y2-dy*0.2,6,3);
+	doXline(B2-1+dt,y1,y2-dy*0.1,6,3);
       }
       if (dr!=0 && fPeak[5]->IsOn()) { //WTime
-	doXline(pk->T3+dt,y1,y2-dy*0.2,3,2);
-	doXline(pk->T4-1+dt,y1,y2-dy*0.1,3,2);
+	doXline(T1+dt,y1,y2-dy*0.2,3,2);
+	doXline(T2-1+dt,y1,y2-dy*0.1,3,2);
       }
       if (dr==0 && fPeak[6]->IsOn()) { //WWidth
-	doXline(pk->T5+dt,y1,y2-dy*0.2,4,4);
-	doXline(pk->T6-1+dt,y1,y2-dy*0.1,4,4);
+	doXline(W1+dt,y1,y2-dy*0.2,4,4);
+	doXline(W2-1+dt,y1,y2-dy*0.1,4,4);
       }
       //cout <<"DrawPeaksT2: " << pk->Time+dt << " " << dt << " " 
       //   << pulse->Tstamp64 << " " << d_event->T << endl;
@@ -1281,7 +1301,7 @@ void EventFrame::ReDraw() {
 	  if (fPeak[9]->IsOn()) { //draw text
 	    if (pulse->Peaks.size()) {
 	      char ss[256];
-	      peak_type *pk = &pulse->Peaks.back();
+	      PeakClass *pk = &pulse->Peaks.back();
 	      // sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f W2=%f",
 	      // 	      pulse->Chan,pk->Area,pk->Time,pk->Width,pk->Width2);
 	      sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",

@@ -203,6 +203,7 @@ Toptions::Toptions() {
     //chtype[i]=ch_NIM;
     dsp[i]=false;
     St[i]=true;
+    Master[i]=true;
     //Mrk[i]=false;
     for (int j=0;j<NGRP;j++)
       Grp[i][j]=false;

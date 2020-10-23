@@ -22,23 +22,17 @@ enum PeakDef {
 */
 
 //peak Type:
-const UShort_t P_PILE1=1<<0; //fisrt puleup pulse
-const UShort_t P_PILE2=1<<1; //subsequent puleup pulse
-const UShort_t P_B1=1<<2; //bad left side (opt.peak1 is out of range)
-const UShort_t P_B2=1<<3; //bad right side (opt.peak2 is out of range)
-const UShort_t P_B11=1<<4; //bad left or right side in timing (T3 or T4 is out of range)
-const UShort_t P_B22=1<<5; //bad left or right side in width (T5 or T6 is out of range)
-//const UShort_t P_B111=1<<6; //bad left size in timing
-
-//const UShort_t P_GAM=1<<9; //gamma
-//const UShort_t P_NEU=1<<10; //neutron
-//const UShort_t P_TAIL=1<<11; //tail
-
-const UShort_t P_BAD=1<<15; //bad (dummy) peak
+const UChar_t P_PILE1=1<<0; //fisrt puleup pulse
+const UChar_t P_PILE2=1<<1; //subsequent puleup pulse
+const UChar_t P_B1=1<<2; //bad left side (opt.peak1 is out of range)
+const UChar_t P_B2=1<<3; //bad right side (opt.peak2 is out of range)
+const UChar_t P_B11=1<<4; //bad left or right side in timing (T3 or T4 is out of range)
+const UChar_t P_B22=1<<5; //bad left or right side in width (T5 or T6 is out of range)
+const UChar_t P_BAD=1<<7; //bad (dummy) peak
 
 
-class peak_type {
- public:
+class PeakClass {
+public:
   Float_t Base; //baseline
   Float_t Area0; //area+background
   Float_t Area; //pure area (Area0-Base)
@@ -48,12 +42,16 @@ class peak_type {
   //Float_t Noise2;
   Float_t Height; //maximum of pulse in the same region as Area
   Float_t Width; //peak width - Alpatov (in 1st deriv)
-  Float_t Width2; //peak width2 - romana3a
+  //Float_t Width2; //peak width2 - romana3a
   //Float_t Width3; //peak width3 - Alpatov2 (in pulse)
   Float_t Time; //exact time relative to pulse start (from 1st deriv), also relative to event start, in samples
   //Float_t Time2; //exact time (from 2nd deriv)
-  Short_t Pos; //position relative to pulse start (in samples)
-  Short_t Pos2; //position of the 1st maximum in 1st derivative after threshold
+
+  UChar_t Type; //peak type
+  //UChar_t Chan; //channel number
+  //Short_t Pos; //position relative to pulse start (in samples)
+  //Short_t Pos2; //position of the 1st maximum in 1st derivative after threshold
+  /*
   Short_t B1; //left background window
   Short_t B2; //right background window
   Short_t P1; //left peak window
@@ -62,17 +60,15 @@ class peak_type {
   Short_t T2; //right zero crossing of deriv
   Short_t T3; //left timing window
   Short_t T4; //right timing window
-  Short_t T5; //left timing window
-  Short_t T6; //right timing window
-
+  Short_t T5; //left width window
+  Short_t T6; //right width window
+  */
   //Pos,T1,T2 - relative to pulse start, in samples
   //Time - relative to discriminator (+preWr), in samples
 
-  UShort_t Type; //peak type
-  //Char_t ch;
- public:
-  peak_type();// {Type=0;};
-  virtual ~peak_type() {};
+public:
+  PeakClass();// {Type=0;};
+//   virtual ~PeakClass() {};
   
 };
 
@@ -96,19 +92,19 @@ class PulseClass {
  public:
   Long64_t Tstamp64; //64-bit timestamp (corrected for overflows)
   Long64_t Counter; //pulse counter
-  //int Nsamp; //actual number of samples in the pulse
   std::vector <Float_t> sData; //(maybe smoothed) pulse data
 
-  std::vector <peak_type> Peaks;
-  //int Npeaks; // number of peaks found in the pulse
-  //peak_type *Peaks;
-
+  //PeakClass Peak;
+  std::vector <PeakClass> Peaks;
   //int tdif; //difference in tstamp from the event tstamp
 
   UChar_t Chan; //channel number
+  Short_t Pos; //position of the trigger relative to pulse start (in samples)
   UChar_t State;
   //bit 0: channel state word (Control word - external input in crs32)
+  //bit 1: event is writable in Dec
   //bit 7: hardware counters
+  //State=123 - end of Blisr (?)
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
   //short *Data; //raw pulse data
 

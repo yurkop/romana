@@ -84,6 +84,7 @@ public:
   Int_t chtype[MAX_CHTP]; //ch type, starts from 1 (see MAX_TP in common.h)
   Bool_t dsp[MAX_CHTP]; //true - use dsp for data analysis
   Bool_t St[MAX_CHTP]; //[Start]
+  Bool_t Master[MAX_CHTP]; // Master/slave
   //Bool_t Nt[MAX_CHTP]; //[Mrk] flag to use channel for ntof
   Bool_t Grp[MAX_CHTP][NGRP]; // flag to use channel in group histograms
   //UInt_t ch_flag[MAX_CHTP];
