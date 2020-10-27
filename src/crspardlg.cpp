@@ -1058,11 +1058,11 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   TGLabel* fLabel = new TGLabel(hframe1, "compr.");
   hframe1->AddFrame(fLabel,LayCC1);
 
-  //raw_flag
+  //fProc
   if (rflag) {
     id = Plist.size()+1;
     TGCheckButton *fchk2 = new TGCheckButton(hframe1, "Proc", id);
-    fchk2->SetToolTipText("Checked - write processed events; unchecked - write direct raw stream");
+    fchk2->SetToolTipText("raw: Checked - write processed events; unchecked - write direct raw stream\ndec: Checked - reanalyse .dec file");
     //fchk2->SetName(txt);
     //fchk2->ChangeOptions(fchk2->GetOptions()|kFixedWidth);
     //fchk2->SetWidth(230);
@@ -1110,7 +1110,7 @@ void ParParDlg::AddFiles(TGCompositeFrame* frame) {
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
 
 
-  AddChk(fF6,"Write raw data [Filename].raw",&opt.raw_write,&opt.raw_compr,&opt.raw_flag);
+  AddChk(fF6,"Write raw data [Filename].raw",&opt.raw_write,&opt.raw_compr,&opt.fProc);
   AddChk(fF6,"Write decoded data [Filename].dec",&opt.dec_write,&opt.dec_compr,0);
   AddChk(fF6,"Write root histograms [Filename].root",&opt.root_write,&opt.root_compr,0);
 

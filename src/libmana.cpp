@@ -105,6 +105,7 @@ char maintitle[200];
 
 struct stat statb;
 const char* msg_exists = "Output file already exists.\nPress OK to overwrite it";
+const char* msg_ident = "Input and output files are identical";
 
 std::list<TString> listpar;
 //std::list<TString> listshow;
@@ -1487,7 +1488,7 @@ bool TestFile() {
     opt.root_write=b_root;
     if (b_raw) {
       opt.raw_write=true;
-      opt.raw_flag=true;
+      opt.fProc=true;
     }
 
     if (b_dec) {
@@ -1532,16 +1533,29 @@ bool TestFile() {
 
   if (!crs->juststarted) return true;
 
-  if ((opt.raw_write && !stat(crs->rawname.c_str(), &statb)) ||
-      (opt.dec_write && !stat(crs->decname.c_str(), &statb)) ||
-      (opt.root_write && !stat(crs->rootname.c_str(), &statb))) {
+  bool b1 = opt.raw_write && !stat(crs->rawname.c_str(), &statb);
+  bool b2 = opt.dec_write && !stat(crs->decname.c_str(), &statb);
+  bool b3 = opt.root_write && !stat(crs->rootname.c_str(), &statb);
+
+  bool b_ident=false;
+  if (crs->Fmode==2) {//file analysis - test for identical filename
+    bool c1=b1 && !crs->rawname.compare(crs->Fname);
+    bool c2=b2 && !crs->decname.compare(crs->Fname);
+    bool c3=b3 && !crs->rootname.compare(crs->Fname);
+    b_ident=c1||c2||c3;
+  }
+
+  if (b1 || b2 || b3) {
 
     if (crs->batch) {
       if (!b_force) {
 	cout << "flags: " << opt.raw_write << opt.dec_write << opt.root_write << endl;
 	cout << crs->rawname << endl;
-	//cout << "file exists. Exiting..." << endl;
 	cout << "\033[1;31mFile exists. Exiting...\033[0m" << endl;
+	exit(0);
+      }
+      else if (b_ident) {
+	prnt("sss;",BRED,msg_ident,RST);
 	exit(0);
       }
       else {
@@ -1551,17 +1565,28 @@ bool TestFile() {
 
     Int_t retval;
     //new ColorMsgBox(gClient->GetRoot(), myM,
-    new TGMsgBox(gClient->GetRoot(), myM,
-		 "File exists",
-		 msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
+    if (b_ident) {
+      new TGMsgBox(gClient->GetRoot(), myM,
+		   "File exists",
+		   msg_ident, kMBIconAsterisk, kMBCancel, &retval);
+      retval=kMBCancel;
+    }
+    else {
+      new TGMsgBox(gClient->GetRoot(), myM,
+		   "File exists",
+		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
+    }
+
+
+
     if (retval == kMBOk) {
       return true;
     }
     else {
       return false;
     }
-  }
-  else {
+  } //at least one file exists
+  else { //no existing files
     return true;
   }
 

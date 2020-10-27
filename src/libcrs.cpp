@@ -241,7 +241,7 @@ static void cback(libusb_transfer *trans) {
       }
     } //if decode
 
-    if (opt.raw_write && !opt.raw_flag) {
+    if (opt.raw_write && !opt.fProc) {
 
       if (opt.nthreads>1) {
 	crs->Flush_Raw_MT(trans->buffer, trans->actual_length);
@@ -437,6 +437,7 @@ void *handle_ana(void *ctx) {
 
     // analyze events from m_event to m_end
     while (m_event!=m_end) {
+      //cout << m_event->Tstmp << " " << m_event->State << endl;
       if ((m_event->State&2) && (int)m_event->pulses.size()>=opt.mult1 &&
 	  (int)m_event->pulses.size()<=opt.mult2) {
 
@@ -455,7 +456,7 @@ void *handle_ana(void *ctx) {
 	    //crs->Fill_Dec78(&(*m_event));
 	    crs->Fill_Dec79(&(*m_event));
 	  }
-	  if (opt.raw_write && opt.raw_flag) {
+	  if (opt.raw_write && opt.fProc) {
 	    crs->Fill_Raw(&(*m_event));
 	  }
 	}
@@ -489,7 +490,7 @@ void *handle_ana(void *ctx) {
       if (opt.dec_write) {
 	crs->Flush_Dec();
       }
-      if (opt.raw_write && opt.raw_flag) {
+      if (opt.raw_write && opt.fProc) {
 	crs->Flush_Raw();
       }
     }
@@ -821,7 +822,7 @@ void CRS::Ana2(int all) {
 	  //crs->Fill_Dec78(&(*m_event));
 	  crs->Fill_Dec79(&(*m_event));
 	}
-	if (opt.raw_write && opt.raw_flag) {
+	if (opt.raw_write && opt.fProc) {
 	  crs->Fill_Raw(&(*m_event));
 	}
       }
@@ -845,7 +846,7 @@ void CRS::Ana2(int all) {
   //   if (opt.dec_write) {
   //     crs->Flush_Dec();
   //   }
-  //   if (opt.raw_write && opt.raw_flag) {
+  //   if (opt.raw_write && opt.fProc) {
   //     crs->Flush_Raw();
   //   }
   // }
@@ -2748,7 +2749,7 @@ int CRS::DoBuf() {
   // }
   b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
-  if (opt.raw_write && !opt.raw_flag) {
+  if (opt.raw_write && !opt.fProc) {
     crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
     if (crs->f_raw) {
       int res=gzwrite(crs->f_raw,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
@@ -2922,7 +2923,7 @@ void CRS::EndAna(int all) {
   // if (opt.dec_write) {
   //   crs->Flush_Dec();
   // }
-  // if (opt.raw_write && opt.raw_flag) {
+  // if (opt.raw_write && opt.fProc) {
   //   crs->Flush_Raw();
   // }
 
@@ -3465,36 +3466,61 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
   eventlist *Blist;
   UChar_t frmt = GLBuf[idx1+7] & 0x80;
   Dec_Init(Blist,!frmt);
+  PulseClass ipls=dummy_pulse;
 
   while (idx1<b_end[ibuf]) {
     frmt = GLBuf[idx1+7] & 0x80; //event start bit
 
-    if (frmt) { //event start
-      ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
-      evt = &*Blist->insert(Blist->end(),EventClass());
-      evt->Nevt=nevents;
-      nevents++;
-
-      evt->Tstmp = (*buf8) & sixbytes;
-      evt->State = Bool_t((*buf8) & 0x1000000000000);
-    }
-    else {
-      Short_t* buf2 = (Short_t*) (GLBuf+idx1);
-      UShort_t* buf2u = (UShort_t*) buf2;
-      pulse_vect::iterator ipls =
-	evt->pulses.insert(evt->pulses.end(),PulseClass());
-      ipls->Peaks.push_back(PeakClass());
-      PeakClass *pk = &ipls->Peaks.back();
-      pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-      pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-      pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
-      ipls->Chan = buf2[3];
-      if (opt.St[ipls->Chan] && pk->Time < evt->T0) {
-      	evt->T0=pk->Time;
+    if (opt.fProc) { //fill pulses for reanalysis
+      if (frmt) { //event start
+	if (ipls.ptype==0) {
+	  Event_Insert_Pulse(Blist,&ipls);
+	}
+	ipls=PulseClass();
+	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+	ipls.Tstamp64 = (*buf8) & sixbytes;
+	ipls.State = Bool_t((*buf8) & 0x1000000000000);
       }
-      //ipls->Peaks.clear();
-      //evt->pulses.clear();
+      else {
+	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+	UShort_t* buf2u = (UShort_t*) buf2;
+	ipls.Peaks.push_back(PeakClass());
+	PeakClass *pk = &ipls.Peaks.back();
+	pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	int tt = pk->Time;
+	ipls.Tstamp64+=tt;
+	pk->Time-=tt;
+	pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	ipls.Chan = buf2[3];
+      }
     }
+    else { //fill event
+      if (frmt) { //event start
+	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+	evt = &*Blist->insert(Blist->end(),EventClass());
+	evt->Nevt=nevents;
+	nevents++;
+	evt->Tstmp = (*buf8) & sixbytes;
+	evt->State = Bool_t((*buf8) & 0x1000000000000);
+	evt->State|=2;
+      }
+      else {
+	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+	UShort_t* buf2u = (UShort_t*) buf2;
+	pulse_vect::iterator ipls =
+	  evt->pulses.insert(evt->pulses.end(),PulseClass());
+	ipls->Peaks.push_back(PeakClass());
+	PeakClass *pk = &ipls->Peaks.back();
+	pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	ipls->Chan = buf2[3];
+	if (opt.St[ipls->Chan] && pk->Time < evt->T0) {
+	  evt->T0=pk->Time;
+	}
+      }
+    } //fill event
 
     idx1+=8;
   } //while (idx1<buf_len)
@@ -4990,7 +5016,7 @@ void CRS::Reset_Raw() {
   f_raw = gzopen(crs->rawname.c_str(),raw_opt);
   if (f_raw) {
     cout << "Writing parameters... : " << crs->rawname.c_str() << " " << module << endl;
-    if (opt.raw_flag) {
+    if (opt.fProc) {
       SaveParGz(f_raw,34);
     }
     else {
