@@ -22,6 +22,7 @@ enum MENU_COM {
   M_EDIT_PROF8,
   M_EDIT_PROF64,
   M_PROF_TIME,
+  M_ECALIBR,
   M_HELP,
 };
 
@@ -60,6 +61,7 @@ int FindVar(char* buf, int sz, const char* name, char* var);
 
 void example();
 void saveroot(const char *name);
+void readpar_root(const char* pname);
 void readroot(const char *name);
 short int bits(int n, int i1, int i2);
 Bool_t getbit(int n, int bit);
@@ -126,7 +128,7 @@ class MainFrame : public TGMainFrame {
   //TGPopupMenu          *fMenuFile;    // "File" popup menu entry
   //TGPopupMenu          *fMenuHelp;    // "Help" popup menu entry
   TGTextButton *fStart;
-  TGTextButton *fReset;
+  //TGTextButton *fReset;
   TGTextButton *fAna;
   TGTextButton *fNb;
 

@@ -97,6 +97,7 @@ char* parfile2=0;
 char* datfname=0;
 
 bool b_raw=false,b_dec=false,b_root=false,b_force=false;
+bool rd_root=false; //readroot from comand line
 
 char startdir[200];
 char pr_name[200];
@@ -1109,12 +1110,24 @@ int main(int argc, char **argv)
   }
 
   if (datfname) {
-    crs->DoFopen(datfname,rdpar); //read file and parameters from it
+    string dir, name, ext;
+    SplitFilename(string(datfname),dir,name,ext);
+    //cout << dir << " " << name << " " << ext << endl;
+    if (!ext.compare(".root")) { //root file
+      if (!parfile2) {
+	readpar_root(datfname);
+      }
+      rd_root=true;
+    }
+    else { //.raw or .dec file
+      crs->DoFopen(datfname,rdpar); //read file and parameters from it
+    }
   }
   else {
     datfname=(char*)"";
   }
 
+  //exit(1);
   //change individual parameters if listpar is not empty
   evalpar();
 
@@ -1314,7 +1327,7 @@ void saveroot(const char *name) {
   tf->Close();
 }
 
-void readroot(char *name) {
+void readroot(const char *name) {
 
   //char nam[100];
 
@@ -1473,7 +1486,7 @@ bool TestFile() {
 
   if (crs->batch) {
     //strcpy(opt.Filename,crs->Fname);
-    SplitFilename (string(crs->Fname),dir,name,ext);
+    SplitFilename(string(crs->Fname),dir,name,ext);
     dir = TString(startdir);
     //cout << "Root_dir: " << dir << endl;
 
@@ -1674,9 +1687,11 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gClient->GetColorByName("cyan", fCyan);
   gClient->GetColorByName("magenta", fMagenta);
   //gClient->GetColorByName("BlueViolet",fBluevio);
-  fOrng=TColor::RGB2Pixel(255,114,86);
+  fOrng = TColor::RGB2Pixel(255,114,86);
   fBlue = TColor::RGB2Pixel(135,92,231);
   fRed10=gROOT->GetColor(kPink-9)->GetPixel();
+
+  Pixel_t fOrng2 = TColor::RGB2Pixel(230,139,70);
 
   fCol[0] = fYellow; // 1
   fCol[1] = fGreen;  // 2
@@ -1691,6 +1706,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGLayoutHints* LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
   TGLayoutHints* LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
   TGLayoutHints* LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
+  TGLayoutHints* LayET1a = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,0);
+  TGLayoutHints* LayET1b = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,5);
   TGLayoutHints* LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
   TGLayoutHints* LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
   LayEE1 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
@@ -1733,6 +1750,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGPopupMenu* fMenuFile = new TGPopupMenu(gClient->GetRoot());
 
+  fMenuBar->AddPopup("&File", fMenuFile, 
+		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
+
   fMenuFile->AddEntry("Read Parameters", M_READINIT);
   fMenuFile->AddEntry("Save Parameters", M_SAVEINIT);
   fMenuFile->AddSeparator();
@@ -1757,10 +1777,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
-  fMenuBar->AddPopup("&File", fMenuFile, 
-		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
-
   TGPopupMenu* fMenuProf = new TGPopupMenu(gClient->GetRoot());
+
+  fMenuBar->AddPopup("&Profilometer", fMenuProf, 
+		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
   fMenuProf->AddEntry("Edit Ing-27/Prof8x8 channel map", M_EDIT_PROF8);
   fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
@@ -1774,8 +1794,19 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
-  fMenuBar->AddPopup("&Profilometer", fMenuProf, 
+
+
+
+  TGPopupMenu* fMenuCalibr = new TGPopupMenu(gClient->GetRoot());
+
+  fMenuBar->AddPopup("&Calibration", fMenuCalibr, 
 		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
+
+  fMenuCalibr->AddEntry("Energy calibration", M_ECALIBR);
+  fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
+		     "HandleMenu(Int_t)");
+
+
 
   TGPopupMenu* fMenuHelp = new TGPopupMenu(gClient->GetRoot());
   fMenuHelp->AddEntry("Display Help file", M_HELP);
@@ -1837,7 +1868,36 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   FontStruct_t tfont = font->GetFontStruct();
 
 
-  const int butx=80,buty=40;
+
+
+  TGLabel *ver = new TGLabel(vframe1,GITVERSION);
+  //cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
+	
+  vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
+
+  fTab = new TGTab(hframe1, 300, 300);
+  hframe1->AddFrame(fTab, new TGLayoutHints(kLHintsExpandX |
+					    kLHintsExpandY,3,3,2,2));
+
+  fTab->Connect("Selected(Int_t)", "MainFrame", this, "DoTab(Int_t)");
+
+  //cout << "tab1: " << endl;
+  tabfr[0] = fTab->AddTab("Parameters");
+  tabfr[1] = fTab->AddTab("DAQ");
+  tabfr[2] = fTab->AddTab("Analysis");
+  tabfr[3] = fTab->AddTab("Peaks");
+  tabfr[4] = fTab->AddTab("Events");
+  tabfr[5] = fTab->AddTab("Histograms/Cuts");
+  tabfr[6] = fTab->AddTab("Errors");
+
+  MakeTabs();
+
+
+
+
+
+
+  const int butx=80,buty=33;
 
   TGGroupFrame* fGr1 = new TGGroupFrame(vframe1, "Acquisition", kVerticalFrame);
   fGr1->SetTitlePos(TGGroupFrame::kCenter); // right aligned
@@ -1845,33 +1905,32 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fStart = new TGTextButton(fGr1,"Start");
   //fStart->SetToggleButton(true);
+  fStart->SetToolTipText("Start/Stop acquisition");
 
   fStart->SetFont(tfont,false);
   fStart->Resize(butx,buty);
   fStart->ChangeOptions(fStart->GetOptions() | kFixedSize);
   //fStart->SetStyle("modern");
-
   fStart->ChangeBackground(fGreen);
-
   fStart->Connect("Clicked()","MainFrame",this,"DoStartStop()");
   fGr1->AddFrame(fStart, LayET1);
 
+  /*
   fReset = new TGTextButton(fGr1,"Reset");
   fReset->SetFont(tfont,false);
-
   fReset->SetTextJustify(kTextCenterX);
-
   fReset->Resize(butx,buty);
   fReset->ChangeOptions(fStart->GetOptions() | kFixedSize);
   fReset->ChangeBackground(fCyan);
-
   fReset->Connect("Clicked()","MainFrame",this,"DoReset()");
   fGr1->AddFrame(fReset, LayET1);
+  */
 
   TGGroupFrame* fGr2 = new TGGroupFrame(vframe1, "Analysis", kVerticalFrame);
   fGr2->SetTitlePos(TGGroupFrame::kCenter);
   vframe1->AddFrame(fGr2, LayCT1);
 
+  /*
   TGPopupMenu* fPopMenu = new TGPopupMenu(gClient->GetRoot());
   fPopMenu->AddEntry("Open+", 1);
   fPopMenu->AddEntry("Open-", 0);
@@ -1889,8 +1948,31 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fOpen->ChangeBackground(fOrng);
   fOpen->Connect("ItemClicked(Int_t)", "MainFrame", this, "DoOpen(Int_t)");
   fGr2->AddFrame(fOpen, LayET1);
+  */
 
+
+  TGTextButton *fOpen = new TGTextButton(fGr2,new TGHotString("Open +"));
+  fOpen->SetFont(tfont,false);
+  fOpen->SetToolTipText("Open data file with parameters");
+  fOpen->Resize(butx,buty*2/3);
+  fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
+  fOpen->ChangeBackground(fOrng);
+  fOpen->Connect("Clicked()","MainFrame",this,"DoOpen(=1)");
+  fGr2->AddFrame(fOpen, LayET1a);
+
+  TGTextButton *fOpen2 = new TGTextButton(fGr2,new TGHotString("Open -"));
+  fOpen2->SetFont(tfont,false);
+  fOpen2->SetToolTipText("Open data file without parameters");
+  fOpen2->Resize(butx,buty*2/3);
+  fOpen2->ChangeOptions(fOpen2->GetOptions() | kFixedSize);
+  fOpen2->ChangeBackground(fOrng2);
+  fOpen2->Connect("Clicked()","MainFrame",this,"DoOpen(=0)");
+  fGr2->AddFrame(fOpen2, LayET1b);
+
+
+  
   TGTextButton *fClose = new TGTextButton(fGr2,new TGHotString("&Close"));
+  fClose->SetToolTipText("Close data file");
   fClose->SetFont(tfont,false);
   fClose->Resize(butx,buty);
   fClose->ChangeOptions(fClose->GetOptions() | kFixedSize);
@@ -1899,6 +1981,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fGr2->AddFrame(fClose, LayET1);
 
   TGTextButton *fReset2 = new TGTextButton(fGr2,new TGHotString("&Reset"));
+  fReset2->SetToolTipText("Reset/clear everything (doesn't work during acquisition/analysis)");
   fReset2->SetFont(tfont,false);
   fReset2->Resize(butx,buty);
   fReset2->ChangeOptions(fReset2->GetOptions() | kFixedSize);
@@ -1908,6 +1991,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fGr2->AddFrame(fReset2, LayET1);
 
   fAna = new TGTextButton(fGr2,"&Analyze");
+  fAna->SetToolTipText("Analyze data file");
   fAna->SetFont(tfont,false);
   fAna->Resize(butx,buty);
   fAna->ChangeOptions(fAna->GetOptions() | kFixedSize);
@@ -1916,6 +2000,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fGr2->AddFrame(fAna, LayET1);
 
   TGTextButton* f1b = new TGTextButton(fGr2,new TGHotString("&1 buf"));
+  f1b->SetToolTipText("Analyze one buffer");
   f1b->SetFont(tfont,false);
   f1b->Resize(butx,buty);
   f1b->ChangeOptions(f1b->GetOptions() | kFixedSize);
@@ -1923,62 +2008,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   f1b->Connect("Clicked()","MainFrame",this,"Do1buf()");
   fGr2->AddFrame(f1b, LayET1);
 
-  TGLabel *ver = new TGLabel(vframe1,GITVERSION);
-  //cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
-	
-  vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
-  fTab = new TGTab(hframe1, 300, 300);
-  hframe1->AddFrame(fTab, new TGLayoutHints(kLHintsExpandX |
-					    kLHintsExpandY,3,3,2,2));
-
-  fTab->Connect("Selected(Int_t)", "MainFrame", this, "DoTab(Int_t)");
-
-
-  //fremake=false;
-
-  //cout << "tab1: " << endl;
-  tabfr[0] = fTab->AddTab("Parameters");
-  tabfr[1] = fTab->AddTab("DAQ");
-  tabfr[2] = fTab->AddTab("Analysis");
-  tabfr[3] = fTab->AddTab("Peaks");
-  //tabfr[2] = fTab->AddTab("Channels");
-  tabfr[4] = fTab->AddTab("Events");
-  tabfr[5] = fTab->AddTab("Histograms/Cuts");
-  tabfr[6] = fTab->AddTab("Errors");
-  //TGDockableFrame *tab4 = fTab->AddTab("Events");
-  //TGDockableFrame *tab4 = fTab->AddTab("Events");
-
-  //parpar = new ParParDlg(tabfr[0], 600, 500);
-  //parpar->Update();
-  //tabfr[0]->AddFrame(parpar, LayEE1);
-
-  MakeTabs();
-  //cout << "Maketabs2: " << endl;
-  //fremake=true;
-
-  //TGTabElement* tab6 = fTab->GetTabTab("Errors");
-  //tab6->SetBackgroundColor(fRed);
-  //cout << "tab6: " << tab6 << endl;
-  //exit(1);
-  //MakeTabs();
-
-  if (crs->Fmode!=1) { //no CRS present
-    daqpar->AllEnabled(false);
-
-    //TGTabElement *tabdaq = fTab->GetTabTab("DAQ");
-    //tabdaq->SetEnabled(false);
-    fStart->SetEnabled(false);
-    fReset->SetEnabled(false);
-
-    /*
-      opt.raw_write=false;
-      //parpar->Update();
-      TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
-      if (te) 
-      te->SetEnabled(false);
-    */
-  }
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
   fGr2->AddFrame(hfr1, LayET1);
@@ -1991,18 +2021,39 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 					   TGNumberFormat::kNELLimitMinMax,
 					   1,100000);
   parpar->DoMap(fNum1->GetNumberEntry(),&opt.num_buf,p_inum,0);
+  fNum1->GetNumberEntry()->SetToolTipText("Number of buffers to analyze");
   fNum1->Resize(65, fNum1->GetDefaultHeight());
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
 				   "DoNum()");
   hfr1->AddFrame(fNum1,LayLT3);
 
   fNb = new TGTextButton(hfr1,new TGHotString("&N buf"));
+  fNb->SetToolTipText("Analyze N buffers");
   //fNb->SetFont(tfont,false);
   fNb->Resize(35,22);
   fNb->ChangeOptions(fNb->GetOptions() | kFixedSize);
   fNb->ChangeBackground(fGreen);
   fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
   hfr1->AddFrame(fNb, LayLT3);
+
+
+
+
+  if (rd_root) {
+    readroot(datfname);
+    crs->Fmode=0;
+    SetTitle(datfname);
+  }
+
+  if (crs->Fmode!=1) { //no CRS present
+    daqpar->AllEnabled(false);
+    fStart->SetEnabled(false);
+    //fReset->SetEnabled(false);
+  }
+
+
+
+
 
   parpar->Update();
 
@@ -2302,7 +2353,7 @@ void MainFrame::DoOpen(Int_t id) {
   if (!crs->b_stop) return;
 
   //id=12-id;
-  //cout << "DoOpen: " << id << endl;
+  cout << "DoOpen: " << id << endl;
 
   const char *dnd_types[] = {
     "all files",     "*",
@@ -2365,7 +2416,7 @@ void MainFrame::DoClose() {
   if (crs->Fmode==1) { //CRS is present
     daqpar->AllEnabled(true);
     fStart->SetEnabled(true);
-    fReset->SetEnabled(true);
+    //fReset->SetEnabled(true);
 
     //opt.raw_write=false;
     //parpar->Update();
@@ -3179,7 +3230,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
     {
       //cout << "cal1: " << p_time_cal << endl;
       if (!p_pop) {
-	p_pop = new PopFrame(this,800,600);
+	p_pop = new PopFrame(this,800,600,M_PROF_TIME);
 	//pop->Popup;
 	// TCanvas* cc = new TCanvas();
 	// //cout << "p_ed: " << p_ed << endl;
@@ -3189,6 +3240,16 @@ void MainFrame::HandleMenu(Int_t menu_id)
 	// p_ed->Popup();
       }
       //cout << "cal2: " << p_pop << endl;
+    }
+    break;
+
+  case M_ECALIBR:
+    {
+      //cout << "ecalibr: " << fTab->GetCurrent() << endl;
+      fTab->SetTab("Histograms/Cuts");
+      if (!p_pop) {
+	p_pop = new PopFrame(this,100,600,M_ECALIBR);
+      }
     }
     break;
 

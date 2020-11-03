@@ -116,6 +116,7 @@ public:
   void ShowCutG();
   void ClearCutG();
   void DoPeaks();
+  void Do_Ecalibr();
   void HiReset();
   void Update();
   void DrawHist();

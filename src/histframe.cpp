@@ -1,6 +1,8 @@
 //----- HistFrame ----------------
 #include "romana.h"
 
+#include <sstream>
+
 #include <TColor.h>
 #include <TCanvas.h>
 #include <TText.h>
@@ -208,6 +210,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGLayoutHints* LayLC1  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
   TGLayoutHints* LayLC2  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,0,0,0);
   TGLayoutHints* LayLC3  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
+  TGLayoutHints* LayLC4  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,2,0,0);
   TGLayoutHints* LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
 
 
@@ -313,17 +316,20 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   but = new TGTextButton(fHor3,"Add",1);
   but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  but->SetToolTipText("Add a cut for existing histogram");
   fHor3->AddFrame(but, LayLC1);
 
   but = new TGTextButton(fHor3,"Cancel",2);
   but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  but->SetToolTipText("Cancel/interrupt addning a cut");
   fHor3->AddFrame(but, LayLC1);
 
   but = new TGTextButton(fHor3,"Clear",4);
   but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
+  but->SetToolTipText("Delete all cuts. Use right mouse button on a cut to delete it");
   fHor3->AddFrame(but, LayLC1);
 
-  const char* ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
+  const char* ttip = "Formula for the cut.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
 
   tab2->AddFrame(new TGLabel(tab2, "--Formula--"), LayET0);
   TGHorizontalFrame *fHor7 = new TGHorizontalFrame(tab2, 10, 10);
@@ -1404,6 +1410,67 @@ void HistFrame::DoPeaks()
 	//TF1* fitf=new TF1("fitf","gaus",0,10);
 	hh->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
 	//f1->Draw("same");
+      }
+      nn++;
+    }
+    ii++;
+  }
+  //fEc->GetCanvas()->SetEditable(true);
+  fEc->GetCanvas()->Update();
+  //fEc->GetCanvas()->SetEditable(false);
+
+}
+
+void HistFrame::Do_Ecalibr()
+{
+  double sig = myM->p_pop->fwhm/2.35;
+  double width = myM->p_pop->range;
+  double* ee = myM->p_pop->ee;
+  
+  cout << "eee: " << sig << endl;
+  //return;
+
+  TSpectrum spec;
+
+  int nch;
+  int nn=1;
+  int ii=0;
+  TIter next(hlist);
+  TObject* obj;
+  while ( (obj=(TObject*)next()) ) {
+    if (ii>=opt.icheck) {
+      if (!fEc->GetCanvas()->GetPad(nn)) break;
+      fEc->GetCanvas()->cd(nn);
+      TH1 *hh = ((HMap*) obj)->hst;
+      string str(hh->GetName());
+      size_t found = str.find_last_of("_");
+      std::stringstream ss(str.substr(found+1));
+      ss >> nch;
+
+      //cout << "hhh: " << hh->GetTitleSize() << endl;
+      //hh->Draw();
+      int npk = spec.Search(hh,sig,"",0.5);
+#if ROOT_VERSION_CODE > ROOT_VERSION(6,0,0)
+      Double_t* peaks = spec.GetPositionX();
+#else
+      Float_t* peaks = spec.GetPositionX();
+#endif
+      for (int j=0;j<npk;j++) {
+	//int bin = hh->FindFixBin(peaks[j]);
+
+	TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
+	//cout << f1->GetNpar() << endl;
+	f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
+
+	//f1->Print();
+	const char* fitopt="NQ+";
+	if (j==0) fitopt="NQ";
+
+	//TF1* fitf=new TF1("fitf","gaus",0,10);
+	hh->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
+	f1->Draw("same");
+	opt.E1[nch]*=ee[0]/f1->GetParameter(1);
+	cout << "hist: " << nch << " " << opt.E1[nch] << " " << hh->GetName() << " " << f1->GetParameter(1) << endl;
       }
       nn++;
     }

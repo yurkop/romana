@@ -15,7 +15,7 @@ extern HistFrame* HiFrm;
 extern Toptions opt;
 
 using namespace std;
-PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h)
+PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id)
 {
   txt.SetTextSize(0.15);
   txt.SetTextAlign(22);
@@ -25,13 +25,12 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h)
   // use hierarchical cleaning
   fMain->SetCleanup(kDeepCleanup);
 
-  fCanvas = new TRootEmbeddedCanvas("Events",fMain,w,h);
-  fMain->AddFrame(fCanvas, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-
- 
-  TGTextButton* fOK = new TGTextButton(fMain, "  &OK  ");
-  fOK->Connect("Clicked()", "PopFrame", this, "DoOK()");
-  fMain->AddFrame(fOK, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+  if (menu_id==M_PROF_TIME) {
+    AddProf(w,h);
+  }
+  else if (menu_id==M_ECALIBR) {
+    AddEcalibr();
+  }
 
   fMain->MapSubwindows();
   fMain->Resize();
@@ -54,8 +53,76 @@ void PopFrame::CloseWindow()
   //cout << "fVar2: " << *fVar << " " << this << endl;
 }
 
-void PopFrame::DoOK()
-{
+void PopFrame::AddProf(UInt_t w, UInt_t h) {
+  fCanvas = new TRootEmbeddedCanvas("Events",fMain,w,h);
+  fMain->AddFrame(fCanvas, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
+  TGTextButton* fOK = new TGTextButton(fMain, "  &OK  ");
+  fOK->Connect("Clicked()", "PopFrame", this, "DoProfTime()");
+  fMain->AddFrame(fOK, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+}
+
+void PopFrame::AddEcalibr() {
+  ee[0]=4438;
+  fwhm=10;
+  npol=1;
+  range=300;
+
+  TGLayoutHints* LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 2,2,2,2);
+  TGLayoutHints* LayCC2   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 2,2,2,2);
+
+  for (int i=0;i<11;i++) {
+    pframe[i]=0;
+  }
+
+  fMain->SetWindowName("Energy Calibration");
+  npeaks=1;
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,LayLC2);
+  fNum = new TGNumberEntry(hframe, fwhm, 8, 11, kr, ka, kn);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum,LayLC2);
+  fLabel = new TGLabel(hframe, "FWHM");
+  hframe->AddFrame(fLabel,LayLC2);
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,LayLC2);
+  fNum = new TGNumberEntry(hframe, range, 8, 12, kr, ka, kn);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum,LayLC2);
+  fLabel = new TGLabel(hframe, "+/- fit range");
+  hframe->AddFrame(fLabel,LayLC2);
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,LayLC2);
+  fNum = new TGNumberEntry(hframe, npol, 8, 13, ki, ka, kl, 0, 2);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum,LayLC2);
+  fLabel = new TGLabel(hframe, "Substrate polynomial");
+  hframe->AddFrame(fLabel,LayLC2);
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,LayLC2);
+  fNum = new TGNumberEntry(hframe, npeaks, 8, 14, ki, ka, kl, 1, 10);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum,LayLC2);
+  fLabel = new TGLabel(hframe, "Number of peaks");
+  hframe->AddFrame(fLabel,LayLC2);
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,LayCC2);
+  fLabel = new TGLabel(hframe, " ------- Peaks ------- ");
+  hframe->AddFrame(fLabel,LayCC2);
+
+  AddPeaks();
+}
+
+void PopFrame::DoProfTime() {
+
   TH1* hh;
   TGraph* gr;
   TF1* fit;
@@ -85,7 +152,7 @@ void PopFrame::DoOK()
 	}
 	gr->SetNameTitle("Time_Calibr","Time Calibration");
 	gr->Fit("pol1");
-    
+
 	fit = gr->GetFunction("pol1");
 	if (fit) {
 	  res++;
@@ -111,4 +178,59 @@ void PopFrame::DoOK()
     txt.DrawTextNDC(0.5,0.5,"Can't find 31 peaks");
   }
   cv->Update();
+}
+
+void PopFrame::AddPeaks() {
+  for (int i=0;i<11;i++) {
+    if (pframe[i]) {
+      fMain->RemoveFrame(pframe[i]);
+      pframe[i]=0;
+    }
+  }
+
+  for (int i=0;i<npeaks;i++) {
+    if (!pframe[i]) {
+      pframe[i] = new TGHorizontalFrame(fMain,10,10);
+      fMain->AddFrame(pframe[i],new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 2,2,2,2));
+      fNum = new TGNumberEntry(pframe[i], ee[i], 8, i, kr, ka, kn);
+      fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				      "DoENum()");
+      pframe[i]->AddFrame(fNum,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 2,2,2,2));
+      fLabel = new TGLabel(pframe[i], "Energy (kEv)");
+      pframe[i]->AddFrame(fLabel,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 2,2,2,2));
+    }
+  }
+
+  pframe[10] = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(pframe[10],new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
+  TGTextButton* fOK = new TGTextButton(pframe[10], "  &OK  ");
+  fOK->Connect("Clicked()", "HistFrame", HiFrm, "Do_Ecalibr()");
+  pframe[10]->AddFrame(fOK, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+
+  fMain->Resize(fMain->GetDefaultSize());
+  fMain->MapSubwindows();
+  fMain->Layout();
+
+}
+
+void PopFrame::DoENum() {
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+  if (id>=0 && id<10) {
+    ee[id]=te->GetNumber();
+    //cout << "ee: " << id << " " << ee[id] << endl;
+  }
+  else if (id==11) {
+    fwhm=te->GetNumber();
+  }
+  else if (id==12) {
+    range=te->GetNumber();
+  }
+  else if (id==13) {
+    npol=te->GetNumber();
+  }
+  else if (id==14) {
+    npeaks=te->GetNumber();
+    AddPeaks();
+  }
 }
