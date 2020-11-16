@@ -37,6 +37,7 @@ public:
   virtual ~PopFrame();
   void AddProf(UInt_t w, UInt_t h);
   void AddEcalibr();
+  void AddTcalibr();
   void DoProfTime();
   void AddPeaks();
   void DoENum();

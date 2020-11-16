@@ -45,6 +45,7 @@ struct pmap {
   // in DoDaqNum:
   // 1 - DoReset
   // 2 - Hireset
+  // 3 - Hi->Update()
   // 5 - group4
 
   // in DoDaqChk:
@@ -195,20 +196,20 @@ public:
 		   //TGNumberFormat::EAttribute attr, 
    double min1=0, double max1=0,
    double min2=0, double max2=0, byte cmd1=0, byte cmd2=0);
-  void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
-    const char* tip, const char* label);
-  void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
-    const char* tip, const char* label, int type);
-  void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
-    const char* tip, const char* label);
-  void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
-    P_Def pp, const char* tip);
-  void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
-    const char* tip, const char* label);
+  // void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
+  //   const char* tip, const char* label);
+  // void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
+  //   const char* tip, const char* label, int type);
+  // void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
+  //   const char* tip, const char* label);
+  // void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
+  //   P_Def pp, const char* tip);
+  // void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
+  //   const char* tip, const char* label);
   void AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
    Int_t* compr, Bool_t* rflag);
   void AddFiles(TGCompositeFrame* frame);
-  void AddHist(TGCompositeFrame* frame);
+  //void AddHist(TGCompositeFrame* frame);
   void AddOpt(TGCompositeFrame* frame);
   void AddLogic(TGCompositeFrame* frame);
   void AddAna(TGCompositeFrame* frame);
@@ -219,6 +220,51 @@ public:
   void Update();
 
   ClassDef(ParParDlg, 0)
+};
+
+//-----------------------------------------------
+class HistParDlg: public ParDlg {
+public:
+  HistParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~HistParDlg() {};
+
+protected:
+
+  TGSplitFrame *hor;
+  TGSplitFrame *ver1;
+  TGSplitFrame *ver2;
+  
+  TGGroupFrame* frame1d;
+  TGGroupFrame* frame2d;
+
+  const char* tip1;
+  const char* tip2;
+  const char* label;
+
+  TGNumberFormat::EStyle k_int;
+  TGNumberFormat::EStyle k_r0;
+  TGNumberFormat::EStyle k_r1;
+  TGNumberFormat::EStyle k_mon;
+
+  TGTextEntry* tTrig;
+
+public:
+
+  void AddHist(TGCompositeFrame* frame2);
+  void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
+    const char* tip, const char* label);
+  void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
+    const char* tip, const char* label, int type);
+  void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
+    const char* tip, const char* label);
+  void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
+    P_Def pp, const char* tip);
+  void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
+    const char* tip, const char* label);
+  void Add2d();
+  void Update();
+
+  ClassDef(HistParDlg, 0)
 };
 
 //-----------------------------------------------

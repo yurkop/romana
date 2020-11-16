@@ -2,6 +2,7 @@
 #define hclass_H 1
 
 #include "common.h"
+//#include "toptions.h"
 #include <TH1.h>
 #include <TH2.h>
 #include <TFormula.h>
@@ -14,27 +15,37 @@ class HMap: public TNamed {
  public:
 
   HMap();
-  HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
-       Int_t *cuts);
+  HMap(const char* dname);
+  HMap(const char* dname, TH1* hist, Hdef* hd1, int i);
+  // HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
+  //      Int_t *cuts);
   ~HMap();
   HMap(const HMap& other);
   HMap& operator=(const HMap& other);
   
   TH1* hst;
-  Bool_t* chk; //item is checked
-  Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*, WORK_MT)
-  UShort_t* bitwk; //bit mask - item is checked in the WORK* folder
-  Int_t *cut_index; //список окон (cuts), заданных на этой гистограмме (hst)
+  Hdef* hd;
+  UShort_t nn; //index in Hdef
+  //Int_t *rb; //rebin
+  //Bool_t* chk; //item is checked
+  //Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*, WORK_MT)
+
+  //UShort_t* bitwk; //bit mask - item is checked in the WORK* folder
+
+  // Int_t *cut_index; // = Hdef->cut
+  // список окон (cuts), заданных на этой гистограмме (hst)
   // положение бита в этой маске соответствует номеру соответствующего окна
   // максимальная размерность: 32 бита, значит число окон
   // не может быть больше 32
   // bit mask: 1 - cut is in this histogram; 0 - cut is not here
+
   HMap* h_cuts[MAXCUTS];
   //список копий этой гистограммы (map), которые будут
   //заполняться при попадании события в какое-то окно/cut [i]
   //(не обязательно в этой гистограмме)
   //и будут храниться в папке WORK_cut[i]
-  HMap* h_MT;
+
+  //HMap* h_MT;
   //копия этой гистограммы (map), которая будет
   //заполняться при попадании события в мастер триггер
   //и будет храниться в папке WORK_MT
@@ -48,7 +59,7 @@ class HClass {
  public:
 
   HMap* m_rate[MAX_CH+NGRP]; // software rate in real time
-  HMap* m_counter[MAX_CH+NGRP]; // hardware counter in real time
+  HMap* m_count[MAX_CH+NGRP]; // hardware counter in real time
   HMap* m_area[MAX_CH+NGRP]; //area of the peak
   HMap* m_area0[MAX_CH+NGRP]; //area of the peak w/o bkg
   HMap* m_base[MAX_CH+NGRP]; //baseline - background
@@ -84,6 +95,11 @@ class HClass {
 
   //HMap* m_area_width3[MAX_CH];
   //HMap* m_width_12[MAX_CH];
+
+
+  //std::vector<int> vcuts; //vector of
+
+
 
   TCutG* cutG[MAXCUTS];
   //Name: cut[i]

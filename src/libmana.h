@@ -23,6 +23,7 @@ enum MENU_COM {
   M_EDIT_PROF64,
   M_PROF_TIME,
   M_ECALIBR,
+  M_TCALIBR,
   M_HELP,
 };
 
@@ -95,6 +96,7 @@ class PEditor {
   void   Load_Ing(const char* header);
   void   LoadPar8();
   void   LoadPar64();
+  void   LoadCuts();
   //void   LoadBuffer(const char *buffer);
   //void   AddBuffer(const char *buffer);
 
@@ -138,7 +140,8 @@ class MainFrame : public TGMainFrame {
   //TGLayoutHints* Lay12;
 
   TGTab                *fTab;
-  TGCompositeFrame     *tabfr[10];
+  //TGCompositeFrame     *tabfr[10];
+  std::vector<TGCompositeFrame*> tabfr;
 
   // Pixel_t fGreen;
   // Pixel_t fRed;

@@ -71,6 +71,7 @@ ErrFrame* ErrFrm;
 HClass* hcl;
 
 ParParDlg *parpar;
+HistParDlg *histpar;
 DaqParDlg *daqpar;
 AnaParDlg *anapar;
 PikParDlg *pikpar;
@@ -407,6 +408,9 @@ Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf) 
       if (debug&0x2)
 	cout << "member: " << dm->GetName() << " " << len << " " << sz << " " << dm->GetDataType()->GetType() << " " << dm->GetDataType()->GetTypeName() << endl;
     }
+    // else {
+    //   cout << "member: " << dm->GetName() << " " << len << " " << sz << " " << dm->GetDataType() << " " << dm->GetTypeName() << endl;
+    // }
   }
 
   return sz;
@@ -1209,6 +1213,10 @@ int main(int argc, char **argv)
     return 0;
   }
 
+
+  //cout << "HCuts2: " << opt.cuts.ll.size() << endl;
+
+
   TApplication theApp("App",&argc,argv);
   //example();
   // myM=0;
@@ -1805,6 +1813,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuCalibr->AddEntry("Energy calibration", M_ECALIBR);
   fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
+  fMenuCalibr->AddEntry("Time calibration", M_TCALIBR);
+  fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
+		     "HandleMenu(Int_t)");
 
 
 
@@ -1814,17 +1825,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuHelp->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
-  /*
-    fMenuBar->AddPopup("&Options", fMenuOptions, 
-    new TGLayoutHints(kLHintsLeft|kLHintsTop));
-
-    fMenuBar->AddPopup("Histograms", fMenuHist, 
-    new TGLayoutHints(kLHintsLeft|kLHintsTop));
-
-    fMenuBar->AddPopup("Analysis", fMenuAna, 
-    new TGLayoutHints(kLHintsLeft|kLHintsTop));
-  */
-	
   fMenuBar->AddPopup("&Help", fMenuHelp,
 		     new TGLayoutHints(kLHintsTop|kLHintsRight,0,4,0,0));
 
@@ -1882,13 +1882,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fTab->Connect("Selected(Int_t)", "MainFrame", this, "DoTab(Int_t)");
 
   //cout << "tab1: " << endl;
-  tabfr[0] = fTab->AddTab("Parameters");
-  tabfr[1] = fTab->AddTab("DAQ");
-  tabfr[2] = fTab->AddTab("Analysis");
-  tabfr[3] = fTab->AddTab("Peaks");
-  tabfr[4] = fTab->AddTab("Events");
-  tabfr[5] = fTab->AddTab("Histograms/Cuts");
-  tabfr[6] = fTab->AddTab("Errors");
 
   MakeTabs();
 
@@ -2200,13 +2193,15 @@ void MainFrame::Rebuild() {
   //   tabfr[i]->RemoveAll();
   // }
 	
-  tabfr[0]->RemoveAll();
-  tabfr[1]->RemoveAll();
-  tabfr[2]->RemoveAll();
-  tabfr[3]->RemoveAll();
-  tabfr[4]->RemoveAll();
-  tabfr[5]->RemoveAll();
-  tabfr[6]->RemoveAll();
+
+  std::vector<TGCompositeFrame*>::iterator it;
+  for (it=tabfr.begin();it!=tabfr.end();++it) {
+    (*it)->RemoveAll();
+    (*it)->Delete();
+    fTab->RemoveTab();
+  }
+  tabfr.clear();
+
   /*
     delete parpar;
     delete daqpar;
@@ -2246,48 +2241,73 @@ void MainFrame::MakeTabs(bool reb) {
 
   int ntab=0;
 
+  TGCompositeFrame* tb;
+
   //cout << "tab0: " << endl;
 
-  parpar = new ParParDlg(tabfr[0], 600, MAIN_HEIGHT);
+  tb = fTab->AddTab("Parameters");
+  tabfr.push_back(tb);
+  parpar = new ParParDlg(tb, 450, MAIN_HEIGHT);
   parpar->Update();
-  tabfr[0]->AddFrame(parpar, LayEE1);
+  tb->AddFrame(parpar, LayEE1);
+  ntab++;
+
+  tb = fTab->AddTab("Histograms");
+  tabfr.push_back(tb);
+  //histpar = new HistParDlg(tb, 600, MAIN_HEIGHT);
+  histpar = new HistParDlg(tb, 400, MAIN_HEIGHT);
+  histpar->Update();
+  tb->AddFrame(histpar, LayEE1);
   ntab++;
 
   //cout << "tab2: " << endl;
-  daqpar = new DaqParDlg(tabfr[1], 600, MAIN_HEIGHT);
+  tb = fTab->AddTab("DAQ");
+  tabfr.push_back(tb);
+  daqpar = new DaqParDlg(tb, 600, MAIN_HEIGHT);
   daqpar->Build();
-  tabfr[1]->AddFrame(daqpar, LayEE2);
+  tb->AddFrame(daqpar, LayEE2);
   ntab++;
   daqpar->Update();
   //cout << "tab3: " << endl;
 
-  anapar = new AnaParDlg(tabfr[2], 600, MAIN_HEIGHT);
+  tb = fTab->AddTab("Analysis");
+  tabfr.push_back(tb);
+  anapar = new AnaParDlg(tb, 600, MAIN_HEIGHT);
   anapar->Build();
-  tabfr[2]->AddFrame(anapar, LayEE2);
+  tb->AddFrame(anapar, LayEE2);
   ntab++;
   anapar->Update();
 
-  pikpar = new PikParDlg(tabfr[3], 600, MAIN_HEIGHT);
+  tb = fTab->AddTab("Peaks");
+  tabfr.push_back(tb);
+  pikpar = new PikParDlg(tb, 600, MAIN_HEIGHT);
   pikpar->Build();
-  tabfr[3]->AddFrame(pikpar, LayEE2);
+  tb->AddFrame(pikpar, LayEE2);
   ntab++;
   pikpar->Update();
 
-  EvtFrm = new EventFrame(tabfr[4], 620, MAIN_HEIGHT,ntab);
-  tabfr[4]->AddFrame(EvtFrm, LayEE1);
+  tb = fTab->AddTab("Events");
+  tabfr.push_back(tb);
+  EvtFrm = new EventFrame(tb, 620, MAIN_HEIGHT,ntab);
+  tb->AddFrame(EvtFrm, LayEE1);
   ntab++;
 
-  HiFrm = new HistFrame(tabfr[5], 800, MAIN_HEIGHT,ntab);
+  tb = fTab->AddTab("Plots/Cuts");
+  tabfr.push_back(tb);
+  HiFrm = new HistFrame(tb, 800, MAIN_HEIGHT,ntab);
   HiFrm->HiReset();
-  tabfr[5]->AddFrame(HiFrm, LayEE1);
+  tb->AddFrame(HiFrm, LayEE1);
   ntab++;
 
-  ErrFrm = new ErrFrame(tabfr[6], 800, MAIN_HEIGHT);
-  //HiFrm->HiReset();
-  tabfr[6]->AddFrame(ErrFrm, LayEE1);
+  tb = fTab->AddTab("Errors");
+  tabfr.push_back(tb);
+  ErrFrm = new ErrFrame(tb, 250, MAIN_HEIGHT);
+  tb->AddFrame(ErrFrm, LayEE1);
   ntab++;
 
   local_nch=opt.Nchan;
+
+  //cout << "tab9: " << tabfr.size() << endl;
 
   // MapSubwindows();
   // Resize(GetDefaultSize());
@@ -2694,7 +2714,7 @@ void MainFrame::Export() {
   if (name.EqualTo("Events",TString::kIgnoreCase)) {
     cv=EvtFrm->fCanvas->GetCanvas();
   }
-  else if (name.EqualTo("Histograms",TString::kIgnoreCase)) {
+  else if (name.Contains("Plots",TString::kIgnoreCase)) {
     cv=HiFrm->fEc->GetCanvas();
   }
   else {
@@ -2878,7 +2898,7 @@ void MainFrame::DoExit() {
   //double it[4];
   //double sum;
 
-  cout << "DoExit" << endl;
+  //cout << "DoExit" << endl;
 
   //saveinit(parfile);
 #ifdef LINUX
@@ -2901,7 +2921,7 @@ void MainFrame::DoExit() {
   // printf("%d bad events\n",bad_events);
 
   delete this;
-  //gApplication->Terminate(0);
+  gApplication->Terminate(0);
 }
 
 void MainFrame::DoSaveRoot() {
@@ -3046,7 +3066,7 @@ void MainFrame::DoTab(Int_t num) {
     if (crs->b_stop)
       EvtFrm->DrawEvent2();
   }
-  else if (name.Contains("Histograms",TString::kIgnoreCase)) {
+  else if (name.Contains("Plots",TString::kIgnoreCase)) {
     //cout << "DoTab5: " << name << endl;
     if (!crs->b_acq)
       HiFrm->Update();
@@ -3246,9 +3266,19 @@ void MainFrame::HandleMenu(Int_t menu_id)
   case M_ECALIBR:
     {
       //cout << "ecalibr: " << fTab->GetCurrent() << endl;
-      fTab->SetTab("Histograms/Cuts");
+      fTab->SetTab("Plots/Cuts");
       if (!p_pop) {
 	p_pop = new PopFrame(this,100,600,M_ECALIBR);
+      }
+    }
+    break;
+
+  case M_TCALIBR:
+    {
+      //cout << "ecalibr: " << fTab->GetCurrent() << endl;
+      fTab->SetTab("Plots/Cuts");
+      if (!p_pop) {
+	p_pop = new PopFrame(this,100,600,M_TCALIBR);
       }
     }
     break;
@@ -3725,6 +3755,12 @@ void PEditor::LoadPar64()
   
   fEdit->AddLine("# Run Profilometer time calibration");
   fEdit->AddLine("# for period determination");
+}
+
+void PEditor::LoadCuts()
+{
+  string str = HiFrm->CutsToStr();
+  fEdit->LoadBuffer(str.c_str());
 }
 
 void PEditor::CloseWindow()

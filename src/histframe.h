@@ -34,10 +34,10 @@ public:
   TGCanvas               *gCanvas2; //cuts Gcanvas
   TRootEmbeddedCanvas    *fEc;
 
-  TGHorizontalFrame      *fHor1; //contains canvas and list of histograms
-  TGHorizontalFrame      *fHor2; //contains buttons etc
-  TGHorizontalFrame      *fHor3; //for cuts
-  TGVerticalFrame        *fVer0; //canvas && hslider
+  // TGHorizontalFrame      *fHor1; //contains canvas and list of histograms
+  // TGHorizontalFrame      *fHor2; //contains buttons etc
+  // TGHorizontalFrame      *fHor3; //for cuts
+  // TGVerticalFrame        *fVer0; //canvas && hslider
 
 
 
@@ -51,10 +51,10 @@ public:
   TGListTreeItem         *iWork;
   TGListTreeItem         *iWork_cut[MAXCUTS];
   TGListTreeItem         *iWork_MT;
-  TList* hlist;
-  //THStack* hstack;
-  TList* st_list;    //stack list
-  TH1F* st_plot;    //histogram for plotting stack;
+
+  TList* hmap_list;     //list of plotted hmaps (histograms)
+  TList* hlist;         //list of plotted histograms (also used for stack)
+  TH1F* st_plot;        //histogram for plotting stack;
 
   TGCheckButton* chknorm;
   TGCheckButton* chklog;
@@ -70,7 +70,7 @@ public:
 
   Bool_t wrk_check[MAXCUTS+1]; //is work* checked before deleting ltree
   //work,work_cut[MAXCUTS]
-  Bool_t wrk_check_MT; //is work_MT checked before deleting ltree
+  //Bool_t wrk_check_MT; //is work_MT checked before deleting ltree
   Bool_t changed;
   Bool_t started;
   Bool_t in_gcut;
@@ -98,7 +98,7 @@ public:
   void DoNorm();
   void DoLog();
   void DoStat();
-  void DoKey(TGListTreeItem* entry, UInt_t keysym);
+  void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
   //void SelectDiv(int nn);
   void DoNum();
   void DoRadio();
@@ -109,12 +109,15 @@ public:
   void X_Slider(TH1* hh, double &a1, double &a2);
   void Y_Slider(TH1* hh, double a1, double a2, double y1, double y2);
   void AddCutG(TPolyLine *pl, TObject* hobj);
+  int Find_icut();
   void MakeCutG(TPolyLine *pl, TObject* hobj);
   void DoCutG();
   void AddFormula();
   //void DoFormula();
   void ShowCutG();
   void ClearCutG();
+  string CutsToStr();
+  void EditCutG();
   void DoPeaks();
   void Do_Ecalibr();
   void HiReset();

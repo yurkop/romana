@@ -25,14 +25,32 @@ extern HistFrame* EvtFrm;
 
 HMap::HMap() {
   hst = 0;
-  chk = 0;
-  wrk = 0;
-  bitwk=0;
-  cut_index = 0;
+  hd = 0;
+  nn = 0;
   memset(h_cuts,0,sizeof(h_cuts));
-  h_MT=0;
+  //h_MT=0;
 }
 
+HMap::HMap(const char* dname) : HMap() {
+  SetTitle(dname);
+  SetName(dname);
+  //cout << "HMAP: " << GetName() << " " << hst << endl;
+}
+
+HMap::HMap(const char* dname, TH1* hist, Hdef* hd1, int i) {
+  hst = hist;
+  hd = hd1;
+  nn = i;
+
+  SetTitle(dname);
+  if (hist)
+    SetName(hist->GetName());
+  else
+    SetName(dname);
+  memset(h_cuts,0,sizeof(h_cuts));
+}
+
+/*
 HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
 	   Int_t *cuts) {
   hst = hist;
@@ -47,15 +65,16 @@ HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
   else
     SetName(dname);
   memset(h_cuts,0,sizeof(h_cuts));
-  h_MT=0;
-  //list_cuts = new TList();
-  //list_h_cuts = new TList();
 }
+*/
 
 HMap::~HMap() {
-  //cout << "~hmap: " << GetName() << endl;
-  delete hst;
-  hst=0;
+  //cout << "~hmap: " << GetName() << " " << hst << endl;
+  if (hst) {
+    delete hst;
+    hst=0;
+  }
+  //cout << "~hmap1: " << GetName() << " " << hst << endl;
   //memset(cut_index,0,MAXCUTS);
   for (int i=0;i<MAXCUTS;i++) {
     if (h_cuts[i]) {
@@ -65,45 +84,37 @@ HMap::~HMap() {
       h_cuts[i]=0;
     }
   }
-  if (h_MT) {
-    delete h_MT->hst;
-    h_MT->hst=0;
-    delete h_MT;
-    h_MT=0;
-  }
-  //delete list_cuts;
-  //delete list_h_cuts;
-  //list_h_cuts=0;
+  // if (h_MT) {
+  //   delete h_MT->hst;
+  //   h_MT->hst=0;
+  //   delete h_MT;
+  //   h_MT=0;
+  // }
+  //cout << "~hmap2: " << GetName() << endl;
 }
 
 HMap::HMap(const HMap& other) : TNamed(other) {
   hst = other.hst;
-  chk = other.chk;
-  wrk = other.wrk;
-  bitwk = other.bitwk;
-  cut_index = other.cut_index;
+  hd = other.hd;
+  nn = other.nn;
+
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
   }
-  h_MT=other.h_MT;
-  //list_cuts = (TList*) other.list_cuts->Clone();
-  //list_h_cuts = (TList*) other.list_h_cuts->Clone();
+  //h_MT=other.h_MT;
 }
 
 //TH1F& TH1F::operator=(const TH1F &h1)
 //RFive& operator=(const RFive& other)
 HMap& HMap::operator=(const HMap& other) {
   hst = other.hst;
-  chk = other.chk;
-  wrk = other.wrk;
-  bitwk = other.bitwk;
-  cut_index = other.cut_index;
+  hd = other.hd;
+  nn = other.nn;
+
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
   }
-  h_MT=other.h_MT;
-  //list_cuts = (TList*) other.list_cuts->Clone();
-  //list_h_cuts = (TList*) other.list_h_cuts->Clone();
+  //h_MT=other.h_MT;
   return *this;
 }
 
@@ -117,12 +128,9 @@ HClass::HClass()
     sprintf(ss,"form%d",i+1);
     cform[i]=new TFormula(ss,"0");
     strcpy(cuttitle[i],"");
-    //initcuts[i]=1;
-    //cutmap[i]=0;
   }
 
   wfalse=false;
-  //Make_hist();
   map_list=NULL;
   hist_list=NULL;
   dir_list=NULL;
@@ -160,7 +168,8 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
     int nn=hd->bins*(hd->max - hd->min);
     if (nn<1) nn=1;
     TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-    map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
+    map[i] = new HMap(dname,hh,hd,i);
+    //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
   }
@@ -184,8 +193,9 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
         int nn=hd->bins*(hd->max - hd->min);
         if (nn<1) nn=1;
         TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-        map[MAX_CH+j] = new HMap(dname,hh,hd->c+MAX_CH+j,hd->w+MAX_CH+j,
-         hd->cut+MAX_CH+j);
+	map[MAX_CH+j] = new HMap(dname,hh,hd,MAX_CH+j);
+        // map[MAX_CH+j] = new HMap(dname,hh,hd->c+MAX_CH+j,hd->w+MAX_CH+j,
+        //  hd->cut+MAX_CH+j);
         map_list->Add(map[MAX_CH+j]);
         hist_list->Add(map[MAX_CH+j]->hst);
         break;
@@ -219,7 +229,8 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
     TH1F* hh=new TH1F(name2,title2,nn,min,max);
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
-    map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
+    map[i] = new HMap(dname,hh,hd,i);
+    //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
 
@@ -245,7 +256,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
     if (n2<1) n2=1;
     TH2F* hh=new TH2F(name2,title2,n1,hd1->min,hd1->max,n2,hd2->min,hd2->max);
 
-    map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
+    map[i] = new HMap(dname,hh,hd,i);
     map_list->Add(map[i]);
     hist_list->Add(map[i]->hst);
   }
@@ -272,7 +283,8 @@ void HClass::Make_prof(const char* dname, const char* name,
       int i=k+(opt.prof_ny-j-1)*opt.prof_ny;
       TH2F* hh=new TH2F(name2,title2,8,0,120,8,0,120);
 
-      map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
+      map[i] = new HMap(dname,hh,hd,i);
+      //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
       map_list->Add(map[i]);
       hist_list->Add(map[i]->hst);
     }
@@ -293,7 +305,8 @@ void HClass::Make_prof(const char* dname, const char* name,
 
     TH1F* hh=new TH1F(name2,title2,bb,0,bb);
 
-    map2[i] = new HMap("Prof1d",hh,hd2->c+i,hd2->w+i,hd2->cut+i);
+    map2[i] = new HMap("Prof1d",hh,hd2,i);
+    //map2[i] = new HMap("Prof1d",hh,hd2->c+i,hd2->w+i,hd2->cut+i);
     map_list->Add(map2[i]);
     hist_list->Add(map2[i]->hst);
   }
@@ -320,7 +333,8 @@ void HClass::Make_axay(const char* dname, const char* name, const char* title,
       if (nn<1) nn=1;
       TH2F* hh=new TH2F(name2,title2,nn,hd1->min,hd1->max,nn,hd1->min,hd1->max);
 
-      map[ii] = new HMap(dname,hh,hd->c+ii,hd->w+ii,hd->cut+ii);
+      map[ii] = new HMap(dname,hh,hd,ii);
+      //map[ii] = new HMap(dname,hh,hd->c+ii,hd->w+ii,hd->cut+ii);
       map_list->Add(map[ii]);
       hist_list->Add(map[ii]->hst);
       ii++;
@@ -346,7 +360,8 @@ void HClass::Clone_Hist(HMap* map) {
 	hcut->SetNameTitle(name,htitle);
 	//cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
 	hist_list->Add(hcut);
-	HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
+	//HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
+	HMap* mcut = new HMap(cutname,hcut,map->hd,map->nn);
 
 	// add this map to the list h_cuts
 	map->h_cuts[i]=mcut;
@@ -387,18 +402,25 @@ void HClass::Remove_Clones(HMap* map) {
       break;
   }
 
-  HMap* mcut = map->h_MT;
-  if (mcut) {
-    TH1* hcut = map->h_MT->hst;
-    hist_list->Remove(hcut);
-    delete mcut;
-    map->h_MT=0;
-  }
+  // HMap* mcut = map->h_MT;
+  // if (mcut) {
+  //   TH1* hcut = map->h_MT->hst;
+  //   hist_list->Remove(hcut);
+  //   delete mcut;
+  //   map->h_MT=0;
+  // }
   
 }
 
 void HClass::Make_cuts() {
   char cutname[99];
+
+  opt.ncuts=0;
+  for (int i=1;i<MAXCUTS;i++) {
+    if (opt.pcuts[i])
+      opt.ncuts=i+1;
+  }
+
   //char name[99],htitle[99];
 
   // for (int i=0;i<MAXCUTS;i++) {
@@ -416,17 +438,18 @@ void HClass::Make_cuts() {
     //determine cut titles and colors
     int icut=1;
     for (int i=1;i<opt.ncuts;i++) {
-      if (getbit(*(map->cut_index),i)) {
+      if (getbit(*(map->hd->cut+map->nn),i)) {
+	//if (getbit(*(map->cut_index),i)) {
 	cutcolor[i]=icut+1;
 	icut++;
 	//cutcolor[i]+=1;
 	sprintf(cuttitle[i],"%s",map->GetName());
-	//cout << "cutcolor: " << i << " " << cutcolor[icut-1] << " " << cuttitle[icut-1] << endl;
       }
     }
 
     //clone histograms if map flag is set
-    if (*map->wrk) {
+    if (*(map->hd->w+map->nn)) {
+      //if (*map->wrk) {
       Remove_Clones(map);
       Clone_Hist(map);
     }
@@ -468,12 +491,11 @@ void HClass::Make_cuts() {
       //cout << "cuts4: " << i << endl;
       //cout << "make_cuts: " << opt.ncuts << " " << i << " " << cutcolor[i] << " " << cutG[i]->GetLineColor() << endl;
     }
-    //cout << "cutname: " << i << " " << cutname << " " << cuttitle[i] << endl;
     cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
     cutG[i]->SetTitle(cuttitle[i]);
     cutG[i]->SetLineColor(cutcolor[i]);
   }
-  //cout << "make_cuts2: " << endl;
+  //cout << "make_cuts2: " << opt.ncuts << endl;
 }
 
 void HClass::Make_hist() {
@@ -481,6 +503,7 @@ void HClass::Make_hist() {
   //opt.cut_per[9*MAXCUTS+4]=17;
   
   //char title[100];
+  //cout << "make_hist: " << endl;
 
   memset(T_prev,0,sizeof(T_prev));
 
@@ -497,7 +520,7 @@ void HClass::Make_hist() {
   map_list->SetOwner(true);
 
   Make_1d("Rate","rate",";T(sec);Counts",m_rate,&opt.h_rate);
-  Make_1d("Counter","counter",";T(sec);Counts",m_counter,&opt.h_counter);
+  Make_1d("Count","count",";T(sec);Counts",m_count,&opt.h_count);
   Make_1d("Area","area",";Channel;Counts",m_area,&opt.h_area);
   Make_1d("Area0","area0",";Channel;Counts",m_area0,&opt.h_area0);
   Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);

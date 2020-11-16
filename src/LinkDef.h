@@ -7,6 +7,7 @@
 
 #pragma link C++ class ParDlg+;
 #pragma link C++ class ParParDlg+;
+#pragma link C++ class HistParDlg+;
 #pragma link C++ class ChanParDlg+;
 #pragma link C++ class DaqParDlg+;
 #pragma link C++ class AnaParDlg+;
@@ -18,6 +19,7 @@
 //#pragma link C++ class vector<rpeak_type73>+;
 //#pragma link C++ class Hbuf+;
 #pragma link C++ class Hdef+;
+//#pragma link C++ class HCuts+;
 #pragma link C++ class Coptions+;
 #pragma link C++ class Toptions+;
 //#pragma link C++ class Hoptions+;

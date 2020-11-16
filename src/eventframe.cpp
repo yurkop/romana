@@ -965,6 +965,9 @@ void EventFrame::FillGraph(int dr) {
 	  dd=pulse->sData[j]-pulse->sData[j-kk]-
 	    pulse->sData[j-1]+pulse->sData[j-kk-1];
 
+	// cout << "edif2: " << pulse->Tstamp64 << " " << j << " " << dd
+	//      << " " << pulse->sData[j] << endl;
+
 	if (fPeak[11]->IsOn() && pulse->Peaks.size()) { //normalize
 	  dd*=1000/pulse->Peaks.back().Area;
 	}

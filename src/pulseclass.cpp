@@ -362,6 +362,8 @@ void PulseClass::PeakAna33() {
   sum=0;
   if (opt.sTg[Chan]!=5) { //use 1st deriv
     for (int j=T1;j<T2;j++) {
+      if (j<kk)
+	continue;
       Float_t dif=sData[j]-sData[j-kk];
       if (dif>0) {
 	pk->Time+=dif*j;
@@ -372,29 +374,15 @@ void PulseClass::PeakAna33() {
   else { //use 2nd deriv
     // 05.10.2020
     for (int j=T1;j<T2;j++) {
+      if (j<kk+1)
+	continue;
       Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
       pk->Time+=dif2*j;
       sum+=dif2;
+      //cout << "dif2: " << j << " " << dif2 << " " << sData[j] << endl;
     }
-    
-    /*
-    for (int j=Pos;j>=2;j--) {
-      Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
-      if (dif2<=0 || j<T1)
-	break;
-      pk->Time+=dif2*j;
-      sum+=dif2;
-      //cout << "d1: " << Tstamp64 << " " << j-cpar.preWr[Chan] << " " << dif2 << endl;
-    }
-    for (int j=Pos+1;j<sz;j++) {
-      Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
-      if (dif2<=0 || j>T2)
-	break;
-      pk->Time+=dif2*j;
-      sum+=dif2;
-      //cout << "d2: " << Tstamp64 << " " << j-cpar.preWr[Chan] << " " << dif2 << endl;
-    }
-    */
+    // cout << "T7: " << Tstamp64 << " " << Pos << " " << T1 << " " << T2
+    // 	 << " " << pk->Time << " " << sum << endl; 
   }
   if (abs(sum)>1e-5) {
     pk->Time/=sum;
@@ -539,14 +527,6 @@ void PulseClass::PeakAna33() {
 
   if (nbkg)
     pk->Slope2/=nbkg;
-
-
-  // printf(ANSI_COLOR_RED
-  //   "Alp: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
-  //   Counter,Bg,Ar,Ht,Tm,Wd);
-  // printf(ANSI_COLOR_GREEN
-  //   "Kop: %10lld %8.1f %8.1f %8.1f %8.1f %8.1f\n" ANSI_COLOR_RESET,
-  //   Counter,pk->Base,pk->Area0,pk->Height,pk->Time,Wd);
 
 } //PeakAna33()
 
@@ -754,7 +734,7 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
     map[ch]->hst->Fill(x);
     if (opt.ncuts) {
       for (int i=1;i<opt.ncuts;i++) {
-	if (getbit(*(map[ch]->cut_index),i)) {
+	if (getbit(*(map[ch]->hd->cut+map[ch]->nn),i)) {
 	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
 	    //if (hcl->cut_flag[i]==0)
 	    hcl->cut_flag[i]=1;
@@ -765,7 +745,7 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
       }
     }
   }
-  else if (*(map[ch]->wrk)) {
+  else if (*(map[ch]->hd->w+map[ch]->nn)) {
     for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
 	//int bin = map[ch]->h_cuts[i]->hst->FindFixBin(x);
@@ -791,7 +771,8 @@ void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
     map[ch]->hst->Fill(x,w);
     if (opt.ncuts) {
       for (int i=1;i<opt.ncuts;i++) {
-	if (getbit(*(map[ch]->cut_index),i)) {
+	if (getbit(*(map[ch]->hd->cut+map[ch]->nn),i)) {
+	  //if (getbit(*(map[ch]->cut_index),i)) {
 	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
 	    hcl->cut_flag[i]=1;
 	  }
@@ -799,7 +780,8 @@ void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
       }
     }
   }
-  else if (*(map[ch]->wrk)) {
+  else if (*(map[ch]->hd->w+map[ch]->nn)) {
+    //else if (*(map[ch]->wrk)) {
     for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
 	map[ch]->h_cuts[i]->hst->Fill(x,w);
@@ -855,7 +837,8 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
     }
     Fill_Mean1((TH1F*)map->hst, &pls->sData[0], newsz, ideriv);
   } //if first
-  else if (*(map->wrk)) {
+  else if (*(map->hd->w+map->nn)) {
+    //else if (*(map->wrk)) {
     for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
 
@@ -879,7 +862,8 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
     map->hst->Fill(x,y);
     if (opt.ncuts) {
       for (int i=1;i<opt.ncuts;i++) {
-	if (getbit(*(map->cut_index),i)) {
+	if (getbit(*(map->hd->cut+map->nn),i)) {
+	  //if (getbit(*(map->cut_index),i)) {
 	  if (hcl->cutG[i]->IsInside(x,y)) {
 	    //if (hcl->cut_flag[i]==0)
 	    hcl->cut_flag[i]=1;
@@ -890,7 +874,8 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
       }
     }
   }
-  else if (*(map->wrk)) {
+  else if (*(map->hd->w+map->nn)) {
+    //else if (*(map->wrk)) {
     for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
 	//int bin = map->h_cuts[i]->hst->FindFixBin(x,y);
@@ -1043,7 +1028,7 @@ void EventClass::FillHist(Bool_t first) {
 	//tt = pk->Time - T0 + dt;
 	tt = pk->Time - T0;
 	//cout << "Time: " << Nevt << " " << pk->Time << " " << T0 << endl;
-	Fill1d(first,hcl->m_time,ch,tt*opt.Period);
+	Fill1d(first,hcl->m_time,ch,tt*opt.Period+opt.sD[ch]);
       }
 
       if (j==0) { //only for the first peak

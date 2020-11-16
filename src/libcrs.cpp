@@ -3088,7 +3088,7 @@ void CRS::Show(bool force) {
     // cout << "\033[0m";
 
     tm1=tm2;
-    //cout << "show... " << info.fMemTotal << " " << info.fMemFree << " " << info.fMemUsed << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
+    //cout << "show... " << opt.T_acq << " " << Levents.size() << " " << &*m_event << " " << m_event->Nevt << endl;
 
     if (myM) {
       if (myM->fTab->GetCurrent()==EvtFrm->ntab || EvtFrm->fDock->GetUndocked()) {
@@ -3801,7 +3801,7 @@ void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
       ipls=PulseClass();
       npulses++;
       ipls.Chan=ch;
-      ipls.Tstamp64=data+(Long64_t)opt.Delay[ch];// - cpar.preWr[ch];
+      ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.preWr[ch];
       n_frm=0;
       //cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
     }
@@ -4107,7 +4107,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       ipls=PulseClass();
       npulses++;
       ipls.Chan=ch;
-      ipls.Tstamp64=data+(Long64_t)opt.Delay[ch];// - cpar.preWr[ch];
+      ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.preWr[ch];
       //cout << "Tstmp64: " << ipls.Tstamp64 << " " << Blist->back().Tstmp << " " << Blist->size() << endl;
       n_frm=0;
       break;
@@ -4402,7 +4402,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
       ipls=PulseClass();
       npulses++;
       ipls.Chan = ch;
-      ipls.Tstamp64=data+(Long64_t)opt.Delay[ch];// - cpar.preWr[ch];
+      ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.preWr[ch];
     }
     else if (frmt<4) {
       Long64_t t64 = data;
@@ -4564,7 +4564,7 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
 	ipls.Tstamp64 = buf4[idx+rLen-2];
 	ipls.Tstamp64 <<= 32;
-	ipls.Tstamp64 += buf4[idx+rLen-3]+(Long64_t)opt.Delay[ipls.Chan];
+	ipls.Tstamp64 += buf4[idx+rLen-3];//+(Long64_t)opt.sD[ipls.Chan];
 
 	if (Pstamp64==P64_0) {
 	  Pstamp64=ipls.Tstamp64;

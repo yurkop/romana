@@ -9,6 +9,23 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
+
+/*
+#include <list>
+//------------------------------------
+class HCuts {
+public:
+  //HCuts() {};
+  virtual ~HCuts() {};
+  std::list<std::pair<int,TCutG*>> ll;
+  //TList ll;
+  //std::list<int*> gcuts;
+  //std::list<*TCutG> gcuts;
+  ClassDef(HCuts, 1)
+};
+*/
+
+
 //------------------------------------
 class Hdef {
 public:
@@ -22,7 +39,14 @@ public:
   Bool_t c[MAX_CH+NGRP]; //check
   Bool_t w[MAX_CH+NGRP]; //work
   Int_t cut[MAX_CH+NGRP]; //see cut_index in HMap
-  ClassDef(Hdef, 1)
+  // список окон (cuts), заданных на этой гистограмме (hst)
+  // положение бита в этой маске соответствует номеру соответствующего окна
+  // максимальная размерность: 32 бита, значит число окон
+  // не может быть больше 32
+  // bit mask: 1 - cut is in this histogram; 0 - cut is not here
+  
+  Int_t rb; //rebin
+  ClassDef(Hdef, 2)
 };
 //------------------------------------
 
@@ -65,7 +89,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 117)
+  ClassDef(Coptions, 118)
 };
 
 //------------------------------------
@@ -91,7 +115,7 @@ public:
   Int_t sS[MAX_CHTP]; //[nsmoo] software smoothing 0..100
   Int_t Drv[MAX_CHTP]; //[kdrv] parameter of derivative
   Int_t Thr[MAX_CHTP];//[thresh]
-  Float_t Delay[MAX_CHTP]; //[delay]
+  Float_t sD[MAX_CHTP]; //[Delay] [delay]
   Int_t Base1[MAX_CHTP]; //[bkg1]
   Int_t Base2[MAX_CHTP]; //[bkg2]
   Int_t Peak1[MAX_CHTP]; //[peak1]
@@ -206,18 +230,28 @@ public:
   Bool_t b_deriv[3];
   Bool_t b_peak[16];
 
+  //HCuts cuts;
   //std::vector<Float_t> cut[3];
+  //std::list<Float_t> gcut2;
+
+
+
+
   Int_t ncuts;
-  Int_t pcuts[MAXCUTS]; //number of points in gcut
+  Int_t pcuts[MAXCUTS]; // number of points in gcut: 1-formula; 2-1d; >2-2d
+                        // 0- no cut
   Float_t gcut[MAXCUTS][2][MAX_PCUTS]; //20 cuts; xy; 10 points
+  char cut_form[MAXCUTS][100];
+
+
+
 
   char formula[100];
-  char cut_form[MAXCUTS][100];
   Int_t maintrig;
   //char maintrig[22];
 
   Hdef h_rate;
-  Hdef h_counter;
+  Hdef h_count;
   Hdef h_area;
   Hdef h_area0;
   Hdef h_base;
@@ -257,7 +291,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 117)
+  ClassDef(Toptions, 118)
 };
 
 //ClassImp(Toptions)

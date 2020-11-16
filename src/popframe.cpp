@@ -31,6 +31,9 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id)
   else if (menu_id==M_ECALIBR) {
     AddEcalibr();
   }
+  else if (menu_id==M_TCALIBR) {
+    AddTcalibr();
+  }
 
   fMain->MapSubwindows();
   fMain->Resize();
@@ -83,7 +86,7 @@ void PopFrame::AddEcalibr() {
   fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
 				  "DoENum()");
   hframe->AddFrame(fNum,LayLC2);
-  fLabel = new TGLabel(hframe, "FWHM");
+  fLabel = new TGLabel(hframe, "Peak width");
   hframe->AddFrame(fLabel,LayLC2);
 
   hframe = new TGHorizontalFrame(fMain,10,10);
@@ -119,6 +122,57 @@ void PopFrame::AddEcalibr() {
   hframe->AddFrame(fLabel,LayCC2);
 
   AddPeaks();
+}
+
+void PopFrame::AddTcalibr() {
+  ee[0]=4438;
+  fwhm=10;
+  npol=1;
+  range=300;
+
+  TGLayoutHints* LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 2,2,2,2);
+  TGLayoutHints* LayCC2   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 2,2,2,2);
+
+  for (int i=0;i<11;i++) {
+    pframe[i]=0;
+  }
+
+  fMain->SetWindowName("Time Calibration");
+  npeaks=1;
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,LayLC2);
+  fNum = new TGNumberEntry(hframe, fwhm, 8, 11, kr, ka, kn);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum,LayLC2);
+  fLabel = new TGLabel(hframe, "Peak width");
+  hframe->AddFrame(fLabel,LayLC2);
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,LayLC2);
+  fNum = new TGNumberEntry(hframe, range, 8, 12, kr, ka, kn);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum,LayLC2);
+  fLabel = new TGLabel(hframe, "+/- fit range");
+  hframe->AddFrame(fLabel,LayLC2);
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,LayLC2);
+  fNum = new TGNumberEntry(hframe, npeaks, 8, 14, ki, ka, kl, 1, 10);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum,LayLC2);
+  fLabel = new TGLabel(hframe, "Number of peaks");
+  hframe->AddFrame(fLabel,LayLC2);
+
+  pframe[10] = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(pframe[10],new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
+  TGTextButton* fOK = new TGTextButton(pframe[10], "  &OK  ");
+  fOK->Connect("Clicked()", "HistFrame", HiFrm, "Do_Ecalibr()");
+  pframe[10]->AddFrame(fOK, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+
 }
 
 void PopFrame::DoProfTime() {

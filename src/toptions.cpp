@@ -192,6 +192,16 @@ Toptions::Toptions() {
 
   //cout << "toptions" << endl;
 
+  /*
+  TCutG *cut = new TCutG();
+  cuts.ll.push_back(std::make_pair(1,cut));
+  cuts.ll.push_back(std::make_pair(2,new TCutG()));
+  // cuts.gcuts.Add(cut);
+  // //cuts.gcuts.push_back(TCutG());
+  // //cuts.gcuts.push_back(TCutG());
+  cout << "HCuts: " << cuts.ll.size() << endl;
+  */
+
   memset(gitver,0,sizeof(gitver));
   maxch=0;
   maxtp=0;
@@ -211,7 +221,7 @@ Toptions::Toptions() {
     Thr[i]=cpar.threshold[i];
 
     Drv[i]=1;
-    Delay[i]=0;
+    sD[i]=0;
     Base1[i]=-10;
     Base2[i]=-5;
     Peak1[i]=5;
@@ -344,6 +354,7 @@ Hdef::Hdef() {
   min=0;
   max=1000;
   b=false;
+  rb=1;
   for (int i=0;i<MAX_CH+NGRP;i++) {
     c[i]=true;
     w[i]=false;
