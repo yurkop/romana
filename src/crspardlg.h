@@ -53,7 +53,7 @@ struct pmap {
 
   // in UpdateField:
   // 2 - 2d hist (2 fields)
-  // 3 - 1d hist (3 fields)
+  // 3 - 1d hist (4 fields)
   // 4 - profilometer hist
 
 

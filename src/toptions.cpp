@@ -83,7 +83,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         min = 0;
         max=4093;        
       }
-      else { //33,34,41,51
+      else { //33,34,35,41,51
         //!! знак противоположный тому, что в Протоколе!!!
         // здесь отрицательный знак означает начало записи
         // "после" срабатывания дискриминатора
@@ -104,7 +104,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         max=16379;
       else if (module==32)
         max=32763;
-      else { //33,34,41,51
+      else { //33,34,35,41,51
         if (type_ch==0)
           max=4068;
         else if (type_ch==1)
@@ -168,7 +168,9 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     else if (!strcmp(name,"trig")) {
       par = trg[i];
       min=0;
-      if (module==41 || module==51)
+      if (module==35)
+        max=5;
+      else if (module==41 || module==51)
         max=4;
       else if (module>=33) //33,34
         max=3;

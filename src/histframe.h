@@ -52,9 +52,12 @@ public:
   TGListTreeItem         *iWork_cut[MAXCUTS];
   TGListTreeItem         *iWork_MT;
 
-  TList* hmap_list;     //list of plotted hmaps (histograms)
-  TList* hlist;         //list of plotted histograms (also used for stack)
+  TList* hmap_list;  //list of plotted hmaps (histograms)
+  TList* hlist;      //list of plotted histograms (also for stack) - delete!!!
   TH1F* st_plot;        //histogram for plotting stack;
+
+  TH1* pad_hist[MAX_PADS];     //copies of histograms for plotting in pads;
+  HMap *pad_map[MAX_PADS];       //maps plotted in pads
 
   TGCheckButton* chknorm;
   TGCheckButton* chklog;
@@ -81,7 +84,6 @@ public:
   int ndiv;
   //int xdiv;
   //int ydiv;
-  TObject *padmap[MAX_PADS];
 
 public:
   HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
@@ -122,8 +124,10 @@ public:
   void Do_Ecalibr();
   void HiReset();
   void Update();
-  void DrawHist();
   void DrawStack();
+  void DrawHist();
+  void AllRebinDraw();
+  void DrawCuts(int npad);
   void ReDraw();
   //void DataDropped(TGListTreeItem *, TDNDData *data);
 

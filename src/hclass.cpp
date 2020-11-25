@@ -349,13 +349,13 @@ void HClass::Clone_Hist(HMap* map) {
   //do the same with MT
 
   //if (*map->wrk) {
-    TH1* h0 = (TH1*) map->hst;
+    TH1F* h0 = (TH1F*) map->hst;
     for (int i=1;i<opt.ncuts;i++) {
       if (opt.pcuts[i]) {
 	sprintf(cutname,"WORK_cut%d",i);
 	sprintf(name,"%s_cut%d",h0->GetName(),i);
 	sprintf(htitle,"%s_cut%d",h0->GetTitle(),i);
-	TH1* hcut = (TH1*) h0->Clone();
+	TH1F* hcut = (TH1F*) h0->Clone();
 	hcut->Reset();
 	hcut->SetNameTitle(name,htitle);
 	//cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;

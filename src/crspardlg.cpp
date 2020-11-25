@@ -10,6 +10,7 @@
 #include <TSystem.h>
 //#include "romana.h"
 #include <TColor.h>
+#include <TGToolTip.h>
 
 //const char* t_raw = "Write raw data";
 
@@ -69,7 +70,7 @@ const char* ttip1[ndaqpar]={
   "Number of samples before the trigger",
   "Total length of the pulse in samples",
   "Additional Gain\nFor CRS-8/16 and CRS-128 grouped by 4 channels",
-  "Trigget type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative (only for CRS-8/16)",
+  "Trigget type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing\nNot all types are available for all devices",
   "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
   "Pulse rate (software)",
@@ -845,7 +846,13 @@ void ParDlg::UpdateField(int nn) {
       //cout << "c_num: " << col << endl;
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
       if (te->IsEnabled()) {
-	if (val) {
+	bool vv = val;
+	if (te->GetToolTip()->GetText()->
+	    Contains("rebin"),TString::kIgnoreCase) {
+	  vv = val>1;
+	}
+	//cout << "vcolor: " << te->GetToolTip()->GetText()->GetString() << endl;
+	if (vv) {
 	  te->ChangeBackground(fCol[col-1]);
 	}
 	else {
@@ -1074,7 +1081,7 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   if (rflag) {
     id = Plist.size()+1;
     TGCheckButton *fchk2 = new TGCheckButton(hframe1, "Proc", id);
-    fchk2->SetToolTipText("raw: Checked - write processed events; unchecked - write direct raw stream\ndec: Checked - reanalyse .dec file");
+    fchk2->SetToolTipText("input raw: Checked - write processed events; unchecked - write direct raw stream\ninput dec: Checked - reanalyse .dec file with new coincidence conditions");
     //fchk2->SetName(txt);
     //fchk2->ChangeOptions(fchk2->GetOptions()|kFixedWidth);
     //fchk2->SetWidth(230);
@@ -1192,7 +1199,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
 	      1,2048,1,64000,0,1<<4);
 
   tip1= "Maximal size of the event list:\nNumber of events available for viewing in the Events Tab";
-  tip2= "Event lag:\nMaximal number of events which may come delayed from another channel";
+  tip2= "Event lag:\nMaximal expected number of lagged events (see Errors/Event lag exceeded)";
   label="Event_list size / Event lag";
   AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,k_int,1,1000000,1,1000000);
 
@@ -1217,6 +1224,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
     EnableField(id,false);
     EnableField(id-1,false);
     EnableField(id-2,false);
+    if (crs->module==35) EnableField(id-1,true);
   }
 
   fF6->Resize();

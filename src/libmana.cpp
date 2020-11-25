@@ -123,8 +123,6 @@ int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
 
 //int *opt_id[MXNUM];
 
-//void printhlist(int n);
-
 using namespace std;
 
 void prnt(const char* fmt...)
@@ -2252,14 +2250,6 @@ void MainFrame::MakeTabs(bool reb) {
   tb->AddFrame(parpar, LayEE1);
   ntab++;
 
-  tb = fTab->AddTab("Histograms");
-  tabfr.push_back(tb);
-  //histpar = new HistParDlg(tb, 600, MAIN_HEIGHT);
-  histpar = new HistParDlg(tb, 400, MAIN_HEIGHT);
-  histpar->Update();
-  tb->AddFrame(histpar, LayEE1);
-  ntab++;
-
   //cout << "tab2: " << endl;
   tb = fTab->AddTab("DAQ");
   tabfr.push_back(tb);
@@ -2290,6 +2280,14 @@ void MainFrame::MakeTabs(bool reb) {
   tabfr.push_back(tb);
   EvtFrm = new EventFrame(tb, 620, MAIN_HEIGHT,ntab);
   tb->AddFrame(EvtFrm, LayEE1);
+  ntab++;
+
+  tb = fTab->AddTab("Histograms");
+  tabfr.push_back(tb);
+  //histpar = new HistParDlg(tb, 600, MAIN_HEIGHT);
+  histpar = new HistParDlg(tb, 400, MAIN_HEIGHT);
+  histpar->Update();
+  tb->AddFrame(histpar, LayEE1);
   ntab++;
 
   tb = fTab->AddTab("Plots/Cuts");
@@ -2747,7 +2745,6 @@ void MainFrame::Export() {
 void MainFrame::DoReset() {
 
   //prtime("Main::DoReset");
-  //printhlist(4);
 	
   // if (HiFrm)
   //   cout << "DoReset_main: " << HiFrm->h_time[1]->GetName() << endl;

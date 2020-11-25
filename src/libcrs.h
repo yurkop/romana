@@ -19,6 +19,21 @@
 #include "pulseclass.h"
 #include "common.h"
 
+enum ERR_NUM {
+  ER_START=0,
+  ER_CH,
+  ER_MIS,
+  ER_FRMT,  
+  ER_LEN,
+  ER_ZERO,
+  ER_ALEN,
+  ER_TST,
+  ER_ANA,
+  ER_DEC,
+  ER_LAG,
+  ER_OVF,
+};
+
 typedef unsigned char byte;
 
 typedef std::list<EventClass>::iterator event_iter;
@@ -32,6 +47,15 @@ using namespace std;
 /*   char* buf; */
 /*   size_t len; */
 /* }; */
+
+class PkClass {
+public:
+  Long64_t QX;
+  Int_t C,A,AY;
+  Int_t RX;
+  Short_t H;
+  byte E;
+};
 
 //---------------------------
 class CRS {
@@ -115,7 +139,7 @@ RQ_OBJECT("CRS")
 
   Short_t module;
   //1-ADCM raw, 3 - ortec lis, 22 - crs2;
-  //32 - old crs32, 33 - new crs32 with dsp, 34 - new crs32
+  //32 - old crs32, 33 - crs32 with dsp/po3, 34 - crs32/po4, 35 - crs32/po5
   //41 - crs-8/16
   //51 - crs-128
   //72..79 - decoded file
@@ -174,24 +198,28 @@ RQ_OBJECT("CRS")
   PulseClass dummy_pulse;
   EventClass dummy_event;
 
-  Int_t b_len[MAX_CH],
+  Double_t b_len[MAX_CH],
     p_len[MAX_CH],
     w_len[MAX_CH]; //length of window for bkg, peak and width integration in DSP
 
-  Long64_t errors[MAX_ERR];
+  Bool_t use_2nd_deriv[MAX_CH]; //use 2nd deriv in pulseana33
+
   Long64_t Counter[MAX_CH];
 
+  Long64_t errors[MAX_ERR];
   string errlabel[MAX_ERR] = {
-    "Bad buf start (obsolete):",
-    "Bad channel:",
-    "Channel mismatch:",
-    "Bad frmt:",
-    "Zero data:",
-    "Wrong ADCM length:",
-    "Bad ADCM Tstamp:",
-    "Slow analysis:",
-    "Slow decoding:",
-    "Event lag exceeded:"
+    "Bad buf start (obsolete):", //ER_START,
+    "Bad channel:",              //ER_CH,
+    "Channel mismatch:",         //ER_MIS,
+    "Bad frmt:",                 //ER_FRMT,
+    "Bad length:",               //ER_LEN,
+    "Zero data:",                //ER_ZERO,
+    "Wrong ADCM length:",        //ER_ALEN,
+    "Bad ADCM Tstamp:",          //ER_TST,
+    "Slow analysis:",            //ER_ANA,
+    "Slow decoding:",            //ER_DEC,
+    "Event lag exceeded:",       //ER_LAG,    
+    "OVF:"                       //ER_OVF,    
   };
   Int_t prof_ch[MAX_CH];
   // -1: nothing;
@@ -226,6 +254,7 @@ RQ_OBJECT("CRS")
   int Command2(byte cmd, byte ch, byte type, int par);
   void AllParameters2(); // load all parameters
   void AllParameters41(); // load all parameters
+  void AllParameters35(); // load all parameters
   void AllParameters34(); // load all parameters
   void AllParameters33(); // load all parameters
   void AllParameters32(); // load all parameters
@@ -270,8 +299,10 @@ RQ_OBJECT("CRS")
   void Decode77(UInt_t iread, UInt_t ibuf);
   void Decode76(UInt_t iread, UInt_t ibuf);
   void Decode75(UInt_t iread, UInt_t ibuf);
-  void Decode33(UInt_t iread, UInt_t ibuf);
+  //void Decode33(UInt_t iread, UInt_t ibuf);
   void Decode34(UInt_t iread, UInt_t ibuf);
+  void MakePk(PkClass &pk, PulseClass &ipls);
+  void Decode35(UInt_t iread, UInt_t ibuf);
   void Decode2(UInt_t iread, UInt_t ibuf);
   void Decode_adcm(UInt_t iread, UInt_t ibuf);
 

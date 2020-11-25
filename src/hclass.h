@@ -24,7 +24,7 @@ class HMap: public TNamed {
   HMap& operator=(const HMap& other);
   
   TH1* hst;
-  Hdef* hd;
+  Hdef* hd; //Hdef, которому принадлежит этот Hmap
   UShort_t nn; //index in Hdef
   //Int_t *rb; //rebin
   //Bool_t* chk; //item is checked

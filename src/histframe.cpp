@@ -136,7 +136,7 @@ void DynamicExec()
 	}
       }
       if (np) {
-	map=(HMap*) HiFrm->padmap[np-1];
+	map = HiFrm->pad_map[np-1];
 	//cout << "hist found: " << map << endl;
 	//cout << "hist found: " << map->hst->GetName() << endl;
       }
@@ -223,6 +223,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   hlist=new TList();
   hlist->SetOwner(true);
   st_plot = new TH1F("st_plot","",1000,0.,1000.);
+  memset(pad_hist,0,sizeof(pad_hist));
 
   st_plot->SetBit(TH1::kNoStats);
   st_plot->SetBit(kCanDelete,0);
@@ -1783,6 +1784,7 @@ void HistFrame::DrawStack() {
 void HistFrame::DrawHist() {
 
   //cout << "DrawHist1:" << endl;
+
   //create hmap_list
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
@@ -1790,14 +1792,12 @@ void HistFrame::DrawHist() {
     while (item) {
       if (item->GetUserData()) {
 	//YK - don't know why this is needed
-
 	// HMap* map = (HMap*) item->GetUserData();
 	// if (!TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
 	//   *map->chk = item->IsChecked();
 	// }
 	if (item->IsChecked()) {
 	  hmap_list->Add((TObject*)item->GetUserData());
-	  //cout << "hmap_list_add: " << item->GetUserData() << " " << item->GetText() << endl;
 	}
       }
       item = item->GetNextSibling();
@@ -1810,118 +1810,69 @@ void HistFrame::DrawHist() {
   if (opt.icheck < 0)
     opt.icheck=0;
 
-  //draw hists
-  HMap* map;
-
-  //cout << "Drawstat: " << gStyle->GetOptStat() << endl;
-
   TCanvas *cv=fEc->GetCanvas();
   cv->Clear();
-  memset(padmap,0,sizeof(padmap));
+  memset(pad_map,0,sizeof(pad_map));
   double mg=0.001;
   if (opt.xdiv+opt.ydiv>16)
     mg=0;
+  cv->Divide(opt.xdiv,opt.ydiv,mg,mg);
 
-  // if (opt.b_stack)
-  //   cv->Divide(1,1);
-  // else {
-    //cout << "divide1: " << endl;
-    cv->Divide(opt.xdiv,opt.ydiv,mg,mg);
-    //cv->Divide(opt.xdiv,opt.ydiv);
-    //cout << "divide2: " << endl;
-  //}
+  int npad=0;
+  int ii=0;
+
+  //draw hists
+  HMap* map;
 
   //cout << "DrawHist2: " << hmap_list->GetSize() << endl;
   hlist->Clear();
-  int nn=1;
-  int ii=0;
   TIter next(hmap_list);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     //cout << "DrawHist22: " << obj << endl;
     if (ii>=opt.icheck) {
-      cv->cd(nn);
+      cv->cd(npad+1);
       map=(HMap*) obj;
-      char name[100];
-      sprintf(name,"%s ",map->hst->GetName());
+      pad_map[npad]=map;
 
-      // TH1 *hh = (TH1*) map->hst->Clone();
-      // hh->SetName(name);
-      TH1* hh;
-      int rb=map->hd->rb;
-      if (rb<=1) {
-	hh = (TH1*) map->hst->Clone();
-	hh->SetName(name);
-      }
-      else {
-	hh=map->hst->Rebin(rb,name);
-      }
+      TString name(map->hst->GetName());
+      name+=' ';
+      if (pad_hist[npad]) delete pad_hist[npad];
+      pad_hist[npad] = (TH1*) map->hst->Clone(name.Data());
 
-      hlist->Add(hh);
-      hh->UseCurrentStyle();
+
+      //hlist->Add(hh);
+      pad_hist[npad]->UseCurrentStyle();
+
+      /*
       double a1,a2,y1=1e99,y2=-1e99;
-      X_Slider(hh,a1,a2);
-      Y_Slider(hh,a1,a2,y1,y2);
-      if (hh->GetDimension()==2) {
+      X_Slider(pad_hist[npad],a1,a2);
+      Y_Slider(pad_hist[npad],a1,a2,y1,y2);
+      if (pad_hist[npad]->GetDimension()==2) {
 	gPad->SetLogz(opt.b_logy);
-	hh->Draw("zcol");
+	pad_hist[npad]->Draw("zcol");
       }
       else {
 	gPad->SetLogy(opt.b_logy);
 	//cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
-	hh->Draw();
+	pad_hist[npad]->Draw();
       }
-      padmap[nn-1]=obj;
-      //delete hh;
 
       //draw cuts
       if (opt.b_gcuts && opt.ncuts) {
-	TLegend leg = TLegend(0.7,0.8,0.99,0.99);
-	leg.SetMargin(0.5);
-
-	bool found=false;
-	for (int j=1;j<opt.ncuts;j++) {
-
-	  if (getbit(*(map->hd->cut+map->nn),j)) {
-	    if (hcl->cutG[j]) {
-	      found=true;
-	      if (opt.pcuts[j]>1) { //not formula
-		if (opt.pcuts[j]==2) {
-		  cline.SetLineColor(hcl->cutG[j]->GetLineColor());
-		  gPad->Update();
-		  Double_t xx;
-		  Double_t y1 = gPad->GetUymin();
-		  Double_t y2 = gPad->GetUymax();
-
-		  if (gPad->GetLogy()) {
-		    y1=std::pow(10,y1);
-		    y2=std::pow(10,y2);
-		  }
-
-		  xx = hcl->cutG[j]->GetX()[0];
-		  cline.DrawLine(xx,y1,xx,y2);
-		  xx = hcl->cutG[j]->GetX()[1];
-		  cline.DrawLine(xx,y1,xx,y2);
-		}
-		else {
-		  hcl->cutG[j]->Draw("same");
-		}
-		leg.AddEntry(hcl->cutG[j],hcl->cutG[j]->GetName(),"l");
-	      }
-	    }
-	  }
-	}
-	if (found) {
-	  leg.DrawClone("same");
-	}
+	DrawCuts(npad);
       }
+      */
 
-      nn++;
-      if (nn>ndiv)
+      npad++;
+      if (npad>=ndiv)
 	break;
     }
     ii++;
-  }
+  } //while ( (obj=(TObject*)next()) )
+
+  AllRebinDraw();
+
   cv->Update();
 
   // make cuts if selected
@@ -1941,6 +1892,130 @@ void HistFrame::DrawHist() {
   
 }
 
+void HistFrame::AllRebinDraw() {
+
+  //cout << "AllRebin: " << endl;
+
+  for (int npad = 0;npad<ndiv;npad++) {
+    if (!pad_map[npad] || !pad_hist[npad])
+      continue;
+
+    //TAxis* ya = pad_map[npad]->hst->GetYaxis();
+
+    Int_t rb=1;
+    Int_t nbins;
+    Float_t *hold, *hnew;
+
+    if (pad_map[npad]->hst->GetDimension()==1) { //1d hist -> rebin
+      TAxis* xa = pad_map[npad]->hst->GetXaxis();
+      nbins = xa->GetNbins();
+      Double_t xmin  = xa->GetXmin();
+      Double_t xmax  = xa->GetXmax();
+
+      rb = pad_map[npad]->hd->rb; //rebin factor
+      if (rb>nbins)
+	rb=nbins;
+
+      Int_t newbins = nbins/rb;
+      pad_hist[npad]->SetBins(newbins,xmin,xmax);
+
+      hold = ((TH1F*)pad_map[npad]->hst)->GetArray();
+      hnew = ((TH1F*)pad_hist[npad])->GetArray();
+
+      pad_hist[npad]->Reset();
+      for (int i=0;i<nbins;i++) {
+	int j=i/rb;
+	//pad_hist[npad]->AddBinContent(j,pad_map[npad]->hst->GetBinContent(i));
+	hnew[j+1]+=hold[i+1];
+      }
+    }
+    else { //2d hist
+      nbins = ((TH2F*) pad_map[npad]->hst)->GetSize();
+      hold = ((TH2F*)pad_map[npad]->hst)->GetArray();
+      hnew = ((TH2F*)pad_hist[npad])->GetArray();
+      memcpy(hnew,hold,nbins*sizeof(Float_t));
+    }
+
+    // cout << "rbn: " << pad_map[npad]->hst->GetName()
+    // 	 << " " << nbins
+    //   //<< " " << xbins << " " << ybins
+    // 	 << endl;
+
+    pad_hist[npad]->ResetStats();
+
+
+
+
+    double a1,a2,y1=1e99,y2=-1e99;
+    X_Slider(pad_hist[npad],a1,a2);
+    Y_Slider(pad_hist[npad],a1,a2,y1,y2);
+
+    fEc->GetCanvas()->cd(npad+1);
+    if (pad_hist[npad]->GetDimension()==2) {
+      gPad->SetLogz(opt.b_logy);
+      pad_hist[npad]->Draw("zcol");
+    }
+    else {
+      gPad->SetLogy(opt.b_logy);
+      //cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
+      pad_hist[npad]->Draw();
+    }
+
+    //draw cuts
+    if (opt.b_gcuts && opt.ncuts) {
+      DrawCuts(npad);
+    }
+
+
+
+  } //for npad
+}
+
+void HistFrame::DrawCuts(int npad) {
+  HMap* map = pad_map[npad];
+  if (!map)
+    return;
+
+  TVirtualPad* pad = fEc->GetCanvas()->GetPad(npad+1);
+  TLegend leg = TLegend(0.7,0.8,0.99,0.99);
+  leg.SetMargin(0.5);
+
+  bool found=false;
+  for (int j=1;j<opt.ncuts;j++) {
+
+    if (getbit(*(map->hd->cut+map->nn),j)) {
+      if (hcl->cutG[j]) {
+	found=true;
+	if (opt.pcuts[j]>1) { //not formula
+	  if (opt.pcuts[j]==2) {
+	    cline.SetLineColor(hcl->cutG[j]->GetLineColor());
+	    pad->Update();
+	    Double_t xx;
+	    Double_t y1 = pad->GetUymin();
+	    Double_t y2 = pad->GetUymax();
+
+	    if (pad->GetLogy()) {
+	      y1=std::pow(10,y1);
+	      y2=std::pow(10,y2);
+	    }
+
+	    xx = hcl->cutG[j]->GetX()[0];
+	    cline.DrawLine(xx,y1,xx,y2);
+	    xx = hcl->cutG[j]->GetX()[1];
+	    cline.DrawLine(xx,y1,xx,y2);
+	  }
+	  else {
+	    hcl->cutG[j]->Draw("same");
+	  }
+	  leg.AddEntry(hcl->cutG[j],hcl->cutG[j]->GetName(),"l");
+	}
+      }
+    }
+  }
+  if (found) {
+    leg.DrawClone("same");
+  }
+}
 /*
 void HistFrame::DrawHist()
 {
@@ -1979,6 +2054,7 @@ void HistFrame::ReDraw()
   TCanvas *cv=fEc->GetCanvas();
 
   if (changed || started || opt.b_stack) {
+    //cout << "changed: " << cv << endl;
     //fEc->GetCanvas()->Draw();
     //fEc->GetCanvas()->Update();
     //cout << "changed" << endl;
@@ -1987,14 +2063,18 @@ void HistFrame::ReDraw()
     started=false;
   }
   else {
-    //cout << "unchanged2: " << fEc->GetCanvas() << endl;
-    for (int i=0;i<ndiv;i++) {
-      cv->cd(i+1);
-      gPad->Modified(1);
-      //gPad->Update();
-    }
+    //cout << "unchanged: " << cv << endl;
+    AllRebinDraw();
+    // for (int i=0;i<ndiv;i++) {
+    //   //cv->GetPad(i+1)->Modified(1);
+    //   cv->cd(i+1);
+    //   gPad->Modified(1);
+    //   gPad->Draw();
 
-    fEc->GetCanvas()->Update();
+
+    //   gPad->Update();
+    // }
+    cv->Update();
   }
 
 }

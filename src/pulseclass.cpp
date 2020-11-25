@@ -137,7 +137,7 @@ void PulseClass::FindPeaks() {
     Dpr=1;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
-      if (D[j] < 0 && jj) {
+      if (D[j] <= 0 && jj) {
 	Pos=j-1;
 	Peaks.push_back(pk);
 	break;
@@ -360,7 +360,23 @@ void PulseClass::PeakAna33() {
 
   pk->Time=0;
   sum=0;
-  if (opt.sTg[Chan]!=5) { //use 1st deriv
+
+  if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv
+    // 05.10.2020
+    for (int j=T1;j<T2;j++) {
+      if (j<kk+1)
+	continue;
+      Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
+      if (dif2>0) {
+	pk->Time+=dif2*j;
+	sum+=dif2;
+      }
+      //cout << "dif2: " << j << " " << dif2 << " " << sData[j] << endl;
+    }
+    // cout << "T7: " << Tstamp64 << " " << Pos << " " << T1 << " " << T2
+    // 	 << " " << pk->Time << " " << sum << endl; 
+  }
+  else { //use 1st deriv
     for (int j=T1;j<T2;j++) {
       if (j<kk)
 	continue;
@@ -371,19 +387,6 @@ void PulseClass::PeakAna33() {
       }
     }
   }
-  else { //use 2nd deriv
-    // 05.10.2020
-    for (int j=T1;j<T2;j++) {
-      if (j<kk+1)
-	continue;
-      Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
-      pk->Time+=dif2*j;
-      sum+=dif2;
-      //cout << "dif2: " << j << " " << dif2 << " " << sData[j] << endl;
-    }
-    // cout << "T7: " << Tstamp64 << " " << Pos << " " << T1 << " " << T2
-    // 	 << " " << pk->Time << " " << sum << endl; 
-  }
   if (abs(sum)>1e-5) {
     pk->Time/=sum;
   }
@@ -392,6 +395,7 @@ void PulseClass::PeakAna33() {
 
   pk->Time-=cpar.preWr[Chan];
 
+  //pk->Time=sum;
 
   /*
     pk->Width=0;
@@ -501,8 +505,9 @@ void PulseClass::PeakAna33() {
     }
   	
     pk->Width-=pk->Base;
+    //YK
     pk->Width=opt.E0[Chan] + opt.E1[Chan]*pk->Width +
-      opt.E2[Chan]*pk->Width*pk->Width;
+    opt.E2[Chan]*pk->Width*pk->Width;
     pk->Width/=pk->Area;
   }
 
@@ -1027,8 +1032,44 @@ void EventClass::FillHist(Bool_t first) {
 	//double dt = pulses[i].Tstamp64 - Tstmp;
 	//tt = pk->Time - T0 + dt;
 	tt = pk->Time - T0;
-	//cout << "Time: " << Nevt << " " << pk->Time << " " << T0 << endl;
 	Fill1d(first,hcl->m_time,ch,tt*opt.Period+opt.sD[ch]);
+
+
+
+
+	/*
+	static float P0;
+	Long64_t dt = pulses[i].Tstamp64-Tstmp;
+	float pp = pulses[i].Pos-cpar.preWr[ch]-pk->Time+dt;
+	const char* col;
+	const char* nm = "Time: ";
+
+	if (tt>1.5)
+	  col=BRED;
+	else
+	  col=BBLU;
+
+	if (!tt) {
+	  nm="T0: ";
+	  P0 = pp;
+	}
+
+	prnt("ssd f f f ls;",col,nm,Nevt,tt,pp,pp-P0,dt,RST);
+
+	//cout << "Time: " << Nevt << " " << tt*opt.Period << " " << pp*opt.Period << " " << endl;
+	//cout << "Time: " << Nevt << " " << pk->Time << " " << T0 << endl;
+	if (tt) {
+	  Fill1d(first,hcl->m_time,ch+2,pp);
+	}
+	else {
+	  Fill1d(first,hcl->m_time,ch+2,pp);
+	}
+	Fill1d(first,hcl->m_time,ch,tt+opt.sD[ch]);
+	*/
+
+
+
+
       }
 
       if (j==0) { //only for the first peak
