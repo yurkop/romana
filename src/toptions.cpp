@@ -15,7 +15,7 @@ Coptions::Coptions() {
   //ver = TClass::GetClass("Coptions")->GetClassVersion();
   // for (int i=0;i<MAX_CH;i++) {
   //   //chtype[i]=ch_other;
-  //   enabl[i]=true;
+  //   on[i]=true;
   // }
 
   InitPar(1);
@@ -25,20 +25,20 @@ Coptions::Coptions() {
 void Coptions::InitPar(int zero) {
 
   for (int i=0;i<MAX_CHTP;i++) {
-    enabl[i]=true;
-    acdc[i]=true;
-    inv[i]=false;
-    smooth[i]=0*zero;
-    deadTime[i]=1*zero;
-    preWr[i]=100*zero;
+    on[i]=true;
+    AC[i]=true;
+    Inv[i]=false;
+    hS[i]=0*zero;
+    Dt[i]=1*zero;
+    Pre[i]=100*zero;
     if (zero)
-      durWr[i]=200;
+      Len[i]=200;
     else
-      durWr[i]=1;
-    trg[i]=1;
-    kderiv[i]=1*zero;
-    threshold[i]=50*zero;
-    adcGain[i]=12*zero;
+      Len[i]=1;
+    Trg[i]=1;
+    Drv[i]=1*zero;
+    Thr[i]=50*zero;
+    G[i]=12*zero;
     fdiv[i]=0;
     pls[i]=true;
     //Mask[i]=0xFF;
@@ -57,7 +57,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
   max=-1;
   //cout << "GetPAr7: " << module << " " << name << endl;
     if (!strcmp(name,"smooth")) {
-      par = smooth[i];
+      par = hS[i];
       min = 0;
       if (type_ch==3) //CRS-128
 	max=7;
@@ -65,7 +65,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         max=9;
     }
     else if (!strcmp(name,"dt")) {
-      par = deadTime[i];
+      par = Dt[i];
       min = 1;
       if (module==22)
         max=1;
@@ -73,7 +73,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         max=16383;
     }
     else if (!strcmp(name,"pre")) {
-      par = preWr[i];
+      par = Pre[i];
 
       if (module==22) {
         min = 0;
@@ -98,7 +98,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       }
     }
     else if (!strcmp(name,"len")) {
-      par = durWr[i];
+      par = Len[i];
       min = 1;
       if (module==22)
         max=16379;
@@ -116,7 +116,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       }
     }
     else if (!strcmp(name,"deriv")) {
-      par = kderiv[i];
+      par = Drv[i];
       if (type_ch==3)
 	max=255;
       else
@@ -127,7 +127,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         min = 1;
     }
     else if (!strcmp(name,"thresh")) {
-      par = threshold[i];
+      par = Thr[i];
       if (type_ch==0) {
         min=-2048;
         max=2047;
@@ -138,7 +138,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       }
     }
     else if (!strcmp(name,"gain")) {
-      par = adcGain[i];
+      par = G[i];
       if (type_ch==0) {
         min=5;
         max=12;
@@ -149,7 +149,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       }
     }
     else if (!strcmp(name,"delay")) {
-      par = delay[i];
+      par = hD[i];
       min=0;
       if (module==22) {
         max=0;
@@ -166,7 +166,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       }
     }
     else if (!strcmp(name,"trig")) {
-      par = trg[i];
+      par = Trg[i];
       min=0;
       if (module==35)
         max=5;
@@ -220,15 +220,15 @@ Toptions::Toptions() {
     for (int j=0;j<NGRP;j++)
       Grp[i][j]=false;
     sS[i]=2;
-    Thr[i]=cpar.threshold[i];
+    sThr[i]=cpar.Thr[i];
 
-    Drv[i]=1;
+    sDrv[i]=1;
     sD[i]=0;
     Base1[i]=-10;
     Base2[i]=-5;
     Peak1[i]=5;
     Peak2[i]=30;
-    dT[i]=100;
+    dTm[i]=100;
     Pile[i]=100;
     sTg[i]=-1;
     //timing[i]=3;

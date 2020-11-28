@@ -892,7 +892,7 @@ void EventFrame::FillGraph(int dr) {
     }
     //cout << "sData: " << i << " " << pulse->sData.size() << " " << Gr[dr][i]->GetN() << endl;
 
-    double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.preWr[ch[i]];
+    double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch[i]];
 
     gx1[i]=(dt-1);
     gx2[i]=(pulse->sData.size()+dt);
@@ -917,10 +917,10 @@ void EventFrame::FillGraph(int dr) {
     }
     else if (dr==1) { //1st derivaive
 
-      Int_t kk=opt.Drv[ch[i]];
+      Int_t kk=opt.sDrv[ch[i]];
       if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
 
-      //cout << "kk=" << kk << " " << ch[i] << " " << opt.Drv[ch[i]] << endl;
+      //cout << "kk=" << kk << " " << ch[i] << " " << opt.sDrv[ch[i]] << endl;
       //dat = new Float_t[pulse->sData.size()];
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
@@ -946,7 +946,7 @@ void EventFrame::FillGraph(int dr) {
     }
     else if (dr==2) { //2nd derivative
 
-      Int_t kk=opt.Drv[ch[i]];
+      Int_t kk=opt.sDrv[ch[i]];
       if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
 
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
@@ -1115,7 +1115,7 @@ void EventFrame::DrawEvent2() {
   sprintf(ss,"%ld",d_event->pulses.size());
   fStat[2]->SetText(ss);
 
-  sprintf(ss,"%d",d_event->State);
+  sprintf(ss,"%d",d_event->Spin);
   fStat[3]->SetText(ss);
 
   // for (int i=0;i<4;i++) {
@@ -1149,7 +1149,7 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
-    double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.preWr[ch];
+    double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch];
 
     for (UInt_t j=0;j<pulse->Peaks.size();j++) {
       PeakClass *pk = &pulse->Peaks[j];
@@ -1165,7 +1165,7 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
 
       /*
       if (opt.dsp[ch]) {
-	pulse->Pos=cpar.preWr[ch];
+	pulse->Pos=cpar.Pre[ch];
 	pk->B1=pulse->Pos+opt.Base1[ch];
 	pk->B2=pulse->Pos+opt.Base2[ch]+1;
 	pk->P1=pulse->Pos+opt.Peak1[ch];
@@ -1180,8 +1180,8 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
       if (fPeak[1]->IsOn()) // Pos
 	doXline(pulse->Pos+dt,y1,y2-dy*0.3,2,1);
       if (fPeak[2]->IsOn()) {// Time
-	//double dt2=pulse->Tstamp64 - d_event->Tstmp - cpar.preWr[ch];
-	//doXline(pk->Time+dt+cpar.preWr[ch],y2-dy*0.2,y2,3,1);
+	//double dt2=pulse->Tstamp64 - d_event->Tstmp - cpar.Pre[ch];
+	//doXline(pk->Time+dt+cpar.Pre[ch],y2-dy*0.2,y2,3,1);
 	doXline(pk->Time,y2-dy*0.2,y2,3,1);
       }
       if (dr==0 && fPeak[4]->IsOn()) { // Wpeak
@@ -1298,7 +1298,7 @@ void EventFrame::ReDraw() {
 	    DrawPeaks(i,pulse,y1,y2);
 	    int ithr=(opt.sTg[pulse->Chan]!=0);
 	    if (i==ithr && fPeak[8]->IsOn()) //threshold
-	      doYline(opt.Thr[pulse->Chan],gx1[j],
+	      doYline(opt.sThr[pulse->Chan],gx1[j],
 		      gx2[j],chcol[pulse->Chan],2);
 	  }
 	  if (fPeak[9]->IsOn()) { //draw text
@@ -1348,7 +1348,7 @@ void EventFrame::ReDraw() {
 	  for (UInt_t j=0;j<d_event->pulses.size();j++) {
 	    PulseClass *pulse = &d_event->pulses.at(j);
 	    if (fChn[pulse->Chan]->IsOn()) {
-	      int dt=(pulse->Tstamp64-d_event->Tstmp)-cpar.preWr[pulse->Chan];
+	      int dt=(pulse->Tstamp64-d_event->Tstmp)-cpar.Pre[pulse->Chan];
 	      //cout << "dt: " << j << " " << (int)pulse->Chan << " " << dt; //<< endl;
 	      //cout << " "<< Gr[i][j]->GetN() << " " << Gr[i][j]->GetX()[-dt] << " " << Gr[i][j]->GetY()[-dt] << endl;
 

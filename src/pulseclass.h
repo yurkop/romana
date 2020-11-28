@@ -100,11 +100,11 @@ class PulseClass {
 
   UChar_t Chan; //channel number
   Short_t Pos; //position of the trigger relative to pulse start (in samples)
-  UChar_t State;
+  UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 1: event is writable in Dec
   //bit 7: hardware counters
-  //State=123 - end of Blisr (?)
+  //Spin=123 - end of Blisr (?)
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
   //short *Data; //raw pulse data
 
@@ -137,7 +137,7 @@ class EventClass { //event of pulses
 
  public:
   Long64_t Nevt;
-  Char_t State;
+  UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 7: hardware counters
   Long64_t Tstmp; //Timestamp of the earliest pulse (threshold crossig)
@@ -163,6 +163,7 @@ class EventClass { //event of pulses
   void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);
   void FillHist(Bool_t first);
   void FillHist_old();
+  void PrintEvent();
   //void PeakAna();
   //ClassDef(EventClass, 0)
 };

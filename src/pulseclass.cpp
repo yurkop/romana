@@ -46,7 +46,7 @@ PulseClass::PulseClass() {
   //Npeaks=0;
   //Analyzed=false;
   Tstamp64=0;
-  State=0;
+  Spin=0;
   //tdif=99;
   //sData=NULL;
   //Peaks=NULL;
@@ -65,7 +65,7 @@ void PulseClass::FindPeaks() {
   if (sData.size()<2)
     return;
 
-  UInt_t kk=opt.Drv[Chan];
+  UInt_t kk=opt.sDrv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
   PeakClass pk=PeakClass();
@@ -83,7 +83,7 @@ void PulseClass::FindPeaks() {
   switch (opt.sTg[Chan]) {
   case 0: // hreshold crossing of pulse
     for (j=0;j<sData.size();j++) {
-      if (sData[j] >= opt.Thr[Chan]) {
+      if (sData[j] >= opt.sThr[Chan]) {
 	Pos=j;
 	Peaks.push_back(pk);
 	break;
@@ -93,7 +93,7 @@ void PulseClass::FindPeaks() {
   case 1: // threshold crossing of derivative;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
-      if (D[j] >= opt.Thr[Chan]) {
+      if (D[j] >= opt.sThr[Chan]) {
 	Pos=j;
 	Peaks.push_back(pk);
 	break;
@@ -106,7 +106,7 @@ void PulseClass::FindPeaks() {
     //int jpr;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
-      if (Dpr >= opt.Thr[Chan] && D[j]<Dpr) {
+      if (Dpr >= opt.sThr[Chan] && D[j]<Dpr) {
 	Pos=j-1;
 	Peaks.push_back(pk);
 	break;
@@ -122,7 +122,7 @@ void PulseClass::FindPeaks() {
       if (D[j] > 0 && Dpr<=0) {
 	jj=j;
       }
-      if (D[j] >= opt.Thr[Chan]) {
+      if (D[j] >= opt.sThr[Chan]) {
 	Pos=jj;
 	Peaks.push_back(pk);
 	break;
@@ -142,7 +142,7 @@ void PulseClass::FindPeaks() {
 	Peaks.push_back(pk);
 	break;
       }
-      if (D[j] >= opt.Thr[Chan]) {
+      if (D[j] >= opt.sThr[Chan]) {
 	jj=1;
       }
       // else {
@@ -183,7 +183,7 @@ void PulseClass::FindPeaks() {
   if (sData.size()<2)
   return;
 
-  UInt_t kk=opt.Drv[Chan];
+  UInt_t kk=opt.sDrv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
 
   PeakClass *pk=0;
@@ -201,7 +201,7 @@ void PulseClass::FindPeaks() {
   for (j=kk;j<sData.size();j++) {
   D[j]=sData[j]-sData[j-kk];
   if (!in_peak) {
-  if (D[j] >= opt.Thr[Chan]) {
+  if (D[j] >= opt.sThr[Chan]) {
   in_peak=true;
   Peaks.push_back(PeakClass());
   pk = &Peaks.back();
@@ -295,12 +295,12 @@ void PulseClass::PeakAna33() {
   PeakClass *pk;
 
   int sz=sData.size();
-  Int_t kk=opt.Drv[Chan];
+  Int_t kk=opt.sDrv[Chan];
   if (kk<1 || kk>=sz-1) kk=1;
 
   if (sData.size()<=2) {
     //   Peaks.push_back(PeakClass());
-    //   Peaks.back().Pos=cpar.preWr[Chan];
+    //   Peaks.back().Pos=cpar.Pre[Chan];
     //   Peaks.back().Time=0;
     return;
   }
@@ -313,7 +313,7 @@ void PulseClass::PeakAna33() {
     Peaks.push_back(PeakClass());
     //pk = &Peaks.back();
     //pk->Pos=crs->Pre[Chan];
-    Pos=cpar.preWr[Chan];
+    Pos=cpar.Pre[Chan];
   }
   else { //use software trigger
     FindPeaks();
@@ -393,7 +393,7 @@ void PulseClass::PeakAna33() {
   else
     pk->Time=(T1+T2)*0.5;
 
-  pk->Time-=cpar.preWr[Chan];
+  pk->Time-=cpar.Pre[Chan];
 
   //pk->Time=sum;
 
@@ -419,7 +419,7 @@ void PulseClass::PeakAna33() {
     pk->Width=(W1+W2)*0.5;
 
     //pk->Width-=Pos;
-    pk->Width-=cpar.preWr[Chan];
+    pk->Width-=cpar.Pre[Chan];
   */
 
 
@@ -577,7 +577,7 @@ void PulseClass::CheckDSP() {
 }
 
 EventClass::EventClass() {
-  State=0;
+  Spin=0;
   //Tstmp=-9999999999;
   T0=99999;
   //Analyzed=false;
@@ -590,7 +590,7 @@ EventClass::EventClass() {
   pp.ptype=0;
   pp.Chan=i;
   pp.Counter=0;
-  for (UInt_t j=0;j<cpar.durWr[i];j++) {
+  for (UInt_t j=0;j<cpar.Len[i];j++) {
   pp.sData.push_back(0);
   }
   pulses.push_back(pp);
@@ -608,18 +608,18 @@ EventClass::EventClass() {
   }
   PulseClass *pp = &pulses.at(pls->Chan);
 
-  if (pp->sData.size() != cpar.durWr[pls->Chan]) {
-  pp->sData.resize(cpar.durWr[pls->Chan]);
+  if (pp->sData.size() != cpar.Len[pls->Chan]) {
+  pp->sData.resize(cpar.Len[pls->Chan]);
   cout << "Pulse_Mean_Add: resize: " << (int) pls->Chan
   << " " << pp->sData.size() << endl;     
   }
 
-  if (pls->sData.size()  != cpar.durWr[pls->Chan]) {
+  if (pls->sData.size()  != cpar.Len[pls->Chan]) {
   cout << "Error: " << (int) pls->Chan << " " << pls->Counter
   << " " << pls->sData.size() << endl;
   return;
   }
-  for (UInt_t j=0;j<cpar.durWr[pls->Chan];j++) {
+  for (UInt_t j=0;j<cpar.Len[pls->Chan];j++) {
   pp->sData[j]+=pls->sData[j];
   }
 
@@ -644,17 +644,17 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
     }
   }
 
-  // cout << "state1: " << Nevt << " " << (int) State << " " << (int) pls->Chan
+  // cout << "state1: " << Nevt << " " << (int) Spin << " " << (int) pls->Chan
   //      << " " << opt.Master[pls->Chan] << endl;
   if (opt.Master[pls->Chan]) {
-    State|=2;
+    Spin|=2;
   }
 
-  if (pls->State & 1) {
-    State|=1;
+  if (pls->Spin & 1) {
+    Spin|=1;
   }
 
-  //cout << "state2: " << Nevt << " " << (int) State << endl;
+  //cout << "state2: " << Nevt << " " << (int) Spin << endl;
   if (pulses.empty()) { //this is the first pulse in the event
     //dt=0;
     Tstmp=pls->Tstamp64;
@@ -686,7 +686,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 
       PeakClass *pk = &pls->Peaks.front();
       //Float_t T2 = pk->Time - crs->Pre[pls->Chan] + dt;
-      //Float_t T2 = pk->Time - cpar.preWr[pls->Chan] + dt;
+      //Float_t T2 = pk->Time - cpar.Pre[pls->Chan] + dt;
       //Float_t T2 = pk->Time + dt;
 
       //if (T2<T0) {
@@ -829,7 +829,7 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
   //HMap* map = hcl->m_pulse[n];
   int ch = pls->Chan;
 	
-  // if (pls->sData.size() < cpar.durWr[pls->Chan]) {
+  // if (pls->sData.size() < cpar.Len[pls->Chan]) {
   //   cout << "Error: " << (int) pls->Chan << " " << pls->Counter
   //   << " " << pls->sData.size() << endl;
   //   return;
@@ -838,7 +838,7 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
     int newsz = pls->sData.size();
     if (map->hst->GetNbinsX() < newsz) {
       map->hst->
-	SetBins(pls->sData.size(),-cpar.preWr[ch],newsz-cpar.preWr[ch]);
+	SetBins(pls->sData.size(),-cpar.Pre[ch],newsz-cpar.Pre[ch]);
     }
     Fill_Mean1((TH1F*)map->hst, &pls->sData[0], newsz, ideriv);
   } //if first
@@ -847,12 +847,12 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map, PulseClass* pls,
     for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
 
-	if (map->h_cuts[i]->hst->GetNbinsX() != (int) cpar.durWr[ch]) {
+	if (map->h_cuts[i]->hst->GetNbinsX() != (int) cpar.Len[ch]) {
 	  map->h_cuts[i]->hst->
-	    SetBins(cpar.durWr[ch],-cpar.preWr[ch],cpar.durWr[ch]-cpar.preWr[ch]);
+	    SetBins(cpar.Len[ch],-cpar.Pre[ch],cpar.Len[ch]-cpar.Pre[ch]);
 	}
 
-	Fill_Mean1((TH1F*)map->h_cuts[i]->hst, &pls->sData[0], cpar.durWr[ch], ideriv);
+	Fill_Mean1((TH1F*)map->h_cuts[i]->hst, &pls->sData[0], cpar.Len[ch], ideriv);
 
       }
     }
@@ -1040,7 +1040,7 @@ void EventClass::FillHist(Bool_t first) {
 	/*
 	static float P0;
 	Long64_t dt = pulses[i].Tstamp64-Tstmp;
-	float pp = pulses[i].Pos-cpar.preWr[ch]-pk->Time+dt;
+	float pp = pulses[i].Pos-cpar.Pre[ch]-pk->Time+dt;
 	const char* col;
 	const char* nm = "Time: ";
 
@@ -1151,7 +1151,7 @@ void EventClass::FillHist(Bool_t first) {
   /*
     if (opt.dec_write) {
     crs->rTime=T;
-    crs->rState = State;
+    crs->rSpin = Spin;
     crs->Tree->Fill();
     crs->rPeaks.clear();
     }
@@ -1200,7 +1200,7 @@ void EventClass::FillHist(Bool_t first) {
 	  //cout << "hcl: " << i << " " << pp << " " << hcl->h_xy << " " << hcl->h_off << endl;
 	  if (hcl->h_xy>=0) {//one of Prof64 position channels
 	    PulseClass *pulse = &pulses[i];  
-	    int dt=(pulse->Tstamp64-Tstmp)-cpar.preWr[pulse->Chan];
+	    int dt=(pulse->Tstamp64-Tstmp)-cpar.Pre[pulse->Chan];
 	    int size = pulse->sData.size();
 
 	    for (int kk=-1;kk<31;kk++) {
@@ -1336,6 +1336,15 @@ void PulseClass::PrintPulse(int pdata) {
   if (pdata) {
     for (int i=0;i<(int)sData.size();i++) {
       printf("-- %d %f\n",i,sData[i]);
+    }
+  }
+}
+
+void EventClass::PrintEvent() {
+  printf("Event: %8lld %10lld %10.2f %2ld\n",Nevt,Tstmp,T0,pulses.size());
+  for (UInt_t i=0;i<pulses.size();i++) {
+    for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
+      printf("  %3d %lld %10.2f\n",pulses[i].Chan,pulses[i].Tstamp64,pulses[i].Peaks[j].Time);
     }
   }
 }

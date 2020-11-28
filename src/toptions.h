@@ -60,20 +60,20 @@ public:
 
   //Int_t chtype[MAX_CHTP]; //channel type
   //Int_t test; // [ts1] [ts2] test
-  Int_t smooth[MAX_CHTP]; // Hardware Smooth - SS=0..10; S=2^SS
-  Int_t deadTime[MAX_CHTP]; // B = 1..16383
-  Int_t preWr[MAX_CHTP]; // pre-length M = 0..4094
-  Int_t durWr[MAX_CHTP]; // total length N = 1…32763 (internally - multiple of 4)
-  Int_t delay[MAX_CHTP]; //hardware delay in samples
-  Int_t trg[MAX_CHTP]; // Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
-  Int_t kderiv[MAX_CHTP]; // K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
-  Int_t threshold[MAX_CHTP]; // T = –2048 .. +2047
-  Int_t adcGain[MAX_CHTP]; // G = 0..12
-  Int_t fdiv[MAX_CHTP]; //frequency divider (=2 for 16-bit/100 MHz)
-  Bool_t acdc[MAX_CHTP]; // AC-1; DC-0
-  Bool_t inv[MAX_CHTP]; //0 - no inversion; 1 - inversion (individual)
-  Bool_t enabl[MAX_CHTP]; //1 - enabled; 0 - disabled
-  Bool_t pls[MAX_CHTP]; //1 - send pulses (format 2,3); 0 - don't send
+  Int_t hS[MAX_CHTP]; // [smooth] Hardware Smooth - SS=0..10; S=2^SS
+  Int_t Dt[MAX_CHTP]; // [deadTime] B = 1..16383
+  Int_t Pre[MAX_CHTP]; // [preWr] pre-length M = 0..4094
+  Int_t Len[MAX_CHTP]; // [durWr] total length N = 1…32763 (internally - multiple of 4)
+  Int_t hD[MAX_CHTP]; // [delay] hardware delay in samples
+  Int_t Trg[MAX_CHTP]; // [trg] Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
+  Int_t Drv[MAX_CHTP]; // [kderiv] K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
+  Int_t Thr[MAX_CHTP]; // [threshold] T = –2048 .. +2047
+  Int_t G[MAX_CHTP]; // [adcGain] G = 0..12
+  Int_t fdiv[MAX_CHTP]; // frequency divider (=2 for 16-bit/100 MHz)
+  Bool_t AC[MAX_CHTP]; // [acdc] AC-1; DC-0
+  Bool_t Inv[MAX_CHTP]; // [inv] 0 - no inversion; 1 - inversion (individual)
+  Bool_t on[MAX_CHTP]; // [enabl] 1 - enabled; 0 - disabled
+  Bool_t pls[MAX_CHTP]; // 1 - send pulses (format 2,3); 0 - don't send
   //UInt_t Mask[MAX_CHTP];
   Bool_t forcewr; //only for crs2
   // 0 - only triggered channel is written; 
@@ -113,14 +113,14 @@ public:
   Bool_t Grp[MAX_CHTP][NGRP]; // flag to use channel in group histograms
   //UInt_t ch_flag[MAX_CHTP];
   Int_t sS[MAX_CHTP]; //[nsmoo] software smoothing 0..100
-  Int_t Drv[MAX_CHTP]; //[kdrv] parameter of derivative
-  Int_t Thr[MAX_CHTP];//[thresh]
+  Int_t sDrv[MAX_CHTP]; //[Drv] [kdrv] parameter of derivative
+  Int_t sThr[MAX_CHTP];//[Thr] [thresh]
   Float_t sD[MAX_CHTP]; //[Delay] [delay]
   Int_t Base1[MAX_CHTP]; //[bkg1]
   Int_t Base2[MAX_CHTP]; //[bkg2]
   Int_t Peak1[MAX_CHTP]; //[peak1]
   Int_t Peak2[MAX_CHTP]; //[peak2]
-  Int_t dT[MAX_CHTP];//[deadT]
+  Int_t dTm[MAX_CHTP];//[deadT][dT]
   Int_t Pile[MAX_CHTP]; //[pile]
   //Int_t pile2[MAX_CHTP];
   Int_t sTg[MAX_CHTP]; // [strg] Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger

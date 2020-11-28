@@ -220,8 +220,8 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
   for (int i=0;i<opt.Nchan;i++) {
     NameTitle(name2,title2,i,0,name,title);
 
-    Float_t min = -cpar.preWr[i];
-    Float_t max = cpar.durWr[i]-cpar.preWr[i];
+    Float_t min = -cpar.Pre[i];
+    Float_t max = cpar.Len[i]-cpar.Pre[i];
     Float_t bins = 1;
 
     int nn=bins*(max-min);

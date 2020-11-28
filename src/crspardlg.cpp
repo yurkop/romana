@@ -80,7 +80,7 @@ const char* ttip1[ndaqpar]={
 
 const int n_apar=13;
 const int tlen2[n_apar]={24,24,26,70,24,25,35,35,35,38,38,38,38};
-const char* tlab2[n_apar]={"on","*","Ch","Type","St","sS","sD","dT","Pile","E0","E1","E2","Bc"};
+const char* tlab2[n_apar]={"on","*","Ch","Type","St","sS","sD","dTm","Pile","E0","E1","E2","Bc"};
 const char* ttip2[n_apar]={
   "On/Off",
   "Select",
@@ -101,7 +101,7 @@ const char* ttip2[n_apar]={
 
 const int n_ppar=16;
 const int tlen3[n_ppar]={24,24,26,70,24,26,32,40,40,40,42,42,40,40,40,40};
-const char* tlab3[n_ppar]={"on","*","Ch","Type","dsp","sTg","Drv","Thr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
+const char* tlab3[n_ppar]={"on","*","Ch","Type","dsp","sTg","sDrv","sThr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
 const char* ttip3[n_ppar]={
   "On/Off",
   "Select",
@@ -109,8 +109,8 @@ const char* ttip3[n_ppar]={
   ttip_type,
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
   "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n-1 - use hardware trigger",
-  "Parameter of derivative: S(i) - S(i-Drv)",
-  "Trigger threshold",
+  "Software parameter of derivative: S(i) - S(i-Drv)",
+  "Software trigger threshold",
   "Baseline start, relative to peak Pos (negative)",
   "Baseline end, relative to peak Pos (negative), included",
   "Peak start, relative to peak Pos (usually negative)",
@@ -699,7 +699,7 @@ void ParDlg::UpdateField(int nn) {
   TQObject* tq = (TQObject*) pp->field;
   tq->BlockAllSignals(true);
 
-  Int_t val=0;
+  Float_t val=0;
   Bool_t bb;
   //cout << "updatefield0: " << nn << endl;
   //cout << "updatefield: " << nn << " " << pp->type << " " << p_chk << " " << p_cmb << " " << gROOT << endl;
@@ -721,7 +721,7 @@ void ParDlg::UpdateField(int nn) {
   case p_fnum: {
     TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
     Float_t *dat = (Float_t*) pp->data;
-    val = (*dat==0) ? 0 : 1;
+    val = *dat;
     if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
       *dat = te->GetNumMax();
     }
@@ -846,12 +846,11 @@ void ParDlg::UpdateField(int nn) {
       //cout << "c_num: " << col << endl;
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
       if (te->IsEnabled()) {
-	bool vv = val;
+	bool vv = (val!=0);
 	if (te->GetToolTip()->GetText()->
-	    Contains("rebin"),TString::kIgnoreCase) {
+	    Contains("rebin",TString::kIgnoreCase)) {
 	  vv = val>1;
 	}
-	//cout << "vcolor: " << te->GetToolTip()->GetText()->GetString() << endl;
 	if (vv) {
 	  te->ChangeBackground(fCol[col-1]);
 	}
@@ -1974,7 +1973,7 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
     all=i-MAX_CH+1;
   }
 
-  AddChkPar(kk, cframe[i], &cpar.enabl[i], all, ttip1[kk], 1);
+  AddChkPar(kk, cframe[i], &cpar.on[i], all, ttip1[kk], 1);
   AddChkPar(kk, cframe[i], &opt.star[i], all, ttip1[kk], 0);
 
   //button for "all"
@@ -2200,31 +2199,31 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
 
   AddChCombo(i,id,kk,all);
 
-  //AddChkPar(kk, cframe[i], &cpar.enabl[i], all, ttip1[kk], 1);
-  AddChkPar(kk, cframe[i], &cpar.inv[i], all, ttip1[kk], 1);
-  AddChkPar(kk, cframe[i], &cpar.acdc[i], all, ttip1[kk], act);
+  //AddChkPar(kk, cframe[i], &cpar.on[i], all, ttip1[kk], 1);
+  AddChkPar(kk, cframe[i], &cpar.Inv[i], all, ttip1[kk], 1);
+  AddChkPar(kk, cframe[i], &cpar.AC[i], all, ttip1[kk], act);
   AddChkPar(kk, cframe[i], &cpar.pls[i], all, ttip1[kk], 1);
   AddChkPar(kk, cframe[i], &opt.dsp[i], all, ttip1[kk], 1);
 
 
-  AddNumDaq(i,kk++,all,cframe[i],"smooth",&cpar.smooth[i]);
-  AddNumDaq(i,kk++,all,cframe[i],"delay" ,&cpar.delay[i]);
-  AddNumDaq(i,kk++,all,cframe[i],"dt"    ,&cpar.deadTime[i]);
-  AddNumDaq(i,kk++,all,cframe[i],"pre"   ,&cpar.preWr[i]);
-  AddNumDaq(i,kk++,all,cframe[i],"len"   ,&cpar.durWr[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"smooth",&cpar.hS[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"delay" ,&cpar.hD[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"dt"    ,&cpar.Dt[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"pre"   ,&cpar.Pre[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"len"   ,&cpar.Len[i]);
   if (crs->module==22) 
-    AddNumDaq(i,kk++,1,cframe[i],"gain"  ,&cpar.adcGain[i]);
+    AddNumDaq(i,kk++,1,cframe[i],"gain"  ,&cpar.G[i]);
   else
-    AddNumDaq(i,kk++,all,cframe[i],"gain"  ,&cpar.adcGain[i],0,act);
+    AddNumDaq(i,kk++,all,cframe[i],"gain"  ,&cpar.G[i],0,act);
 
   // if (crs->module>=33)
-  //   AddNumDaq(i,kk++,all,cframe[i],"trig" ,&cpar.trg[i]);
+  //   AddNumDaq(i,kk++,all,cframe[i],"trig" ,&cpar.Trg[i]);
   // else
   //   kk++;
-  AddNumDaq(i,kk++,all,cframe[i],"trig" ,&cpar.trg[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"trig" ,&cpar.Trg[i]);
 
-  AddNumDaq(i,kk++,all,cframe[i],"deriv" ,&cpar.kderiv[i],&opt.Drv[i]);
-  AddNumDaq(i,kk++,all,cframe[i],"thresh",&cpar.threshold[i],&opt.Thr[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"deriv" ,&cpar.Drv[i],&opt.sDrv[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"thresh",&cpar.Thr[i],&opt.sThr[i]);
 
 
   if (i<=MAX_CH) {
@@ -2505,7 +2504,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
   AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],-99,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.sD[i],-999,999,p_fnum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.dT[i],0,9999,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.dTm[i],0,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Pile[i],0,9999,p_inum);
 
   AddNumChan(i,kk++,all,cframe[i],&opt.E0[i],-1e99,1e99,p_fnum);
@@ -2617,8 +2616,8 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   //cout << "module: " << crs->module << " " << i << " " << crs->type_ch[i] << " " << amax << endl;
 
   AddNumChan(i,kk++,all,cframe[i],&opt.sTg[i],-1,5,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.Drv[i],1,1023,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.Thr[i],0,65565,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sDrv[i],1,1023,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sThr[i],0,65565,p_inum);
 
   AddNumChan(i,kk++,all,cframe[i],&opt.Base1[i],-1024,amax,p_inum,1);
   AddNumChan(i,kk++,all,cframe[i],&opt.Base2[i],-1024,9999,p_inum,1);
