@@ -27,6 +27,8 @@ const int MAX_TP=8; // 8 types, MAX_TP=other, MAX_TP+1=copy, MAX_TP+2=swap
 const int MAX_CHTP=MAX_CH+MAX_TP+1;
 const int NGRP=4; //number of groups of channels
 
+const int MAXROI=10; //maximal number of ROI
+
 const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to nr-1 of bits in hmap::bitwk; 
 const int MAX_PCUTS=11; //maximal number of points in cutG
 const int MAX_PADS=256; //maximal number of sub-pads in histframe

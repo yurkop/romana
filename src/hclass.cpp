@@ -25,19 +25,28 @@ extern HistFrame* EvtFrm;
 
 HMap::HMap() {
   hst = 0;
+  gr = 0;
   hd = 0;
   nn = 0;
   memset(h_cuts,0,sizeof(h_cuts));
   //h_MT=0;
 }
 
-HMap::HMap(const char* dname) : HMap() {
+// HMap::HMap(const char* dname) : HMap() {
+//   SetTitle(dname);
+//   SetName(dname);
+//   //cout << "HMAP: " << GetName() << " " << hst << endl;
+// }
+
+HMap::HMap(const char* dname, Hdef* hd1) : HMap() {
+  hd = hd1;
+
   SetTitle(dname);
   SetName(dname);
-  //cout << "HMAP: " << GetName() << " " << hst << endl;
+  //memset(h_cuts,0,sizeof(h_cuts));
 }
 
-HMap::HMap(const char* dname, TH1* hist, Hdef* hd1, int i) {
+HMap::HMap(const char* dname, TH1* hist, Hdef* hd1, int i) : HMap() {
   hst = hist;
   hd = hd1;
   nn = i;
@@ -47,32 +56,31 @@ HMap::HMap(const char* dname, TH1* hist, Hdef* hd1, int i) {
     SetName(hist->GetName());
   else
     SetName(dname);
-  memset(h_cuts,0,sizeof(h_cuts));
+  //memset(h_cuts,0,sizeof(h_cuts));
 }
 
-/*
-HMap::HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
-	   Int_t *cuts) {
-  hst = hist;
-  chk = s;
-  wrk = w;
-  //memcpy(cut_index,cuts,sizeof(cut_index));
-  cut_index = cuts;
-  //cout << "index: " << (void*) cuts << " " << (void*) cut_index << endl;
+HMap::HMap(const char* dname, TGraphErrors* gr1, Hdef* hd1, int i) : HMap() {
+  gr = gr1;
+  hd = hd1;
+  nn = i;
+
   SetTitle(dname);
-  if (hist)
-    SetName(hist->GetName());
+  if (gr)
+    SetName(gr->GetName());
   else
     SetName(dname);
-  memset(h_cuts,0,sizeof(h_cuts));
+  //memset(h_cuts,0,sizeof(h_cuts));
 }
-*/
 
 HMap::~HMap() {
   //cout << "~hmap: " << GetName() << " " << hst << endl;
   if (hst) {
     delete hst;
     hst=0;
+  }
+  if (gr) {
+    delete gr;
+    gr=0;
   }
   //cout << "~hmap1: " << GetName() << " " << hst << endl;
   //memset(cut_index,0,MAXCUTS);
@@ -95,6 +103,7 @@ HMap::~HMap() {
 
 HMap::HMap(const HMap& other) : TNamed(other) {
   hst = other.hst;
+  gr = other.gr;
   hd = other.hd;
   nn = other.nn;
 
@@ -108,6 +117,7 @@ HMap::HMap(const HMap& other) : TNamed(other) {
 //RFive& operator=(const RFive& other)
 HMap& HMap::operator=(const HMap& other) {
   hst = other.hst;
+  gr = other.gr;
   hd = other.hd;
   nn = other.nn;
 

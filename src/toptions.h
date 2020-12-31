@@ -44,9 +44,10 @@ public:
   // максимальная размерность: 32 бита, значит число окон
   // не может быть больше 32
   // bit mask: 1 - cut is in this histogram; 0 - cut is not here
+  Float_t roi[MAXROI][2];
   
   Int_t rb; //rebin
-  ClassDef(Hdef, 2)
+  ClassDef(Hdef, 3)
 };
 //------------------------------------
 
@@ -89,7 +90,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 118)
+  ClassDef(Coptions, 120)
 };
 
 //------------------------------------
@@ -108,7 +109,7 @@ public:
   Int_t chtype[MAX_CHTP]; //ch type, starts from 1 (see MAX_TP in common.h)
   Bool_t dsp[MAX_CHTP]; //true - use dsp for data analysis
   Bool_t St[MAX_CHTP]; //[Start]
-  Bool_t Master[MAX_CHTP]; // Master/slave
+  Bool_t Ms[MAX_CHTP]; // [Master] Master/slave (see Spin)
   //Bool_t Nt[MAX_CHTP]; //[Mrk] flag to use channel for ntof
   Bool_t Grp[MAX_CHTP][NGRP]; // flag to use channel in group histograms
   //UInt_t ch_flag[MAX_CHTP];
@@ -135,6 +136,8 @@ public:
   Float_t E2[MAX_CHTP]; // [emult2]
   Float_t Bc[MAX_CHTP]; // [bcor]
 
+  Float_t adj[MAX_CH+NGRP+1][3];
+
   Float_t elim1[MAX_CHTP];
   Float_t elim2[MAX_CHTP];
   //----------------------------------------------
@@ -148,7 +151,9 @@ public:
 
   Int_t nthreads;
   Int_t Nchan;
-  Float_t Tstart,Tstop;
+  Float_t Tlim1; //Tstart
+  Float_t Tlim2; //Tstop
+  //Float_t Tstart,Tstop;
   Int_t tsleep;
   Int_t usb_size; //in kB
   Int_t rbuf_size; //in kB
@@ -291,7 +296,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 118)
+  ClassDef(Toptions, 121)
 };
 
 //ClassImp(Toptions)

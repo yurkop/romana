@@ -15,44 +15,6 @@
 
 #include <TRandom.h>
 
-namespace EF {
-  Float_t RGB[32][3] = 
-    {
-      {0,0,0},//0
-      {1,0,0},
-      {0,1,0},
-      {0,0,1},
-      {1,0,1},
-      {0,1,1}, //5
-      {0.63,0.67,0.02},
-      {0.71,0.11,0.52},
-      {0.51,0.95,0.46},
-      {0.16,0.71,0.77},
-      {0.77,0.96,0.16},//10
-      {0.68,0.61,0.98},
-      {0.15,0.45,0.74},
-      {0.03,0.62,0.07},
-      {0.47,0.37,0.50},
-      {0.72,0.34,0.04},//15
-      {0.51,0.54,0.59},
-      {0.52,0.78,0.11},
-      {0.01,0.86,0.66},
-      {0.78,0.69,0.14},
-      {0.91,0.65,0.90},//20
-      {0.16,0.30,0.29},
-      {0.41,0.69,0.03},
-      {0.77,0.22,0.80},
-      {0.40,0.37,0.98},
-      {0.56,0.06,0.34},//25
-      {0.89,0.64,0.79},
-      {0.24,0.99,0.28},
-      {0.84,0.89,0.10},
-      {0.12,0.25,0.18},
-      {0.97,0.85,0.74},//30
-      {0.55,0.29,0.20}
-    };
-}
-
 Long64_t markt[10];
 
 TLine ln;
@@ -120,21 +82,13 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
 
   Float_t rr[3];
-  for (int i=0;i<MAX_CH;i++) {
+  for (int i=0;i<MAX_CH+NGRP;i++) {
     for (int j=0;j<3;j++) {
       rr[j]=EF::RGB[i%32][j];
     }
-    //chcol[i]=TColor::GetColor(TColor::RGB2Pixel(EF::RGB[i][0],EF::RGB[i][1],EF::RGB[i][2]));
     chcol[i]=TColor::GetColor(TColor::RGB2Pixel(rr[0],rr[1],rr[2]));
     gcol[i]=gROOT->GetColor(chcol[i])->GetPixel();
-    // fcol[i]=0;
-    // if (i==0 || i==3 || i==21 || i==25 || i==29)
-    //    fcol[i]=0xffffff;
-
-    //cout << i << " " << gcol[i] << endl;
-
   }
-  //exit(1);
 
   mk.SetMarkerStyle(3);
   mk.SetMarkerColor(2);

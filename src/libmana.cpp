@@ -60,11 +60,19 @@ MemInfo_t minfo;
 ProcInfo_t pinfo;
 // double rmem;
 
-extern CRS* crs;
-extern TMutex cmut;
-
 std::list<VarClass> varlist;
 typedef std::list<VarClass>::iterator v_iter;
+
+extern TMutex cmut;
+
+GlbClass* glb;
+MyMainFrame* myM=0;
+
+Coptions cpar;
+Toptions opt;
+
+CRS* crs;
+
 EventFrame* EvtFrm;
 HistFrame* HiFrm;
 ErrFrame* ErrFrm;
@@ -115,10 +123,6 @@ typedef std::list<TString>::iterator l_iter;
 
 //TList listmap2;
 
-MyMainFrame *myM=0;
-
-Coptions cpar;
-Toptions opt;
 int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
 
 //int *opt_id[MXNUM];
@@ -1214,11 +1218,14 @@ int main(int argc, char **argv)
 
   //cout << "HCuts2: " << opt.cuts.ll.size() << endl;
 
-
   TApplication theApp("App",&argc,argv);
   //example();
   // myM=0;
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
+
+  glb = new GlbClass();
+  TCollection* tglb = gROOT->GetListOfGlobalFunctions();
+  tglb->Add(glb);
 
   //gSystem->Sleep(100);
   //crs->Dummy_trd();
@@ -1679,6 +1686,23 @@ TTimeStamp prtime(const char* txt, int set) {
   return tt2;
 }
 
+//----- GlbClass ----------------
+
+GlbClass::GlbClass() {
+  SetName("GLB");
+  g_opt= &opt;
+
+  g_cpar = &cpar;
+  g_crs = crs;
+  g_myM = myM;
+  g_EvtFrm = EvtFrm;
+  g_HiFrm = HiFrm;
+  g_ErrFrm = ErrFrm;
+  g_hcl = hcl;
+
+}
+
+
 //----- MainFrame ----------------
 
 MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
@@ -1706,7 +1730,16 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fCol[4] = fOrng;   // 5
   fCol[5] = fBlue;   // 6
   fCol[6] = fRed10;  // 7
-  //cout << "fCol: " << gROOT->GetColor(kWhite)->GetPixel() << endl;
+  //cout << "fCol1: " << gROOT->GetColor(kWhite)->GetPixel() << endl;
+
+  // Float_t rr[3];
+  // for (int i=0;i<MAX_CH+NGRP;i++) {
+  //   for (int j=0;j<3;j++) {
+  //     rr[j]=EF::RGB[i%32][j];
+  //   }
+  //   chcol[i]=TColor::GetColor(TColor::RGB2Pixel(rr[0],rr[1],rr[2]));
+  //   gcol[i]=gROOT->GetColor(chcol[i])->GetPixel();
+  // }
 
   TGLayoutHints* LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
   TGLayoutHints* LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
@@ -1808,6 +1841,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuBar->AddPopup("&Calibration", fMenuCalibr, 
 		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
+  // fMenuCalibr->AddEntry("Energy Pre-calibration", M_PRECALIBR);
+  // fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
+  // 		     "HandleMenu(Int_t)");
   fMenuCalibr->AddEntry("Energy calibration", M_ECALIBR);
   fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
@@ -2290,7 +2326,7 @@ void MainFrame::MakeTabs(bool reb) {
   tb->AddFrame(histpar, LayEE1);
   ntab++;
 
-  tb = fTab->AddTab("Plots/Cuts");
+  tb = fTab->AddTab("Plots");
   tabfr.push_back(tb);
   HiFrm = new HistFrame(tb, 800, MAIN_HEIGHT,ntab);
   HiFrm->HiReset();
@@ -3260,12 +3296,18 @@ void MainFrame::HandleMenu(Int_t menu_id)
     }
     break;
 
+  // case M_PRECALIBR:
+  //   {
+  //     if (!p_pop) {
+  // 	p_pop = new PopFrame(this,800,600,M_PRECALIBR);
+  //     }
+  //   }
+  //   break;
+
   case M_ECALIBR:
     {
-      //cout << "ecalibr: " << fTab->GetCurrent() << endl;
-      fTab->SetTab("Plots/Cuts");
       if (!p_pop) {
-	p_pop = new PopFrame(this,100,600,M_ECALIBR);
+	p_pop = new PopFrame(this,800,600,M_ECALIBR);
       }
     }
     break;
@@ -3273,7 +3315,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
   case M_TCALIBR:
     {
       //cout << "ecalibr: " << fTab->GetCurrent() << endl;
-      fTab->SetTab("Plots/Cuts");
+      fTab->SetTab("Plots");
       if (!p_pop) {
 	p_pop = new PopFrame(this,100,600,M_TCALIBR);
       }
@@ -3772,18 +3814,18 @@ void PEditor::DoSavePar()
 {
   // Handle Save button.
 
-  TGText* txt = fEdit->GetText();
-  //cout << txt->RowCount() << endl;
+  TGText* tgt = fEdit->GetText();
+  //cout << tgt->RowCount() << endl;
   int kk=0;
-  for (int i=0;i<txt->RowCount();i++) {
-    char* chr = txt->GetLine(TGLongPosition(0,i),100);
+  for (int i=0;i<tgt->RowCount();i++) {
+    char* chr = tgt->GetLine(TGLongPosition(0,i),100);
     if (chr) {
       std::stringstream ss(chr);
       TString ts;
       int j,xx,yy;
       ss >> ts >> j >> xx >> yy;
       //cout << i << " " << chr << " " << ts << " " << a << " " << b << " " << c << endl;
-      delete chr;
+      delete[] chr;
       if (ts.EqualTo("Ing",TString::kIgnoreCase) && j>=0 && j<16) {
 	opt.Ing_x[j]=xx;
 	opt.Ing_y[j]=yy;

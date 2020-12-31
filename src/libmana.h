@@ -2,12 +2,19 @@
 #define libmana_H 1
 
 #include "common.h"
+#include "toptions.h"
+
+//#include "libcrs.h"
+//#include "eventframe.h"
+
+
 #include "colors.h"
 #include "popframe.h"
 #include <TGDockableFrame.h>
 #include <TGTextEdit.h>
 #include <TTimeStamp.h>
 #include <TDataMember.h>
+#include <list>
 
 enum MENU_COM {
   M_READINIT,
@@ -22,6 +29,7 @@ enum MENU_COM {
   M_EDIT_PROF8,
   M_EDIT_PROF64,
   M_PROF_TIME,
+  //M_PRECALIBR,
   M_ECALIBR,
   M_TCALIBR,
   M_HELP,
@@ -73,6 +81,29 @@ bool TestFile();
 TTimeStamp prtime(const char* txt, int set=1);
 int CheckMem(bool pr=false);
 
+class MyMainFrame;
+class CRS;
+class EventFrame;
+class HistFrame;
+class ErrFrame;
+class HClass;
+
+//-----------------------------------------------
+class GlbClass : public TNamed {
+ public:
+  //std::list<void*> lst;
+  Toptions* g_opt;
+  Coptions* g_cpar;
+  CRS* g_crs;
+  MyMainFrame* g_myM;
+  EventFrame* g_EvtFrm;
+  HistFrame* g_HiFrm;
+  ErrFrame* g_ErrFrm;
+  HClass* g_hcl;
+
+  GlbClass();
+  virtual ~GlbClass() {};
+};
 //-----------------------------------------------
 class VarClass {
  public:
@@ -117,9 +148,11 @@ class PEditor {
 //-----------------------------------------------
 class MainFrame : public TGMainFrame {
 
-  //public:
-  //TGMainFrame          *fMain;
  public:
+
+  // Int_t chcol[MAX_CH+NGRP];
+  // ULong_t gcol[MAX_CH+NGRP];
+  
 
   TGLayoutHints* LayEE1;
   TGLayoutHints* LayEE2;
@@ -127,28 +160,16 @@ class MainFrame : public TGMainFrame {
   TRootEmbeddedCanvas  *fEcanvas;
 
   TGMenuBar            *fMenuBar;     // main menu bar
-  //TGPopupMenu          *fMenuFile;    // "File" popup menu entry
-  //TGPopupMenu          *fMenuHelp;    // "Help" popup menu entry
   TGTextButton *fStart;
-  //TGTextButton *fReset;
   TGTextButton *fAna;
   TGTextButton *fNb;
 
   PEditor* p_ed;
   PopFrame* p_pop;
-  //TGLayoutHints* Lay11;
-  //TGLayoutHints* Lay12;
 
   TGTab                *fTab;
-  //TGCompositeFrame     *tabfr[10];
   std::vector<TGCompositeFrame*> tabfr;
 
-  // Pixel_t fGreen;
-  // Pixel_t fRed;
-  // Pixel_t fCyan;
-  // Pixel_t fBluevio;
-
-  //bool fremake;
   int local_nch;
   static const Int_t n_stat=11;
   TGTextEntry* fStat[n_stat];
@@ -236,6 +257,6 @@ class TGMatrixLayout2 : public TGLayoutManager {
   virtual void SavePrimitive(ostream &out, Option_t * = "");
 
   ClassDef(TGMatrixLayout2,0)  // Matrix layout manager
-    };
+};
 
 #endif

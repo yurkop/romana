@@ -51,6 +51,10 @@ extern MemInfo_t minfo;
 extern ProcInfo_t pinfo;
 // extern double rmem;
 
+extern CRS* crs;
+extern Coptions cpar;
+extern Toptions opt;
+
 extern EventFrame* EvtFrm;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
@@ -91,6 +95,7 @@ std::list<EventClass>::iterator m_event; //важный параметр
 //int MT=1;
 
 const ULong64_t sixbytes=0xFFFFFFFFFFFF;
+const int MAXSHORT=32767;
 
 //const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
 //const Long64_t GLBSIZE=1024*1024*1024; //1024 MB
@@ -160,9 +165,6 @@ int ana_all;
 
 volatile char astat[CRS::MAXTRANS];
 
-CRS* crs;
-extern Coptions cpar;
-extern Toptions opt;
 int chan_in_module;
 
 
@@ -436,29 +438,28 @@ void *handle_ana(void *ctx) {
 
     // analyze events from m_event to m_end
     while (m_event!=m_end) {
-      //cout << m_event->Tstmp << " " << m_event->Spin << endl;
-      if ((m_event->Spin&2) && (int)m_event->pulses.size()>=opt.mult1 &&
+      if ((int)m_event->pulses.size()>=opt.mult1 &&
 	  (int)m_event->pulses.size()<=opt.mult2) {
 
 	m_event->FillHist(true);
 	m_event->FillHist(false);
-
-	//it->FillHist_old();
-	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
-	  ++crs->nevents2;
-	  if (opt.dec_write) {
-	    //crs->Fill_Dec73(&(*m_event));
-	    //crs->Fill_Dec74(&(*m_event));
-	    //crs->Fill_Dec75(&(*m_event));
-	    //crs->Fill_Dec76(&(*m_event));
-	    //crs->Fill_Dec77(&(*m_event));
-	    //crs->Fill_Dec78(&(*m_event));
-	    crs->Fill_Dec79(&(*m_event));
-	  }
-	  if (opt.raw_write && opt.fProc) {
-	    crs->Fill_Raw(&(*m_event));
-	  }
-	}
+	if (m_event->Spin & 2) {
+	  if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
+	    ++crs->nevents2;
+	    if (opt.dec_write) {
+	      //crs->Fill_Dec73(&(*m_event));
+	      //crs->Fill_Dec74(&(*m_event));
+	      //crs->Fill_Dec75(&(*m_event));
+	      //crs->Fill_Dec76(&(*m_event));
+	      //crs->Fill_Dec77(&(*m_event));
+	      //crs->Fill_Dec78(&(*m_event));
+	      crs->Fill_Dec79(&(*m_event));
+	    }
+	    if (opt.raw_write && opt.fProc) {
+	      crs->Fill_Raw(&(*m_event));
+	    }
+	  } //maintrig
+	} // spin
 	//++m_event;
       }
       // else {
@@ -806,27 +807,28 @@ void CRS::Ana2(int all) {
 
   // analyze events from m_event to m_end
   while (m_event!=m_end) {
-    if ((m_event->Spin&2) && (int)m_event->pulses.size()>=opt.mult1 &&
+    if ((int)m_event->pulses.size()>=opt.mult1 &&
 	(int)m_event->pulses.size()<=opt.mult2) {
 
       m_event->FillHist(true);
       m_event->FillHist(false);
-      //it->FillHist_old();
-      if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
-	++crs->nevents2;
-	if (opt.dec_write) {
-	  //crs->Fill_Dec73(&(*m_event));
-	  //crs->Fill_Dec74(&(*m_event));
-	  //crs->Fill_Dec75(&(*m_event));
-	  //crs->Fill_Dec76(&(*m_event));
-	  //crs->Fill_Dec77(&(*m_event));
-	  //crs->Fill_Dec78(&(*m_event));
-	  crs->Fill_Dec79(&(*m_event));
-	}
-	if (opt.raw_write && opt.fProc) {
-	  crs->Fill_Raw(&(*m_event));
-	}
-      }
+      if (m_event->Spin & 2) {
+	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
+	  ++crs->nevents2;
+	  if (opt.dec_write) {
+	    //crs->Fill_Dec73(&(*m_event));
+	    //crs->Fill_Dec74(&(*m_event));
+	    //crs->Fill_Dec75(&(*m_event));
+	    //crs->Fill_Dec76(&(*m_event));
+	    //crs->Fill_Dec77(&(*m_event));
+	    //crs->Fill_Dec78(&(*m_event));
+	    crs->Fill_Dec79(&(*m_event));
+	  }
+	  if (opt.raw_write && opt.fProc) {
+	    crs->Fill_Raw(&(*m_event));
+	  }
+	} //maintrig
+      } // spin
       ++m_event;
     }
     else {
@@ -873,6 +875,21 @@ void CRS::Ana2(int all) {
 CRS::CRS() {
 
   /*
+
+  string command = ".x ";
+  command+=MACRO;
+  command+="/test.C+";
+  //command+="/";
+  cout << command << endl;
+  //cout << gSystem->pwd() << endl;
+  //gSystem->cd("..");
+  //cout << gSystem->pwd() << endl;
+  gROOT->ProcessLine(command.c_str());
+  exit(1);
+
+
+
+
   Long64_t a=0,b=0,c=0,d=0;
   for (Long64_t i=0;i<5e9;i++) {
     a = i & 0x7FF;
@@ -2176,7 +2193,7 @@ void CRS::ProcessCrs() {
     }
     gSystem->Sleep(10);   
     gSystem->ProcessEvents();
-    if (opt.Tstop && opt.T_acq>opt.Tstop) {
+    if (opt.Tlim2 && opt.T_acq>opt.Tlim2) {
       //cout << "Stop1!!!" << endl;
       DoStartStop();
       //cout << "Stop2!!!" << endl;
@@ -3171,7 +3188,7 @@ void CRS::Decode_switch(UInt_t ibuf) {
     Decode35(dec_iread[ibuf]-1,ibuf);
     break;
   case 79:
-    Decode79(dec_iread[ibuf]-1,ibuf);
+    Decode79a(dec_iread[ibuf]-1,ibuf);
     break;
   case 78:
     Decode78(dec_iread[ibuf]-1,ibuf);
@@ -3507,23 +3524,11 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 
     if (opt.fProc) { //fill pulses for reanalysis
       if (frmt) { //event start
-	/*
-	prnt("ssls;",KRED,"ipls: ",ipls.Tstamp64,RST);
-	//if (ipls.ptype==0) {
-	//Event_Insert_Pulse(Blist,&ipls);
-	if (!Blist->empty()) {
-	  Blist->back().PrintEvent();
-	}
-	//}
-	//ipls=PulseClass();
-	*/
 	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
 	Tst = (*buf8) & sixbytes;
 	(*buf8)>>=48;
 	Spn = UChar_t((*buf8) & 1);
-	Spn|=2;
-	//ipls.Tstamp64 = (*buf8) & sixbytes;
-	//ipls.Spin = Bool_t((*buf8) & 0x1000000000000);
+	//Spn|=2;
       }
       else {
 	ipls=PulseClass();
@@ -3545,11 +3550,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
       }
     }
     else { //fill event
-      if (frmt) { //event start
-	// if (!Blist->empty()) {
-	//   Blist->back().PrintEvent();
-	// }
-	
+      if (frmt) { //event start	
 	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
 	evt = &*Blist->insert(Blist->end(),EventClass());
 	evt->Nevt=nevents;
@@ -3557,7 +3558,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	evt->Tstmp = (*buf8) & sixbytes;
 	(*buf8)>>=48;
 	evt->Spin = UChar_t((*buf8) & 1);
-	evt->Spin|=2;
+	//evt->Spin|=2;
       }
       else {
 	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
@@ -3579,17 +3580,93 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
     idx1+=8;
   } //while (idx1<buf_len)
 
-  // prnt("ss",KWHT,"Dec79_2: ");
-  // CheckMem(1);
-  // //Blist->clear();
+  Dec_End(Blist,iread);
+
+} //decode79
+
+void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
+  //Decode79a - the same as 79, with additional calibration
+
+  //ibuf - current sub-buffer
+  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  UChar_t frmt = GLBuf[idx1+7] & 0x80;
+  Dec_Init(Blist,!frmt);
+  PulseClass ipls=dummy_pulse;
+  static Long64_t Tst;
+  static UChar_t Spn;
+
+  while (idx1<b_end[ibuf]) {
+    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+
+    if (opt.fProc) { //fill pulses for reanalysis
+      if (frmt) { //event start
+	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+	Tst = (*buf8) & sixbytes;
+	(*buf8)>>=48;
+	Spn = UChar_t((*buf8) & 1);
+	//Spn|=2;
+      }
+      else {
+	ipls=PulseClass();
+	ipls.Peaks.push_back(PeakClass());
+	PeakClass *pk = &ipls.Peaks.back();
+
+	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+	UShort_t* buf2u = (UShort_t*) buf2;
+	ipls.Chan = buf2[3];
+	pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	pk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*pk->Area +
+	  opt.E2[ipls.Chan]*pk->Area*pk->Area;
+	pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	int tt = pk->Time+opt.sD[ipls.Chan]/opt.Period;
+	ipls.Tstamp64=Tst+tt;
+	ipls.Spin=Spn;
+	pk->Time-=tt;
+	pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+
+	Event_Insert_Pulse(Blist,&ipls);
+      }
+    }
+    else { //fill event
+      if (frmt) { //event start	
+	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+	evt = &*Blist->insert(Blist->end(),EventClass());
+	evt->Nevt=nevents;
+	nevents++;
+	evt->Tstmp = (*buf8) & sixbytes;
+	(*buf8)>>=48;
+	evt->Spin = UChar_t((*buf8) & 1);
+	//evt->Spin|=2;
+      }
+      else {
+	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+	UShort_t* buf2u = (UShort_t*) buf2;
+	pulse_vect::iterator itpls =
+	  evt->pulses.insert(evt->pulses.end(),PulseClass());
+	itpls->Peaks.push_back(PeakClass());
+	PeakClass *pk = &itpls->Peaks.back();
+	pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	itpls->Chan = buf2[3];
+	if (opt.St[itpls->Chan] && pk->Time < evt->T0) {
+	  evt->T0=pk->Time;
+	}
+	pk->Area=opt.E0[itpls->Chan] + opt.E1[itpls->Chan]*pk->Area +
+	  opt.E2[itpls->Chan]*pk->Area*pk->Area;
+      }
+    } //fill event
+
+    idx1+=8;
+  } //while (idx1<buf_len)
 
   Dec_End(Blist,iread);
 
-  // prnt("ss",KWHT,"Dec79_3: ");
-  // CheckMem(1);
-  // prnt("s",RST);
-
-} //decode79
+} //decode79a
 
 void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
   //Decode78 - the same as 77, but different factors for Time and Width
@@ -5205,13 +5282,14 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
 
   //cout << "Make_Events: T_acq: " << gl_ivect << " " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
 	
-  if (opt.Tstop && opt.T_acq>opt.Tstop) {
-    if (b_acq) {
+  if (opt.Tlim2 && opt.T_acq>opt.Tlim2) {
+    //if (b_acq) {
       //myM->DoStartStop();
       //myM->fStart->Emit("Clicked()");
       //myM->fStart->Clicked();
-    }
-    else if (b_fana) {
+    //}
+    //else
+    if (b_fana) {
       crs->b_fana=false;
       crs->b_stop=true;
     }
@@ -5573,6 +5651,132 @@ void CRS::Fill_Dec79(EventClass* evt) {
 
 } //Fill_Dec79
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+// int sgn(int a) {
+// }
+
+void CRS::Fill_Dec80(EventClass* evt) {
+
+  const bool bit_area=true;
+  const bool bit_time=true;
+  const bool bit_width=true;
+
+  const Float_t DA=1;
+  const Float_t DT=100;
+  const Float_t DW=10000;
+
+
+  //Fill_Dec80
+
+  // fill_dec is not thread safe!!! (??? - not sure)
+
+
+  //format of decoded data:
+  // --- 16 bytes global header:
+  // 1 byte: format of area/time/width
+  //   bit0=1 - write area
+  //   bit1=1 - write time
+  //   bit2=1 - write width
+  // --
+  // 3 bytes - reserved
+  // --
+  // 4 bytes: float DA - constant for converting area (see peak area below)
+  // 4 bytes: float DT - constant for converting time (see peak time below)
+  // 4 bytes: float DW - constant for converting width (see peak width below)
+
+
+  //format of decoded counters:
+  // header1 (1byte) = 01 (binary)
+  //   1byte - channel1
+  //   6bytes - tstamp (in nsec)
+  //   6bytes - counter
+  // header1 (1byte) = 01 (binary)
+  //   1byte - channel2
+  //   6bytes - tstamp (in nsec)
+  //   6bytes - counter
+  // header1 (1byte) = 01 (binary)
+  //   1byte - channel3
+  // ...
+
+
+  
+  //format of decoded event:
+  // -- event start --
+  // header10 (1byte) = 10 (binary) + bit2=spin
+  // tstamp (6bytes) (in nsec)
+  // -- N peaks... 
+  // header00 (1byte) = 00 (binary) -- peak1
+  // ch (1byte)
+  // area  (2bytes, optional)
+  // time  (2bytes, optional)
+  // width (2bytes, optional)
+  // header00 (1byte) = 00 (binary) -- peak2
+  // ch (1byte)
+  // area  (2bytes, optional)
+  // time  (2bytes, optional)
+  // width (2bytes, optional)
+  // ...
+  // header00 (1byte) = 00 (binary) -- peak3
+  // ...
+  
+
+  // peak area:  2bytes (Area*DA  (for DA - see global header))
+  // peak time:  2bytes (Time*DT  (for DT - see global header))
+  // peak width: 2bytes (Width*DW (for DW - see global header))
+
+
+  
+  *DecBuf1 = evt->Spin&1;
+  *DecBuf1 <<= 2; //spin
+  *DecBuf1 |= 2; //header: binary 10 - event_start
+  ++DecBuf1;
+
+  DecBuf8 = (ULong64_t*) DecBuf1;
+  *DecBuf8 = evt->Tstmp & sixbytes;
+
+  DecBuf1+=6;
+
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+      PeakClass* pk = &evt->pulses[i].Peaks[j];
+
+      *DecBuf1 = 0;
+      ++DecBuf1;
+      *DecBuf1 = evt->pulses[i].Chan;
+      ++DecBuf1;
+
+      Short_t* DecBuf2 = (Short_t*) DecBuf1;
+      
+      if (bit_area) {
+	int X = pk->Area*DA;
+	(abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
+	++DecBuf2;
+      }
+      if (bit_time) {
+	int X = pk->Time*DT;
+	(abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
+	++DecBuf2;
+      }
+      if (bit_width) {
+	int X = pk->Width*DW;
+	(abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
+	++DecBuf2;
+      }
+
+      DecBuf1 = (UChar_t*) DecBuf2;
+    }
+  }
+
+  idec = DecBuf1-DecBuf;
+  if (idec>DECSIZE) {
+    Flush_Dec();
+  }
+
+} //Fill_Dec80
+
 int CRS::Wr_Dec(UChar_t* buf, int len) {
   //return >0 if error
   //       0 - OK
@@ -5644,6 +5848,8 @@ void CRS::Flush_Dec() {
 
   if (opt.nthreads==1) { //single thread
     Wr_Dec(DecBuf,idec);
+    DecBuf8 = (ULong64_t*) DecBuf;
+    DecBuf1 = DecBuf;
     idec=0;
   }
   else { //multithreading
@@ -5667,6 +5873,7 @@ void CRS::Flush_Dec() {
       DecBuf=DecBuf_ring;
     }
     DecBuf8 = (ULong64_t*) DecBuf;
+    DecBuf1 = DecBuf;
     idec=0;
     
   }
@@ -5832,15 +6039,6 @@ void CRS::Flush_Raw() {
 }
 
 void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
-
-  /*
-  if (m1==0) {
-    //cout << "YK7: " << crs->decname.c_str() << " " << mdec1 << " " << mdec2 << " " << mdec1-mdec2 << " " << Levents.size() << " " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
-    cout << "Flush_dec: " << Bufevents.size() << " " << buf_inits << " " << buf_erase << endl;
-    buf_inits=0;
-    buf_erase=0;
-  }
-  */
 
   Pair p;
   p.first=buf;

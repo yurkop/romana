@@ -24,6 +24,9 @@
 class HMap; //forward declaration
 void DynamicExec();
 
+typedef std::vector<double> dvect;
+typedef std::vector<dvect> d2vect;
+
 //-----------------------------------------------
 class HistFrame: public TGCompositeFrame {
 
@@ -32,39 +35,36 @@ public:
 
   TGCanvas               *gCanvas; //hist Gcanvas
   TGCanvas               *gCanvas2; //cuts Gcanvas
+  TGCanvas               *gCanvas3; //roi Gcanvas
   TRootEmbeddedCanvas    *fEc;
-
-  // TGHorizontalFrame      *fHor1; //contains canvas and list of histograms
-  // TGHorizontalFrame      *fHor2; //contains buttons etc
-  // TGHorizontalFrame      *fHor3; //for cuts
-  // TGVerticalFrame        *fVer0; //canvas && hslider
-
-
 
   TGDoubleHSlider        *fHslider;
   TGDoubleVSlider        *fVslider;
 
-
   TGListTree             *fListTree;    // list tree with histograms
-  TGListTree             *fCutTree;    // list tree with histograms
+  TGListTree             *fCutTree;    // list tree with cuts
+  TGListTree             *fRoiTree;    // list tree with roi
 
   TGListTreeItem         *iWork;
   TGListTreeItem         *iWork_cut[MAXCUTS];
   TGListTreeItem         *iWork_MT;
 
-  TList* hmap_list;  //list of plotted hmaps (histograms)
-  TList* hlist;      //list of plotted histograms (also for stack) - delete!!!
+  TGStatusBar            *fStatus;
+
+
+  TList* hmap_list;  //list of marked hmaps (histograms)
+  TList* st_hlist;      //list of plotted histograms for stack
   TH1F* st_plot;        //histogram for plotting stack;
 
   TH1* pad_hist[MAX_PADS];     //copies of histograms for plotting in pads;
   HMap *pad_map[MAX_PADS];       //maps plotted in pads
 
+  TText ttxt;
+
   TGCheckButton* chknorm;
   TGCheckButton* chklog;
   TGCheckButton* chkstat;
   TGCheckButton* chkgcuts;
-  //static const int NR=7;
-  //TGRadioButton *Rb[NR];
   TGRadioButton *Rb[2];
 
   TGTextEntry* tForm;
@@ -76,14 +76,18 @@ public:
   //Bool_t wrk_check_MT; //is work_MT checked before deleting ltree
   Bool_t changed;
   Bool_t started;
-  Bool_t in_gcut;
+  Int_t in_gcut; //0-cancel;1-cut;2-roi
   int np_gcut; //number of points in gcut
 
   //TLine line;
-
   int ndiv;
-  //int xdiv;
-  //int ydiv;
+
+  bool b_adj; //apply b_adj calibration
+  d2vect ee_calib;
+  int bpol;
+  int fitpol;
+  double fitsig;
+  int nofit;
 
 public:
   HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
@@ -96,6 +100,7 @@ public:
   void Clone_Ltree(HMap* hmap);
   void DoClick(TGListTreeItem* item,Int_t but);
   void CutClick(TGListTreeItem* item,Int_t but);
+  void RoiClick(TGListTreeItem* item,Int_t but);
   void DoCheck(TObject* obj, Bool_t check);
   void DoNorm();
   void DoLog();
@@ -110,10 +115,12 @@ public:
 		  double &y1, double &y2);
   void X_Slider(TH1* hh, double &a1, double &a2);
   void Y_Slider(TH1* hh, double a1, double a2, double y1, double y2);
-  void AddCutG(TPolyLine *pl, TObject* hobj);
+  void AddCutG(TPolyLine *pl, HMap* map);
   int Find_icut();
-  void MakeCutG(TPolyLine *pl, TObject* hobj);
-  void DoCutG();
+  void MakeCutG(TPolyLine *pl, HMap* map);
+  void ItemROI(HMap* map, int iroi);
+  void MakeROI(TPolyLine *pl, HMap* map);
+  void StartMouse();
   void AddFormula();
   //void DoFormula();
   void ShowCutG();
@@ -121,13 +128,20 @@ public:
   string CutsToStr();
   void EditCutG();
   void DoPeaks();
-  void Do_Ecalibr();
+  void PeakFit(HMap* map, TH1* hist1, TH1* hist2, int i, d2vect &d2);
+  void DelMaps(TGListTreeItem *idir);
+  void Do_Ecalibr(PopFrame* pop);
+  void Do_Tcalibr(PopFrame* pop);
+  //void Do_Ecalibr();
   void HiReset();
   void Update();
   void DrawStack();
+  void Make_Hmap_List();
   void DrawHist();
+  void OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj);
   void AllRebinDraw();
   void DrawCuts(int npad);
+  void DrawRoi(Hdef* hd, TVirtualPad* pad);//int npad);
   void ReDraw();
   //void DataDropped(TGListTreeItem *, TDNDData *data);
 

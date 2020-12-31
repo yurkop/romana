@@ -646,7 +646,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 
   // cout << "state1: " << Nevt << " " << (int) Spin << " " << (int) pls->Chan
   //      << " " << opt.Master[pls->Chan] << endl;
-  if (opt.Master[pls->Chan]) {
+  if (opt.Ms[pls->Chan]) {
     Spin|=2;
   }
 
@@ -911,13 +911,18 @@ void EventClass::FillHist(Bool_t first) {
   	
     opt.T_acq=(Tstmp - crs->Tstart64)*DT;
 
-    if (opt.Tstop && (opt.T_acq > opt.Tstop || opt.T_acq < opt.Tstart)) {
-      if (crs->b_fana) {
-	crs->b_stop=true;
-	crs->b_fana=false;
-	crs->b_run=0;
+    if (opt.Tlim2) {
+      if (opt.T_acq > opt.Tlim2) {
+	if (crs->b_fana) {
+	  crs->b_stop=true;
+	  crs->b_fana=false;
+	  crs->b_run=0;
+	}
+	return;
       }
-      return;
+      else if (opt.T_acq < opt.Tlim1) {
+	return;
+      }
     }
 
     if (opt.ncuts) {

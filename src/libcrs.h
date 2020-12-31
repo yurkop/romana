@@ -95,6 +95,7 @@ RQ_OBJECT("CRS")
 
   UChar_t* DecBuf_ring;
   UChar_t* DecBuf; 
+  UChar_t* DecBuf1; //for Fill_Dec80+ 
   ULong64_t* DecBuf8;
   Int_t idec; //index of DecBuf;
   std::list<Pair> decw_list;
@@ -193,6 +194,8 @@ RQ_OBJECT("CRS")
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   Long64_t Tstart0; //Tstamp of the ntof start pulses
   char txt_start[30]; //local text copy of F_start, start of the acquisition
+
+  Double_t sPeriod; // real period for each channel, including smpl
 
   PeakClass dummy_peak;
   PulseClass dummy_pulse;
@@ -295,6 +298,7 @@ RQ_OBJECT("CRS")
   void Dec_Init(eventlist* &Blist, UChar_t frmt);
   void Dec_End(eventlist* &Blist, UInt_t iread);
   void Decode79(UInt_t iread, UInt_t ibuf);
+  void Decode79a(UInt_t iread, UInt_t ibuf);
   void Decode78(UInt_t iread, UInt_t ibuf);
   void Decode77(UInt_t iread, UInt_t ibuf);
   void Decode76(UInt_t iread, UInt_t ibuf);
@@ -324,6 +328,7 @@ RQ_OBJECT("CRS")
   void Fill_Dec77(EventClass* evt);
   void Fill_Dec78(EventClass* evt);
   void Fill_Dec79(EventClass* evt);
+  void Fill_Dec80(EventClass* evt);
   //void Flush_Dec_old();
   int Wr_Dec(UChar_t* buf, int len);
   void Flush_Dec();

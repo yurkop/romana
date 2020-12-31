@@ -7,9 +7,10 @@
 !/cyusb
 !/src
 !/utils
+!/decoder
+!/Macro/*.C
 !Makefile
 !TODO
-!/decoder
 #!/*.par
 !.gitignore
 !git-help

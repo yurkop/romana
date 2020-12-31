@@ -2,6 +2,7 @@
 #define eventframe_H 1
 
 #include "common.h"
+#include "pulseclass.h"
 #include <TRootEmbeddedCanvas.h>
 #include <TGLabel.h>
 #include <TGButton.h>
@@ -15,9 +16,48 @@
 #include <TGStatusBar.h>
 #include <TGTextEntry.h>
 #include <TGDockableFrame.h>
+#include <TFormula.h>
 
 //#include "TThread.h"
 #include <list>
+
+namespace EF {
+  const Float_t RGB[32][3] = 
+    {
+      {0,0,0},//0
+      {1,0,0},
+      {0,1,0},
+      {0,0,1},
+      {1,0,1},
+      {0,1,1}, //5
+      {0.63,0.67,0.02},
+      {0.71,0.11,0.52},
+      {0.51,0.95,0.46},
+      {0.16,0.71,0.77},
+      {0.77,0.96,0.16},//10
+      {0.68,0.61,0.98},
+      {0.15,0.45,0.74},
+      {0.03,0.62,0.07},
+      {0.47,0.37,0.50},
+      {0.72,0.34,0.04},//15
+      {0.51,0.54,0.59},
+      {0.52,0.78,0.11},
+      {0.01,0.86,0.66},
+      {0.78,0.69,0.14},
+      {0.91,0.65,0.90},//20
+      {0.16,0.30,0.29},
+      {0.41,0.69,0.03},
+      {0.77,0.22,0.80},
+      {0.40,0.37,0.98},
+      {0.56,0.06,0.34},//25
+      {0.89,0.64,0.79},
+      {0.24,0.99,0.28},
+      {0.84,0.89,0.10},
+      {0.12,0.25,0.18},
+      {0.97,0.85,0.74},//30
+      {0.55,0.29,0.20}
+    };
+}
 
 //-----------------------------------------------
 class EventFrame: public TGCompositeFrame {
@@ -26,11 +66,11 @@ public:
 
   TGDockableFrame        *fDock;
 
+  Int_t chcol[MAX_CH+NGRP];
+  ULong_t gcol[MAX_CH+NGRP];
+
 protected:
 
-  Int_t chcol[MAX_CH];
-  ULong_t gcol[MAX_CH];
-  //ULong_t fcol[MAX_CH];
   TGVertical3DLine       *separator1;
   TGHorizontalFrame      *fHor;
   TGHorizontalFrame      *fHor2;

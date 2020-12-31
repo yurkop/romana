@@ -215,7 +215,7 @@ Toptions::Toptions() {
     //chtype[i]=ch_NIM;
     dsp[i]=false;
     St[i]=true;
-    Master[i]=true;
+    Ms[i]=true;
     //Mrk[i]=false;
     for (int j=0;j<NGRP;j++)
       Grp[i][j]=false;
@@ -318,8 +318,10 @@ Toptions::Toptions() {
     Ing_y[i]=-1;
   }
 
-  Tstart=0;
-  Tstop=0;
+  Tlim1=0;
+  Tlim2=0;
+  //Tstart=0;
+  //Tstop=0;
   Period=10;
 
   b_deriv[0]=true;
@@ -346,6 +348,13 @@ Toptions::Toptions() {
   memset(formula,0,sizeof(formula));
   memset(cut_form,0,sizeof(cut_form));
   maintrig=0;
+
+  int sz = sizeof(adj)/sizeof(Float_t)/3;
+  for (int i=0;i<sz;i++) {
+    adj[i][0]=0;
+    adj[i][1]=1;
+    adj[i][2]=0;
+  }
   //memset(maintrig,0,sizeof(maintrig));
   //strcpy(formula,"0");
 }
@@ -362,6 +371,7 @@ Hdef::Hdef() {
     w[i]=false;
     cut[i]=0;
   }
+  memset(roi,0,sizeof(roi));
 }
 
 /*

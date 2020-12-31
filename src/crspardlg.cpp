@@ -78,15 +78,16 @@ const char* ttip1[ndaqpar]={
   "Number of bad pulses"
 };
 
-const int n_apar=13;
-const int tlen2[n_apar]={24,24,26,70,24,25,35,35,35,38,38,38,38};
-const char* tlab2[n_apar]={"on","*","Ch","Type","St","sS","sD","dTm","Pile","E0","E1","E2","Bc"};
+const int n_apar=14;
+const int tlen2[n_apar]={24,24,26,70,24,24,25,35,35,35,38,38,38,38};
+const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sS","sD","dTm","Pile","E0","E1","E2","Bc"};
 const char* ttip2[n_apar]={
   "On/Off",
   "Select",
   "Channel number",
   ttip_type,
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
+  "Master/slave channel (events with only slaves are not written)",
   "Software smoothing",
   "Software delay in ns (can be negative or positive)",
   "Dead-time window \nsubsequent peaks within this window are ignored",
@@ -1079,7 +1080,7 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   //fProc
   if (rflag) {
     id = Plist.size()+1;
-    TGCheckButton *fchk2 = new TGCheckButton(hframe1, "Proc", id);
+    TGCheckButton *fchk2 = new TGCheckButton(hframe1, "fProc", id);
     fchk2->SetToolTipText("input raw: Checked - write processed events; unchecked - write direct raw stream\ninput dec: Checked - reanalyse .dec file with new coincidence conditions");
     //fchk2->SetName(txt);
     //fchk2->ChangeOptions(fchk2->GetOptions()|kFixedWidth);
@@ -1177,7 +1178,7 @@ void ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Analysis start (in sec) - only for analyzing files";
   tip2= "Analysis stop (in sec)";
   label="Time limits";
-  AddLine_opt(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0,k_r0,0,0,0,0,3<<1,1<<1);
+  AddLine_opt(fF6,ww,&opt.Tlim1,&opt.Tlim2,tip1,tip2,label,k_r0,k_r0,0,0,0,0,3<<1,1<<1);
 
   // TGTextEntry *te = (TGTextEntry*) Plist.back().field;
   // te->SetName("Tstop");
@@ -1254,13 +1255,13 @@ void ParParDlg::AddLogic(TGCompositeFrame* frame) {
 	      1,9999,1,9999);
 
   tip1= "";
-  tip2= "Main trigegr condition (cut).\nThis condition is used for selecting events which are written as decoded events\nSee Plots/Cuts for making conditions\nUse this cut number as a main trigger condition.\nIf set to zero - write all events.";
+  tip2= "Main trigegr condition (cut).\nThis condition is used for selecting events which are written as decoded events\nSee \"Plots\" for making conditions\nUse this cut number as a main trigger condition.\nIf set to zero - write all events.";
   label="Main trigger";
   AddLine_opt(fF6,ww,NULL,&opt.maintrig,tip1,tip2,label,k_int,k_int,
 	      0,0,0,MAXCUTS);
 
   /*
-    tip1= "This condition is used for selecting events which are written as decoded events\nSee Plots/Cuts for making conditions\nUse arithmetic/logic operations on existing cuts or leave it empty to record all events\nPress Enter or Check button to check if the syntaxis is correct";
+    tip1= "This condition is used for selecting events which are written as decoded events\nSee \"Plots\" for making conditions\nUse arithmetic/logic operations on existing cuts or leave it empty to record all events\nPress Enter or Check button to check if the syntaxis is correct";
     label="Main Trigger conditions";
     ww=150;
     AddLine_txt(fF6,ww,opt.maintrig, tip1, label);
@@ -2489,6 +2490,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   AddChCombo(i,id,kk,all);
 
   AddChkPar(kk, cframe[i], &opt.St[i], all, ttip2[kk]);
+  AddChkPar(kk, cframe[i], &opt.Ms[i], all, ttip2[kk]);
 
   // id = Plist.size()+1;
   // TGCheckButton *fst = new TGCheckButton(cframe[i], "", id);

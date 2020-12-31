@@ -6,6 +6,7 @@
 #include <TH1.h>
 #include <TH2.h>
 #include <TFormula.h>
+#include <TGraphErrors.h>
 
 class HMap; //forward declaration
 
@@ -15,15 +16,17 @@ class HMap: public TNamed {
  public:
 
   HMap();
-  HMap(const char* dname);
+  //HMap(const char* dname);
+  HMap(const char* dname, Hdef* hd1);
   HMap(const char* dname, TH1* hist, Hdef* hd1, int i);
-  // HMap(const char* dname, TH1* hist, Bool_t* s, Bool_t* w,
-  //      Int_t *cuts);
+  HMap(const char* dname, TGraphErrors* gr1, Hdef* hd1, int i);
+  HMap(const char* dname, TGraphErrors* igr, int i);
   ~HMap();
   HMap(const HMap& other);
   HMap& operator=(const HMap& other);
   
   TH1* hst;
+  TGraphErrors* gr;
   Hdef* hd; //Hdef, которому принадлежит этот Hmap
   UShort_t nn; //index in Hdef
   //Int_t *rb; //rebin
