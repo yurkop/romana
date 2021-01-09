@@ -75,6 +75,14 @@ public:
   Bool_t Inv[MAX_CHTP]; // [inv] 0 - no inversion; 1 - inversion (individual)
   Bool_t on[MAX_CHTP]; // [enabl] 1 - enabled; 0 - disabled
   Bool_t pls[MAX_CHTP]; // 1 - send pulses (format 2,3); 0 - don't send
+
+  Int_t coinc_w[2]; //ширина окна совпадений для групп 0,1
+  Int_t mult_w1[2]; //минимальная множественность для групп 0,1
+  Int_t mult_w2[2]; //максимальная множественность для групп 0,1
+  Bool_t group[MAX_CHTP][2];
+  Int_t ratediv[MAX_CHTP];
+
+
   //UInt_t Mask[MAX_CHTP];
   Bool_t forcewr; //only for crs2
   // 0 - only triggered channel is written; 
@@ -176,7 +184,8 @@ public:
   Int_t ydiv; // ndiv on Y
   Int_t icheck; //first histogram to plot among checked
   
-  Bool_t decode;
+  //Bool_t decode;
+  Bool_t directraw;
   //Bool_t analyze_or_dsp; //true - raw analyze, false - use dsp
   Bool_t checkdsp;
 
@@ -186,7 +195,7 @@ public:
   Bool_t root_write;
   Int_t raw_compr; //raw data compr level
   Int_t dec_compr; //decoded data compr level
-  Int_t root_compr; //decoded data compr level
+  Int_t root_compr; //root compr level
   //char fname_raw[199];
   //char fname_dec[199];
   //char fname_root[199];
@@ -200,12 +209,15 @@ public:
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list
 
+  //software logic
   Int_t tgate; // coincidence window for events (in samples)
   Int_t tveto; // veto window for pulses from the same channel
-  //Int_t tgate2; // coincidence window for histograms (in ...)
-
   Int_t mult1; // minimal multiplicity
   Int_t mult2; // maximal multiplicity
+  Int_t maintrig;
+
+  //hardware logic
+  Bool_t hard_logic; //0 - use software logic; 1 - use hardware logic
 
   Int_t seltab;
 
@@ -239,20 +251,13 @@ public:
   //std::vector<Float_t> cut[3];
   //std::list<Float_t> gcut2;
 
-
-
-
   Int_t ncuts;
   Int_t pcuts[MAXCUTS]; // number of points in gcut: 1-formula; 2-1d; >2-2d
                         // 0- no cut
   Float_t gcut[MAXCUTS][2][MAX_PCUTS]; //20 cuts; xy; 10 points
   char cut_form[MAXCUTS][100];
 
-
-
-
   char formula[100];
-  Int_t maintrig;
   //char maintrig[22];
 
   Hdef h_rate;
@@ -296,7 +301,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 121)
+  ClassDef(Toptions, 122)
 };
 
 //ClassImp(Toptions)

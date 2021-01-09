@@ -12,11 +12,6 @@ using namespace std;
 //extern int debug;
 
 Coptions::Coptions() {
-  //ver = TClass::GetClass("Coptions")->GetClassVersion();
-  // for (int i=0;i<MAX_CH;i++) {
-  //   //chtype[i]=ch_other;
-  //   on[i]=true;
-  // }
 
   InitPar(1);
 
@@ -42,7 +37,18 @@ void Coptions::InitPar(int zero) {
     fdiv[i]=0;
     pls[i]=true;
     //Mask[i]=0xFF;
+
+    group[i][0]=0;
+    group[i][1]=0;
+    ratediv[i]=0;
   }
+
+  for (int i=0;i<2;i++) {
+    coinc_w[i]=100;
+    mult_w1[i]=1;
+    mult_w2[i]=255;
+  }
+  
   forcewr=false;
   DTW=1;
   Smpl=0;
@@ -83,7 +89,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         min = 0;
         max=4093;        
       }
-      else { //33,34,35,41,51
+      else { //33,34,35,41,51,52
         //!! знак противоположный тому, что в Протоколе!!!
         // здесь отрицательный знак означает начало записи
         // "после" срабатывания дискриминатора
@@ -104,7 +110,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         max=16379;
       else if (module==32)
         max=32763;
-      else { //33,34,35,41,51
+      else { //33,34,35,41,51,52
         if (type_ch==0)
           max=4068;
         else if (type_ch==1)
@@ -170,12 +176,18 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       min=0;
       if (module==35)
         max=5;
-      else if (module==41 || module==51)
+      else if (module==41 || module==51 || module==52)
         max=4;
       else if (module>=33) //33,34
         max=3;
       else
         max=0;
+      // cout << "trig: " << module << " " << min << " " << max << endl;
+    }
+    else if (!strcmp(name,"ratediv")) {
+      par = ratediv[i];
+      min=0;
+      max=1024;
       // cout << "trig: " << module << " " << min << " " << max << endl;
     }
     else {
@@ -212,7 +224,6 @@ Toptions::Toptions() {
   for (int i=0;i<MAX_CHTP;i++) {
     star[i]=true;
     chtype[i]=1;
-    //chtype[i]=ch_NIM;
     dsp[i]=false;
     St[i]=true;
     Ms[i]=true;
@@ -243,10 +254,6 @@ Toptions::Toptions() {
     Bc[i]=0;
   }
 
-  // for (int i=MAX_CH;i<MAX_CHTP;i++) {
-  //   chtype[i]=ch_other;
-  // }
-
   raw_write=false;
   fProc=false;
   dec_write=false;
@@ -272,6 +279,7 @@ Toptions::Toptions() {
   ev_min=10;
   ev_max=1000;
 
+  hard_logic=0;
   tgate=500;
   tveto=10;
   mult1=1;
@@ -287,7 +295,8 @@ Toptions::Toptions() {
   num_events=100000;
   num_buf=100;
 
-  decode=true;
+  //decode=true;
+  directraw=false;
   //analyze_or_dsp=true;
   checkdsp=false;
 

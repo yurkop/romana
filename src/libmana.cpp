@@ -85,6 +85,7 @@ AnaParDlg *anapar;
 PikParDlg *pikpar;
 
 Pixel_t fWhite;
+Pixel_t fGrey;
 Pixel_t fYellow;
 Pixel_t fGreen;
 Pixel_t fRed;
@@ -1149,12 +1150,12 @@ int main(int argc, char **argv)
 #ifdef CYUSB
   if (crs->abatch) {
     if (crs->Fmode!=2) {
-      bool d = opt.decode;
+      bool d = opt.directraw;
       bool w = opt.raw_write;
-      opt.decode=0;
+      opt.directraw=1;
       opt.raw_write=0;
       ret=crs->Detect_device();
-      opt.decode=d;
+      opt.directraw=d;
       opt.raw_write=w;
     }
   }
@@ -1710,6 +1711,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // Create a main frame
 
   gClient->GetColorByName("white", fWhite);
+  fGrey=gROOT->GetColor(18)->GetPixel();
 
   gClient->GetColorByName("yellow", fYellow);
   gClient->GetColorByName("green", fGreen);
@@ -1747,7 +1749,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   TGLayoutHints* LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
   TGLayoutHints* LayET1a = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,0);
   TGLayoutHints* LayET1b = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,5);
-  TGLayoutHints* LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
+  //TGLayoutHints* LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
   TGLayoutHints* LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
   LayEE1 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
   LayEE2 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,3,3);
@@ -1890,7 +1892,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //font = pool->GetFont("helvetica", -18, kFontWeightMedium, kFontSlantRoman);
   //const TGFont *font = pool->GetFont("helvetica", -18, kFontWeightBold, kFontSlantRoman);
   //const TGFont *font = pool->GetFont("helvetica", -18, 4, kFontSlantRoman);
-  const TGFont *font = pool->GetFont("-*-helvetica-bold-r-*-*-18-*-*-*-*-*-iso8859-1",true);
+  const TGFont *font = pool->GetFont("-*-helvetica-bold-r-*-*-16-*-*-*-*-*-iso8859-1",true);
 
   //const TGFont *font = gClient->GetFont("-*-arial-normal-r-*-*-20-*-*-*-*-*-*-*");
 
@@ -1920,11 +1922,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   MakeTabs();
 
 
-
-
-
-
-  const int butx=80,buty=33;
+  const int butx=70,buty=30;
 
   TGGroupFrame* fGr1 = new TGGroupFrame(vframe1, "Acquisition", kVerticalFrame);
   fGr1->SetTitlePos(TGGroupFrame::kCenter); // right aligned
@@ -1942,41 +1940,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fStart->Connect("Clicked()","MainFrame",this,"DoStartStop()");
   fGr1->AddFrame(fStart, LayET1);
 
-  /*
-  fReset = new TGTextButton(fGr1,"Reset");
-  fReset->SetFont(tfont,false);
-  fReset->SetTextJustify(kTextCenterX);
-  fReset->Resize(butx,buty);
-  fReset->ChangeOptions(fStart->GetOptions() | kFixedSize);
-  fReset->ChangeBackground(fCyan);
-  fReset->Connect("Clicked()","MainFrame",this,"DoReset()");
-  fGr1->AddFrame(fReset, LayET1);
-  */
 
   TGGroupFrame* fGr2 = new TGGroupFrame(vframe1, "Analysis", kVerticalFrame);
   fGr2->SetTitlePos(TGGroupFrame::kCenter);
   vframe1->AddFrame(fGr2, LayCT1);
-
-  /*
-  TGPopupMenu* fPopMenu = new TGPopupMenu(gClient->GetRoot());
-  fPopMenu->AddEntry("Open+", 1);
-  fPopMenu->AddEntry("Open-", 0);
-  //fPopMenu->AddSeparator();
-  //fPopMenu->Resize(butx,buty);
-  //fPopMenu->ChangeOptions(fPopMenu->GetOptions() | kFixedSize);
-
-  TGSplitButton *fOpen = new TGSplitButton(fGr2, new TGHotString("&Open+"),
-					   fPopMenu,1);
-  fOpen->SetSplit(true);
-  fOpen->SetToolTipText("Open+: open data file with parameters\nOpen-: open data file without parameters");
-  fOpen->SetFont(tfont,false);
-  fOpen->Resize(butx,buty);
-  fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
-  fOpen->ChangeBackground(fOrng);
-  fOpen->Connect("ItemClicked(Int_t)", "MainFrame", this, "DoOpen(Int_t)");
-  fGr2->AddFrame(fOpen, LayET1);
-  */
-
 
   TGTextButton *fOpen = new TGTextButton(fGr2,new TGHotString("Open +"));
   fOpen->SetFont(tfont,false);
@@ -2037,31 +2004,32 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
 
 
-  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
-  fGr2->AddFrame(hfr1, LayET1);
+  //TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
+  //fGr2->AddFrame(hfr1, LayET1);
 
-  int id;
-  id = parpar->Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id,
+  int id = parpar->Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(fGr2, 0, 0, id,
 					   TGNumberFormat::kNESInteger,
 					   TGNumberFormat::kNEAAnyNumber,
 					   TGNumberFormat::kNELLimitMinMax,
 					   1,100000);
   parpar->DoMap(fNum1->GetNumberEntry(),&opt.num_buf,p_inum,0);
   fNum1->GetNumberEntry()->SetToolTipText("Number of buffers to analyze");
-  fNum1->Resize(65, fNum1->GetDefaultHeight());
+  //fNum1->Resize(butx,buty);
+  //fNum1->Resize(65, fNum1->GetDefaultHeight());
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar,
 				   "DoNum()");
-  hfr1->AddFrame(fNum1,LayLT3);
+  fGr2->AddFrame(fNum1,LayET1a);
 
-  fNb = new TGTextButton(hfr1,new TGHotString("&N buf"));
+  fNb = new TGTextButton(fGr2,new TGHotString("&N buf"));
   fNb->SetToolTipText("Analyze N buffers");
-  //fNb->SetFont(tfont,false);
-  fNb->Resize(35,22);
+  fNb->SetFont(tfont,false);
+  fNb->Resize(butx,buty);
+  //fNb->Resize(35,22);
   fNb->ChangeOptions(fNb->GetOptions() | kFixedSize);
   fNb->ChangeBackground(fGreen);
   fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
-  hfr1->AddFrame(fNb, LayLT3);
+  fGr2->AddFrame(fNb, LayET1b);
 
 
 
@@ -2281,7 +2249,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   tb = fTab->AddTab("Parameters");
   tabfr.push_back(tb);
-  parpar = new ParParDlg(tb, 450, MAIN_HEIGHT);
+  parpar = new ParParDlg(tb, 1, MAIN_HEIGHT);
   parpar->Update();
   tb->AddFrame(parpar, LayEE1);
   ntab++;
@@ -2289,7 +2257,7 @@ void MainFrame::MakeTabs(bool reb) {
   //cout << "tab2: " << endl;
   tb = fTab->AddTab("DAQ");
   tabfr.push_back(tb);
-  daqpar = new DaqParDlg(tb, 600, MAIN_HEIGHT);
+  daqpar = new DaqParDlg(tb, 1, MAIN_HEIGHT);
   daqpar->Build();
   tb->AddFrame(daqpar, LayEE2);
   ntab++;
@@ -2298,7 +2266,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   tb = fTab->AddTab("Analysis");
   tabfr.push_back(tb);
-  anapar = new AnaParDlg(tb, 600, MAIN_HEIGHT);
+  anapar = new AnaParDlg(tb, 1, MAIN_HEIGHT);
   anapar->Build();
   tb->AddFrame(anapar, LayEE2);
   ntab++;
@@ -2306,7 +2274,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   tb = fTab->AddTab("Peaks");
   tabfr.push_back(tb);
-  pikpar = new PikParDlg(tb, 600, MAIN_HEIGHT);
+  pikpar = new PikParDlg(tb, 1, MAIN_HEIGHT);
   pikpar->Build();
   tb->AddFrame(pikpar, LayEE2);
   ntab++;
@@ -2314,7 +2282,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   tb = fTab->AddTab("Events");
   tabfr.push_back(tb);
-  EvtFrm = new EventFrame(tb, 620, MAIN_HEIGHT,ntab);
+  EvtFrm = new EventFrame(tb, MAIN_WIDTH, MAIN_HEIGHT,ntab);
   tb->AddFrame(EvtFrm, LayEE1);
   ntab++;
 
@@ -2328,7 +2296,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   tb = fTab->AddTab("Plots");
   tabfr.push_back(tb);
-  HiFrm = new HistFrame(tb, 800, MAIN_HEIGHT,ntab);
+  HiFrm = new HistFrame(tb, 1, MAIN_HEIGHT,ntab);
   HiFrm->HiReset();
   tb->AddFrame(HiFrm, LayEE1);
   ntab++;

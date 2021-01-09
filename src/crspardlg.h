@@ -8,7 +8,8 @@
 #include <TGComboBox.h>
 #include <TGNumberEntry.h>
 #include <TGStatusBar.h>
-#include <TGSplitFrame.h>
+#include <TGSplitter.h>
+//#include <TGSplitFrame.h>
 //#include <TGListBox.h>
 #include <TGDockableFrame.h>
 
@@ -19,6 +20,7 @@
 //#define p_txt 5
 
 typedef unsigned char byte;
+//typedef std::list<TGFrame*> wlist;
 
 enum P_Def {
   p_null,
@@ -31,7 +33,7 @@ enum P_Def {
 };
 
 struct pmap {
-  TGWidget* field; //address of the input widget
+  TGFrame* field; //address of the input widget
   void* data; //address of the parameter
   void* data2; //address of the second (parallel) parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
@@ -49,9 +51,14 @@ struct pmap {
   // 5 - group4
 
   // in DoDaqChk:
-  // 5 - group4
+  // 5 - group4 for module51
 
-  // in UpdateField:
+  /*
+  /////// 6 - soft_logic
+  /////// 7 - hard logic
+  */
+
+  // in UpdateField (chk):
   // 2 - 2d hist (2 fields)
   // 3 - 1d hist (4 fields)
   // 4 - profilometer hist
@@ -68,15 +75,22 @@ public:
   TGLayoutHints* LayCC0 ;
   TGLayoutHints* LayCC0a;
   TGLayoutHints* LayCC1 ;
+  TGLayoutHints* LayCC2 ;
   TGLayoutHints* LayET3 ;
+  TGLayoutHints* LayLC1 ;
+  TGLayoutHints* LayLC2 ;
   TGLayoutHints* LayLT0 ;
+  TGLayoutHints* LayLT1 ;
+  TGLayoutHints* LayLT1a ;
   TGLayoutHints* LayLT2 ;
   TGLayoutHints* LayLT3 ;
   TGLayoutHints* LayLT4 ;
-  TGLayoutHints* LayLC1 ;
+  TGLayoutHints* LayLT4a ;
   TGLayoutHints* LayLT5 ;
+  TGLayoutHints* LayLT6 ;
   TGLayoutHints* LayLE0 ;
   TGLayoutHints* LayEE0 ;
+  TGLayoutHints* LayEE1 ;
 
 
   int jtrig;
@@ -100,6 +114,12 @@ protected:
 
   int nfld; //number of fields in a line
 
+  TGNumberFormat::EStyle k_int;
+  TGNumberFormat::EStyle k_r0;
+  TGNumberFormat::EStyle k_r1;
+  TGNumberFormat::EStyle k_chk;
+  TGNumberFormat::EStyle k_lab;
+
 public:
   std::vector<pmap> Plist;
 
@@ -107,7 +127,7 @@ public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ParDlg();
 
-  void DoMap(TGWidget *f, void *d, P_Def t, int all, byte cmd=0, void *d2=0);
+  void DoMap(TGFrame *f, void *d, P_Def t, int all, byte cmd=0, void *d2=0);
 
   void SetNum(pmap pp, Double_t num);
   void SetChk(pmap pp, Bool_t num);
@@ -132,8 +152,32 @@ public:
   void Update();
   void EnableField(int nn, bool state);
   void AllEnabled(bool state);
-  void SelectEnabled(bool state, const char* text);
-  TGWidget *FindWidget(void* p);
+  //void SelectEnabled(bool state, const char* text);
+  TGFrame *FindWidget(void* p);
+  void AddClab(TGCompositeFrame* cfr, TGTextEntry* &clb,
+	       int i, const char* txt, int &kk, int t);
+  void AddChname(TGCompositeFrame* cfr, int i7, int &kk, int c);
+
+
+  void Check_opt(TGHorizontalFrame *hfr1, int width, void* x1,
+		 const char* tip1, byte cmd1, const char* cname="");
+
+  void Num_opt(TGHorizontalFrame *hfr1, int width, void* x1,
+	       const char* tip1, TGNumberFormat::EStyle style1,
+	       double min1, double max1, byte cmd1, TGLayoutHints* Lay);
+
+  void AddLine_opt(TGCompositeFrame* frame, int width, void *x1, void *x2, 
+		   const char* tip1, const char* tip2, const char* label,
+		   TGNumberFormat::EStyle style1, 
+		   TGNumberFormat::EStyle style2,
+		   //TGNumberFormat::EAttribute attr, 
+		   double min1=0, double max1=0,
+		   double min2=0, double max2=0, byte cmd1=0, byte cmd2=0,
+		   TGLayoutHints* Lay1=0, TGLayoutHints* Lay2=0);
+
+  void AddSoftHard(TGGroupFrame* frame, TGCheckButton* &fchkSoft,
+		   TGCheckButton* &fchkHard);
+
   // void Rebuild();
 
   ClassDef(ParDlg, 0)
@@ -147,77 +191,34 @@ public:
 
 protected:
 
-  //TGHorizontalFrame *hor;
-  //TGVerticalFrame *ver1;
-  //TGVerticalFrame *ver2;
+  TGCheckButton *fchkSoft;
+  TGCheckButton *fchkHard;
 
-  TGSplitFrame *hor;
-  TGSplitFrame *ver1;
-  TGSplitFrame *ver2;
-  
-  TGGroupFrame* frame1d;
-  TGGroupFrame* frame2d;
+  //wlist soft_list;
+  //wlist hard_list;
 
   const char* tip1;
   const char* tip2;
   const char* label;
-  //void *x1,*x2;
-
-  //int id_read;
-  //int id_tstop;
-
-  TGNumberFormat::EStyle k_int;
-  TGNumberFormat::EStyle k_r0;
-  TGNumberFormat::EStyle k_r1;
-  //TGNumberFormat::EStyle k_r2;
-  //TGNumberFormat::EStyle k_r3;
-
-  TGNumberFormat::EStyle k_mon;
 
   TGTextEntry* tTrig;
 
 public:
-  /*
-    void AddLine3(TGCompositeFrame* frame, int width, void *x1, void *x2, 
-    const char* tip1, const char* tip2, const char* label,
-    TGNumberFormat::EStyle style, 
-    //TGNumberFormat::EAttribute attr, 
-    double min=0, double max=0);
-  */
 
-  void One_opt(TGHorizontalFrame *hfr1, int width, void* x1,
-    const char* tip1, TGNumberFormat::EStyle style1,
-    double min1, double max1, byte cmd1);
-
-  void AddLine_opt(TGGroupFrame* frame, int width, void *x1, void *x2, 
-   const char* tip1, const char* tip2, const char* label,
-   TGNumberFormat::EStyle style1, 
-   TGNumberFormat::EStyle style2, 
-		   //TGNumberFormat::EAttribute attr, 
-   double min1=0, double max1=0,
-   double min2=0, double max2=0, byte cmd1=0, byte cmd2=0);
-  // void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
-  //   const char* tip, const char* label);
-  // void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
-  //   const char* tip, const char* label, int type);
-  // void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
-  //   const char* tip, const char* label);
-  // void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
-  //   P_Def pp, const char* tip);
-  // void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
-  //   const char* tip, const char* label);
   void AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
-   Int_t* compr, Bool_t* rflag);
-  void AddFiles(TGCompositeFrame* frame);
+	      Int_t* compr, Bool_t* rflag);
+  int AddFiles(TGCompositeFrame* frame);
   //void AddHist(TGCompositeFrame* frame);
-  void AddOpt(TGCompositeFrame* frame);
-  void AddLogic(TGCompositeFrame* frame);
-  void AddAna(TGCompositeFrame* frame);
-  // void DoCheckPulse();
+  int AddOpt(TGCompositeFrame* frame);
+  int AddAna(TGCompositeFrame* frame);
+  int AddLogic(TGCompositeFrame* frame);
+  void DoCheckLogic();
 
   void Add2d();
 
   void Update();
+  //void UpdateLL(wlist &llist, Bool_t state);
+  void UpdateLogic();
 
   ClassDef(ParParDlg, 0)
 };
@@ -230,21 +231,12 @@ public:
 
 protected:
 
-  TGSplitFrame *hor;
-  TGSplitFrame *ver1;
-  TGSplitFrame *ver2;
-  
   TGGroupFrame* frame1d;
   TGGroupFrame* frame2d;
 
   const char* tip1;
   const char* tip2;
   const char* label;
-
-  TGNumberFormat::EStyle k_int;
-  TGNumberFormat::EStyle k_r0;
-  TGNumberFormat::EStyle k_r1;
-  TGNumberFormat::EStyle k_mon;
 
   TGTextEntry* tTrig;
 
@@ -271,7 +263,9 @@ public:
 class ChanParDlg: public ParDlg {
 
 public:
+  TGCanvas* fCanvas0;
   TGCanvas* fCanvas2;
+  TGHSplitter *hsplitter;
   TGCompositeFrame* fcont2;
   TGHorizontalFrame *head_frame;
 
@@ -297,6 +291,12 @@ public:
   TGTextEntry *fStat3[MAX_CH+1];
   TGTextEntry *fStatBad[MAX_CH+1];
 
+  TGCheckButton *fchkSoft;
+  TGCheckButton *fchkHard;
+
+  TGGroupFrame* cGrp;
+  TGLabel *cLabel;
+
 public:
   DaqParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~DaqParDlg() {};
@@ -307,7 +307,7 @@ public:
   void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
     const char* name, void* apar, void* apar2=0, byte cmd=1);
   void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
-		   const char* ttip);
+		   const char* ttip, int &kk);
   void UpdateStatus(int rst=0);
 
   ClassDef(DaqParDlg, 0)

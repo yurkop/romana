@@ -206,7 +206,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGLayoutHints* LayLC1  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,1,1,0,0);
   TGLayoutHints* LayLC2  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,0,0,0);
   TGLayoutHints* LayLC3  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
-  TGLayoutHints* LayLC4  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,2,0,0);
+  //TGLayoutHints* LayLC4  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,2,0,0);
   TGLayoutHints* LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
 
   TGLayoutHints* LayRC0 = new TGLayoutHints(kLHintsRight|kLHintsCenterY);
@@ -616,7 +616,10 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
 
 void HistFrame::Make_Ltree() {
 
-  cout << "Make_Ltree():" << endl;
+  //cout << "Make_Ltree():" << endl;
+  // for (int i=0;i<opt.Nchan;i++) {
+  //   cout << "chtype: " << i << " " << opt.chtype[i] << endl;
+  // }
 
   TObject* obj=0;
   TIter next(hcl->map_list);

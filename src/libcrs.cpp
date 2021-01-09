@@ -230,7 +230,8 @@ static void cback(libusb_transfer *trans) {
       double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
     UInt_t nn = (rr+1e-6)*gl_Nbuf;
 
-    if (opt.decode) {
+    //if (opt.decode) {
+    if (!opt.directraw) {
       if (nn!=gl_ibuf) {
 	// cout << "cback2: " << itr << " " << nn << " " << gl_ibuf << endl;
 	int length=trans->buffer-GLBuf-b_fill[gl_ibuf]+trans->actual_length;
@@ -1372,8 +1373,8 @@ int CRS::Detect_device() {
     break;
 
   case 5: //crs-128
-    //cout << "case5: " << endl;
-    module=51;
+    //module=51;
+    module=52;
     opt.Period=10;
     chan_in_module=nplates*16;
     for (int j=0;j<chan_in_module;j++) {
@@ -1432,6 +1433,10 @@ int CRS::SetPar() {
   case 41:
   case 51:
     AllParameters41();
+    break;
+  case 42:
+  case 52:
+    AllParameters42();
     break;
   default:
     cout << "SetPar Error! No module found" << endl;
@@ -1663,16 +1668,15 @@ int CRS::Command32_old(byte cmd, byte ch, byte type, int par) {
 }
 
 int CRS::Command32(byte cmd, byte ch, byte type, int par) {
-  //prnt("ssd ds;",KRED,"Command32: ",(int) cmd, (int) ch, RST);
-  //cout << "Command32: " << (int) cmd << " " << (int) ch << endl;
+  if (cpar.on[ch]) {
+    prnt("ssd d d ds;",KGRN,"Cmd: ",(int) cmd, (int) ch, (int) type, par, RST);
+    //cout << "Command32: " << (int) cmd << " " << (int) ch << endl;
+  }
   //для версии ПО 2
   int transferred = 0;
   int r;
 
   int len_in,len_out;
-
-  //byte buf_out[6];//={0};
-  //byte buf_in[7];//={0};
 
   buf_out[0] = cmd;
   buf_out[1] = ch;
@@ -1809,18 +1813,17 @@ void CRS::Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
   // << " " << a2 << " " << len << endl;
 }
 
-void CRS::AllParameters41()
-{
-  UInt_t mask,mask2;
-  //cout << "AllParameters41(): " << endl;
-
-  AllParameters33();
+void CRS::AllParameters42() {
+  cout << "Allparameters42: " << opt.hard_logic << endl;
+  UInt_t mask;
+  AllParameters41();
 
   for (byte chan = 0; chan < chan_in_module; chan++) {
     if (cpar.on[chan]) {
-      //cpar.Mask[chan]=0xFF;
-      mask=0x3; //00000011 - for discr: tst,count40
-      mask2=0xC1; //11000001 - for START: tst,count48,overflow
+      //int gr = opt.chtype[chan]-1;
+      //if (gr<0 || gr>=MAX_TP) gr=MAX_TP;
+
+      mask=0x3; //00000011 - for coinc: tst,count40
       if (opt.dsp[chan]) { //add 110000
 	mask|=0x30; // write DSP data
       }
@@ -1829,20 +1832,80 @@ void CRS::AllParameters41()
 	mask|=0xC; // write pulse
       }
 
-      // mask=0xFF;
-      // cout << "mask: " << (int) chan << " " << hex << mask << dec << endl;
+      Command32(2,chan,26,mask); //bitmask для СС и пересчета
+
+      mask=2; // 0010 - запись по сигналу СТАРТ
+      if (opt.hard_logic) { //схема совпадений
+	mask|=4; // запись по СС
+	if (cpar.ratediv[chan])
+	  mask|=8; // запись по пересчету
+      }
+      else { // запись по дискриминатору
+	mask|=1;
+      }
+      Command32(2,chan,25,mask); // битовая маска разрешений записи
+
+      int w = 1;
+      mask=0;
+      for (int j=0;j<2;j++) {
+	if (cpar.group[chan][j]) {
+	  if (cpar.coinc_w[j]>w)
+	    w=cpar.coinc_w[j];
+	  mask+=j+1;
+	}
+      }
+      Command32(2,chan,27,(int) w); // длительность окна совпадений
+      Command32(2,chan,28,(int) 0); // тип обработки повторных
+      int red = cpar.ratediv[chan]-1;
+      if (red<0) red=0;
+      Command32(2,chan,29,(int) red); // величина пересчета P
+      Command32(2,chan,31,(int) mask); //битовая маска принадлежности к группам
+    } // if (cpar.on[chan])
+    else {
+      Command32(2,chan,25,0); // битовая маска разрешений записи
+    }
+  } //for
+
+  //Общие параметры:
+
+  Command32(11,4,0,(int) opt.hard_logic); // Использование схемы совпадений
+  Command32(11,5,0,(int) cpar.mult_w1[0]); // минимальная множественность 0
+  Command32(11,6,0,(int) cpar.mult_w2[0]); // максимальная множественность 0
+  Command32(11,7,0,(int) cpar.mult_w1[1]); // минимальная множественность 1
+  Command32(11,8,0,(int) cpar.mult_w2[1]); // максимальная множественность 1
+
+}
+
+void CRS::AllParameters41() {
+  UInt_t mask;
+
+  AllParameters33();
+
+  for (byte chan = 0; chan < chan_in_module; chan++) {
+    if (cpar.on[chan]) {
+
+      mask=0x3; //00000011 - for discr: tst,count40
+      if (opt.dsp[chan]) { //add 110000
+	mask|=0x30; // write DSP data
+      }
+
+      if (cpar.pls[chan]) { //add 1100
+	mask|=0xC; // write pulse
+      }
+
       Command32(2,chan,23,mask); //bitmask for discriminator
-      Command32(2,chan,24,mask2); //bitmask for START
-      //UInt_t mask = 0xFF;
-      //Command32(2,chan,23,(UInt_t) mask); //bitmask
-      mask=cpar.St_trig ? 2 : 1;
-      mask=3;
-      // mask=0xFF;
-      // cout << "mch: " << (int) chan << " " << mask << endl;
-      Command32(2,chan,25,mask); //bitmask for START
+
+      mask=0xC1; //11000001 - for START: tst,count48,overflow
+      Command32(2,chan,24,mask); //bitmask for START
+
+      //mask=cpar.St_trig ? 2 : 1;
+      mask=3; // 11 - запись по дискриминатору и СТАРТу
+      Command32(2,chan,25,mask); // битовая маска разрешений записи
       Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
     } //if
   } //for
+
+  //Общие параметры:
 
   // Start dead time DT
   if (cpar.DTW<=0) cpar.DTW=1;
@@ -1856,14 +1919,11 @@ void CRS::AllParameters41()
 	
   //Start source
   mask=cpar.St_Per ? 1 : 0;
-  // mask=0xFF;
-  // cout << "start source: " << mask << endl;
   Command32(11,2,0,mask);
 
   //Start imitator period
   mask=cpar.St_Per;
   if (mask) mask--;
-  // cout << "start period: " << mask << endl;
   Command32(11,3,0,mask);
 
 }
@@ -2179,7 +2239,7 @@ void CRS::ProcessCrs() {
 
   //decode_thread_run=1;
   //tt1[3].Set();
-  if (crs->module>=32 && crs->module<=51 /*34*/) {
+  if (crs->module>=32 && crs->module<=52 /*34*/) {
     Command32(8,0,0,0); //сброс сч./буф.
     Command32(9,0,0,0); //сброс времени
   }
@@ -2700,8 +2760,8 @@ void CRS::AnaBuf(int loc_ibuf) {
   ttm[0]+=dif;
 #endif
 
-
-  if (opt.decode) {
+  //if (opt.decode) {
+  if (!opt.directraw) {
     //buf_len[gl_ibuf]=BufLength;
     if (opt.nthreads>1) {
       Decode_any_MT(gl_iread, gl_ibuf, loc_ibuf);
@@ -3184,6 +3244,11 @@ void CRS::Decode_switch(UInt_t ibuf) {
   case 51:
     Decode34(dec_iread[ibuf]-1,ibuf);
     break;
+  case 42:
+  case 52:
+    Decode34(dec_iread[ibuf]-1,ibuf);
+    //Decode42(dec_iread[ibuf]-1,ibuf);
+    break;
   case 35:
     Decode35(dec_iread[ibuf]-1,ibuf);
     break;
@@ -3320,6 +3385,8 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   case 35:
   case 41:
   case 51:
+  case 42:
+  case 52:
     for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);
@@ -3869,285 +3936,6 @@ void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
 
 } //decode75
 
-/*
-void CRS::Decode33(UInt_t iread, UInt_t ibuf) {
-  //ibuf - current sub-buffer
-
-  ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
-
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
-
-  ULong64_t data;
-  Short_t sss; // temporary var. to convert signed nbit var. to signed 16bit int
-  Int_t iii; // temporary var. to convert signed nbit var. to signed 32bit int
-  Long64_t lll; //Long temporary var.
-  int n_frm=0; //counter for frmt4 and frmt5
-  PeakClass *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
-  Double_t QX=0,QY=0,RX,RY;
-
-  eventlist *Blist;
-  UChar_t frmt = (GLBuf[idx1+6] & 0xF0) >> 4;
-  Dec_Init(Blist,frmt);
-  PulseClass ipls=dummy_pulse;
-
-  //cout << "Decode33: " << ibuf << " " << buf_off[ibuf] << " " << vv->size() << " " << length << " " << hex << buf8[idx1/8] << dec << endl;
-
-  while (idx1<b_end[ibuf]) {
-    //debug_mess(idx1>16500,"DDDD0: ",idx1,buf1[idx1]);
-    frmt = (GLBuf[idx1+6] & 0xF0) >> 4;
-    //YKYKYK!!!! do something with cnt - ???
-    //int cnt = frmt & 0x0F;
-    // frmt = (frmt & 0xF0)>>4;
-    data = buf8[idx1/8] & sixbytes;
-    UChar_t ch = GLBuf[idx1+7];
-
-    if (ch==255) {
-      //start signal
-      idx1+=8;
-      continue;      
-    }
-    else if ((ch>=opt.Nchan) ||
-	     (frmt && ch!=ipls.Chan)) {
-      cout << "dec33: Bad channel: " << (int) ch
-	   << " " << (int) ipls.Chan
-	   << " " << idx1 << " " << ibuf
-	   << endl;
-      ipls.ptype|=P_BADCH;
-
-      //idx8++;
-      idx1+=8;
-      continue;
-    }
-
-    if (frmt==0) {
-      //ipls->ptype&=~P_NOSTOP; //pulse has stop
-
-      //analyze previous pulse
-      if (ipls.ptype==0) {
-	PulseAna(ipls);
-	Event_Insert_Pulse(Blist,&ipls);
-	//cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
-      }
-
-      // create new pulse
-      ipls=PulseClass();
-      npulses++;
-      ipls.Chan=ch;
-      ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.Pre[ch];
-      n_frm=0;
-      //cout << "ipls: " << Blist->size() << " " << ipls.Tstamp64 << endl;
-    }
-    else if (frmt==1) {
-      ipls.Spin = GLBuf[idx1+5];
-      ipls.Counter = data & 0xFFFFFFFFFF;
-      //cout << "Counter: " << ipls.Counter << " " << (int) ipls.Chan << endl;
-      // if (buffer[idx1+5]) {
-      // 	cout << "state: " << (int) buffer[idx1+5] << " " << (int ) ipls.Spin << " " << data << " " << buf8[idx8] << endl;
-      // }
-    }
-    else if (frmt==2) {
-
-      if ((int)ipls.sData.size()>=cpar.Len[ipls.Chan]) {
-	// cout << "32: ERROR Nsamp: "
-	//      << " " << (ipls.Counter & 0x0F)
-	//      << " " << ipls.sData.size() << " " << cpar.Len[ipls.Chan]
-	//      << " " << (int) ch << " " << (int) ipls.Chan
-	//      << " " << idx8 //<< " " << transfer->actual_length
-	//      << endl;
-	ipls.ptype|=P_BADSZ;
-      }
-      //else {
-      for (int i=0;i<4;i++) {
-
-	iii = data & 0xFFF;
-	ipls.sData.push_back((iii<<20)>>20);
-
-	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
-	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
-	data>>=12;
-      }
-      //}
-    }
-    else if (frmt==3) {
-
-      if ((int)ipls.sData.size()>=cpar.Len[ipls.Chan]) {
-	// cout << "33: ERROR Nsamp: "
-	//      << " " << (ipls.Counter & 0x0F)
-	//      << " " << ipls.sData.size() << " " << cpar.Len[ipls.Chan]
-	//      << " " << (int) ch << " " << (int) ipls.Chan
-	//      << " " << idx8 //<< " " << transfer->actual_length
-	//      << endl;
-	ipls.ptype|=P_BADSZ;
-      }
-      //else {
-      for (int i=0;i<3;i++) {
-
-	iii = data & 0xFFFF;
-	ipls.sData.push_back((iii<<16)>>16);
-
-	//YK
-	//float aa = (iii<<16)>>16;
-	//aa*=10*ipls.sData.size();
-	//ipls.sData.push_back(aa);
-
-
-	//ipls.sData[ipls.Nsamp++]=(iii<<20)>>20;
-	//printf("sData: %4d %12llx %5d\n",Nsamp-1,data,sData[Nsamp-1]);
-	data>>=16;
-      }
-      //}
-    }
-    else if (frmt==4) {
-      if (opt.dsp[ipls.Chan]) {
-	if (ipls.Peaks.size()==0) {
-	  ipls.Peaks.push_back(PeakClass());
-	  ipk=&ipls.Peaks[0];
-	}
-	switch (n_frm) {
-	case 0: //C – [24]; A – [24]
-		//area
-	  iii = data & 0xFFFFFF;
-	  ipk->Area0=((iii<<8)>>8);
-	  ipk->Area0/=p_len[ipls.Chan];
-	  data>>=24;
-	  //bkg
-	  iii = data & 0xFFFFFF;
-	  ipk->Base=((iii<<8)>>8);
-	  ipk->Base/=b_len[ipls.Chan];
-
-	  ipk->Area=ipk->Area0 - ipk->Base;
-	  //ipk->Area*=opt.emult[ipls.Chan];
-	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
-	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
-	  if (opt.Bc[ipls.Chan]) {
-	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
-	  }
-
-	  break;
-	case 1: //H – [12]; QX – [36]
-	  lll = data & 0xFFFFFFFFF;
-	  QX=((lll<<28)>>28);
-	  data>>=36;
-	  //height
-	  iii = data & 0xFFF;
-	  ipk->Height=((iii<<20)>>20);
-	  break;
-	case 2: //QY – [36]
-	  lll = data & 0xFFFFFFFFF;
-	  QY=((lll<<28)>>28);
-	  break;
-	case 3: //RY – [20]; RX – [20]
-		//RX
-	  iii = data & 0xFFFFF;
-	  RX=((iii<<12)>>12);
-	  data>>=24;
-	  //RY
-	  iii = data & 0xFFFFF;
-	  RY=((iii<<12)>>12);
-
-	  if (RX!=0)
-	    ipk->Time=QX/RX;
-	  else
-	    ipk->Time=-999;
-
-	  if (RY!=0)
-	    ipk->Width=QY/RY;
-	  else
-	    ipk->Width=-999;
-
-	  break;
-	default:
-	  ;
-	} //switch
-	n_frm++;
-      } //if (opt.dsp[ipls.Chan])
-    }
-    else if (frmt==5) {
-      if (opt.dsp[ipls.Chan]) {
-	if (ipls.Peaks.size()==0) {
-	  ipls.Peaks.push_back(PeakClass());
-	  ipk=&ipls.Peaks[0];
-	}
-	switch (n_frm) {
-	case 0: //C – [28]; H – [16]
-		//height
-	  sss = data & 0xFFFF;
-	  ipk->Height=sss;
-	  data>>=16;
-	  //bkg
-	  iii = data & 0xFFFFFFF;
-	  ipk->Base=((iii<<4)>>4);
-	  ipk->Base/=b_len[ipls.Chan];
-	  break;
-	case 1: //A – [28]
-		//area
-	  iii = data & 0xFFFFFFF;
-	  ipk->Area0=((iii<<4)>>4);
-	  ipk->Area0/=p_len[ipls.Chan];
-
-	  ipk->Area=ipk->Area0 - ipk->Base;
-	  //ipk->Area*=opt.emult[ipls.Chan];
-	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
-	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
-	  if (opt.Bc[ipls.Chan]) {
-	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
-	  }
-	  break;
-	case 2: //A – [28]
-		//QX
-	  lll = data & 0xFFFFFFFFFF;
-	  QX=((lll<<24)>>24);
-	  break;
-	case 3: //QY – [40]
-		//QY
-	  lll = data & 0xFFFFFFFFFF;
-	  QY=((lll<<24)>>24);
-	  break;
-	case 4: //RY – [24]; RX – [24]
-		//RX
-	  iii = data & 0xFFFFFF;
-	  RX=((iii<<8)>>8);
-	  data>>=24;
-	  //RY
-	  iii = data & 0xFFFFFF;
-	  RY=((iii<<8)>>8);
-
-	  if (RX!=0)
-	    ipk->Time=QX/RX;
-	  else
-	    ipk->Time=-999;
-
-	  if (RY!=0)
-	    ipk->Width=QY/RY;
-	  else
-	    ipk->Width=-999;
-
-	  break;
-	default:
-	  ;
-	} //switch
-	n_frm++;
-      } //if (opt.dsp[ipls.Chan])
-    }
-    else {
-      cout << "bad frmt: " << frmt << endl;
-    }
-
-    //idx8++;
-    idx1+=8;
-  } //while (idx1<buf_len)
-
-  //add last pulse to the list
-  if (ipls.ptype==0) {
-    PulseAna(ipls);
-    Event_Insert_Pulse(Blist,&ipls);
-  }
-
-  Dec_End(Blist,iread);
-
-} //decode33
-*/
-
 void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   //ibuf - current sub-buffer
 
@@ -4674,6 +4462,8 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
 } //decode35
 
+void CRS::Decode42(UInt_t iread, UInt_t ibuf) {
+}
 
 void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 
