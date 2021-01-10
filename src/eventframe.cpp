@@ -661,26 +661,19 @@ void EventFrame::DoCheckPoint() {
       par[2]=(d_event->Tstmp-crs->Tstart64)*opt.Period*1e-9;
       par[1]=d_event->Tstmp;
 
-      for (UInt_t i=0;i<d_event->pulses.size();i++) {
-	int ch = d_event->pulses[i].Chan;
-	par[0]=ch;
+      for (pulse_vect::iterator ipls=d_event->pulses.begin();
+	   ipls!=d_event->pulses.end();++ipls) {
+	par[0]=ipls->Chan;
 
-	for (UInt_t j=0;j<d_event->pulses[i].Peaks.size();j++) {
-	  PeakClass* pk = &d_event->pulses[i].Peaks[j];
-	  par[4]=pk->Area;
-	  par[5]=pk->Base;
-	  //double dt = d_event->pulses[i].Tstamp64 - d_event->Tstmp;
-	  //double tt = pk->Time - d_event->T0 + dt;
-	  double tt = pk->Time - d_event->T0;
+	par[4]=ipls->Area;
+	par[5]=ipls->Base;
+	double tt = ipls->Time - d_event->T0;
 
-	  par[6]=tt*opt.Period;
-	  res = formula->EvalPar(0,par);
-	  //cout << "DoCheck: " << id << " " << opt.formula << " " << d_event->Nevt << " " << d_event->Tstmp << " " << " " << par[4] << " " << res << endl;
-	  if (res) {
-	    //d_event = d_event;
-	    DrawEvent2();
-	    return;
-	  }
+	par[6]=tt*opt.Period;
+	res = formula->EvalPar(0,par);
+	if (res) {
+	  DrawEvent2();
+	  return;
 	}
       }
       if (id==1) {
@@ -857,9 +850,9 @@ void EventFrame::FillGraph(int dr) {
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
 	double dd = pulse->sData[j];
-	if (fPeak[11]->IsOn() && pulse->Peaks.size()) { //normalize
-	  dd-=pulse->Peaks.back().Base;
-	  dd*=1000/pulse->Peaks.back().Area;
+	if (fPeak[11]->IsOn() && pulse->Area) { //normalize
+	  dd-=pulse->Base;
+	  dd*=1000/pulse->Area;
 	}
 	Gr[dr][i]->GetY()[j]=dd;
 
@@ -885,8 +878,8 @@ void EventFrame::FillGraph(int dr) {
 	else
 	  dd=pulse->sData[j]-pulse->sData[j-kk];
 
-	if (fPeak[11]->IsOn() && pulse->Peaks.size()) { //normalize
-	  dd*=1000/pulse->Peaks.back().Area;
+	if (fPeak[11]->IsOn() && pulse->Area) { //normalize
+	  dd*=1000/pulse->Area;
 	}
 
 	Gr[dr][i]->GetY()[j]=dd;
@@ -922,8 +915,8 @@ void EventFrame::FillGraph(int dr) {
 	// cout << "edif2: " << pulse->Tstamp64 << " " << j << " " << dd
 	//      << " " << pulse->sData[j] << endl;
 
-	if (fPeak[11]->IsOn() && pulse->Peaks.size()) { //normalize
-	  dd*=1000/pulse->Peaks.back().Area;
+	if (fPeak[11]->IsOn() && pulse->Area) { //normalize
+	  dd*=1000/pulse->Area;
 	}
 
 	Gr[dr][i]->GetY()[j]=dd;
@@ -1105,67 +1098,45 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   if (fChn[ch]->IsOn()) {
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch];
 
-    for (UInt_t j=0;j<pulse->Peaks.size();j++) {
-      PeakClass *pk = &pulse->Peaks[j];
+    //for (UInt_t j=0;j<pulse->Peaks.size();j++) {
+    //PeakClass *pk = &pulse->Peaks[j];
 
-      B1=pulse->Pos+opt.Base1[ch];
-      B2=pulse->Pos+opt.Base2[ch]+1;
-      P1=pulse->Pos+opt.Peak1[ch];
-      P2=pulse->Pos+opt.Peak2[ch]+1;
-      T1=pulse->Pos+opt.T1[ch];
-      T2=pulse->Pos+opt.T2[ch]+1;
-      W1=pulse->Pos+opt.W1[ch];
-      W2=pulse->Pos+opt.W2[ch]+1;
+    B1=pulse->Pos+opt.Base1[ch];
+    B2=pulse->Pos+opt.Base2[ch]+1;
+    P1=pulse->Pos+opt.Peak1[ch];
+    P2=pulse->Pos+opt.Peak2[ch]+1;
+    T1=pulse->Pos+opt.T1[ch];
+    T2=pulse->Pos+opt.T2[ch]+1;
+    W1=pulse->Pos+opt.W1[ch];
+    W2=pulse->Pos+opt.W2[ch]+1;
 
-      /*
-      if (opt.dsp[ch]) {
-	pulse->Pos=cpar.Pre[ch];
-	pk->B1=pulse->Pos+opt.Base1[ch];
-	pk->B2=pulse->Pos+opt.Base2[ch]+1;
-	pk->P1=pulse->Pos+opt.Peak1[ch];
-	pk->P2=pulse->Pos+opt.Peak2[ch]+1;
-	pk->T3=pulse->Pos+opt.T1[ch];
-	pk->T4=pulse->Pos+opt.T2[ch]+1;
-	pk->T5=pulse->Pos+opt.W1[ch];
-	pk->T6=pulse->Pos+opt.W2[ch]+1;
-      }
-      */
-
-      if (fPeak[1]->IsOn()) // Pos
-	doXline(pulse->Pos+dt,y1,y2-dy*0.3,2,1);
-      if (fPeak[2]->IsOn()) {// Time
-	//double dt2=pulse->Tstamp64 - d_event->Tstmp - cpar.Pre[ch];
-	//doXline(pk->Time+dt+cpar.Pre[ch],y2-dy*0.2,y2,3,1);
-	doXline(pk->Time,y2-dy*0.2,y2,3,1);
-      }
-      if (dr==0 && fPeak[4]->IsOn()) { // Wpeak
-	doXline(P1+dt,y1,y2-dy*0.2,1,2);
-	doXline(P2-1+dt,y1,y2-dy*0.1,1,2);
-      }
-      if (dr==0 && fPeak[3]->IsOn()) { // WBkgr
-	doXline(B1+dt,y1,y2-dy*0.2,6,3);
-	doXline(B2-1+dt,y1,y2-dy*0.1,6,3);
-      }
-      if (dr!=0 && fPeak[5]->IsOn()) { //WTime
-	doXline(T1+dt,y1,y2-dy*0.2,3,2);
-	doXline(T2-1+dt,y1,y2-dy*0.1,3,2);
-      }
-      if (dr==0 && fPeak[6]->IsOn()) { //WWidth
-	doXline(W1+dt,y1,y2-dy*0.2,4,4);
-	doXline(W2-1+dt,y1,y2-dy*0.1,4,4);
-      }
-      //cout <<"DrawPeaksT2: " << pk->Time+dt << " " << dt << " " 
-      //   << pulse->Tstamp64 << " " << d_event->T << endl;
+    if (fPeak[1]->IsOn()) // Pos
+      doXline(pulse->Pos+dt,y1,y2-dy*0.3,2,1);
+    if (fPeak[2]->IsOn()) {// Time
+      doXline(pulse->Time,y2-dy*0.2,y2,3,1);
     }
+    if (dr==0 && fPeak[4]->IsOn()) { // Wpeak
+      doXline(P1+dt,y1,y2-dy*0.2,1,2);
+      doXline(P2-1+dt,y1,y2-dy*0.1,1,2);
+    }
+    if (dr==0 && fPeak[3]->IsOn()) { // WBkgr
+      doXline(B1+dt,y1,y2-dy*0.2,6,3);
+      doXline(B2-1+dt,y1,y2-dy*0.1,6,3);
+    }
+    if (dr!=0 && fPeak[5]->IsOn()) { //WTime
+      doXline(T1+dt,y1,y2-dy*0.2,3,2);
+      doXline(T2-1+dt,y1,y2-dy*0.1,3,2);
+    }
+    if (dr==0 && fPeak[6]->IsOn()) { //WWidth
+      doXline(W1+dt,y1,y2-dy*0.2,4,4);
+      doXline(W2-1+dt,y1,y2-dy*0.1,4,4);
+    }
+    //}
   }
 
 }
 
-//void EventFrame::DrawEvent() {
-//} //DrawEvent
-
 void EventFrame::DoGraph(int ndiv, int dd) {
-
 } //DoGraph
 
 void EventFrame::ReDraw() {
@@ -1180,19 +1151,8 @@ void EventFrame::ReDraw() {
   }
 
   TCanvas *cv=fCanvas->GetCanvas();
-  //cout << "Redr0: " << endl;
-  /*
-  if (Pevents->empty()) {
-    txt.DrawTextNDC(0.2,0.7,"Empty event");
-    cv->Update();
-    //cout << "draw1a:" << endl;
-    //Emut2.UnLock();
-    return;
-  }
-  */
-  //cout << "draw1a:" << endl;
+
   if (d_event->pulses.empty()) {
-    //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
     cv->Update();
     //Emut2.UnLock();
@@ -1210,8 +1170,6 @@ void EventFrame::ReDraw() {
       cv->cd(nn++);
 
       SetRanges(i);
-
-      //cout << "mx1: " << i << " " << mx1 << endl;
 
       if (mx1>1e98) {
 	gPad->Clear();
@@ -1245,7 +1203,6 @@ void EventFrame::ReDraw() {
 
       for (UInt_t j=0;j<d_event->pulses.size();j++) {
 	PulseClass *pulse = &d_event->pulses.at(j);
-	//UInt_t ch= d_event->pulses.at(j).Chan;
 	if (fChn[pulse->Chan]->IsOn()) {
 	  if (Gr[i][j]->GetN()) { //draw graph
 	    Gr[i][j]->Draw("lp");
@@ -1256,18 +1213,13 @@ void EventFrame::ReDraw() {
 		      gx2[j],chcol[pulse->Chan],2);
 	  }
 	  if (fPeak[9]->IsOn()) { //draw text
-	    if (pulse->Peaks.size()) {
+	    //if (pulse->Peaks.size()) {
 	      char ss[256];
-	      PeakClass *pk = &pulse->Peaks.back();
-	      // sprintf(ss,"%d A=%0.1f T=%0.1f W=%0.1f W2=%f",
-	      // 	      pulse->Chan,pk->Area,pk->Time,pk->Width,pk->Width2);
-	      sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
-		      pulse->Chan,pk->Area,pk->Base,pk->Time,pk->Width);
+	      //PeakClass *pk = &pulse->Peaks.back();
 
-	      //tt.SetBBoxX1(0);
-	      //tt.SetBBoxX2(100);
-	      //tt.SetBBoxY1(0);
-	      //tt.SetBBoxY2(20);
+	      sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
+		      pulse->Chan,pulse->Area,pulse->Base,
+		      pulse->Time,pulse->Width);
 
 	      tt.SetTextAlign(0);
 	      double sz=0.025*ndiv;
@@ -1284,7 +1236,7 @@ void EventFrame::ReDraw() {
 		tx=0;
 		ty++;
 	      }
-	    }
+	      //}
 	  }
 	}
       } //for (UInt_t j=0;j<d_event->pulses.size();j++) {

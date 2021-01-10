@@ -31,6 +31,7 @@ const UChar_t P_B22=1<<5; //bad left or right side in width (T5 or T6 is out of 
 const UChar_t P_BAD=1<<7; //bad (dummy) peak
 
 
+/*
 class PeakClass {
 public:
   Float_t Base; //baseline
@@ -51,18 +52,18 @@ public:
   //UChar_t Chan; //channel number
   //Short_t Pos; //position relative to pulse start (in samples)
   //Short_t Pos2; //position of the 1st maximum in 1st derivative after threshold
-  /*
-  Short_t B1; //left background window
-  Short_t B2; //right background window
-  Short_t P1; //left peak window
-  Short_t P2; //right peak window
-  Short_t T1; //left zero crossing of deriv
-  Short_t T2; //right zero crossing of deriv
-  Short_t T3; //left timing window
-  Short_t T4; //right timing window
-  Short_t T5; //left width window
-  Short_t T6; //right width window
-  */
+
+  // Short_t B1; //left background window
+  // Short_t B2; //right background window
+  // Short_t P1; //left peak window
+  // Short_t P2; //right peak window
+  // Short_t T1; //left zero crossing of deriv
+  // Short_t T2; //right zero crossing of deriv
+  // Short_t T3; //left timing window
+  // Short_t T4; //right timing window
+  // Short_t T5; //left width window
+  // Short_t T6; //right width window
+
   //Pos,T1,T2 - relative to pulse start, in samples
   //Time - relative to discriminator (+preWr), in samples
 
@@ -71,6 +72,7 @@ public:
 //   virtual ~PeakClass() {};
   
 };
+*/
 
 //ptype==0 - > pulse had start and stop
 const unsigned char P_NOSTART=1; //pulse has no start
@@ -80,7 +82,7 @@ const unsigned char P_BADTST=8;
 const unsigned char P_BADSZ=16;
 const unsigned char P_BADCNT=32;
 const unsigned char P_STARTCH=64;
-const unsigned char P_BADPULSE=128;
+const unsigned char P_BADPEAK=128;
 //-----------------------------------------------
 
 // Pulse is a signal registered in physical channel Chan
@@ -95,8 +97,7 @@ class PulseClass {
   std::vector <Float_t> sData; //(maybe smoothed) pulse data
 
   //PeakClass Peak;
-  std::vector <PeakClass> Peaks;
-  //int tdif; //difference in tstamp from the event tstamp
+  // std::vector <PeakClass> Peaks;
 
   UChar_t Chan; //channel number
   Short_t Pos; //position of the trigger relative to pulse start (in samples)
@@ -106,13 +107,21 @@ class PulseClass {
   //bit 7: hardware counters
   //Spin=123 - end of Blisr (?)
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
-  //short *Data; //raw pulse data
 
-  // Float_t Bg; //Background
-  // Float_t Ar; //Area
-  // Float_t Ht; //Height
-  // Float_t Tm; //Time
-  // Float_t Wd; //Width
+
+
+  Float_t Base; //baseline
+  Float_t Area0; //area+background
+  Float_t Area; //pure area (Area0-Base)
+  Float_t Slope1; //slope of background
+  Float_t Slope2; //slope of peak
+  //Float_t Noise1;
+  //Float_t Noise2;
+  Float_t Height; //maximum of pulse in the same region as Area
+  Float_t Width; //peak width - Alpatov (in 1st deriv)
+  Float_t Time; //exact time relative to pulse start (from 1st deriv), also rela
+
+
 
   //bool Analyzed; //true if pulse is already analyzed
  public:
@@ -157,7 +166,8 @@ class EventClass { //event of pulses
   void Fill_Time_Extend(HMap* map);
   void Fill1d(Bool_t first, HMap* map[], int ch, Float_t x);
   static void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w);
-  void Fill_Mean_Pulse(Bool_t first, HMap* map,  PulseClass* pls, int ideriv);
+  void Fill_Mean_Pulse(Bool_t first, HMap* map,
+		       pulse_vect::iterator pls, int ideriv);
   void Fill_Mean1(TH1F* hh,  Float_t* Data, Int_t nbins, int ideriv);
   //void Fill_Mean1(TH1F* hh,  PulseClass* pls, UInt_t nbins, int ideriv);
   void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);

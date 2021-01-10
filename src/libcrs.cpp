@@ -1078,17 +1078,14 @@ CRS::CRS() {
   GLBuf = NULL;//new UChar_t[GLBSIZE];
   //memset(GLBuf,0,GLBSIZE);
 
-  dummy_pulse.ptype=P_BADPULSE;
+  dummy_pulse.ptype=P_BADPEAK;
   dummy_pulse.Chan=254;
 
 
-  dummy_peak.Area=0;
-  dummy_peak.Height=0;
-  dummy_peak.Width=0;
-  //dummy_peak.Width2=0;
-  //dummy_peak.Width3=0;
-  dummy_peak.Time=-100;
-  //dummy_peak.Pos=0;
+  // dummy_peak.Area=0;
+  // dummy_peak.Height=0;
+  // dummy_peak.Width=0;
+  // dummy_peak.Time=-100;
 
   for (int i=0;i<MAX_CHTP;i++) {
     type_ch[i]=255;
@@ -3533,7 +3530,7 @@ void CRS::PulseAna(PulseClass &ipls) {
     }
     ipls.PeakAna33();
   }
-  else {
+  else { //dsp
     if (opt.checkdsp) {
       // if (ipls.Peaks.size()!=1) {
       // 	cout << "size!!!: " << ipls.Peaks.size() << endl;
@@ -3599,19 +3596,19 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
       }
       else {
 	ipls=PulseClass();
-	ipls.Peaks.push_back(PeakClass());
-	PeakClass *pk = &ipls.Peaks.back();
+	//ipls.Peaks.push_back(PeakClass());
+	//PeakClass *pk = &ipls.Peaks.back();
 
 	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
 	UShort_t* buf2u = (UShort_t*) buf2;
 	ipls.Chan = buf2[3];
-	pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	int tt = pk->Time+opt.sD[ipls.Chan]/opt.Period;
+	ipls.Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	ipls.Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	int tt = ipls.Time+opt.sD[ipls.Chan]/opt.Period;
 	ipls.Tstamp64=Tst+tt;
 	ipls.Spin=Spn;
-	pk->Time-=tt;
-	pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	ipls.Time-=tt;
+	ipls.Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
 
 	Event_Insert_Pulse(Blist,&ipls);
       }
@@ -3632,14 +3629,14 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	UShort_t* buf2u = (UShort_t*) buf2;
 	pulse_vect::iterator itpls =
 	  evt->pulses.insert(evt->pulses.end(),PulseClass());
-	itpls->Peaks.push_back(PeakClass());
-	PeakClass *pk = &itpls->Peaks.back();
-	pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	//itpls->Peaks.push_back(PeakClass());
+	//PeakClass *pk = &itpls->Peaks.back();
+	itpls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	itpls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	itpls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
 	itpls->Chan = buf2[3];
-	if (opt.St[itpls->Chan] && pk->Time < evt->T0) {
-	  evt->T0=pk->Time;
+	if (opt.St[itpls->Chan] && itpls->Time < evt->T0) {
+	  evt->T0=itpls->Time;
 	}
       }
     } //fill event
@@ -3679,21 +3676,21 @@ void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
       }
       else {
 	ipls=PulseClass();
-	ipls.Peaks.push_back(PeakClass());
-	PeakClass *pk = &ipls.Peaks.back();
+	//ipls.Peaks.push_back(PeakClass());
+	//PeakClass *pk = &ipls.Peaks.back();
 
 	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
 	UShort_t* buf2u = (UShort_t*) buf2;
 	ipls.Chan = buf2[3];
-	pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	pk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*pk->Area +
-	  opt.E2[ipls.Chan]*pk->Area*pk->Area;
-	pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	int tt = pk->Time+opt.sD[ipls.Chan]/opt.Period;
+	ipls.Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area +
+	  opt.E2[ipls.Chan]*ipls.Area*ipls.Area;
+	ipls.Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	int tt = ipls.Time+opt.sD[ipls.Chan]/opt.Period;
 	ipls.Tstamp64=Tst+tt;
 	ipls.Spin=Spn;
-	pk->Time-=tt;
-	pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	ipls.Time-=tt;
+	ipls.Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
 
 	Event_Insert_Pulse(Blist,&ipls);
       }
@@ -3714,17 +3711,17 @@ void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
 	UShort_t* buf2u = (UShort_t*) buf2;
 	pulse_vect::iterator itpls =
 	  evt->pulses.insert(evt->pulses.end(),PulseClass());
-	itpls->Peaks.push_back(PeakClass());
-	PeakClass *pk = &itpls->Peaks.back();
-	pk->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	pk->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	pk->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	//itpls->Peaks.push_back(PeakClass());
+	//PeakClass *pk = &itpls->Peaks.back();
+	itpls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	itpls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	itpls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
 	itpls->Chan = buf2[3];
-	if (opt.St[itpls->Chan] && pk->Time < evt->T0) {
-	  evt->T0=pk->Time;
+	if (opt.St[itpls->Chan] && itpls->Time < evt->T0) {
+	  evt->T0=itpls->Time;
 	}
-	pk->Area=opt.E0[itpls->Chan] + opt.E1[itpls->Chan]*pk->Area +
-	  opt.E2[itpls->Chan]*pk->Area*pk->Area;
+	itpls->Area=opt.E0[itpls->Chan] + opt.E1[itpls->Chan]*itpls->Area +
+	  opt.E2[itpls->Chan]*itpls->Area*itpls->Area;
       }
     } //fill event
 
@@ -3766,14 +3763,14 @@ void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
       Short_t* buf2 = (Short_t*) (GLBuf+idx1);
       pulse_vect::iterator ipls =
 	evt->pulses.insert(evt->pulses.end(),PulseClass());
-      ipls->Peaks.push_back(PeakClass());
-      PeakClass *pk = &ipls->Peaks.back();
-      pk->Area = buf2[0];
-      pk->Time = buf2[1]*0.01; //in samples
-      pk->Width = buf2[2]*0.001;
+      //ipls->Peaks.push_back(PeakClass());
+      //PeakClass *pk = &ipls->Peaks.back();
+      ipls->Area = buf2[0];
+      ipls->Time = buf2[1]*0.01; //in samples
+      ipls->Width = buf2[2]*0.001;
       ipls->Chan = buf2[3];
-      if (opt.St[ipls->Chan] && pk->Time < evt->T0) {
-	evt->T0=pk->Time;
+      if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
+	evt->T0=ipls->Time;
       }
     }
 
@@ -3814,14 +3811,14 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
       Short_t* buf2 = (Short_t*) (GLBuf+idx1);
       pulse_vect::iterator ipls =
 	evt->pulses.insert(evt->pulses.end(),PulseClass());
-      ipls->Peaks.push_back(PeakClass());
-      PeakClass *pk = &ipls->Peaks.back();
-      pk->Area = buf2[0];
-      pk->Time = buf2[1]*0.1;
-      pk->Width = buf2[2];
+      //ipls->Peaks.push_back(PeakClass());
+      //PeakClass *pk = &ipls->Peaks.back();
+      ipls->Area = buf2[0];
+      ipls->Time = buf2[1]*0.1;
+      ipls->Width = buf2[2];
       ipls->Chan = buf2[3];
-      if (opt.St[ipls->Chan] && pk->Time < evt->T0) {
-	evt->T0=pk->Time;
+      if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
+	evt->T0=ipls->Time;
       }
     }
 
@@ -3861,10 +3858,10 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
       Short_t* buf2 = (Short_t*) (GLBuf+idx1);
       pulse_vect::iterator ipls =
 	evt->pulses.insert(evt->pulses.end(),PulseClass());
-      ipls->Peaks.push_back(PeakClass());
-      PeakClass *pk = &ipls->Peaks.back();
-      pk->Area = buf2[0];
-      pk->Time = buf2[1]*0.1;
+      //ipls->Peaks.push_back(PeakClass());
+      //PeakClass *pk = &ipls->Peaks.back();
+      ipls->Area = buf2[0];
+      ipls->Time = buf2[1]*0.1;
       ipls->Chan = buf2[3];
     }
 
@@ -3918,10 +3915,10 @@ void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
       Short_t* buf2 = (Short_t*) (GLBuf+idx1);
       pulse_vect::iterator ipls =
 	evt->pulses.insert(evt->pulses.end(),PulseClass());
-      ipls->Peaks.push_back(PeakClass());
-      PeakClass *pk = &ipls->Peaks.back();
-      pk->Area = buf2[0];
-      pk->Time = buf2[1]*0.1;
+      //ipls->Peaks.push_back(PeakClass());
+      //PeakClass *pk = &ipls->Peaks.back();
+      ipls->Area = buf2[0];
+      ipls->Time = buf2[1]*0.1;
       ipls->Chan = buf2[3];
     }
 
@@ -3948,7 +3945,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   Int_t iii; // temporary var. to convert signed nbit var. to signed 32bit int
   Long64_t lll; //Long temporary var.
   int n_frm=0; //counter for frmt4 and frmt5
-  PeakClass *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
+  //PeakClass *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
   //Double_t QX=0,QY=0,RX,RY;
   Double_t QX=0,RX,AY;
 
@@ -4081,26 +4078,26 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       break;
     case 4:
       if (opt.dsp[ipls.Chan]) {
-	if (ipls.Peaks.size()==0) {
-	  ipls.Peaks.push_back(PeakClass());
-	  ipk=&ipls.Peaks[0];
-	}
+	// if (ipls.Peaks.size()==0) {
+	//   ipls.Peaks.push_back(PeakClass());
+	//   ipk=&ipls.Peaks[0];
+	// }
 	switch (n_frm) {
 	case 0: //C – [24]; A – [24]
 	  //area
 	  iii = data & 0xFFFFFF;
-	  ipk->Area0=((iii<<8)>>8);
-	  ipk->Area0/=p_len[ipls.Chan];
+	  ipls.Area0=((iii<<8)>>8);
+	  ipls.Area0/=p_len[ipls.Chan];
 	  data>>=24;
 	  //bkg
 	  iii = data & 0xFFFFFF;
-	  ipk->Base=((iii<<8)>>8);
-	  ipk->Base/=b_len[ipls.Chan];
-	  ipk->Area=ipk->Area0 - ipk->Base;
-	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
-	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
+	  ipls.Base=((iii<<8)>>8);
+	  ipls.Base/=b_len[ipls.Chan];
+	  ipls.Area=ipls.Area0 - ipls.Base;
+	  ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area +
+	    opt.E2[ipls.Chan]*ipls.Area*ipls.Area;
 	  if (opt.Bc[ipls.Chan]) {
-	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
+	    ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
 	  }
 	  break;
 	case 1: //H – [12]; QX – [36]
@@ -4109,7 +4106,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  data>>=36;
 	  //height
 	  iii = data & 0xFFF;
-	  ipk->Height=((iii<<20)>>20);
+	  ipls.Height=((iii<<20)>>20);
 	  break;
 	  // case 2: //QY – [36]
 	  //   lll = data & 0xFFFFFFFFF;
@@ -4122,25 +4119,25 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  data>>=24;
 
 	  if (RX!=0)
-	    ipk->Time=QX/RX;
+	    ipls.Time=QX/RX;
 	  else
-	    ipk->Time=-999;
+	    ipls.Time=-999;
 
 	  //AY (Width)
-	  if (ipk->Area) {
+	  if (ipls.Area) {
 	    iii = data & 0xFFFFFF;
 	    AY=((iii<<8)>>8);
 
-	    ipk->Width=AY/w_len[ipls.Chan]-ipk->Base;
-	    ipk->Width=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Width +
-	      opt.E2[ipls.Chan]*ipk->Width*ipk->Width;
+	    ipls.Width=AY/w_len[ipls.Chan]-ipls.Base;
+	    ipls.Width=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Width +
+	      opt.E2[ipls.Chan]*ipls.Width*ipls.Width;
 	    // if (opt.Bc[ipls.Chan]) {
-	    //   ipk->Width+=opt.Bc[ipls.Chan]*ipk->Base;
+	    //   ipls.Width+=opt.Bc[ipls.Chan]*ipls.Base;
 	    // }
-	    ipk->Width/=ipk->Area;
+	    ipls.Width/=ipls.Area;
 	  }
 	  else {
-	    ipk->Width=0;
+	    ipls.Width=0;
 	  }
 
 	  break;
@@ -4152,33 +4149,33 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       break;
     case 5:
       if (opt.dsp[ipls.Chan]) {
-	if (ipls.Peaks.size()==0) {
-	  ipls.Peaks.push_back(PeakClass());
-	  ipk=&ipls.Peaks[0];
-	}
+	// if (ipls.Peaks.size()==0) {
+	//   ipls.Peaks.push_back(PeakClass());
+	//   ipk=&ipls.Peaks[0];
+	// }
 	switch (n_frm) {
 	case 0: //C – [28]; H – [16]
 	  //height
 	  sss = data & 0xFFFF;
-	  ipk->Height=sss;
+	  ipls.Height=sss;
 	  data>>=16;
 	  //bkg
 	  iii = data & 0xFFFFFFF;
-	  ipk->Base=((iii<<4)>>4);
-	  ipk->Base/=b_len[ipls.Chan];
+	  ipls.Base=((iii<<4)>>4);
+	  ipls.Base/=b_len[ipls.Chan];
 	  break;
 	case 1: //A – [28]
 	  //area
 	  iii = data & 0xFFFFFFF;
-	  ipk->Area0=((iii<<4)>>4);
-	  ipk->Area0/=p_len[ipls.Chan];
+	  ipls.Area0=((iii<<4)>>4);
+	  ipls.Area0/=p_len[ipls.Chan];
 
-	  ipk->Area=ipk->Area0 - ipk->Base;
-	  //ipk->Area*=opt.emult[ipls.Chan];
-	  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
-	    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
+	  ipls.Area=ipls.Area0 - ipls.Base;
+	  //ipls.Area*=opt.emult[ipls.Chan];
+	  ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area +
+	    opt.E2[ipls.Chan]*ipls.Area*ipls.Area;
 	  if (opt.Bc[ipls.Chan]) {
-	    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
+	    ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
 	  }
 	  break;
 	case 2: //QX – [40]
@@ -4186,23 +4183,23 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  QX=((lll<<24)>>24);
 	  break;
 	case 3: //AY – [28]
-	  if (ipk->Area) {
+	  if (ipls.Area) {
 
 	    iii = data & 0xFFFFFFF;
 	    AY=((iii<<4)>>4);
 
-	    ipk->Width=AY/w_len[ipls.Chan]-ipk->Base;
-	    ipk->Width=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Width +
-	      opt.E2[ipls.Chan]*ipk->Width*ipk->Width;
+	    ipls.Width=AY/w_len[ipls.Chan]-ipls.Base;
+	    ipls.Width=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Width +
+	      opt.E2[ipls.Chan]*ipls.Width*ipls.Width;
 	    // if (opt.Bc[ipls.Chan]) {
-	    // 	ipk->Width+=opt.Bc[ipls.Chan]*ipk->Base;
+	    // 	ipls.Width+=opt.Bc[ipls.Chan]*ipls.Base;
 	    // }
-	    ipk->Width/=ipk->Area;
+	    ipls.Width/=ipls.Area;
 	  }
 	  else {
-	    ipk->Width=0;
+	    ipls.Width=0;
 	  }
-	  // cout << "Width: " << ipls.Counter << " " << ipk->Width << " " << ipk->Area << " " << ipk->Area0 << endl;
+	  // cout << "Width: " << ipls.Counter << " " << ipls.Width << " " << ipls.Area << " " << ipls.Area0 << endl;
 
 	  break;
 	case 4: //reserved – [24]; RX – [24]
@@ -4212,9 +4209,9 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  data>>=24;
 
 	  if (RX!=0)
-	    ipk->Time=QX/RX;
+	    ipls.Time=QX/RX;
 	  else
-	    ipk->Time=-999;
+	    ipls.Time=-999;
 
 	  break;
 	default:
@@ -4273,30 +4270,30 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 } //decode34
 
 void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
-  ipls.Peaks.push_back(PeakClass());
-  PeakClass *ipk=&ipls.Peaks[0];
+  //ipls.Peaks.push_back(PeakClass());
+  //PeakClass *ipk=&ipls.Peaks[0];
 
-  ipk->Area0=pk.A/p_len[ipls.Chan];
-  ipk->Base=pk.C/b_len[ipls.Chan];
-  ipk->Area=ipk->Area0 - ipk->Base;
+  ipls.Area0=pk.A/p_len[ipls.Chan];
+  ipls.Base=pk.C/b_len[ipls.Chan];
+  ipls.Area=ipls.Area0 - ipls.Base;
 
-  ipk->Height=pk.H;
+  ipls.Height=pk.H;
 
   if (pk.RX!=0)
-    ipk->Time=Double_t(pk.QX)/pk.RX;
+    ipls.Time=Double_t(pk.QX)/pk.RX;
   else
-    ipk->Time=-999;
+    ipls.Time=-999;
 
-  //ipk->Time=pk.RX;
+  //ipls.Time=pk.RX;
 
-  ipk->Width=pk.AY/w_len[ipls.Chan]-ipk->Base;
+  ipls.Width=pk.AY/w_len[ipls.Chan]-ipls.Base;
   //YK
-  ipk->Width/=ipk->Area;
+  ipls.Width/=ipls.Area;
 
-  ipk->Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipk->Area +
-    opt.E2[ipls.Chan]*ipk->Area*ipk->Area;
+  ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area +
+    opt.E2[ipls.Chan]*ipls.Area*ipls.Area;
   if (opt.Bc[ipls.Chan]) {
-    ipk->Area+=opt.Bc[ipls.Chan]*ipk->Base;
+    ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
   }
 
 }
@@ -4837,10 +4834,10 @@ void CRS::Print_Events(const char* file) {
     for (UInt_t i=0;i<it->pulses.size();i++) {
       PulseClass pp = it->pulses.at(i);
       out << "Ch: " << (int)pp.Chan << " Tstamp: " << pp.Tstamp64;
-      for (std::vector<PeakClass>::iterator pk=pp.Peaks.begin();
-	   pk!=pp.Peaks.end();++pk) {
-	out << " Pk: " << pk->Time << " " << pk->Area << " " << pk->Width;
-      }
+      // for (std::vector<PeakClass>::iterator pk=pp.Peaks.begin();
+      // 	   pk!=pp.Peaks.end();++pk) {
+      out << " Pk: " << pp.Time << " " << pp.Area << " " << pp.Width;
+      //}
       out << endl;
 
       for (int j=0;j<(int)pp.sData.size();j++) {
@@ -4873,10 +4870,10 @@ void CRS::Print_Peaks(const char* file) {
        it!=Levents.end();++it) {
     for (UInt_t i=0;i<it->pulses.size();i++) {
       PulseClass pp = it->pulses.at(i);
-      for (std::vector<PeakClass>::iterator pk=pp.Peaks.begin();
-	   pk!=pp.Peaks.end();++pk) {
-	out << it->Nevt << " " << (int)pp.Chan << " " << pp.Tstamp64*int(opt.Period) << " " << pk->Area << endl;
-      }
+      // for (std::vector<PeakClass>::iterator pk=pp.Peaks.begin();
+      // 	   pk!=pp.Peaks.end();++pk) {
+      out << it->Nevt << " " << (int)pp.Chan << " " << pp.Tstamp64*int(opt.Period) << " " << pp.Area << endl;
+      //}
     }
     //out << endl;
   }
@@ -5204,179 +5201,6 @@ void CRS::Reset_Dec(Short_t mod) {
   // memset(b_decwrite,0,sizeof(b_decwrite));
 }
 
-void CRS::Fill_Dec75(EventClass* evt) {
-  // fill_dec is not thread safe!!!
-  //format of decoded data:
-  // 1) one 8byte header word:
-  //    bit63=1 - start of event
-  //    lowest 6 bytes - Tstamp
-  //    byte 7 - Spin
-  // 2) N 8 byte words, each containing one peak
-  //    1st (lowest) 2 bytes - Area
-  //    2 bytes - Time*10
-  //    2 bytes - Width
-  //    1 byte - channel
-
-  *DecBuf8 = 1;
-  *DecBuf8<<=63;
-  *DecBuf8 |= evt->Tstmp & sixbytes;
-  if (evt->Spin) {
-    *DecBuf8 |= 0x1000000000000;
-  }
-
-  ++DecBuf8;
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      PeakClass* pk = &evt->pulses[i].Peaks[j];
-
-      Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      Decbuf2[0] = pk->Area;
-      Decbuf2[1] = pk->Time*10;
-      Decbuf2[2] = 0;
-      Decbuf2[3] = evt->pulses[i].Chan;
-      ++DecBuf8;
-    }
-  }
-
-  idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
-    Flush_Dec();
-  }
-
-} //Fill_Dec75
-
-void CRS::Fill_Dec76(EventClass* evt) {
-  // fill_dec is not thread safe!!!
-  //format of decoded data:
-  // 1) one 8byte header word:
-  //    bit63=1 - start of event
-  //    lowest 6 bytes - Tstamp
-  //    byte 7 - Spin
-  // 2) N 8-byte words, each containing one peak
-  //    1st (lowest) 2 bytes - Area
-  //    2 bytes - Time*10
-  //    2 bytes - Width
-  //    1 byte - channel
-
-  *DecBuf8 = 1;
-  *DecBuf8<<=63;
-  *DecBuf8 |= evt->Tstmp & sixbytes;
-  if (evt->Spin) {
-    *DecBuf8 |= 0x1000000000000;
-  }
-
-  ++DecBuf8;
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      PeakClass* pk = &evt->pulses[i].Peaks[j];
-      *DecBuf8=0;
-      Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      Decbuf2[0] = pk->Area;
-      Decbuf2[1] = pk->Time*10;
-      // Decbuf2[2] = 0;
-      Decbuf2[3] = evt->pulses[i].Chan;
-      ++DecBuf8;
-    }
-  }
-
-  idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
-    Flush_Dec();
-  }
-
-} //Fill_Dec76
-
-void CRS::Fill_Dec77(EventClass* evt) {
-  //Decode77 is the same as 76, but since this version Time is relative to event Tstmp (was relative to pulse Tstamp64 in Decode76)
-  //Width is recorded
-
-  // fill_dec is not thread safe!!!
-  //format of decoded data:
-  // 1) one 8byte header word:
-  //    bit63=1 - start of event
-  //    lowest 6 bytes - Tstamp
-  //    byte 7 - Spin
-  // 2) N 8-byte words, each containing one peak
-  //    1st (lowest) 2 bytes - Area
-  //    2 bytes - Time*10
-  //    2 bytes - Width
-  //    1 byte - channel
-
-  *DecBuf8 = 1;
-  *DecBuf8<<=63;
-  *DecBuf8 |= evt->Tstmp & sixbytes;
-  if (evt->Spin) {
-    *DecBuf8 |= 0x1000000000000;
-  }
-
-  ++DecBuf8;
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      PeakClass* pk = &evt->pulses[i].Peaks[j];
-      *DecBuf8=0;
-      Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      Decbuf2[0] = pk->Area;
-      Decbuf2[1] = pk->Time*10;
-      Decbuf2[2] = pk->Width;
-      Decbuf2[3] = evt->pulses[i].Chan;
-      ++DecBuf8;
-    }
-  }
-
-  idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
-    Flush_Dec();
-  }
-
-} //Fill_Dec77
-
-void CRS::Fill_Dec78(EventClass* evt) {
-  //Fill_Dec78 - the same as 77, but different factors for Time and Width
-
-  // fill_dec is not thread safe!!!
-  //format of decoded data:
-  // 1) one 8byte header word:
-  //    bit63=1 - start of event
-  //    lowest 6 bytes - Tstamp
-  //    byte 7 - Spin
-  // 2) N 8-byte words, each containing one peak
-  //    1st (lowest) 2 bytes - Area
-  //    2 bytes - Time*100
-  //    2 bytes - Width*1000
-  //    1 byte - channel
-
-  *DecBuf8 = 1;
-  *DecBuf8<<=63;
-  *DecBuf8 |= evt->Tstmp & sixbytes;
-  if (evt->Spin) {
-    *DecBuf8 |= 0x1000000000000;
-  }
-
-  ++DecBuf8;
-
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      PeakClass* pk = &evt->pulses[i].Peaks[j];
-      *DecBuf8=0;
-      Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      Decbuf2[0] = pk->Area;
-      Decbuf2[1] = pk->Time*100;
-      Decbuf2[2] = pk->Width*1000;
-      Decbuf2[3] = evt->pulses[i].Chan;
-      ++DecBuf8;
-    }
-  }
-
-  idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
-    Flush_Dec();
-  }
-
-} //Fill_Dec78
-
 void CRS::Fill_Dec79(EventClass* evt) {
   //Fill_Dec79 - the same as 78, but different factor for Area
 
@@ -5404,27 +5228,28 @@ void CRS::Fill_Dec79(EventClass* evt) {
   // }
   ++DecBuf8;
 
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      PeakClass* pk = &evt->pulses[i].Peaks[j];
-      *DecBuf8=0;
-      Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
-      if (pk->Area<0) {
-	*Decbuf2u = 0;
-      }
-      else if (pk->Area>13106){
-	*Decbuf2u = 65535;
-      }
-      else {
-	*Decbuf2u = pk->Area*5+1;
-      }
-      Decbuf2[1] = pk->Time*100;
-      Decbuf2[2] = pk->Width*1000;
-      Decbuf2[3] = evt->pulses[i].Chan;
-      //cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
-      ++DecBuf8;
+  for (pulse_vect::iterator ipls=evt->pulses.begin();
+       ipls!=evt->pulses.end();++ipls) {
+    //for (UInt_t i=0;i<evt->pulses.size();i++) {
+    //for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
+    //PeakClass* pk = &evt->pulses[i].Peaks[j];
+    *DecBuf8=0;
+    Short_t* Decbuf2 = (Short_t*) DecBuf8;
+    UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
+    if (ipls->Area<0) {
+      *Decbuf2u = 0;
     }
+    else if (ipls->Area>13106){
+      *Decbuf2u = 65535;
+    }
+    else {
+      *Decbuf2u = ipls->Area*5+1;
+    }
+    Decbuf2[1] = ipls->Time*100;
+    Decbuf2[2] = ipls->Width*1000;
+    Decbuf2[3] = ipls->Chan;
+    //cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
+    ++DecBuf8;
   }
 
   idec = (UChar_t*)DecBuf8-DecBuf;
@@ -5449,7 +5274,7 @@ template <typename T> int sgn(T val) {
 // }
 
 void CRS::Fill_Dec80(EventClass* evt) {
-
+  // эти параметры должны быть заданы в opt
   const bool bit_area=true;
   const bool bit_time=true;
   const bool bit_width=true;
@@ -5457,7 +5282,6 @@ void CRS::Fill_Dec80(EventClass* evt) {
   const Float_t DA=1;
   const Float_t DT=100;
   const Float_t DW=10000;
-
 
   //Fill_Dec80
 
@@ -5478,24 +5302,29 @@ void CRS::Fill_Dec80(EventClass* evt) {
   // 4 bytes: float DW - constant for converting width (see peak width below)
 
 
-  //format of decoded counters:
-  // header1 (1byte) = 01 (binary)
+  // Event header byte (2 lower bits):
+  // = 01b: next 12 bytes - counters
+  // = 10b: bit2=spin + next 6 bytes - tstamp     -> event start
+  // = 00b: next 7 bytes - peak
+  
+
+  //format of decoded counters (header=01b):
+  // header1 (1byte) = 01b
   //   1byte - channel1
   //   6bytes - tstamp (in nsec)
   //   6bytes - counter
-  // header1 (1byte) = 01 (binary)
+  // header1 (1byte) = 01b
   //   1byte - channel2
   //   6bytes - tstamp (in nsec)
   //   6bytes - counter
-  // header1 (1byte) = 01 (binary)
+  // header1 (1byte) = 01b
   //   1byte - channel3
   // ...
 
 
-  
-  //format of decoded event:
+  //format of decoded event (header=10b):
   // -- event start --
-  // header10 (1byte) = 10 (binary) + bit2=spin
+  // header10 (1byte) = 10b + bit2=spin
   // tstamp (6bytes) (in nsec)
   // -- N peaks... 
   // header00 (1byte) = 00 (binary) -- peak1
@@ -5512,15 +5341,11 @@ void CRS::Fill_Dec80(EventClass* evt) {
   // header00 (1byte) = 00 (binary) -- peak3
   // ...
   
-
   // peak area:  2bytes (Area*DA  (for DA - see global header))
   // peak time:  2bytes (Time*DT  (for DT - see global header))
   // peak width: 2bytes (Width*DW (for DW - see global header))
 
-
-  
-  *DecBuf1 = evt->Spin&1;
-  *DecBuf1 <<= 2; //spin
+  *DecBuf1 = (evt->Spin&1) << 2; //spin
   *DecBuf1 |= 2; //header: binary 10 - event_start
   ++DecBuf1;
 
@@ -5529,35 +5354,34 @@ void CRS::Fill_Dec80(EventClass* evt) {
 
   DecBuf1+=6;
 
-  for (UInt_t i=0;i<evt->pulses.size();i++) {
-    for (UInt_t j=0;j<evt->pulses[i].Peaks.size();j++) {
-      PeakClass* pk = &evt->pulses[i].Peaks[j];
+  for (pulse_vect::iterator ipls=evt->pulses.begin();
+       ipls!=evt->pulses.end();++ipls) {
 
-      *DecBuf1 = 0;
-      ++DecBuf1;
-      *DecBuf1 = evt->pulses[i].Chan;
-      ++DecBuf1;
+    *DecBuf1 = 0;
+    ++DecBuf1;
+    *DecBuf1 = ipls->Chan;
+    ++DecBuf1;
 
-      Short_t* DecBuf2 = (Short_t*) DecBuf1;
+    Short_t* DecBuf2 = (Short_t*) DecBuf1;
       
-      if (bit_area) {
-	int X = pk->Area*DA;
-	(abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
-	++DecBuf2;
-      }
-      if (bit_time) {
-	int X = pk->Time*DT;
-	(abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
-	++DecBuf2;
-      }
-      if (bit_width) {
-	int X = pk->Width*DW;
-	(abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
-	++DecBuf2;
-      }
-
-      DecBuf1 = (UChar_t*) DecBuf2;
+    if (bit_area) {
+      int X = ipls->Area*DA;
+      (abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
+      ++DecBuf2;
     }
+    if (bit_time) {
+      int X = ipls->Time*DT;
+      (abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
+      ++DecBuf2;
+    }
+    if (bit_width) {
+      int X = ipls->Width*DW;
+      (abs(X)<MAXSHORT) ? *DecBuf2 = X : *DecBuf2 = MAXSHORT*sgn(X);
+      ++DecBuf2;
+    }
+
+    DecBuf1 = (UChar_t*) DecBuf2;
+
   }
 
   idec = DecBuf1-DecBuf;

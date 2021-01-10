@@ -197,7 +197,7 @@ RQ_OBJECT("CRS")
 
   Double_t sPeriod; // real period for each channel, including smpl
 
-  PeakClass dummy_peak;
+  //PeakClass dummy_peak;
   PulseClass dummy_pulse;
   EventClass dummy_event;
 
