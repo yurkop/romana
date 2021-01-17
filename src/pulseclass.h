@@ -105,7 +105,7 @@ class PulseClass {
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 1: event is writable in Dec
   //bit 7: hardware counters
-  //Spin=123 - end of Blisr (?)
+  //Spin=255 - end of Blist
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
 
 

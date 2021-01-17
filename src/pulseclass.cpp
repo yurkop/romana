@@ -523,7 +523,7 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   //Float_t dt;
   //Long64_t dt;
 
-  for (UInt_t i=0;i<pulses.size();i++) {
+  for (UInt_t i=0;i<pulses.size();i++) { //reject identical pulses
     if (pls->Chan == pulses[i].Chan &&
 	TMath::Abs(pls->Tstamp64-pulses[i].Tstamp64) < opt.tveto) {
       return;
@@ -539,8 +539,10 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   }
 
   if (pulses.empty()) { //this is the first pulse in the event
-    //dt=0;
-    Tstmp=pls->Tstamp64;
+    int i_dt = opt.sD[pls->Chan]/opt.Period;
+    Tstmp=pls->Tstamp64+i_dt;
+    pls->Time-=i_dt;
+    //Tstmp=pls->Tstamp64;
   }
   else {
     pls->Time+=pls->Tstamp64 - Tstmp;
@@ -549,9 +551,12 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
   pulses.push_back(*pls);
 
   if (opt.St[pls->Chan]) {
-    if (pls->Time<T0) {
-      T0=pls->Time;
+    if (pls->Time+opt.sD[pls->Chan]/opt.Period<T0) {
+      T0=pls->Time+opt.sD[pls->Chan]/opt.Period;
     }
+    // if (pls->Time<T0) {
+    //   T0=pls->Time;
+    // }
   }
 
 }

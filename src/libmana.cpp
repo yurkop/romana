@@ -242,9 +242,11 @@ void print_var(int tp, TDataMember *dm, TString vname, TString memname, int len=
   }	
 }
 
-void evalpar() {
+int evalpar(l_iter it, char* var, const char* varname) {
+  //returns 0 if OK
+
   //cout << "listpar: " << listpar.size() << endl;
-  for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
+  //for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
     //try {
     TString par, // parameter name
       p0, //parameter with []
@@ -254,7 +256,7 @@ void evalpar() {
     Ssiz_t ll,len;
     char sbuf[1024];
     int buflen=0;
-    char* var = (char*) &opt;
+    //char* var = (char*) &opt;
 
     ll = it->First("=");
     p0 = (*it)(0,ll);
@@ -276,7 +278,7 @@ void evalpar() {
 
     //cout << "par: " << par << " " << index << endl;
 
-    TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
+    TList* lst = TClass::GetClass(varname)->GetListOfDataMembers();
     TDataMember* dm = (TDataMember*) lst->FindObject(par.Data());
     if (dm) {
       TString tp = dm->GetTypeName();
@@ -303,12 +305,14 @@ void evalpar() {
 	buflen=sdata.Length();
 	memset(var+off,0,maxindex);
 	memcpy(var+off,sdata.Data(),TMath::Min(buflen,maxindex));
-	continue;
+	//continue;
+	return 0;
       }
       else {
 	cout << "Error: unknown type of parameter: "
 	     << par << " " << tp << endl;
-	continue;
+	//continue;
+	return 1;
       }
 
       if (dim==0) { //only one parameter
@@ -329,19 +333,23 @@ void evalpar() {
 	else {
 	  cout << "Error: index is out of range : "
 	       << par << " " << index << " " << maxindex << endl;
-	  continue;
+	  //continue;
+	  return 2;
 	}
       }
       else { //2-dim of more - ignore
 	cout << "Error: parameter with dimension >1 : "
 	     << par << " " << dim << endl;
-	continue;
+	//continue;
+	return 3;
       }
     } //if dm
     else {
-      cout << "Parameter " << par.Data() << " not found" << endl;
+      //cout << "Parameter " << par.Data() << " not found" << endl;
+      return 100;
     }
-  } //for l_iter
+    //} //for l_iter
+    return 0;
 }
 
 //-------------------------------------
@@ -1136,7 +1144,14 @@ int main(int argc, char **argv)
 
   //exit(1);
   //change individual parameters if listpar is not empty
-  evalpar();
+  for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
+    int res=0;
+    res+=evalpar(it,(char*)&opt,"Toptions");
+    res+=evalpar(it,(char*)&cpar,"Coptions");
+    if (res>=200) {
+      prnt("ssssds;",BRED,"Parameter ",it->Data()," not found: ",res,RST);
+    }
+  }
 
   //show individual parameters if listshow is not empty
   //showpar();

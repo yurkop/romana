@@ -1169,6 +1169,17 @@ int ParParDlg::AddFiles(TGCompositeFrame* frame) {
   TGHorizontalFrame *hframe2 = new TGHorizontalFrame(fF6,1,1);
   fF6->AddFrame(hframe2,LayLT0);
 
+  //strcpy(opt.fname_raw,"raw32.gz");
+  id = Plist.size()+1;
+  TGTextEntry* tt = new TGTextEntry(hframe2,opt.Filename, id);
+  tt->SetDefaultSize(380,20);
+  tt->SetMaxLength(sizeof(opt.Filename)-1);
+  //tt->SetWidth(590);
+  //tt->SetState(false);
+  hframe2->AddFrame(tt,LayCC0);
+  DoMap(tt,opt.Filename,p_txt,0);
+  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+
   AddChk(fF6,"Write raw data [Filename].raw",&opt.raw_write,&opt.raw_compr,0);
   AddChk(fF6,"Write decoded data [Filename].dec",&opt.dec_write,&opt.dec_compr,0);
   AddChk(fF6,"Write root histograms [Filename].root",&opt.root_write,&opt.root_compr,0);

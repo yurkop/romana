@@ -348,14 +348,10 @@ void *handle_mkev(void *ctx) {
 
     bool fdec=false; //proper dec.. finished
     while(!fdec && mkev_thread_run) {
-      // EventClass *evt = &(crs->Bufevents.begin()->back());
-      // if (evt->Nevt==gl_ivect && evt->Spin==123) {
-      // }
-
       for (BB = crs->Bufevents.begin(); BB!=crs->Bufevents.end();++BB) {
 	// cout << "mkev: " << crs->Bufevents.size() << " " << BB->front().Nevt
 	//      << " " << gl_ivect << " " << (int) BB->front().Spin << endl;
-	if (BB->back().Nevt==gl_ivect && BB->back().Spin==123) {
+	if (BB->back().Nevt==gl_ivect && BB->back().Spin==255) {
 	  fdec=true;
 	  break;
 	}
@@ -3561,8 +3557,108 @@ void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
 void CRS::Dec_End(eventlist* &Blist, UInt_t iread) {
   Blist->push_back(EventClass());
   Blist->back().Nevt=iread;
-  Blist->back().Spin=123;
+  Blist->back().Spin=255;
 }
+
+void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
+  //Decode79a - the same as 79, with additional calibration
+
+  //ibuf - current sub-buffer
+  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  UChar_t frmt = GLBuf[idx1+7] & 0x80;
+  Dec_Init(Blist,!frmt);
+  PulseClass pls;//=dummy_pulse;
+  PulseClass* ipls=&pls;
+  static Long64_t Tst;
+  static UChar_t Spn;
+
+  while (idx1<b_end[ibuf]) {
+    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+
+    if (opt.fProc) { //fill pulses for reanalysis
+      if (frmt) { //event start
+	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+	Tst = (*buf8) & sixbytes;
+	(*buf8)>>=48;
+	Spn = UChar_t((*buf8) & 1);
+	//Spn|=2;
+      }
+      else {
+	//pls=PulseClass();
+
+	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+	UShort_t* buf2u = (UShort_t*) buf2;
+	ipls->Chan = buf2[3];
+	ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	ipls->Area=opt.E0[ipls->Chan] + opt.E1[ipls->Chan]*ipls->Area +
+	  opt.E2[ipls->Chan]*ipls->Area*ipls->Area;
+
+	//old
+	// ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	// int tt = ipls->Time+opt.sD[ipls->Chan]/opt.Period;
+	// ipls->Tstamp64=Tst+tt;
+	// ipls->Time-=tt;
+	//prnt("sd l l l d fs;",KRED,ipls->Chan,Tst,ipls->Tstamp64,ipls->Tstamp64-Tst,tt,ipls->Time,RST);
+
+	//new
+	// double dt = opt.sD[ipls->Chan]/opt.Period; //in samples
+	// ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01 + dt; //in samples
+	// int i_dt = ipls->Time;
+	// ipls->Time -= i_dt;
+	// ipls->Tstamp64=Tst+i_dt;
+
+	//new2
+	ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	ipls->Tstamp64=Tst;
+
+
+	ipls->Spin=Spn;
+	ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+
+	Event_Insert_Pulse(Blist,ipls);
+      }
+    }
+    else { //fill event
+      if (frmt) { //event start	
+	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+	evt = &*Blist->insert(Blist->end(),EventClass());
+	evt->Nevt=nevents;
+	nevents++;
+	evt->Tstmp = (*buf8) & sixbytes;
+	(*buf8)>>=48;
+	evt->Spin = UChar_t((*buf8) & 1);
+	//evt->Spin|=2;
+      }
+      else {
+	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+	UShort_t* buf2u = (UShort_t*) buf2;
+	pulse_vect::iterator itpls =
+	  evt->pulses.insert(evt->pulses.end(),PulseClass());
+	ipls = &(*itpls);
+	ipls->Chan = buf2[3];
+	ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01
+	  + opt.sD[ipls->Chan]/opt.Period; //in samples
+	ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
+	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
+	  evt->T0=ipls->Time;
+	}
+	ipls->Area=opt.E0[ipls->Chan] + opt.E1[ipls->Chan]*ipls->Area +
+	  opt.E2[ipls->Chan]*ipls->Area*ipls->Area;
+      }
+    } //fill event
+
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+  Dec_End(Blist,iread);
+
+} //decode79a
 
 void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
   //Decode79 - the same as 78, but different factor for Area
@@ -3603,11 +3699,22 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	UShort_t* buf2u = (UShort_t*) buf2;
 	ipls.Chan = buf2[3];
 	ipls.Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	ipls.Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	int tt = ipls.Time+opt.sD[ipls.Chan]/opt.Period;
-	ipls.Tstamp64=Tst+tt;
+
+
+	//old
+	//ipls.Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	//int tt = ipls.Time+opt.sD[ipls.Chan]/opt.Period;
+	//ipls.Tstamp64=Tst+tt;
+	//ipls.Time-=tt;
+
+	//new
+	double dt = opt.sD[ipls.Chan]/opt.Period; //in samples
+	ipls.Time = (buf2[1]+rnd.Rndm()-0.5)*0.01 + dt; //in samples
+	int i_dt = ipls.Time;
+	ipls.Time -= i_dt;
+	ipls.Tstamp64=Tst+i_dt;
+
 	ipls.Spin=Spn;
-	ipls.Time-=tt;
 	ipls.Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
 
 	Event_Insert_Pulse(Blist,&ipls);
@@ -3647,90 +3754,6 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
   Dec_End(Blist,iread);
 
 } //decode79
-
-void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
-  //Decode79a - the same as 79, with additional calibration
-
-  //ibuf - current sub-buffer
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
-
-  EventClass* evt=&dummy_event;
-
-  eventlist *Blist;
-  UChar_t frmt = GLBuf[idx1+7] & 0x80;
-  Dec_Init(Blist,!frmt);
-  PulseClass ipls=dummy_pulse;
-  static Long64_t Tst;
-  static UChar_t Spn;
-
-  while (idx1<b_end[ibuf]) {
-    frmt = GLBuf[idx1+7] & 0x80; //event start bit
-
-    if (opt.fProc) { //fill pulses for reanalysis
-      if (frmt) { //event start
-	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
-	Tst = (*buf8) & sixbytes;
-	(*buf8)>>=48;
-	Spn = UChar_t((*buf8) & 1);
-	//Spn|=2;
-      }
-      else {
-	ipls=PulseClass();
-	//ipls.Peaks.push_back(PeakClass());
-	//PeakClass *pk = &ipls.Peaks.back();
-
-	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
-	UShort_t* buf2u = (UShort_t*) buf2;
-	ipls.Chan = buf2[3];
-	ipls.Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area +
-	  opt.E2[ipls.Chan]*ipls.Area*ipls.Area;
-	ipls.Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	int tt = ipls.Time+opt.sD[ipls.Chan]/opt.Period;
-	ipls.Tstamp64=Tst+tt;
-	ipls.Spin=Spn;
-	ipls.Time-=tt;
-	ipls.Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
-
-	Event_Insert_Pulse(Blist,&ipls);
-      }
-    }
-    else { //fill event
-      if (frmt) { //event start	
-	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
-	evt = &*Blist->insert(Blist->end(),EventClass());
-	evt->Nevt=nevents;
-	nevents++;
-	evt->Tstmp = (*buf8) & sixbytes;
-	(*buf8)>>=48;
-	evt->Spin = UChar_t((*buf8) & 1);
-	//evt->Spin|=2;
-      }
-      else {
-	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
-	UShort_t* buf2u = (UShort_t*) buf2;
-	pulse_vect::iterator itpls =
-	  evt->pulses.insert(evt->pulses.end(),PulseClass());
-	//itpls->Peaks.push_back(PeakClass());
-	//PeakClass *pk = &itpls->Peaks.back();
-	itpls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	itpls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	itpls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
-	itpls->Chan = buf2[3];
-	if (opt.St[itpls->Chan] && itpls->Time < evt->T0) {
-	  evt->T0=itpls->Time;
-	}
-	itpls->Area=opt.E0[itpls->Chan] + opt.E1[itpls->Chan]*itpls->Area +
-	  opt.E2[itpls->Chan]*itpls->Area*itpls->Area;
-      }
-    } //fill event
-
-    idx1+=8;
-  } //while (idx1<buf_len)
-
-  Dec_End(Blist,iread);
-
-} //decode79a
 
 void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
   //Decode78 - the same as 77, but different factors for Time and Width
@@ -4981,21 +5004,13 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
 
   ++npulses2[pls->Chan];
 
-  /*
-  if (Elist->empty()) {
-    //if (Tstart64<0) {
-    //Tstart64 = pls->Tstamp64;
-
-    // cout << "TStart64: " << Tstart64 << endl;
-    it=Elist->insert(Elist->end(),EventClass());
-    it->Nevt=nevents;
-    it->Pulse_Ana_Add(pls);
-    nevents++;
-    //m_event=Elist->begin();
-
-    return;
-  }
-  */
+  int i_dt = pls->Time;
+  pls->Time -= i_dt;
+  pls->Tstamp64+=i_dt;
+  Long64_t T64 = pls->Tstamp64+Long64_t(opt.sD[pls->Chan]/opt.Period);
+  // if (opt.sD[pls->Chan]/opt.Period) {
+  //   cout << "sd: " << pls->Chan << " " << opt.sD[pls->Chan]/opt.Period << endl;
+  // }
 
   // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
   int nn=0;
@@ -5009,7 +5024,7 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
       ++errors[ER_LAG];//event lag exceeded
       return;
     }
-    dt = (pls->Tstamp64 - rit->Tstmp);
+    dt = (T64 - rit->Tstmp);
     if (dt > opt.tgate) {
       //add new event AFTER rit.base()
       it=Elist->insert(rit.base(),EventClass());
@@ -5083,7 +5098,7 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     //return;
   }
 
-  if (BB->back().Spin==123) {
+  if (BB->back().Spin==255) {
     BB->pop_back();
   }
 
