@@ -3561,7 +3561,7 @@ void CRS::Dec_End(eventlist* &Blist, UInt_t iread) {
 }
 
 void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
-  //Decode79a - the same as 79, with additional calibration
+  //the same as 79, with additional calibration
 
   //ibuf - current sub-buffer
   int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)

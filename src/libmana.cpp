@@ -1300,7 +1300,8 @@ void SplitFilename (string str, string &folder, string &name, string &ext)
   //strcpy(ext,fname.substr(found+1).c_str());
 }
 
-void saveroot(const char *name) {
+/*
+void saveroot_old(const char *name) {
 
   TFile * tf = new TFile(name,"RECREATE");
 
@@ -1315,6 +1316,7 @@ void saveroot(const char *name) {
   gROOT->cd();
 
   TIter next(gDirectory->GetList());
+  //TIter next(hcl->map_list;);
 
   tf->cd();
 
@@ -1355,17 +1357,46 @@ void saveroot(const char *name) {
 
   tf->Close();
 }
+*/
+
+void saveroot(const char *name) {
+
+  TFile * tf = new TFile(name,"RECREATE");
+
+  if (!tf->IsOpen()) {
+    cout << "Can't open file: " << name << endl;
+    return;
+  }
+
+  //gROOT->cd();
+
+  TIter next(hcl->allmap_list);
+
+  tf->cd();
+
+  TObject* obj;
+  while ( (obj=(TObject*)next()) ) {
+    HMap* map = (HMap*) obj;
+    if (map->hst->GetEntries() > 0) {
+      map->hst->Write();
+    }
+  }
+
+  cpar.Write();
+  opt.Write();
+
+  cout << "Histograms and parameters are saved in file: " << name << endl;
+
+  tf->Close();
+}
 
 void readroot(const char *name) {
 
   //char nam[100];
 
-  //cout << opt.channels[0] << endl;
-
   gROOT->cd();
-  //TList *list = gDirectory->GetList();
-  TList *list = hcl->hist_list;
-
+  // TList *list = hcl->hist_list;
+  TList *list = hcl->allmap_list;
   //list->ls();
 
   TFile *tf = new TFile(name,"READ");
@@ -1378,25 +1409,31 @@ void readroot(const char *name) {
   while ((key = (TKey*)next())) {
     //key->Print();
 
-    //cout << key->GetClassName() << endl;
-    if (strcmp(key->GetClassName(),"Toptions")) {
-      obj=key->ReadObj();
-      if (obj->InheritsFrom(TH1::Class())) {
-	//obj->Print();
-	obj2 = (TH1*) list->FindObject(obj->GetName());
-	if (obj2) {
-	  //printf("%d\n",obj2);
-	  // cout << "readroot1: " << obj2 << " " << obj2->GetName() << " "
-	  //      << ((TH1*) obj2)->Integral() << endl;
-	  TDirectory* dir = obj2->GetDirectory();
-	  obj->Copy(*obj2);
-	  obj->Delete();
-	  obj2->SetDirectory(dir);
-	  // cout << "readroot2: " << obj2 << " " << obj2->GetName() << " "
-	  //      << ((TH1*) obj2)->Integral() << endl;
-	}
+    //cout << "key: " << key->GetClassName() << endl;
+    //continue;
+
+    //if (strcmp(key->GetClassName(),"Toptions")) {
+    obj=key->ReadObj();
+    if (obj->InheritsFrom(TH1::Class())) {
+      //obj->Print();
+      //cout << "obj: " << obj->GetName() << endl;
+      HMap* map = (HMap*) list->FindObject(obj->GetName());
+      if (map) {
+	//cout << "map: " << map->GetName() << endl;
+	//continue;
+	obj2 = map->hst;
+	//printf("%d\n",obj2);
+	// cout << "readroot1: " << obj2 << " " << obj2->GetName() << " "
+	//      << ((TH1*) obj2)->Integral() << endl;
+	TDirectory* dir = obj2->GetDirectory();
+	obj->Copy(*obj2);
+	obj->Delete();
+	obj2->SetDirectory(dir);
+	// cout << "readroot2: " << obj2 << " " << obj2->GetName() << " "
+	//      << ((TH1*) obj2)->Integral() << endl;
       }
     }
+      //}
 
   }
 
@@ -2048,7 +2085,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
 
 
-
+  //cout << "rd_root: " << rd_root << endl;
   if (rd_root) {
     readroot(datfname);
     crs->Fmode=0;
@@ -2741,22 +2778,23 @@ void MainFrame::Export() {
   TGFileInfo fi;
   fi.fFileTypes = dnd_types;
   //fi.fIniDir    = StrDup(".");
-  new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
+  new TGFileDialog(gClient->GetRoot(), this, kFDSave, &fi);
 
   if (fi.fFilename) {
-    Int_t retval=kMBOk;
-    if (!stat(fi.fFilename, &statb)) {
-      new TGMsgBox(gClient->GetRoot(), this,
-		   "File exists",
-		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
-    }
+    cv->SaveAs(fi.fFilename);
+    // Int_t retval=kMBOk;
+    // if (!stat(fi.fFilename, &statb)) {
+    //   new TGMsgBox(gClient->GetRoot(), this,
+    // 		   "File exists",
+    // 		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
+    // }
 
-    if (retval == kMBOk) {
-      cout << "OK: " << fi.fFilename <<  " " << TImage::GetImageFileTypeFromFilename(fi.fFilename) << endl;
-      //TGCompositeFrame* frame = fTab->GetCurrentContainer();
-      //frame->SaveAs(fi.fFilename);
-      cv->SaveAs(fi.fFilename);
-    }
+    // if (retval == kMBOk) {
+    //   cout << "OK: " << fi.fFilename <<  " " << TImage::GetImageFileTypeFromFilename(fi.fFilename) << endl;
+    //   //TGCompositeFrame* frame = fTab->GetCurrentContainer();
+    //   //frame->SaveAs(fi.fFilename);
+    //   cv->SaveAs(fi.fFilename);
+    // }
   }
 	
 }
@@ -2984,16 +3022,18 @@ void MainFrame::DoSaveRoot() {
   new TGFileDialog(gClient->GetRoot(), this, kFDSave, &fi);
 
   if (fi.fFilename) {
-    Int_t retval=kMBOk;
-    if (!stat(fi.fFilename, &statb)) {
-      new TGMsgBox(gClient->GetRoot(), this,
-		   "File exists",
-		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
-    }
+    saveroot(fi.fFilename);
 
-    if (retval == kMBOk) {
-      saveroot(fi.fFilename);
-    }
+    // Int_t retval=kMBOk;
+    // if (!stat(fi.fFilename, &statb)) {
+    //   new TGMsgBox(gClient->GetRoot(), this,
+    // 		   "File exists",
+    // 		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
+    // }
+
+    // if (retval == kMBOk) {
+    //   saveroot(fi.fFilename);
+    // }
   }
 
 #ifdef LINUX

@@ -155,7 +155,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   LayLT1a   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 1, 1, 5, 0);
   LayLT2   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 0);
   LayLT3   = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
-  LayLT4   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 6, 1, 1, 1);
+  LayLT4   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 6, 1, 1, 1);
   LayLT4a   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 6, 11, 1, 1);
   LayLT5   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 1);
   LayLT6   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 50, 1, 20, -10);
@@ -914,10 +914,11 @@ void ParDlg::Check_opt(TGHorizontalFrame *hfr1, int width, void* x1,
     fchk->SetToolTipText(tip1);
     fchk->ChangeOptions(fchk->GetOptions()|kFixedWidth);
 
-    int wd = fchk->GetWidth()-12; //12 - from laylt4
-    int x1 = (width-wd)/2;
-    int x2 = width-x1-wd;
-    
+    int wd = fchk->GetWidth();
+    int x1 = (width-wd)/2+10;
+    int x2 = 7+width-x1-wd; //7 - from laylt4
+
+    //cout << "wd: " << width << " " << wd << " " << x1 << " " << x2 << endl;
     hfr1->AddFrame(fchk,
 		   new TGLayoutHints(kLHintsLeft|kLHintsCenterY,x1,x2,1,1));
     //fchk->SetWidth(52);
@@ -963,8 +964,8 @@ void ParDlg::Num_opt(TGHorizontalFrame *hfr1, int width, void* x1,
     id = Plist.size()+1;
     if (width>0) {
       fNum1 = new TGNumberEntry(hfr1, 0, 0, id, style1, 
-					       TGNumberFormat::kNEAAnyNumber,
-					       limits,min1,max1);
+				TGNumberFormat::kNEAAnyNumber,
+				limits,min1,max1);
       fNum1->SetWidth(width);
       hfr1->AddFrame(fNum1,Lay);
       fNum2=fNum1->GetNumberEntry();
@@ -972,7 +973,8 @@ void ParDlg::Num_opt(TGHorizontalFrame *hfr1, int width, void* x1,
     else {
       width=-width;
       fNum2 = new TGNumberEntryField(hfr1, id, 0, style1,
-			       TGNumberFormat::kNEAAnyNumber,limits,min1,max1);
+				     TGNumberFormat::kNEAAnyNumber,
+				     limits,min1,max1);
       fNum2->SetWidth(width);
       hfr1->AddFrame(fNum2,Lay);
     }
@@ -1020,6 +1022,29 @@ void ParDlg::AddLine_opt(TGCompositeFrame* frame, int width,
   //cout << "addopt2: " << Lay1 << endl;
 }
 
+void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1, 
+			  const char* tip1, const char* label,
+			  TGNumberFormat::EStyle style1, 
+			  double min1, double max1,
+			  byte cmd1, TGLayoutHints* Lay1) {
+  // cout << "addopt1: " << Lay1 << endl;
+  if (!Lay1) Lay1 = LayLT4;
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+
+  frame->AddFrame(hfr1);
+
+  // if (style1==k_chk)
+  //   Check_opt(hfr1,width,x1,tip1,cmd1,"Strig");
+  // else
+  Num_opt(hfr1,width,x1,tip1,style1,min1,max1,cmd1,Lay1);
+
+  TGLabel* fLabel = new TGLabel(hfr1, label);
+  hfr1->AddFrame(fLabel,LayLT4);
+
+  //cout << "addopt2: " << Lay1 << endl;
+}
+
 void ParDlg::AddSoftHard(TGGroupFrame* frame, TGCheckButton* &fchkSoft,
 			 TGCheckButton* &fchkHard) {
 
@@ -1035,7 +1060,7 @@ void ParDlg::AddSoftHard(TGGroupFrame* frame, TGCheckButton* &fchkSoft,
   //DoMap(fchkSoft,&opt.hard_logic,p_chk);
   fchkSoft->SetToolTipText(tip1);
   fchkSoft->Connect("Clicked()", "ParParDlg", this, "DoCheckLogic()");
-  
+
   tip1= "Use hardware coincidences";
   label="HardCoinc.";
   fchkHard = new TGCheckButton(frame, label, 1);
@@ -1071,7 +1096,6 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 
   TGVerticalFrame *fV1 = new TGVerticalFrame(fcont1, 1, 1, kFixedWidth|kSunkenFrame);
-  //TGVerticalFrame *fV2 = new TGVerticalFrame(fcont1, 1, 1, kSunkenFrame);
 
   fcont1->AddFrame(fV1,new TGLayoutHints(kLHintsLeft |kLHintsExpandY));
 
@@ -1080,7 +1104,6 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   vsplitter->ChangeOptions(vsplitter->GetOptions()|kFixedSize);
   vsplitter->SetFrame(fV1, kTRUE);
   fcont1->AddFrame(vsplitter, new TGLayoutHints(kLHintsLeft | kLHintsTop));
-  //fcont1->AddFrame(fV2,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY));
 
   int ww = AddFiles(fV1);
   ww = TMath::Max(ww,AddOpt(fV1));
@@ -1089,6 +1112,10 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   fV1->Resize(ww+10,1);
 
+  TGVerticalFrame *fV2 = new TGVerticalFrame(fcont1, 1, 1, kSunkenFrame);
+  fcont1->AddFrame(fV2,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY));
+  AddExpert(fV2);
+  //AddLogic(fV2);
   //AddLogic(fV2);
   //AddHWLogic(fV2);
 
@@ -1348,6 +1375,49 @@ int ParParDlg::AddLogic(TGCompositeFrame* frame) {
   // soft_list.push_back(FindWidget(&opt.mult1));
   // soft_list.push_back(FindWidget(&opt.mult2));
   // soft_list.push_back(FindWidget(&opt.maintrig));
+
+  return fF6->GetDefaultWidth();
+
+}
+
+int ParParDlg::AddExpert(TGCompositeFrame* frame) {
+
+  int ww=70;
+  const char *tip1, *label;
+
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Expert", kVerticalFrame);
+  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame->AddFrame(fF6, LayLT1);
+
+  tip1= "Decoded data format";
+  label="Dec format";
+  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+
+  tip1= "";
+  label="Bitmask for START";
+  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+
+  tip1= "";
+  label="Bitmask for discriminator";
+  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+
+  tip1= "";
+  label="Bitmask for coincidences/RD";
+  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+
+  tip1= "";
+  label="Repeated triggering type";
+  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+
+  tip1= "";
+  label="Type 3 discriminator length";
+  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+
+
+  //AddSoftHard(fF6,fchkSoft,fchkHard);
+
+  fF6->Resize();
+  //fF6->ChangeBackground(fRed);
 
   return fF6->GetDefaultWidth();
 

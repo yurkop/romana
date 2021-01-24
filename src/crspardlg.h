@@ -175,6 +175,12 @@ public:
 		   double min2=0, double max2=0, byte cmd1=0, byte cmd2=0,
 		   TGLayoutHints* Lay1=0, TGLayoutHints* Lay2=0);
 
+  void AddLine_1opt(TGCompositeFrame* frame, int width, void *x1, 
+		   const char* tip1, const char* label,
+		   TGNumberFormat::EStyle style1, 
+		   double min1=0, double max1=0,
+		   byte cmd1=0, TGLayoutHints* Lay1=0);
+
   void AddSoftHard(TGGroupFrame* frame, TGCheckButton* &fchkSoft,
 		   TGCheckButton* &fchkHard);
 
@@ -212,6 +218,7 @@ public:
   int AddOpt(TGCompositeFrame* frame);
   int AddAna(TGCompositeFrame* frame);
   int AddLogic(TGCompositeFrame* frame);
+  int AddExpert(TGCompositeFrame* frame);
   void DoCheckLogic();
 
   void Add2d();

@@ -52,7 +52,7 @@ public:
   TGStatusBar            *fStatus;
 
 
-  TList* hmap_list;  //list of marked hmaps (histograms)
+  TList* hmap_chklist;  //list of marked hmaps (histograms)
   TList* st_hlist;      //list of plotted histograms for stack
   TH1F* st_plot;        //histogram for plotting stack;
 
@@ -136,7 +136,7 @@ public:
   void HiReset();
   void Update();
   void DrawStack();
-  void Make_Hmap_List();
+  void Make_Hmap_ChkList();
   void DrawHist();
   void OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj);
   void AllRebinDraw();

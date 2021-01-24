@@ -216,7 +216,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   gline[0].SetLineColor(2);
   gline[1].SetLineColor(2);
 
-  hmap_list=new TList();
+  hmap_chklist=new TList();
   //hstack=new THStack();
   st_hlist=new TList();
   st_hlist->SetOwner(true);
@@ -661,24 +661,26 @@ void HistFrame::Make_Ltree() {
   next.Reset();
   while ( (obj=(TObject*)next()) ) {
     map = (HMap*) obj;
-    TString title = TString(map->GetTitle());
-    if (!fListTree->FindChildByName(0,title)) {
-      //cout << "map: " << map->GetName() << " " << map->GetTitle() << " " << map->hd->rb << endl;
-      idir = Item_Ltree(iroot, title,map,0,0);
-    }
-    if (map->hst->InheritsFrom(TH2::Class()))
-      pic=pic_2d;
-    else
-      pic=pic_1d;
+    //if (!map->flg) {
+      TString title = TString(map->GetTitle());
+      if (!fListTree->FindChildByName(0,title)) {
+	//cout << "map: " << map->GetName() << " " << map->GetTitle() << " " << map->hd->rb << endl;
+	idir = Item_Ltree(iroot, title,map,0,0);
+      }
+      if (map->hst->InheritsFrom(TH2::Class()))
+	pic=pic_2d;
+      else
+	pic=pic_1d;
 
-    Item_Ltree(idir, map->GetName(), map, pic, pic);
+      Item_Ltree(idir, map->GetName(), map, pic, pic);
 
-    if (*(map->hd->w+map->nn)) {
-      Item_Ltree(iWork, map->GetName(), map, pic, pic);
-      //make clones of _work_ histograms and their hmaps
-      Clone_Ltree(map);
-    }
-  }
+      if (*(map->hd->w+map->nn)) {
+	Item_Ltree(iWork, map->GetName(), map, pic, pic);
+	//make clones of _work_ histograms and their hmaps
+	Clone_Ltree(map);
+      }
+      //} //if
+  } //while
 
   fListTree->CheckAllChildren(iWork,wrk_check[0]);
   for (int cc=1;cc<opt.ncuts;cc++) {
@@ -745,7 +747,7 @@ void HistFrame::Make_Ltree() {
 void HistFrame::Clear_Ltree()
 {
 
-  hmap_list->Clear();
+  hmap_chklist->Clear();
 
   TGListTreeItem *idir;
 
@@ -805,7 +807,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
   if (but==2 && TString(item->GetText()).EqualTo("work",TString::kIgnoreCase)) {
     //cout << "DoClick: " << item->GetText() << " " << item->GetParent() << " " << but << endl;
 
-    hmap_list->Clear();
+    hmap_chklist->Clear();
 
     item2 = item->GetFirstChild();
     while (item2) {
@@ -833,7 +835,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       // если клик мышкой (2 или 3) на гистограмму в папке work*,
       // удаляем ее из всех work*
 
-      hmap_list->Clear();
+      hmap_chklist->Clear();
       //remove items
       //cout << "work or work_cut*: " << endl;
       TObject* hh = (TObject*) item->GetUserData();
@@ -880,7 +882,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       // }
       //cout << "work3: " << item << " " << hname << endl;
     } //work*
-    else { //not work*
+    else { //not work* -> добавляем гистограмму в work*
       // add items
       //cout << "nowork: " << item << endl;
 
@@ -913,6 +915,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 }
 
 void HistFrame::Clone_Ltree(HMap* map) {
+
   //char cutname[99];
   //char name[99],htitle[99];
   TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
@@ -1778,7 +1781,7 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir1, *idir2;
 
-  hmap_list->Clear();
+  hmap_chklist->Clear();
 
   idir1=fListTree->FindChildByName(0,mapname1);
   DelMaps(idir1);
@@ -1797,10 +1800,10 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
   //cout << "idir3: " << idir << endl;
 
   //cout << "idir2: " << idir << endl;
-  Make_Hmap_List();
+  Make_Hmap_ChkList();
   //cout << "idir2a: " << idir << endl;
 
-  TIter next(hmap_list);
+  TIter next(hmap_chklist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     map=(HMap*) obj;
@@ -1908,7 +1911,7 @@ void HistFrame::Do_Tcalibr(PopFrame* pop) {
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir1;
 
-  hmap_list->Clear();
+  hmap_chklist->Clear();
 
   idir1=fListTree->FindChildByName(0,mapname1);
   DelMaps(idir1);
@@ -1918,9 +1921,9 @@ void HistFrame::Do_Tcalibr(PopFrame* pop) {
 
 
   idir1 = Item_Ltree(iroot,mapname1,0,0,0);;
-  Make_Hmap_List();
+  Make_Hmap_ChkList();
 
-  TIter next(hmap_list);
+  TIter next(hmap_chklist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     map=(HMap*) obj;
@@ -2102,7 +2105,7 @@ void HistFrame::Update()
   chkgcuts->SetState((EButtonState) opt.b_gcuts);
 
   //cout << "HiFrm::Update()2a" << endl;
-  hmap_list->Clear();
+  hmap_chklist->Clear();
   st_hlist->Clear();
   //cout << "HiFrm::Update()2b" << endl;
 
@@ -2139,7 +2142,7 @@ void HistFrame::Update()
 
 
 
-  //hmap_list->Print();
+  //hmap_chklist->Print();
 
   Hmut.UnLock();
   //cout << "hist_list: " << endl;
@@ -2147,7 +2150,7 @@ void HistFrame::Update()
   //cout << "hist_list: " << hcl->hist_list << " " << hcl->hist_list->GetSize() << endl;
 
 
-  // TIter next(hmap_list);
+  // TIter next(hmap_chklist);
   // TObject* obj;
   // while ( (obj=(TObject*)next()) ) {
   //   HMap* map=(HMap*) obj;
@@ -2167,14 +2170,14 @@ void HistFrame::DrawStack() {
   std::vector<Hdef*> def_list;
   std::vector<Hdef*>::iterator it;
  
-  Make_Hmap_List();
+  Make_Hmap_ChkList();
 
   double x1=1e99,x2=-1e99,y1=1e99,y2=-1e99;
 
-  //int cc=0;
+  int cc=0;
   memset(pad_map,0,sizeof(pad_map));
   int npad=0;
-  TIter next2(hmap_list);
+  TIter next2(hmap_chklist);
   TObject* obj;
   while ( (obj=(TObject*)next2()) ) {
     HMap* map=(HMap*) obj;
@@ -2197,8 +2200,9 @@ void HistFrame::DrawStack() {
       hh->UseCurrentStyle();
       OneRebinPreCalibr(map,hh,b_adj);
 
-      hh->SetLineColor(EvtFrm->chcol[map->nn]);
-      //cc++;
+      //hh->SetLineColor(EvtFrm->chcol[map->nn]);
+      hh->SetLineColor(EvtFrm->chcol[cc%32+1]);
+      cc++;
 
       if (opt.b_norm && hh->Integral()) {
 	double sc = hh->GetNbinsX()/hh->Integral();
@@ -2282,15 +2286,15 @@ void HistFrame::DrawStack() {
 
 } //DrawStack
 
-void HistFrame::Make_Hmap_List() {
-  hmap_list->Clear();
+void HistFrame::Make_Hmap_ChkList() {
+  hmap_chklist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     TGListTreeItem *item = idir->GetFirstChild();
     while (item) {
       if (item->GetUserData()) {
 	if (item->IsChecked()) {
-	  hmap_list->Add((TObject*)item->GetUserData());
+	  hmap_chklist->Add((TObject*)item->GetUserData());
 	}
       }
       item = item->GetNextSibling();
@@ -2301,11 +2305,11 @@ void HistFrame::Make_Hmap_List() {
 
 void HistFrame::DrawHist() {
 
-  //create hmap_list
-  Make_Hmap_List();
+  //create hmap_chklist
+  Make_Hmap_ChkList();
 
-  if (opt.icheck > hmap_list->GetSize()-ndiv)
-    opt.icheck=hmap_list->GetSize()-ndiv;
+  if (opt.icheck > hmap_chklist->GetSize()-ndiv)
+    opt.icheck=hmap_chklist->GetSize()-ndiv;
   if (opt.icheck < 0)
     opt.icheck=0;
 
@@ -2324,7 +2328,7 @@ void HistFrame::DrawHist() {
   HMap* map;
 
   // create pad_hist from pad_map
-  TIter next(hmap_list);
+  TIter next(hmap_chklist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     if (ii>=opt.icheck) {
@@ -2585,7 +2589,7 @@ void HistFrame::DrawHist()
   cv->Divide(xdiv,ydiv);
   //cv->Update();
   //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
-  //cout <<"dr2: " << hmap_list << endl;
+  //cout <<"dr2: " << hmap_chklist << endl;
   //return;
 
   for (int i=0;i<ndiv;i++) {
@@ -2600,7 +2604,6 @@ void HistFrame::DrawHist()
 void HistFrame::ReDraw()
 {
 
-  //cout << "ReDraw: " << changed << " " << started << endl; //fEc->GetCanvas() << endl;
 
 
 

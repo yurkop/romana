@@ -168,9 +168,9 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
     //hframe->AddFrame(new TGLabel(hframe, aa[j]), LayLC2);
   }
 
-  HiFrm->Make_Hmap_List();
+  HiFrm->Make_Hmap_ChkList();
 
-  TIter next(HiFrm->hmap_list);
+  TIter next(HiFrm->hmap_chklist);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
 

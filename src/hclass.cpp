@@ -28,6 +28,7 @@ HMap::HMap() {
   gr = 0;
   hd = 0;
   nn = 0;
+  flg=0;
   memset(h_cuts,0,sizeof(h_cuts));
   //h_MT=0;
 }
@@ -106,6 +107,7 @@ HMap::HMap(const HMap& other) : TNamed(other) {
   gr = other.gr;
   hd = other.hd;
   nn = other.nn;
+  flg = other.flg;
 
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
@@ -120,6 +122,7 @@ HMap& HMap::operator=(const HMap& other) {
   gr = other.gr;
   hd = other.hd;
   nn = other.nn;
+  flg = other.flg;
 
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
@@ -142,7 +145,7 @@ HClass::HClass()
 
   wfalse=false;
   map_list=NULL;
-  hist_list=NULL;
+  allmap_list=NULL;
   dir_list=NULL;
 }
 
@@ -181,7 +184,7 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
     map[i] = new HMap(dname,hh,hd,i);
     //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
     map_list->Add(map[i]);
-    hist_list->Add(map[i]->hst);
+    allmap_list->Add(map[i]);
   }
 
   
@@ -207,7 +210,7 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
         // map[MAX_CH+j] = new HMap(dname,hh,hd->c+MAX_CH+j,hd->w+MAX_CH+j,
         //  hd->cut+MAX_CH+j);
         map_list->Add(map[MAX_CH+j]);
-        hist_list->Add(map[MAX_CH+j]->hst);
+        allmap_list->Add(map[MAX_CH+j]);
         break;
       }
     }
@@ -242,7 +245,7 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
     map[i] = new HMap(dname,hh,hd,i);
     //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
     map_list->Add(map[i]);
-    hist_list->Add(map[i]->hst);
+    allmap_list->Add(map[i]);
 
   }
 }
@@ -268,7 +271,7 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
 
     map[i] = new HMap(dname,hh,hd,i);
     map_list->Add(map[i]);
-    hist_list->Add(map[i]->hst);
+    allmap_list->Add(map[i]);
   }
   //cout << "mem: " << name << " " << GetMem() << endl;
 
@@ -296,7 +299,7 @@ void HClass::Make_prof(const char* dname, const char* name,
       map[i] = new HMap(dname,hh,hd,i);
       //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
       map_list->Add(map[i]);
-      hist_list->Add(map[i]->hst);
+      allmap_list->Add(map[i]);
     }
   }
 
@@ -318,7 +321,7 @@ void HClass::Make_prof(const char* dname, const char* name,
     map2[i] = new HMap("Prof1d",hh,hd2,i);
     //map2[i] = new HMap("Prof1d",hh,hd2->c+i,hd2->w+i,hd2->cut+i);
     map_list->Add(map2[i]);
-    hist_list->Add(map2[i]->hst);
+    allmap_list->Add(map2[i]);
   }
 
 }
@@ -346,7 +349,7 @@ void HClass::Make_axay(const char* dname, const char* name, const char* title,
       map[ii] = new HMap(dname,hh,hd,ii);
       //map[ii] = new HMap(dname,hh,hd->c+ii,hd->w+ii,hd->cut+ii);
       map_list->Add(map[ii]);
-      hist_list->Add(map[ii]->hst);
+      allmap_list->Add(map[ii]);
       ii++;
     }
   }
@@ -358,41 +361,44 @@ void HClass::Clone_Hist(HMap* map) {
   // clone map->hist as many times as there are cuts; put it in map->h_cuts[i]
   //do the same with MT
 
+  //cout << "clone_hist: " << map->GetName() << endl;
   //if (*map->wrk) {
-    TH1F* h0 = (TH1F*) map->hst;
-    for (int i=1;i<opt.ncuts;i++) {
-      if (opt.pcuts[i]) {
-	sprintf(cutname,"WORK_cut%d",i);
-	sprintf(name,"%s_cut%d",h0->GetName(),i);
-	sprintf(htitle,"%s_cut%d",h0->GetTitle(),i);
-	TH1F* hcut = (TH1F*) h0->Clone();
-	hcut->Reset();
-	hcut->SetNameTitle(name,htitle);
-	//cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
-	hist_list->Add(hcut);
-	//HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
-	HMap* mcut = new HMap(cutname,hcut,map->hd,map->nn);
+  TH1F* h0 = (TH1F*) map->hst;
+  for (int i=1;i<opt.ncuts;i++) {
+    if (opt.pcuts[i]) {
+      sprintf(cutname,"WORK_cut%d",i);
+      sprintf(name,"%s_cut%d",h0->GetName(),i);
+      sprintf(htitle,"%s_cut%d",h0->GetTitle(),i);
+      TH1F* hcut = (TH1F*) h0->Clone();
+      hcut->Reset();
+      hcut->SetNameTitle(name,htitle);
+      //cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
 
-	// add this map to the list h_cuts
-	map->h_cuts[i]=mcut;
-      }
+      //hist_list->Add(hcut);
+      HMap* mcut = new HMap(cutname,hcut,map->hd,map->nn);
+      mcut->flg=1; //cut flag
+
+      // add this map to the list h_cuts
+      map->h_cuts[i]=mcut;
+      allmap_list->Add(mcut);
     }
+  }
 
-    // if (crs->b_maintrig) {
-    //   sprintf(cutname,"WORK_MT");
-    //   sprintf(name,"%s_MT",h0->GetName());
-    //   sprintf(htitle,"%s_MT",h0->GetTitle());
-    //   TH1* hcut = (TH1*) h0->Clone();
-    //   hcut->Reset();
-    //   hcut->SetNameTitle(name,htitle);
-    //   //cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
-    //   hist_list->Add(hcut);
-    //   HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
+  // if (crs->b_maintrig) {
+  //   sprintf(cutname,"WORK_MT");
+  //   sprintf(name,"%s_MT",h0->GetName());
+  //   sprintf(htitle,"%s_MT",h0->GetTitle());
+  //   TH1* hcut = (TH1*) h0->Clone();
+  //   hcut->Reset();
+  //   hcut->SetNameTitle(name,htitle);
+  //   //cout << "clone: " << i << " " << hcut->GetName() << " " << gStyle << endl;
+  //   hist_list->Add(hcut);
+  //   HMap* mcut = new HMap(cutname,hcut,map->chk,&wfalse,map->cut_index);
 
-    //   // add this map to the list h_cuts
-    //   map->h_MT=mcut;
-    // }
-    //}
+  //   // add this map to the list h_cuts
+  //   map->h_MT=mcut;
+  // }
+  //}
 }
 
 void HClass::Remove_Clones(HMap* map) {
@@ -403,8 +409,9 @@ void HClass::Remove_Clones(HMap* map) {
     //cout << i << " " << map->h_cuts[i] << endl;
     HMap* mcut = map->h_cuts[i];
     if (mcut) {
-      TH1* hcut = map->h_cuts[i]->hst;
-      hist_list->Remove(hcut);
+      //TH1* hcut = map->h_cuts[i]->hst;
+      //hist_list->Remove(hcut);
+      allmap_list->Remove(mcut);
       delete mcut;
       map->h_cuts[i]=0;
     }
@@ -439,7 +446,6 @@ void HClass::Make_cuts() {
 
   // loop through all maps
   // для каждой гистограммы (map) находим cuts, которые заданы в ней
-  //cout << "make_cuts1: " << endl;
   TIter next(map_list);
   TObject* obj=0;
   while ( (obj=(TObject*)next()) ) {
@@ -457,7 +463,7 @@ void HClass::Make_cuts() {
       }
     }
 
-    //clone histograms if map flag is set
+    //clone histograms if work flag is set
     if (*(map->hd->w+map->nn)) {
       //if (*map->wrk) {
       Remove_Clones(map);
@@ -517,11 +523,11 @@ void HClass::Make_hist() {
 
   memset(T_prev,0,sizeof(T_prev));
 
-  if (hist_list)
-    delete hist_list;
-  hist_list = new TList();
-  hist_list->SetName("hist_list");
-  hist_list->SetOwner(false);
+  if (allmap_list)
+    delete allmap_list;
+  allmap_list = new TList();
+  allmap_list->SetName("allmap_list");
+  allmap_list->SetOwner(false);
 
   if (map_list)
     delete map_list;

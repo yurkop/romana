@@ -29,6 +29,7 @@ class HMap: public TNamed {
   TGraphErrors* gr;
   Hdef* hd; //Hdef, которому принадлежит этот Hmap
   UShort_t nn; //index in Hdef
+  UChar_t flg; // 0 - normal histogram, 1 - cut histogram
   //Int_t *rb; //rebin
   //Bool_t* chk; //item is checked
   //Bool_t* wrk; //item is in the WORK directory (and in WORK_CUT*, WORK_MT)
@@ -116,9 +117,9 @@ class HClass {
 
   //HMap *cutmap[MAXCUTS];
 
-  TList* map_list;
-  TList* hist_list;
-  TList* dir_list;
+  TList* map_list; //list of basic maps (excluding cuts) 
+  TList* allmap_list; //list of all maps (including cuts)
+  TList* dir_list; //list of folders
 
   Long64_t T_prev[MAX_CH];
 
