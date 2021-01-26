@@ -1881,7 +1881,7 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
       //gr->GetListOfFunctions()->ls();
       //TF1* fitf = gr->GetFunction("pol2");
 
-      for (int j=0;j<3;j++) {
+      for (int j=0;j<2;j++) {
 	opt.adj[map->nn][j]=fitf->GetParameter(j);
       }
       
@@ -2412,7 +2412,7 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
       Double_t dx=(xmax-xmin)/newbins;
       for (int i=0;i<newbins+1;i++) {
 	double x = xmin+i*dx;
-	xbins[i]=opt.adj[nn][0]+x*opt.adj[nn][1]+x*x*opt.adj[nn][2];
+	xbins[i]=opt.adj[nn][0]+x*opt.adj[nn][1];
       }
       hist->SetBins(newbins,xbins);
       delete[] xbins;

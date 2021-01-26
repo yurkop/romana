@@ -141,10 +141,10 @@ public:
 
   Float_t E0[MAX_CHTP]; // [emult0]
   Float_t E1[MAX_CHTP]; // [emult]
-  Float_t E2[MAX_CHTP]; // [emult2]
+  //Float_t E2[MAX_CHTP]; // [emult2]
   Float_t Bc[MAX_CHTP]; // [bcor]
 
-  Float_t adj[MAX_CH+NGRP+1][3];
+  Float_t adj[MAX_CH+NGRP+1][2];
 
   Float_t elim1[MAX_CHTP];
   Float_t elim2[MAX_CHTP];
@@ -159,8 +159,8 @@ public:
 
   Int_t nthreads;
   Int_t Nchan;
-  Float_t Tlim1; //Tstart
-  Float_t Tlim2; //Tstop
+  Float_t Tstart; //Tlim1
+  Float_t Tstop; //Tlim2
   //Float_t Tstart,Tstop;
   Int_t tsleep;
   Int_t usb_size; //in kB

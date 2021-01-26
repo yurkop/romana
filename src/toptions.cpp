@@ -250,7 +250,7 @@ Toptions::Toptions() {
 
     E0[i]=0;
     E1[i]=1;
-    E2[i]=0;
+    //E2[i]=0;
     Bc[i]=0;
   }
 
@@ -327,10 +327,10 @@ Toptions::Toptions() {
     Ing_y[i]=-1;
   }
 
-  Tlim1=0;
-  Tlim2=0;
-  //Tstart=0;
-  //Tstop=0;
+  //Tlim1=0;
+  //Tlim2=0;
+  Tstart=0;
+  Tstop=0;
   Period=10;
 
   b_deriv[0]=true;
@@ -358,11 +358,11 @@ Toptions::Toptions() {
   memset(cut_form,0,sizeof(cut_form));
   maintrig=0;
 
-  int sz = sizeof(adj)/sizeof(Float_t)/3;
+  int sz = sizeof(adj)/sizeof(Float_t)/2;
   for (int i=0;i<sz;i++) {
     adj[i][0]=0;
     adj[i][1]=1;
-    adj[i][2]=0;
+    //adj[i][2]=0;
   }
   //memset(maintrig,0,sizeof(maintrig));
   //strcpy(formula,"0");

@@ -113,7 +113,7 @@ void PopFrame::AddAdj(TGCompositeFrame* fcont1, HMap* map, int i) {
   hframe->AddFrame(fLabel, LayLC0);
   //fLabel->SetBackgroundColor(EvtFrm->gcol[i]);
 
-  for (int j=0;j<3;j++) {
+  for (int j=0;j<2;j++) {
     //cout << "fadj: " << i << " " << j << endl;
 
 
@@ -135,7 +135,7 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
 
   memcpy(&E0,&opt.E0,sizeof(E0));
   memcpy(&E1,&opt.E1,sizeof(E1));
-  memcpy(&E2,&opt.E2,sizeof(E2));
+  //memcpy(&E2,&opt.E2,sizeof(E2));
   memcpy(&adj,&opt.adj,sizeof(adj));
 
   HiFrm->b_adj=true;
@@ -231,63 +231,6 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
   hframe->AddFrame(fRevert, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 5, 5, 5, 5));
 
 }
-
-/*
-void PopFrame::AddEcalibr_old(UInt_t w, UInt_t h) {
-  ee[0]=4438;
-  fwhm=10;
-  npol=1;
-  range=300;
-
-  // for (int i=0;i<11;i++) {
-  //   pframe[i]=0;
-  // }
-
-  fMain->SetWindowName("Energy Calibration");
-  //npeaks=2;
-
-  fEdit = new TGTextEdit(fMain, w, h, kSunkenFrame|kDoubleBorder);
-  fMain->AddFrame(fEdit,  LayEE2);
-
-  if (!fEdit->LoadFile("ecalibr.dat")) {
-    fEdit->LoadBuffer(
-		      "# calibrate all marked energy histograms\n"
-		      "# all ROI must be set befor calibration\n"
-		      "# each ROI may contain several peaks,\n"
-		      "# fitted simultaneously\n"
-		      "#--------------------------------------\n"
-		      "\n"
-		      "1	# substrate poly\n"
-		      "3	# Fit poly\n"
-		      "\n"
-		      "--- Peaks: #ROI peak1 peak2 ... peakN ---\n"
-		      "1 846.7778  # 56F)\n"
-		      "2 2223.245  # 1H(n,g)\n"
-		      "3 6129.89   # 16O(n,n')\n"
-		      "4 7645.58   # 56Fe(n,g)\n"
-		      );
-  }
-
-  hframe = new TGHorizontalFrame(fMain,10,10);
-  fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsBottom, 2,2,2,2));
-  TGTextButton* fOK = new TGTextButton(hframe, "  Calibr  ");
-  fOK->Connect("Clicked()", "PopFrame", this, "Do_Ecalibr()");
-  hframe->AddFrame(fOK, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 10, 10, 5, 5));
-
-  TGTextButton* fSave = new TGTextButton(hframe, "  Save  ");
-  fSave->Connect("Clicked()", "PopFrame", this, "Do_Save_Ecalibr()");
-  hframe->AddFrame(fSave, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 10, 10, 5, 5));
-
-  TGTextButton* fClose = new TGTextButton(hframe, "  Close  ");
-  fClose->Connect("Clicked()", "PopFrame", this, "CloseWindow()");
-  hframe->AddFrame(fClose, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 10, 10, 5, 5));
-
-  // fMain->Resize(fMain->GetDefaultSize());
-  // fMain->MapSubwindows();
-  // fMain->Layout();
-  
-}
-*/
 
 void PopFrame::AddTcalibr() {
   fwhm=1;
@@ -548,7 +491,7 @@ void PopFrame::Do_Ecalibr()
 
 void PopFrame::E_Update() {
   for (int i=0;i<MAX_CH+NGRP;i++) {
-    for (int j=0;j<3;j++) {
+    for (int j=0;j<2;j++) {
       if (fAdj[i][j]) {
 	char text[256];
          snprintf(text, 255, "%g", opt.adj[i][j]);
@@ -577,7 +520,7 @@ void PopFrame::Do_EApply() {
 
       opt.E0[i] = opt.adj[i][0];
       opt.E1[i] = opt.adj[i][1];
-      opt.E2[i] = opt.adj[i][2];
+      //opt.E2[i] = opt.adj[i][2];
     }
   }
   //E_Update();
@@ -596,7 +539,7 @@ void PopFrame::Do_TApply() {
 void PopFrame::Do_Revert() {
   memcpy(&opt.E0,&E0,sizeof(E0));
   memcpy(&opt.E1,&E1,sizeof(E1));
-  memcpy(&opt.E2,&E2,sizeof(E2));
+  //memcpy(&opt.E2,&E2,sizeof(E2));
   memcpy(&opt.adj,&adj,sizeof(adj));
 
   E_Update();

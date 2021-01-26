@@ -368,8 +368,7 @@ void PulseClass::PeakAna33() {
   //calibration
   Area=Area0 - Base;
   //pk->Area*=opt.emult[Chan];
-  Area=opt.E0[Chan] + opt.E1[Chan]*Area +
-    opt.E2[Chan]*Area*Area;
+  //Area=opt.E0[Chan] + opt.E1[Chan]*Area;
 
   if (opt.Bc[Chan]) {
     Area+=opt.Bc[Chan]*Base;
@@ -392,7 +391,7 @@ void PulseClass::PeakAna33() {
   	
     Width-=Base;
     //YK
-    Width=opt.E0[Chan] + opt.E1[Chan]*Width + opt.E2[Chan]*Width*Width;
+    //Width=opt.E0[Chan] + opt.E1[Chan]*Width;
     Width/=Area;
   }
 
@@ -460,6 +459,10 @@ void PulseClass::CheckDSP() {
 
   Peaks.pop_back();
   */
+}
+
+void PulseClass::Ecalibr() {
+  Area=opt.E0[Chan] + opt.E1[Chan]*Area;
 }
 
 EventClass::EventClass() {
@@ -769,8 +772,8 @@ void EventClass::FillHist(Bool_t first) {
   	
     opt.T_acq=(Tstmp - crs->Tstart64)*DT;
 
-    if (opt.Tlim2) {
-      if (opt.T_acq > opt.Tlim2) {
+    if (opt.Tstop) {
+      if (opt.T_acq > opt.Tstop) {
 	if (crs->b_fana) {
 	  crs->b_stop=true;
 	  crs->b_fana=false;
@@ -778,7 +781,7 @@ void EventClass::FillHist(Bool_t first) {
 	}
 	return;
       }
-      else if (opt.T_acq < opt.Tlim1) {
+      else if (opt.T_acq < opt.Tstart) {
 	return;
       }
     }
@@ -790,6 +793,7 @@ void EventClass::FillHist(Bool_t first) {
   }
 
   for (pulse_vect::iterator ipls=pulses.begin();ipls!=pulses.end();++ipls) {
+    ipls->Ecalibr();
     //for (UInt_t i=0;i<pulses.size();i++) {
     int ch = ipls->Chan;
 

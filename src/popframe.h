@@ -63,7 +63,7 @@ public:
 
   Float_t E0[MAX_CHTP]; // [emult0]
   Float_t E1[MAX_CHTP]; // [emult]
-  Float_t E2[MAX_CHTP]; // [emult2]
+  //Float_t E2[MAX_CHTP]; // [emult2]
   Float_t adj[MAX_CH+NGRP+1][3];
 
   Float_t sD[MAX_CHTP];

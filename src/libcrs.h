@@ -299,7 +299,7 @@ RQ_OBJECT("CRS")
   void Dec_Init(eventlist* &Blist, UChar_t frmt);
   void Dec_End(eventlist* &Blist, UInt_t iread);
   void Decode79(UInt_t iread, UInt_t ibuf);
-  void Decode79a(UInt_t iread, UInt_t ibuf);
+  //void Decode79a(UInt_t iread, UInt_t ibuf);
   void Decode78(UInt_t iread, UInt_t ibuf);
   void Decode77(UInt_t iread, UInt_t ibuf);
   void Decode76(UInt_t iread, UInt_t ibuf);

@@ -74,9 +74,9 @@ const char* ttip1[ndaqpar]={
   "Number of bad pulses"
 };
 
-const int n_apar=14;
-const int tlen2[n_apar]={24,24,26,70,24,24,25,35,35,35,38,38,38,38};
-const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sS","sD","dTm","Pile","E0","E1","E2","Bc"};
+const int n_apar=13;
+const int tlen2[n_apar]={24,24,26,70,24,24,25,35,35,35,38,38,38};
+const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sS","sD","dTm","Pile","E0","E1","Bc"};
 const char* ttip2[n_apar]={
   "On/Off",
   "Select",
@@ -89,9 +89,8 @@ const char* ttip2[n_apar]={
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
-  "Energy calibration 0: [0]+[1]*x+[2]*x^2",
-  "Energy calibration 1: [0]+[1]*x+[2]*x^2",
-  "Energy calibration 2: [0]+[1]*x+[2]*x^2",
+  "Energy calibration 0: E0+E1*x",
+  "Energy calibration 1: E0+E1*x",
   "Baseline correction"
 };
 
@@ -1267,7 +1266,7 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Analysis start (in sec) - only for analyzing files";
   tip2= "Analysis stop (in sec)";
   label="Time limits";
-  AddLine_opt(fF6,ww,&opt.Tlim1,&opt.Tlim2,tip1,tip2,label,k_r0,k_r0,0,0,0,0,3<<1,1<<1);
+  AddLine_opt(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0,k_r0,0,0,0,0,3<<1,1<<1);
 
   tip1= "";
   tip2= "Delay between drawing events (in msec)";
@@ -2485,7 +2484,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 
   AddNumChan(i,kk++,all,cframe[i],&opt.E0[i],-1e99,1e99,p_fnum);
   AddNumChan(i,kk++,all,cframe[i],&opt.E1[i],-1e99,1e99,p_fnum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.E2[i],-1e99,1e99,p_fnum);
+  //AddNumChan(i,kk++,all,cframe[i],&opt.E2[i],-1e99,1e99,p_fnum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Bc[i],-1e99,1e99,p_fnum);
 
   for (int j=0;j<NGRP;j++) {

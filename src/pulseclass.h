@@ -134,6 +134,7 @@ class PulseClass {
   //void PeakAna();
   void PeakAna33();
   void CheckDSP();
+  void Ecalibr();
   void Smooth(int n);
   void PrintPulse(int pdata=0);
 
