@@ -62,6 +62,7 @@ extern ErrFrame* ErrFrm;
 extern HClass* hcl;
 extern ParParDlg *parpar;
 extern DaqParDlg *daqpar;
+extern HistParDlg *histpar;
 extern AnaParDlg *anapar;
 extern PikParDlg *pikpar;
 
@@ -696,6 +697,9 @@ void CRS::Ana_start() {
   //set initial variables for analysis
   //should be called before first call of ana2
   // b_mem=false;
+
+  parpar->DaqDisable();
+  histpar->DaqDisable();
 
   if (opt.ev_min>=opt.ev_max) {
     opt.ev_min=opt.ev_max/2;
@@ -2478,13 +2482,12 @@ void CRS::DoFopen(char* oname, int popt) {
     char header[256];
     gzread(f_read,header,256);
 
-    Int_t *fmt = (Int_t*) header;
-    Int_t *style = (Int_t*) &header[4];
-    Double_t *start_t = (Double_t*) &header[8];
-    char txt[90];
-    strncpy(txt,header+121,80);
-
-    printf("hdr: %d %d %f %s\n",*fmt,*style,*start_t,txt);
+    // Int_t *fmt = (Int_t*) header;
+    // Int_t *style = (Int_t*) &header[4];
+    // Double_t *start_t = (Double_t*) &header[8];
+    // char txt[90];
+    // strncpy(txt,header+121,80);
+    // printf("hdr: %d %d %f %s\n",*fmt,*style,*start_t,txt);
   }
 
   //boffset=1024*1024;
@@ -3026,6 +3029,9 @@ void CRS::EndAna(int all) {
   // if (opt.raw_write && opt.fProc) {
   //   crs->Flush_Raw();
   // }
+
+  parpar->DaqEnable();
+  histpar->DaqEnable();
 
 }
 
@@ -3685,7 +3691,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 
 	//new2
 	ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	ipls->Tstamp64=Tst;
+	ipls->Tstamp64=Tst;//*opt.Period;
 
 
 	ipls->Spin=Spn;

@@ -2361,6 +2361,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   local_nch=opt.Nchan;
 
+  //parpar->DaqDisable();
   //cout << "tab9: " << tabfr.size() << endl;
 
   // MapSubwindows();

@@ -38,12 +38,15 @@ struct pmap {
   void* data2; //address of the second (parallel) parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
   char all; //1 - all/ALL/* parameters; >1 - channel type
-  byte cmd; //опции (биты)
+  //byte cmd; //опции (биты)
+  UInt_t cmd; //опции (биты)
   //0x1: (bit0) 1: start/stop DAQ
   //0xE: (bit1-3) change color
+  //0xF0: (bit4-7) Action
+  //0x100 (bit8) disble during acq
+  //0x200 (bit9) disble fields not existing in certain devices
 
-  //0xF0: (bit4-7) action:
-
+  //Action: 
   // in DoDaqNum:
   // 1 - DoReset
   // 2 - Hireset
@@ -54,19 +57,16 @@ struct pmap {
   // 5 - group4 for module51
 
   /*
-  /////// 6 - soft_logic
-  /////// 7 - hard logic
-  */
-
   // in UpdateField (chk):
   // 2 - 2d hist (2 fields)
   // 3 - 1d hist (4 fields)
   // 4 - profilometer hist
-
+  */
 
   //byte chan; //for Command_crs :seems to be not needed (21.01.2020)
 };
 
+typedef std::vector<pmap>::iterator piter;
 //-----------------------------------------------
 class ParDlg: public TGCompositeFrame {
 
@@ -122,12 +122,13 @@ protected:
 
 public:
   std::vector<pmap> Plist;
+  std::vector<byte> Clist; //list of isanable states for daqdisable
 
 public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ParDlg();
 
-  void DoMap(TGFrame *f, void *d, P_Def t, int all, byte cmd=0, void *d2=0);
+  void DoMap(TGFrame *f, void *d, P_Def t, int all, UInt_t cmd=0, void *d2=0);
 
   void SetNum(pmap pp, Double_t num);
   void SetChk(pmap pp, Bool_t num);
@@ -152,6 +153,8 @@ public:
   void Update();
   void EnableField(int nn, bool state);
   void AllEnabled(bool state);
+  void DaqDisable();
+  void DaqEnable();
   //void SelectEnabled(bool state, const char* text);
   TGFrame *FindWidget(void* p);
   void AddClab(TGCompositeFrame* cfr, TGTextEntry* &clb,
@@ -160,11 +163,11 @@ public:
 
 
   void Check_opt(TGHorizontalFrame *hfr1, int width, void* x1,
-		 const char* tip1, byte cmd1, const char* cname="");
+		 const char* tip1, UInt_t cmd1, const char* cname="");
 
   void Num_opt(TGHorizontalFrame *hfr1, int width, void* x1,
 	       const char* tip1, TGNumberFormat::EStyle style1,
-	       double min1, double max1, byte cmd1, TGLayoutHints* Lay);
+	       double min1, double max1, UInt_t cmd1, TGLayoutHints* Lay);
 
   void AddLine_opt(TGCompositeFrame* frame, int width, void *x1, void *x2, 
 		   const char* tip1, const char* tip2, const char* label,
@@ -172,14 +175,14 @@ public:
 		   TGNumberFormat::EStyle style2,
 		   //TGNumberFormat::EAttribute attr, 
 		   double min1=0, double max1=0,
-		   double min2=0, double max2=0, byte cmd1=0, byte cmd2=0,
+		   double min2=0, double max2=0, UInt_t cmd1=0, UInt_t cmd2=0,
 		   TGLayoutHints* Lay1=0, TGLayoutHints* Lay2=0);
 
   void AddLine_1opt(TGCompositeFrame* frame, int width, void *x1, 
 		   const char* tip1, const char* label,
 		   TGNumberFormat::EStyle style1, 
 		   double min1=0, double max1=0,
-		   byte cmd1=0, TGLayoutHints* Lay1=0);
+		   UInt_t cmd1=0, TGLayoutHints* Lay1=0);
 
   void AddSoftHard(TGGroupFrame* frame, TGCheckButton* &fchkSoft,
 		   TGCheckButton* &fchkHard);
@@ -282,9 +285,9 @@ public:
 
   void AddChCombo(int i, int &id, int &kk, int &all);
   void AddChkPar(int &kk, TGHorizontalFrame *cframe,
-		 Bool_t* dat, int all, const char* ttip, int cmd=0);
+		 Bool_t* dat, int all, const char* ttip, UInt_t cmd=0);
   void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
-    void* apar, double min, double max, P_Def ptype, byte cmd=0);
+    void* apar, double min, double max, P_Def ptype, UInt_t cmd=0);
   // void ClearLines();
 
   ClassDef(ChanParDlg, 0)
@@ -312,7 +315,7 @@ public:
   void AddHeader();
   void AddLine_daq(int i, TGCompositeFrame* fcont1);
   void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
-    const char* name, void* apar, void* apar2=0, byte cmd=1);
+    const char* name, void* apar, void* apar2=0, UInt_t cmd=1);
   void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
 		   const char* ttip, int &kk);
   void UpdateStatus(int rst=0);
