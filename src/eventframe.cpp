@@ -1247,7 +1247,7 @@ void EventFrame::ReDraw() {
 	bx.SetFillColor(3);
 	//bx.SetLineColor(3);
 	for (int kk=-1;kk<31;kk++) {
-	  int x1 = 0+opt.Prof64_W[0]+opt.Prof64_W[1]*kk;
+	  int x1 = opt.Prof64_W[1]+opt.Prof64_W[0]*kk;
 	  int x2 = x1 + opt.Prof64_W[2]-1;
 	  bx.DrawBox(x1,y1,x2,y2);
 	  //cout << "x1: " << x1 << " " << x2 << endl;

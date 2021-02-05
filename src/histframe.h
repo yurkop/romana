@@ -93,6 +93,7 @@ public:
   HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
   virtual ~HistFrame();
 
+  //void AddButtons(TGHorizontalFrame *fHor3, TGLayoutHints* LayLC1, int num);
   TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
   void Make_Ltree();
   void Clear_Ltree();
@@ -106,8 +107,6 @@ public:
   void DoLog();
   void DoStat();
   void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
-  //void SelectDiv(int nn);
-  void DoNum();
   void DoRadio();
   void DoButton();
   void DoSlider();

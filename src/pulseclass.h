@@ -101,6 +101,7 @@ class PulseClass {
 
   UChar_t Chan; //channel number
   Short_t Pos; //position of the trigger relative to pulse start (in samples)
+               //Pos=-32222 -> no peak found
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 1: event is writable in Dec

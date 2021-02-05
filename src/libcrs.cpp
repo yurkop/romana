@@ -1359,7 +1359,8 @@ int CRS::Detect_device() {
     break;
 
   case 4: //crs-8/16
-    module=41;
+    //module=41;
+    module=42;
     opt.Period=10;
     chan_in_module=nplates*8;
     for (int j=0;j<chan_in_module;j++) {

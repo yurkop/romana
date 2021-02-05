@@ -280,8 +280,11 @@ void ParDlg::DoDaqNum() {
     HiFrm->HiReset();
   }
 
-  if (act==3 && crs->b_stop) {
-    HiFrm->Update();
+  if (act==3) {
+    if (crs->b_stop)
+      HiFrm->Update();
+    else
+      HiFrm->changed=true;
   }
 
   if (act==5 && nfld && (crs->module>=41 && crs->module<=70)) {
@@ -515,7 +518,6 @@ void ParDlg::DoTxt() {
   pmap pp = Plist[id-1];
 
   SetTxt(pp,te->GetText());
-
 }
 
 void ParDlg::DoOneType(int i) {

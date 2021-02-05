@@ -22,7 +22,10 @@
 //#pragma link C++ class HCuts+;
 #pragma link C++ class Coptions+;
 #pragma link C++ class Toptions+;
+#pragma link C++ class PEditor+;
 //#pragma link C++ class Hoptions+;
+
+
 #pragma link C++ class TGMatrixLayout2;
 
 

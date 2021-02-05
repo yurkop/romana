@@ -11,7 +11,6 @@
 #include "colors.h"
 #include "popframe.h"
 #include <TGDockableFrame.h>
-#include <TGTextEdit.h>
 #include <TTimeStamp.h>
 #include <TDataMember.h>
 #include <list>
@@ -28,6 +27,7 @@ enum MENU_COM {
   M_FILE_EXIT,
   M_EDIT_PROF8,
   M_EDIT_PROF64,
+  M_EDIT_CUTG,
   M_PROF_TIME,
   //M_PRECALIBR,
   M_ECALIBR,
@@ -112,40 +112,6 @@ class VarClass {
   TDataMember *Dm;
 };
 //-----------------------------------------------
-class PEditor {
-
- private:
-  TGTransientFrame *fMain;   // main frame of this widget
-  TGTextEdit       *fEdit;   // text edit widget
-
-  TString          *str;
- public:
-  PEditor(const TGWindow *main, UInt_t w, UInt_t h);
-  virtual ~PEditor();
-
-  void   LoadFile(const char *file);
-  void   Load_Ing(const char* header);
-  void   LoadPar8();
-  void   LoadPar64();
-  void   LoadCuts();
-  //void   LoadBuffer(const char *buffer);
-  //void   AddBuffer(const char *buffer);
-
-  TGTextEdit *GetEditor() const { return fEdit; }
-
-  void   SetTitle();
-  void   Popup();
-
-  // slots
-  void   CloseWindow();
-  void   DoSavePar();
-  void   DoPExit();
-  void   DoOpen();
-  void   DoSave();
-  void   DoClose();
-};
-
-//-----------------------------------------------
 class MainFrame : public TGMainFrame {
 
  public:
@@ -164,8 +130,8 @@ class MainFrame : public TGMainFrame {
   TGTextButton *fAna;
   TGTextButton *fNb;
 
-  PEditor* p_ed;
-  PopFrame* p_pop;
+  //PEditor* p_ed;
+  //PopFrame* p_pop;
 
   TGTab                *fTab;
   std::vector<TGCompositeFrame*> tabfr;

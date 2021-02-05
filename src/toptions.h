@@ -205,6 +205,7 @@ public:
   //TString S_ch_name[MAX_TP];
   char ch_name[MAX_TP][20];
   //char ch_name2[3][4][5][MAX_TP][20]; //->
+  char drawopt[30];
 
   Int_t ev_min; //minimal length of events list
   Int_t ev_max; //maximal length of events list
@@ -232,8 +233,9 @@ public:
   Int_t Ing_y[16];
   Int_t Prof_x[8];
   Int_t Prof_y[8];
-  Int_t Prof64[5];
-  Int_t Prof64_W[3]; //Windows: offset, period, width (in smp)
+  Int_t Prof64[5]; //position channels for Prof64
+  char Prof64_TSP[10];
+  Int_t Prof64_W[3]; //Windows: period, offset, width (in smp)
 
   //Int_t prof_ch[MAX_CH];
 

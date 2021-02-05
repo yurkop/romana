@@ -25,28 +25,18 @@ public:
 
   TGLayoutHints *LayLC0,*LayLC2,*LayEE2;
 
-  //void** fVar;
-  //static const int MAXPNUM=11;
+  void* ptr;
+
   TGTransientFrame *fMain;   // main frame of this widget
   TGTextEdit       *fEdit;   // text edit widget
 
   TList chklist;
 
-  //std::vector<std::array<double,4>> ee_calib;
-
-  //TPolyLine* ee_calib;
-  //std::vector<ee_map> ee_calib;
-  //std::vector<double> ch_calib;
-  
-  //TGHorizontalFrame *pframe[MAXPNUM];
-  //TGNumberEntry* fpNum[MAXPNUM];
-  //TGLabel* fpLabel[MAXPNUM];
-
   TGHorizontalFrame *hframe;
   TGLabel* fLabel;
   TGNumberEntry *fWidth, *fRange, *fSubstr, *fNum;
   TGNumberEntryField *fAdj[MAX_CH+NGRP+1][3];
-  //TGCheckButton *fChk;
+
   TGNumberFormat::EStyle ki=TGNumberFormat::kNESInteger;
   TGNumberFormat::EStyle kr = TGNumberFormat::kNESReal;
   TGNumberFormat::EAttribute ka = TGNumberFormat::kNEAAnyNumber;
@@ -69,15 +59,12 @@ public:
   Float_t sD[MAX_CHTP];
 
 public:
-  PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id);
+  PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id, void* p=0);
   virtual ~PopFrame();
-  void AddProf(UInt_t w, UInt_t h);
+  void AddProfTime(UInt_t w, UInt_t h);
   void AddAdj(TGCompositeFrame* fcont1, HMap* map, int i);
   void AddEcalibr(UInt_t w, UInt_t h);
-  //void AddEcalibr_old(UInt_t w, UInt_t h);
   void AddTcalibr();
-  void DoProfTime();
-  //void AddPeaks();
   void DoAdj();
   void DoENum();
   void Do_Save_Ecalibr();

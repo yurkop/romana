@@ -240,6 +240,7 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
     int nn=bins*(max-min);
     //cout << "Hist: " << i << " " << nn << " " << min << " " << max << endl;
     TH1F* hh=new TH1F(name2,title2,nn,min,max);
+    hh->Sumw2();
 
     //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
     map[i] = new HMap(dname,hh,hd,i);
@@ -308,7 +309,7 @@ void HClass::Make_prof(const char* dname, const char* name,
   //1d
   int bb=64;
   //int bb=hd->bins;
-  const char* name3[] = {"Prof_x","Prof_y","Prof_ax","Prof_ay"};
+  const char* name3[] = {"prof_x","prof_y","prof_ax","prof_ay"};
   for (int i=0;i<4;i++) {
     sprintf(name2,"%s",name3[i]);
     sprintf(title2,"%s;N strip",name3[i]);
@@ -317,6 +318,10 @@ void HClass::Make_prof(const char* dname, const char* name,
     //   bb=hd->bins2;
 
     TH1F* hh=new TH1F(name2,title2,bb,0,bb);
+    hh->Sumw2();
+    hh->SetOption("E");
+
+    //cout << "Prof: " << hh->GetName() << " " << hh->GetSumw2() << " " << hh->GetDefaultSumw2() << " " << hh->ClassName() << " " << h2->ClassName() << endl;
 
     map2[i] = new HMap("Prof1d",hh,hd2,i);
     //map2[i] = new HMap("Prof1d",hh,hd2->c+i,hd2->w+i,hd2->cut+i);

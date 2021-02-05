@@ -1,5 +1,6 @@
 //----- HistFrame ----------------
 #include "romana.h"
+//#include "peditor.h"
 
 #include <sstream>
 
@@ -332,6 +333,16 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->SetToolTipText("Remove all histograms from WORK*");
   fHor4->AddFrame(but, LayLC1);
 
+  int id = parpar->Plist.size()+1;
+  TGTextEntry* tOpt    = new TGTextEntry(tab1,"",id);;
+  //tForm->SetWidth(110);
+  tOpt->SetMaxLength(sizeof(opt.drawopt)-1);
+  tOpt->SetToolTipText("Draw options (see ROOT manual for drawing histograms)");
+  parpar->DoMap(tOpt,opt.drawopt,p_txt,0,0);
+  tOpt->Connect("TextChanged(char*)", "ParDlg", parpar, "DoTxt()");
+  //tOpt->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
+  tab1->AddFrame(tOpt,LayET0);
+
   // TGNumberEntryField* fN =
   //   new TGNumberEntryField(fHor4, 0, 7, TGNumberFormat::kNESInteger,
   // 			   TGNumberFormat::kNEAPositive,
@@ -372,10 +383,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->SetToolTipText("Edit all cuts");
   fHor3->AddFrame(but, LayLC1);
 
-  but = new TGTextButton(fHor3,"Sort",4);
-  //but->Connect("Clicked()", "HistFrame", this, "EditCutG()");
-  but->SetToolTipText("Sort all cuts");
-  fHor3->AddFrame(but, LayLC1);
+  // but = new TGTextButton(fHor3,"Sort",4);
+  // //but->Connect("Clicked()", "HistFrame", this, "EditCutG()");
+  // but->SetToolTipText("Sort all cuts");
+  // fHor3->AddFrame(but, LayLC1);
 
   const char* ttip = "Formula for the cut.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
 
@@ -470,7 +481,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   const char* ttip2[] = {"Horizontal divisions","Vertical divisions"};
 
   TGNumberEntry* fNum[2];
-  int div[2] = {opt.xdiv,opt.ydiv};
+  //int div[2] = {opt.xdiv,opt.ydiv};
+  int* div[2] = {&opt.xdiv,&opt.ydiv};
+
+  /*
   for (int i=0;i<2;i++) {
     fNum[i] = new TGNumberEntry(fHor2, div[i], 2, i+10,
 				TGNumberFormat::kNESInteger,
@@ -479,6 +493,20 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 				1,16);
     fNum[i]->GetNumberEntry()->Connect("TextChanged(char*)", "HistFrame", this, "DoNum()");
     fNum[i]->GetNumberEntry()->SetToolTipText(ttip2[i]);
+  }
+  */
+
+  for (int i=0;i<2;i++) {
+    int id = parpar->Plist.size()+1;
+    fNum[i] = new TGNumberEntry(fHor2, 0, 2, id,
+				TGNumberFormat::kNESInteger,
+				TGNumberFormat::kNEAAnyNumber,
+				TGNumberFormat::kNELLimitMinMax,
+				1,16);
+    
+    fNum[i]->GetNumberEntry()->SetToolTipText(ttip2[i]);
+    parpar->DoMap(fNum[i]->GetNumberEntry(),div[i],p_inum,0,3<<4);
+    fNum[i]->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", parpar, "DoDaqNum()");
   }
 
   fHor2->AddFrame(fNum[0], LayLC2);
@@ -574,20 +602,6 @@ HistFrame::~HistFrame()
 {
   //cout << "~HistFrame()" << endl;
 }
-
-/*
-void NameTitle(char* name, char* title, int i, int cc, 
-			  const char* nm, const char* axis) {
-  if (cc) {
-    sprintf(name,"%s_%02d_cut%d",nm,i,cc);
-    sprintf(title,"%s_%02d_cut%d%s_cut%d",nm,i,cc,axis,cc);
-  }
-  else {
-    sprintf(name,"%s_%02d",nm,i);
-    sprintf(title,"%s_%02d%s",nm,i,axis);
-  }
-}
-*/
 
 TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open, const TGPicture *closed) {
 
@@ -1070,24 +1084,6 @@ void HistFrame::DoRadio()
     changed=true;
 }
 
-void HistFrame::DoNum()
-{
-  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
-  Int_t id = te->WidgetId();
-
-  if (id==10) {
-    opt.xdiv=te->GetNumber();
-  }
-  else {
-    opt.ydiv=te->GetNumber();
-  }
-  
-  if (crs->b_stop)
-    Update();
-  else
-    changed=true;
-}
-
 void HistFrame::DoButton()
 {
   if (opt.b_stack)
@@ -1135,7 +1131,7 @@ void HistFrame::DoSlider() {
 void HistFrame::GetHMinMax(TH1* hh, double x1, double x2,
 		double &y1, double &y2) {
   for (int i=hh->FindFixBin(x1);i<=hh->FindFixBin(x2);i++) {
-    double cc = ((TH1F*)hh)->GetBinContent(i);//+hh->GetBinError();
+    double cc = hh->GetBinContent(i);//+hh->GetBinError();
     if (opt.b_logy) {
       if (cc>0)
 	y1 = TMath::Min(y1,cc);
@@ -1560,13 +1556,7 @@ string HistFrame::CutsToStr()
 
 void HistFrame::EditCutG()
 {
-  //cout << "Edit_cuts: " << endl;
-  if (!myM->p_ed) {
-    myM->p_ed = new PEditor(this, 400, 500);
-    myM->p_ed->LoadCuts();
-    //ed->LoadBuffer(editortxt1);
-    myM->p_ed->Popup();
-  }
+  new PEditor(this, M_EDIT_CUTG, 400, 520);
 }
 
 void HistFrame::DoPeaks()
@@ -2423,7 +2413,6 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
 
     hold = ((TH1F*)map->hst)->GetArray();
     hnew = ((TH1F*)hist)->GetArray();
-
     memset(hnew,0,((TH1F*)hist)->GetSize()*sizeof(*hnew));
     //cout << "float: " << sizeof(*hnew) << " " << sizeof(float) << " " << ((TH1F*)hist)->GetSize() << endl;
 
@@ -2431,6 +2420,8 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
     for (int i=0;i<nbins;i++) {
       int j=i/rb;
       hnew[j+1]+=hold[i+1];
+      //cout << "hold: " << i << " " << hold[i+1] << " " << ((TH1F*)map->hst)->GetBinContent(i+1) << endl;
+      //hnew[j+1]+=((TH1F*)map->hst)->GetBinContent(i+1);
     }
   }
   else { //2d hist
@@ -2471,7 +2462,13 @@ void HistFrame::AllRebinDraw() {
     else {
       gPad->SetLogy(opt.b_logy);
       //cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
-      pad_hist[npad]->Draw();
+      pad_hist[npad]->Draw(opt.drawopt);
+
+      // cout << "padhist: " << pad_hist[npad]->GetName()
+      // 	   << " " << pad_hist[npad]->GetOption()
+      // 	   << " " << pad_hist[npad]->GetSumw2N()
+      // 	   << endl;
+
       // TSpectrum ts;
       // TH1* bkg = ts.Background(pad_hist[npad],40);
       // bkg->SetLineColor(2);

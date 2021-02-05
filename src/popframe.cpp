@@ -1,10 +1,6 @@
 //----- PopFrame ----------------
-#include "popframe.h"
-#include "libmana.h"
-#include "histframe.h"
-#include "eventframe.h"
-#include "toptions.h"
-#include "hclass.h"
+#include "romana.h"
+
 //#include <iostream>
 #include <TCanvas.h>
 #include <TPolyMarker.h>
@@ -18,6 +14,7 @@
 extern GlbClass *glb;
 extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
+extern HClass* hcl;
 extern EventFrame* EvtFrm;
 extern Toptions opt;
 
@@ -27,9 +24,10 @@ const int ww[]={15,70,80,80,80};
 
 using namespace std;
 
-PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id)
-{
+PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
+		   void* p) {
   //ee_calib=0;
+  ptr=p;
 
   LayLC0   = new TGLayoutHints(kLHintsLeft|kLHintsTop);
   LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 2,2,2,2);
@@ -37,7 +35,7 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id)
   LayEE2   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 2,2,2,2);
   //LayLE2   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY, 2,2,2,2);
 
-  txt.SetTextSize(0.15);
+  txt.SetTextSize(0.07);
   txt.SetTextAlign(22);
   fMain = new TGTransientFrame(gClient->GetRoot(), main, w, h);
   fMain->Connect("CloseWindow()", "PopFrame", this, "CloseWindow()");
@@ -47,7 +45,7 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id)
   fMain->SetCleanup(kDeepCleanup);
 
   if (menu_id==M_PROF_TIME) {
-    AddProf(w,h);
+    AddProfTime(w,h);
   }
   // else if (menu_id==M_PRECALIBR) {
   //   AddEcalibr(w,h);
@@ -78,17 +76,101 @@ void PopFrame::CloseWindow()
   HiFrm->Update();
 
   delete this;
-  myM->p_pop=0;
+  //myM->p_pop=0;
   //*fVar=0;
   //cout << "fVar2: " << *fVar << " " << this << endl;
 }
 
-void PopFrame::AddProf(UInt_t w, UInt_t h) {
+void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
   fCanvas = new TRootEmbeddedCanvas("Events",fMain,w,h);
   fMain->AddFrame(fCanvas, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-  TGTextButton* fOK = new TGTextButton(fMain, "  &OK  ");
-  fOK->Connect("Clicked()", "PopFrame", this, "DoProfTime()");
-  fMain->AddFrame(fOK, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+
+  TCanvas *cv=fCanvas->GetCanvas();
+  cv->Clear();
+  cv->Divide(1,2);
+
+  TH1* hh;
+  TGraph* gr;
+  TF1* fit;
+  int res=0;
+
+  TString name = opt.Prof64_TSP;
+  TString msg;
+  HMap* map = (HMap*) hcl->allmap_list->FindObject(name);
+  //TGListTreeItem *item=HiFrm->FindItem(ss);
+  //cout << "map: " << map << endl;
+  if (map) {
+    res++;
+    cv->cd(1);
+    name+='r';
+    hh = (TH1*) map->hst->Clone(name.Data());
+    hh->Draw();
+    hh->ShowPeaks(2,"",0.05);
+    TList *functions = hh->GetListOfFunctions();
+    TPolyMarker *pm = (TPolyMarker*)functions->FindObject("TPolyMarker");
+    if (pm) {
+      res++;
+      //functions->Remove(pm);
+      int nn = pm->GetN();
+      //cout << nn << " peaks found" << endl;
+      if (nn>=31) {
+	//nn=31;
+	res++;
+	gr = new TGraph(nn,pm->GetX(),pm->GetX());
+	gr->Sort();
+	nn = 31;
+	gr->Set(nn);
+	for (int i=0;i<nn;i++) {
+	  gr->GetX()[i]=i;
+	  //cout << "gr: " << i << " " << gr->GetY()[i] << endl;
+	}
+	gr->SetNameTitle("Time_Calibr","Time Calibration");
+	gr->Fit("pol1","Q");
+	cv->cd(2);
+	gr->Draw("AL*");
+
+	fit = gr->GetFunction("pol1");
+	if (fit) {
+	  res++;
+	}
+      } //
+      else {
+	msg = "Number of peaks if less than 31: ";
+	msg+=nn;
+      }
+    } //pm
+    else {
+      msg = "Peaks not found";
+    }
+  }
+  else {
+    msg = TString("Histogram ") + opt.Prof64_TSP + " not found";
+  }
+
+  cv->cd(2);
+  if (res<4) { //error
+    txt.DrawTextNDC(0.5,0.5,msg);
+    cout << "res: " << res << endl;
+  }
+  else { //OK
+    opt.Prof64_W[0]=fit->GetParameters()[1]/opt.Period;
+    msg = TString("Period = ") + opt.Prof64_W[0];
+    txt.DrawTextNDC(0.5,0.5,msg);
+    if (ptr) {
+      PEditor* pe = (PEditor*) ptr;
+      pe->LoadPar64();
+    }
+  }
+  cv->Update();
+
+
+  TGTextButton* fClose = new TGTextButton(fMain, "  &Close  ");
+  fClose->Connect("Clicked()", "PopFrame", this, "CloseWindow()");
+  fMain->AddFrame(fClose, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+
+  // TGTextButton* fOK = new TGTextButton(fMain, "  &OK  ");
+  // fOK->Connect("Clicked()", "PopFrame", this, "DoProfTime()");
+  // fMain->AddFrame(fOK, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
 }
 
 void PopFrame::AddAdj(TGCompositeFrame* fcont1, HMap* map, int i) {
@@ -281,65 +363,6 @@ void PopFrame::AddTcalibr() {
   fTApply->Connect("Clicked()", "PopFrame", this, "Do_TApply()");
   hframe->AddFrame(fTApply, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
 
-}
-
-void PopFrame::DoProfTime() {
-
-  TH1* hh;
-  TGraph* gr;
-  TF1* fit;
-  int res=0;
-
-  char ss[10];
-  sprintf(ss,"tof_%02d",opt.Prof64[4]);
-  TGListTreeItem *item=HiFrm->FindItem(ss);
-  if (item) {
-    res++;
-    HMap* map=(HMap*) item->GetUserData();
-    hh = map->hst;
-
-    hh->ShowPeaks(2,"",0.05);
-    TList *functions = hh->GetListOfFunctions();
-    TPolyMarker *pm = (TPolyMarker*)functions->FindObject("TPolyMarker");
-    if (pm) {
-      res++;
-      //functions->Remove(pm);
-      int nn = pm->GetN();
-      if (nn==31) {
-	res++;
-	gr = new TGraph(nn,pm->GetX(),pm->GetX());
-	gr->Sort();
-	for (int i=0;i<nn;i++) {
-	  gr->GetX()[i]=i;
-	}
-	gr->SetNameTitle("Time_Calibr","Time Calibration");
-	gr->Fit("pol1");
-
-	fit = gr->GetFunction("pol1");
-	if (fit) {
-	  res++;
-	}
-      }
-    }
-  }
-
-  TCanvas *cv=fCanvas->GetCanvas();
-  cv->Clear();
-  cv->Divide(1,2);
-  if (res==4) {
-    cv->cd(1);
-    hh->Draw();
-    cv->cd(2);
-    gr->Draw("AL*");
-    //opt.Prof64_W[0]=fit->GetParameters()[0]/opt.Period;
-    opt.Prof64_W[1]=fit->GetParameters()[1]/opt.Period;
-    //opt.Prof64_W[2]=10;
-  }
-  else {
-    cv->cd(2);
-    txt.DrawTextNDC(0.5,0.5,"Can't find 31 peaks");
-  }
-  cv->Update();
 }
 
 void PopFrame::Do_Save_Ecalibr() {

@@ -65,8 +65,11 @@ void PulseClass::FindPeaks() {
   //      4 - fall of derivative;
   //      5 - threshold crossing of derivative, use 2nd deriv for timing.
 
-  if (sData.size()<2)
+  Pos=-32222;
+
+  if (sData.size()<2) {
     return;
+  }
 
   UInt_t kk=opt.sDrv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
@@ -666,9 +669,11 @@ void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
 void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
   Float_t zz=0;
   Float_t* arr = hh->GetArray();
+  Double_t* w2 = hh->GetSumw2()->GetArray();
   int nent=hh->GetEntries();
   int min = TMath::Min(hh->fN-2,nbins);
-  //cout << "min: " << hh->fN << " " << nbins << " " << min << endl;
+  // cout << "Fill_mean: " << hh->fN << " " << nbins << " " << min
+  //      << " " << hh->GetSumw2() << " " << hh->ClassName() << endl;
   for (Int_t j=0;j<min;j++) {
     if (ideriv==0) {
       zz = Data[j];
@@ -793,6 +798,10 @@ void EventClass::FillHist(Bool_t first) {
   }
 
   for (pulse_vect::iterator ipls=pulses.begin();ipls!=pulses.end();++ipls) {
+    if (ipls->Pos<-32000)
+      continue;
+    //cout << "pulse: " << Nevt << " " << Tstmp << " " << (int) ipls->Chan << " " << ipls->Pos << endl;
+    
     ipls->Ecalibr();
     //for (UInt_t i=0;i<pulses.size();i++) {
     int ch = ipls->Chan;
@@ -1003,7 +1012,7 @@ void EventClass::FillHist(Bool_t first) {
 	    int size = pulse->sData.size();
 
 	    for (int kk=-1;kk<31;kk++) {
-	      int x1 = 0+opt.Prof64_W[0]+opt.Prof64_W[1]*kk;
+	      int x1 = opt.Prof64_W[1]+opt.Prof64_W[0]*kk;
 	      //int x2 = x1 + opt.Prof64_W[2];
 	      int xmin = TMath::Max(-dt+x1,0);
 	      int xmax = TMath::Min(size,-dt+x1+opt.Prof64_W[2]);

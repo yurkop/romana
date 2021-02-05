@@ -312,9 +312,11 @@ Toptions::Toptions() {
   prof_nx=8;
   prof_ny=8;
 
-  for (int i=0;i<5;i++) {
-    Prof64[i]=-1;
+  for (int i=0;i<4;i++) {
+    Prof64[i]=i;
   }
+  Prof64[4]=6;
+  strcpy(Prof64_TSP,"time_06");
   Prof64_W[0]=0;
   Prof64_W[1]=0;
   Prof64_W[2]=0;

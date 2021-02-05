@@ -11,6 +11,7 @@
 
 #include "romana.h"
 #include "popframe.h"
+//#include "peditor.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1875,17 +1876,17 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuBar->AddPopup("&Profilometer", fMenuProf, 
 		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
-  fMenuProf->AddEntry("Edit Ing-27/Prof8x8 channel map", M_EDIT_PROF8);
+  fMenuProf->AddEntry("Profilometer 8x8", M_EDIT_PROF8);
   fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
-  fMenuProf->AddEntry("Edit Ing-27/Prof64x64 channel map", M_EDIT_PROF64);
+  fMenuProf->AddEntry("Profilometer 64x64", M_EDIT_PROF64);
   fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
-  fMenuProf->AddEntry("Profilometer time calibration", M_PROF_TIME);
-  fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
-		     "HandleMenu(Int_t)");
+  // fMenuProf->AddEntry("Profilometer time calibration", M_PROF_TIME);
+  // fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
+  // 		     "HandleMenu(Int_t)");
 
 
 
@@ -2198,8 +2199,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   Move(-100,-100);
 
-  p_ed=0;
-  p_pop=0;
+  //p_ed=0;
+  //p_pop=0;
   //prtime("MainFrame_end");
 }
 
@@ -3081,49 +3082,28 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
     //cout << "DoTab2: " << name << endl;
-    /*
-      if (daqpar->notbuilt) {
-      daqpar->Build();
-      Resize(GetDefaultSize());
-      MapSubwindows();
-      Layout();
-      }
-    */
     daqpar->Update();
   }
   else if (name.EqualTo("Analysis",TString::kIgnoreCase)) {
     //cout << "DoTab3: " << name << endl;
-    /*
-      if (anapar->notbuilt) {
-      anapar->Build();
-      //Resize(GetDefaultSize());
-      MapSubwindows();
-      //Layout();
-      }
-    */
-    //cout << "Ana3: " << endl;
     anapar->Update();
-    //cout << "Ana4: " << endl;
   }
   else if (name.EqualTo("Peaks",TString::kIgnoreCase)) {
     //cout << "DoTab3: Peaks: " << name << endl;
-    /*
-      if (pikpar->notbuilt) {
-      pikpar->Build();
-      //Resize(GetDefaultSize());
-      MapSubwindows();
-      //Layout();
-      }
-    */
     pikpar->Update();
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
+    parpar->Update();
     EvtFrm->EvtUpdate();
     //cout << "DoTab4: " << name << endl;
     if (crs->b_stop)
       EvtFrm->DrawEvent2();
   }
+  else if (name.EqualTo("histograms",TString::kIgnoreCase)) {
+    histpar->Update();
+  }
   else if (name.Contains("Plots",TString::kIgnoreCase)) {
+    parpar->Update();
     //cout << "DoTab5: " << name << endl;
     if (!crs->b_acq)
       HiFrm->Update();
@@ -3281,44 +3261,23 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
   case M_EDIT_PROF8:
     {
-      if (!p_ed) {
-	//cout << "p_ed: " << p_ed << endl;
-	p_ed = new PEditor(this, 400, 500);
-	p_ed->LoadPar8();
-	//ed->LoadBuffer(editortxt1);
-	p_ed->Popup();
-      }
+      new PEditor(this, M_EDIT_PROF8, 400, 600);
     }
     break;
 
   case M_EDIT_PROF64:
     {
-      if (!p_ed) {
-	//cout << "p_ed: " << p_ed << endl;
-	p_ed = new PEditor(this, 400, 500);
-	p_ed->LoadPar64();
-	//ed->LoadBuffer(editortxt1);
-	p_ed->Popup();
-      }
+      new PEditor(this, M_EDIT_PROF64, 400, 600);
     }
     break;
 
-  case M_PROF_TIME:
-    {
-      //cout << "cal1: " << p_time_cal << endl;
-      if (!p_pop) {
-	p_pop = new PopFrame(this,800,600,M_PROF_TIME);
-	//pop->Popup;
-	// TCanvas* cc = new TCanvas();
-	// //cout << "p_ed: " << p_ed << endl;
-	// p_ed = new PEditor(this, 400, 400);
-	// p_ed->LoadPar64();
-	// //ed->LoadBuffer(editortxt1);
-	// p_ed->Popup();
-      }
-      //cout << "cal2: " << p_pop << endl;
-    }
-    break;
+  // case M_PROF_TIME:
+  //   {
+  //     //cout << "cal1: " << p_time_cal << endl;
+  //     new PopFrame(this,800,600,M_PROF_TIME);
+  //     //cout << "cal2: " << p_pop << endl;
+  //   }
+  //   break;
 
   // case M_PRECALIBR:
   //   {
@@ -3330,9 +3289,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
   case M_ECALIBR:
     {
-      if (!p_pop) {
-	p_pop = new PopFrame(this,800,600,M_ECALIBR);
-      }
+      new PopFrame(this,800,600,M_ECALIBR);
     }
     break;
 
@@ -3340,9 +3297,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
     {
       //cout << "ecalibr: " << fTab->GetCurrent() << endl;
       fTab->SetTab("Plots");
-      if (!p_pop) {
-	p_pop = new PopFrame(this,100,600,M_TCALIBR);
-      }
+      new PopFrame(this,100,600,M_TCALIBR);
     }
     break;
 
@@ -3668,250 +3623,4 @@ void TGMatrixLayout2::SavePrimitive(ostream &out, Option_t *)
       << fSep << ","
       << fHints <<")";
 
-}
-
-
-PEditor::PEditor(const TGWindow *main, UInt_t w, UInt_t h)
-{
-  // Create an editor in a dialog.
-
-  str = new TString();
-
-  fMain = new TGTransientFrame(gClient->GetRoot(), main, w, h);
-  fMain->Connect("CloseWindow()", "PEditor", this, "CloseWindow()");
-  fMain->DontCallClose(); // to avoid double deletions.
-
-  // use hierarchical cleaning
-  fMain->SetCleanup(kDeepCleanup);
-
-  fEdit = new TGTextEdit(fMain, w, h, kSunkenFrame | kDoubleBorder);
-  fMain->AddFrame(fEdit, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
-  fEdit->Connect("Opened()", "PEditor", this, "DoOpen()");
-  fEdit->Connect("Saved()",  "PEditor", this, "DoSave()");
-  fEdit->Connect("Closed()", "PEditor", this, "DoClose()");
-
-  // set selected text colors
-  Pixel_t pxl;
-  gClient->GetColorByName("#3399ff", pxl);
-  fEdit->SetSelectBack(pxl);
-  fEdit->SetSelectFore(TGFrame::GetWhitePixel());
-
-  // TGTextButton* fRead = new TGTextButton(fMain, "  &Read  ");
-  // fRead->Connect("Clicked()", "PEditor", this, "DoOpen()");
-  // fL2 = new TGLayoutHints(kLHintsBottom | kLHintsCenterX, 0, 0, 5, 5);
-  // fMain->AddFrame(fRead, fL2);
-
-  TGHorizontalFrame* fHor = new TGHorizontalFrame(fMain);
-  fMain->AddFrame(fHor, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
-
-  TGTextButton* fSave = new TGTextButton(fHor, "  &Save  ");
-  fSave->Connect("Clicked()", "PEditor", this, "DoSavePar()");
-  fHor->AddFrame(fSave, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 10, 0, 0));
-
-  TGTextButton* fExit = new TGTextButton(fHor, "  Save && &Exit  ");
-  fExit->Connect("Clicked()", "PEditor", this, "DoPExit()");
-  fHor->AddFrame(fExit, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 10, 0, 0, 0));
-
-  SetTitle();
-
-  fMain->MapSubwindows();
-
-  fMain->Resize();
-
-  // editor covers right half of parent window
-  fMain->CenterOnParent(kTRUE, TGTransientFrame::kRight);
-}
-
-PEditor::~PEditor()
-{
-  // Delete editor dialog.
-
-  fMain->DeleteWindow();  // deletes fMain
-}
-
-void PEditor::SetTitle()
-{
-  // Set title in editor window.
-
-  TGText *txt = GetEditor()->GetText();
-  Bool_t untitled = !strlen(txt->GetFileName()) ? kTRUE : kFALSE;
-
-  char title[256];
-  if (untitled)
-    sprintf(title, "Channel map");
-  else
-    sprintf(title, "%s", txt->GetFileName());
-
-  fMain->SetWindowName(title);
-  fMain->SetIconName(title);
-}
-
-void PEditor::Popup()
-{
-  // Show editor.
-
-  fMain->MapWindow();
-}
-
-// void PEditor::LoadBuffer(const char *buffer)
-// {
-//   // Load a text buffer in the editor.
-
-//   fEdit->LoadBuffer(buffer);
-// }
-
-void PEditor::LoadFile(const char *file)
-{
-  // Load a file in the editor.
-  fEdit->LoadFile(file);
-}
-
-void PEditor::Load_Ing(const char* header)
-{
-  char ss[100];
-  fEdit->LoadBuffer(header);
-  fEdit->AddLine("# N: Ing27 strip number");
-  fEdit->AddLine("# X-ch: DAQ channel for the given X-strip");
-  fEdit->AddLine("# Y-ch: DAQ channel for the given Y-strip");
-  fEdit->AddLine("# Set to -1 if the strip is absent/not used");
-  fEdit->AddLine("# Ing  N X-ch Y-ch");
-  for (int i=0;i<16;i++) {
-    sprintf(ss,"Ing  %2d %2d %2d",i,opt.Ing_x[i],opt.Ing_y[i]);
-    fEdit->AddLine(ss);
-  }
-}
-
-void PEditor::LoadPar8()
-{
-  char ss[100];
-  Load_Ing("# Settings for 8x8 profilometer");
-  fEdit->AddLine("# Prof N X-ch Y-ch");
-  //fEdit->AddLine("#");
-  for (int i=0;i<8;i++) {
-    sprintf(ss,"Prof %2d %2d %2d",i,opt.Prof_x[i],opt.Prof_y[i]);
-    fEdit->AddLine(ss);
-  }
-}
-
-void PEditor::LoadPar64()
-{
-  char ss[100];
-  Load_Ing("# Settings for 64x64 profilometer");
-  fEdit->AddLine("# Prof64: four channels for Prof64 position signals");
-  //fEdit->AddLine("#");
-  sprintf(ss,"Prof64 %d # P+(33-64)",opt.Prof64[0]);
-  fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # P+(1-32)",opt.Prof64[1]);
-  fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # N+(33-64)",opt.Prof64[2]);
-  fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # N+(1-32)",opt.Prof64[3]);
-  fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_T %d # Channel for Time calibration",opt.Prof64[4]);
-  fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_OFF %d # Time Offset",opt.Prof64_W[0]);
-  fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_PER %d # Period",opt.Prof64_W[1]);
-  fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_WIN %d # Window",opt.Prof64_W[2]);
-  fEdit->AddLine(ss);
-  
-  fEdit->AddLine("# Run Profilometer time calibration");
-  fEdit->AddLine("# for period determination");
-}
-
-void PEditor::LoadCuts()
-{
-  string str = HiFrm->CutsToStr();
-  fEdit->LoadBuffer(str.c_str());
-}
-
-void PEditor::CloseWindow()
-{
-  // Called when closed via window manager action.
-
-  delete this;
-  myM->p_ed=0;
-}
-
-void PEditor::DoSavePar()
-{
-  // Handle Save button.
-
-  TGText* tgt = fEdit->GetText();
-  //cout << tgt->RowCount() << endl;
-  int kk=0;
-  for (int i=0;i<tgt->RowCount();i++) {
-    char* chr = tgt->GetLine(TGLongPosition(0,i),100);
-    if (chr) {
-      std::stringstream ss(chr);
-      TString ts;
-      int j,xx,yy;
-      ss >> ts >> j >> xx >> yy;
-      //cout << i << " " << chr << " " << ts << " " << a << " " << b << " " << c << endl;
-      delete[] chr;
-      if (ts.EqualTo("Ing",TString::kIgnoreCase) && j>=0 && j<16) {
-	opt.Ing_x[j]=xx;
-	opt.Ing_y[j]=yy;
-      }
-      else if (ts.EqualTo("Prof",TString::kIgnoreCase) && j>=0 && j<8) {
-	opt.Prof_x[j]=xx;
-	opt.Prof_y[j]=yy;
-      }
-      else if (ts.EqualTo("Prof64",TString::kIgnoreCase) && kk>=0 && kk<4) {
-	opt.Prof64[kk]=j;
-	++kk;
-      }
-      else if (ts.EqualTo("Prof64_T",TString::kIgnoreCase)) {
-	opt.Prof64[4]=j;
-	++kk;
-      }
-      else if (ts.EqualTo("Prof64_OFF",TString::kIgnoreCase)) {
-	opt.Prof64_W[0]=j;
-      }
-      else if (ts.EqualTo("Prof64_PER",TString::kIgnoreCase)) {
-	opt.Prof64_W[1]=j;
-      }
-      else if (ts.EqualTo("Prof64_WIN",TString::kIgnoreCase)) {
-	opt.Prof64_W[2]=j;
-      }
-    }
-  }
-
-  crs->Make_prof_ch();
-}
-
-void PEditor::DoPExit()
-{
-  // Handle Save&Exit button.
-
-  DoSavePar();
-  CloseWindow();
-}
-
-void PEditor::DoOpen()
-{
-  SetTitle();
-#ifdef LINUX
-  if (chdir(startdir)) {}
-#else
-  _chdir(startdir);
-#endif
-}
-
-void PEditor::DoSave()
-{
-  SetTitle();
-#ifdef LINUX
-  if (chdir(startdir)) {}
-#else
-  _chdir(startdir);
-#endif
-}
-
-void PEditor::DoClose()
-{
-  // Handle close button.
-
-  CloseWindow();
 }
