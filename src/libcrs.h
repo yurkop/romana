@@ -141,7 +141,7 @@ RQ_OBJECT("CRS")
   Short_t module;
   //1-ADCM raw, 3 - ortec lis, 22 - crs2;
   //32 - old crs32, 33 - crs32 with dsp/po3, 34 - crs32/po4, 35 - crs32/po5
-  //41 - crs-8/16
+  //41,42 - crs-8/16
   //51,52 - crs-128
   //72..80 - decoded file
 
@@ -256,7 +256,7 @@ RQ_OBJECT("CRS")
   void Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max);
   int Command2(byte cmd, byte ch, byte type, int par);
   void AllParameters2(); // load all parameters
-  void AllParameters41(); // load all parameters
+  //void AllParameters41(); // load all parameters
   void AllParameters42(); // load all parameters
   void AllParameters35(); // load all parameters
   void AllParameters34(); // load all parameters

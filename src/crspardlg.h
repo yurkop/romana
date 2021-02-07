@@ -184,9 +184,6 @@ public:
 		   double min1=0, double max1=0,
 		   UInt_t cmd1=0, TGLayoutHints* Lay1=0);
 
-  void AddSoftHard(TGGroupFrame* frame, TGCheckButton* &fchkSoft,
-		   TGCheckButton* &fchkHard);
-
   // void Rebuild();
 
   ClassDef(ParDlg, 0)
@@ -200,8 +197,10 @@ public:
 
 protected:
 
-  TGCheckButton *fchkSoft;
-  TGCheckButton *fchkHard;
+  //TGCheckButton *fchkSoft;
+  //TGCheckButton *fchkHard;
+
+  TGCheckButton *fchkTrig[3];
 
   //wlist soft_list;
   //wlist hard_list;
@@ -221,14 +220,15 @@ public:
   int AddOpt(TGCompositeFrame* frame);
   int AddAna(TGCompositeFrame* frame);
   int AddLogic(TGCompositeFrame* frame);
+  void AddTrigger(TGGroupFrame* frame);
   int AddExpert(TGCompositeFrame* frame);
-  void DoCheckLogic();
+  void DoCheckTrigger();
 
   void Add2d();
 
   void Update();
   //void UpdateLL(wlist &llist, Bool_t state);
-  void UpdateLogic();
+  void UpdateTrigger();
 
   ClassDef(ParParDlg, 0)
 };
@@ -301,8 +301,8 @@ public:
   TGTextEntry *fStat3[MAX_CH+1];
   TGTextEntry *fStatBad[MAX_CH+1];
 
-  TGCheckButton *fchkSoft;
-  TGCheckButton *fchkHard;
+  //TGCheckButton *fchkSoft;
+  //TGCheckButton *fchkHard;
 
   TGGroupFrame* cGrp;
   TGLabel *cLabel;

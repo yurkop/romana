@@ -2467,7 +2467,6 @@ void MainFrame::DoOpen(Int_t id) {
 }
 
 void MainFrame::DoClose() {
-  cout << "DoClose: " << endl;
 
   if (!crs->b_stop) return;
 
@@ -2490,7 +2489,7 @@ void MainFrame::DoClose() {
 #ifdef CYUSB
   crs->Detect_device();
   if (crs->Fmode==1) { //CRS is present
-    daqpar->AllEnabled(true);
+    //daqpar->AllEnabled(true);
     fStart->SetEnabled(true);
     //fReset->SetEnabled(true);
 

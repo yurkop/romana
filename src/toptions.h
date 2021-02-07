@@ -87,7 +87,8 @@ public:
   Bool_t forcewr; //only for crs2
   // 0 - only triggered channel is written; 
   // 1 - both channels are written with any trigger
-  Bool_t St_trig; //force trigger on start
+  Int_t Trigger; // [St_trig]   0 - discr; 1 - START; 2 - coinc
+  //Bool_t St_trig; //force trigger on start
   Int_t DTW; //Start dead time window
   Int_t Smpl; //Sampling rate divider
   Int_t St_Per; //Start imitator period

@@ -803,7 +803,7 @@ void ParDlg::UpdateField(int nn) {
 
     //cout << "bit9: " << bit9 << " " << nn << " " << pp->data << " " << &cpar.Smpl << endl;
 
-    if ((pp->data==&cpar.Smpl || pp->data==&cpar.St_trig)
+    if ((pp->data==&cpar.Smpl /*|| pp->data==&cpar.St_trig*/)
 	&& (crs->Fmode!=1 || crs->module<41)) {
       EnableField(nn,false);
     }
@@ -838,7 +838,6 @@ void ParDlg::EnableField(int nn, bool state) {
 	
   //TQObject* tq = (TQObject*) pp->field;
   //tq->BlockAllSignals(true);
-
   switch (pp->type) {
   case p_inum:
   case p_fnum:
@@ -869,6 +868,7 @@ void ParDlg::EnableField(int nn, bool state) {
     TGComboBox *te = (TGComboBox*) pp->field;
     te->SetEnabled(state);
   }
+    break;
   case p_but: {
     TGButton *te = (TGButton*) pp->field;
     te->SetEnabled(state);
@@ -878,7 +878,6 @@ void ParDlg::EnableField(int nn, bool state) {
   } //switch
 
   //tq->BlockAllSignals(false);
-
 }
 
 void ParDlg::AllEnabled(bool state) {
@@ -1099,32 +1098,6 @@ void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1,
   hfr1->AddFrame(fLabel,LayLT4);
 }
 
-void ParDlg::AddSoftHard(TGGroupFrame* frame, TGCheckButton* &fchkSoft,
-			 TGCheckButton* &fchkHard) {
-
-  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
-  frame->AddFrame(hfr1);
-
-  const char* tip1, *label;
-
-  tip1= "Use software coincidences";
-  label="SoftCoinc.";
-  fchkSoft = new TGCheckButton(frame, label, 0);
-  hfr1->AddFrame(fchkSoft, LayLT6);//,*/new TGLayoutHints(kLHintsCenterX|kLHintsTop, 0,0,20,-10));
-  //DoMap(fchkSoft,&opt.hard_logic,p_chk);
-  fchkSoft->SetToolTipText(tip1);
-  fchkSoft->Connect("Clicked()", "ParParDlg", this, "DoCheckLogic()");
-
-  tip1= "Use hardware coincidences";
-  label="HardCoinc.";
-  fchkHard = new TGCheckButton(frame, label, 1);
-  hfr1->AddFrame(fchkHard, LayLT6);//,*/new TGLayoutHints(kLHintsCenterX|kLHintsTop, 0,0,20,-10));
-  //DoMap(fchkSoft,&opt.hard_logic,p_chk);
-  fchkHard->SetToolTipText(tip1);
-  fchkHard->Connect("Clicked()", "ParParDlg", this, "DoCheckLogic()");
-  
-}
-
 //------ ParParDlg -------
 
 ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
@@ -1169,9 +1142,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   TGVerticalFrame *fV2 = new TGVerticalFrame(fcont1, 1, 1, kSunkenFrame);
   fcont1->AddFrame(fV2,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY));
   AddExpert(fV2);
-  //AddLogic(fV2);
-  //AddLogic(fV2);
-  //AddHWLogic(fV2);
+
 
   // for (UInt_t i=0;i<Plist.size();i++) {
   //   pmap* pp = &Plist[i];
@@ -1357,11 +1328,18 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   // cout << "Smpl: " << cpar.Smpl << endl;
   AddLine_opt(fF6,ww,&cpar.Smpl,&cpar.St_Per,tip1,tip2,label,k_int,k_int,0,14,0,8,0x200|(2<<1)|1,0x200|(6<<1)|1);
 
-  tip1= "[CRS-8/16] Force trigger on all active channels from START signal.\n"
-    "Normal trigger is disabled";
+
+  // tip1= "[CRS-8/16] Force trigger on all active channels from START signal.\n"
+  //   "Normal trigger is disabled";
+  // tip2= "START input channel dead time (in samples). All channels are inhibited during START dead time";
+  // label="START trigger/START dead time";
+  // AddLine_opt(fF6,ww,&cpar.St_trig,&cpar.DTW,tip1,tip2,label,k_chk,k_int,
+  // 	      0,0,1,2e9,0x200|(3<<1)|1,0x200|1);
+
+  tip1="";
   tip2= "START input channel dead time (in samples). All channels are inhibited during START dead time";
-  label="START trigger/START dead time";
-  AddLine_opt(fF6,ww,&cpar.St_trig,&cpar.DTW,tip1,tip2,label,k_chk,k_int,
+  label="START dead time";
+  AddLine_opt(fF6,ww,NULL,&cpar.DTW,tip1,tip2,label,k_chk,k_int,
 	      0,0,1,2e9,0x200|(3<<1)|1,0x200|1);
 
 
@@ -1411,7 +1389,7 @@ int ParParDlg::AddLogic(TGCompositeFrame* frame) {
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, LayLT1);
 
-  AddSoftHard(fF6,fchkSoft,fchkHard);
+  AddTrigger(fF6);
 
   tip1= "Coincidence window for making events (in samples)";
   tip2= "Veto window (in samples): \nsubsequent pulses from the same channel coming within this window are ignored";
@@ -1440,6 +1418,46 @@ int ParParDlg::AddLogic(TGCompositeFrame* frame) {
 
   return fF6->GetDefaultWidth();
 
+}
+
+void ParParDlg::AddTrigger(TGGroupFrame* frame) {
+
+  const char* tip1 = "Trigger type";
+  const char* label[3] = {"Normal","START","Coincidence"};
+
+  TGHorizontalFrame *hfr = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr,LayLT1);
+
+  TGLabel* fLabel = new TGLabel(hfr, "Trigger:");
+  hfr->AddFrame(fLabel,LayLC1);
+
+  for (int i=0;i<3;i++) {
+    fchkTrig[i] = new TGCheckButton(hfr, label[i], i);
+    fchkTrig[i]->SetToolTipText(tip1);
+    fchkTrig[i]->Connect("Clicked()", "ParParDlg", this, "DoCheckTrigger()");
+    hfr->AddFrame(fchkTrig[i],LayLC1);
+  }
+
+  /*
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
+  tip1= "Use software coincidences";
+  label="SoftCoinc.";
+  fchkSoft = new TGCheckButton(frame, label, 0);
+  hfr1->AddFrame(fchkSoft, LayLT6);
+  //DoMap(fchkSoft,&opt.hard_logic,p_chk);
+  fchkSoft->SetToolTipText(tip1);
+  fchkSoft->Connect("Clicked()", "ParParDlg", this, "DoCheckTrigger()");
+
+  tip1= "Use hardware coincidences";
+  label="HardCoinc.";
+  fchkHard = new TGCheckButton(frame, label, 1);
+  hfr1->AddFrame(fchkHard, LayLT6);
+  //DoMap(fchkSoft,&opt.hard_logic,p_chk);
+  fchkHard->SetToolTipText(tip1);
+  fchkHard->Connect("Clicked()", "ParParDlg", this, "DoCheckTrigger()");
+  */
 }
 
 int ParParDlg::AddExpert(TGCompositeFrame* frame) {
@@ -1476,8 +1494,6 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
 
 
-  //AddSoftHard(fF6,fchkSoft,fchkHard);
-
   fF6->Resize();
   //fF6->ChangeBackground(fRed);
 
@@ -1487,21 +1503,22 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
 void ParParDlg::Update() {
   ParDlg::Update();
-  UpdateLogic();
+  UpdateTrigger();
   MapSubwindows();
   Layout();
 }
 
-void ParParDlg::DoCheckLogic() {
+void ParParDlg::DoCheckTrigger() {
 
   TGCheckButton *te = (TGCheckButton*) gTQSender;
   Int_t id = te->WidgetId();
 
-  opt.hard_logic=((Bool_t)!te->GetState());
-  if (id) opt.hard_logic=!opt.hard_logic;
-
-  //cout << "logic: " << opt.hard_logic << endl;
-  UpdateLogic();
+  cpar.Trigger = id;
+  
+  //opt.hard_logic=((Bool_t)!te->GetState());
+  //if (id) opt.hard_logic=!opt.hard_logic;
+  //cout << "trigger: " << id << endl;
+  UpdateTrigger();
 
 #ifdef CYUSB
   if (crs->b_acq && !jtrig) {
@@ -1527,20 +1544,32 @@ void ParParDlg::DoCheckLogic() {
 //   }
 // }
 
-void ParParDlg::UpdateLogic() {
-  fchkSoft->SetState((EButtonState) !opt.hard_logic,false);
-  fchkHard->SetState((EButtonState) opt.hard_logic,false);
+void ParParDlg::UpdateTrigger() {
+  Pixel_t col[3] = {fGrey,fRed,fMagenta};
+  Pixel_t fcol;
+  for (int i=0;i<3;i++) {
+    int state = (cpar.Trigger==i);
+    fchkTrig[i]->SetState((EButtonState) state);
+    if (state)
+      fcol=col[i];
+    else
+      fcol=col[0];
+    fchkTrig[i]->ChangeBackground(fcol);
+  }
+
+  //fchkSoft->SetState((EButtonState) !opt.hard_logic,false);
+  //fchkHard->SetState((EButtonState) opt.hard_logic,false);
 
   if (daqpar) {
-    if (opt.hard_logic) {
-      fchkHard->ChangeBackground(fMagenta);
-      daqpar->cLabel->SetText("Use hardware coincidences");
+    if (cpar.Trigger==2) {
+      //fchkHard->ChangeBackground(fMagenta);
+      daqpar->cLabel->SetText("Use hard coincidences");
       daqpar->cLabel->ChangeBackground(fMagenta);
       daqpar->cGrp->ChangeBackground(fGreen);
     }
     else {
-      fchkHard->ChangeBackground(fGrey);
-      daqpar->cLabel->SetText("Use software coincidences");
+      //fchkHard->ChangeBackground(fGrey);
+      daqpar->cLabel->SetText("Use soft coincidences");
       daqpar->cLabel->ChangeBackground(fGrey);
       daqpar->cGrp->ChangeBackground(fGrey);
     }
@@ -2217,8 +2246,6 @@ void DaqParDlg::Build() {
   //TGHorizontalFrame *hfr1 = new TGHorizontalFrame(cGrp);
   //cGrp->AddFrame(hfr1);
 
-  //AddSoftHard(cGrp,fchkSoft,fchkHard);
-
   AddLine_opt(cGrp,ww,(void*)"C1",(void*)"C2",tip1,tip2,"",
 	      k_lab,k_lab,0,0,0,0,0,0,LayLC1,LayLC2);
 
@@ -2247,8 +2274,8 @@ void DaqParDlg::Build() {
   // }
 
   cLabel = new TGLabel(cGrp);
-  //fskip->ChangeOptions(fskip->GetOptions()|kFixedWidth);
-  //fskip->SetWidth(width);
+  cLabel->ChangeOptions(cLabel->GetOptions()|kFixedWidth);
+  cLabel->SetWidth(130);
   cGrp->AddFrame(cLabel,LayLT1a);
 
   //cGrp->Resize();

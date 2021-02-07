@@ -50,6 +50,7 @@ void Coptions::InitPar(int zero) {
   }
   
   forcewr=false;
+  Trigger=0;
   DTW=1;
   Smpl=0;
   St_Per=0;
@@ -176,7 +177,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       min=0;
       if (module==35)
         max=5;
-      else if (module==41 || module==51 || module==52)
+      else if (module>=41 && module<=52)
         max=4;
       else if (module>=33) //33,34
         max=3;
