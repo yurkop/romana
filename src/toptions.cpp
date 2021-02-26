@@ -56,6 +56,7 @@ void Coptions::InitPar(int zero) {
   St_Per=0;
 
   F_start = gSystem->Now();
+  F_stop = 0;
 }
 
 void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &par, int &min, int &max) {
@@ -304,6 +305,7 @@ Toptions::Toptions() {
   b_logy=false;
   b_stat=false;
   b_gcuts=false;
+  b_roi=false;
 
   start_ch=0;
   ntof_period=0;
@@ -335,6 +337,8 @@ Toptions::Toptions() {
   Tstart=0;
   Tstop=0;
   Period=10;
+
+  adcm_period=10;
 
   b_deriv[0]=true;
   b_deriv[1]=false;

@@ -94,6 +94,7 @@ public:
   Int_t St_Per; //Start imitator period
 
   Long64_t F_start; //start of the acquisition
+  Long64_t F_stop; //stop of the acquisition (usually time of last modification of file)
 
 public:
   void InitPar(int zero);
@@ -247,9 +248,12 @@ public:
   Bool_t b_logy;
   Bool_t b_stat;
   Bool_t b_gcuts;
+  Bool_t b_roi;
   Bool_t b_deriv[3];
   Bool_t b_peak[16];
 
+
+  Float_t adcm_period;
   //HCuts cuts;
   //std::vector<Float_t> cut[3];
   //std::list<Float_t> gcut2;

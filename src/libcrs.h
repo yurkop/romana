@@ -267,7 +267,7 @@ RQ_OBJECT("CRS")
 #endif
 
 
-  void Text_time();
+  void Text_time(const char* hd, Long64_t f_time);
   void DoExit();
   //int Command_old(int len_out, int len_in); //send and receive command
   //void SendParametr(const char* name, int len_out); //send one parameter
@@ -315,6 +315,8 @@ RQ_OBJECT("CRS")
   void Decode_adcm(UInt_t iread, UInt_t ibuf);
 
   int Searchsync(int &idx, UInt_t* buf4, int end);
+  int Detect_adcm(const char* fname);
+  int Find_adcmraw_start();
 
   //int Set_Trigger();
   void Ana_start();

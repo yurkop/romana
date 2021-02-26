@@ -207,7 +207,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   TGLayoutHints* LayLC1  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,1,1,0,0);
   TGLayoutHints* LayLC2  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,0,0,0);
   TGLayoutHints* LayLC3  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,0,5,0,0);
-  //TGLayoutHints* LayLC4  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,2,0,0);
+  //TGLayoutHints* LayLC4  = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,1,1,7,7);
   TGLayoutHints* LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
 
   TGLayoutHints* LayRC0 = new TGLayoutHints(kLHintsRight|kLHintsCenterY);
@@ -319,29 +319,34 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   tab1->AddFrame(fHor4, LayET0);
 
   TGCheckButton *chkbut = new TGCheckButton(fHor4,"",0);
-  //chkbut->Connect("Clicked()", "HistFrame", this, "DoNorm()");
+  chkbut->Connect("Toggled(Bool_t)", "HistFrame", this, "CheckAll(Bool_t)");
   chkbut->SetToolTipText("check/uncheck all");
   fHor4->AddFrame(chkbut, LayLC1);
 
   but = new TGTextButton(fHor4,"w+",1);
-  //but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  but->Connect("Clicked()", "HistFrame", this, "CheckWork()");
   but->SetToolTipText("Add all checked histograms to WORK*");
   fHor4->AddFrame(but, LayLC1);
 
   but = new TGTextButton(fHor4,"w-",2);
-  //but->Connect("Clicked()", "HistFrame", this, "DoCutG()");
+  but->Connect("Clicked()", "HistFrame", this, "ClearWork()");
   but->SetToolTipText("Remove all histograms from WORK*");
   fHor4->AddFrame(but, LayLC1);
 
+  fHor4 = new TGHorizontalFrame(tab1, 10, 10);
+  tab1->AddFrame(fHor4, LayET0);
+
   int id = parpar->Plist.size()+1;
-  TGTextEntry* tOpt    = new TGTextEntry(tab1,"",id);;
+  TGLabel* fLab = new TGLabel(fHor4, "Draw:");
+  fHor4->AddFrame(fLab,LayLC1);
+  TGTextEntry* tOpt    = new TGTextEntry(fHor4,"",id);;
+  fHor4->AddFrame(tOpt,LayET0);
   //tForm->SetWidth(110);
   tOpt->SetMaxLength(sizeof(opt.drawopt)-1);
   tOpt->SetToolTipText("Draw options (see ROOT manual for drawing histograms)");
-  parpar->DoMap(tOpt,opt.drawopt,p_txt,0,0);
+  parpar->DoMap(tOpt,opt.drawopt,p_txt,0,3<<4);
   tOpt->Connect("TextChanged(char*)", "ParDlg", parpar, "DoTxt()");
   //tOpt->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
-  tab1->AddFrame(tOpt,LayET0);
 
   // TGNumberEntryField* fN =
   //   new TGNumberEntryField(fHor4, 0, 7, TGNumberFormat::kNESInteger,
@@ -468,8 +473,10 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   Rb[0]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
   Rb[0]->SetToolTipText("Draw all marked histograms as stack");
   
-  chknorm = new TGCheckButton(fHor2,"",11);
-  chknorm->Connect("Clicked()", "HistFrame", this, "DoNorm()");
+  id = parpar->Plist.size()+1;
+  chknorm = new TGCheckButton(fHor2,"",id);
+  parpar->DoMap(chknorm,&opt.b_norm,p_chk,0,3<<4);
+  chknorm->Connect("Toggled(Bool_t)", "ParDlg", parpar, "DoDaqChk(Bool_t)");
   fHor2->AddFrame(chknorm, LayLC2);
   chknorm->SetToolTipText("Normalize stacked histograms");
 
@@ -533,13 +540,17 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->SetToolTipText("N histograms forward");
 
   //TGCheckButton* chk;
-  chklog = new TGCheckButton(fHor2,"Log",11);
-  chklog->Connect("Clicked()", "HistFrame", this, "DoLog()");
+  id = parpar->Plist.size()+1;
+  chklog = new TGCheckButton(fHor2,"Log",id);
+  parpar->DoMap(chklog,&opt.b_logy,p_chk,0,3<<4);
+  chklog->Connect("Toggled(Bool_t)", "ParDlg", parpar, "DoDaqChk(Bool_t)");
   fHor2->AddFrame(chklog, LayLC1);
   chklog->SetToolTipText("Log scale");
 
-  chkstat = new TGCheckButton(fHor2,"Stat",12);
-  chkstat->Connect("Clicked()", "HistFrame", this, "DoStat()");
+  id = parpar->Plist.size()+1;
+  chkstat = new TGCheckButton(fHor2,"Stat",id);
+  parpar->DoMap(chkstat,&opt.b_stat,p_chk,0,3<<4);
+  chkstat->Connect("Toggled(Bool_t)", "ParDlg", parpar, "DoDaqChk(Bool_t)");
   fHor2->AddFrame(chkstat, LayLC1);
   chkstat->SetToolTipText("Show stats");
 
@@ -577,10 +588,20 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   */
 
   //TGCheckButton* chk;
-  chkgcuts = new TGCheckButton(fHor2,"Cuts",5);
-  chkgcuts->Connect("Clicked()", "HistFrame", this, "ShowCutG()");
-  fHor2->AddFrame(chkgcuts, LayLC1);
-  chkgcuts->SetToolTipText("Draw cuts");
+
+  id = parpar->Plist.size()+1;
+  chkd = new TGCheckButton(fHor2,"Cuts",id);
+  parpar->DoMap(chkd,&opt.b_gcuts,p_chk,0,3<<4);
+  chkd->Connect("Toggled(Bool_t)", "ParDlg", parpar, "DoDaqChk(Bool_t)");
+  fHor2->AddFrame(chkd, LayLC1);
+  chkd->SetToolTipText("Draw cuts");
+
+  id = parpar->Plist.size()+1;
+  chkd = new TGCheckButton(fHor2,"Roi",id);
+  parpar->DoMap(chkd,&opt.b_roi,p_chk,0,3<<4);
+  chkd->Connect("Toggled(Bool_t)", "ParDlg", parpar, "DoDaqChk(Bool_t)");
+  fHor2->AddFrame(chkd, LayLC1);
+  chkd->SetToolTipText("Draw ROI");
 
   but = new TGTextButton(fHor2,"Peaks",4);
   but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
@@ -808,6 +829,44 @@ TGListTreeItem* HistFrame::FindItem(const char* name) {
   return 0;
 }
 
+void HistFrame::AddWork(TGListTreeItem *item) {
+  TGListTreeItem *item2 =
+    fListTree->FindChildByData(iWork, item->GetUserData());
+  if (!item2) {
+    //cout << "Item2: " << item2 << endl;
+
+    TObject* hh = (TObject*) item->GetUserData();
+    //strcpy(hname,hh->GetName());
+    const TGPicture *pic = item->GetPicture();
+    Item_Ltree(iWork, hh->GetName(), hh, pic, pic);
+
+    HMap* map = (HMap*) item->GetUserData();
+    *(map->hd->w+map->nn)=true;
+
+    hcl->Clone_Hist(map);
+    Clone_Ltree(map);
+  }
+}
+
+void HistFrame::ClearWork() {
+  hmap_chklist->Clear();
+
+  TGListTreeItem* item2 = iWork->GetFirstChild();
+  while (item2) {
+    HMap* map = (HMap*) item2->GetUserData();
+    *(map->hd->w+map->nn)=false;
+    hcl->Remove_Clones(map);
+    item2 = item2->GetNextSibling();
+  }
+    
+  fListTree->DeleteChildren(iWork);
+  for (int cc=1;cc<opt.ncuts;cc++) {
+    if (opt.pcuts[cc]) {
+      fListTree->DeleteChildren(iWork_cut[cc]);
+    }
+  }
+}
+
 void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 {
   if (!crs->b_stop)
@@ -821,6 +880,9 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
   if (but==2 && TString(item->GetText()).EqualTo("work",TString::kIgnoreCase)) {
     //cout << "DoClick: " << item->GetText() << " " << item->GetParent() << " " << but << endl;
 
+    ClearWork();
+
+    /*
     hmap_chklist->Clear();
 
     item2 = item->GetFirstChild();
@@ -838,6 +900,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	fListTree->DeleteChildren(iWork_cut[cc]);
       }
     }
+    */
     // if (crs->b_maintrig) {
     //   fListTree->DeleteChildren(iWork_MT);
     // }
@@ -868,7 +931,6 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	strcpy(hname,hname2);
       }
 
-      //cout << "work1: " << item << " " << hname << endl;
       item2 = fListTree->FindChildByName(iWork,hname);
 
       if (item2) {
@@ -878,7 +940,6 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	hcl->Remove_Clones(map);
       }
 
-      //cout << "work2: " << item << " " << hname << endl;
       for (int cc=1;cc<opt.ncuts;cc++) {
 	if (opt.pcuts[cc]) {
 	  sprintf(hname2,"%s_cut%d",hname,cc);
@@ -897,25 +958,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       //cout << "work3: " << item << " " << hname << endl;
     } //work*
     else { //not work* -> добавляем гистограмму в work*
-      // add items
-      //cout << "nowork: " << item << endl;
-
-      TGListTreeItem *item2 =
-	fListTree->FindChildByData(iWork, item->GetUserData());
-      if (!item2) {
-	//cout << "Item2: " << item2 << endl;
-
-	TObject* hh = (TObject*) item->GetUserData();
-	strcpy(hname,hh->GetName());
-	const TGPicture *pic = item->GetPicture();
-	Item_Ltree(iWork, hh->GetName(), hh, pic, pic);
-
-	HMap* map = (HMap*) item->GetUserData();
-	*(map->hd->w+map->nn)=true;
-
-	hcl->Clone_Hist(map);
-	Clone_Ltree(map);
-      }
+      AddWork(item);
     }
   } //if (item->GetParent() && (but==2 || but==3))
   
@@ -926,6 +969,35 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
     changed=true;
   //cout << "Upd2: " << endl;
 
+}
+
+void HistFrame::CheckAll(Bool_t on) {
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  while (idir) {
+    fListTree->CheckAllChildren(idir,on);
+    idir = idir->GetNextSibling();
+  }
+  changed=true;
+  ReDraw();
+}
+
+void HistFrame::CheckWork() {
+  //добавляем все помеченные гистограмы в Work 
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  while (idir) {
+    TGListTreeItem *item = idir->GetFirstChild();
+    while (item) {
+      if (item->GetUserData()) {
+	if (item->IsChecked()) {
+	  AddWork(item);
+	}
+      }
+      item = item->GetNextSibling();
+    }
+    idir = idir->GetNextSibling();
+  }
+  changed=true;
+  ReDraw();
 }
 
 void HistFrame::Clone_Ltree(HMap* map) {
@@ -1004,54 +1076,6 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
   //   cout << "map2: " << map2->GetName() << " " << *map2->chk << " " << opt.s_ntof[0] << endl;
   // }
 
-  if (crs->b_stop)
-    Update();
-  else
-    changed=true;
-}
-
-void HistFrame::DoNorm()
-{
-  TGCheckButton *te = (TGCheckButton*) gTQSender;
-
-  opt.b_norm = (Bool_t)te->GetState();
-  
-  if (crs->b_stop)
-    Update();
-  else
-    changed=true;
-}
-
-void HistFrame::DoLog()
-{
-  TGCheckButton *te = (TGCheckButton*) gTQSender;
-
-  opt.b_logy = (Bool_t)te->GetState();
-  
-  if (crs->b_stop)
-    Update();
-  else
-    changed=true;
-}
-
-void HistFrame::DoStat()
-{
-  TGCheckButton *te = (TGCheckButton*) gTQSender;
-
-  opt.b_stat = (Bool_t)te->GetState();
-  
-  if (crs->b_stop)
-    Update();
-  else
-    changed=true;
-}
-
-void HistFrame::ShowCutG()
-{
-  TGCheckButton *te = (TGCheckButton*) gTQSender;
-
-  opt.b_gcuts = (Bool_t)te->GetState();
-  
   if (crs->b_stop)
     Update();
   else
@@ -1236,7 +1260,6 @@ void HistFrame::AddCutG(TPolyLine *pl, HMap* map) {
   }
   in_gcut=0;
   Update();
-  //ShowCutG(gcut);
 
 }
 
@@ -2088,11 +2111,11 @@ void HistFrame::Update()
 
   //int sel = abs(opt.sel_hdiv)%NR;
   //SelectDiv(sel);
-  chknorm->SetState((EButtonState) opt.b_norm);
 
-  chklog->SetState((EButtonState) opt.b_logy);
-  chkstat->SetState((EButtonState) opt.b_stat);
-  chkgcuts->SetState((EButtonState) opt.b_gcuts);
+  //chknorm->SetState((EButtonState) opt.b_norm);
+  //chklog->SetState((EButtonState) opt.b_logy);
+  //chkstat->SetState((EButtonState) opt.b_stat);
+  //chkgcuts->SetState((EButtonState) opt.b_gcuts);
 
   //cout << "HiFrm::Update()2a" << endl;
   hmap_chklist->Clear();
@@ -2265,7 +2288,7 @@ void HistFrame::DrawStack() {
   // }
   // cout << endl;
 
-  if (opt.b_gcuts) {
+  if (opt.b_roi) {
     for (it=def_list.begin(); it!=def_list.end(); ++it) {
       DrawRoi(*it,gPad);
     }
@@ -2479,7 +2502,7 @@ void HistFrame::AllRebinDraw() {
     if (opt.b_gcuts && opt.ncuts) {
       DrawCuts(npad);
     }
-    if (opt.b_gcuts) {
+    if (opt.b_roi) {
       DrawRoi(pad_map[npad]->hd,fEc->GetCanvas()->GetPad(npad+1));
     }
 
@@ -2601,15 +2624,9 @@ void HistFrame::DrawHist()
 void HistFrame::ReDraw()
 {
 
-
-
-
-
   // Update();
   // changed=false;
   // started=false;
-
-
 
   TCanvas *cv=fEc->GetCanvas();
 

@@ -136,6 +136,7 @@ public:
   void SetTxt(pmap pp, const char* txt);
   bool Chk_all(int all, int i);
   void DoNum();
+  void DoAct(int id, int intbool, Double_t fnum);
   void DoDaqNum();
   void DoChk(Bool_t on);
   void DoDaqChk(Bool_t on);

@@ -770,10 +770,9 @@ void EventClass::FillHist(Bool_t first) {
 
   // инициализация
   if (first) {
-    if (crs->Tstart64<0) {
-      crs->Tstart64 = Tstmp;
-      //cout << "Tstart64: " << crs->Tstart64 << endl;
-    }
+    // if (crs->Tstart64<0) {
+    //   crs->Tstart64 = Tstmp;
+    // }
   	
     opt.T_acq=(Tstmp - crs->Tstart64)*DT;
 

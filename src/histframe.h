@@ -64,7 +64,7 @@ public:
   TGCheckButton* chknorm;
   TGCheckButton* chklog;
   TGCheckButton* chkstat;
-  TGCheckButton* chkgcuts;
+  TGCheckButton* chkd;
   TGRadioButton *Rb[2];
 
   TGTextEntry* tForm;
@@ -99,13 +99,15 @@ public:
   void Clear_Ltree();
   TGListTreeItem* FindItem(const char* name);
   void Clone_Ltree(HMap* hmap);
+  void AddWork(TGListTreeItem *item);
+  void ClearWork();
   void DoClick(TGListTreeItem* item,Int_t but);
+  void CheckAll(Bool_t on);
+  void CheckWork();
+
   void CutClick(TGListTreeItem* item,Int_t but);
   void RoiClick(TGListTreeItem* item,Int_t but);
   void DoCheck(TObject* obj, Bool_t check);
-  void DoNorm();
-  void DoLog();
-  void DoStat();
   void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
   void DoRadio();
   void DoButton();
@@ -122,7 +124,6 @@ public:
   void StartMouse();
   void AddFormula();
   //void DoFormula();
-  void ShowCutG();
   void ClearCutG();
   string CutsToStr();
   void EditCutG();

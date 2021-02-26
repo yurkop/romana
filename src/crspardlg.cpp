@@ -262,15 +262,8 @@ void ParDlg::DoNum() {
   te->SetCursorPosition(pos);
 }
 
-void ParDlg::DoDaqNum() {
-  jtrig++;
-  ParDlg::DoNum();
-  jtrig--;
-
-  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
-  Int_t id = te->WidgetId();
+void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
   pmap* pp = &Plist[id-1];
-
   int act = (pp->cmd>>4)&0xF;
   if (act==1 && crs->b_stop) {
     crs->DoReset();
@@ -293,7 +286,12 @@ void ParDlg::DoDaqNum() {
     int l4 = ll/4*4; //group4
     for (int i=0; i<4;i++) {
       pmap p2 = Plist[(l4+i)*nfld+kk];
-      SetNum(p2,te->GetNumber());
+      if (intbool) {
+	SetNum(p2,fnum);
+      }
+      else {
+	SetChk(p2,fnum);	
+      }
       UpdateField((l4+i)*nfld+kk);
     }
   }
@@ -309,6 +307,18 @@ void ParDlg::DoDaqNum() {
     crs->Command2(3,0,0,0);
   }
 #endif
+}
+
+void ParDlg::DoDaqNum() {
+  jtrig++;
+  ParDlg::DoNum();
+  jtrig--;
+
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  DoAct(id,1,te->GetNumber());
+
 }
 
 void ParDlg::SetChk(pmap pp, Bool_t num) {
@@ -350,33 +360,8 @@ void ParDlg::DoDaqChk(Bool_t on) {
 
   TGCheckButton *te = (TGCheckButton*) gTQSender;
   Int_t id = te->WidgetId();
-  pmap* pp = &Plist[id-1];
 
-  int act = (pp->cmd>>4)&0xF;
-  if (act==5 && nfld && (crs->module>=41 && crs->module<=70)) {
-    int kk = (id-1)%nfld; //column number
-    int ll = (id-1)/nfld; //line number
-    int l4 = ll/4*4; //group4
-    for (int i=0; i<4;i++) {
-      pmap p2 = Plist[(l4+i)*nfld+kk];
-      SetChk(p2,on);
-      UpdateField((l4+i)*nfld+kk);
-    }
-  }
-
-#ifdef CYUSB
-
-  int cmd = pp->cmd & 1;
-  if (cmd && crs->b_acq && !jtrig) {
-    crs->Command2(4,0,0,0);
-    crs->SetPar();
-    gzFile ff = gzopen("last.par","wb");
-    crs->SaveParGz(ff,crs->module);
-    gzclose(ff);
-    crs->Command2(3,0,0,0);
-  }
-#endif
-
+  DoAct(id,0,on);
 }
 
 void ParDlg::DoCheckHist(Bool_t on) {
@@ -518,6 +503,8 @@ void ParDlg::DoTxt() {
   pmap pp = Plist[id-1];
 
   SetTxt(pp,te->GetText());
+  UpdateField(id-1);
+  DoAct(id,1,0);
 }
 
 void ParDlg::DoOneType(int i) {
@@ -1493,6 +1480,10 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   label="Type 3 discriminator length";
   AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
 
+  tip1= "ADCM period in nsec: 10 for ADCM32; 16 for ADCM64";
+  label="adcm period";
+  AddLine_1opt(fF6,ww,&opt.adcm_period,tip1,label,k_r0,1,1000);
+
 
   fF6->Resize();
   //fF6->ChangeBackground(fRed);
@@ -1785,7 +1776,7 @@ void HistParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   //checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
-  DoMap(chk_hist,&hd->b,p_chk,0,0x100|(3<<4)); //setenabled 4 next fields
+  DoMap(chk_hist,&hd->b,p_chk,0,0x100);
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_hist,LayLT2);
 

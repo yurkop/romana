@@ -2366,7 +2366,7 @@ void MainFrame::SetTitle(char* fname) {
 
 void MainFrame::DoStartStop() {
 
-  cout << "Dostartstop1: " << gROOT->FindObject("Start") << endl;
+  //cout << "Dostartstop1: " << gROOT->FindObject("Start") << endl;
 
 #ifdef CYUSB
   if (crs->b_acq) { //STOP is pressed here
@@ -2409,7 +2409,7 @@ void MainFrame::DoStartStop() {
   }
 #endif
 
-  cout << "Dostartstop2: " << endl;
+  //cout << "Dostartstop2: " << endl;
 }
 
 void MainFrame::DoOpen(Int_t id) {

@@ -5,6 +5,7 @@
 #include <zlib.h>
 #include <sys/stat.h>
 #include <iomanip>
+#include<sys/mman.h>
 
 #ifdef CYUSB
 #include "cyusb.h"
@@ -698,8 +699,10 @@ void CRS::Ana_start() {
   //should be called before first call of ana2
   // b_mem=false;
 
-  parpar->DaqDisable();
-  histpar->DaqDisable();
+  if (!batch) {
+    parpar->DaqDisable();
+    histpar->DaqDisable();
+  }
 
   if (opt.ev_min>=opt.ev_max) {
     opt.ev_min=opt.ev_max/2;
@@ -2203,7 +2206,7 @@ int CRS::DoStartStop() {
     //nsmp=0;
 
     cpar.F_start = gSystem->Now();
-    Text_time();
+    Text_time("S:",cpar.F_start);
 
     if (opt.raw_write) {
       Reset_Raw();
@@ -2292,11 +2295,14 @@ void CRS::ProcessCrs() {
 
 #endif //CYUSB
 
-void CRS::Text_time() {
+void CRS::Text_time(const char* hd, Long64_t f_time) {
   //convert btw gSystem->Now and time_t
   time_t tt = (cpar.F_start+788907600000)*0.001;
   struct tm *ptm = localtime(&tt);
-  strftime(txt_start,sizeof(txt_start),"%F %T",ptm);
+  char ttt[100];
+  strftime(ttt,sizeof(ttt),"%F %T",ptm);
+  strcpy(txt_start,hd);
+  strcat(txt_start,ttt);
 }
 
 void CRS::DoExit()
@@ -2324,13 +2330,13 @@ void CRS::DoReset() {
 
   opt.T_acq=0;
 
-  if (module==1) {
-    Tstart64=-1;
-  }
-  else {
-    Tstart64=0;
-  }
-  //Tstart64=0;
+  // if (module==1) {
+  //   Tstart64=-1;
+  // }
+  // else {
+  //   Tstart64=0;
+  // }
+  Tstart64=0;
 
   // cout << "Dorese1a: " << Fmode << " " << Tstart64 << endl;
 
@@ -2437,50 +2443,73 @@ void CRS::DoReset() {
 void CRS::DoFopen(char* oname, int popt) {
   //popt: 1 - read opt from file; 0 - don't read opt from file
   int tp=0; //1 - adcm raw; 0 - crs2/32/dec; 2 - Ortec Lis
-  //int bsize;
-  //int boffset;
+  module=0;
 
   if (oname)
     strcpy(Fname,oname);
 
-  cout << "DoFopen: " << Fname << endl;
+  //cout << "DoFopen: " << Fname << endl;
   // if (TString(Fname).EqualTo(" ",TString::kIgnoreCase)) {
   //   return;
   // }
 
-  string dir, name, ext;
-  SplitFilename(string(Fname),dir,name,ext);
+  string dir, name, ext2;
+  SplitFilename(string(Fname),dir,name,ext2);
 
-  if (TString(ext).EqualTo(".dat",TString::kIgnoreCase)) {
+  TString ext(ext2);
+  ext.ToLower();
+
+  if (ext.EqualTo(".dat")) {
     tp=1;
   }
-  else if (TString(ext).EqualTo(".lis",TString::kIgnoreCase)) {
+  else if (ext.EqualTo(".lis")) {
     tp=2;
   }
-  else if (TString(ext).EqualTo(".gz",TString::kIgnoreCase)) {
+  else if (ext.EqualTo(".gz")) {
     tp=0;
   }
-  else if (TString(ext).EqualTo(".raw",TString::kIgnoreCase)) {
+  else if (ext.EqualTo(".raw")) {
     tp=0;
   }
-  else if (TString(ext).EqualTo(".dec",TString::kIgnoreCase)) {
+  else if (ext.EqualTo(".dec")) {
     tp=0;
   }
-  //else if (TString(ext).EqualTo(".dec",TString::kIgnoreCase)) {
-  //tp=0;
-  //}
   else {
-    cout << "Unknown file type (extension): " << Fname << endl;
+    prnt("sss;",BRED,"Unknown file type (extension): ",ext.Data());
+    prnt("ss;","Allowed extensions: .root, .dat, .raw, .dec, .gz",RST);
     if (f_read) gzclose(f_read);
     f_read=0;
     return;
   }
 
+  //determine file date/time and Tstart64
+  if (tp==1) {
+
+    int res = Detect_adcm(Fname);
+
+    if (!res) {
+      prnt("ssss;",BRED,"Unknown file format / can't find Tstamp in adcm/raw file: ",Fname,RST);
+      f_read=0;
+      return;
+    }
+
+    //exit(1);
+    //prnt("ssl ds;",BRED,"Tstart64: ",Tstart64,modtime,RST);
+    //cout << sizeof(time_t) << " " << sizeof(int) << endl;
+
+    //time_t sec = Tstart64/100000000;
+    //TTimeStamp tt(modtime,0);
+    //cout << "TT: " << sec << " " << tt << " " << tt.AsString("l") << endl;
+
+  }
+  else {
+    Tstart64=0;
+  }
+
+
   if (f_read) gzclose(f_read);
   f_read = gzopen(Fname,"rb");
-  //cout << "f_read: " << f_read << endl;
   if (!f_read) {
-    //Fmode=0;
     cout << "Can't open file: " << Fname << endl;
     f_read=0;
     return;
@@ -2498,7 +2527,7 @@ void CRS::DoFopen(char* oname, int popt) {
     cout << "ADCM RAW File: " << Fname << endl;
     module=1;
     cpar.InitPar(0);
-    opt.Period=10;
+    opt.Period=opt.adcm_period;
   }
   else if (tp==2) { //Ortec Lis
     cout << "Ortec Lis File: " << Fname << endl;
@@ -2517,14 +2546,6 @@ void CRS::DoFopen(char* oname, int popt) {
     // printf("hdr: %d %d %f %s\n",*fmt,*style,*start_t,txt);
   }
 
-  //boffset=1024*1024;
-  //bsize=opt.rbuf_size*1024+boffset;
-  if (module==1) {
-    Tstart64=-1;
-  }
-  else {
-    Tstart64=0;
-  }
   //Tstart64=0;
 
   //list_min=opt.ev_max-opt.ev_min;
@@ -2617,7 +2638,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     }
   }
   Make_prof_ch();
-  Text_time();
+  Text_time("S:",cpar.F_start);
 
   if (m1) {
     if (mod==2 || mod==22) {
@@ -2626,7 +2647,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     }
     else if (mod>=32) {
       module=mod;
-      cout << "CRS32 File: " << Fname << " " << module << endl;
+      cout << "CRS32 or decoded File: " << Fname << " " << module << endl;
     }
     else {
       Fmode=0;
@@ -2863,7 +2884,7 @@ void CRS::AnaBuf(int loc_ibuf) {
 
 int CRS::DoBuf() {
 
-  // cout << "gzread0: " << Fmode << " " << nbuffers << " " << opt.rbuf_size*1024 << " " << gl_ibuf << " " << dec_iread[gl_ibuf] << endl;
+  //cout << "gzread0: " << Fmode << " " << nbuffers << " " << opt.rbuf_size*1024 << " " << gl_ibuf << " " << dec_iread[gl_ibuf] << endl;
 #ifdef TIMES
   tt1[0].Set();
 #endif
@@ -3057,8 +3078,10 @@ void CRS::EndAna(int all) {
   //   crs->Flush_Raw();
   // }
 
-  parpar->DaqEnable();
-  histpar->DaqEnable();
+  if (!batch) {
+    parpar->DaqEnable();
+    histpar->DaqEnable();
+  }
 
 }
 
@@ -3092,11 +3115,11 @@ void CRS::FAnalyze2(bool nobatch) {
   }
   //T_start = gSystem->Now();
 
-  //cout << "FAnalyze: " << gztell(f_read) << endl;
   Ana_start();
-  //cout << "FAnalyze2: " << gztell(f_read) << endl;
-  int res;
-  while ((res=crs->DoBuf()) && crs->b_fana) {
+  //int res;
+  while (crs->b_fana) {
+    int res=crs->DoBuf();
+    if (!res) break;
     if (nobatch) {
       Show();
       gSystem->ProcessEvents();
@@ -4604,6 +4627,105 @@ int CRS::Searchsync(int &idx, UInt_t* buf4, int end) {
 
 //-------------------------------------
 
+int CRS::Detect_adcm(const char* fname) {
+  int res=0;
+  //int len;
+  //Long64_t Tstop64;
+
+  Long_t id;
+  Long64_t size;
+  Long_t flags;
+  Long_t modtime;
+
+  int ires=gSystem->GetPathInfo(Fname, &id, &size, &flags, &modtime);
+  if (ires) {
+    prnt("ssss;",BRED,"Can't open file: ",fname,RST);
+    return 0;
+  }
+
+  /*
+  Long64_t size4,lim=2000;
+
+  int fd = open(fname, O_RDONLY);
+  void* buf = mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
+  UInt_t* buf4 = (UInt_t*) buf;
+  UShort_t* buf2 = (UShort_t*) buf;
+
+  size4=size/4;
+  len = std::min(size4,lim);
+
+  for (int i=0;i<len;++i) {
+    if (buf4[i] == 0x2a500100) {
+      int rLen = buf2[i*2+3];
+      int idnext=i+rLen;
+      if (idnext<len) {
+	Tstart64 = buf4[idnext-2];
+	Tstart64 <<= 32;
+	Tstart64 += buf4[idnext-3];
+	res+=1;
+	break;
+      }
+    }
+  }
+
+  for (int i=size4-1;i>=size4-len;--i) {
+    if (buf4[i] == 0x2a500100) {
+      if (i>3) {
+	Tstop64 = buf4[i-2];
+	Tstop64 <<= 32;
+	Tstop64 += buf4[i-3];
+	res+=1;
+	break;
+      }
+    }
+  }
+
+  if (res==2) {
+    double dt = (Tstop64 - Tstart64)*1e-9*opt.adcm_period;
+    cpar.F_start = (modtime-dt-788907600)*1000;
+    Text_time();
+
+    cout << "txt_start: " << txt_start << " " << modtime << " " << dt << " " << Tstop64 << " " << Tstart64 << " " << size4 << endl;
+  }
+
+  munmap (buf, size);
+  close(fd);
+*/
+
+  cpar.F_stop = (modtime-788907600)*1000;
+  Text_time("E:",cpar.F_stop);
+  res=2;
+  return res;
+}
+
+int CRS::Find_adcmraw_start() {
+
+  int res=0;
+  char buf[iMB];
+  UInt_t* buf4 = (UInt_t*) buf;
+  UShort_t* buf2 = (UShort_t*) buf;
+
+  int len = gzread(f_read,buf,iMB);
+
+  int idx=0;
+  len/=4;
+  if (Searchsync(idx,buf4,len)) {
+    int rLen = buf2[idx*2+3];
+    int idnext=idx+rLen;
+    if (idnext<len) {
+      Tstart64 = buf4[idx+rLen-2];
+      Tstart64 <<= 32;
+      Tstart64 += buf4[idx+rLen-3];//+(Long64_t)opt.sD[ipls.Chan];
+      res=1;
+    }
+  }
+
+  gzrewind(f_read);
+  return res;
+}
+
+//-------------------------------------
+
 void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
   //cout << "decode_adcm: " << endl;
@@ -4665,7 +4787,10 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
     rLen = buf2[idx*2+3];
     idnext=idx+rLen;
 
-    //cout << "while: " << idx << " " << idnext << " " << length << endl;
+    Long64_t Tstop64 = buf4[idnext-2];
+    Tstop64 <<= 32;
+    Tstop64 += buf4[idnext-3];
+    cout << "while: " << idx << " " << idnext << " " << length << " " << Tstop64 << endl;
 
     if (idnext>length)
       break;

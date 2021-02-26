@@ -71,10 +71,10 @@ $(OBJ_D)/%.o: $(SRC_D)/%.cpp
 
 
 ifeq ($(VER2),5.) # root 5
-$(OBJ_D)/romdict.cpp: src/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
+$(OBJ_D)/romdict.cpp: $(SRC_D)/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
 	rootcint -f $(OBJ_D)/romdict.cpp -c -p $(SRC_D)/$(PROG).h $(SRC_D)/popframe.h $(SRC_D)/LinkDef.h
 else # root 6+
-$(OBJ_D)/romdict.cpp: src/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
+$(OBJ_D)/romdict.cpp: $(SRC_D)/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
 	rootcling -f $(OBJ_D)/romdict.cpp -s romana.pcm $(SRC_D)/$(PROG).h $(SRC_D)/popframe.h $(SRC_D)/LinkDef.h
 endif
 
@@ -84,8 +84,8 @@ $(OBJ_D)/romdict.o: $(OBJ_D)/romdict.cpp
 $(OBJ_D):
 	mkdir -p $(OBJ_D)
 
-dec34: utils/dec34.cpp src/toptions.cpp src/toptions.h
-	g++ $(CXXFLAGS) $(CPPFLAGS) -o dec34.x utils/dec34.cpp src/toptions.cpp $(LDFLAGS)
+dec34: utils/dec34.cpp $(SRC_D)/toptions.cpp (SRC_D)c/toptions.h
+	g++ $(CXXFLAGS) $(CPPFLAGS) -o dec34.x utils/dec34.cpp $(SRC_D)/toptions.cpp $(LDFLAGS)
 
 r2a: utils/root2ascii.cxx
 	g++ $(CXXFLAGS) $(CPPFLAGS) -o r2a.x utils/root2ascii.cxx $(LDFLAGS)
