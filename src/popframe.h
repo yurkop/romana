@@ -55,6 +55,7 @@ public:
   Float_t E1[MAX_CHTP]; // [emult]
   Float_t E2[MAX_CHTP]; // [emult2]
   Float_t adj[MAX_CH+NGRP+1][3];
+  Int_t calibr_t[MAX_CHTP]; //type of calibration
 
   Float_t sD[MAX_CHTP];
 

@@ -223,6 +223,7 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
   memcpy(&E1,&opt.E1,sizeof(E1));
   memcpy(&E2,&opt.E2,sizeof(E2));
   memcpy(&adj,&opt.adj,sizeof(adj));
+  memcpy(&calibr_t,&opt.calibr_t,sizeof(calibr_t));
 
   HiFrm->b_adj=true;
   HiFrm->Update();
@@ -602,9 +603,28 @@ void PopFrame::Do_Tcalibr()
 void PopFrame::Do_EApply() {
   for (int i=0;i<MAX_CH;i++) {
     if (fAdj[i][0]) {
-      opt.E0[i] = opt.adj[i][0];
-      opt.E1[i] = opt.adj[i][1];
-      opt.E2[i] = opt.adj[i][2];
+      switch (opt.calibr_t[i]) {
+      case 2:
+	prnt("ss d ss;",BRED,"quadratic calibration for ch:",i,"not possible",RST);
+	break;
+      case 1:
+	//prnt("ss d f f fs;",BGRN,"E1:",i,opt.E0[i],opt.E1[i],opt.E2[i],RST);
+	opt.E2[i] = opt.adj[i][2]*opt.E1[i]*opt.E1[i];
+	opt.E1[i] = opt.E1[i]*(opt.adj[i][1] +
+			       2*opt.adj[i][2]*opt.E0[i]);
+	opt.E0[i] = opt.adj[i][0] + opt.E0[i]*(opt.adj[i][1]+
+					       opt.adj[i][2]*opt.E0[i]);
+	//prnt("ss d f f fs;",BGRN,"EE:",i,opt.E0[i],opt.E1[i],opt.E2[i],RST);
+	break;
+      case 0:
+	opt.E0[i] = opt.adj[i][0];
+	opt.E1[i] = opt.adj[i][1];
+	opt.E2[i] = opt.adj[i][2];
+	break;
+      default:
+	;
+      }
+
       if (opt.adj[i][2])
 	opt.calibr_t[i]=2;
       else
@@ -657,6 +677,7 @@ void PopFrame::Do_Revert() {
   memcpy(&opt.E1,&E1,sizeof(E1));
   memcpy(&opt.E2,&E2,sizeof(E2));
   memcpy(&opt.adj,&adj,sizeof(adj));
+  memcpy(&opt.calibr_t,&calibr_t,sizeof(calibr_t));
 
   E_Update();
 }
