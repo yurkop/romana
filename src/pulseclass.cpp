@@ -42,6 +42,7 @@ PeakClass::PeakClass() {
 */
 
 PulseClass::PulseClass() {
+  Pos=-31000;
   //ptype=P_NOSTOP;
   ptype=0;
   //Nsamp=0;
@@ -465,7 +466,16 @@ void PulseClass::CheckDSP() {
 }
 
 void PulseClass::Ecalibr() {
-  Area=opt.E0[Chan] + opt.E1[Chan]*Area;
+  switch (opt.calibr_t[Chan]) {
+  case 2:
+    Area=opt.E0[Chan] + opt.E1[Chan]*Area + opt.E2[Chan]*Area*Area;
+    break;
+  case 1:
+    Area=opt.E0[Chan] + opt.E1[Chan]*Area;
+    break;
+  default:
+    break;
+  }
 }
 
 EventClass::EventClass() {
@@ -568,6 +578,8 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 }
 
 void EventClass::Fill_Time_Extend(HMap* map) {
+  if (!map) return;
+
   TH1F* hh = (TH1F*) map->hst;
   Double_t max = hh->GetXaxis()->GetXmax();
 
@@ -598,6 +610,7 @@ void EventClass::Fill_Time_Extend(HMap* map) {
 }
 
 void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
+  if (!map[ch]) return;
   // if first -> check cuts and set cut_flag
   if (first) {
     //int bin = map[ch]->hst->FindFixBin(x);
@@ -637,6 +650,7 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
 
 void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
 			 Double_t w) {
+  if (!map[ch]) return;
   // if first -> check cuts and set cut_flag
   if (first) {
     map[ch]->hst->Fill(x,w);
@@ -693,6 +707,7 @@ void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
 }
 void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map,
 				 pulse_vect::iterator pls, int ideriv) {
+  if (!map) return;
 
   //HMap* map = hcl->m_pulse[n];
   int ch = pls->Chan;
@@ -729,6 +744,7 @@ void EventClass::Fill_Mean_Pulse(Bool_t first, HMap* map,
 }
 
 void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
+  if (!map) return;
   if (first) {
     //int bin = map->hst->FindFixBin(x,y);
     //map->hst->AddBinContent(bin);
@@ -797,11 +813,11 @@ void EventClass::FillHist(Bool_t first) {
   }
 
   for (pulse_vect::iterator ipls=pulses.begin();ipls!=pulses.end();++ipls) {
-    if (ipls->Pos<-32000)
+    if (ipls->Pos<-32000) // пропускаем импульсы, где не найден пик
       continue;
     //cout << "pulse: " << Nevt << " " << Tstmp << " " << (int) ipls->Chan << " " << ipls->Pos << endl;
     
-    ipls->Ecalibr();
+    //ipls->Ecalibr();
     //for (UInt_t i=0;i<pulses.size();i++) {
     int ch = ipls->Chan;
 

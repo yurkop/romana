@@ -18,7 +18,7 @@ extern HClass* hcl;
 extern EventFrame* EvtFrm;
 extern Toptions opt;
 
-const int ww[]={15,70,80,80,80};
+const int ww[]={15,60,60,60,60};
 
 //const double Co60[] = {1173,1332};
 
@@ -26,14 +26,15 @@ using namespace std;
 
 PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
 		   void* p) {
+  chklist.Clear();
   //ee_calib=0;
   ptr=p;
 
-  LayLC0   = new TGLayoutHints(kLHintsLeft|kLHintsTop);
+  LayLC0   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY);
   LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 2,2,2,2);
-  //LayCC2   = new TGLayoutHints(kLHintsCenterX|kLHintsTop, 2,2,2,2);
-  LayEE2   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 2,2,2,2);
-  //LayLE2   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY, 2,2,2,2);
+  LayEE2   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 0,0,2,2);
+  LayBut1 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 5, 5, 5, 5);
+  LayBut2 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 15, 5, 1, 1);
 
   txt.SetTextSize(0.07);
   txt.SetTextAlign(22);
@@ -174,15 +175,21 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
 }
 
 void PopFrame::AddAdj(TGCompositeFrame* fcont1, HMap* map, int i) {
+  ULong_t colr = EvtFrm->gcol[i];
+  
+  if (i==MAX_CH+NGRP) {
+    colr = TColor::RGB2Pixel(245,230,210);
+  }
+
+
   hframe = new TGHorizontalFrame(fcont1,10,10);
   fcont1->AddFrame(hframe,LayLC2);
-
 
   fLabel = new TGLabel(hframe," ");
   fLabel->ChangeOptions(fLabel->GetOptions()|kFixedWidth);
   fLabel->SetWidth(ww[0]);
   hframe->AddFrame(fLabel, LayLC0);
-  fLabel->SetBackgroundColor(EvtFrm->gcol[i]);
+  fLabel->SetBackgroundColor(colr);
 
   if (map) {
     fLabel = new TGLabel(hframe,map->GetName());
@@ -195,29 +202,26 @@ void PopFrame::AddAdj(TGCompositeFrame* fcont1, HMap* map, int i) {
   hframe->AddFrame(fLabel, LayLC0);
   //fLabel->SetBackgroundColor(EvtFrm->gcol[i]);
 
-  for (int j=0;j<2;j++) {
-    //cout << "fadj: " << i << " " << j << endl;
-
-
+  for (int j=0;j<3;j++) {
+    //cout << "fadj: " << i << " " << j << " " << opt.adj[i][j] << endl;
     fAdj[i][j]=new TGNumberEntryField(hframe,i*10+j,opt.adj[i][j],kr,ka,kn);
     fAdj[i][j]->Connect("TextChanged(char*)", "PopFrame", this, "DoAdj()");
     fAdj[i][j]->SetWidth(ww[j+2]);
     hframe->AddFrame(fAdj[i][j], LayLC0);
-
-
-    // TGNumberEntryField *ff =new TGNumberEntryField(hframe,0,1);
-    // //ff->Associate(fMain);
-    // //fAdj[i][j]->Connect("TextChanged(char*)", "PopFrame", this, "DoAdj()");
-    // //fAdj[i][j]->SetWidth(ww[j+2]);
-    // hframe->AddFrame(ff, LayLC0);
+    if (i==MAX_CH+NGRP)
+      fAdj[i][j]->ChangeBackground(colr);
   }
 }
 
 void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
 
+  for (int i=0;i<MAX_CH+NGRP+1;i++) {
+    if (opt.adj[i][1]<=0) opt.adj[i][1]=1e-4;
+  }
+
   memcpy(&E0,&opt.E0,sizeof(E0));
   memcpy(&E1,&opt.E1,sizeof(E1));
-  //memcpy(&E2,&opt.E2,sizeof(E2));
+  memcpy(&E2,&opt.E2,sizeof(E2));
   memcpy(&adj,&opt.adj,sizeof(adj));
 
   HiFrm->b_adj=true;
@@ -225,7 +229,37 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
 
   memset(fAdj,0,sizeof(fAdj));
 
-  fMain->SetWindowName("Pre-calibrate all marked 1D histograms");
+  fMain->SetWindowName("Calibrate all marked 1D Area histograms");
+
+  hframe = new TGHorizontalFrame(fMain,1,1);
+  fMain->AddFrame(hframe, LayLC2);
+
+  const char* aa[] = {" ","hist","A0","A1","A2"};
+  for (int j=0;j<5;j++) {
+    TGTextEntry* fLab = new TGTextEntry(hframe, aa[j]);
+    fLab->SetState(false);
+    fLab->ChangeOptions(fLab->GetOptions()|kFixedSize|kRaisedFrame);
+    fLab->SetToolTipText("Pre-calibration coefficient");
+    fLab->SetWidth(ww[j]);
+    fLab->SetAlignment(kTextCenterX);
+    hframe->AddFrame(fLab, LayLC0);
+    //hframe->AddFrame(new TGLabel(hframe, aa[j]), LayLC2);
+  }
+
+  TGTextButton* fAuto = new TGTextButton(hframe, " Auto ");
+  fAuto->Connect("Clicked()", "PopFrame", this, "Do_Auto_Ecalibr()");
+  fAuto->SetToolTipText("Auto pre-calibrate using the highest peak in the range");
+  hframe->AddFrame(fAuto, LayBut2);
+
+
+  TGNumberEntryField* fN =
+    new TGNumberEntryField(hframe, 21, opt.E_auto, TGNumberFormat::kNESReal);
+
+  fN->SetWidth(50);
+  fN->SetToolTipText("Reference value for auto pre-calibration");
+  fN->Connect("TextChanged(char*)", "PopFrame", this, "DoENum()");
+  hframe->AddFrame(fN, LayBut2);
+
 
   TGCanvas* fCanvas1 = new TGCanvas(fMain,360,h*2/3.0);
   fMain->AddFrame(fCanvas1, LayEE2);
@@ -237,20 +271,13 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
   //fMain->SetCleanup(kDeepCleanup);
   fCanvas1->GetViewPort()->SetCleanup(kDeepCleanup);
 
-
-  hframe = new TGHorizontalFrame(fcont1,10,10);
-  fcont1->AddFrame(hframe, LayLC2);
-
-  const char* aa[] = {" ","hist","A0","A1"};
-  for (int j=0;j<4;j++) {
-    fLabel = new TGLabel(hframe,aa[j]);
-    fLabel->ChangeOptions(fLabel->GetOptions()|kFixedWidth);
-    fLabel->SetWidth(ww[j]);
-    hframe->AddFrame(fLabel, LayLC0);
-    //hframe->AddFrame(new TGLabel(hframe, aa[j]), LayLC2);
-  }
-
   HiFrm->Make_Hmap_ChkList();
+
+  AddAdj(fcont1, 0, MAX_CH+NGRP);
+
+  //Pixel_t fCyan9;
+  //fCyan9 = TColor::RGB2Pixel(1535,255,2);
+  //fAdj[MAX_CH+NGRP][0]->ChangeBackground(fCyan9);
 
   TIter next(HiFrm->hmap_chklist);
   TObject* obj;
@@ -259,58 +286,54 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
     HMap* map=(HMap*) obj;
     int i = map->nn;
 
-    if (fAdj[i][0])
+    TString str(map->GetName());
+    if (!str.Contains("area",TString::kIgnoreCase) || fAdj[i][0])
       continue;
 
     //TString chch = TString::Format("%15d",i);
+    chklist.Add(map);
     AddAdj(fcont1, map, i);
   }
-
-  AddAdj(fcont1, 0, MAX_CH+NGRP);
 
   fEdit = new TGTextEdit(fMain, 360, h/3, kSunkenFrame|kDoubleBorder);
   fMain->AddFrame(fEdit,  LayEE2);
 
   if (!fEdit->LoadFile("ecalibr.dat")) {
-    fEdit->LoadBuffer(
-		      "# calibrate all marked energy histograms\n"
-		      "# all ROI must be set befor calibration\n"
-		      "# each ROI may contain several peaks,\n"
-		      "# fitted simultaneously\n"
-		      "#--------------------------------------\n"
-		      "\n"
-		      "1	# substrate poly\n"
-		      "3	# Fit poly\n"
-		      "\n"
-		      "--- Peaks: #ROI peak1 peak2 ... peakN ---\n"
-		      "1 846.7778  # 56F)\n"
-		      "2 2223.245  # 1H(n,g)\n"
-		      "3 6129.89   # 16O(n,n')\n"
-		      "4 7645.58   # 56Fe(n,g)\n"
-		      );
+    Do_Default();
   }
 
   hframe = new TGHorizontalFrame(fMain,10,10);
   fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsBottom, 2,2,2,2));
-  TGTextButton* fOK = new TGTextButton(hframe, "  Calibr  ");
-  fOK->Connect("Clicked()", "PopFrame", this, "Do_Ecalibr()");
-  hframe->AddFrame(fOK, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 5, 5, 5, 5));
+
+  TGTextButton* fCalibr = new TGTextButton(hframe, "  Calibr  ");
+  fCalibr->SetToolTipText("Perform calibration using PeakFit");
+  fCalibr->Connect("Clicked()", "PopFrame", this, "Do_Ecalibr()");
+  hframe->AddFrame(fCalibr, LayBut1);
 
   TGTextButton* fSave = new TGTextButton(hframe, "  Save  ");
+  fSave->SetToolTipText("Save calibration settings in \"ecalibr.dat\" file");
   fSave->Connect("Clicked()", "PopFrame", this, "Do_Save_Ecalibr()");
-  hframe->AddFrame(fSave, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 5, 5, 5, 5));
+  hframe->AddFrame(fSave, LayBut1);
 
   TGTextButton* fClose = new TGTextButton(hframe, "  Close  ");
+  fClose->SetToolTipText("Close calibration window");
   fClose->Connect("Clicked()", "PopFrame", this, "CloseWindow()");
-  hframe->AddFrame(fClose, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 5, 5, 5, 5));
+  hframe->AddFrame(fClose, LayBut1);
 
   TGTextButton* fEApply = new TGTextButton(hframe, "  Apply  ");
+  fEApply->SetToolTipText("Apply calibration parameters for next analysis (copy A0-A2 coefficients to E0-E2)");
   fEApply->Connect("Clicked()", "PopFrame", this, "Do_EApply()");
-  hframe->AddFrame(fEApply, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 5, 5, 5, 5));
+  hframe->AddFrame(fEApply, LayBut1);
+
+  TGTextButton* fDefault = new TGTextButton(hframe, "  Default  ");
+  fDefault->SetToolTipText("Load default calibration settings");
+  fDefault->Connect("Clicked()", "PopFrame", this, "Do_Default()");
+  hframe->AddFrame(fDefault, LayBut1);
 
   TGTextButton* fRevert = new TGTextButton(hframe, "  Revert  ");
+  fRevert->SetToolTipText("Revert to the initial pre-calibration coefficients A0-A2");
   fRevert->Connect("Clicked()", "PopFrame", this, "Do_Revert()");
-  hframe->AddFrame(fRevert, new TGLayoutHints(kLHintsLeft|kLHintsBottom, 5, 5, 5, 5));
+  hframe->AddFrame(fRevert, LayBut1);
 
 }
 
@@ -358,10 +381,10 @@ void PopFrame::AddTcalibr() {
   fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
   TGTextButton* fCalibr = new TGTextButton(hframe, "  &Calibr  ");
   fCalibr->Connect("Clicked()", "PopFrame", this, "Do_Tcalibr()");
-  hframe->AddFrame(fCalibr, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+  hframe->AddFrame(fCalibr, LayBut1);
   TGTextButton* fTApply = new TGTextButton(hframe, "  &Apply  ");
   fTApply->Connect("Clicked()", "PopFrame", this, "Do_TApply()");
-  hframe->AddFrame(fTApply, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+  hframe->AddFrame(fTApply, LayBut1);
 
 }
 
@@ -379,13 +402,11 @@ void PopFrame::DoAdj() {
   opt.adj[i][j]=te->GetNumber();
   if (i==MAX_CH+NGRP) {
     for (int k=0;k<MAX_CH+NGRP;k++) {
-    //for (int k=0;k<10;k++) {
       if (fAdj[k][j]) {
 	opt.adj[k][j]=opt.adj[i][j];
 	char text[256];
 	snprintf(text, 255, "%g", opt.adj[i][j]);
 	fAdj[k][j]->SetText(text,false);
-	//fAdj[k][j]->SetNumber(opt.adj[k][j]);
       }
     }
   }
@@ -399,19 +420,70 @@ void PopFrame::DoENum() {
     ee[id]=te->GetNumber();
     //cout << "ee: " << id << " " << ee[id] << endl;
   }
-  else if (id==11) {
+  else if (id==11)
     fwhm=te->GetNumber();
-  }
-  else if (id==12) {
+  else if (id==12)
     range=te->GetNumber();
-  }
-  else if (id==13) {
+  else if (id==13)
     npol=te->GetNumber();
-  }
+  else if (id==21)
+    opt.E_auto=te->GetNumber();
   // else if (id==14) {
   //   npeaks=te->GetNumber();
   //   AddPeaks();
   // }
+}
+
+void PopFrame::Do_Auto_Ecalibr()
+{
+
+  /*
+  TIter next(&chklist);
+  HMap* map;
+  while ( (map=(HMap*)next()) ) {
+    //int i = map->nn;
+
+    if (map->hst) {
+      double a1,a2;
+      HiFrm->X_Slider(map->hst,a1,a2);
+      double xm = map->hst->GetBinCenter(map->hst->GetMaximumBin());
+      cout << "mpp: " << map->GetName() << " " << xm << " " << endl;
+    }
+
+  }
+  */
+
+  for (int i=0;i<MAX_CH+NGRP+1;i++) {
+    adj[i][0]=0;
+    adj[i][1]=1;
+    adj[i][2]=0;
+  }
+
+  
+  double a1,a2;
+  if (opt.b_stack)
+    HiFrm->X_Slider(HiFrm->st_plot,a1,a2);
+
+  for (size_t i = 0; i < HiFrm->pad_hist.size(); ++i) {
+    TH1* hh = HiFrm->pad_hist[i];
+    if (hh && hh->Integral()>0) {
+      TString str(hh->GetName());
+      if (str.Contains("area",TString::kIgnoreCase)) {
+	int nn = HiFrm->pad_map[i]->nn;
+	if (opt.b_stack)
+	  hh->GetXaxis()->SetRangeUser(a1,a2);
+	double xm = hh->GetXaxis()->GetBinCenter(hh->GetMaximumBin());
+	opt.adj[nn][0] = 0;
+	opt.adj[nn][1] *= opt.E_auto/xm;
+	opt.adj[nn][2] = 0;
+	//cout << "dr2: " << hh->GetName() << " " << xm << " " << nn << endl;
+      }
+    }
+  }
+
+  E_Update();
+  HiFrm->Update();
+
 }
 
 void PopFrame::Do_Ecalibr()
@@ -447,21 +519,17 @@ void PopFrame::Do_Ecalibr()
       double ee;
       ss >> ee;
 
-      if (str.Contains("substr",TString::kIgnoreCase)) {
-	HiFrm->bpol=ee;
-      }
-      else if (str.Contains("nofit",TString::kIgnoreCase)) {
+      if (str.Contains("#1"))
 	HiFrm->nofit=ee;
-      }
-      else if (str.Contains("fit",TString::kIgnoreCase)) {
+      else if (str.Contains("#2"))
+	HiFrm->bpol=ee;
+      else if (str.Contains("#3"))
 	HiFrm->fitpol=ee;
-      }
-      else if (str.Contains("fwhm",TString::kIgnoreCase)) {
+      else if (str.Contains("#4"))
 	HiFrm->fitsig=ee/2.35;
-      }
-      else if (str.Contains("peaks",TString::kIgnoreCase)) {
+      else if (str.Contains("Peaks:"))
 	b_peaks=true;
-      }
+
       if (ss.good() && b_peaks) {
 	dvect dd;
 	dd.push_back(ee-1);
@@ -513,13 +581,12 @@ void PopFrame::Do_Ecalibr()
 }
 
 void PopFrame::E_Update() {
+  char text[256];
   for (int i=0;i<MAX_CH+NGRP;i++) {
-    for (int j=0;j<2;j++) {
+    for (int j=0;j<3;j++) {
       if (fAdj[i][j]) {
-	char text[256];
          snprintf(text, 255, "%g", opt.adj[i][j]);
          fAdj[i][j]->SetText(text,false);
-	   //fAdj[i][j]->SetNumber(opt.adj[i][j]);
       }
     }
   }
@@ -535,15 +602,13 @@ void PopFrame::Do_Tcalibr()
 void PopFrame::Do_EApply() {
   for (int i=0;i<MAX_CH;i++) {
     if (fAdj[i][0]) {
-      // opt.E0[i] = opt.adj[i][0]+opt.adj[i][1]*opt.E0[i]
-      // 	+ opt.adj[i][2]*opt.E0[i]*opt.E0[i];
-      // opt.E1[i] = opt.adj[i][1]*opt.E1[i]
-      // 	+ 2*opt.adj[i][2]*opt.E0[i]*opt.E1[i];
-      // opt.E2[i] = opt.adj[i][2]*opt.E1[i]*opt.E1[i];
-
       opt.E0[i] = opt.adj[i][0];
       opt.E1[i] = opt.adj[i][1];
-      //opt.E2[i] = opt.adj[i][2];
+      opt.E2[i] = opt.adj[i][2];
+      if (opt.adj[i][2])
+	opt.calibr_t[i]=2;
+      else
+	opt.calibr_t[i]=1;
     }
   }
   //E_Update();
@@ -559,10 +624,38 @@ void PopFrame::Do_TApply() {
   //E_Update();
 }
 
+void PopFrame::Do_Default() {
+  fEdit->LoadBuffer(
+"# calibrate all marked energy histograms\n"
+"# all ROI must be set befor calibration\n"
+"# each ROI may contain several peaks,\n"
+"# fitted simultaneously\n"
+"#--------------------------------------\n"
+"\n"
+"0       #1 nofit - set to 1 to draw fit functions w/o fit\n"
+"2       #2 substrate poly - \n"
+"2       #3 Fit poly\n"
+"120     #4 fwhm\n"
+"\n"
+"-- Peaks: NROI peak1 pos1 peak2 pos2 ... --\n"
+"-- (pos are relative to ROI borders [0..1]) --\n"
+"-- (pos=0 - automatic peak search) --\n"
+"-- peaks can be excluded by adding # in front --\n"
+"\n"
+"1 846.7778  0.5 # 56Fe(n,n')\n"
+"2 1238.3    0.5 # 56Fe(n,n')\n"
+"3 2223.245  0.5 # 1H(n,g)\n"
+"4 4439.8    0.5 # 12C(n,n')\n"
+"#5 5618.89   0.3 6129.89  0.7 # 16O(n,n')\n"
+"5 7134.6    0.25 7645.58  0.6 # 56Fe(n,g)\n"
+"#7 10100      0.6 # ???\n"
+		    );
+}
+
 void PopFrame::Do_Revert() {
   memcpy(&opt.E0,&E0,sizeof(E0));
   memcpy(&opt.E1,&E1,sizeof(E1));
-  //memcpy(&opt.E2,&E2,sizeof(E2));
+  memcpy(&opt.E2,&E2,sizeof(E2));
   memcpy(&opt.adj,&adj,sizeof(adj));
 
   E_Update();

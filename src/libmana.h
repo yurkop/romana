@@ -70,7 +70,7 @@ int FindVar(char* buf, int sz, const char* name, char* var);
 
 void example();
 void saveroot(const char *name);
-void readpar_root(const char* pname);
+void readpar_root(const char* pname, int ropt=1);
 void readroot(const char *name);
 short int bits(int n, int i1, int i2);
 Bool_t getbit(int n, int bit);

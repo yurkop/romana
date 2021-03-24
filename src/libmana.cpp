@@ -113,6 +113,7 @@ bool rd_root=false; //readroot from comand line
 char startdir[200];
 char pr_name[200];
 char maintitle[200];
+char mainname[200];
 //char rootname[200]="";
 
 struct stat statb;
@@ -982,7 +983,7 @@ int main(int argc, char **argv)
   cout << help << endl;
 
   strcpy(pr_name,argv[0]);
-  strcpy(maintitle,pr_name);
+  //strcpy(maintitle,pr_name);
 
   crs->abatch=true; //default: acquisition (for detect_device)
 
@@ -1124,7 +1125,7 @@ int main(int argc, char **argv)
     //cout << dir << " " << name << " " << ext << endl;
     if (!ext.compare(".root")) { //root file
       if (!parfile2) {
-	readpar_root(datfname);
+	readpar_root(datfname,1);
       }
       rd_root=true;
     }
@@ -1429,6 +1430,12 @@ void readroot(const char *name) {
 
   tf->Close();
 
+  strcpy(mainname,name);
+  if (myM) {
+    myM->SetTitle((char*)name);
+    //daqpar->AllEnabled(false);
+  }
+
   //strcpy(maintitle,pr_name);
   //strcat(maintitle," ");
   //strcat(maintitle,name);
@@ -1454,12 +1461,13 @@ void clear_hist() {
 
 }
 
-void readpar_root(const char* pname)
+void readpar_root(const char* pname, int ropt)
 {
   TFile *f2 = new TFile(pname,"READ");
 
   cpar.Read("Coptions");
-  opt.Read("Toptions");
+  if (ropt)
+    opt.Read("Toptions");
 
   opt.raw_write=false;
   opt.dec_write=false;
@@ -2077,7 +2085,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   if (rd_root) {
     readroot(datfname);
     crs->Fmode=0;
-    SetTitle(datfname);
+    //SetTitle(datfname);
   }
 
   if (crs->Fmode!=1) { //no CRS present
@@ -2165,14 +2173,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   UpdateStatus(1);
 
   // Set a name to the main frame
-  //SetWindowName(maintitle);
-
-  SetTitle(crs->Fname);
-  //SetWMSizeHints(800,600,10000,10000,1,1);
+  SetTitle(mainname);
 
   //Rebuild();
   // Map all subwindows of main frame
-  //ChangeOptions(GetOptions()|kFitWidth|kFitHeight);
 
   MapSubwindows();
   // Initialize the layout algorithm
@@ -2417,12 +2421,14 @@ void MainFrame::DoOpen(Int_t id) {
   if (!crs->b_stop) return;
 
   //id=12-id;
-  cout << "DoOpen: " << id << endl;
+  //cout << "DoOpen: " << id << endl;
 
   const char *dnd_types[] = {
     "all files",     "*",
-    "adcm raw files",     "run*.dat",
-    "crs raw files",     "raw*.gz",
+    "adcm raw or deecoded files",     "*.dat",
+    "crs raw files",     "*.raw",
+    "crs dec files",     "*.dec",
+    "root files",        "*.root",
     //"crs32 files",     "*.32gz",
     0,               0
   };
@@ -2437,7 +2443,22 @@ void MainFrame::DoOpen(Int_t id) {
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
 
   if (fi.fFilename != NULL) {
-    crs->DoFopen(fi.fFilename,id);//1 - read toptions
+
+    string dir, name, ext2;
+    SplitFilename(string(fi.fFilename),dir,name,ext2);
+    TString ext(ext2);
+    ext.ToLower();
+
+    if (ext.EqualTo(".root")) {
+      readpar_root(fi.fFilename,id);
+      DoReset();
+
+      readroot(fi.fFilename);
+      HiFrm->Update();
+    }
+    else {
+      crs->DoFopen(fi.fFilename,id);//id - read toptions
+    }
 
     parpar->Update();
     daqpar->Update();
@@ -2704,7 +2725,7 @@ void MainFrame::DoReadRoot() {
 
     strcpy(rname,fi.fFilename);
 
-    readpar_root(rname);
+    readpar_root(rname,1);
     DoReset();
     //new_hist();
 

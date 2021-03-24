@@ -74,9 +74,9 @@ const char* ttip1[ndaqpar]={
   "Number of bad pulses"
 };
 
-const int n_apar=13;
-const int tlen2[n_apar]={24,24,26,70,24,24,25,35,35,35,38,38,38};
-const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sS","sD","dTm","Pile","E0","E1","Bc"};
+const int n_apar=15;
+const int tlen2[n_apar]={24,24,26,70,24,24,25,35,35,35,20,40,40,40,38};
+const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sS","sD","dTm","Pile","C","E0","E1","E2","Bc"};
 const char* ttip2[n_apar]={
   "On/Off",
   "Select",
@@ -89,8 +89,10 @@ const char* ttip2[n_apar]={
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
+  "Energy calibration type: 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline",
   "Energy calibration 0: E0+E1*x",
   "Energy calibration 1: E0+E1*x",
+  "Energy calibration 2: E0+E1*x+E2*x*x",
   "Baseline correction"
 };
 
@@ -2563,9 +2565,10 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   AddNumChan(i,kk++,all,cframe[i],&opt.dTm[i],0,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Pile[i],0,9999,p_inum);
 
+  AddNumChan(i,kk++,all,cframe[i],&opt.calibr_t[i],0,2,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.E0[i],-1e99,1e99,p_fnum);
   AddNumChan(i,kk++,all,cframe[i],&opt.E1[i],-1e99,1e99,p_fnum);
-  //AddNumChan(i,kk++,all,cframe[i],&opt.E2[i],-1e99,1e99,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.E2[i],-1e99,1e99,p_fnum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Bc[i],-1e99,1e99,p_fnum);
 
   for (int j=0;j<NGRP;j++) {

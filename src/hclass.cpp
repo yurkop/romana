@@ -168,6 +168,8 @@ void NameTitle(char* name, char* title, int i, int cc,
 void HClass::Make_1d(const char* dname, const char* name, const char* title,
 		     HMap* map[], Hdef* hd) {
 
+  memset(map,0,sizeof(HMap*)*MAX_CH+NGRP);
+
   if (!hd->b) return;
 
   char name2[100];
@@ -222,6 +224,8 @@ void HClass::Make_1d(const char* dname, const char* name, const char* title,
 void HClass::Make_1d_pulse(const char* dname, const char* name,
 			   const char* title, HMap* map[], Hdef* hd) {
 
+  memset(map,0,sizeof(HMap*)*MAX_CH);
+
   if (!hd->b) return;
 
   char name2[100];
@@ -254,6 +258,8 @@ void HClass::Make_1d_pulse(const char* dname, const char* name,
 void HClass::Make_2d(const char* dname, const char* name, const char* title,
 		     HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2) {
 
+  memset(map,0,sizeof(HMap*)*MAX_CH);
+
   if (!hd->b) return;
 
   char name2[100];
@@ -282,6 +288,9 @@ void HClass::Make_prof(const char* dname, const char* name,
 	  const char* title, HMap* map[], Hdef* hd,
 		 HMap* map2[],Hdef* hd2) {
 
+  memset(map,0,sizeof(HMap*)*256);
+  memset(map2,0,sizeof(HMap*)*4);
+  
   if (!hd->b) return;
 
   char name2[100];
@@ -333,6 +342,8 @@ void HClass::Make_prof(const char* dname, const char* name,
 
 void HClass::Make_axay(const char* dname, const char* name, const char* title,
 		     HMap* map[], Hdef* hd, Hdef* hd1) { //, int nmax) {
+
+  memset(map,0,sizeof(HMap*)*MAX_CH*(MAX_CH+1)/2);
 
   if (!hd->b) return;
 
@@ -387,6 +398,9 @@ void HClass::Clone_Hist(HMap* map) {
       map->h_cuts[i]=mcut;
       allmap_list->Add(mcut);
     }
+    else {
+      map->h_cuts[i]=0;
+    } 
   }
 
   // if (crs->b_maintrig) {

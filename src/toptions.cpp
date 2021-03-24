@@ -250,9 +250,10 @@ Toptions::Toptions() {
     W1[i]=-5;
     W2[i]=5;
 
+    calibr_t[i]=1;
     E0[i]=0;
     E1[i]=1;
-    //E2[i]=0;
+    E2[i]=0;
     Bc[i]=0;
   }
 
@@ -351,7 +352,7 @@ Toptions::Toptions() {
   memset(pcuts,0,sizeof(pcuts));
 
   usb_size=1024;
-  rbuf_size=20000;
+  rbuf_size=1024;
   nthreads=1;
   Nchan=32;
   tsleep=500;
@@ -365,11 +366,12 @@ Toptions::Toptions() {
   memset(cut_form,0,sizeof(cut_form));
   maintrig=0;
 
-  int sz = sizeof(adj)/sizeof(Float_t)/2;
-  for (int i=0;i<sz;i++) {
+  E_auto=2223;
+  //int sz = sizeof(adj)/sizeof(Float_t)/2;
+  for (int i=0;i<MAX_CH+NGRP+1;i++) {
     adj[i][0]=0;
     adj[i][1]=1;
-    //adj[i][2]=0;
+    adj[i][2]=0;
   }
   //memset(maintrig,0,sizeof(maintrig));
   //strcpy(formula,"0");

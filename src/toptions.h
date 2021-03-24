@@ -100,7 +100,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 120)
+  ClassDef(Coptions, 123)
 };
 
 //------------------------------------
@@ -141,12 +141,15 @@ public:
   Int_t W1[MAX_CHTP]; // [wwin1]
   Int_t W2[MAX_CHTP]; // [wwin2]
 
+  Int_t calibr_t[MAX_CHTP]; //type of calibration
+  // 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline
   Float_t E0[MAX_CHTP]; // [emult0]
   Float_t E1[MAX_CHTP]; // [emult]
-  //Float_t E2[MAX_CHTP]; // [emult2]
+  Float_t E2[MAX_CHTP]; // [emult2]
   Float_t Bc[MAX_CHTP]; // [bcor]
 
-  Float_t adj[MAX_CH+NGRP+1][2];
+  Float_t E_auto; //value for auto energy pre-calibration
+  Float_t adj[MAX_CH+NGRP+1][3];
 
   Float_t elim1[MAX_CHTP];
   Float_t elim2[MAX_CHTP];
@@ -308,7 +311,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 122)
+  ClassDef(Toptions, 123)
 };
 
 //ClassImp(Toptions)

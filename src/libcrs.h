@@ -139,11 +139,14 @@ RQ_OBJECT("CRS")
   Short_t Fmode; //0 - do nothing; 1 - CRS module online; 2 - file analysis
 
   Short_t module;
-  //1-ADCM raw, 3 - ortec lis, 22 - crs2;
-  //32 - old crs32, 33 - crs32 with dsp/po3, 34 - crs32/po4, 35 - crs32/po5
-  //41,42 - crs-8/16
-  //51,52 - crs-128
-  //72..80 - decoded file
+  // 1 - ADCM raw
+  // 3 - ADCM dec
+  // 7? - ortec lis,
+  // 22 - crs2;
+  // 32 - old crs32, 33 - crs32 with dsp/po3, 34 - crs32/po4, 35 - crs32/po5
+  // 41,42 - crs-8/16
+  // 51,52 - crs-128
+  // 72..80 - decoded file
 
   Int_t type_ch[MAX_CHTP];
   //0: 4-11bit;
@@ -297,7 +300,7 @@ RQ_OBJECT("CRS")
 
   void PulseAna(PulseClass &ipls);
   void Dec_Init(eventlist* &Blist, UChar_t frmt);
-  void Dec_End(eventlist* &Blist, UInt_t iread);
+  void Dec_End(eventlist* &Blist, UInt_t iread, byte sp);
   void Decode79(UInt_t iread, UInt_t ibuf);
   //void Decode79a(UInt_t iread, UInt_t ibuf);
   void Decode78(UInt_t iread, UInt_t ibuf);
@@ -313,10 +316,11 @@ RQ_OBJECT("CRS")
   void Decode35(UInt_t iread, UInt_t ibuf);
   void Decode2(UInt_t iread, UInt_t ibuf);
   void Decode_adcm(UInt_t iread, UInt_t ibuf);
+  void Decode_adcm_dec(UInt_t iread, UInt_t ibuf);
 
-  int Searchsync(int &idx, UInt_t* buf4, int end);
-  int Detect_adcm(const char* fname);
-  int Find_adcmraw_start();
+  int Searchsync(Long64_t &idx, UInt_t* buf4, Long64_t end);
+  int Detect_adcm();
+  //int Find_adcmraw_start();
 
   //int Set_Trigger();
   void Ana_start();

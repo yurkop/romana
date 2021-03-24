@@ -1,4 +1,5 @@
 #include "libcrs.h"
+#include "adcm_df.h"
 
 //#include <iostream>
 #include <fstream>
@@ -46,6 +47,11 @@ TMutex cmut;
 
 const int BFMAX=999999999;
 
+#define ID_ADCM  0x2A50
+#define ID_CMAP  0x504D
+#define ID_EVNT  0x5645
+#define ID_CNTR  0x5443
+
 using namespace std;
 
 extern MemInfo_t minfo;
@@ -72,6 +78,8 @@ extern int debug; // for printing debug messages
 extern char startdir[200];
 const double MB = 1024*1024;
 const Long64_t iMB = 1024*1024;
+
+extern char mainname[200];
 
 //MemInfo_t info;
 
@@ -109,9 +117,9 @@ const Long64_t gl_off = iMB; //1MB, was 1024*128 - офсет GLBuf относи
 UChar_t* GLBuf;
 UChar_t* GLBuf2;
 
-int b_start[CRS::MAXTRANS]; //start of local buffer(part of GLBuf), included
-int b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
-int b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
+Long64_t b_start[CRS::MAXTRANS]; //start of local buffer(part of GLBuf), included
+Long64_t b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
+Long64_t b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
 
 UInt_t gl_iread; //current number of readbuf or cback [0.. infinity)
 UInt_t gl_ivect; //current number of pstruct in make_event [0.. infinity)
@@ -353,7 +361,7 @@ void *handle_mkev(void *ctx) {
       for (BB = crs->Bufevents.begin(); BB!=crs->Bufevents.end();++BB) {
 	// cout << "mkev: " << crs->Bufevents.size() << " " << BB->front().Nevt
 	//      << " " << gl_ivect << " " << (int) BB->front().Spin << endl;
-	if (BB->back().Nevt==gl_ivect && BB->back().Spin==255) {
+	if (BB->back().Nevt==gl_ivect && BB->back().Spin>=254) {
 	  fdec=true;
 	  break;
 	}
@@ -361,6 +369,7 @@ void *handle_mkev(void *ctx) {
       gSystem->Sleep(1);
 
     }
+
     if (!mkev_thread_run) {
       break;
     }
@@ -2442,7 +2451,7 @@ void CRS::DoReset() {
 
 void CRS::DoFopen(char* oname, int popt) {
   //popt: 1 - read opt from file; 0 - don't read opt from file
-  int tp=0; //1 - adcm raw; 0 - crs2/32/dec; 2 - Ortec Lis
+  int tp=0; //1 - adcm raw; 0 - crs2/32/dec; 7? - Ortec Lis
   module=0;
 
   if (oname)
@@ -2455,11 +2464,36 @@ void CRS::DoFopen(char* oname, int popt) {
 
   string dir, name, ext2;
   SplitFilename(string(Fname),dir,name,ext2);
-
   TString ext(ext2);
   ext.ToLower();
 
+  Tstart64=0;
+
   if (ext.EqualTo(".dat")) {
+    //determine file date/time and Tstart64
+    int res = Detect_adcm();
+
+    if (res==0) {
+      prnt("ssss;",BRED,"Can't open file: ",Fname,RST);
+      //f_read=0;
+      return;
+    }
+    else if (res==2) {
+      prnt("ssss;",BRED,"Unknown file format / can't find Tstamp in adcm/raw file: ",Fname,RST);
+      //f_read=0;
+      return;
+    }
+    else if (res==1) {
+      prnt("ssss;",BYEL,"ADCM RAW File: ",Fname,RST);
+    }
+    else if (res==3) {
+      prnt("ssss;",BYEL,"ADCM DEC File: ",Fname,RST);
+    }
+
+    module=res; //1 - adcm raw; 3 - adcm dec
+    cpar.InitPar(0);
+    opt.Period=opt.adcm_period;
+
     tp=1;
   }
   else if (ext.EqualTo(".lis")) {
@@ -2482,29 +2516,6 @@ void CRS::DoFopen(char* oname, int popt) {
     return;
   }
 
-  //determine file date/time and Tstart64
-  if (tp==1) {
-
-    int res = Detect_adcm(Fname);
-
-    if (!res) {
-      prnt("ssss;",BRED,"Unknown file format / can't find Tstamp in adcm/raw file: ",Fname,RST);
-      f_read=0;
-      return;
-    }
-
-    //exit(1);
-    //prnt("ssl ds;",BRED,"Tstart64: ",Tstart64,modtime,RST);
-    //cout << sizeof(time_t) << " " << sizeof(int) << endl;
-
-    //time_t sec = Tstart64/100000000;
-    //TTimeStamp tt(modtime,0);
-    //cout << "TT: " << sec << " " << tt << " " << tt.AsString("l") << endl;
-
-  }
-  else {
-    Tstart64=0;
-  }
 
 
   if (f_read) gzclose(f_read);
@@ -2515,6 +2526,7 @@ void CRS::DoFopen(char* oname, int popt) {
     return;
   }
 
+
   if (tp==0) { //crs32 or crs2 or dec
     if (ReadParGz(f_read,Fname,1,1,popt)) {
       gzclose(f_read);
@@ -2522,12 +2534,6 @@ void CRS::DoFopen(char* oname, int popt) {
       return;
     }
     cout << "opt.Period from .par: " << opt.Period << endl;
-  }
-  else if (tp==1) { //adcm raw
-    cout << "ADCM RAW File: " << Fname << endl;
-    module=1;
-    cpar.InitPar(0);
-    opt.Period=opt.adcm_period;
   }
   else if (tp==2) { //Ortec Lis
     cout << "Ortec Lis File: " << Fname << endl;
@@ -2546,34 +2552,20 @@ void CRS::DoFopen(char* oname, int popt) {
     // printf("hdr: %d %d %f %s\n",*fmt,*style,*start_t,txt);
   }
 
-  //Tstart64=0;
-
-  //list_min=opt.ev_max-opt.ev_min;
-
   Fmode=2;
 
-  //opt.raw_write=false;
-
-  //cout << "smooth 0-39: " << cpar.hS[39] << " " << opt.hS[39] << endl;
-
-  //ibuf=0;
-
-  //cout << "Dofopen1: " << endl;
   InitBuf();
-  //cout << "Dofopen2: " << endl;
-  //nvp=0;
 
-  if (tp==1) { //adcm raw - determine durwr
-    // cout << "durwr1: " << nvp << " " << vv2->size() << endl;
-    // DoBuf();
-    // cout << "durwr2: " << nvp << " " << vv2->size() << endl;
-  }
+  // if (tp==1) { //adcm raw - determine durwr
+  //   // cout << "durwr1: " << nvp << " " << vv2->size() << endl;
+  //   // DoBuf();
+  //   // cout << "durwr2: " << nvp << " " << vv2->size() << endl;
+  // }
 
+  strcpy(mainname,Fname);
   if (myM) {
     myM->SetTitle(Fname);
     daqpar->AllEnabled(false);
-    //myM->fTab->SetEnabled(1,false);
-    //cout << "fTab: " << myM->fTab << endl;
   }
 }
 
@@ -2786,9 +2778,9 @@ void CRS::AnaBuf(int loc_ibuf) {
   UInt_t ibuf2 = gl_ibuf+1;
   //Если последний буфер в "кольце буферов" -> копируем "хвост" буфера в начало
   if (ibuf2==gl_Nbuf) { //last buffer in ring, jump to zero
-    int end0 = b_end[gl_ibuf];
+    Long64_t end0 = b_end[gl_ibuf];
     FindLast(gl_ibuf, loc_ibuf, 8);
-    int sz = end0 - b_end[gl_ibuf];
+    Long64_t sz = end0 - b_end[gl_ibuf];
     memcpy(GLBuf-sz,GLBuf+b_end[gl_ibuf],sz);
     b_start[0]=-sz;
     b_fill[0]=0;
@@ -2894,7 +2886,7 @@ int CRS::DoBuf() {
 
   // cout << "gzread1: " << Fmode << " " << nbuffers << " " << opt.rbuf_size*1024 << " " << gl_ibuf << " " << dec_iread[gl_ibuf] << endl;
 
-  int length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
+  Long64_t length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
   // if (nbuffers==4) {
   //   Print_Buf8(GLBuf+b_fill[gl_ibuf],length);
   // }
@@ -3323,7 +3315,12 @@ void CRS::Decode_switch(UInt_t ibuf) {
   case 1:
     Decode_adcm(dec_iread[ibuf]-1,ibuf);
     break;
+  case 3:
+    Decode_adcm_dec(dec_iread[ibuf]-1,ibuf);
+    break;
   default:
+    eventlist *Blist;
+    Dec_Init(Blist,0);
     break;
   }
 
@@ -3391,13 +3388,13 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   UInt_t ibuf2 = (ibuf+1)%gl_Nbuf; //next transfer/buffer
   UInt_t frmt;
 
-  int sss=-1;
+  Long64_t sss=-1;
   //bool found=false;
   UShort_t lflag;
 
   switch (module) {
   case 1:
-    for (int i=b_end[ibuf]-4;i>=b_start[ibuf];i-=4) {
+    for (Long64_t i=b_end[ibuf]-4;i>=b_start[ibuf];i-=4) {
       //find *frmt==0x2a500100 -> this is the start of a pulse
       frmt = *((UInt_t*) (GLBuf+i));
       //cout << "for: " << i << " " << hex << frmt << dec << endl;
@@ -3417,8 +3414,19 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
     } //for i
     cout << "1: Error: no last event: maybe USB buffer is too small: " << ibuf << endl;
     break;
+  case 3:
+    for (Long64_t i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
+      frmt = *((UShort_t*) (GLBuf+i));
+      if (frmt==ID_EVNT) {
+	b_end[ibuf]=i;
+	b_start[ibuf2]=i;
+	return;
+      }
+    } //for i
+    cout << "1: Error: no last event: maybe USB buffer is too small: " << ibuf << endl;
+    break;
   case 22:
-    for (int i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
+    for (Long64_t i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+1] & 0x70);
       if (frmt==0) {
@@ -3437,11 +3445,11 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   case 51:
   case 42:
   case 52:
-    for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
+    for (Long64_t i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);
       if (frmt==0) {
-	int len = b_end[ibuf]-i;
+	Long64_t len = b_end[ibuf]-i;
 	b_end[ibuf]=i;
 	b_start[ibuf2]=i;
         // prnt("ss2d2d2d 9d 9d 4d2ds;",KGRN,"FindL:",gl_iread, loc_ibuf, ibuf,
@@ -3457,7 +3465,7 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   case 77:
   case 78:
   case 79:
-    for (int i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
+    for (Long64_t i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==1 -> this is the start of a pulse
       frmt = GLBuf[i+7] & 0x80; //event start bit
       if (frmt) {
@@ -3592,6 +3600,7 @@ void CRS::PulseAna(PulseClass &ipls) {
       ipls.CheckDSP();
     }
   }
+  ipls.Ecalibr();
 }
 
 void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
@@ -3611,10 +3620,10 @@ void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
   }
 }
 
-void CRS::Dec_End(eventlist* &Blist, UInt_t iread) {
+void CRS::Dec_End(eventlist* &Blist, UInt_t iread, byte sp) {
   Blist->push_back(EventClass());
   Blist->back().Nevt=iread;
-  Blist->back().Spin=255;
+  Blist->back().Spin=sp;
 }
 
 /*
@@ -3707,7 +3716,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
   //Decode79 - the same as 78, but different factor for Area
 
   //ibuf - current sub-buffer
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   EventClass* evt=&dummy_event;
 
@@ -3719,10 +3728,10 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
   static Long64_t Tst;
   static UChar_t Spn;
 
-  while (idx1<b_end[ibuf]) {
-    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+  if (opt.fProc) { //fill pulses for reanalysis
+    while (idx1<b_end[ibuf]) {
+      frmt = GLBuf[idx1+7] & 0x80; //event start bit
 
-    if (opt.fProc) { //fill pulses for reanalysis
       if (frmt) { //event start
 	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
 	Tst = (*buf8) & sixbytes;
@@ -3738,19 +3747,28 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	ipls->Chan = buf2[3];
 	ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
 
-
 	//new2
 	ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
 	ipls->Tstamp64=Tst;//*opt.Period;
 
-
 	ipls->Spin=Spn;
 	ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
 
+	ipls->Ecalibr();
 	Event_Insert_Pulse(Blist,ipls);
       }
-    }
-    else { //fill event
+
+      idx1+=8;
+    } //while (idx1<buf_len)
+
+    Dec_End(Blist,iread,255);
+
+  } //if (opt.fProc)
+
+  else { //!opt.fProc -> fill event
+    while (idx1<b_end[ibuf]) {
+      frmt = GLBuf[idx1+7] & 0x80; //event start bit
+
       if (frmt) { //event start	
 	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
 	evt = &*Blist->insert(Blist->end(),EventClass());
@@ -3776,13 +3794,15 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	  evt->T0=ipls->Time;
 	}
+	ipls->Ecalibr();
       }
-    } //fill event
 
-    idx1+=8;
-  } //while (idx1<buf_len)
+      idx1+=8;
+    } //while (idx1<buf_len)
 
-  Dec_End(Blist,iread);
+    Dec_End(Blist,iread,254);
+
+  }
 
 } //decode79
 
@@ -3792,7 +3812,7 @@ void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
 
   //ibuf - current sub-buffer
 
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   EventClass* evt=&dummy_event;
 
@@ -3826,12 +3846,13 @@ void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
       if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
 	evt->T0=ipls->Time;
       }
+      ipls->Ecalibr();
     }
 
     idx1+=8;
   } //while (idx1<buf_len)
 
-  Dec_End(Blist,iread);
+  Dec_End(Blist,iread,254);
 
 } //decode78
 
@@ -3840,7 +3861,7 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
 
   //ibuf - current sub-buffer
 
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   EventClass* evt=&dummy_event;
 
@@ -3874,12 +3895,13 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
       if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
 	evt->T0=ipls->Time;
       }
+      ipls->Ecalibr();
     }
 
     idx1+=8;
   } //while (idx1<buf_len)
 
-  Dec_End(Blist,iread);
+  Dec_End(Blist,iread,254);
 
 } //decode77
 
@@ -3887,7 +3909,7 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
 
   //ibuf - current sub-buffer
 
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   EventClass* evt=&dummy_event;
 
@@ -3917,12 +3939,13 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
       ipls->Area = buf2[0];
       ipls->Time = buf2[1]*0.1;
       ipls->Chan = buf2[3];
+      ipls->Ecalibr();
     }
 
     idx1+=8;
   } //while (idx1<buf_len)
 
-  Dec_End(Blist,iread);
+  Dec_End(Blist,iread,254);
 
 } //decode76
 
@@ -3931,7 +3954,7 @@ void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
   //cout << "decode75_1: " << endl;
   //ibuf - current sub-buffer
 
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   EventClass* evt=&dummy_event;
 
@@ -3974,13 +3997,14 @@ void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
       ipls->Area = buf2[0];
       ipls->Time = buf2[1]*0.1;
       ipls->Chan = buf2[3];
+      ipls->Ecalibr();
     }
 
     idx1+=8;
   } //while (idx1<buf_len)
 
   //cout << "decode75_3: " << endl;
-  Dec_End(Blist,iread);
+  Dec_End(Blist,iread,254);
 
   // cout << "decode75: " << idx1 << " " << Blist->size()
   //      << " " << Bufevents.size() << " " << Bufevents.begin()->size() << endl;
@@ -3992,7 +4016,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
 
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   ULong64_t data;
   Short_t sss; // temporary var. to convert signed nbit var. to signed 16bit int
@@ -4315,7 +4339,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
     Event_Insert_Pulse(Blist,&ipls);
   }
 
-  Dec_End(Blist,iread);
+  Dec_End(Blist,iread,255);
 
 } //decode34
 
@@ -4352,7 +4376,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
 
-  int idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   ULong64_t data;
   Int_t d16,d32;
@@ -4504,7 +4528,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
     Event_Insert_Pulse(Blist,&ipls);
   }
 
-  Dec_End(Blist,iread);
+  Dec_End(Blist,iread,255);
 
 } //decode35
 
@@ -4515,14 +4539,12 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 
   UShort_t* buf2 = (UShort_t*) GLBuf;
 
-  int idx2=b_start[ibuf]/2;
+  Long64_t idx2=b_start[ibuf]/2;
 
   eventlist *Blist;
   UChar_t frmt = (buf2[idx2] & 0x7000)>>12;
   Dec_Init(Blist,frmt);
   PulseClass ipls=dummy_pulse;
-
-  //cout << "Decode2: " << iread << " " << ibuf << " " << idx2 << " " << b_end[ibuf] << endl;
 
   //cout << "decode2: " << idx2 << endl;
   while (idx2<b_end[ibuf]/2) {
@@ -4606,14 +4628,14 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
     Event_Insert_Pulse(Blist,&ipls);
   }
 
-  Dec_End(Blist,iread);
+  Dec_End(Blist,iread,255);
 
 } //decode2
 
 
 //-------------------------------
 
-int CRS::Searchsync(int &idx, UInt_t* buf4, int end) {
+int CRS::Searchsync(Long64_t &idx, UInt_t* buf4, Long64_t end) {
   //returns 1 if syncw is found;
   //returns 0 if syncw is not found;
 
@@ -4627,9 +4649,13 @@ int CRS::Searchsync(int &idx, UInt_t* buf4, int end) {
 
 //-------------------------------------
 
-int CRS::Detect_adcm(const char* fname) {
+int CRS::Detect_adcm() {
+  //res=0 - can't open file
+  //res=2 - can't detect file format
+  //res=1 - adcm raw
+  //res=3 - adcm dec
+
   int res=0;
-  //int len;
   //Long64_t Tstop64;
 
   Long_t id;
@@ -4638,15 +4664,81 @@ int CRS::Detect_adcm(const char* fname) {
   Long_t modtime;
 
   int ires=gSystem->GetPathInfo(Fname, &id, &size, &flags, &modtime);
-  if (ires) {
-    prnt("ssss;",BRED,"Can't open file: ",fname,RST);
+
+  if (f_read) gzclose(f_read);
+  f_read = gzopen(Fname,"rb");
+
+  if (ires || !f_read) {
+    //prnt("ssss;",BRED,"Can't open file: ",Fname,RST);
+    f_read=0;
     return 0;
   }
+
+  char buf1[iMB];
+  int len = gzread(f_read,buf1,iMB);
+
+  int r_id=0;
+  bool strt=true;
+
+  for (int i=0;i<len-4;++i) {
+    UShort_t* buf2 = (UShort_t*) (buf1+i);
+    switch (*buf2) {
+    case ID_ADCM:
+      r_id++;
+      if (strt) {
+	UShort_t rLen = *((UShort_t*) (buf1+i+4));
+	int idnext=i+rLen*4-2;
+	if (idnext<len) {
+	  UInt_t* buf4 = (UInt_t*) (buf1+idnext);
+	  //cout << "idnext: " << i << " " << idnext << " " << *buf4 << endl;
+	  Tstart64 = buf4[-2];
+	  Tstart64 <<= 32;
+	  Tstart64 += buf4[-3];
+	  strt=false;
+	}
+      }
+      break;
+    case ID_EVNT:
+      r_id--;
+      if (strt) {
+	//struct stor_packet_hdr_t *hdr = (struct stor_packet_hdr_t *) (buf2);
+	struct stor_ev_hdr_t *eh = (struct stor_ev_hdr_t *) (buf2+sizeof(struct stor_packet_hdr_t)/2);
+	Tstart64=eh->ts;
+	strt=false;
+      }
+      break;
+    }
+  }
+
+  cout << "r_id: " << r_id << " " << strt << " " << Tstart64 << endl;
+
+  gzclose(f_read);
+  f_read=0;
+
+
+  cpar.F_stop = (modtime-788907600)*1000;
+  Text_time("E:",cpar.F_stop);
+
+  if (r_id==0) {
+    res=2;
+  }
+  else if (r_id>0) {
+    res=1;
+  }
+  else {
+    res=3;
+  }
+
+  return res;
+
+
+
+
 
   /*
   Long64_t size4,lim=2000;
 
-  int fd = open(fname, O_RDONLY);
+  int fd = open(Fname, O_RDONLY);
   void* buf = mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
   UInt_t* buf4 = (UInt_t*) buf;
   UShort_t* buf2 = (UShort_t*) buf;
@@ -4667,37 +4759,41 @@ int CRS::Detect_adcm(const char* fname) {
       }
     }
   }
+  cout << "Tstart64: " << hex << Tstart64 << dec << endl;
 
-  for (int i=size4-1;i>=size4-len;--i) {
-    if (buf4[i] == 0x2a500100) {
-      if (i>3) {
-	Tstop64 = buf4[i-2];
-	Tstop64 <<= 32;
-	Tstop64 += buf4[i-3];
-	res+=1;
-	break;
-      }
-    }
-  }
+  // for (int i=size4-1;i>=size4-len;--i) {
+  //   if (buf4[i] == 0x2a500100) {
+  //     if (i>3) {
+  // 	Tstop64 = buf4[i-2];
+  // 	Tstop64 <<= 32;
+  // 	Tstop64 += buf4[i-3];
+  // 	res+=1;
+  // 	break;
+  //     }
+  //   }
+  // }
 
-  if (res==2) {
-    double dt = (Tstop64 - Tstart64)*1e-9*opt.adcm_period;
-    cpar.F_start = (modtime-dt-788907600)*1000;
-    Text_time();
+  // if (res==2) {
+  //   double dt = (Tstop64 - Tstart64)*1e-9*opt.adcm_period;
+  //   cpar.F_start = (modtime-dt-788907600)*1000;
+  //   Text_time();
 
-    cout << "txt_start: " << txt_start << " " << modtime << " " << dt << " " << Tstop64 << " " << Tstart64 << " " << size4 << endl;
-  }
+  //   cout << "txt_start: " << txt_start << " " << modtime << " " << dt << " " << Tstop64 << " " << Tstart64 << " " << size4 << endl;
+  // }
 
   munmap (buf, size);
   close(fd);
-*/
+  */
 
-  cpar.F_stop = (modtime-788907600)*1000;
-  Text_time("E:",cpar.F_stop);
-  res=2;
-  return res;
+
+
+
+
+
+
 }
 
+/*
 int CRS::Find_adcmraw_start() {
 
   int res=0;
@@ -4723,7 +4819,7 @@ int CRS::Find_adcmraw_start() {
   gzrewind(f_read);
   return res;
 }
-
+*/
 //-------------------------------------
 
 void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
@@ -4753,15 +4849,15 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
   UInt_t* buf4 = (UInt_t*) GLBuf;
   UShort_t* buf2 = (UShort_t*) GLBuf;
 
-  int idx=b_start[ibuf]/4; // current index in the buffer (in 1-byte words)
-  int idnext=0; //idx of the next event
+  Long64_t idx=b_start[ibuf]/4; // current index in the buffer (in 1-byte words)
+  Long64_t idnext=0; //idx of the next event
   int rLen; // length of one m-link fram
   UInt_t header; //data header
   UShort_t id; // block id (=0,1,2)
   UShort_t lflag; //last fragment flag
   //UShort_t nfrag; //fragment number
   UShort_t nsamp; // number of samples in the fragment
-  int length = b_end[ibuf]/4;
+  Long64_t length = b_end[ibuf]/4;
   int ch;
 
   //cout << "idx: " << idx << " " << nevents << endl;
@@ -4790,7 +4886,7 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
     Long64_t Tstop64 = buf4[idnext-2];
     Tstop64 <<= 32;
     Tstop64 += buf4[idnext-3];
-    cout << "while: " << idx << " " << idnext << " " << length << " " << Tstop64 << endl;
+    //cout << "while: " << idx << " " << idnext << " " << length << " " << Tstop64 << endl;
 
     if (idnext>length)
       break;
@@ -4928,11 +5024,112 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
   //cout << "nevt2: " << nevents << endl;
 
-  Dec_End(Blist,iread);
+  Dec_End(Blist,iread,255);
 
   //cout << "idx2: " << idx << endl;
 } //Decode_adcm
 
+//-------------------------------------
+void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
+
+  int nev = 0,
+    nmap = 0,
+    ncnt = 0;
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  Dec_Init(Blist,0);
+  PulseClass pls;//=dummy_pulse;
+  PulseClass* ipls=&pls;
+
+  Long64_t dp,
+    p = b_start[ibuf],
+    length = b_end[ibuf];
+
+
+
+
+  // for (int i=0;i<1024;i+=2) {
+  //   struct stor_packet_hdr_t *hdr = (struct stor_packet_hdr_t *) GLBuf+p+i;
+  //   Short_t* buf2 = (Short_t*) GLBuf+p+i;
+  //   cout << i << " " <<hex<< *buf2 << " " << hdr->id << dec<<endl;
+  // }
+
+
+
+
+
+  while (p < length) {
+    dp = p + sizeof(struct stor_packet_hdr_t);
+    struct stor_packet_hdr_t *hdr = (struct stor_packet_hdr_t *) (GLBuf+p);
+    //cout << "hdr: "<<p<<" "<<hex<<hdr->id<<dec<<" "<<hdr->size<<endl;
+    if (p + hdr->size > length) {
+      prnt("ss d s ls;",KRED,"size > length:",hdr->size, "at pos:",p,RST);
+      break;
+    }
+    switch (hdr->id) {
+    case ID_CMAP:
+      nmap++;
+      // memcpy (&cmap, &buf[dp], sizeof (struct adcm_cmap_t));
+      break;
+    case ID_EVNT:{
+      struct stor_ev_hdr_t *eh = (struct stor_ev_hdr_t *) (GLBuf+dp);
+      //int n;
+      nev++;
+      evt = &*Blist->insert(Blist->end(),EventClass());
+      evt->Nevt=nevents;
+      nevents++;
+      //static Long64_t T_prev;
+      evt->Tstmp = eh->ts;
+      // if (evt->Tstmp<T_prev) {
+      //   prnt("ss l d l ls;",BRED,"ts:",nevents,eh->ts,evt->Tstmp,T_prev,RST);
+      // }
+      // else {
+      //   prnt("ss l d l ls;",BGRN,"ts:",nevents,eh->ts,evt->Tstmp,T_prev,RST);
+      // }
+      // T_prev = eh->ts;
+
+      for (int n = 0; n < eh->np; n++) {
+	struct stor_puls_t *hit = (struct stor_puls_t *) (GLBuf+dp + sizeof(struct stor_ev_hdr_t) + n * sizeof(struct stor_puls_t));
+	pulse_vect::iterator itpls =
+	  evt->pulses.insert(evt->pulses.end(),PulseClass());
+
+	ipls = &(*itpls);
+	ipls->Chan = hit->ch;
+	ipls->Area = hit->a;
+	ipls->Time = hit->t //?? in ns ??
+	  + opt.sD[ipls->Chan]; //in ns (not in samples)
+	ipls->Width = hit->w;
+	if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
+	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
+	  evt->T0=ipls->Time;
+	}
+      }
+      break;
+    }
+    case ID_CNTR:
+      ncnt++;
+      // memcpy (&counters, &buf[dp], sizeof (struct adcm_counters_t));
+      break;
+    default:
+      prnt("ss x s ls;",BRED,"Bad block ID:",hdr->id, "at pos:",p,RST);
+      //fprintf (stderr, "Bad block ID %04X at pos %zu\n", hdr->id, p);
+      return;
+    }
+    p += hdr->size;
+  }
+
+  fprintf (stderr, "Complete %lld bytes, %u events, %u counters, %u maps\n", p, nev, ncnt, nmap);
+
+  // if (!ipls.ptype) {
+  //   PulseAna(ipls);
+  //   Event_Insert_Pulse(Blist,&ipls);
+  // }
+
+  Dec_End(Blist,iread,254);
+
+} //Decode_adcm_dec
 
 //-------------------------------------
 
@@ -5068,7 +5265,7 @@ void CRS::Print_Buf_err(UInt_t ibuf, const char* file) {
 
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
 
-  int idx1=b_start[ibuf];
+  Long64_t idx1=b_start[ibuf];
 
   int goodch=999;
   if (idx1-1>=b_start[ibuf])
@@ -5210,7 +5407,11 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
 //void CRS::Make_Events(plist_iter it) {
 void CRS::Make_Events(std::list<eventlist>::iterator BB) {
 
-  //cout << "Make_Events: T_acq: " << gl_ivect << " " << opt.T_acq << " " << crs->Tstart64 << " " << Levents.back().T << endl;
+  // cout << "Make_Events: T_acq: " << gl_ivect << " " << opt.T_acq
+  //      << " " << crs->Tstart64 << " " << Levents.back().T0
+  //      << " " << Levents.empty()
+  //      << " " << BB->empty()
+  //      << endl;
 	
   if (opt.Tstop && opt.T_acq>opt.Tstop) {
     //if (b_acq) {
@@ -5226,39 +5427,26 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     //return;
   }
 
-  if (BB->back().Spin==255) {
+  if (!Levents.empty() && !BB->empty() && (BB->back().Spin==255)) {
+
+    //if (BB->back().Spin==255) {
     BB->pop_back();
-  }
+    //}
 
-  //cout << "LL: " << Levents.rbegin()->Nevt << " " << Levents.rbegin()->TT << endl;
-  //UInt_t sz = Levents.size();
-
-
-  //int n6=0;
-  //int n7=0;
-  //merge beginning of BB and end of Levents
-  if (!Levents.empty() && !BB->empty()) {
+    //merge beginning of BB and end of Levents
     evlist_iter it = BB->begin();
     Long64_t T_last = Levents.rbegin()->Tstmp + opt.tgate;
-    //evlist_reviter rr = Levents.rbegin();
-    //prnt("ssd d ds;",KGRN,"MMM: ",rr->Tstmp,it->Tstmp,it->Tstmp-rr->Tstmp,RST);
+
     //while (it!=BB->end() && it->Tstmp - rr->Tstmp<=opt.tgate*2) {
     while (it!=BB->end() && it->Tstmp <= T_last) {
-      //prnt("s d d d d;","merge: ",n6,rr->Tstmp,it->Tstmp,it->Tstmp-rr->Tstmp);
-      //++n6;
       for (UInt_t i=0;i<it->pulses.size();i++) {
 	Event_Insert_Pulse(&Levents,&it->pulses[i]);
-	//++n7;
       }
       it=BB->erase(it);
-      //rr=Levents.rbegin();
     }
   }
 
-  //cout << "MakeEv: " << Bufevents.size() << endl;
-
   Levents.splice(Levents.end(),*BB);
-  //cout << "BB1: " << Levents.size() << " " << Bufevents.size() << endl;
 
   Bufevents.erase(BB);
   //++buf_erase;

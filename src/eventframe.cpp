@@ -1098,6 +1098,9 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   if (fChn[ch]->IsOn()) {
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch];
 
+    if (pulse->Pos==-31000) pulse->Pos=cpar.Pre[ch];
+    //cout << "Pos: " << ch << " " << pulse->Pos << endl;
+
     //for (UInt_t j=0;j<pulse->Peaks.size();j++) {
     //PeakClass *pk = &pulse->Peaks[j];
 

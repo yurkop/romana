@@ -101,15 +101,15 @@ class PulseClass {
 
   UChar_t Chan; //channel number
   Short_t Pos; //position of the trigger relative to pulse start (in samples)
-               //Pos=-32222 -> no peak found
+               //Pos=-32222 -> no peak found in FindPeaks
+               //Pos=-31000 -> default Pos - значит, FindPeaks не вызывался
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 1: event is writable in Dec
   //bit 7: hardware counters
-  //Spin=255 - end of Blist
+  //Spin=254 - end of Blist, merge BB and Levents in Make_Events
+  //Spin=255 - end of Blist, just splice BB and Levents
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
-
-
 
   Float_t Base; //baseline
   Float_t Area0; //area+background
@@ -121,8 +121,6 @@ class PulseClass {
   Float_t Height; //maximum of pulse in the same region as Area
   Float_t Width; //peak width - Alpatov (in 1st deriv)
   Float_t Time; //exact time relative to pulse start (from 1st deriv), also rela
-
-
 
   //bool Analyzed; //true if pulse is already analyzed
  public:

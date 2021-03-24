@@ -53,11 +53,15 @@ public:
 
 
   TList* hmap_chklist;  //list of marked hmaps (histograms)
-  TList* st_hlist;      //list of plotted histograms for stack
+  //TList* st_hlist;      //list of plotted histograms for stack
   TH1F* st_plot;        //histogram for plotting stack;
 
-  TH1* pad_hist[MAX_PADS];     //copies of histograms for plotting in pads;
-  HMap *pad_map[MAX_PADS];       //maps plotted in pads
+  //TH1* pad_hist[MAX_PADS];     //copies of histograms for plotting in pads;
+  //HMap *pad_map[MAX_PADS];       //maps plotted in pads
+  std::vector <HMap*> pad_map;       //maps plotted in pads
+  std::vector <TH1*> pad_hist;       //copies of histograms plotted in pads
+                                     //or in DrawStacj
+                                     //hists must be deleted before clear()
 
   TText ttxt;
 
