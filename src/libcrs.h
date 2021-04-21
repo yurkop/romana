@@ -144,8 +144,9 @@ RQ_OBJECT("CRS")
   // 7? - ortec lis,
   // 22 - crs2;
   // 32 - old crs32, 33 - crs32 with dsp/po3, 34 - crs32/po4, 35 - crs32/po5
-  // 41,42 - crs-8/16
-  // 51,52 - crs-128
+  // 41,42,43 - crs-8/16
+  // 51,52,53 - crs-128
+  // 43,53 - new format (decode35)
   // 72..80 - decoded file
 
   Int_t type_ch[MAX_CHTP];
@@ -260,7 +261,8 @@ RQ_OBJECT("CRS")
   int Command2(byte cmd, byte ch, byte type, int par);
   void AllParameters2(); // load all parameters
   //void AllParameters41(); // load all parameters
-  void AllParameters42(); // load all parameters
+  void AllParameters43(); // load all parameters
+  //void AllParameters42(); // load all parameters
   void AllParameters35(); // load all parameters
   void AllParameters34(); // load all parameters
   void AllParameters33(); // load all parameters
@@ -311,7 +313,7 @@ RQ_OBJECT("CRS")
   void MakePk(PkClass &pk, PulseClass &ipls);
 
   //void Decode33(UInt_t iread, UInt_t ibuf);
-  void Decode42(UInt_t iread, UInt_t ibuf);
+  //void Decode42(UInt_t iread, UInt_t ibuf);
   void Decode34(UInt_t iread, UInt_t ibuf);
   void Decode35(UInt_t iread, UInt_t ibuf);
   void Decode2(UInt_t iread, UInt_t ibuf);

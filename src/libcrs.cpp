@@ -1309,7 +1309,7 @@ int CRS::Detect_device() {
   //}
   //cout << endl;
   int nch2=0;
-	
+
   switch (device_code) {
   case 1: //crs-32
   case 2: //crs-6/16
@@ -1372,7 +1372,8 @@ int CRS::Detect_device() {
 
   case 4: //crs-8/16
     //module=41;
-    module=42;
+    //module=42;
+    module=43;
     opt.Period=10;
     chan_in_module=nplates*8;
     for (int j=0;j<chan_in_module;j++) {
@@ -1445,9 +1446,13 @@ int CRS::SetPar() {
   // case 51:
   //   AllParameters41();
   //   break;
-  case 42:
-  case 52:
-    AllParameters42();
+  // case 42:
+  // case 52:
+  //   AllParameters42();
+  //   break;
+  case 43:
+  case 53:
+    AllParameters43();
     break;
   default:
     cout << "SetPar Error! No module found" << endl;
@@ -1824,6 +1829,83 @@ void CRS::Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max) {
   // << " " << a2 << " " << len << endl;
 }
 
+void CRS::AllParameters43() {
+  //cout << "Allparameters43: " << opt.hard_logic << endl;
+  UInt_t mask, //маска для дискр,СС и пересчета 
+    mask2, //маска для СТАРТ
+    wmask; //маска разрешений записи
+
+  AllParameters35();
+
+  for (byte chan = 0; chan < chan_in_module; chan++) {
+    if (cpar.on[chan]) {
+
+      mask=0b1100000000011; //bits 0,1,11,12
+      if (opt.dsp[chan]) {
+	mask|=0b11101110000; // write DSP data
+      }
+
+      if (cpar.pls[chan]) { //add 1100
+	mask|=0b1100; // write pulse
+      }
+
+      mask2=0b1000000000011; //bits 0,1,12 - bitmask for START: tst,count48,overflow
+
+      wmask=2; // 0010 - запись по сигналу СТАРТ - всегда
+
+      if (cpar.Trigger==0) { //discr
+	wmask|=1;
+      }
+      else if (cpar.Trigger==1) { //START
+	mask2|=mask; //добавляем запись импульса по старту
+      }
+      else { //coinc
+	wmask|=4; // запись по СС
+	if (cpar.ratediv[chan])
+	  wmask|=8; // запись по пересчету	
+      }
+
+      //Command32(2,chan,23,mask); //bitmask для дискриминатора
+      Command32(2,chan,24,mask2); //bitmask для START
+      Command32(2,chan,26,mask); //bitmask для СС и пересчета
+
+      Command32(2,chan,25,wmask); // битовая маска разрешений записи
+
+      int w = 1;
+      mask=0;
+      for (int j=0;j<2;j++) {
+	if (cpar.group[chan][j]) {
+	  if (cpar.coinc_w[j]>w)
+	    w=cpar.coinc_w[j];
+	  mask+=j+1;
+	}
+      }
+      Command32(2,chan,27,(int) w); // длительность окна совпадений
+      Command32(2,chan,28,(int) 0); // тип обработки повторных
+      int red = cpar.ratediv[chan]-1;
+      if (red<0) red=0;
+      Command32(2,chan,29,(int) red); // величина пересчета P
+      Command32(2,chan,31,(int) mask); //битовая маска принадлежности к группам
+      Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
+
+    } // if (cpar.on[chan])
+    else {
+      Command32(2,chan,25,0); // битовая маска разрешений записи = 0
+    }
+  } //for
+
+  //Общие параметры:
+
+  Command32(11,1,0,cpar.Smpl);            // Sampling rate
+  Command32(11,4,0,(int) opt.hard_logic); // Использование схемы совпадений
+  Command32(11,5,0,(int) cpar.mult_w1[0]); // минимальная множественность 0
+  Command32(11,6,0,(int) cpar.mult_w2[0]); // максимальная множественность 0
+  Command32(11,7,0,(int) cpar.mult_w1[1]); // минимальная множественность 1
+  Command32(11,8,0,(int) cpar.mult_w2[1]); // максимальная множественность 1
+
+} //AllParameters43()
+
+/*
 void CRS::AllParameters42() {
   //cout << "Allparameters42: " << opt.hard_logic << endl;
   UInt_t mask, //маска для дискр,СС и пересчета 
@@ -1850,7 +1932,7 @@ void CRS::AllParameters42() {
       if (cpar.Trigger==0) { //discr
 	wmask|=1;
       }
-      else if (cpar.Trigger==0) { //START
+      else if (cpar.Trigger==1) { //START
 	mask2|=mask; //добавляем запись импульса по старту
       }
       else { //coinc
@@ -1911,60 +1993,7 @@ void CRS::AllParameters42() {
   Command32(11,7,0,(int) cpar.mult_w1[1]); // минимальная множественность 1
   Command32(11,8,0,(int) cpar.mult_w2[1]); // максимальная множественность 1
 
-}
-
-/*
-void CRS::AllParameters41() {
-  UInt_t mask;
-
-  AllParameters33();
-
-  for (byte chan = 0; chan < chan_in_module; chan++) {
-    if (cpar.on[chan]) {
-
-      mask=0x3; //00000011 - for discr: tst,count40
-      if (opt.dsp[chan]) { //add 110000
-	mask|=0x30; // write DSP data
-      }
-
-      if (cpar.pls[chan]) { //add 1100
-	mask|=0xC; // write pulse
-      }
-
-      Command32(2,chan,23,mask); //bitmask for discriminator
-
-      mask=0xC1; //11000001 - for START: tst,count48,overflow
-      Command32(2,chan,24,mask); //bitmask for START
-
-      //mask=cpar.St_trig ? 2 : 1;
-      mask=3; // 11 - запись по дискриминатору и СТАРТу
-      Command32(2,chan,25,mask); // битовая маска разрешений записи
-      Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
-    } //if
-  } //for
-
-  //Общие параметры:
-
-  // Start dead time DT
-  if (cpar.DTW<=0) cpar.DTW=1;
-  byte type = cpar.DTW>>24;
-  Command32(11,0,type,(UInt_t) cpar.DTW);
-
-  // Sampling rate
-  Command32(11,1,0,cpar.Smpl);
-  // FIR Filter
-  //Command32(11,2,0,cpar.FIR);
-	
-  //Start source
-  mask=cpar.St_Per ? 1 : 0;
-  Command32(11,2,0,mask);
-
-  //Start imitator period
-  mask=cpar.St_Per;
-  if (mask) mask--;
-  Command32(11,3,0,mask);
-
-}
+} //AllParameters42
 */
 
 void CRS::AllParameters35()
@@ -1989,7 +2018,7 @@ void CRS::AllParameters35()
 
   for (byte chan = 0; chan < chan_in_module; chan++) {
     if (cpar.on[chan]) {
-      //cpar.Mask[chan]=0xFF;
+
       mask=0b1100000000011; //bits 0,1,11,12
       if (opt.dsp[chan]) {
 	mask|=0b11101110000; // write DSP data
@@ -2007,19 +2036,17 @@ void CRS::AllParameters35()
   // Start dead time DT
   if (cpar.DTW<=0) cpar.DTW=1;
   byte type = cpar.DTW>>24;
-  Command32(11,0,type,(UInt_t) cpar.DTW);
 
   //Start source
-  mask=cpar.St_Per ? 1 : 0;
-  // mask=0xFF;
-  // cout << "start source: " << mask << endl;
-  Command32(11,2,0,mask);
+  int st_src=cpar.St_Per ? 1 : 0;
 
   //Start imitator period
-  mask=cpar.St_Per;
-  if (mask) mask--;
-  // cout << "start period: " << mask << endl;
-  Command32(11,3,0,mask);
+  int sprd=cpar.St_Per;
+  if (sprd) sprd--;
+
+  Command32(11,0,type,(UInt_t) cpar.DTW); // Start dead time DTW
+  Command32(11,2,0,st_src);               // Start source
+  Command32(11,3,0,sprd);                 // Start imitator period
 
   for (int i=0;i<chan_in_module;i++) {
     cpar.Trg[i] = s_Trg[i];
@@ -3284,15 +3311,18 @@ void CRS::Decode_switch(UInt_t ibuf) {
   case 34:
   case 41:
   case 51:
-    Decode34(dec_iread[ibuf]-1,ibuf);
-    break;
+    //Decode34(dec_iread[ibuf]-1,ibuf);
+    //break;
   case 42:
   case 52:
     Decode34(dec_iread[ibuf]-1,ibuf);
     //Decode42(dec_iread[ibuf]-1,ibuf);
     break;
+  case 43:
+  case 53:
   case 35:
     Decode35(dec_iread[ibuf]-1,ibuf);
+    //Decode42(dec_iread[ibuf]-1,ibuf);
     break;
   case 79:
     Decode79(dec_iread[ibuf]-1,ibuf);
@@ -3445,6 +3475,8 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   case 51:
   case 42:
   case 52:
+  case 43:
+  case 53:
     for (Long64_t i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);
@@ -4278,7 +4310,8 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
   Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   ULong64_t data;
-  Int_t d16,d32;
+  Int_t d32;
+  Short_t d16;
   PkClass pk;
 
   //PeakClass *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
@@ -4430,9 +4463,6 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
   Dec_End(Blist,iread,255);
 
 } //decode35
-
-void CRS::Decode42(UInt_t iread, UInt_t ibuf) {
-}
 
 void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 
