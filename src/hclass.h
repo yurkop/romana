@@ -92,7 +92,7 @@ class HClass {
   HMap* m_area_width2[MAX_CH];
   HMap* m_area_ntof[MAX_CH];
   HMap* m_prof[256];
-  HMap* m_prof_x[4];
+  HMap* m_prof_xy[6];
   //HMap* m_prof_y[1];
   //HMap* m_prof_ax[1];
   //HMap* m_prof_ay[1];
@@ -131,8 +131,8 @@ class HClass {
   std::vector<int> ax;
   std::vector<int> ay;
   HMap *h_p,*h_a;
-  int h_off;
-  int h_xy;
+  int h_off; // 1 or 33 
+  int h_xy; // 0: X; 1: Y; -1: ???
   Float_t h_sum[2][64]; //[xy][pos]
   
  public:
@@ -150,8 +150,10 @@ class HClass {
   void Make_axay(const char* dname, const char* name, const char* title,
 	       HMap* map[], Hdef* hd, Hdef* hd1); //, int nmax);
   void Make_prof(const char* dname,const char* name,
-		 const char* title,HMap* map[],Hdef* hd,
-		 HMap* map2[],Hdef* hd2);
+		 const char* title,HMap* map[],Hdef* hd);
+  void Make_prof_xy(const char* dname,
+		    const char* title,HMap* map[],Hdef* hd,Hdef* hd2);
+
   void Make_hist();
   void Clone_Hist(HMap* map);
   void Remove_Clones(HMap* map);

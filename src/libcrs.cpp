@@ -3482,107 +3482,6 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
 
 }
 
-/*
-  void CRS::Decode32(UChar_t *buffer, int length) {
-
-  //PulseClass *ipls;
-  //pulse_vect::iterator ipls;
-
-  ULong64_t* buf8 = (ULong64_t*) buffer;
-
-  //cout << "Decode32 2: " << Vpulses.size() << endl;
-  unsigned short frmt;
-  int idx8=0;
-  int idx1=0;
-  ULong64_t data;
-
-  while (idx1<length) {
-  frmt = buffer[idx1+6];
-  //YKYKYK!!!! do something with cnt - ???
-  //int cnt = frmt & 0x0F;
-  frmt = (frmt & 0xF0)>>4;
-  data = buf8[idx8] & 0xFFFFFFFFFFFF;
-  unsigned char ch = buffer[idx1+7];
-
-  if ((ch>=opt.Nchan) || (frmt && ch!=ipls->Chan)) {
-  cout << "dec32: Bad channel: " << (int) ch
-  << " " << (int) ipls->Chan
-  << " " << idx8 //<< " " << nvp
-  << endl;
-  ipls->ptype|=P_BADCH;
-
-  idx8++;
-  idx1=idx8*8;
-  continue;
-  }
-
-  if (frmt==0) {
-  ipls->ptype&=~P_NOSTOP; //pulse has stop
-
-  //analyze pulse
-  ipls->FindPeaks();
-  ipls->PeakAna();
-
-  ipls = vv->insert(vv->end(),PulseClass());
-  npulses++;
-  ipls->Chan=ch;
-  ipls->Tstamp64=data+opt.HD[ch];// - cpar.Pre[ch];
-  }
-  else if (frmt==1) {
-  ipls->Spin = buffer[idx1+5];
-  ipls->Counter = data & 0xFFFFFFFFFF;
-  }
-  else if (frmt==2) {
-
-  if (ipls->sData.size()>=cpar.Len[ipls->Chan]) {
-  // cout << "32: ERROR Nsamp: "
-  //      << " " << (ipls->Counter & 0x0F)
-  //      << " " << ipls->sData.size() << " " << cpar.Len[ipls->Chan]
-  //      << " " << (int) ch << " " << (int) ipls->Chan
-  //      << " " << idx8 //<< " " << transfer->actual_length
-  //      << endl;
-  ipls->ptype|=P_BADSZ;
-  }
-  //else {
-  for (int i=0;i<4;i++) {
-
-  int zzz = data & 0xFFF;
-  ipls->sData.push_back((zzz<<20)>>20);
-  data>>=12;
-  }
-  //}
-  }
-  else if (frmt==3) {
-
-  if (ipls->sData.size()>=cpar.Len[ipls->Chan]) {
-  // cout << "32: ERROR Nsamp: "
-  //      << " " << (ipls->Counter & 0x0F)
-  //      << " " << ipls->sData.size() << " " << cpar.Len[ipls->Chan]
-  //      << " " << (int) ch << " " << (int) ipls->Chan
-  //      << " " << idx8 //<< " " << transfer->actual_length
-  //      << endl;
-  ipls->ptype|=P_BADSZ;
-  }
-  //else {
-  for (int i=0;i<3;i++) {
-
-  int zzz = data & 0xFFFF;
-  ipls->sData.push_back((zzz<<16)>>16);
-  data>>=16;
-  }
-  //}
-  }
-  else {
-  cout << "bad frmt: " << frmt << endl;
-  }
-
-  idx8++;
-  idx1=idx8*8;
-  }
-
-  } //decode32
-*/
-
 void CRS::PulseAna(PulseClass &ipls) {
   //cout << "PulseAna: " << endl;
   if (!opt.dsp[ipls.Chan]) {
@@ -4997,13 +4896,6 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 	//ipls.sData.push_back(buf2[idx*2+i+11]-baseline);
 	//ipls.sData.push_back(buf2[idx*2+i+10]-baseline);
       }
-
-      // if (lflag) {
-      // 	ipls.ptype&=~P_NOSTOP; //pulse has stop
-      // 	//analyze pulse
-      // 	ipls.FindPeaks();
-      // 	ipls.PeakAna();
-      // }
 
     } //id!=1
 

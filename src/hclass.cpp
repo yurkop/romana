@@ -285,11 +285,9 @@ void HClass::Make_2d(const char* dname, const char* name, const char* title,
 }
 
 void HClass::Make_prof(const char* dname, const char* name,
-	  const char* title, HMap* map[], Hdef* hd,
-		 HMap* map2[],Hdef* hd2) {
+		       const char* title, HMap* map[], Hdef* hd) {
 
   memset(map,0,sizeof(HMap*)*256);
-  memset(map2,0,sizeof(HMap*)*4);
   
   if (!hd->b) return;
 
@@ -304,7 +302,7 @@ void HClass::Make_prof(const char* dname, const char* name,
       //NameTitle(name2,title2,i,0,name,title);
 
       int i=k+(opt.prof_ny-j-1)*opt.prof_ny;
-      TH2F* hh=new TH2F(name2,title2,8,0,120,8,0,120);
+      TH2F* hh=new TH2F(name2,title2,hd->bins,0,120,hd->bins2,0,120);
 
       map[i] = new HMap(dname,hh,hd,i);
       //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
@@ -313,30 +311,48 @@ void HClass::Make_prof(const char* dname, const char* name,
     }
   }
 
+}
+
+void HClass::Make_prof_xy(const char* dname,
+			  const char* title, HMap* map[],Hdef* hd,Hdef* hd2) {
+
   if (!hd2->b) return;
 
-  //1d
+  memset(map,0,sizeof(HMap*)*6);
+  
+  char name2[100];
+  char title2[100];
+
+  //Prof64: 1d + sum 2d
   int bb=64;
-  //int bb=hd->bins;
-  const char* name3[] = {"prof_x","prof_y","prof_ax","prof_ay"};
+  const char* name3[] = {"prof_x","prof_y","prof_ax","prof_ay","prof_nm","prof_xy"};
+
   for (int i=0;i<4;i++) {
     sprintf(name2,"%s",name3[i]);
     sprintf(title2,"%s;N strip",name3[i]);
-
-    // if (i%2)
-    //   bb=hd->bins2;
 
     TH1F* hh=new TH1F(name2,title2,bb,0,bb);
     hh->Sumw2();
     hh->SetOption("E");
 
-    //cout << "Prof: " << hh->GetName() << " " << hh->GetSumw2() << " " << hh->GetDefaultSumw2() << " " << hh->ClassName() << " " << h2->ClassName() << endl;
-
-    map2[i] = new HMap("Prof1d",hh,hd2,i);
-    //map2[i] = new HMap("Prof1d",hh,hd2->c+i,hd2->w+i,hd2->cut+i);
-    map_list->Add(map2[i]);
-    allmap_list->Add(map2[i]);
+    map[i] = new HMap(dname,hh,hd2,i);
+    map_list->Add(map[i]);
+    allmap_list->Add(map[i]);
   }
+
+  sprintf(name2,"%s",name3[4]);
+  sprintf(title2,"%s%s",name3[4],title);
+  TH2F* hh=new TH2F(name2,title2,hd->bins,0,64,hd->bins2,0,64);
+  map[4] = new HMap(dname,hh,hd2,4);
+  map_list->Add(map[4]);
+  allmap_list->Add(map[4]);
+
+  sprintf(name2,"%s",name3[5]);
+  sprintf(title2,"%s%s",name3[5],title);
+  hh=new TH2F(name2,title2,hd->bins,0,120,hd->bins2,0,120);
+  map[5] = new HMap(dname,hh,hd2,5);
+  map_list->Add(map[5]);
+  allmap_list->Add(map[5]);
 
 }
 
@@ -585,8 +601,8 @@ void HClass::Make_hist() {
   //Make_2d("Area_Width3","Area_Width3",";Channel;Width (a.u.)",m_area_width3,&opt.h_area_width3,&opt.h_area,&opt.h_width3);
   //Make_2d("Width_12","Width_12",";Width(a.u.);Width2(a.u.)",m_width_12,&opt.h_width_12,&opt.h_width,&opt.h_width2);
 
-  Make_prof("Prof","Prof",";X (mm);Y (mm)",m_prof,&opt.h_prof,
-	    m_prof_x,&opt.h_prof_x);
+  Make_prof("Prof","prof",";X (mm);Y (mm)",m_prof,&opt.h_prof);
+  Make_prof_xy("Prof_xy",";X (mm);Y (mm)",m_prof_xy,&opt.h_prof,&opt.h_prof_xy);
 
   b_formula=false;
   if (opt.ncuts)

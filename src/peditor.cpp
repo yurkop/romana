@@ -162,21 +162,25 @@ void PEditor::LoadPar64()
 {
   char ss[100];
   Load_Ing("# Settings for 64x64 profilometer");
-  fEdit->AddLine("# Prof64: Start channel (Analysis/St)");
-  fEdit->AddLine("#         must be the \"threshold\" output");
+  fEdit->AddLine("");
+  fEdit->AddLine("# Prof64:");
+  fEdit->AddLine("# Start channel (Analysis/St) must be the \"threshold\" output");
 
+  fEdit->AddLine("");
   fEdit->AddLine("# Prof64: four channels for Prof64 position signals");
   //fEdit->AddLine("#");
-  sprintf(ss,"Prof64 %d # P+(33-64)",opt.Prof64[0]);
+  sprintf(ss,"Prof64 %d # X P+(33-64)",opt.Prof64[0]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # P+(1-32)",opt.Prof64[1]);
+  sprintf(ss,"Prof64 %d # X P+(1-32)",opt.Prof64[1]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # N+(33-64)",opt.Prof64[2]);
+  sprintf(ss,"Prof64 %d # Y N+(33-64)",opt.Prof64[2]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # N+(1-32)",opt.Prof64[3]);
+  sprintf(ss,"Prof64 %d # Y N+(1-32)",opt.Prof64[3]);
   fEdit->AddLine(ss);
   sprintf(ss,"Prof64_T %d # Channel for clk output",opt.Prof64[4]);
   fEdit->AddLine(ss);
+
+  fEdit->AddLine("");
   sprintf(ss,"Prof64_TSP %s # Prof64 clock spectrum",opt.Prof64_TSP);
   fEdit->AddLine(ss);
   sprintf(ss,"Prof64_PER %d # Period (in samples)",opt.Prof64_W[0]);
@@ -185,7 +189,10 @@ void PEditor::LoadPar64()
   fEdit->AddLine(ss);
   sprintf(ss,"Prof64_WID %d # Time width of the plateau",opt.Prof64_W[2]);
   fEdit->AddLine(ss);
+  sprintf(ss,"Prof64_THR %d # Threshold",opt.Prof64_THR);
+  fEdit->AddLine(ss);
   
+  fEdit->AddLine("");
   fEdit->AddLine("# Run Profilometer time calibration (TCalibr)");
   fEdit->AddLine("# for period determination");
   fEdit->AddLine("# Prof64_TSP spectrum: start - threshold, stop - clk");
@@ -238,33 +245,37 @@ void PEditor::DoSaveProf() {
       ss >> ts >> tj >> xx >> yy;
       j=tj.Atoi();
       //cout << i << " " << chr << " " << ts << " " << a << " " << b << " " << c << endl;
+      ts.ToLower();
       delete[] chr;
-      if (ts.EqualTo("Ing",TString::kIgnoreCase) && j>=0 && j<16) {
+      if (ts.EqualTo("ing") && j>=0 && j<16) {
 	opt.Ing_x[j]=xx;
 	opt.Ing_y[j]=yy;
       }
-      else if (ts.EqualTo("Prof",TString::kIgnoreCase) && j>=0 && j<8) {
+      else if (ts.EqualTo("prof") && j>=0 && j<8) {
 	opt.Prof_x[j]=xx;
 	opt.Prof_y[j]=yy;
       }
-      else if (ts.EqualTo("Prof64",TString::kIgnoreCase) && kk>=0 && kk<4) {
+      else if (ts.EqualTo("prof64") && kk>=0 && kk<4) {
 	opt.Prof64[kk]=j;
 	++kk;
       }
-      else if (ts.EqualTo("Prof64_T",TString::kIgnoreCase)) {
+      else if (ts.EqualTo("prof64_t")) {
 	opt.Prof64[4]=j;
       }
-      else if (ts.EqualTo("Prof64_TSP",TString::kIgnoreCase)) {
+      else if (ts.EqualTo("prof64_tsp")) {
 	strcpy(opt.Prof64_TSP,tj.Data());
       }
-      else if (ts.EqualTo("Prof64_PER",TString::kIgnoreCase)) {
+      else if (ts.EqualTo("prof64_per")) {
 	opt.Prof64_W[0]=j;
       }
-      else if (ts.EqualTo("Prof64_OFF",TString::kIgnoreCase)) {
+      else if (ts.EqualTo("prof64_off")) {
 	opt.Prof64_W[1]=j;
       }
-      else if (ts.EqualTo("Prof64_WID",TString::kIgnoreCase)) {
+      else if (ts.EqualTo("prof64_wid")) {
 	opt.Prof64_W[2]=j;
+      }
+      else if (ts.EqualTo("prof64_thr")) {
+	opt.Prof64_THR=j;
       }
     }
   }

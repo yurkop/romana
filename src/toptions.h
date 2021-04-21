@@ -47,7 +47,7 @@ public:
   Float_t roi[MAXROI][2];
   
   Int_t rb; //rebin
-  ClassDef(Hdef, 3)
+  ClassDef(Hdef, 4)
 };
 //------------------------------------
 
@@ -100,7 +100,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 123)
+  ClassDef(Coptions, 124)
 };
 
 //------------------------------------
@@ -238,9 +238,10 @@ public:
   Int_t Ing_y[16];
   Int_t Prof_x[8];
   Int_t Prof_y[8];
-  Int_t Prof64[5]; //position channels for Prof64
+  Int_t Prof64[5]; //position channels for Prof64 + clock(?) [4]
   char Prof64_TSP[10];
   Int_t Prof64_W[3]; //Windows: period, offset, width (in smp)
+  Int_t Prof64_THR; //Threshold
 
   //Int_t prof_ch[MAX_CH];
 
@@ -303,6 +304,8 @@ public:
   Hdef h_prof_y;
   Hdef h_prof_ax;
   Hdef h_prof_ay;
+  Hdef h_prof_nm;
+  Hdef h_prof_xy;
   //Hdef h_area_width3;
   //Hdef h_width_12;
 public:
@@ -311,7 +314,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 123)
+  ClassDef(Toptions, 124)
 };
 
 //ClassImp(Toptions)

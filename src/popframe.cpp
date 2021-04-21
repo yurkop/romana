@@ -106,7 +106,7 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
     name+='r';
     hh = (TH1*) map->hst->Clone(name.Data());
     hh->Draw();
-    hh->ShowPeaks(2,"",0.05);
+    hh->ShowPeaks(2,"",0.002);
     TList *functions = hh->GetListOfFunctions();
     TPolyMarker *pm = (TPolyMarker*)functions->FindObject("TPolyMarker");
     if (pm) {
@@ -136,7 +136,7 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
 	}
       } //
       else {
-	msg = "Number of peaks if less than 31: ";
+	msg = "Number of peaks is less than 31: ";
 	msg+=nn;
       }
     } //pm
@@ -151,7 +151,7 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
   cv->cd(2);
   if (res<4) { //error
     txt.DrawTextNDC(0.5,0.5,msg);
-    cout << "res: " << res << endl;
+    //cout << "res: " << res << endl;
   }
   else { //OK
     opt.Prof64_W[0]=fit->GetParameters()[1]/opt.Period;

@@ -1982,9 +1982,9 @@ void HistParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 
   //1d checkbutton
   id = Plist.size()+1;
-  TGCheckButton *chk_1d = new TGCheckButton(hfr1, "+1D", id);
+  TGCheckButton *chk_1d = new TGCheckButton(hfr1, "1D + sum", id);
   chk_1d->SetToolTipText("Create 1D histograms (only for the new profilometer)");
-  DoMap(chk_1d,&opt.h_prof_x.b,p_chk,0,0x100);
+  DoMap(chk_1d,&opt.h_prof_xy.b,p_chk,0,0x100);
   chk_1d->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_1d,LayCC1);
   //id0=id;
