@@ -2560,7 +2560,8 @@ void CRS::DoFopen(char* oname, int popt) {
       f_read=0;
       return;
     }
-    cout << "opt.Period from .par: " << opt.Period << endl;
+    cout << "opt.Period from file: " << opt.Period << endl;
+    cout << "Git version from file: " << opt.gitver << endl;
   }
   else if (tp==2) { //Ortec Lis
     cout << "Ortec Lis File: " << Fname << endl;
