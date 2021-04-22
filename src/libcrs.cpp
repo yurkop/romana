@@ -5335,6 +5335,10 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   //      << " " << BB->empty()
   //      << endl;
 	
+  // for (event_iter it=BB->begin(); it!=BB->end(); ++it) {
+  //   prnt("ss l l f ds;","BB:",BGRN,it->Nevt,it->Tstmp,it->T0,it->Spin,RST);
+  // }
+
   if (opt.Tstop && opt.T_acq>opt.Tstop) {
     //if (b_acq) {
       //myM->DoStartStop();
@@ -5349,17 +5353,20 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
     //return;
   }
 
-  if (!Levents.empty() && !BB->empty() && (BB->back().Spin==255)) {
-
-    //if (BB->back().Spin==255) {
+  int spn=0;
+  if (!BB->empty()) {
+    spn = BB->back().Spin;
     BB->pop_back();
-    //}
+  }
+
+  if (!Levents.empty() && !BB->empty() && (spn==255)) {
 
     //merge beginning of BB and end of Levents
     evlist_iter it = BB->begin();
     Long64_t T_last = Levents.rbegin()->Tstmp + opt.tgate;
 
     //while (it!=BB->end() && it->Tstmp - rr->Tstmp<=opt.tgate*2) {
+    //cout << "it: " << it->Tstmp << " " << T_last << endl;
     while (it!=BB->end() && it->Tstmp <= T_last) {
       for (UInt_t i=0;i<it->pulses.size();i++) {
 	Event_Insert_Pulse(&Levents,&it->pulses[i]);
@@ -5369,6 +5376,10 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   }
 
   Levents.splice(Levents.end(),*BB);
+
+  // for (event_iter it=Levents.begin(); it!=Levents.end(); ++it) {
+  //   prnt("ss l l f ds;","Le:",BRED,it->Nevt,it->Tstmp,it->T0,it->Spin,RST);
+  // }
 
   Bufevents.erase(BB);
   //++buf_erase;

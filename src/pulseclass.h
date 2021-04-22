@@ -107,8 +107,9 @@ class PulseClass {
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 1: event is writable in Dec
   //bit 7: hardware counters
-  //Spin=254 - end of Blist, merge BB and Levents in Make_Events
-  //Spin=255 - end of Blist, just splice BB and Levents
+  //Spin>=254: сигнализирует, что текущий кусок декодера завершился
+  //Spin=255 - end of Blist, merge BB and Levents in Make_Events
+  //Spin=254 - end of Blist, just splice BB and Levents
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
 
   Float_t Base; //baseline
@@ -148,7 +149,11 @@ class EventClass { //event of pulses
   Long64_t Nevt;
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
+  //bit 1: event is writable in Dec
   //bit 7: hardware counters
+  //Spin>=254: сигнализирует, что текущий кусок декодера завершился
+  //Spin=255 - end of Blist, merge BB and Levents in Make_Events
+  //Spin=254 - end of Blist, just splice BB and Levents
   Long64_t Tstmp; //Timestamp of the earliest pulse (threshold crossig)
   Float_t T0; //time of the earliest *START* peak, relative to Tstmp, in samples
   std::vector <PulseClass> pulses;
