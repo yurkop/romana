@@ -162,9 +162,9 @@ void PEditor::LoadPar64()
 {
   char ss[100];
   Load_Ing("# Settings for 64x64 profilometer");
-  fEdit->AddLine("");
-  fEdit->AddLine("# Prof64:");
-  fEdit->AddLine("# Start channel (Analysis/St) must be the \"threshold\" output");
+  // fEdit->AddLine("");
+  // fEdit->AddLine("# Prof64:");
+  // fEdit->AddLine("# Start channel (Analysis/St) must be the \"threshold\" output");
 
   fEdit->AddLine("");
   fEdit->AddLine("# Prof64: four channels for Prof64 position signals");
@@ -181,7 +181,7 @@ void PEditor::LoadPar64()
   fEdit->AddLine(ss);
 
   fEdit->AddLine("");
-  sprintf(ss,"Prof64_TSP %s # Prof64 clock spectrum",opt.Prof64_TSP);
+  sprintf(ss,"Prof64_TSP %s # Prof64 clock time spectrum",opt.Prof64_TSP);
   fEdit->AddLine(ss);
   sprintf(ss,"Prof64_PER %d # Period (in samples)",opt.Prof64_W[0]);
   fEdit->AddLine(ss);
@@ -190,6 +190,8 @@ void PEditor::LoadPar64()
   sprintf(ss,"Prof64_WID %d # Time width of the plateau",opt.Prof64_W[2]);
   fEdit->AddLine(ss);
   sprintf(ss,"Prof64_THR %d # Threshold",opt.Prof64_THR);
+  fEdit->AddLine(ss);
+  sprintf(ss,"Prof64_GAT %d # Alpha - Prof coinc. gate (in ns)",opt.Prof64_GAT);
   fEdit->AddLine(ss);
   
   fEdit->AddLine("");
@@ -276,6 +278,9 @@ void PEditor::DoSaveProf() {
       }
       else if (ts.EqualTo("prof64_thr")) {
 	opt.Prof64_THR=j;
+      }
+      else if (ts.EqualTo("prof64_gat")) {
+	opt.Prof64_GAT=j;
       }
     }
   }

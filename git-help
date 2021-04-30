@@ -33,6 +33,9 @@ git checkout 06d6d2b4
 вернуться в последнюю версию:
 git checkout master
 
+Сбросить все локальные изменения:
+git reset --hard
+
 добавить метку:
 git tag -a v1.4 -m 'version 1.4'
 

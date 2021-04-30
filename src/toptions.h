@@ -46,8 +46,8 @@ public:
   // bit mask: 1 - cut is in this histogram; 0 - cut is not here
   Float_t roi[MAXROI][2];
   
-  Int_t rb; //rebin
-  ClassDef(Hdef, 4)
+  Int_t rb,rb2; //rebin
+  ClassDef(Hdef, 5)
 };
 //------------------------------------
 
@@ -242,6 +242,7 @@ public:
   char Prof64_TSP[10];
   Int_t Prof64_W[3]; //Windows: period, offset, width (in smp)
   Int_t Prof64_THR; //Threshold
+  Int_t Prof64_GAT; //Coincidence gate with ing27 alpha
 
   //Int_t prof_ch[MAX_CH];
 
@@ -314,7 +315,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 124)
+  ClassDef(Toptions, 125)
 };
 
 //ClassImp(Toptions)

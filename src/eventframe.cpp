@@ -1249,11 +1249,13 @@ void EventFrame::ReDraw() {
 	bx.SetFillStyle(3013);
 	bx.SetFillColor(3);
 	//bx.SetLineColor(3);
+	//cout << "T0: " << d_event->T0 << endl;
 	for (int kk=-1;kk<31;kk++) {
-	  int x1 = opt.Prof64_W[1]+opt.Prof64_W[0]*kk;
+	  int x1 = opt.Prof64_W[1]+opt.Prof64_W[0]*kk+d_event->T0;
 	  int x2 = x1 + opt.Prof64_W[2]-1;
 	  bx.DrawBox(x1,y1,x2,y2);
 	  //cout << "x1: " << x1 << " " << x2 << endl;
+
 	  for (UInt_t j=0;j<d_event->pulses.size();j++) {
 	    PulseClass *pulse = &d_event->pulses.at(j);
 	    if (fChn[pulse->Chan]->IsOn()) {
@@ -1277,9 +1279,9 @@ void EventFrame::ReDraw() {
 		for (int l=0;l<gg->GetN();l++) {
 		  sum+=gg->GetY()[l];
 		}
-		// if (kk==1)
+		// if (kk==1) {
 		//   cout << "sum/N: " << d_event->Nevt << " " << j << " " << (int)pulse->Chan << " " << kk << " " << sum/gg->GetN() << endl;
-
+		// }
 	      }
 	      if (nnn>opt.Prof64_W[2]) {
 		cout << "nnn is too big: " << nnn << endl;

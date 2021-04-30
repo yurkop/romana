@@ -83,7 +83,7 @@ const char* ttip2[n_apar]={
   "Channel number",
   ttip_type,
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
-  "Master/slave channel (events with only slaves are not written)",
+  "Master/slave channel:\nEvents containing only slave channels are rejected\nEach event must contain at least one master channel",
   "Software smoothing",
   "Software delay in ns (can be negative or positive)",
   "Dead-time window \nsubsequent peaks within this window are ignored",
@@ -1353,7 +1353,7 @@ int ParParDlg::AddAna(TGCompositeFrame* frame) {
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, LayLT1);
 
-  tip1= "Ntof period (mks) (ignored if set to zero)";
+  tip1= "Ntof period (mks) (should be always zero if unsure why it's needed)";
   tip2= "Ntof start channel";
   label="Ntof period / start channel";
   AddLine_opt(fF6,ww,&opt.ntof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
@@ -2561,7 +2561,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   ttip7 = (char**) ttip2;
 
   AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],-99,99,p_inum);
-  AddNumChan(i,kk++,all,cframe[i],&opt.sD[i],-999,999,p_fnum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sD[i],-9999,9999,p_fnum);
   AddNumChan(i,kk++,all,cframe[i],&opt.dTm[i],0,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Pile[i],0,9999,p_inum);
 

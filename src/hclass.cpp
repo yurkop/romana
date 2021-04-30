@@ -302,7 +302,9 @@ void HClass::Make_prof(const char* dname, const char* name,
       //NameTitle(name2,title2,i,0,name,title);
 
       int i=k+(opt.prof_ny-j-1)*opt.prof_ny;
-      TH2F* hh=new TH2F(name2,title2,hd->bins,0,120,hd->bins2,0,120);
+      //TH2F* hh=new TH2F(name2,title2,hd->bins,0,120,hd->bins2,0,120);
+      TH2F* hh=new TH2F(name2,title2,hd->bins,0,64,hd->bins2,0,64);
+      //TH2F* hh=new TH2F(name2,title2,64,0,64,64,0,64);
 
       map[i] = new HMap(dname,hh,hd,i);
       //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
@@ -343,6 +345,7 @@ void HClass::Make_prof_xy(const char* dname,
   sprintf(name2,"%s",name3[4]);
   sprintf(title2,"%s%s",name3[4],title);
   TH2F* hh=new TH2F(name2,title2,hd->bins,0,64,hd->bins2,0,64);
+  //TH2F* hh=new TH2F(name2,title2,64,0,64,64,0,64);
   map[4] = new HMap(dname,hh,hd2,4);
   map_list->Add(map[4]);
   allmap_list->Add(map[4]);

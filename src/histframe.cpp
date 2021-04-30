@@ -2420,14 +2420,11 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
     hold = ((TH1F*)map->hst)->GetArray();
     hnew = ((TH1F*)hist)->GetArray();
     memset(hnew,0,((TH1F*)hist)->GetSize()*sizeof(*hnew));
-    //cout << "float: " << sizeof(*hnew) << " " << sizeof(float) << " " << ((TH1F*)hist)->GetSize() << endl;
 
     //hist->Reset();
     for (int i=0;i<nbins;i++) {
       int j=i/rb;
       hnew[j+1]+=hold[i+1];
-      //cout << "hold: " << i << " " << hold[i+1] << " " << ((TH1F*)map->hst)->GetBinContent(i+1) << endl;
-      //hnew[j+1]+=((TH1F*)map->hst)->GetBinContent(i+1);
     }
   }
   else { //2d hist
@@ -2443,6 +2440,9 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
 void HistFrame::AllRebinDraw() {
 
   //cout << "AllRebin: " << endl;
+  char* opt2d = opt.drawopt;
+  if (!strlen(opt2d))
+    opt2d = (char*)"zcol";
 
   for (int npad = 0;npad<ndiv;npad++) {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
@@ -2458,7 +2458,7 @@ void HistFrame::AllRebinDraw() {
     fEc->GetCanvas()->cd(npad+1);
     if (pad_hist[npad]->GetDimension()==2) {
       gPad->SetLogz(opt.b_logy);
-      pad_hist[npad]->Draw("zcol");
+      pad_hist[npad]->Draw(opt2d);
     }
     else {
       gPad->SetLogy(opt.b_logy);

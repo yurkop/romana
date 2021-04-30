@@ -325,6 +325,7 @@ Toptions::Toptions() {
   Prof64_W[1]=0;
   Prof64_W[2]=0;
   Prof64_THR=50;
+  Prof64_GAT=100;
   for (int i=0;i<8;i++) {
     Prof_x[i]=-1;
     Prof_y[i]=-1;

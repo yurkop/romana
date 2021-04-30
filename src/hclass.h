@@ -133,6 +133,7 @@ class HClass {
   HMap *h_p,*h_a;
   int h_off; // 1 or 33 
   int h_xy; // 0: X; 1: Y; -1: ???
+  int ch_alpha;
   Float_t h_sum[2][64]; //[xy][pos]
   
  public:
