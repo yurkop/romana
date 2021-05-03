@@ -21,6 +21,8 @@ LFS=$(shell getconf LFS_CFLAGS)
 
 ifdef DEBUG
   CPPFLAGS += -g
+  #CPPFLAGS += -D_GLIBCXX_DEBUG
+  #CPPFLAGS += -fsanitize=address
 endif
 
 ifdef TIMES

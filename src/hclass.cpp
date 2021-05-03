@@ -295,15 +295,16 @@ void HClass::Make_prof(const char* dname, const char* name,
   char title2[100];
 
   //2d
-  for (int j=opt.prof_ny-1;j>=0;j--) {
+  //for (int j=opt.prof_ny-1;j>=0;j--) {
+  for (int j=0;j<opt.prof_ny;j++) {
     for (int k=0;k<opt.prof_nx;k++) {
       sprintf(name2,"%s_%d_%d",name,k+1,j+1);
       sprintf(title2,"%s_%d_%d%s",name,k+1,j+1,title);
       //NameTitle(name2,title2,i,0,name,title);
 
       int i=k+(opt.prof_ny-j-1)*opt.prof_ny;
-      //TH2F* hh=new TH2F(name2,title2,hd->bins,0,120,hd->bins2,0,120);
-      TH2F* hh=new TH2F(name2,title2,hd->bins,0,64,hd->bins2,0,64);
+      TH2F* hh=new TH2F(name2,title2,hd->bins,0,120,hd->bins2,0,120);
+      //TH2F* hh=new TH2F(name2,title2,hd->bins,0,64,hd->bins2,0,64);
       //TH2F* hh=new TH2F(name2,title2,64,0,64,64,0,64);
 
       map[i] = new HMap(dname,hh,hd,i);

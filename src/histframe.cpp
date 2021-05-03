@@ -317,7 +317,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor4->AddFrame(tOpt,LayET0);
   //tForm->SetWidth(110);
   tOpt->SetMaxLength(sizeof(opt.drawopt)-1);
-  tOpt->SetToolTipText("Draw options (see ROOT manual for drawing histograms)");
+  tOpt->SetToolTipText("Draw options for 1d and 2d, separated by space\n(see ROOT manual for drawing histograms)");
   parpar->DoMap(tOpt,opt.drawopt,p_txt,0,3<<4);
   tOpt->Connect("TextChanged(char*)", "ParDlg", parpar, "DoTxt()");
   //tOpt->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
@@ -2440,9 +2440,18 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
 void HistFrame::AllRebinDraw() {
 
   //cout << "AllRebin: " << endl;
-  char* opt2d = opt.drawopt;
-  if (!strlen(opt2d))
-    opt2d = (char*)"zcol";
+  string dopt[2] = {"","zcol"};
+  string temp;
+  int nn=0;
+  if (opt.drawopt[0]==' ')
+    nn=1;
+
+  stringstream ss(opt.drawopt);
+  while ((ss>>temp) && nn<2) {
+    dopt[nn++] = temp;
+  }
+
+  //cout << "dopt: " << dopt[0] << " " << dopt[1] << " " << dopt[0].size() << " " << dopt[1].size() << endl;
 
   for (int npad = 0;npad<ndiv;npad++) {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
@@ -2458,12 +2467,12 @@ void HistFrame::AllRebinDraw() {
     fEc->GetCanvas()->cd(npad+1);
     if (pad_hist[npad]->GetDimension()==2) {
       gPad->SetLogz(opt.b_logy);
-      pad_hist[npad]->Draw(opt2d);
+      pad_hist[npad]->Draw(dopt[1].c_str());
     }
     else {
       gPad->SetLogy(opt.b_logy);
       //cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
-      pad_hist[npad]->Draw(opt.drawopt);
+      pad_hist[npad]->Draw(dopt[0].c_str());
 
       // cout << "padhist: " << pad_hist[npad]->GetName()
       // 	   << " " << pad_hist[npad]->GetOption()

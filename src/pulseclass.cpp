@@ -999,6 +999,7 @@ void EventClass::FillHist(Bool_t first) {
 	switch (pp) {
 	case 0: //P+(33-64) (X)
 	  h_xy=0;
+	  //h_off=33;
 	  h_off=62;
 	  sgn=-1;
 	  break;
@@ -1007,7 +1008,9 @@ void EventClass::FillHist(Bool_t first) {
 	  break;
 	case 2: //N+(33-64) (Y)
 	  h_xy=1;
-	  h_off=33;
+	  //h_off=33;
+	  h_off=62;
+	  sgn=-1;
 	  // возможно, здесь sgn тоже должен быть -1
 	  break;
 	case 3: //N+(1-32) (Y)
@@ -1026,15 +1029,16 @@ void EventClass::FillHist(Bool_t first) {
 	  int size = pulse->sData.size();
 
 	  for (int kk=-1;kk<31;kk++) {
+	    int jj=h_off+kk*sgn;
 	    int x1 = opt.Prof64_W[1] + opt.Prof64_W[0]*kk - dt;
 	    int x2 = x1 + opt.Prof64_W[2];
 	    int xmin = TMath::Max(x1,0);
 	    int xmax = TMath::Min(x2,size);
 	    if (xmax-xmin>0) {
 	      for (int j=xmin;j<xmax;j++) {
-		hcl->h_sum[h_xy][h_off+kk*sgn]+=pulse->sData[j];
+		hcl->h_sum[h_xy][jj]+=pulse->sData[j];
 	      }
-	      hcl->h_sum[h_xy][h_off+kk*sgn]*=-1.0/(xmax-xmin);
+	      hcl->h_sum[h_xy][jj]*=-1.0/(xmax-xmin);
 	      // if (kk==1) {
 	      //   prnt("sd d fs;",BRED,Nevt,pulse->Chan,hcl->h_sum[h_xy][h_off+kk],RST);
 	      // }
@@ -1180,8 +1184,8 @@ void EventClass::FillHist(Bool_t first) {
 	if (hcl->h_sum[0][i]>opt.Prof64_THR) {
 	  for (int j=0;j<64;j++) {
 	    if (hcl->h_sum[1][j]>opt.Prof64_THR) {
-	      //Fill2d(first,hcl->m_prof[hcl->ch_alpha],(i+0.5)*1.875,(j+0.5)*1.875);
-	      Fill2d(first,hcl->m_prof[hcl->ch_alpha],(i+0.5),(j+0.5));
+	      Fill2d(first,hcl->m_prof[hcl->ch_alpha],(i+0.5)*1.875,(j+0.5)*1.875);
+	      //Fill2d(first,hcl->m_prof[hcl->ch_alpha],(i+0.5),(j+0.5));
 	    } //if Y
 	  }
 	} //if X
