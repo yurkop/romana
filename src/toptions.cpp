@@ -386,6 +386,7 @@ Hdef::Hdef() {
   max=1000;
   b=false;
   rb=1;
+  rb2=1;
   for (int i=0;i<MAX_CH+NGRP;i++) {
     c[i]=true;
     w[i]=false;

@@ -1926,7 +1926,7 @@ void HistParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
 }
 
 void HistParDlg::Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
-			     P_Def pp, const char* tip) {
+			     P_Def pp, UInt_t cmd, const char* tip) {
   double ww1=26;
   int id;
   TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
@@ -1935,11 +1935,11 @@ void HistParDlg::Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
   TGNumberEntryField* fNum1 =
     new TGNumberEntryField(hfr1, id, 0, k_int,
 			   TGNumberFormat::kNEAAnyNumber,lim,1,max);
-  DoMap(fNum1,nnn,pp,0,0x100);
+  DoMap(fNum1,nnn,pp,0,cmd);
   fNum1->SetToolTipText(tip);
   fNum1->SetWidth(ww1);
   fNum1->Connect("TextChanged(char*)", "ParDlg", this,
-		 "DoNum()");
+		 "DoDaqNum()");
   hfr1->AddFrame(fNum1,LayLT3);
 }
 
@@ -1962,10 +1962,12 @@ void HistParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
   hfr1->AddFrame(chk_hist,LayCC1);
   //id0=id;
 
-  Add_prof_num(hfr1,&opt.prof_nx,16,p_inum,"Number of X-strips from ING-27");
-  Add_prof_num(hfr1,&opt.prof_ny,16,p_inum,"Number of Y-strips from ING-27");
-  Add_prof_num(hfr1,&hd->bins,64,p_fnum,"Number of X-bins in profilometer histograms");
-  Add_prof_num(hfr1,&hd->bins2,64,p_fnum,"Number of Y-bins in profilometer histograms");
+  Add_prof_num(hfr1,&opt.prof_nx,16,p_inum,0x100|(2<<4),"Number of X-strips from ING-27");
+  Add_prof_num(hfr1,&opt.prof_ny,16,p_inum,0x100|(2<<4),"Number of Y-strips from ING-27");
+  Add_prof_num(hfr1,&hd->bins,64,p_fnum,0x100|(2<<4),"Number of X-bins in profilometer histograms");
+  Add_prof_num(hfr1,&hd->bins2,64,p_fnum,0x100|(2<<4),"Number of Y-bins in profilometer histograms");
+  Add_prof_num(hfr1,&hd->rb,64,p_inum,4<<1|3<<4,"Rebin X (only for drawing)");
+  Add_prof_num(hfr1,&hd->rb2,64,p_inum,4<<1|3<<4,"Rebin Y (only for drawing)");
 
 	
   TGTextEntry *fLabel=new TGTextEntry(hfr1, label);

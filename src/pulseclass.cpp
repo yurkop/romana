@@ -1006,15 +1006,22 @@ void EventClass::FillHist(Bool_t first) {
 	case 1: //P+(1-32) (X)
 	  h_xy=0;
 	  break;
+	// case 2: //N+(33-64) (Y)
+	//   h_xy=1;
+	//   //h_off=33;
+	//   h_off=62;
+	//   sgn=-1;
+	//   break;
+	// case 3: //N+(1-32) (Y)
+	//   h_xy=1;
+	//   break;
 	case 2: //N+(33-64) (Y)
 	  h_xy=1;
-	  //h_off=33;
-	  h_off=62;
-	  sgn=-1;
-	  // возможно, здесь sgn тоже должен быть -1
 	  break;
 	case 3: //N+(1-32) (Y)
 	  h_xy=1;
+	  h_off=62;
+	  sgn=-1;
 	  break;
 	case 4:
 	  // do nothing

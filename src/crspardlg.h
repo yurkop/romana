@@ -261,7 +261,7 @@ public:
   void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
     const char* tip, const char* label);
   void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
-    P_Def pp, const char* tip);
+		    P_Def pp, UInt_t cmd, const char* tip);
   void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
     const char* tip, const char* label);
   void Add2d();

@@ -2381,40 +2381,41 @@ void HistFrame::DrawHist() {
 } //DrawHist
 
 void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
-  Int_t rb=1;
-  Int_t nbins;
   Float_t *hold, *hnew;
 
   int nn = map->nn;
 
+  Int_t nx = map->hst->GetNbinsX();
+  Int_t rb=map->hd->rb;
+  if (rb<1)
+    rb=1;
+  if (rb>nx)
+    rb=nx;
+
+  Int_t newx = nx/rb;
+
+  TAxis* xa = map->hst->GetXaxis();
+  Double_t xmin  = xa->GetXmin();
+  Double_t xmax  = xa->GetXmax();
+
   if (map->hst->GetDimension()==1) { //1d hist -> rebin
-    TAxis* xa = map->hst->GetXaxis();
-    nbins = xa->GetNbins();
-    Double_t xmin  = xa->GetXmin();
-    Double_t xmax  = xa->GetXmax();
-
-    rb = map->hd->rb; //rebin factor
-    if (rb>nbins)
-      rb=nbins;
-
-    Int_t newbins = nbins/rb;
 
     TString str = map->GetTitle();
 
     if (badj && !str.Contains("Efit",TString::kIgnoreCase)) {// map->nn==1) {
-      Double_t *xbins = new Double_t[newbins+1];
-      Double_t dx=(xmax-xmin)/newbins;
+      Double_t *xbins = new Double_t[newx+1];
+      Double_t dx=(xmax-xmin)/newx;
 
-      for (int i=0;i<newbins+1;i++) {
+      for (int i=0;i<newx+1;i++) {
 	double x = xmin+i*dx;
 	xbins[i]=opt.adj[nn][0]+x*opt.adj[nn][1]+x*x*opt.adj[nn][2];
       }
 
-      hist->SetBins(newbins,xbins);
+      hist->SetBins(newx,xbins);
       delete[] xbins;
     }
     else {
-      hist->SetBins(newbins,xmin,xmax);
+      hist->SetBins(newx,xmin,xmax);
     }
 
     hold = ((TH1F*)map->hst)->GetArray();
@@ -2422,16 +2423,53 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
     memset(hnew,0,((TH1F*)hist)->GetSize()*sizeof(*hnew));
 
     //hist->Reset();
-    for (int i=0;i<nbins;i++) {
+    for (int i=0;i<nx;i++) {
       int j=i/rb;
       hnew[j+1]+=hold[i+1];
     }
   }
   else { //2d hist
-    nbins = ((TH2F*) map->hst)->GetSize();
-    hold = ((TH2F*) map->hst)->GetArray();
+
+    //prnt("ss ss;",BRED,"hst:",map->hst->GetName(),RST);    
+
+    Int_t ny = map->hst->GetNbinsY();
+    Int_t rb2=map->hd->rb2;
+    if (rb2<1)
+      rb2=1;
+    if (rb2>ny)
+      rb2=ny;
+
+    //prnt("ss d ds;",BGRN,"ny:",ny,rb2,RST);
+
+    Int_t newy = ny/rb2;
+
+    TAxis* ya = map->hst->GetYaxis();
+
+    //cout << "ya: " << ya << endl;
+
+    Double_t ymin  = ya->GetXmin();
+    Double_t ymax  = ya->GetXmax();
+
+    //prnt("ss d f f d f fs;",BRED,"newx:",newx,xmin,xmax,newy,ymin,ymax,RST);
+    ((TH2F*) hist)->SetBins(newx,xmin,xmax,newy,ymin,ymax);
+
+    //prnt("ss d f f d f fs;",BBLU,"newx:",newx,xmin,xmax,newy,ymin,ymax,RST);
     hnew = ((TH2F*) hist)->GetArray();
-    memcpy(hnew,hold,nbins*sizeof(Float_t));
+    memset(hnew,0,((TH2F*)hist)->GetSize()*sizeof(*hnew));
+
+    for (int i=0;i<nx;i++) {
+      int i2=i/rb;
+      for (int j=0;j<ny;j++) {
+	int j2=j/rb2;
+	hist->AddBinContent(hist->GetBin(i2+1,j2+1),
+			    map->hst->GetBinContent(i+1,j+1));
+      }
+    }
+    
+    // nx = ((TH2F*) map->hst)->GetSize();
+    // hold = ((TH2F*) map->hst)->GetArray();
+    // hnew = ((TH2F*) hist)->GetArray();
+    // memcpy(hnew,hold,nx*sizeof(Float_t));
   }
 
   hist->ResetStats();
