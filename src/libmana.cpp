@@ -89,6 +89,7 @@ Pixel_t fWhite;
 Pixel_t fGrey;
 Pixel_t fYellow;
 Pixel_t fGreen;
+Pixel_t fGreen2;
 Pixel_t fRed;
 Pixel_t fCyan;
 Pixel_t fMagenta;
@@ -860,7 +861,7 @@ void ctrl_c_handler(int s){
 
   if (crs->b_acq && crs->Fmode==1) {
     // fStart->Emit("Clicked()");
-    myM->DoStartStop();
+    myM->DoStartStop(0);
     gSystem->Sleep(300);
     return;
   }
@@ -964,19 +965,20 @@ int main(int argc, char **argv)
     "-h: print usage and exit\n"
     "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
-    "-a: start acquisition in batch mode (without gui) and exit\n"
+    "-a: start acquisition in batch mode (without gui)\n"
+    "    Program exits after Tstop time is reached\n"
     "-b: analyze file in batch mode (without gui) and exit\n"
-    "-s: suppress batch screen output\n"
+    "-s (only in batch mode): suppress batch screen output\n"
     "-w (only in batch mode): create processed .raw file in subdirectory Raw\n"
     "-d (only in batch mode): create decoded .dec file in subdirectory Dec\n"
     "-r (only in batch mode): create .root file in subdirectory Root\n"
     "-f (only in batch mode): force overwriting .dec and/or .root files\n"
-    " Parameters <Filename>, <Write raw/decoded/root data> are ignored in batch mode\n"
+    "   Parameters <Filename>, <Write raw/decoded/root data> are ignored in batch mode\n"
     "[par=val] - set parameter par to val (see toptions.h for parameter names)\n"
     "   examples: Tstop=10 (set time limit to 10 sec)\n"
     "             Thr[5]=20 (set threshold for ch5 to 20)\n"
     "             Thr=20 (set threshold for all channels to 20)\n"
-    "   works only with Toptions class; doesn't work with 2d/3d parameters\n"
+    "   works only with Toptions class; doesn't work with 2d/3d hist parameters\n"
     //"[par:] - print value(s) of the parameter par\n"
     "----------------------------------------------";
 
@@ -1198,7 +1200,7 @@ int main(int argc, char **argv)
 
     if (crs->abatch) {
 #ifdef CYUSB
-      crs->DoStartStop();
+      crs->DoStartStop(0);
 #endif
       crs->b_acq=false;
       crs->b_stop=true;
@@ -1763,6 +1765,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   gClient->GetColorByName("yellow", fYellow);
   gClient->GetColorByName("green", fGreen);
+  //gClient->GetColorByName("kGreen", fGreen2);
+  fGreen2 = gROOT->GetColor(kSpring+1)->GetPixel();
+  //cout << "gr: " << fGreen2 << endl;
   gClient->GetColorByName("red", fRed);
   gClient->GetColorByName("cyan", fCyan);
   gClient->GetColorByName("magenta", fMagenta);
@@ -1941,15 +1946,19 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //const TGFont *font = pool->GetFont("helvetica", -18, kFontWeightBold, kFontSlantRoman);
   //const TGFont *font = pool->GetFont("helvetica", -18, 4, kFontSlantRoman);
   const TGFont *font = pool->GetFont("-*-helvetica-bold-r-*-*-16-*-*-*-*-*-iso8859-1",true);
-
-  //const TGFont *font = gClient->GetFont("-*-arial-normal-r-*-*-20-*-*-*-*-*-*-*");
+  const TGFont *font14 = pool->GetFont("-*-helvetica-bold-r-*-*-14-*-*-*-*-*-iso8859-1",true);
 
   //cout << "Font: " << font << endl;
   //font->Print();
 
+
   if (!font)
     font = gClient->GetResourcePool()->GetDefaultFont();
+  if (!font14)
+    font14 = gClient->GetResourcePool()->GetDefaultFont();
+
   FontStruct_t tfont = font->GetFontStruct();
+  FontStruct_t tfont14 = font14->GetFontStruct();
 
 
 
@@ -1977,17 +1986,33 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   vframe1->AddFrame(fGr1, LayCT1);
 
   fStart = new TGTextButton(fGr1,"Start");
-  //fStart->SetToggleButton(true);
   fStart->SetToolTipText("Start/Stop acquisition");
-
   fStart->SetFont(tfont,false);
   fStart->Resize(butx,buty);
   fStart->ChangeOptions(fStart->GetOptions() | kFixedSize);
-  //fStart->SetStyle("modern");
   fStart->ChangeBackground(fGreen);
-  fStart->Connect("Clicked()","MainFrame",this,"DoStartStop()");
+  fStart->Connect("Clicked()","MainFrame",this,"DoStartStop(=1)");
   fGr1->AddFrame(fStart, LayET1);
 
+  fPause = new TGTextButton(fGr1,"Continue");
+  fPause->SetToolTipText("Continue/Pause acquisition");
+  fPause->SetFont(tfont14,false);
+  fPause->Resize(butx,buty);
+  fPause->ChangeOptions(fPause->GetOptions() | kFixedSize);
+  fPause->ChangeBackground(fGreen2);
+  fPause->Connect("Clicked()","MainFrame",this,"DoStartStop(=0)");
+  fGr1->AddFrame(fPause, LayET1);
+
+  /*
+  fPause = new TGTextButton(fGr1,"Clear");
+  fPause->SetToolTipText("Clear histograms (works during acquisition/analysis)");
+  fPause->SetFont(tfont14,false);
+  fPause->Resize(butx,buty);
+  fPause->ChangeOptions(fPause->GetOptions() | kFixedSize);
+  fPause->ChangeBackground(fCyan);
+  fPause->Connect("Clicked()","HistFrame",HiFrm,"DoClear()");
+  fGr1->AddFrame(fPause, LayET1);
+  */
 
   TGGroupFrame* fGr2 = new TGGroupFrame(vframe1, "Analysis", kVerticalFrame);
   fGr2->SetTitlePos(TGGroupFrame::kCenter);
@@ -2091,9 +2116,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   if (crs->Fmode!=1) { //no CRS present
     daqpar->AllEnabled(false);
     fStart->SetEnabled(false);
+    fPause->SetEnabled(false);
     //fReset->SetEnabled(false);
   }
-
 
 
 
@@ -2368,19 +2393,23 @@ void MainFrame::SetTitle(char* fname) {
   SetWindowName(maintitle);
 }
 
-void MainFrame::DoStartStop() {
+void MainFrame::DoStartStop(int rst) {
+  //rst=1 - start/stop is pressed
+  //rst=0 - continue/pause is pressed
 
   //cout << "Dostartstop1: " << gROOT->FindObject("Start") << endl;
 
 #ifdef CYUSB
-  if (crs->b_acq) { //STOP is pressed here
+  if (crs->b_acq) { //STOP or PAUSE is pressed here
     if (!crs->batch) {
       fStart->ChangeBackground(fGreen);
       fStart->SetText("Start");
+      fPause->ChangeBackground(fGreen2);
+      fPause->SetText("Continue");
     }
     //crs->b_stop=false;
     //crs->Show();
-    crs->DoStartStop();
+    crs->DoStartStop(rst);
 
     if (opt.root_write || b_root) {
       saveroot(crs->rootname.c_str());
@@ -2392,12 +2421,16 @@ void MainFrame::DoStartStop() {
       //ParLock();
       fStart->ChangeBackground(fRed);
       fStart->SetText("Stop");
-      crs->DoStartStop();
+      fPause->ChangeBackground(fMagenta);
+      fPause->SetText("Pause");
+      crs->DoStartStop(rst);
       //cout << "Start7: " << endl;
 
 
       fStart->ChangeBackground(fGreen);
       fStart->SetText("Start");
+      fPause->ChangeBackground(fGreen2);
+      fPause->SetText("Continue");
 
       crs->b_stop=true;
       crs->b_fana=false;
@@ -2500,6 +2533,7 @@ void MainFrame::DoClose() {
   if (crs->Fmode==1) { //CRS is present
     //daqpar->AllEnabled(true);
     fStart->SetEnabled(true);
+    fPause->SetEnabled(true);
     //fReset->SetEnabled(true);
 
     //opt.raw_write=false;
@@ -2936,7 +2970,7 @@ void MainFrame::CloseWindow() {
     // fStart->Emit("Clicked()");
     // cout << "dostartstop7: " << endl;
 #ifdef CYUSB
-    crs->DoStartStop();
+    crs->DoStartStop(0);
     gSystem->Sleep(300);
 #endif
     // cout << "dostartstop8: " << endl;

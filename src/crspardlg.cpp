@@ -168,7 +168,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   LayEE1   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,0,0,1,1);
 
   //SetCleanup(kDeepCleanup);
-  jtrig=0;
+  //jtrig=0;
   notbuilt=true;
   pmax=0;
 
@@ -209,7 +209,7 @@ bool ParDlg::Chk_all(int all, int i) {
   }
   else if (all==1) { //all
     if (opt.chkall==0) { // * (star)
-      return /*(i<pmax) && */opt.star[i];
+      return (i<pmax) && opt.star[i];
     }
     else if (opt.chkall==1) { //all
       return i<pmax;
@@ -245,14 +245,15 @@ void ParDlg::DoNum() {
   pmap pp = Plist[id-1];
 
   SetNum(pp,te->GetNumber());
-  int pos = te->GetCursorPosition();
-  UpdateField(id-1);
+  //int pos = te->GetCursorPosition();
+  //UpdateField(id-1);
 
   if (pp.all>0) {
     if (nfld) {
       int kk = (id-1)%nfld; //column number
+      int ll = (id-1)/nfld; //line number
       for (int i=0;i<pmax+MAX_TP+1;i++) { //pmax+all+MAX_TP
-	if (Chk_all(pp.all,i)) {
+	if (i!=ll && Chk_all(pp.all,i)) {
 	  pmap p2 = Plist[i*nfld+kk];
 	  SetNum(p2,te->GetNumber());
 	  UpdateField(i*nfld+kk);
@@ -261,46 +262,78 @@ void ParDlg::DoNum() {
     }
   }
 
-  te->SetCursorPosition(pos);
+  //te->SetCursorPosition(pos);
 }
 
 void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
   pmap* pp = &Plist[id-1];
   int act = (pp->cmd>>4)&0xF;
-  if (act==1 && crs->b_stop) {
-    crs->DoReset();
-  }
 
-  if (act==2 && crs->b_stop) {
-    HiFrm->HiReset();
-  }
+  switch (act) {
+  case 1:
+    if (crs->b_stop)
+      crs->DoReset();
+    break;
 
-  if (act==3) {
+  case 2:
+    if (crs->b_stop)
+      HiFrm->HiReset();
+    break;
+
+  case 3:
     if (crs->b_stop)
       HiFrm->Update();
     else
       HiFrm->changed=true;
-  }
-
-  if (act==5 && nfld && (crs->module>=41 && crs->module<=70)) {
-    int kk = (id-1)%nfld; //column number
-    int ll = (id-1)/nfld; //line number
-    int l4 = ll/4*4; //group4
-    for (int i=0; i<4;i++) {
-      pmap p2 = Plist[(l4+i)*nfld+kk];
-      if (intbool) {
-	SetNum(p2,fnum);
+    break;
+    /*
+  case 4:
+    if (nfld && (crs->module==22)) {
+      int ll = (id-1)/nfld; //line number
+      cout << "DoAct: " << id << " " << nfld << " " << pmax << " " << ll << " " << &cpar.Trg[ll] << " " << pp->data << endl;
+      if (ll<pmax) {
+	if (&cpar.Drv[ll]==pp->data) { //Drv
+	  if (cpar.Drv[ll])
+	    cpar.Trg[ll]=1;
+	  else
+	    cpar.Trg[ll]=0;
+	  UpdateField(id-2);
+	}
+	else { //Trg
+	  if (cpar.Trg[ll])
+	    cpar.Drv[ll]=1;
+	  else
+	    cpar.Drv[ll]=0;
+	  UpdateField(id);
+	}
       }
-      else {
-	SetChk(p2,fnum);	
-      }
-      UpdateField((l4+i)*nfld+kk);
     }
-  }
+    break;
+    */
+  case 5:
+    if (nfld && (crs->module>=41 && crs->module<=70)) {
+      int kk = (id-1)%nfld; //column number
+      int ll = (id-1)/nfld; //line number
+      int l4 = ll/4*4; //group4
+      for (int i=0; i<4;i++) {
+	pmap p2 = Plist[(l4+i)*nfld+kk];
+	if (intbool) {
+	  SetNum(p2,fnum);
+	}
+	else {
+	  SetChk(p2,fnum);	
+	}
+	UpdateField((l4+i)*nfld+kk);
+      }
+    }
+    break;
+  } //switch
+
+  DoColor(pp,(Float_t) fnum);
 
 #ifdef CYUSB
   int cmd = pp->cmd & 1;
-  if (cmd && crs->b_acq && !jtrig) {
+  if (cmd && crs->b_acq) {// && !jtrig) {
     crs->Command2(4,0,0,0);
     crs->SetPar();
     gzFile ff = gzopen("last.par","wb");
@@ -312,9 +345,9 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
 }
 
 void ParDlg::DoDaqNum() {
-  jtrig++;
+  //jtrig++;
   ParDlg::DoNum();
-  jtrig--;
+  //jtrig--;
 
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
   Int_t id = te->WidgetId();
@@ -356,9 +389,9 @@ void ParDlg::DoChk(Bool_t on) {
 }
 
 void ParDlg::DoDaqChk(Bool_t on) {
-  jtrig++;
+  //jtrig++;
   ParDlg::DoChk(on);
-  jtrig--;
+  //jtrig--;
 
   TGCheckButton *te = (TGCheckButton*) gTQSender;
   Int_t id = te->WidgetId();
@@ -369,13 +402,13 @@ void ParDlg::DoDaqChk(Bool_t on) {
 void ParDlg::DoCheckHist(Bool_t on) {
   if (!crs->b_stop) return;
 
-  jtrig++;
+  //jtrig++;
   DoChk(on);
-  jtrig--;
+  //jtrig--;
 
-  if (!jtrig) {
-    HiFrm->HiReset();
-  }
+  //if (!jtrig) {
+  HiFrm->HiReset();
+  //}
 }
 
 void ParDlg::DoOpen() {
@@ -505,7 +538,7 @@ void ParDlg::DoTxt() {
   pmap pp = Plist[id-1];
 
   SetTxt(pp,te->GetText());
-  UpdateField(id-1);
+  //UpdateField(id-1);
   DoAct(id,1,0);
 }
 
@@ -617,6 +650,46 @@ void ParDlg::CopyField(int from, int to) {
   } //switch  
 }
 
+void ParDlg::DoColor(pmap* pp, Float_t val) {
+  //change color, if needed
+  int col=(pp->cmd & 0xF)>>1;
+  if (col) {
+    switch (pp->type) {
+    case p_inum:
+    case p_fnum: {
+      TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
+      if (te->IsEnabled()) {
+	bool vv = (val!=0);
+	if (te->GetToolTip()->GetText()->
+	    Contains("rebin",TString::kIgnoreCase)) {
+	  vv = val>1;
+	}
+	if (vv) {
+	  te->ChangeBackground(fCol[col-1]);
+	}
+	else {
+	  te->ChangeBackground(fWhite);
+	}
+      }
+      break;
+    }
+    case p_chk: {
+      // cout << "c_chk: " << col << endl;
+      TGCheckButton *te = (TGCheckButton*) pp->field;
+      if (val) {
+	te->ChangeBackground(fCol[col-1]);
+      }
+      else {
+	te->ChangeBackground(fGrey);
+      }
+      break;
+    }
+    default:;
+    }
+  }
+
+}
+
 void ParDlg::UpdateField(int nn) {
 
   TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
@@ -716,74 +789,8 @@ void ParDlg::UpdateField(int nn) {
     cout << "unknown pp->type: " << pp->type << endl;
   } //switch
 
-  /*
-  //do some action, if needed
-  UInt_t act = (pp->cmd>>4)&0xF;
-  //cout << "act: " << nn << " " << act << endl;
-  if (act && crs->b_stop && pp->type==p_chk) {
-    // cout << "Act_Chk: " << act << endl;
-    int n2=0;
-    switch (act) {
-    case 2: //2d hist
-      n2=2;
-      break;
-    case 3: //1d hist
-      n2=4;
-      break;
-    case 4: //profilom
-      {	n2=4;
-	pp = &Plist[nn+5];
-	TGCheckButton *te3 = (TGCheckButton*) pp->field;
-	te3->SetEnabled(bb);
-	break;
-      }
-    default:;
-    }
-    for (int i=0;i<n2;i++) {
-      EnableField(nn+i+1,bb);
-      if (bb) {
-	UpdateField(nn+i+1);
-      }
-    }
-  }
-  */
 
-  //change color, if needed
-  int col=(pp->cmd & 0xF)>>1;
-  if (col) {
-    switch (pp->type) {
-    case p_inum:
-    case p_fnum: {
-      TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-      if (te->IsEnabled()) {
-	bool vv = (val!=0);
-	if (te->GetToolTip()->GetText()->
-	    Contains("rebin",TString::kIgnoreCase)) {
-	  vv = val>1;
-	}
-	if (vv) {
-	  te->ChangeBackground(fCol[col-1]);
-	}
-	else {
-	  te->ChangeBackground(fWhite);
-	}
-      }
-      break;
-    }
-    case p_chk: {
-      // cout << "c_chk: " << col << endl;
-      TGCheckButton *te = (TGCheckButton*) pp->field;
-      if (val) {
-	te->ChangeBackground(fCol[col-1]);
-      }
-      else {
-	te->ChangeBackground(fGrey);
-      }
-      break;
-    }
-    default:;
-    }
-  }
+  DoColor(pp,val);
 
   //disble some fields, if needed
 
@@ -1169,7 +1176,7 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
   hframe1->AddFrame(fNum1,LayCC1);
   DoMap(fNum1->GetNumberEntry(),compr,p_inum,0,0x100);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoNum()");
+				   "DoDaqNum()");
 
   fNum1->GetNumberEntry()->SetToolTipText("Compression factor [0-9]: 0 - no compression (fast); 9- maximum compression (slow)");
   TGLabel* fLabel = new TGLabel(hframe1, "compr.");
@@ -1514,7 +1521,7 @@ void ParParDlg::DoCheckTrigger() {
   UpdateTrigger();
 
 #ifdef CYUSB
-  if (crs->b_acq && !jtrig) {
+  if (crs->b_acq) {// && !jtrig) {
     crs->Command2(4,0,0,0);
     crs->SetPar();
     gzFile ff = gzopen("last.par","wb");
@@ -2173,13 +2180,16 @@ void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 			    void* apar, double min, double max, P_Def ptype, UInt_t cmd) {
 
   int id = Plist.size()+1;
+  ETextJustification al;
 
   TGNumberFormat::EStyle style;
   if (ptype==p_fnum) {
     style=TGNumberFormat::kNESReal;
+    al = kTextLeft;
   }
   else {
     style=TGNumberFormat::kNESInteger;
+    al = kTextRight;
   }
 
   TGNumberEntryField* fNum =
@@ -2189,10 +2199,9 @@ void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
   //DoChanMap(fNum,apar,ptype, all,0);
   DoMap(fNum,apar,ptype, all,cmd);
-  fNum->SetAlignment(kTextLeft);
   fNum->SetWidth(tlen7[kk]);
   fNum->SetHeight(20);
-  fNum->SetAlignment(kTextRight);
+  fNum->SetAlignment(al);
   fNum->Connect("TextChanged(char*)", "ParDlg", this, "DoDaqNum()");
   fNum->SetToolTipText(ttip7[kk]);
   hframe1->AddFrame(fNum,LayCC0);
@@ -2351,12 +2360,8 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   else
     AddNumDaq(i,kk++,all,cframe[i],"gain"  ,&cpar.G[i],0,act);
 
-  // if (crs->module>=33)
-  //   AddNumDaq(i,kk++,all,cframe[i],"trig" ,&cpar.Trg[i]);
-  // else
-  //   kk++;
+  //act = 1|(4<<4); //match Trg & Drv for CRS2
   AddNumDaq(i,kk++,all,cframe[i],"trig" ,&cpar.Trg[i]);
-
   AddNumDaq(i,kk++,all,cframe[i],"deriv" ,&cpar.Drv[i],&opt.sDrv[i]);
   AddNumDaq(i,kk++,all,cframe[i],"thresh",&cpar.Thr[i],&opt.sThr[i]);
 
@@ -2396,6 +2401,7 @@ void DaqParDlg::AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
   fNum->SetWidth(tlen1[kk]);
   fNum->SetHeight(20);
   fNum->SetAlignment(kTextRight);
+  //fNum->SetAlignment(kTextRight);
   fNum->Connect("TextChanged(char*)", "ParDlg", this, "DoDaqNum()");
   hframe1->AddFrame(fNum,LayCC0);
 

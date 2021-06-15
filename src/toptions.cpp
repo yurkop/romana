@@ -129,9 +129,10 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
 	max=255;
       else
 	max=1023;
-      if (module<=32) //22 or 32
-        min = 0;
-      else
+
+      // if (module<=32) //22 or 32
+      //   min = 0;
+      // else
         min = 1;
     }
     else if (!strcmp(name,"thresh")) {
@@ -176,12 +177,14 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     else if (!strcmp(name,"trig")) {
       par = Trg[i];
       min=0;
-      if (module==35)
+      if (module>=35 && module<=70)
         max=5;
-      else if (module>=41 && module<=52)
-        max=4;
-      else if (module>=33) //33,34
+      else if (module>=32 && module<=34) //33,34
         max=3;
+      else if (module==22) {
+	min=1;
+        max=1;
+      }
       else
         max=0;
       // cout << "trig: " << module << " " << min << " " << max << endl;
@@ -232,7 +235,7 @@ Toptions::Toptions() {
     //Mrk[i]=false;
     for (int j=0;j<NGRP;j++)
       Grp[i][j]=false;
-    sS[i]=2;
+    sS[i]=0;
     sThr[i]=cpar.Thr[i];
 
     sDrv[i]=1;
@@ -286,7 +289,7 @@ Toptions::Toptions() {
   tgate=500;
   tveto=10;
   mult1=1;
-  mult2=32;
+  mult2=9999;
 
   xdiv=2;
   ydiv=2;

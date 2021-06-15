@@ -42,7 +42,7 @@ struct pmap {
   UInt_t cmd; //опции (биты)
   //0x1: (bit0) 1: start/stop DAQ
   //0xE: (bit1-3) change color
-  //0xF0: (bit4-7) Action
+  //0xF0: (bit4-7) Action (1..15)
   //0x100 (bit8) disble during acq
   //0x200 (bit9) disble fields not existing in certain devices
 
@@ -51,6 +51,7 @@ struct pmap {
   // 1 - DoReset
   // 2 - Hireset
   // 3 - Hi->Update()
+  // // 4 - match Trg & Drv for CRS2 (not realized)
   // 5 - group4
 
   // in DoDaqChk:
@@ -93,7 +94,7 @@ public:
   TGLayoutHints* LayEE1 ;
 
 
-  int jtrig;
+  //int jtrig;
   bool notbuilt;
   int pmax; //максимальный канал (вместо MAX_CH), который записан в параметрах
 
@@ -150,6 +151,7 @@ public:
   void DoAll();
   void CopyParLine(int sel, int line);
   void CopyField(int from, int to);
+  void DoColor(pmap* pp, Float_t val);
   void UpdateField(int nn);
   void Update();
   void EnableField(int nn, bool state);

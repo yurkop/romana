@@ -1385,8 +1385,8 @@ int CRS::Detect_device() {
     break;
 
   case 5: //crs-128
-    //module=51;
-    module=52;
+    //module=51/52;
+    module=53;
     opt.Period=10;
     chan_in_module=nplates*16;
     for (int j=0;j<chan_in_module;j++) {
@@ -2030,6 +2030,12 @@ void CRS::AllParameters35()
 
       Command32(2,chan,23,mask); //bitmask for discriminator
       Command32(2,chan,32,drv[chan]); //type of derivative
+
+      int pwin = opt.Peak2[chan]; //окно повторных срабатываний
+      if (pwin<0) pwin=0;
+      if (pwin>4095) pwin=4095;
+      Command32(2,chan,33,pwin); //окно повторных срабатываний
+
     } //if
   } //for
 
@@ -2171,26 +2177,25 @@ void CRS::AllParameters2()
 
 }
 
-int CRS::DoStartStop() {
-  // int r;
-  //int transferred = 0;
-  //int len=2; //input/output length must be 2, not 1
+int CRS::DoStartStop(int rst) {
+  //rst=1 - reset timestamp; 0 - do not reset
+
   if (f_read) {
     gzclose(f_read);
     f_read=0;
   }
 	
   if (!b_acq) { //start
-		//if (b_usbbuf) {
     crs->Free_Transfer();
     gSystem->Sleep(50);
 
     InitBuf();
     crs->Init_Transfer();
-    //}
-    //b_usbbuf=false;
 
-    DoReset();
+    DoReset(rst);
+    if (rst) {
+      HiFrm->DoRst();
+    }
     //juststarted=true; already set in doreset
 
     TCanvas *cv;
@@ -2244,12 +2249,14 @@ int CRS::DoStartStop() {
     cpar.F_start = gSystem->Now();
     Text_time("S:",cpar.F_start);
 
-    if (opt.raw_write) {
-      Reset_Raw();
-    }   
-    if (opt.dec_write) {
-      Reset_Dec(79);
-    }   
+    if (rst) {
+      if (opt.raw_write) {
+	Reset_Raw();
+      }   
+      if (opt.dec_write) {
+	Reset_Dec(79);
+      }
+    }
 
     //cout << "Acquisition started" << endl;
     //gettimeofday(&t_start,NULL);
@@ -2258,7 +2265,7 @@ int CRS::DoStartStop() {
     //InitBuf();
 
 
-    ProcessCrs();
+    ProcessCrs(rst);
     //ProcessCrs_old();
 
 
@@ -2297,13 +2304,13 @@ int CRS::DoStartStop() {
 
 }
 
-void CRS::ProcessCrs() {
+void CRS::ProcessCrs(int rst) {
   b_run=1;
   Ana_start();
 
   //decode_thread_run=1;
   //tt1[3].Set();
-  if (crs->module>=32 && crs->module<=52 /*34*/) {
+  if (rst && crs->module>=32 && crs->module<=70) {
     Command32(8,0,0,0); //сброс сч./буф.
     Command32(9,0,0,0); //сброс времени
   }
@@ -2319,7 +2326,7 @@ void CRS::ProcessCrs() {
     gSystem->ProcessEvents();
     if (opt.Tstop && opt.T_acq>opt.Tstop) {
       //cout << "Stop1!!!" << endl;
-      DoStartStop();
+      DoStartStop(0);
       //cout << "Stop2!!!" << endl;
     }
   }
@@ -2358,34 +2365,15 @@ void CRS::DoExit()
 
 }
 
-void CRS::DoReset() {
+void CRS::DoReset(int rst) {
 
   // cout << "DoReset1: " << b_stop << endl;
 
   if (!b_stop) return;
 
-  opt.T_acq=0;
-
-  // if (module==1) {
-  //   Tstart64=-1;
-  // }
-  // else {
-  //   Tstart64=0;
-  // }
-  Tstart64=0;
-
-  // cout << "Dorese1a: " << Fmode << " " << Tstart64 << endl;
-
-  Tstart0=0;
-  //Offset64=0;
-  //T_last_good=0;
-  Pstamp64=P64_0;
-
-  //cout << "EvtFrm: " << EvtFrm << endl;
   if (EvtFrm) {
     EvtFrm->DoReset();
   }
-  // cout << "Doreset1b: " << Fmode << " " << Tstart64 << endl;
 
   Levents.clear();
 
@@ -2399,85 +2387,45 @@ void CRS::DoReset() {
   //m_end=Levents.end();
   //m_event=Levents.begin();
 
-  nevents=0;
-  nevents2=0;
-
-  //Vpulses.clear();
   Bufevents.clear();
-  //plist.clear();
 
-  //for (int i=0;i<MAXTRANS;i++)
-  //Vpulses[i].clear();
+  if (rst) {
+    opt.T_acq=0;
+    Tstart64=0;
+    Tstart0=0;
 
-  //nvp=0;
+    Pstamp64=P64_0;
 
-  //vv = Vpulses+nvp; //- vector of pulses from current
-  //vv2 = Vpulses+1-nvp; //- vector of pulses from previous buffer
-  //create first pulse, which is always bad: Chan=254
-  //this pulse will be ignored in Event_insert_pulse
+    nevents=0;
+    nevents2=0;
 
-  //pulse_vect::iterator ipls = Vpulses->insert(Vpulses->end(),PulseClass());
-  //ipls->Chan=254;
-  //ipls->ptype|=P_NOSTART;
+    npulses=0;
+    nbuffers=0;
+    memset(npulses2,0,sizeof(npulses2));
+    memset(npulses3,0,sizeof(npulses3));
+    memset(npulses_bad,0,sizeof(npulses_bad));
+    memset(errors,0,sizeof(errors));
 
-  //ipk=&dummy_peak; //peak points to the dummy_peak
-  //QX=0;QY=0;RX=1;RY=1;
+    if (f_read)
+      DoFopen(NULL,0);
+    juststarted=true;
 
-  // if (module!=1) {
-  //   //cout << "Pre!!!" << endl;
-  //   memcpy(&Pre,&cpar.preWr,sizeof(Pre));
-  // }
-
-  npulses=0;
-  nbuffers=0;
-  memset(npulses2,0,sizeof(npulses2));
-  memset(npulses3,0,sizeof(npulses3));
-  memset(npulses_bad,0,sizeof(npulses_bad));
-  memset(errors,0,sizeof(errors));
+    if (daqpar) {
+      daqpar->UpdateStatus(1);
+      //daqpar->ResetStatus();
+    }
+  }
 
 #ifdef TIMES
   memset(ttm,0,sizeof(ttm));
 #endif
 
-  //npulses=0;
-  //npulses_buf=0;
-
-  inputbytes=0;
-  rawbytes=0;
-  decbytes=0;
-
-  //MAX_LAG=opt.event_buf/2;
-
-  //idx=0;
-  //idnext=0;
-  //lastfl=1;
-
-  //idec=0;
-
-  //cout << "f_read: " << f_read << endl;
-  if (f_read)
-    DoFopen(NULL,0);
-  juststarted=true;
-
-  // parpar->Update();
-  // cout << "DoReset2a: " << endl;
-  if (daqpar) {
-    daqpar->UpdateStatus(1);
-    //daqpar->ResetStatus();
-  }
-  //if (HiFrm)
-  // cout << "DoReset2: " << endl;
-
-  //rPeaks73.clear();
-  //rPeaks74.clear();
-  //CloseTree();
-
-  //Set_Trigger();  
-
 }
 
-void CRS::DoFopen(char* oname, int popt) {
+int CRS::DoFopen(char* oname, int popt) {
   //popt: 1 - read opt from file; 0 - don't read opt from file
+  //return 0 - OK; 1 - error
+
   int tp=0; //1 - adcm raw; 0 - crs2/32/dec; 7? - Ortec Lis
   module=0;
 
@@ -2503,12 +2451,12 @@ void CRS::DoFopen(char* oname, int popt) {
     if (res==0) {
       prnt("ssss;",BRED,"Can't open file: ",Fname,RST);
       //f_read=0;
-      return;
+      return 1;
     }
     else if (res==2) {
       prnt("ssss;",BRED,"Unknown file format / can't find Tstamp in adcm/raw file: ",Fname,RST);
       //f_read=0;
-      return;
+      return 1;
     }
     else if (res==1) {
       prnt("ssss;",BYEL,"ADCM RAW File: ",Fname,RST);
@@ -2540,25 +2488,22 @@ void CRS::DoFopen(char* oname, int popt) {
     prnt("ss;","Allowed extensions: .root, .dat, .raw, .dec, .gz",RST);
     if (f_read) gzclose(f_read);
     f_read=0;
-    return;
+    return 1;
   }
-
-
 
   if (f_read) gzclose(f_read);
   f_read = gzopen(Fname,"rb");
   if (!f_read) {
     cout << "Can't open file: " << Fname << endl;
     f_read=0;
-    return;
+    return 1;
   }
-
 
   if (tp==0) { //crs32 or crs2 or dec
     if (ReadParGz(f_read,Fname,1,1,popt)) {
       gzclose(f_read);
       f_read=0;
-      return;
+      return 1;
     }
     cout << "opt.Period from file: " << opt.Period << endl;
     cout << "Git version from file: " << opt.gitver << endl;
@@ -2595,7 +2540,9 @@ void CRS::DoFopen(char* oname, int popt) {
     myM->SetTitle(Fname);
     daqpar->AllEnabled(false);
   }
-}
+
+  return 0;
+} //DoFopen
 
 int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   //m1 - read module (1/0) (читается только при открытии файла)
@@ -2615,6 +2562,9 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   //           sz bytes - buf
   //        }
 
+  // return 0 - OK; 1 - error
+  int res=0;
+
   UShort_t fmt, mod;
   Int_t sz;
 
@@ -2623,15 +2573,19 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   //prtime("ReadParGz1");
 
   gzread(ff,&fmt,sizeof(Short_t));
-  if (fmt>=129) {
+  if (fmt==129) {
     gzread(ff,&mod,sizeof(Short_t));
     gzread(ff,&sz,sizeof(Int_t));
   }
   else {
     mod=fmt;
+    //fmt=129;
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
+  //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
+  //if (fmt!=129 || mod==0 || mod>100 || sz>1e6){//возможно, это текстовый файл
+  //}
   //cout << "ReadParGz: " << pname << " " << sz << endl;
 
   //char* buf = new char[sz];
@@ -2648,6 +2602,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   if (!ret) {
     prnt("ssss;",BRED,"Warning: error reading parameters: ",pname,RST);
     gSystem->Sleep(1000);
+    res=1;
   }
   //exit(1);
 
@@ -2672,7 +2627,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     else {
       Fmode=0;
       cout << "Unknown file type: " << Fname << " " << mod << endl;
-      return 1;
+      res=1;
     }
   }
 
@@ -2718,7 +2673,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   //end of F_start test
   */
 
-  return 0;
+  return res;
 } //ReadParGz
 
 void CRS::SaveParGz(gzFile &ff, Short_t mod) {
@@ -3238,7 +3193,7 @@ void CRS::Show(bool force) {
     cout << "Memory is too low. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
 
 #ifdef CYUSB
-    DoStartStop();
+    DoStartStop(0);
     // gSystem->Sleep(500);
 
     // cout << "Terminate..." << endl;
@@ -4067,10 +4022,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       //else {
       for (int i=0;i<3;i++) {
 	iii = data & 0xFFFF;
-	//int i1=iii;
-	//int i2=iii;
-	//(i2<<16)>>16;
 	ipls.sData.push_back((iii<<16)>>16);
+	//ipls.sData.push_back((iii<<16)>>22);
 	data>>=16;
 	// if (npulses==6) {
 	//   cout << ipls.sData.back() << " " << i1 << " " << i2 << endl;
@@ -4394,6 +4347,9 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       }
       for (int i=0;i<3;i++) {
 	d16 = data & 0xFFFF;
+	// cout << d16;
+	//	/*YK*/ d16>>=1;
+	// cout << " :: " << d16 << endl;
 	ipls.sData.push_back(d16);
 	data>>=16;
       }

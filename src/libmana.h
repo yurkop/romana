@@ -127,6 +127,7 @@ class MainFrame : public TGMainFrame {
 
   TGMenuBar            *fMenuBar;     // main menu bar
   TGTextButton *fStart;
+  TGTextButton *fPause;
   TGTextButton *fAna;
   TGTextButton *fNb;
 
@@ -147,7 +148,7 @@ class MainFrame : public TGMainFrame {
   void MakeTabs(bool reb=false);
   void Rebuild();
   void SetTitle(char* fname);
-  void DoStartStop();
+  void DoStartStop(int rst);
 
   void DoOpen(Int_t id);
   void DoClose();

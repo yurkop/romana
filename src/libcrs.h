@@ -267,8 +267,8 @@ RQ_OBJECT("CRS")
   void AllParameters34(); // load all parameters
   void AllParameters33(); // load all parameters
   void AllParameters32(); // load all parameters
-  int DoStartStop(); // start-stop acquisition
-  void ProcessCrs(); // new process events in dostartstop
+  int DoStartStop(int rst); // start-stop acquisition
+  void ProcessCrs(int rst); // process events in dostartstop
 #endif
 
 
@@ -276,8 +276,8 @@ RQ_OBJECT("CRS")
   void DoExit();
   //int Command_old(int len_out, int len_in); //send and receive command
   //void SendParametr(const char* name, int len_out); //send one parameter
-  void DoReset(); //reset BPulses
-  void DoFopen(char* oname, int popt);
+  void DoReset(int rst=1); //reset BPulses
+  int DoFopen(char* oname, int popt);
   int ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op);
   void SaveParGz(gzFile &ff, Short_t mod);
   void DoProf(Int_t nn, Int_t *aa, Int_t off);

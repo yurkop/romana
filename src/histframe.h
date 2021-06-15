@@ -123,6 +123,7 @@ public:
   void AddCutG(TPolyLine *pl, HMap* map);
   int Find_icut();
   void MakeCutG(TPolyLine *pl, HMap* map);
+  //void ItemROI(HMap* map, int ich, int iroi);
   void ItemROI(HMap* map, int iroi);
   void MakeROI(TPolyLine *pl, HMap* map);
   void StartMouse();
@@ -137,6 +138,7 @@ public:
   void Do_Ecalibr(PopFrame* pop);
   void Do_Tcalibr(PopFrame* pop);
   //void Do_Ecalibr();
+  void DoRst();
   void HiReset();
   void Update();
   void DrawStack();

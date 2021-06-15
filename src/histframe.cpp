@@ -157,9 +157,6 @@ void DynamicExec()
   
 } //DynamicExec()
 
-// Bool_t empty_roi(HMap* map, int i) {
-//   return map->hd->roi[i][0]==0 && map->hd->roi[i][1]==0;
-// }
 Bool_t empty_roi(Hdef* hd, int i) {
   return hd->roi[i][0]==0 && hd->roi[i][1]==0;
 }
@@ -305,6 +302,12 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but = new TGTextButton(fHor4,"w-",2);
   but->Connect("Clicked()", "HistFrame", this, "ClearWork()");
   but->SetToolTipText("Remove all histograms from WORK*");
+  fHor4->AddFrame(but, LayLC1);
+
+  but = new TGTextButton(fHor4,"Rst",2);
+  but->Connect("Clicked()", "HistFrame", this, "DoRst()");
+  but->SetToolTipText("Reset all histograms (works during acquisition/analysis)");
+  but->ChangeBackground(fCyan);
   fHor4->AddFrame(but, LayLC1);
 
   fHor4 = new TGHorizontalFrame(tab1, 10, 10);
@@ -734,11 +737,11 @@ void HistFrame::Make_Ltree() {
   TIter next2(hcl->dir_list);
   while ( (obj=(TObject*)next2()) ) {
     map = (HMap*) obj;
-    //cout << "map: " << map->GetName() << " " << map->GetTitle() << " " << map->hd << endl;
-    //cout << "map1: " << map->GetName() << " " << map->GetTitle() << " " << map->hd->rb << endl;
     if (map->hd) {
+      //for (int i=0;i<MAX_CH+NGRP;i++) {
       for (int i=0;i<MAXROI;i++) {
 	//cout << "roi1: " << i << " " << map->hd->roi[i][0] << endl;
+	//if (map->hd->roi[i][0]==0)
 	if (empty_roi(map->hd,i))
 	  continue;
 	//cout << "roi2: " << i << " " << map->hd->roi[i][0] << endl;
@@ -1306,6 +1309,8 @@ void HistFrame::MakeCutG(TPolyLine *pl, HMap* map) {
 
 }
 
+//void HistFrame::ItemROI(HMap* map, int ich, int iroi) {
+//YKYK
 void HistFrame::ItemROI(HMap* map, int iroi) {
   char name[99];
   TGPicture *pic = (TGPicture*) gClient->GetPicture("hor_arrow_cursor.png");
@@ -2028,6 +2033,24 @@ void HistFrame::Do_Ecalibr()
 
 }
 */
+
+void HistFrame::DoRst() {
+
+  //cout << "DoRst: " << endl;
+  
+  TIter next(hcl->allmap_list);
+
+  TObject* obj;
+  while ( (obj=(TObject*)next()) ) {
+    HMap* map = (HMap*) obj;
+    if (map->hst->GetEntries() > 0) {
+      map->hst->Reset();
+    }
+  }
+
+  //UpdateStatus(1);
+
+}
 
 void HistFrame::HiReset()
 {

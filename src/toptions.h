@@ -44,6 +44,8 @@ public:
   // максимальная размерность: 32 бита, значит число окон
   // не может быть больше 32
   // bit mask: 1 - cut is in this histogram; 0 - cut is not here
+
+  //Float_t roi[MAX_CH+NGRP][MAXROI];
   Float_t roi[MAXROI][2];
   
   Int_t rb,rb2; //rebin
