@@ -1981,7 +1981,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   const int butx=70,buty=30;
 
-  TGGroupFrame* fGr1 = new TGGroupFrame(vframe1, "Acquisition", kVerticalFrame);
+  fGr1 = new TGGroupFrame(vframe1, "Acquisition", kVerticalFrame);
   fGr1->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   vframe1->AddFrame(fGr1, LayCT1);
 
@@ -1994,27 +1994,27 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fStart->Connect("Clicked()","MainFrame",this,"DoStartStop(=1)");
   fGr1->AddFrame(fStart, LayET1);
 
-  fPause = new TGTextButton(fGr1,"Continue");
-  fPause->SetToolTipText("Continue/Pause acquisition");
-  fPause->SetFont(tfont14,false);
-  fPause->Resize(butx,buty);
-  fPause->ChangeOptions(fPause->GetOptions() | kFixedSize);
-  fPause->ChangeBackground(fGreen2);
-  fPause->Connect("Clicked()","MainFrame",this,"DoStartStop(=0)");
-  fGr1->AddFrame(fPause, LayET1);
+  fContinue = new TGTextButton(fGr1,"Continue");
+  fContinue->SetToolTipText("Continue/Pause acquisition");
+  fContinue->SetFont(tfont14,false);
+  fContinue->Resize(butx,buty);
+  fContinue->ChangeOptions(fContinue->GetOptions() | kFixedSize);
+  fContinue->ChangeBackground(fGreen2);
+  fContinue->Connect("Clicked()","MainFrame",this,"DoStartStop(=0)");
+  fGr1->AddFrame(fContinue, LayET1);
 
   /*
-  fPause = new TGTextButton(fGr1,"Clear");
-  fPause->SetToolTipText("Clear histograms (works during acquisition/analysis)");
-  fPause->SetFont(tfont14,false);
-  fPause->Resize(butx,buty);
-  fPause->ChangeOptions(fPause->GetOptions() | kFixedSize);
-  fPause->ChangeBackground(fCyan);
-  fPause->Connect("Clicked()","HistFrame",HiFrm,"DoClear()");
-  fGr1->AddFrame(fPause, LayET1);
+  fContinue = new TGTextButton(fGr1,"Clear");
+  fContinue->SetToolTipText("Clear histograms (works during acquisition/analysis)");
+  fContinue->SetFont(tfont14,false);
+  fContinue->Resize(butx,buty);
+  fContinue->ChangeOptions(fContinue->GetOptions() | kFixedSize);
+  fContinue->ChangeBackground(fCyan);
+  fContinue->Connect("Clicked()","HistFrame",HiFrm,"DoClear()");
+  fGr1->AddFrame(fContinue, LayET1);
   */
 
-  TGGroupFrame* fGr2 = new TGGroupFrame(vframe1, "Analysis", kVerticalFrame);
+  fGr2 = new TGGroupFrame(vframe1, "Analysis", kVerticalFrame);
   fGr2->SetTitlePos(TGGroupFrame::kCenter);
   vframe1->AddFrame(fGr2, LayCT1);
 
@@ -2116,7 +2116,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   if (crs->Fmode!=1) { //no CRS present
     daqpar->AllEnabled(false);
     fStart->SetEnabled(false);
-    fPause->SetEnabled(false);
+    fContinue->SetEnabled(false);
     //fReset->SetEnabled(false);
   }
 
@@ -2404,8 +2404,8 @@ void MainFrame::DoStartStop(int rst) {
     if (!crs->batch) {
       fStart->ChangeBackground(fGreen);
       fStart->SetText("Start");
-      fPause->ChangeBackground(fGreen2);
-      fPause->SetText("Continue");
+      fContinue->ChangeBackground(fGreen2);
+      fContinue->SetText("Continue");
     }
     //crs->b_stop=false;
     //crs->Show();
@@ -2421,16 +2421,23 @@ void MainFrame::DoStartStop(int rst) {
       //ParLock();
       fStart->ChangeBackground(fRed);
       fStart->SetText("Stop");
-      fPause->ChangeBackground(fMagenta);
-      fPause->SetText("Pause");
+      //fContinue->SetEnabled(false);
+
+      //TList* l2 = fGr2->GetList();
+
+      
+      fContinue->ChangeBackground(fRed);
+      fContinue->SetToolTipText("Stop acquisition");
+      fContinue->SetText("Stop");
+
       crs->DoStartStop(rst);
       //cout << "Start7: " << endl;
 
 
       fStart->ChangeBackground(fGreen);
       fStart->SetText("Start");
-      fPause->ChangeBackground(fGreen2);
-      fPause->SetText("Continue");
+      fContinue->ChangeBackground(fGreen2);
+      fContinue->SetText("Continue");
 
       crs->b_stop=true;
       crs->b_fana=false;
@@ -2533,7 +2540,7 @@ void MainFrame::DoClose() {
   if (crs->Fmode==1) { //CRS is present
     //daqpar->AllEnabled(true);
     fStart->SetEnabled(true);
-    fPause->SetEnabled(true);
+    fContinue->SetEnabled(true);
     //fReset->SetEnabled(true);
 
     //opt.raw_write=false;

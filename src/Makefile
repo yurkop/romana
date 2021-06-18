@@ -1,6 +1,6 @@
 # make TIMES=1 to compile with TIMES option
 # make DEBUG=1 to compile with debug option
-GIT_VERSION := $(shell git describe --abbrev=6 --always --tags)
+GIT_VERSION := $(shell git describe --abbrev=6 --always --tags --dirty)
 SRC_D = src
 OBJ_D = obj
 

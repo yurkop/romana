@@ -125,9 +125,12 @@ class MainFrame : public TGMainFrame {
 
   TRootEmbeddedCanvas  *fEcanvas;
 
-  TGMenuBar            *fMenuBar;     // main menu bar
+  TGMenuBar    *fMenuBar;     // main menu bar
+
+  TGGroupFrame *fGr1, *fGr2;
+
   TGTextButton *fStart;
-  TGTextButton *fPause;
+  TGTextButton *fContinue;
   TGTextButton *fAna;
   TGTextButton *fNb;
 

@@ -799,7 +799,7 @@ void ParDlg::UpdateField(int nn) {
 
     //cout << "bit9: " << bit9 << " " << nn << " " << pp->data << " " << &cpar.Smpl << endl;
 
-    if ((pp->data==&cpar.Smpl /*|| pp->data==&cpar.St_trig*/)
+    if ((pp->data==&cpar.Smpl || pp->data==&cpar.F24)
 	&& (crs->Fmode!=1 || crs->module<41)) {
       EnableField(nn,false);
     }
@@ -811,6 +811,7 @@ void ParDlg::UpdateField(int nn) {
 	&& crs->Fmode!=1) {
       EnableField(nn,false);
     }
+
     //TGNumberEntryField *wg = (TGNumberEntryField*) pp->field;
     //cout << "bit9: " << wg->IsEnabled() << " " << pp->cmd << endl;
   }
@@ -1332,11 +1333,11 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   // AddLine_opt(fF6,ww,&cpar.St_trig,&cpar.DTW,tip1,tip2,label,k_chk,k_int,
   // 	      0,0,1,2e9,0x200|(3<<1)|1,0x200|1);
 
-  tip1="";
+  tip1="24-bit data format (only for CRS-8/16, CRS-128)";
   tip2= "START input channel dead time (in samples). All channels are inhibited during START dead time";
   label="START dead time";
-  AddLine_opt(fF6,ww,NULL,&cpar.DTW,tip1,tip2,label,k_chk,k_int,
-	      0,0,1,2e9,0x200|(3<<1)|1,0x200|1);
+  AddLine_opt(fF6,ww,&cpar.F24,&cpar.DTW,tip1,tip2,label,k_int,k_int,
+	      0,1,1,2e9,0x200|(5<<1)|1,0x200|1);
 
 
   // if (crs->module<41 || crs->module>70) {

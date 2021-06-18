@@ -51,9 +51,10 @@ void Coptions::InitPar(int zero) {
   
   forcewr=false;
   Trigger=0;
-  DTW=1;
   Smpl=0;
   St_Per=0;
+  F24=0;
+  DTW=1;
 
   F_start = gSystem->Now();
   F_stop = 0;

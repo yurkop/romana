@@ -1887,7 +1887,7 @@ void CRS::AllParameters43() {
       Command32(2,chan,29,(int) red); // величина пересчета P
       Command32(2,chan,31,(int) mask); //битовая маска принадлежности к группам
       Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
-
+      Command32(2,chan,34,cpar.F24); // разрядность форматирования отсчетов сигнала
     } // if (cpar.on[chan])
     else {
       Command32(2,chan,25,0); // битовая маска разрешений записи = 0
@@ -2235,13 +2235,7 @@ int CRS::DoStartStop(int rst) {
     b_acq=true;
     b_stop=false;
     //bstart=true;
-    //inputbytes=0;
-    //rawbytes=0;
-    //b_pevent=true;
-		
-    //npulses=0;
-    //nevents=0;
-    //nbuffers=0;
+
 
     //Nsamp=0;
     //nsmp=0;
@@ -2399,6 +2393,10 @@ void CRS::DoReset(int rst) {
     nevents=0;
     nevents2=0;
 
+    inputbytes=0;
+    rawbytes=0;
+    decbytes=0;
+
     npulses=0;
     nbuffers=0;
     memset(npulses2,0,sizeof(npulses2));
@@ -2411,7 +2409,7 @@ void CRS::DoReset(int rst) {
     juststarted=true;
 
     if (daqpar) {
-      daqpar->UpdateStatus(1);
+      daqpar->UpdateStatus(rst);
       //daqpar->ResetStatus();
     }
   }
@@ -4345,13 +4343,28 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 	idx1+=8;
 	continue;
       }
-      for (int i=0;i<3;i++) {
-	d16 = data & 0xFFFF;
-	// cout << d16;
-	//	/*YK*/ d16>>=1;
-	// cout << " :: " << d16 << endl;
-	ipls.sData.push_back(d16);
-	data>>=16;
+      if (cpar.F24) {
+	for (int i=0;i<2;i++) {
+	  d32 = data & 0xFFFFFF;
+	  Float_t f32 = (d32<<8)>>8;
+	  //Float_t f33 = f32+1;
+	  //Float_t f34 = f32-1;
+	  //Double_t f32 = (d32<<8)>>8;
+
+	  //printf("d32_0: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f32/256.0f);
+	  //printf("d32_1: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f33/256.0f);
+	  //printf("d32_2: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f34/256.0f);
+
+	  ipls.sData.push_back(f32/256.0f);
+	  data>>=24;
+	}
+      }
+      else { 
+	for (int i=0;i<3;i++) {
+	  d16 = data & 0xFFFF;
+	  ipls.sData.push_back(d16);
+	  data>>=16;
+	}
       }
       break;
     case 4: //C – [24]; A – [24]

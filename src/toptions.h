@@ -91,9 +91,10 @@ public:
   // 1 - both channels are written with any trigger
   Int_t Trigger; // [St_trig]   0 - discr; 1 - START; 2 - coinc
   //Bool_t St_trig; //force trigger on start
-  Int_t DTW; //Start dead time window
   Int_t Smpl; //Sampling rate divider
   Int_t St_Per; //Start imitator period
+  Int_t F24; //24-bit format for CRS-8, CRS-128
+  Int_t DTW; //Start dead time window
 
   Long64_t F_start; //start of the acquisition
   Long64_t F_stop; //stop of the acquisition (usually time of last modification of file)
