@@ -91,7 +91,7 @@ protected:
   TGGroupFrame           *fGroupCh; //contains channels: frCh[i]
   TGHorizontalFrame      *frCh[MAX_CH+1];
   TGCheckButton          *fDeriv[3];
-  TGCheckButton          *fPeak[16];
+  TGCheckButton          *fPeak[MXPK];
   TGCheckButton          *fChn[MAX_CH+1];
 
   //TGTextButton           *freset;
@@ -166,7 +166,7 @@ public:
 
   void ShPtr(int zz);
   void Rebuild();
-  void EvtUpdate();
+  void ChkpkUpdate();
   void AddCh();
   void DoReset();
   void FillGraph(int dr);

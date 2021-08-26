@@ -15,7 +15,7 @@
 
 #include <TRandom.h>
 
-Long64_t markt[10];
+//Long64_t markt[10];
 
 TLine ln;
 TMarker mk;
@@ -280,8 +280,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[0] = new TGCheckButton(fVer_d, "Peaks", 0);
   fPeak[1] = new TGCheckButton(fVer_d, "Pos", 1);
   fPeak[2] = new TGCheckButton(fVer_d, "Time", 2);
-  fPeak[3] = new TGCheckButton(fVer_d, "WBase", 4);
-  fPeak[4] = new TGCheckButton(fVer_d, "Wpeak", 3);
+  fPeak[3] = new TGCheckButton(fVer_d, "WBase", 3);
+  fPeak[4] = new TGCheckButton(fVer_d, "Wpeak", 4);
   fPeak[5] = new TGCheckButton(fVer_d, "WTime", 5);
   fPeak[6] = new TGCheckButton(fVer_d, "WWidth", 6);
   fPeak[7] = new TGCheckButton(fVer_d, "*TStart", 7);
@@ -320,12 +320,21 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[10]->SetToolTipText("Show stats");
   fPeak[11]->SetToolTipText("Normalize peaks");
 
-  for (int i=0;i<12;i++) {
-    fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
+  fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
+
+  for (int i=0;i<MXPK-2;i++) {
     fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
     fVer_d->AddFrame(fPeak[i], fLay4);
   }
 
+  fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
+
+  for (int i=MXPK-2;i<MXPK;i++) {
+    fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
+    fVer_d->AddFrame(fPeak[i], fLay4);
+  }
+
+  ChkpkUpdate();
   fVer_ch = new TGVerticalFrame(fHor_st);
   fHor_st->AddFrame(fVer_ch, fLay4);
 
@@ -512,19 +521,6 @@ void EventFrame::Rebuild() {
   //fGroupCh->Layout();
 }
 
-void EventFrame::EvtUpdate() {
-  opt.b_peak[10]=opt.b_stat;
-  for (int i=0;i<12;i++) {
-    fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
-  }  
-  if (opt.b_stat) {
-    gStyle->SetOptStat(1002211);
-  }
-  else {
-    gStyle->SetOptStat(0);
-  }
-}
-
 void EventFrame::DoUndock() {
   //cout << "Event::DoUndock: " << opt.Nchan << endl;
   Rebuild();
@@ -658,7 +654,7 @@ void EventFrame::DoCheckPoint() {
     while (d_event!=ievt) {
       //cout << d_event->Nevt << " " << d_event->T << endl;
       par[3]=d_event->pulses.size();
-      par[2]=(d_event->Tstmp-crs->Tstart64)*opt.Period*1e-9;
+      par[2]=(d_event->Tstmp/*-crs->Tstart64*/)*opt.Period*1e-9;
       par[1]=d_event->Tstmp;
 
       for (pulse_vect::iterator ipls=d_event->pulses.begin();
@@ -758,45 +754,42 @@ void EventFrame::DoChkPeak() {
   TGButton *btn = (TGButton *) gTQSender;
   Int_t id = btn->WidgetId();
 
-  //opt.b_peak[id] = !opt.b_peak[id];
-
   opt.b_peak[id] = (bool) btn->GetState();
-  if (id==10) {
-    opt.b_stat=opt.b_peak[10];
-    if (opt.b_stat) {
-      gStyle->SetOptStat(1002211);
-    }
-    else {
-      gStyle->SetOptStat(0);
-    }
-  }
 
-  //btn->SetState((EButtonState) opt.b_peak[id]);
+  // if (id==0) {
+  //   for (int i=0;i<MXPK-2;i++)
+  //     opt.b_peak[i]=opt.b_peak[0];
+  // }
 
-  if (id==0) {
-    if (opt.b_peak[0]) {
-      for (int i=1;i<12;i++) {
-	fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
-      }
-    }
-    else {
-      for (int i=1;i<12;i++) {
-	fPeak[i]->SetState((EButtonState) 0);
-      }
-    }
-  }
+  ChkpkUpdate();
 
-  if (id<10 && opt.b_peak[id]) {
-    opt.b_peak[0] = true;
-    fPeak[0]->SetState((EButtonState) 1);      
-  }
-
-  //cout << "redraw: " << endl;
   if (crs->b_stop) {
     //ReDraw();
     DrawEvent2();
   }
+}
 
+void EventFrame::ChkpkUpdate() {
+
+  for (int i=0;i<MXPK;i++) {
+    if (i && i<MXPK-2)
+      fPeak[i]->SetEnabled(opt.b_peak[0]);
+
+    if (fPeak[i]->IsEnabled()) {
+      fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
+    }
+  }
+
+  // for (int i=0;i<MXPK;i++) {
+  //   fPeak[i]->SetState((EButtonState) opt.b_peak[i]);
+  // }
+
+  if (opt.b_peak[10]) {
+    gStyle->SetOptStat(1002211);
+  }
+  else {
+    gStyle->SetOptStat(0);
+  }
 }
 
 void EventFrame::DoPulseOff() {
@@ -1015,7 +1008,7 @@ void EventFrame::DrawEvent2() {
   }
 
 
-  markt[0]=gSystem->Now();
+  //markt[0]=gSystem->Now();
 
   for (int i=0;i<opt.Nchan;i++) {
     Pixel_t cc;
@@ -1031,7 +1024,7 @@ void EventFrame::DrawEvent2() {
     //fChn[i]->ChangeBackground(gcol[i]);
   }
 
-  markt[1]=gSystem->Now();
+  //markt[1]=gSystem->Now();
 
   ndiv=0;
 
@@ -1042,15 +1035,16 @@ void EventFrame::DrawEvent2() {
     }
   }
 
-  markt[2]=gSystem->Now();
+  //markt[2]=gSystem->Now();
 
   cv->Divide(1,ndiv);
 
-  markt[3]=gSystem->Now();
+  //markt[3]=gSystem->Now();
 
+  //cout << "ReDraw: " << gSystem->Now().AsString() << endl;
   ReDraw();
 
-  markt[4]=gSystem->Now();
+  //markt[4]=gSystem->Now();
   char ss[99];
 
   sprintf(ss,"%lld",d_event->Nevt);
@@ -1098,7 +1092,10 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
   if (fChn[ch]->IsOn()) {
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch];
 
-    if (pulse->Pos==-31000) pulse->Pos=cpar.Pre[ch];
+    if (pulse->Pos<=-32222) {
+      prnt("ssd d l;",BRED,"ErrPos: ",pulse->Pos,pulse->Chan,pulse->Tstamp64,RST);
+    }
+    //if (pulse->Pos==-31000) pulse->Pos=cpar.Pre[ch];
     //cout << "Pos: " << ch << " " << pulse->Pos << endl;
 
     //for (UInt_t j=0;j<pulse->Peaks.size();j++) {
@@ -1118,13 +1115,13 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
     if (fPeak[2]->IsOn()) {// Time
       doXline(pulse->Time,y2-dy*0.2,y2,3,1);
     }
+    if (dr==0 && fPeak[3]->IsOn()) { // WBase
+      doXline(B1+dt,y1,y2-dy*0.2,6,3);
+      doXline(B2-1+dt,y1,y2-dy*0.1,6,3);
+    }
     if (dr==0 && fPeak[4]->IsOn()) { // Wpeak
       doXline(P1+dt,y1,y2-dy*0.2,1,2);
       doXline(P2-1+dt,y1,y2-dy*0.1,1,2);
-    }
-    if (dr==0 && fPeak[3]->IsOn()) { // WBkgr
-      doXline(B1+dt,y1,y2-dy*0.2,6,3);
-      doXline(B2-1+dt,y1,y2-dy*0.1,6,3);
     }
     if (dr!=0 && fPeak[5]->IsOn()) { //WTime
       doXline(T1+dt,y1,y2-dy*0.2,3,2);
@@ -1162,6 +1159,7 @@ void EventFrame::ReDraw() {
     return;
   }
 
+  //cout << "ReDraw: " << d_event->pulses.size() << endl;
   int nn=1;
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
@@ -1200,7 +1198,7 @@ void EventFrame::ReDraw() {
       fHist[i]->Draw("axis");
 
       doYline(0,x1,x2,4,2);
-      if (fPeak[7]->IsOn()) { //T0
+      if (opt.b_peak[0] && opt.b_peak[7]) { //T0
 	mk.DrawMarker(d_event->T0,y2-dy*0.1);
       }
 
@@ -1216,30 +1214,23 @@ void EventFrame::ReDraw() {
 		      gx2[j],chcol[pulse->Chan],2);
 	  }
 	  if (fPeak[9]->IsOn()) { //draw text
-	    //if (pulse->Peaks.size()) {
-	      char ss[256];
-	      //PeakClass *pk = &pulse->Peaks.back();
+	    char ss[256];
+	    sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
+		    pulse->Chan,pulse->Area,pulse->Base,
+		    pulse->Time,pulse->Width);
 
-	      sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
-		      pulse->Chan,pulse->Area,pulse->Base,
-		      pulse->Time,pulse->Width);
+	    tt.SetTextAlign(0);
+	    double sz=0.025*ndiv;
+	    tt.SetTextSize(sz);
+	    tt.SetTextColor(chcol[pulse->Chan]);
+	    dd=0.74*2.0/32;
 
-	      tt.SetTextAlign(0);
-	      double sz=0.025*ndiv;
-	      tt.SetTextSize(sz);
-	      tt.SetTextColor(chcol[pulse->Chan]);
-	      dd=0.74*2.0/32;
-
-	      // cout << "txt: " << j << " " << tx << " " << ty << " "
-	      // 	 << 0.1+tx*0.5 << " " << 0.8-ty*dd
-	      // 	 << endl;
-	      tt.DrawTextNDC(0.17+tx*0.35,0.85-ty*dd,ss);
-	      tx++;
-	      if (tx>1) {
-		tx=0;
-		ty++;
-	      }
-	      //}
+	    tt.DrawTextNDC(0.17+tx*0.35,0.85-ty*dd,ss);
+	    tx++;
+	    if (tx>1) {
+	      tx=0;
+	      ty++;
+	    }
 	  }
 	}
       } //for (UInt_t j=0;j<d_event->pulses.size();j++) {

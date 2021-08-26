@@ -70,8 +70,8 @@ int FindVar(char* buf, int sz, const char* name, char* var);
 
 void example();
 void saveroot(const char *name);
-void readpar_root(const char* pname, int ropt=1);
-void readroot(const char *name);
+int readpar_root(const char* pname, int ropt=1);
+int readroot(const char *name);
 short int bits(int n, int i1, int i2);
 Bool_t getbit(int n, int bit);
 void setbit(int &n, int bit, int set);
@@ -131,6 +131,7 @@ class MainFrame : public TGMainFrame {
 
   TGTextButton *fStart;
   TGTextButton *fContinue;
+  TGTextButton *fReset2;
   TGTextButton *fAna;
   TGTextButton *fNb;
 
@@ -141,7 +142,8 @@ class MainFrame : public TGMainFrame {
   std::vector<TGCompositeFrame*> tabfr;
 
   int local_nch;
-  static const Int_t n_stat=11;
+  static const Int_t n_stat=13;
+  static const Int_t n_stat2=11;
   TGTextEntry* fStat[n_stat];
 
  public:
@@ -151,8 +153,10 @@ class MainFrame : public TGMainFrame {
   void MakeTabs(bool reb=false);
   void Rebuild();
   void SetTitle(char* fname);
-  void DoStartStop(int rst);
 
+  void EnableBut(TGGroupFrame* fGr, bool enbl);
+
+  void DoStartStop(int rst);
   void DoOpen(Int_t id);
   void DoClose();
   void DoAna();

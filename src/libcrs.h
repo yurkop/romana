@@ -28,13 +28,19 @@ enum ERR_NUM {
   ER_ZERO,
   ER_ALEN,
   ER_TST,
+
+  ER_AREA,
+  ER_BASE,
+  ER_WIDTH,
+  ER_TIME,
+  
   ER_ANA,
   ER_DEC,
   ER_LAG,
   ER_OVF,
 };
 
-typedef unsigned char byte;
+//typedef unsigned char byte;
 
 typedef std::list<EventClass>::iterator event_iter;
 typedef std::list<EventClass>::reverse_iterator event_reviter;
@@ -54,7 +60,7 @@ public:
   Int_t C,A,AY;
   Int_t RX;
   Short_t H;
-  byte E;
+  UChar_t E;
 };
 
 //---------------------------
@@ -155,8 +161,8 @@ RQ_OBJECT("CRS")
   //2: crs-8/16 (16bit)
 
   //buffers for sending parameters...
-  byte buf_out[64];
-  byte buf_in[64];
+  UChar_t buf_out[64];
+  UChar_t buf_in[64];
 
   int ntrans; //number of "simultaneous" transfers
 
@@ -169,7 +175,7 @@ RQ_OBJECT("CRS")
   Long64_t npulses; //total number of pulses (zero at Reset (Start button))
   //UInt_t npulses_buf; //pulses in the current buffer
   Long64_t nevents; //total number of events (zero at Reset (Start button))
-  Long64_t nevents2; //number of analyzed/saved events
+  Long64_t mtrig; //number of analyzed/saved (master trigger) events
   Long64_t nbuffers; //total number of buffers (zero at Reset (Start button))
   //double mb_rate;
   //double ev_rate;
@@ -181,7 +187,7 @@ RQ_OBJECT("CRS")
 
   bool batch; //batch mode
   bool abatch; //1 - acquisition in batch; 0 - file in batch
-  bool silent; //silent in batch mode
+  int scrn; //screen output in batch mode
   
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
@@ -193,7 +199,7 @@ RQ_OBJECT("CRS")
   // b_run=2 - analyze all events, then stop 
 
   Long64_t Pstamp64; //previous tstamp (only for decode_adcm)
-  Long64_t Offset64; //Tstamp offset in case of bad events
+  Long64_t Offset64; //Tstamp offset (обычно равен Tstart64)
 
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   Long64_t Tstart0; //Tstamp of the ntof start pulses
@@ -203,7 +209,9 @@ RQ_OBJECT("CRS")
 
   //PeakClass dummy_peak;
   PulseClass dummy_pulse;
+  PulseClass good_pulse;
   EventClass dummy_event;
+  EventClass good_event;
 
   Double_t b_len[MAX_CH],
     p_len[MAX_CH],
@@ -223,6 +231,12 @@ RQ_OBJECT("CRS")
     "Zero data:",                //ER_ZERO,
     "Wrong ADCM length:",        //ER_ALEN,
     "Bad ADCM Tstamp:",          //ER_TST,
+
+    "No area:",                  //ER_AREA
+    "No baseline:",              //ER_BASE
+    "No width:",                 //ER_WIDTH
+    "No time:",                  //ER_TIME
+
     "Slow analysis:",            //ER_ANA,
     "Slow decoding:",            //ER_DEC,
     "Event lag exceeded:",       //ER_LAG,    
@@ -255,10 +269,10 @@ RQ_OBJECT("CRS")
   void Submit_all(int ntr);
   void Cancel_all(int ntr);
   int Init_Transfer();
-  int Command32_old(byte cmd, byte ch, byte type, int par);
-  int Command32(byte cmd, byte ch, byte type, int par);
-  void Check33(byte cmd, byte ch, int &a1, int &a2, int min, int max);
-  int Command2(byte cmd, byte ch, byte type, int par);
+  int Command32_old(UChar_t cmd, UChar_t ch, UChar_t type, int par);
+  int Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par);
+  void Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max);
+  int Command2(UChar_t cmd, UChar_t ch, UChar_t type, int par);
   void AllParameters2(); // load all parameters
   //void AllParameters41(); // load all parameters
   void AllParameters43(); // load all parameters
@@ -302,7 +316,7 @@ RQ_OBJECT("CRS")
 
   void PulseAna(PulseClass &ipls);
   void Dec_Init(eventlist* &Blist, UChar_t frmt);
-  void Dec_End(eventlist* &Blist, UInt_t iread, byte sp);
+  void Dec_End(eventlist* &Blist, UInt_t iread, UChar_t sp);
   void Decode79(UInt_t iread, UInt_t ibuf);
   //void Decode79a(UInt_t iread, UInt_t ibuf);
   void Decode78(UInt_t iread, UInt_t ibuf);
@@ -330,7 +344,7 @@ RQ_OBJECT("CRS")
 
   void Event_Insert_Pulse(eventlist *Elist, PulseClass* pls);
   void Make_Events(std::list<eventlist>::iterator BB);
-  void Select_Event(EventClass *evt);
+  //void Select_Event(EventClass *evt);
 
   void Reset_Raw();
   void Reset_Dec(Short_t mod);

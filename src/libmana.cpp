@@ -13,6 +13,7 @@
 #include "popframe.h"
 //#include "peditor.h"
 
+#include <sys/times.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -535,15 +536,19 @@ int BufToClass(char* buf, char* buf2) {
   const UShort_t mx=50000;
   char data[mx];
 
-  while (buf<buf2) {
+  while (buf+sizeof(len)<buf2) {
+
     memcpy(&len,buf,sizeof(len)); //считываем длину записи имени в буфере
+    //prnt("ssd d ls;",BYEL,"bf2: ",len,mx,buf+len-buf2,RST);
+
     //могут быть нули в конце буфера из-за кратности 8
     if (len==0 && buf2-buf<10) {
       //cout << "len==0: " << len << " " << buf2-buf << endl;
       return 1;
     }
     else if (len==0 || len>=mx || buf+len>buf2) {
-      cout << "len1 error: " << len << " " << buf2-buf << endl;
+      prnt("ssd d ls;",BRED,"errlen1: ",len,mx,buf+len-buf2,RST);
+      //cout << "len1 error: " << len << " " << buf2-buf << endl;
       return 0;
     }
     buf+=sizeof(len);
@@ -860,7 +865,6 @@ void ctrl_c_handler(int s){
   printf("Caught signal %d\n",s);
 
   if (crs->b_acq && crs->Fmode==1) {
-    // fStart->Emit("Clicked()");
     myM->DoStartStop(0);
     gSystem->Sleep(300);
     return;
@@ -911,8 +915,6 @@ int main(int argc, char **argv)
 {
 
   //common_init();
-  //printf("Version: %s\n", GITVERSION);
-  //exit(1);
   string s_name, dir, name, ext;
 
   //cross check for duplicate names in opt and cpar
@@ -968,7 +970,7 @@ int main(int argc, char **argv)
     "-a: start acquisition in batch mode (without gui)\n"
     "    Program exits after Tstop time is reached\n"
     "-b: analyze file in batch mode (without gui) and exit\n"
-    "-s (only in batch mode): suppress batch screen output\n"
+    "-s [n] (only in batch mode): screen output frequency (0 - no output; n - every n-th buffer) \n"
     "-w (only in batch mode): create processed .raw file in subdirectory Raw\n"
     "-d (only in batch mode): create decoded .dec file in subdirectory Dec\n"
     "-r (only in batch mode): create .root file in subdirectory Root\n"
@@ -1013,9 +1015,26 @@ int main(int argc, char **argv)
 	  crs->batch=true;
 	  crs->abatch=false;
 	  continue;
-	case 's':
-	  crs->silent=true;
+	case 's': {
+	  ++i;
+	  crs->scrn=0;
+	  if (i<argc) {
+	    char* p;
+	    crs->scrn = strtol(argv[i], &p, 10);
+	    if (*p) {
+	      //crs->scrn=-1;
+	      --i;
+	    }
+	    // try {
+	    //   crs->scrn = std::stoi(std::string(argv[i]));
+	    // }
+	    // catch(std::invalid_argument&) {
+	    //   cout << "catch: " << endl;
+	    //   --i;
+	    // }
+	  }
 	  continue;
+	}
 	case 'w':
 	  b_raw=true;
 	  continue;
@@ -1090,6 +1109,9 @@ int main(int argc, char **argv)
     } //for i
   }
 
+  //cout << crs->scrn << " " << crs->batch << " " << datfname << endl;
+  //exit(1);
+
   //if (parfile2) cout << "parfile2: " << parfile2 << endl;
   //if (datfname) cout << "datfname: " << datfname << endl;
   //exit(1);
@@ -1103,6 +1125,7 @@ int main(int argc, char **argv)
     ff = gzopen(parfile2,"rb");
     if (!ff) {
       cout << "Can't open par file: " << parfile2 << endl;
+      exit(-1);
     }
     else {
       crs->ReadParGz(ff,parfile2,0,1,1);
@@ -1127,12 +1150,14 @@ int main(int argc, char **argv)
     //cout << dir << " " << name << " " << ext << endl;
     if (!ext.compare(".root")) { //root file
       if (!parfile2) {
-	readpar_root(datfname,1);
+	if (readpar_root(datfname,1))
+	  exit(-1);
       }
       rd_root=true;
     }
     else { //.raw or .dec file
-      crs->DoFopen(datfname,rdpar); //read file and parameters from it
+      if (crs->DoFopen(datfname,rdpar)) //read file and parameters from it
+	exit(-1);
     }
   }
   else {
@@ -1381,9 +1406,8 @@ void saveroot(const char *name) {
   tf->Close();
 }
 
-void readroot(const char *name) {
-
-  //char nam[100];
+int readroot(const char *name) {
+  //return 0 - OK; 1 - error
 
   gROOT->cd();
   // TList *list = hcl->hist_list;
@@ -1391,6 +1415,8 @@ void readroot(const char *name) {
   //list->ls();
 
   TFile *tf = new TFile(name,"READ");
+  if (!tf->IsOpen())
+    return 1;
 
   TIter next(tf->GetListOfKeys());
 
@@ -1443,6 +1469,7 @@ void readroot(const char *name) {
   //strcat(maintitle,name);
 
   //cout << opt.channels[0] << endl;
+  return 0;
 }
 
 void clear_hist() {
@@ -1463,9 +1490,11 @@ void clear_hist() {
 
 }
 
-void readpar_root(const char* pname, int ropt)
+int readpar_root(const char* pname, int ropt)
 {
   TFile *f2 = new TFile(pname,"READ");
+  if (!f2->IsOpen())
+    return 1;
 
   cpar.Read("Coptions");
   if (ropt)
@@ -1477,6 +1506,7 @@ void readpar_root(const char* pname, int ropt)
 
   f2->Close();
   delete f2;
+  return 0;
 }
 
 /*
@@ -1796,12 +1826,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //   gcol[i]=gROOT->GetColor(chcol[i])->GetPixel();
   // }
 
-  TGLayoutHints* LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,20,2);
+  TGLayoutHints* LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,5,2);
   TGLayoutHints* LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
   TGLayoutHints* LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
   TGLayoutHints* LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
   TGLayoutHints* LayET1a = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,0);
   TGLayoutHints* LayET1b = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,5);
+  TGLayoutHints* LayET2=new TGLayoutHints(kLHintsExpandX|kLHintsTop,15,15,2,2);
+  TGLayoutHints* LayET3 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,15);
   //TGLayoutHints* LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
   TGLayoutHints* LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
   LayEE1 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
@@ -1929,12 +1961,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fMain = new TGMainFrame(p,w,h);
 
   // Create a vertical frame for everything
-  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this,10,10);
+  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this);
   AddFrame(hframe1, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
 
   // Create a left vertical frame with buttons
-  TGVerticalFrame *vframe1 = new TGVerticalFrame(hframe1,10,10);
-  hframe1->AddFrame(vframe1, new TGLayoutHints(kLHintsLeft | kLHintsExpandY,2,2,2,2));
+  TGVerticalFrame *vframe1 = new TGVerticalFrame(hframe1);
+  hframe1->AddFrame(vframe1, new TGLayoutHints(kLHintsLeft | kLHintsExpandY,1,1,2,2));
 
   TGFontPool *pool = gClient->GetFontPool();
 
@@ -1962,11 +1994,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
 
 
-
-  TGLabel *ver = new TGLabel(vframe1,GITVERSION);
-  //cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
-	
-  vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
   fTab = new TGTab(hframe1, 300, 300);
   hframe1->AddFrame(fTab, new TGLayoutHints(kLHintsExpandX |
@@ -2047,16 +2074,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fClose->Connect("Clicked()","MainFrame",this,"DoClose()");
   fGr2->AddFrame(fClose, LayET1);
 
-  TGTextButton *fReset2 = new TGTextButton(fGr2,new TGHotString("&Reset"));
-  fReset2->SetToolTipText("Reset/clear everything (doesn't work during acquisition/analysis)");
-  fReset2->SetFont(tfont,false);
-  fReset2->Resize(butx,buty);
-  fReset2->ChangeOptions(fReset2->GetOptions() | kFixedSize);
-  fReset2->ChangeBackground(fCyan);
-  fReset2->Connect("Clicked()","MainFrame",this,"DoReset()");
-  //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
-  fGr2->AddFrame(fReset2, LayET1);
-
   fAna = new TGTextButton(fGr2,"&Analyze");
   fAna->SetToolTipText("Analyze data file");
   fAna->SetFont(tfont,false);
@@ -2076,9 +2093,32 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fGr2->AddFrame(f1b, LayET1);
 
 
+  // TGTextButton *fReset2 = new TGTextButton(fGr2,new TGHotString("&Reset"));
+  // fGr2->AddFrame(fReset2, LayET1);
+
+  fReset2 = new TGTextButton(vframe1,new TGHotString("&Reset"));
+  vframe1->AddFrame(fReset2, LayET2);
+
+  fReset2->SetToolTipText("Reset/clear everything (doesn't work during acquisition/analysis)");
+  fReset2->SetFont(tfont,false);
+  fReset2->Resize(butx,buty);
+  fReset2->ChangeOptions(fReset2->GetOptions() | kFixedSize);
+  fReset2->ChangeBackground(fCyan);
+  fReset2->Connect("Clicked()","MainFrame",this,"DoReset()");
+  //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
+
+  TGHorizontal3DLine* v3d = new TGHorizontal3DLine(vframe1);
+  vframe1->AddFrame(v3d,LayET3);
 
   //TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
   //fGr2->AddFrame(hfr1, LayET1);
+
+
+
+  TGLabel *ver = new TGLabel(vframe1,GITVERSION);
+  //cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
+	
+  vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
   int id = parpar->Plist.size()+1;
   TGNumberEntry* fNum1 = new TGNumberEntry(fGr2, 0, 0, id,
@@ -2108,19 +2148,22 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //cout << "rd_root: " << rd_root << endl;
   if (rd_root) {
-    readroot(datfname);
+    if (readroot(datfname))
+      exit(-1);
     crs->Fmode=0;
     //SetTitle(datfname);
   }
 
   if (crs->Fmode!=1) { //no CRS present
     daqpar->AllEnabled(false);
-    fStart->SetEnabled(false);
-    fContinue->SetEnabled(false);
-    //fReset->SetEnabled(false);
+    EnableBut(fGr1,0);
+
+    //fStart->SetEnabled(false);
+    //fContinue->SetEnabled(false);
   }
 
-
+  //EnableBut(fGr1,1);
+  //EnableBut(fGr2,1);
 
 
   parpar->Update();
@@ -2139,8 +2182,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   AddFrame(fStatFrame2, LayET0);
 
   const int fwid=120;
+  const int fwid2=42;
 
-  const char* txtlab[n_stat] = {"Start","AcqTime","Events","Ev/sec","MTrig","MTrig/sec","Buffers","MB in","MB/sec","Raw MB out","Dec MB out"};
+  const char* txtlab[n_stat] = {"Start","AcqTime","Events","Ev/sec","MTrig","MTrig/sec","Buffers","MB in","MB/sec","Raw MB out","Dec MB out","CPU%:","Mem%:"};
 
   const char* st_tip[n_stat] = {
     "Acquisition start",
@@ -2154,14 +2198,26 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     "Megabytes received",
     "Received megabytes per second",
     "Raw megabytes saved",
-    "Decoded megabytes saved"
+    "Decoded megabytes saved",
+    "CPU used by the program",
+    "Memory used by the program"
   };
 
   TGTextEntry* fLab[n_stat];
+  TGHorizontalFrame *hfr1;
+
   //TGTextEntry* fStat[10];
   for (int i=0;i<n_stat;i++) {
-    fLab[i] = new TGTextEntry(fStatFrame1, txtlab[i]);
-    fStat[i] = new TGTextEntry(fStatFrame2, " ");
+    if (i<n_stat2) {
+      fLab[i] = new TGTextEntry(fStatFrame1, txtlab[i]);
+      fStat[i] = new TGTextEntry(fStatFrame2, " ");
+    }
+    else {
+      hfr1 = new TGHorizontalFrame(vframe1);
+      vframe1->AddFrame(hfr1,LayET0);
+      fLab[i] = new TGTextEntry(hfr1, txtlab[i]);
+      fStat[i] = new TGTextEntry(hfr1, " ");
+    }
     if (tfont) {
       fLab[i]->SetFont(tfont,false);
       fStat[i]->SetFont(tfont,false);
@@ -2184,6 +2240,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
       fStat[i]->SetWidth(fwid);
       fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kFixedWidth);
       fStatFrame2->AddFrame(fStat[i],LayL1);
+    }
+    else if (i>=n_stat2) {
+      fLab[i]->SetWidth(fwid2);
+      fLab[i]->ChangeOptions(fLab[i]->GetOptions()|kFixedWidth);
+      hfr1->AddFrame(fLab[i],LayL1);
+      hfr1->AddFrame(fStat[i],LayE1);
     }
     else {
       fStatFrame1->AddFrame(fLab[i],LayE1);
@@ -2393,6 +2455,30 @@ void MainFrame::SetTitle(char* fname) {
   SetWindowName(maintitle);
 }
 
+void MainFrame::EnableBut(TGGroupFrame* fGr, bool enbl) {
+  //cout << "Gr: " << fGr->GetName() << endl;
+  TIter next(fGr->GetList());
+  TObject* obj;
+  while ( (obj=(TObject*)next()) ) {
+    //TGFrameElement* el = (TGFrameElement*) obj;
+    //TGTextButton* but = (TGTextButton*) el->fFrame;
+
+    TGTextButton* but = (TGTextButton*) ((TGFrameElement*) obj)->fFrame;
+
+    //cout << "but: " << but->GetName() << " " << but->ClassName() << endl;
+    //cout << "but2: " << but->InheritsFrom(TGButton::Class()) << endl;
+
+    if (but->InheritsFrom(TGButton::Class())) {
+      but->SetEnabled(enbl);
+    }
+    else {
+      TGNumberEntry* ent = (TGNumberEntry*) but;
+      ent->SetState(enbl);
+    }
+  }  
+  
+}
+
 void MainFrame::DoStartStop(int rst) {
   //rst=1 - start/stop is pressed
   //rst=0 - continue/pause is pressed
@@ -2404,8 +2490,12 @@ void MainFrame::DoStartStop(int rst) {
     if (!crs->batch) {
       fStart->ChangeBackground(fGreen);
       fStart->SetText("Start");
-      fContinue->ChangeBackground(fGreen2);
-      fContinue->SetText("Continue");
+      fContinue->SetEnabled(true);
+
+      fReset2->SetEnabled(true);
+      EnableBut(fGr2,1);
+      //fContinue->ChangeBackground(fGreen2);
+      //fContinue->SetText("Continue");
     }
     //crs->b_stop=false;
     //crs->Show();
@@ -2421,14 +2511,16 @@ void MainFrame::DoStartStop(int rst) {
       //ParLock();
       fStart->ChangeBackground(fRed);
       fStart->SetText("Stop");
-      //fContinue->SetEnabled(false);
+      fContinue->SetEnabled(false);
 
+      fReset2->SetEnabled(false);
+      EnableBut(fGr2,0);
       //TList* l2 = fGr2->GetList();
 
       
-      fContinue->ChangeBackground(fRed);
-      fContinue->SetToolTipText("Stop acquisition");
-      fContinue->SetText("Stop");
+      //fContinue->ChangeBackground(fRed);
+      //fContinue->SetToolTipText("Stop acquisition");
+      //fContinue->SetText("Stop");
 
       crs->DoStartStop(rst);
       //cout << "Start7: " << endl;
@@ -2436,8 +2528,12 @@ void MainFrame::DoStartStop(int rst) {
 
       fStart->ChangeBackground(fGreen);
       fStart->SetText("Start");
-      fContinue->ChangeBackground(fGreen2);
-      fContinue->SetText("Continue");
+      fContinue->SetEnabled(true);
+
+      fReset2->SetEnabled(true);
+      EnableBut(fGr2,1);
+      //fContinue->ChangeBackground(fGreen2);
+      //fContinue->SetText("Continue");
 
       crs->b_stop=true;
       crs->b_fana=false;
@@ -2903,18 +2999,38 @@ void MainFrame::UpdateStatus(int rst) {
 
   static Long64_t bytes1=0;
   static Long64_t nevents_old=0;
-  static Long64_t nevents2_old=0;
+  static Long64_t mtrig_old=0;
   static double t1=0;
   static double mb_rate,ev_rate,trig_rate;
+
+  static clock_t clk_old, proc_old;
+
+  struct tms timeSample;
+
+  Long64_t tot;
+  clock_t clk, proc;
+  static double percent=0;
+  static double pmem=0;
+
+  //gSystem->GetProcInfo(&pinfo);
+  
+  //cout << "updatestatus: " << rst << endl;
 
   if (rst) {
     bytes1=0;
     nevents_old=0;
-    nevents2_old=0;
-    t1=0;
+    mtrig_old=0;
     mb_rate=0;
     ev_rate=0;
     trig_rate=0;
+
+    clk_old=0;
+    proc_old=0;
+    percent=0;
+    pmem=0;
+
+    t1=0;
+    opt.T_acq=0;
   }
 
   //char txt[100];
@@ -2930,28 +3046,55 @@ void MainFrame::UpdateStatus(int rst) {
   if (dt>0.1) {
     mb_rate = (crs->inputbytes-bytes1)/MB/dt;
     ev_rate = (crs->nevents-nevents_old)/dt;
-    trig_rate = (crs->nevents2-nevents2_old)/dt;
+    trig_rate = (crs->mtrig-mtrig_old)/dt;
     //cout << "trig_rate: " << trig_rate << " " << dt << endl;
 
     bytes1=crs->inputbytes;
     nevents_old=crs->nevents;
-    nevents2_old=crs->nevents2;
+    mtrig_old=crs->mtrig;
     t1=opt.T_acq;
+
+    //cpu
+    clk = times(&timeSample);
+    proc = timeSample.tms_stime + timeSample.tms_utime;
+    tot = clk-clk_old;
+    if (tot>10) {
+      percent = 100.*(proc-proc_old)/tot;
+      clk_old=clk;
+      proc_old=proc;
+    }
+    //else
+    //percent = 0;
+
+    //mem
+    gSystem->GetMemInfo(&minfo);
+    gSystem->GetProcInfo(&pinfo);
+    pmem = pinfo.fMemResident/minfo.fMemTotal*0.1;
   }
 
-  fStat[ii++]->SetText(crs->txt_start,kFALSE);
+  fStat[ii++]->SetText(crs->txt_start,0);
 
-  fStat[ii++]->SetText(TGString::Format("%0.1f",opt.T_acq),1);
-  fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%0.3f",ev_rate),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents2),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%0.3f",trig_rate),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%lld",crs->nbuffers),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),kFALSE);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->decbytes/MB),kFALSE);
+  fStat[ii++]->SetText(TGString::Format("%0.1f",opt.T_acq),0);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents),0);
+  fStat[ii++]->SetText(TGString::Format("%0.3f",ev_rate),0);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->mtrig),0);
+  fStat[ii++]->SetText(TGString::Format("%0.3f",trig_rate),0);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->nbuffers),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->decbytes/MB),0);
 
+  fStat[ii++]->SetText(TGString::Format("%0.2f",percent),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",pmem),0);
+
+  // cout << "Pinfo: " << clk << " " << proc << " " << percent
+  //      << " " << tot << " " << proc-proc_old
+  //      << " " << timeSample.tms_stime << " " << timeSample.tms_utime
+  //      << " " << timeSample.tms_cstime << " " << timeSample.tms_cutime
+  //      << endl;
+
+  //cout << "proc: " << rst << " " << percent << " " << tot << endl;
 }
 
 // void MainFrame::DoSetNumBuf() {
@@ -3149,7 +3292,7 @@ void MainFrame::DoTab(Int_t num) {
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
     parpar->Update();
-    EvtFrm->EvtUpdate();
+    EvtFrm->ChkpkUpdate();
     //cout << "DoTab4: " << name << endl;
     if (crs->b_stop)
       EvtFrm->DrawEvent2();

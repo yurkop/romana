@@ -19,7 +19,7 @@
 //#define p_cmb 4
 //#define p_txt 5
 
-typedef unsigned char byte;
+//typedef unsigned char byte;
 //typedef std::list<TGFrame*> wlist;
 
 enum P_Def {
@@ -38,7 +38,7 @@ struct pmap {
   void* data2; //address of the second (parallel) parameter
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
   char all; //1 - all/ALL/* parameters; >1 - channel type
-  //byte cmd; //опции (биты)
+  //UChar_t cmd; //опции (биты)
   UInt_t cmd; //опции (биты)
   //0x1: (bit0) 1: start/stop DAQ
   //0xE: (bit1-3) change color
@@ -64,7 +64,7 @@ struct pmap {
   // 4 - profilometer hist
   */
 
-  //byte chan; //for Command_crs :seems to be not needed (21.01.2020)
+  //UChar_t chan; //for Command_crs :seems to be not needed (21.01.2020)
 };
 
 typedef std::vector<pmap>::iterator piter;
@@ -123,7 +123,7 @@ protected:
 
 public:
   std::vector<pmap> Plist;
-  std::vector<byte> Clist; //list of isanable states for daqdisable
+  std::vector<UChar_t> Clist; //list of isanable states for daqdisable
 
 public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);

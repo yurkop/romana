@@ -33,7 +33,7 @@ const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to
 const int MAX_PCUTS=11; //maximal number of points in cutG
 const int MAX_PADS=256; //maximal number of sub-pads in histframe
 
-const int MAX_ERR=12; //maximal number of error types;
+const int MAX_ERR=16; //maximal number of error types;
 
 // const int A0A1_MAX=2; // maximal number of input channels used in A0A1 2d hists
 
@@ -53,4 +53,5 @@ const int MAIN_HEIGHT = 550; //height of the main window
 const int MAIN_WIDTH = 630; //width of the main window
 const int W2_HEIGHT = 210; //height of the split frame containing ch_types
 
+const int MXPK=12; // eventframe
 #endif

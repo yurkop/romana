@@ -32,17 +32,9 @@ const double mks=0.001;
 
 using namespace std;
 
-/*
-PeakClass::PeakClass() {
-  Type=0;
-  //Area=0;
-  //Width=0;
-  //B1=0;
-}
-*/
-
 PulseClass::PulseClass() {
-  Pos=-31000;
+  Pos=-32222; // -> no peak found:
+              // Area, Time, Width не имеют смысла
   //ptype=P_NOSTOP;
   ptype=0;
   //Nsamp=0;
@@ -51,6 +43,8 @@ PulseClass::PulseClass() {
   Tstamp64=0;
   Spin=0;
   Area=0;
+  //Time=99999;
+  //Width=88888;
   //tdif=99;
   //sData=NULL;
   //Peaks=NULL;
@@ -66,7 +60,7 @@ void PulseClass::FindPeaks() {
   //      4 - fall of derivative;
   //      5 - threshold crossing of derivative, use 2nd deriv for timing.
 
-  Pos=-32222;
+  //Pos=-32222;
 
   if (sData.size()<2) {
     return;
@@ -74,9 +68,6 @@ void PulseClass::FindPeaks() {
 
   UInt_t kk=opt.sDrv[Chan];
   if (kk<1 || kk>=sData.size()) kk=1;
-
-  //PeakClass pk=PeakClass();
-  //PeakClass *p_prev=0;
 
   //bool in_peak=false;
   Float_t* D = new Float_t[sData.size()]();
@@ -185,39 +176,31 @@ void PulseClass::PeakAna33() {
   Short_t W2; //right width window
 
   // if (Chan==7) {
-  //   cout << "Peakana33: " << (int) Chan << " " << Peaks.size() << " " << sData.size() << endl;
   // }
 
-  //PeakClass *pk;
+  //prnt("sl d l d;","P33: ",Tstamp64,Pos,sData.size(),opt.sTg[Chan]);
 
   int sz=sData.size();
   Int_t kk=opt.sDrv[Chan];
   if (kk<1 || kk>=sz-1) kk=1;
 
   if (sData.size()<=2) {
-    //   Peaks.push_back(PeakClass());
-    //   Peaks.back().Pos=cpar.Pre[Chan];
-    //   Peaks.back().Time=0;
     return;
   }
 
-  //return;
-  //Short_t T5; //left width window
-  //Short_t T6; //right width window
-
-  if (opt.sTg[Chan]<0) { //use hardware trigger
-    //Peaks.push_back(PeakClass());
-    //pk = &Peaks.back();
-    //pk->Pos=crs->Pre[Chan];
-    Pos=cpar.Pre[Chan];
-  }
-  else { //use software trigger
+  if (opt.sTg[Chan]>=0) { //use software trigger
     FindPeaks();
   }
+  else {//use hardware trigger
+    Pos=cpar.Pre[Chan];
+  }
 
-  if (Pos<0) {//Peaks.empty()) {
+  //prnt("ssl d ls;","P33: ",BYEL,Tstamp64,Pos,sData.size(),RST);
+
+  if (Pos<=-32222) {// нет пиков
     return;
   }
+
 
   //pk=&Peaks.back();
   Float_t sum;
@@ -281,10 +264,15 @@ void PulseClass::PeakAna33() {
   if (abs(sum)>1e-5) {
     Time/=sum;
   }
-  else
+  else {
+    ++crs->errors[ER_TIME];
+    //prnt("ssfs;",BGRN,"ErrTime1: ",sum,RST);
     Time=(T1+T2)*0.5;
+  }
 
   Time-=cpar.Pre[Chan];
+
+  //cout << "Peakana33: " << (int) Chan << " " << Time << endl;
 
   //pk->Time=sum;
 
@@ -345,13 +333,13 @@ void PulseClass::PeakAna33() {
     nbkg++;
   }
 
-  //cout << "Bkg: " << nbkg << " " << opt.bkg2[Chan]-opt.bkg1[Chan] << endl;
-
   if (nbkg)
     Base/=nbkg;
   else {
-    //cout << "Error!!! Error!!! Error!!! Check it!!! zero background!!!: " << this->Tstamp64 << " " << nbkg << " " << B1 << " " << B2 << endl;
+    ++crs->errors[ER_BASE];
   }
+
+  //prnt("ssl d d d fs;",BBLU,"Base: ",Tstamp64,B1,B2,nbkg,Base,RST);
 
   int nn=0;
   //peak Area & Height
@@ -366,7 +354,8 @@ void PulseClass::PeakAna33() {
     Area0/=nn;
   }
   else {
-    cout << "zero Area: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
+    ++crs->errors[ER_AREA];
+    //cout << "zero Area: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
   }
 
   //calibration
@@ -390,7 +379,8 @@ void PulseClass::PeakAna33() {
       Width/=nn;
     }
     else {
-      cout << "zero Width: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
+      ++crs->errors[ER_WIDTH];
+      //cout << "zero Width: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
     }
   	
     Width-=Base;
@@ -530,14 +520,23 @@ EventClass::EventClass() {
 
   }
 */
-void EventClass::Pulse_Ana_Add(PulseClass *pls) {
-  //void EventClass::Pulse_Ana_Add(pulse_vect::iterator pls) {
+void EventClass::AddPulse(PulseClass *pls) {
+  // добавляет PulseClass *pls в текущее событие;
+  // проверяет вето, если вето -> pls не добавляется
+  // определяет Spin
+  // определяет T0
+  // поправляет pls->Time
+
+  
+  //void EventClass::AddPulse(pulse_vect::iterator pls) {
 
   // if (opt.b_pulse) {
   //   crs->mean_event.Pulse_Mean_Add(pls);
   // }
   //Float_t dt;
   //Long64_t dt;
+
+  //prnt("ss d f l l fs;",BGRN,"PAA0:",pls->Chan,pls->Time,Nevt,Tstmp,T0,RST);
 
   for (UInt_t i=0;i<pulses.size();i++) { //reject identical pulses
     if (pls->Chan == pulses[i].Chan &&
@@ -566,15 +565,17 @@ void EventClass::Pulse_Ana_Add(PulseClass *pls) {
 
   pulses.push_back(*pls);
 
-  if (opt.St[pls->Chan]) {
-    if (pls->Time+opt.sD[pls->Chan]/opt.Period<T0) {
-      T0=pls->Time+opt.sD[pls->Chan]/opt.Period;
+  if (opt.St[pls->Chan] && pls->Pos>-32222) {
+    Float_t T1 = pls->Time+opt.sD[pls->Chan]/opt.Period;
+    if (T1<T0) {
+      T0=T1;
     }
     // if (pls->Time<T0) {
     //   T0=pls->Time;
     // }
   }
 
+  //prnt("ss d f l l fs;",BRED,"PAA1:",pls->Chan,pls->Time,Nevt,Tstmp,T0,RST);
 }
 
 void EventClass::Fill_Time_Extend(HMap* map) {
@@ -583,7 +584,10 @@ void EventClass::Fill_Time_Extend(HMap* map) {
   TH1F* hh = (TH1F*) map->hst;
   Double_t max = hh->GetXaxis()->GetXmax();
 
+  //prnt("ssl l f fs;",BGRN,"T_acq: ",Nevt,Tstmp,opt.T_acq,max,RST);
+
   if (opt.T_acq > max) {
+    //prnt("ssl l fs;",BYEL,"T_acq: ",Nevt,Tstmp,opt.T_acq-max,RST);
     if (opt.T_acq - max > 1e4) { //larger than several hours
       cout << "Time leap is too large: " << this->Nevt << " " << opt.T_acq << " " << max << " " << crs->Tstart64 << endl;
     }
@@ -599,12 +603,52 @@ void EventClass::Fill_Time_Extend(HMap* map) {
       max*=nn;
 
       int nbin = hh->GetNbinsX()*nn;
-      Float_t* arr = new Float_t[nbin+2];
-      memset(arr,0,sizeof(Float_t)*(nbin+2));
-      Float_t* arr2 = hh->GetArray();
-      memcpy(arr,arr2,hh->GetSize()*sizeof(Float_t));
-      hh->SetBins(nbin,0,max);
-      hh->Adopt(nbin+2,arr);
+
+      //hh->SetBins(nbin,0,max);
+
+
+      //Float_t* arr = new Float_t[nbin+2];
+      //memset(arr,0,sizeof(Float_t)*(nbin+2));
+
+      TIter next(hcl->allmap_list);
+      TObject* obj;
+      while ( (obj=(TObject*)next()) ) {
+	HMap* map2 = (HMap*) obj;
+	if (map2->hd==&opt.h_rate) {
+	  TH1F* hh2 = (TH1F*) map2->hst;
+	  hh2->SetBins(nbin,0,max);
+	}
+      }
+
+      /*
+      TIter next(hcl->allmap_list);
+      TObject* obj;
+      while ( (obj=(TObject*)next()) ) {
+	HMap* map2 = (HMap*) obj;
+	if (map2->hd==&opt.h_rate) {
+	  //cout << "map2: " << map2->GetName() << " " << map2->GetTitle()
+	  //     << " " << (map2->hd==&opt.h_rate) << endl;
+	  TH1F* hh2 = (TH1F*) map2->hst;
+	  Float_t* arr2 = hh2->GetArray();
+	  memcpy(arr,arr2,hh2->GetSize()*sizeof(Float_t));
+	  hh2->SetBins(nbin,0,max);
+	  hh2->Adopt(nbin+2,arr);
+	}
+      }
+      */
+
+
+      /*
+      for (int i=0;i<MAX_CH+NGRP;i++) {
+	TH1F* hh2 = (TH1F*) hcl->m_rate[i]->hst;
+	Float_t* arr2 = hh2->GetArray();
+	memcpy(arr,arr2,hh2->GetSize()*sizeof(Float_t));
+	hh2->SetBins(nbin,0,max);
+	hh2->Adopt(nbin+2,arr);
+      }
+      */
+
+
     }
   }
 }
@@ -782,6 +826,9 @@ void EventClass::FillHist(Bool_t first) {
   //int mult=0;
   Long64_t tm;
 
+  //prnt("s l l l;","evnt:",Nevt,Tstmp,T0);
+
+
   Float_t AA[MAX_CH+1] = {}; //initialize to zero
   //int ch_alpha=-1;
 
@@ -791,7 +838,7 @@ void EventClass::FillHist(Bool_t first) {
     //   crs->Tstart64 = Tstmp;
     // }
   	
-    opt.T_acq=(Tstmp - crs->Tstart64)*DT;
+    opt.T_acq=(Tstmp/*- crs->Tstart64*/)*DT;
 
     if (opt.Tstop) {
       if (opt.T_acq > opt.Tstop) {
@@ -814,149 +861,149 @@ void EventClass::FillHist(Bool_t first) {
   }
 
   for (pulse_vect::iterator ipls=pulses.begin();ipls!=pulses.end();++ipls) {
-    if (ipls->Pos<-32000) // пропускаем импульсы, где не найден пик
-      continue;
     //cout << "pulse: " << Nevt << " " << Tstmp << " " << (int) ipls->Chan << " " << ipls->Pos << endl;
+    if (ipls->Pos>-32222) { // пропускаем импульсы, где не найден пик
     
-    //ipls->Ecalibr();
-    //for (UInt_t i=0;i<pulses.size();i++) {
-    int ch = ipls->Chan;
+      //ipls->Ecalibr();
+      //for (UInt_t i=0;i<pulses.size();i++) {
+      int ch = ipls->Chan;
 
-    if (opt.h_pulse.b) {
-      Fill_Mean_Pulse(first,hcl->m_pulse[ch],ipls,0);
-    }
-
-    if (opt.h_deriv.b) {
-      Fill_Mean_Pulse(first,hcl->m_deriv[ch],ipls,1);
-    }
-
-    // if (opt.elim2[ch]>0 &&
-    //      (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
-    //    continue;
-    // }
-
-    if (opt.h_rate.b) {
-      if (first) {
-	Fill_Time_Extend(hcl->m_rate[ch]);
+      if (opt.h_pulse.b) {
+	Fill_Mean_Pulse(first,hcl->m_pulse[ch],ipls,0);
       }
-      Fill1d(first,hcl->m_rate,ch,opt.T_acq);
-    }
 
-    if (opt.h_area.b) {
-      Fill1d(first,hcl->m_area,ch,ipls->Area);
-    }
-
-    if (opt.h_area0.b) {
-      Fill1d(first,hcl->m_area0,ch,ipls->Area0);
-    }
-
-    if (opt.h_base.b) {
-      Fill1d(first,hcl->m_base,ch,ipls->Base);
-    }
-
-    if (opt.h_slope1.b) {
-      Fill1d(first,hcl->m_slope1,ch,ipls->Slope1);
-    }
-
-    if (opt.h_slope2.b) {
-      Fill1d(first,hcl->m_slope2,ch,ipls->Slope2);
-    }
-
-    if (opt.h_width.b) {
-      Fill1d(first,hcl->m_width,ch,ipls->Width);
-    }
-
-    if (opt.h_area_base.b) {
-      Fill2d(first,hcl->m_area_base[ch],ipls->Area,ipls->Base);
-    }
-
-    if (opt.h_area_sl1.b) {
-      Fill2d(first,hcl->m_area_sl1[ch],ipls->Area,ipls->Slope1);
-    }
-
-    if (opt.h_area_sl2.b) {
-      Fill2d(first,hcl->m_area_sl2[ch],ipls->Area,ipls->Slope2);
-    }
-
-    if (opt.h_slope_12.b) {
-      Fill2d(first,hcl->m_slope_12[ch],ipls->Slope1,ipls->Slope2);
-    }
-
-    if (opt.h_area_time.b) {
-      Fill2d(first,hcl->m_area_time[ch],ipls->Area,opt.T_acq);
-    }
-
-    if (opt.h_area_width.b) {
-      Fill2d(first,hcl->m_area_width[ch],ipls->Area,ipls->Width);
-    }
-
-    if (opt.h_hei.b) {
-      Fill1d(first,hcl->m_height,ch,ipls->Height);
-    }
-
-    if (opt.h_time.b && T0!=99999) {
-      //double dt = pulses[i].Tstamp64 - Tstmp;
-      //tt = Time - T0 + dt;
-      tt = ipls->Time - T0;
-      Fill1d(first,hcl->m_time,ch,tt*opt.Period+opt.sD[ch]);
-    }
-
-    //ntof
-    if (opt.h_ntof.b || opt.h_etof.b || opt.h_ltof.b) {
-      // определяем старт
-      if (ch==opt.start_ch) {
-	crs->Tstart0 = Tstmp + Long64_t(ipls->Time);
+      if (opt.h_deriv.b) {
+	Fill_Mean_Pulse(first,hcl->m_deriv[ch],ipls,1);
       }
-      if (crs->Tstart0>0) {
+
+      // if (opt.elim2[ch]>0 &&
+      //      (pk->Area<opt.elim1[ch] || pk->Area>opt.elim2[ch])) {
+      //    continue;
+      // }
+
+      if (opt.h_rate.b) {
+	if (first) {
+	  Fill_Time_Extend(hcl->m_rate[ch]);
+	}
+	Fill1d(first,hcl->m_rate,ch,opt.T_acq);
+      }
+
+      if (opt.h_area.b) {
+	Fill1d(first,hcl->m_area,ch,ipls->Area);
+      }
+
+      if (opt.h_area0.b) {
+	Fill1d(first,hcl->m_area0,ch,ipls->Area0);
+      }
+
+      if (opt.h_base.b) {
+	Fill1d(first,hcl->m_base,ch,ipls->Base);
+      }
+
+      if (opt.h_slope1.b) {
+	Fill1d(first,hcl->m_slope1,ch,ipls->Slope1);
+      }
+
+      if (opt.h_slope2.b) {
+	Fill1d(first,hcl->m_slope2,ch,ipls->Slope2);
+      }
+
+      if (opt.h_width.b) {
+	Fill1d(first,hcl->m_width,ch,ipls->Width);
+      }
+
+      if (opt.h_area_base.b) {
+	Fill2d(first,hcl->m_area_base[ch],ipls->Area,ipls->Base);
+      }
+
+      if (opt.h_area_sl1.b) {
+	Fill2d(first,hcl->m_area_sl1[ch],ipls->Area,ipls->Slope1);
+      }
+
+      if (opt.h_area_sl2.b) {
+	Fill2d(first,hcl->m_area_sl2[ch],ipls->Area,ipls->Slope2);
+      }
+
+      if (opt.h_slope_12.b) {
+	Fill2d(first,hcl->m_slope_12[ch],ipls->Slope1,ipls->Slope2);
+      }
+
+      if (opt.h_area_time.b) {
+	Fill2d(first,hcl->m_area_time[ch],ipls->Area,opt.T_acq);
+      }
+
+      if (opt.h_area_width.b) {
+	Fill2d(first,hcl->m_area_width[ch],ipls->Area,ipls->Width);
+      }
+
+      if (opt.h_hei.b) {
+	Fill1d(first,hcl->m_height,ch,ipls->Height);
+      }
+
+      if (opt.h_time.b && T0!=99999) {
+	//double dt = pulses[i].Tstamp64 - Tstmp;
+	//tt = Time - T0 + dt;
+	tt = ipls->Time - T0;
+	Fill1d(first,hcl->m_time,ch,tt*opt.Period+opt.sD[ch]);
+      }
+
+      //ntof
+      if (opt.h_ntof.b || opt.h_etof.b || opt.h_ltof.b) {
+	// определяем старт
+	if (ch==opt.start_ch) {
+	  crs->Tstart0 = Tstmp + Long64_t(ipls->Time);
+	}
+	if (crs->Tstart0>0) {
+	  tm = Tstmp + Long64_t(ipls->Time);
+	  tt = (tm - crs->Tstart0)*mks*opt.Period;
+
+	  if (tt>0) {
+	    //check for missed starts
+	    if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
+	      crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
+	      tt = (tm - crs->Tstart0)*mks*opt.Period;
+	    }
+	    if (opt.h_ntof.b) {
+	      Fill1d(first,hcl->m_ntof,ch,tt);
+	    }
+	    if (opt.h_area_ntof.b) {
+	      Fill2d(first,hcl->m_area_ntof[ch],ipls->Area,tt);
+	    }
+	    if (opt.h_etof.b) {
+	      ee = 72.298*opt.Flpath/(tt-opt.TofZero);
+	      ee= ee*ee;
+	      Fill1d(first,hcl->m_etof,ch,ee);
+	    }
+	    if (opt.h_ltof.b) {
+	      sqee = 72.298*opt.Flpath/(tt-opt.TofZero);
+	      double lambda = 0.286*sqee;
+	      Fill1d(first,hcl->m_ltof,ch,lambda);
+	    }
+	  } //if tt>0
+	}
+	//} //if last pulse
+      } //if (opt.h_ntof.b || opt.h_etof.b)
+
+      if (opt.h_axay.b && (ch<=opt.h_axay.bins2)) {
+	AA[ch]=ipls->Area;
+      }
+
+      if (opt.h_per.b) {
+	//tm = pulses[i].Tstamp64 + Long64_t(Time);
 	tm = Tstmp + Long64_t(ipls->Time);
-	tt = (tm - crs->Tstart0)*mks*opt.Period;
+	if (hcl->T_prev[ch] && tm!=hcl->T_prev[ch]) {
+	  tt = (tm - hcl->T_prev[ch])*mks*opt.Period; //convert to mks
 
-	if (tt>0) {
-	  //check for missed starts
-	  if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
-	    crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
-	    tt = (tm - crs->Tstart0)*mks*opt.Period;
-	  }
-	  if (opt.h_ntof.b) {
-	    Fill1d(first,hcl->m_ntof,ch,tt);
-	  }
-	  if (opt.h_area_ntof.b) {
-	    Fill2d(first,hcl->m_area_ntof[ch],ipls->Area,tt);
-	  }
-	  if (opt.h_etof.b) {
-	    ee = 72.298*opt.Flpath/(tt-opt.TofZero);
-	    ee= ee*ee;
-	    Fill1d(first,hcl->m_etof,ch,ee);
-	  }
-	  if (opt.h_ltof.b) {
-	    sqee = 72.298*opt.Flpath/(tt-opt.TofZero);
-	    double lambda = 0.286*sqee;
-	    Fill1d(first,hcl->m_ltof,ch,lambda);
-	  }
-	} //if tt>0
+	  //int mm=tt/32;
+	  //mm*=32;
+	  //tt-=mm;
+
+	  //cout << "tt: " << tt << " " << tm << " " << hcl->T_prev[ch] << endl;
+	  Fill1d(first,hcl->m_per,ch,tt);
+	}
+	hcl->T_prev[ch]=tm;
       }
-      //} //if last pulse
-    } //if (opt.h_ntof.b || opt.h_etof.b)
-
-    if (opt.h_axay.b && (ch<=opt.h_axay.bins2)) {
-      AA[ch]=ipls->Area;
-    }
-
-    if (opt.h_per.b) {
-      //tm = pulses[i].Tstamp64 + Long64_t(Time);
-      tm = Tstmp + Long64_t(ipls->Time);
-      if (hcl->T_prev[ch] && tm!=hcl->T_prev[ch]) {
-	tt = (tm - hcl->T_prev[ch])*mks*opt.Period; //convert to mks
-
-	//int mm=tt/32;
-	//mm*=32;
-	//tt-=mm;
-
-	//cout << "tt: " << tt << " " << tm << " " << hcl->T_prev[ch] << endl;
-	Fill1d(first,hcl->m_per,ch,tt);
-      }
-      hcl->T_prev[ch]=tm;
-    }
+    } //if Pos
   } //for (UInt_t i=0;i<pulses.size()...
 
   if (opt.h_axay.b) {
@@ -1287,7 +1334,7 @@ void PulseClass::Smooth(int nn) {
 
 
 void PulseClass::PrintPulse(int pdata) {
-  printf("Pulse: %2d %2d %6ld %10lld %10lld\n",Chan,ptype,sData.size(),Counter,Tstamp64-crs->Tstart64);
+  printf("Pulse: %2d %2d %6ld %10lld %10lld\n",Chan,ptype,sData.size(),Counter,Tstamp64/*-crs->Tstart64*/);
   if (pdata) {
     for (int i=0;i<(int)sData.size();i++) {
       printf("-- %d %f\n",i,sData[i]);
@@ -1295,11 +1342,10 @@ void PulseClass::PrintPulse(int pdata) {
   }
 }
 
-void EventClass::PrintEvent() {
+void EventClass::PrintEvent(bool pls) {
   printf("Event: %8lld %10lld %10.2f %2ld\n",Nevt,Tstmp,T0,pulses.size());
-  for (UInt_t i=0;i<pulses.size();i++) {
-    //for (UInt_t j=0;j<pulses[i].Peaks.size();j++) {
+  if (pls)
+    for (UInt_t i=0;i<pulses.size();i++) {
       printf("  %3d %lld %10.2f\n",pulses[i].Chan,pulses[i].Tstamp64,pulses[i].Time);
-      //}
-  }
+    }
 }

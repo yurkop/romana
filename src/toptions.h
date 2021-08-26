@@ -258,8 +258,7 @@ public:
   Bool_t b_gcuts;
   Bool_t b_roi;
   Bool_t b_deriv[3];
-  Bool_t b_peak[16];
-
+  Bool_t b_peak[MXPK];
 
   Float_t adcm_period;
   //HCuts cuts;

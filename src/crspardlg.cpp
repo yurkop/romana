@@ -339,6 +339,10 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
     gzFile ff = gzopen("last.par","wb");
     crs->SaveParGz(ff,crs->module);
     gzclose(ff);
+    if (crs->module==22) {//CRS2
+      myM->UpdateStatus(1);
+      daqpar->UpdateStatus(1);
+    }
     crs->Command2(3,0,0,0);
   }
 #endif
@@ -2441,6 +2445,7 @@ void DaqParDlg::UpdateStatus(int rst) {
   if (rst) {
     allbad=0;
     t1=0;
+    opt.T_acq=0;
     memset(npulses2o,0,sizeof(npulses2o));
     memset(npulses3o,0,sizeof(npulses3o));
     memset(rate2,0,sizeof(rate2));

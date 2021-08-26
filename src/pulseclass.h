@@ -75,8 +75,8 @@ public:
 */
 
 //ptype==0 - > pulse had start and stop
-const unsigned char P_NOSTART=1; //pulse has no start
-const unsigned char P_NOSTOP=2; // pulse has no stop
+//const unsigned char P_NOSTART=1; //pulse has no start
+const unsigned char P_NOLAST=2; // pulse has no last fragment
 const unsigned char P_BADCH=4;
 const unsigned char P_BADTST=8;
 const unsigned char P_BADSZ=16;
@@ -101,11 +101,10 @@ class PulseClass {
 
   UChar_t Chan; //channel number
   Short_t Pos; //position of the trigger relative to pulse start (in samples)
-               //Pos=-32222 -> no peak found in FindPeaks
-               //Pos=-31000 -> default Pos - значит, FindPeaks не вызывался
+               //Pos=-32222 -> default Pos - значит, пик не найден
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
-  //bit 1: event is writable in Dec
+  //bit 1 (Spin|=2): event is writable in Dec (Ms - master channel)
   //bit 7: hardware counters
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
@@ -120,8 +119,8 @@ class PulseClass {
   //Float_t Noise1;
   //Float_t Noise2;
   Float_t Height; //maximum of pulse in the same region as Area
-  Float_t Width; //peak width - Alpatov (in 1st deriv)
-  Float_t Time; //exact time relative to pulse start (from 1st deriv), also rela
+  Float_t Width; //peak width
+  Float_t Time; //exact time relative to pulse start (from 1st deriv)
 
   //bool Analyzed; //true if pulse is already analyzed
  public:
@@ -149,7 +148,7 @@ class EventClass { //event of pulses
   Long64_t Nevt;
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
-  //bit 1: event is writable in Dec
+  //bit 1 (Spin|=2): event is writable in Dec (Ms - master channel)
   //bit 7: hardware counters
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
@@ -167,7 +166,7 @@ class EventClass { //event of pulses
   //void Pulse_Mean_Add(PulseClass *newpulse);
 
   //void Pulse_Ana_Add(pulse_vect::iterator pls);
-  void Pulse_Ana_Add(PulseClass *pls);
+  void AddPulse(PulseClass *pls);
   void Fill_Time_Extend(HMap* map);
   void Fill1d(Bool_t first, HMap* map[], int ch, Float_t x);
   static void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w);
@@ -178,7 +177,7 @@ class EventClass { //event of pulses
   void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);
   void FillHist(Bool_t first);
   void FillHist_old();
-  void PrintEvent();
+  void PrintEvent(bool pls=1);
   //void PeakAna();
   //ClassDef(EventClass, 0)
 };
