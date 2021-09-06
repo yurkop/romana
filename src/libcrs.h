@@ -92,7 +92,7 @@ RQ_OBJECT("CRS")
 
   char raw_opt[5];
   char dec_opt[5];
-  char Fname[255];
+  char Fname[255]; //имя файла для чтения/обработки
 
   string rawname;
   string decname;

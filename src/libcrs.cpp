@@ -2194,7 +2194,7 @@ int CRS::DoStartStop(int rst) {
 	
   if (!b_acq) { //start
 
-    cout << "start: " << rst << endl;
+    //cout << "start: " << rst << endl;
     crs->Free_Transfer();
     gSystem->Sleep(50);
 
@@ -2312,6 +2312,7 @@ void CRS::ProcessCrs(int rst) {
   b_run=1;
   Ana_start();
 
+  prnt("ssf d ls;",BBLU,"T_acq: ",opt.T_acq,crs->module,crs->Tstart64,RST);;
   //decode_thread_run=1;
   //tt1[3].Set();
   if (rst && crs->module>=32 && crs->module<=70) {
@@ -2329,7 +2330,7 @@ void CRS::ProcessCrs(int rst) {
     gSystem->Sleep(10);   
     gSystem->ProcessEvents();
     if (opt.Tstop && opt.T_acq>opt.Tstop) {
-      //cout << "Stop1!!!" << endl;
+      //prnt("ssf f ls;",BRED,"Stop1!!!: ",opt.Tstop,opt.T_acq,crs->Tstart64,RST);;
       DoStartStop(0);
       //cout << "Stop2!!!" << endl;
     }
@@ -4893,6 +4894,9 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 
 	Long64_t dt=ipls.Tstamp64-Pstamp64;
 
+
+
+
 	//10 or 20 sec = 2e9
 	if (abs(dt) > 2000000000) { //bad event: поправляем Offset64
 	  Offset64+=dt;
@@ -4901,18 +4905,13 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 	  double DT = opt.Period*1e-9;
 	  prnt("ssl l l f f fs;",BYEL,"Bad Tstamp: ",dt,ipls.Tstamp64,Pstamp64,
 	       dt*DT,ipls.Tstamp64*DT,Pstamp64*DT,RST);
-	  //cout << "bad Tstamp: "<<dt<<" "<<ipls.Tstamp64<<" "<<Offset64<<endl;
-	  /*
-	  Offset64+=dt;
-	  if (abs(Offset64) < 20000000) //~100-200 msec
-	    Offset64=0;
-
-	  //cout << "Offset64: " << Offset64 << endl;
 	  ipls.ptype|=P_BADTST;
-
 	  ++errors[ER_TST]; //bad adcm Tstamp
-	  */
 	}
+
+
+
+
 	//else {
 	Pstamp64=ipls.Tstamp64;
 	//}

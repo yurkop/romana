@@ -37,17 +37,13 @@ PulseClass::PulseClass() {
               // Area, Time, Width не имеют смысла
   //ptype=P_NOSTOP;
   ptype=0;
-  //Nsamp=0;
-  //Npeaks=0;
-  //Analyzed=false;
-  Tstamp64=0;
   Spin=0;
-  Area=0;
+
+  //Tstamp64=0;
+  //Area=0;
+  Time=0;
   //Time=99999;
   //Width=88888;
-  //tdif=99;
-  //sData=NULL;
-  //Peaks=NULL;
 }
 
 void PulseClass::FindPeaks() {
@@ -839,6 +835,7 @@ void EventClass::FillHist(Bool_t first) {
     // }
   	
     opt.T_acq=(Tstmp/*- crs->Tstart64*/)*DT;
+    //cout << "T_acq: " << Nevt << " " << opt.T_acq << " " << Tstmp << " " << opt.Period << " " << DT << endl;
 
     if (opt.Tstop) {
       if (opt.T_acq > opt.Tstop) {

@@ -108,6 +108,7 @@ gzFile ff;
 char* parfile=(char*)"romana.par";;
 char* parfile2=0;
 char* datfname=0;
+char* abatch_name=0;
 
 bool b_raw=false,b_dec=false,b_root=false,b_force=false;
 bool rd_root=false; //readroot from comand line
@@ -967,14 +968,15 @@ int main(int argc, char **argv)
     "-h: print usage and exit\n"
     "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
-    "-a: start acquisition in batch mode (without gui)\n"
-    "    Program exits after Tstop time is reached\n"
+    "-a file: start acquisition in batch mode (without gui)\n"
+    "   Data are saved in file[.raw/.dec/.root] depending on batch parameters\n"
+    "   Program exits after Tstop time is reached\n"
     "-b: analyze file in batch mode (without gui) and exit\n"
     "-s [n] (only in batch mode): screen output frequency (0 - no output; n - every n-th buffer) \n"
-    "-w (only in batch mode): create processed .raw file in subdirectory Raw\n"
-    "-d (only in batch mode): create decoded .dec file in subdirectory Dec\n"
-    "-r (only in batch mode): create .root file in subdirectory Root\n"
-    "-f (only in batch mode): force overwriting .dec and/or .root files\n"
+    "-w (only in batch mode): create processed .raw file in subdirectory Raw/\n"
+    "-d (only in batch mode): create decoded .dec file in subdirectory Dec/\n"
+    "-r (only in batch mode): create .root file in subdirectory Root/\n"
+    "-f (only in batch mode): force overwriting .raw/.dec/.root files\n"
     "   Parameters <Filename>, <Write raw/decoded/root data> are ignored in batch mode\n"
     "[par=val] - set parameter par to val (see toptions.h for parameter names)\n"
     "   examples: Tstop=10 (set time limit to 10 sec)\n"
@@ -1008,9 +1010,19 @@ int main(int argc, char **argv)
 	case 'h':
 	  exit(0);
 	case 'a': //acquisition in batch
-	  crs->batch=true;
-	  crs->abatch=true;
-	  continue;
+	  ++i;
+	  if (i<argc) {
+	    abatch_name = argv[i];
+	    //strcpy(opt.Filename,argv[i]);
+	    if (abatch_name[0]!='-') {
+	      crs->batch=true;
+	      crs->abatch=true;
+	      continue;
+	    }
+	  }
+	  prnt("sss;",BRED,"Parameter -a must be followed by a filename",RST);
+	  exit(-1);
+
 	case 'b': //file in batch
 	  crs->batch=true;
 	  crs->abatch=false;
@@ -1108,9 +1120,6 @@ int main(int argc, char **argv)
       */
     } //for i
   }
-
-  //cout << crs->scrn << " " << crs->batch << " " << datfname << endl;
-  //exit(1);
 
   //if (parfile2) cout << "parfile2: " << parfile2 << endl;
   //if (datfname) cout << "datfname: " << datfname << endl;
@@ -1211,6 +1220,10 @@ int main(int argc, char **argv)
       exit(0);
     }
 
+    if (crs->abatch) {
+      strcpy(crs->Fname,abatch_name);
+    }
+
     if (!TestFile()) {
       exit(0);
     }
@@ -1224,8 +1237,13 @@ int main(int argc, char **argv)
     }
 
     if (crs->abatch) {
+      prnt("sss;",BGRN,"Starting in batch mode.",RST);
+      //prnt("ssss;",BGRN,"File = ",opt.Filename,RST);
+      prnt("ssss;",BGRN,"File = ",crs->Fname,RST);
+      prnt("ssfs;",BGRN,"Tstop=",opt.Tstop,RST);
+      //prnt("ssss;",BGRN,"rawname=",crs->rawname.c_str(),RST);
 #ifdef CYUSB
-      crs->DoStartStop(0);
+      crs->DoStartStop(1);
 #endif
       crs->b_acq=false;
       crs->b_stop=true;
