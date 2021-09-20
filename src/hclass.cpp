@@ -338,7 +338,7 @@ void HClass::Make_prof_xy(const char* dname, HMap* map[], HMap* map2[],
     hh->Sumw2();
     hh->SetOption("E");
 
-    map[i] = new HMap(dname,hh,hd2,i);
+    map[i] = new HMap(dname,hh,hd,i);
     map_list->Add(map[i]);
     allmap_list->Add(map[i]);
   }
@@ -347,14 +347,14 @@ void HClass::Make_prof_xy(const char* dname, HMap* map[], HMap* map2[],
   sprintf(title2,"%s%s",name3[4],";X (strip);Y (strip)");
   TH2F* hh=new TH2F(name2,title2,hd2->bins,0,64,hd2->bins2,0,64);
   //TH2F* hh=new TH2F(name2,title2,64,0,64,64,0,64);
-  map[4] = new HMap(dname,hh,hd2,4);
+  map[4] = new HMap(dname,hh,hd,4);
   map_list->Add(map[4]);
   allmap_list->Add(map[4]);
 
   sprintf(name2,"%s",name3[5]);
   sprintf(title2,"%s%s",name3[5],";X (mm);Y (mm)");
   hh=new TH2F(name2,title2,hd2->bins,0,120,hd2->bins2,0,120);
-  map[5] = new HMap(dname,hh,hd2,5);
+  map[5] = new HMap(dname,hh,hd,5);
   map_list->Add(map[5]);
   allmap_list->Add(map[5]);
 

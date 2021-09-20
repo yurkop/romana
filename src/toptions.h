@@ -36,8 +36,8 @@ public:
 
   Float_t bins,min,max,bins2;
   Bool_t b; //book histogram or not
-  Bool_t c[MAX_CH+NGRP]; //check
-  Bool_t w[MAX_CH+NGRP]; //work
+  Bool_t c[MAX_CH+NGRP]; //check histogram
+  Bool_t w[MAX_CH+NGRP]; //work - гистограмма присутствует в WORK*
   Int_t cut[MAX_CH+NGRP]; //see cut_index in HMap
   // список окон (cuts), заданных на этой гистограмме (hst)
   // положение бита в этой маске соответствует номеру соответствующего окна
@@ -49,7 +49,7 @@ public:
   Float_t roi[MAXROI][2];
   
   Int_t rb,rb2; //rebin
-  ClassDef(Hdef, 5)
+  ClassDef(Hdef, 7)
 };
 //------------------------------------
 
@@ -103,7 +103,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 124)
+  ClassDef(Coptions, 127)
 };
 
 //------------------------------------
@@ -303,11 +303,11 @@ public:
   Hdef h_area_width2;
   Hdef h_area_ntof;
   Hdef h_prof;
-  Hdef h_prof_x;
-  Hdef h_prof_y;
-  Hdef h_prof_ax;
-  Hdef h_prof_ay;
-  Hdef h_prof_nm;
+  // Hdef h_prof_x;
+  // Hdef h_prof_y;
+  // Hdef h_prof_ax;
+  // Hdef h_prof_ay;
+  // Hdef h_prof_nm;
   Hdef h_prof_xy;
   //Hdef h_area_width3;
   //Hdef h_width_12;
@@ -317,7 +317,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 125)
+  ClassDef(Toptions, 127)
 };
 
 //ClassImp(Toptions)

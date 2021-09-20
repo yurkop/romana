@@ -39,7 +39,7 @@ ln -s /usr/local/lib/libcyusb.so.1 /usr/local/lib/libcyusb.so
 cp $CURDIR/configs/cy_renumerate.sh /usr/local/bin
 chmod 777 /usr/local/bin/cy_renumerate.sh
 
-
+make clean
 
 : ' #start of comment
 # Set the CYUSB_ROOT variable to point to the current directory.

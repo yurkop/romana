@@ -2312,7 +2312,7 @@ void CRS::ProcessCrs(int rst) {
   b_run=1;
   Ana_start();
 
-  prnt("ssf d ls;",BBLU,"T_acq: ",opt.T_acq,crs->module,crs->Tstart64,RST);;
+  //prnt("ssf d ls;",BBLU,"T_acq: ",opt.T_acq,crs->module,crs->Tstart64,RST);;
   //decode_thread_run=1;
   //tt1[3].Set();
   if (rst && crs->module>=32 && crs->module<=70) {

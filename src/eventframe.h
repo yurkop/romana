@@ -172,8 +172,8 @@ public:
   void FillGraph(int dr);
   void SetRanges(int dr);
   void DrawEvent2();
-  void DrawPeaks(int dr, PulseClass* pulse, double y1,double y2);
-  void DoGraph(int ndiv, int deriv);
+  void DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2);
+  void DrawProf(int i, double y1, double y2);
   void ReDraw();
   void Plus1();
   void Minus1();

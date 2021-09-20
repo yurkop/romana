@@ -320,10 +320,13 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor4->AddFrame(tOpt,LayET0);
   //tForm->SetWidth(110);
   tOpt->SetMaxLength(sizeof(opt.drawopt)-1);
-  tOpt->SetToolTipText("Draw options for 1d and 2d, separated by space\n(see ROOT manual for drawing histograms)");
+  tOpt->SetToolTipText("Draw options for 1d and 2d, separated by space\n"
+  		       "(see ROOT manual for drawing histograms)\n"
+  		       "x or y in front of 2d option makes x/y projection"
+  		       );
   parpar->DoMap(tOpt,opt.drawopt,p_txt,0,3<<4);
-  tOpt->Connect("TextChanged(char*)", "ParDlg", parpar, "DoTxt()");
-  //tOpt->Connect("ReturnPressed()", "HistFrame", this, "AddFormula()");
+  //tOpt->Connect("TextChanged(char*)", "ParDlg", parpar, "DoTxt()");
+  tOpt->Connect("TextChanged(char*)", "HistFrame", this, "DoDrawopt()");
 
   // TGNumberEntryField* fN =
   //   new TGNumberEntryField(fHor4, 0, 7, TGNumberFormat::kNESInteger,
@@ -855,33 +858,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 
    //clear all work* if middle button is clicked on WORK
   if (but==2 && TString(item->GetText()).EqualTo("work",TString::kIgnoreCase)) {
-    //cout << "DoClick: " << item->GetText() << " " << item->GetParent() << " " << but << endl;
-
     ClearWork();
-
-    /*
-    hmap_chklist->Clear();
-
-    item2 = item->GetFirstChild();
-    while (item2) {
-      //cout << "dell: " << item2->GetText() << endl;
-      HMap* map = (HMap*) item2->GetUserData();
-      *(map->hd->w+map->nn)=false;
-      hcl->Remove_Clones(map);
-      item2 = item2->GetNextSibling();
-    }
-    
-    fListTree->DeleteChildren(iWork);
-    for (int cc=1;cc<opt.ncuts;cc++) {
-      if (opt.pcuts[cc]) {
-	fListTree->DeleteChildren(iWork_cut[cc]);
-      }
-    }
-    */
-    // if (crs->b_maintrig) {
-    //   fListTree->DeleteChildren(iWork_MT);
-    // }
-
   }
 
   if (item->GetParent() && (but==2 || but==3)) {
@@ -1045,18 +1022,11 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
     }
   }
 
-  // TGListTreeItem *iwork = fListTree->GetFirstItem();
-  // cout << "check!: " << item->GetText() << " " << check << " " << iwork->IsChecked() << endl;
-
-  // HMap *map2 = (HMap*) hcl->map_list->FindObject(item->GetText());
-  // if (map2) {
-  //   cout << "map2: " << map2->GetName() << " " << *map2->chk << " " << opt.s_ntof[0] << endl;
-  // }
-
   if (crs->b_stop)
     Update();
   else
     changed=true;
+
 }
 
 void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask) {
@@ -1116,6 +1086,29 @@ void HistFrame::DoButton()
   else
     changed=true;
   //cout << "doradio3: " << id << endl;
+
+}
+
+void HistFrame::DoDrawopt() {
+  parpar->DoTxt();
+
+  //dopt.clear();
+  dopt = {"","zcol"};
+  string temp;
+  int nn=0;
+  if (opt.drawopt[0]==' ')
+    nn=1;
+
+  stringstream ss(opt.drawopt);
+  while ((ss>>temp) && nn<2) {
+    dopt[nn++] = temp;
+  }
+
+  // for (UInt_t i=0;i<dopt.size();i++) {
+  //   cout << "dopt: " << i << " " << dopt[i] << endl; 
+  // }
+
+  Update();
 
 }
 
@@ -2416,7 +2409,6 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
     rb=nx;
 
   Int_t newx = nx/rb;
-
   TAxis* xa = map->hst->GetXaxis();
   Double_t xmin  = xa->GetXmin();
   Double_t xmax  = xa->GetXmax();
@@ -2452,47 +2444,77 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
     }
   }
   else { //2d hist
+    // if (dopt[1].BeginsWith("QQ", TString::kIgnoreCase)) { //X projection
+    //   Int_t ny = map->hst->GetNbinsY();
+    //   hist->SetBins(newx,xmin,xmax);
+    //   hnew = ((TH1F*)hist)->GetArray();
+    //   memset(hnew,0,((TH1F*)hist)->GetSize()*sizeof(*hnew));
 
-    //prnt("ss ss;",BRED,"hst:",map->hst->GetName(),RST);    
+    //   for (int i=0;i<nx;i++) {
+    // 	int i2=i/rb;
+    // 	for (int j=0;j<ny;j++) {
+    // 	  hist->AddBinContent(hist->GetBin(i2+1),
+    // 			      map->hst->GetBinContent(i+1,j+1));
+    // 	}
+    //   }
+    // }
+    // else { //real 2d
+      Int_t ny = map->hst->GetNbinsY();
+      Int_t rb2=map->hd->rb2;
+      if (rb2<1)
+	rb2=1;
+      if (rb2>ny)
+	rb2=ny;
 
-    Int_t ny = map->hst->GetNbinsY();
-    Int_t rb2=map->hd->rb2;
-    if (rb2<1)
-      rb2=1;
-    if (rb2>ny)
-      rb2=ny;
+      Int_t newy = ny/rb2;
+      TAxis* ya = map->hst->GetYaxis();
+      Double_t ymin  = ya->GetXmin();
+      Double_t ymax  = ya->GetXmax();
 
-    //prnt("ss d ds;",BGRN,"ny:",ny,rb2,RST);
+      ((TH2F*) hist)->SetBins(newx,xmin,xmax,newy,ymin,ymax);
 
-    Int_t newy = ny/rb2;
+      hnew = ((TH2F*) hist)->GetArray();
+      memset(hnew,0,((TH2F*)hist)->GetSize()*sizeof(*hnew));
 
-    TAxis* ya = map->hst->GetYaxis();
-
-    //cout << "ya: " << ya << endl;
-
-    Double_t ymin  = ya->GetXmin();
-    Double_t ymax  = ya->GetXmax();
-
-    //prnt("ss d f f d f fs;",BRED,"newx:",newx,xmin,xmax,newy,ymin,ymax,RST);
-    ((TH2F*) hist)->SetBins(newx,xmin,xmax,newy,ymin,ymax);
-
-    //prnt("ss d f f d f fs;",BBLU,"newx:",newx,xmin,xmax,newy,ymin,ymax,RST);
-    hnew = ((TH2F*) hist)->GetArray();
-    memset(hnew,0,((TH2F*)hist)->GetSize()*sizeof(*hnew));
-
-    for (int i=0;i<nx;i++) {
-      int i2=i/rb;
-      for (int j=0;j<ny;j++) {
-	int j2=j/rb2;
-	hist->AddBinContent(hist->GetBin(i2+1,j2+1),
-			    map->hst->GetBinContent(i+1,j+1));
+      for (int i=0;i<nx;i++) {
+	int i2=i/rb;
+	for (int j=0;j<ny;j++) {
+	  int j2=j/rb2;
+	  hist->AddBinContent(hist->GetBin(i2+1,j2+1),
+			      map->hst->GetBinContent(i+1,j+1));
+	}
       }
+    // } //real 2d
+
+    /*
+    cout << "hist: " << hist->GetName() << " " << hist << endl;
+
+    TH1* hist2 = (TH1*) hist->Clone();
+    delete hist;
+    hist = hist2;
+
+    cout << "hist2: " << hist->GetName() << " " << hist << endl;
+
+    std::vector <TH1*>::iterator ih;
+    for (ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
+      cout << "pad_hist: " << (*ih)->GetName() << " " << (*ih) << endl;
+      break;
     }
-    
-    // nx = ((TH2F*) map->hst)->GetSize();
-    // hold = ((TH2F*) map->hst)->GetArray();
-    // hnew = ((TH2F*) hist)->GetArray();
-    // memcpy(hnew,hold,nx*sizeof(Float_t));
+    */
+
+    /*
+    if (dopt[1].BeginsWith("x", TString::kIgnoreCase)) {
+      TH1* hist2 = ((TH2*)hist)->ProjectionX();
+      delete hist;
+      hist = hist2;
+    }
+    else if (dopt[1].BeginsWith("y", TString::kIgnoreCase)) {
+      TH1* hist2 = ((TH2*)hist)->ProjectionY();
+      delete hist;
+      hist = hist2;
+    }
+    */
+
   }
 
   hist->ResetStats();
@@ -2501,18 +2523,6 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
 void HistFrame::AllRebinDraw() {
 
   //cout << "AllRebin: " << endl;
-  string dopt[2] = {"","zcol"};
-  string temp;
-  int nn=0;
-  if (opt.drawopt[0]==' ')
-    nn=1;
-
-  stringstream ss(opt.drawopt);
-  while ((ss>>temp) && nn<2) {
-    dopt[nn++] = temp;
-  }
-
-  //cout << "dopt: " << dopt[0] << " " << dopt[1] << " " << dopt[0].size() << " " << dopt[1].size() << endl;
 
   for (int npad = 0;npad<ndiv;npad++) {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
@@ -2526,14 +2536,10 @@ void HistFrame::AllRebinDraw() {
     Y_Slider(pad_hist[npad],a1,a2,y1,y2);
 
     fEc->GetCanvas()->cd(npad+1);
-    if (pad_hist[npad]->GetDimension()==2) {
-      gPad->SetLogz(opt.b_logy);
-      pad_hist[npad]->Draw(dopt[1].c_str());
-    }
-    else {
+    if (pad_hist[npad]->GetDimension()==1) { //1D hist
       gPad->SetLogy(opt.b_logy);
       //cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
-      pad_hist[npad]->Draw(dopt[0].c_str());
+      pad_hist[npad]->Draw(dopt[0].Data());
 
       // cout << "padhist: " << pad_hist[npad]->GetName()
       // 	   << " " << pad_hist[npad]->GetOption()
@@ -2544,6 +2550,16 @@ void HistFrame::AllRebinDraw() {
       // TH1* bkg = ts.Background(pad_hist[npad],40);
       // bkg->SetLineColor(2);
       // bkg->Draw("samehist");
+    }
+    else { //2D hist or projection
+      //cout << "dopt: " << dopt[1].Data()+1 << endl;
+      gPad->SetLogz(opt.b_logy);
+      if (dopt[1].BeginsWith("x", TString::kIgnoreCase))
+      	((TH2*)pad_hist[npad])->ProjectionX("_px",0,-1,"o")->Draw(dopt[1].Data()+1);
+      else if (dopt[1].BeginsWith("y", TString::kIgnoreCase))
+      	((TH2*)pad_hist[npad])->ProjectionY("_py",0,-1,"o")->Draw(dopt[1].Data()+1);
+      else
+      pad_hist[npad]->Draw(dopt[1].Data());
     }
 
     //draw cuts

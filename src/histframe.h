@@ -63,6 +63,8 @@ public:
                                      //or in DrawStacj
                                      //hists must be deleted before clear()
 
+  vector<TString> dopt = {"","zcol"};
+
   TText ttxt;
 
   TGCheckButton* chknorm;
@@ -115,6 +117,7 @@ public:
   void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
   void DoRadio();
   void DoButton();
+  void DoDrawopt();
   void DoSlider();
   void GetHMinMax(TH1* hh, double x1, double x2,
 		  double &y1, double &y2);

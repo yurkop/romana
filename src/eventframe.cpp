@@ -33,6 +33,44 @@ const char* mgr_name[3] = {"pulse","1deriv","2deriv"};
 const char* mgr_title[3] = {"pulse;samples","1 deriv;samples",
 			    "2 deriv;samples"};
 
+const int PKSTAT=10;
+const int PKNORM=11;
+const int PKPROF=12;
+
+const char* fPeakName[MXPK] =
+  {
+  "Peaks", //[0]
+  "Pos",
+  "Time",
+  "WBase",
+  "Wpeak",
+  "WTime", //[5]
+  "WWidth",
+  "*TStart",
+  "Thresh",
+  "Val",
+  "Stat", //[10]
+  "Norm",
+  "Prof",
+  };
+const char* fPeakTool[MXPK] =
+  {
+   "Show peaks", //[0]
+   "Peak Position (maximum in 1st derivative)",
+   "Exact time from 1st derivative",
+   "Window for baseline integration",
+   "Window for peak integration",
+   "Window for time integration (left,right),\nplotted only in 1st derivative", //[5]
+   "Window for width integration (left,right),\nplotted only in pulse",
+   "Time start marker (earliest Time)",
+   "Threshold)",
+   "Print peak values",
+   "Show stats", //[10]
+   "Normalize peaks",
+   "Show new profilometer pulse analysis",
+};
+
+
 extern Coptions cpar;
 extern Toptions opt;
 extern MyMainFrame *myM;
@@ -277,20 +315,11 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fDeriv[1]->SetToolTipText("Show 1st derivative");
   fDeriv[2]->SetToolTipText("Show 2nd derivative");
 
-  fPeak[0] = new TGCheckButton(fVer_d, "Peaks", 0);
-  fPeak[1] = new TGCheckButton(fVer_d, "Pos", 1);
-  fPeak[2] = new TGCheckButton(fVer_d, "Time", 2);
-  fPeak[3] = new TGCheckButton(fVer_d, "WBase", 3);
-  fPeak[4] = new TGCheckButton(fVer_d, "Wpeak", 4);
-  fPeak[5] = new TGCheckButton(fVer_d, "WTime", 5);
-  fPeak[6] = new TGCheckButton(fVer_d, "WWidth", 6);
-  fPeak[7] = new TGCheckButton(fVer_d, "*TStart", 7);
-  fPeak[8] = new TGCheckButton(fVer_d, "Thresh", 8);
-
-  fPeak[9] = new TGCheckButton(fVer_d, "Val", 9);
-
-  fPeak[10] = new TGCheckButton(fVer_d, "Stat", 10);
-  fPeak[11] = new TGCheckButton(fVer_d, "Norm", 11);
+  for (int i=0;i<MXPK;i++) {
+    fPeak[i] = new TGCheckButton(fVer_d, fPeakName[i], i);
+    fPeak[i]->SetToolTipText(fPeakTool[i]);
+    fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
+  }
 
   //int cc;
   //cc=gROOT->GetColor(2)->GetPixel();
@@ -301,38 +330,18 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[5]->SetForegroundColor(gROOT->GetColor(3)->GetPixel()); //Wtime
   fPeak[6]->SetForegroundColor(gROOT->GetColor(4)->GetPixel()); //Wwidth
   fPeak[7]->SetForegroundColor(gROOT->GetColor(2)->GetPixel()); //Tstart
+  fPeak[PKPROF]->SetForegroundColor(gROOT->GetColor(9)->GetPixel()); //Prof
 
-
-  fPeak[0]->SetToolTipText("Show peaks");
-  fPeak[1]->SetToolTipText("Peak Position (maximum in 1st derivative)");
-  fPeak[2]->SetToolTipText("Exact time from 1st derivative");
-  //fPeak[3]->SetToolTipText("Exact time from 2nd derivative");
-  fPeak[3]->SetToolTipText("Window for baseline integration");
-  fPeak[4]->SetToolTipText("Window for peak integration");
-  fPeak[5]->SetToolTipText("Window for time integration (left,right),\nplotted only in 1st derivative");
-  fPeak[6]->SetToolTipText("Window for width integration (left,right),\nplotted only in pulse");
-  fPeak[7]->SetToolTipText("Time start marker (earliest Time)");
-  //fPeak[8]->SetToolTipText("Threshold, plotted only in 1st derivative)");
-  fPeak[8]->SetToolTipText("Threshold)");
-
-  fPeak[9]->SetToolTipText("Print peak values");
-
-  fPeak[10]->SetToolTipText("Show stats");
-  fPeak[11]->SetToolTipText("Normalize peaks");
-
-  fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
-
-  for (int i=0;i<MXPK-2;i++) {
-    fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
+  //fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
+  for (int i=0;i<MXPK;i++) {
+    if (i==0 || i==PKSTAT || i==PKPROF)
+      fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
     fVer_d->AddFrame(fPeak[i], fLay4);
   }
-
-  fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
-
-  for (int i=MXPK-2;i<MXPK;i++) {
-    fPeak[i]->Connect("Clicked()","EventFrame",this,"DoChkPeak()");
-    fVer_d->AddFrame(fPeak[i], fLay4);
-  }
+  // //fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
+  // for (int i=MXPK-2;i<MXPK;i++) {
+  //   fVer_d->AddFrame(fPeak[i], fLay4);
+  // }
 
   ChkpkUpdate();
   fVer_ch = new TGVerticalFrame(fHor_st);
@@ -843,7 +852,7 @@ void EventFrame::FillGraph(int dr) {
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
 	double dd = pulse->sData[j];
-	if (fPeak[11]->IsOn() && pulse->Area) { //normalize
+	if (opt.b_peak[11] && pulse->Area) { //normalize
 	  dd-=pulse->Base;
 	  dd*=1000/pulse->Area;
 	}
@@ -871,7 +880,7 @@ void EventFrame::FillGraph(int dr) {
 	else
 	  dd=pulse->sData[j]-pulse->sData[j-kk];
 
-	if (fPeak[11]->IsOn() && pulse->Area) { //normalize
+	if (opt.b_peak[11] && pulse->Area) { //normalize
 	  dd*=1000/pulse->Area;
 	}
 
@@ -908,7 +917,7 @@ void EventFrame::FillGraph(int dr) {
 	// cout << "edif2: " << pulse->Tstamp64 << " " << j << " " << dd
 	//      << " " << pulse->sData[j] << endl;
 
-	if (fPeak[11]->IsOn() && pulse->Area) { //normalize
+	if (opt.b_peak[11] && pulse->Area) { //normalize
 	  dd*=1000/pulse->Area;
 	}
 
@@ -1072,7 +1081,7 @@ void EventFrame::DrawEvent2() {
 
 } //DrawEvent2
 
-void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
+void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2) {
 
   Short_t B1; //left background window
   Short_t B2; //right background window
@@ -1095,11 +1104,6 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
     if (pulse->Pos<=-32222) {
       prnt("ssd d l;",BRED,"ErrPos: ",pulse->Pos,pulse->Chan,pulse->Tstamp64,RST);
     }
-    //if (pulse->Pos==-31000) pulse->Pos=cpar.Pre[ch];
-    //cout << "Pos: " << ch << " " << pulse->Pos << endl;
-
-    //for (UInt_t j=0;j<pulse->Peaks.size();j++) {
-    //PeakClass *pk = &pulse->Peaks[j];
 
     B1=pulse->Pos+opt.Base1[ch];
     B2=pulse->Pos+opt.Base2[ch]+1;
@@ -1110,34 +1114,83 @@ void EventFrame::DrawPeaks(int dr, PulseClass* pulse, double y1,double y2) {
     W1=pulse->Pos+opt.W1[ch];
     W2=pulse->Pos+opt.W2[ch]+1;
 
-    if (fPeak[1]->IsOn()) // Pos
+    if (opt.b_peak[1]) // Pos
       doXline(pulse->Pos+dt,y1,y2-dy*0.3,2,1);
-    if (fPeak[2]->IsOn()) {// Time
+    if (opt.b_peak[2]) {// Time
       doXline(pulse->Time,y2-dy*0.2,y2,3,1);
     }
-    if (dr==0 && fPeak[3]->IsOn()) { // WBase
+    if (dr==0 && opt.b_peak[3]) { // WBase
       doXline(B1+dt,y1,y2-dy*0.2,6,3);
       doXline(B2-1+dt,y1,y2-dy*0.1,6,3);
     }
-    if (dr==0 && fPeak[4]->IsOn()) { // Wpeak
+    if (dr==0 && opt.b_peak[4]) { // Wpeak
       doXline(P1+dt,y1,y2-dy*0.2,1,2);
       doXline(P2-1+dt,y1,y2-dy*0.1,1,2);
     }
-    if (dr!=0 && fPeak[5]->IsOn()) { //WTime
+    if (dr!=0 && opt.b_peak[5]) { //WTime
       doXline(T1+dt,y1,y2-dy*0.2,3,2);
       doXline(T2-1+dt,y1,y2-dy*0.1,3,2);
     }
-    if (dr==0 && fPeak[6]->IsOn()) { //WWidth
+    if (dr==0 && opt.b_peak[6]) { //WWidth
       doXline(W1+dt,y1,y2-dy*0.2,4,4);
       doXline(W2-1+dt,y1,y2-dy*0.1,4,4);
     }
     //}
   }
 
+  int ithr=(opt.sTg[pulse->Chan]!=0);
+  if (dr==ithr && opt.b_peak[8]) //threshold
+    doYline(opt.sThr[pulse->Chan],gx1[j],
+	    gx2[j],chcol[pulse->Chan],2);
+
 }
 
-void EventFrame::DoGraph(int ndiv, int dd) {
-} //DoGraph
+void EventFrame::DrawProf(int i, double y1, double y2) {
+  bx.SetFillStyle(3013);
+  bx.SetFillColor(3);
+  //bx.SetLineColor(3);
+  //cout << "T0: " << d_event->T0 << endl;
+  for (int kk=-1;kk<31;kk++) {
+    int x1a = opt.Prof64_W[1]+opt.Prof64_W[0]*kk+d_event->T0;
+    int x2a = x1a + opt.Prof64_W[2]-1;
+    bx.DrawBox(x1a,y1,x2a,y2);
+    //cout << "x1a: " << x1a << " " << x2a << endl;
+
+    for (UInt_t j=0;j<d_event->pulses.size();j++) {
+      PulseClass *pulse = &d_event->pulses.at(j);
+      if (fChn[pulse->Chan]->IsOn()) {
+	int dt=(pulse->Tstamp64-d_event->Tstmp)-cpar.Pre[pulse->Chan];
+	//cout << "dt: " << j << " " << (int)pulse->Chan << " " << dt; //<< endl;
+	//cout << " "<< Gr[i][j]->GetN() << " " << Gr[i][j]->GetX()[-dt] << " " << Gr[i][j]->GetY()[-dt] << endl;
+
+	int xmin = TMath::Max(-dt+x1a,0);
+	//xmin = TMath::Min(xmin,Gr[i][j]->GetN()-1);
+	int xmax = TMath::Min(Gr[i][j]->GetN(),-dt+x1a+opt.Prof64_W[2]);
+	int nnn = xmax-xmin;
+	// cout << "Gr: " << j << " " << (int)pulse->Chan << " " << dt
+	// 	   << " " << -dt+x1a
+	// 	   << " " << nnn << " " << xmin << " " << xmax << endl;
+	if (nnn>0) {
+	  TGraph* gg = new TGraph(nnn,Gr[i][j]->GetX()+xmin,Gr[i][j]->GetY()+xmin);
+	  gg->SetMarkerColor(chcol[pulse->Chan]);
+	  gg->Draw("*");
+		
+	  double sum=0;
+	  for (int l=0;l<gg->GetN();l++) {
+	    sum+=gg->GetY()[l];
+	  }
+	  // if (kk==1) {
+	  //   cout << "sum/N: " << d_event->Nevt << " " << j << " " << (int)pulse->Chan << " " << kk << " " << sum/gg->GetN() << endl;
+	  // }
+	}
+	if (nnn>opt.Prof64_W[2]) {
+	  cout << "nnn is too big: " << nnn << endl;
+	}
+      }  //if
+    } //for j
+
+  } //for kk
+}
 
 void EventFrame::ReDraw() {
 
@@ -1207,13 +1260,10 @@ void EventFrame::ReDraw() {
 	if (fChn[pulse->Chan]->IsOn()) {
 	  if (Gr[i][j]->GetN()) { //draw graph
 	    Gr[i][j]->Draw("lp");
-	    DrawPeaks(i,pulse,y1,y2);
-	    int ithr=(opt.sTg[pulse->Chan]!=0);
-	    if (i==ithr && fPeak[8]->IsOn()) //threshold
-	      doYline(opt.sThr[pulse->Chan],gx1[j],
-		      gx2[j],chcol[pulse->Chan],2);
+	    if (opt.b_peak[0]) //draw peaks
+	      DrawPeaks(i,j,pulse,y1,y2);
 	  }
-	  if (fPeak[9]->IsOn()) { //draw text
+	  if (opt.b_peak[0] && opt.b_peak[9]) { //draw text
 	    char ss[256];
 	    sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
 		    pulse->Chan,pulse->Area,pulse->Base,
@@ -1236,7 +1286,9 @@ void EventFrame::ReDraw() {
       } //for (UInt_t j=0;j<d_event->pulses.size();j++) {
 
       
-      if (opt.h_prof.b && opt.h_prof_x.b) { //profilometer
+      if (opt.b_peak[PKPROF]) { //profilometer
+	DrawProf(i,y1,y2);
+	/*
 	bx.SetFillStyle(3013);
 	bx.SetFillColor(3);
 	//bx.SetLineColor(3);
@@ -1281,8 +1333,8 @@ void EventFrame::ReDraw() {
 	  } //for j
 
 	} //for kk
-	
-      } //if
+	*/
+      } //if prof
       // for (UInt_t j=0;j<32;j++) {
       // 	PulseClass *pulse = &d_event->pulses.at(0);
       // 	pulse->Chan=j;

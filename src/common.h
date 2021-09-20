@@ -53,5 +53,5 @@ const int MAIN_HEIGHT = 550; //height of the main window
 const int MAIN_WIDTH = 630; //width of the main window
 const int W2_HEIGHT = 210; //height of the split frame containing ch_types
 
-const int MXPK=12; // eventframe
+const int MXPK=13; // eventframe
 #endif

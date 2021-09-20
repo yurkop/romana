@@ -1102,14 +1102,14 @@ void EventClass::FillHist(Bool_t first) {
 	tt = (pulses[i].Time - T0)*opt.Period+opt.sD[pulses[i].Chan];
 	if (abs(tt)<=opt.Prof64_GAT) {
 	  ay=pp-crs->ING_Y;
-	  Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
+	  //Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
 	}
       }
       else if (pp>=crs->ING_X) {
 	tt = (pulses[i].Time - T0)*opt.Period+opt.sD[pulses[i].Chan];
 	if (abs(tt)<=opt.Prof64_GAT) {
 	  ax=pp-crs->ING_X;
-	  Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
+	  //Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
 	}
       }
       // else if (pp>=crs->PROF_Y)
@@ -1126,7 +1126,11 @@ void EventClass::FillHist(Bool_t first) {
 
     hcl->ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
 
-    //prnt("ss l d d ds;",BRED,"Prof:",Nevt,ax,ay,hcl->ch_alpha,RST);
+    // if (hcl->ch_alpha>=0 && hcl->ch_alpha<opt.prof_ny*opt.prof_nx) {
+    //   if (ax==3) {
+    // 	prnt("ss l d d ds;",BRED,"Prof:",Nevt,ax,ay,hcl->ch_alpha,RST);
+    //   }
+    // }
 
   } //if (first && ... opt.h_prof.b || opt.h_prof_xy.b)
 
