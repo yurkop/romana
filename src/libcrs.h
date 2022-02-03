@@ -203,6 +203,7 @@ RQ_OBJECT("CRS")
 
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   Long64_t Tstart0; //Tstamp of the ntof start pulses
+  Float_t Time0; //Exact time of the ntof start pulses
   char txt_start[30]; //local text copy of F_start, start of the acquisition
 
   Double_t sPeriod; // real period for each channel, including smpl
@@ -355,6 +356,8 @@ RQ_OBJECT("CRS")
   void Fill_Dec78(EventClass* evt);
   void Fill_Dec79(EventClass* evt);
   void Fill_Dec80(EventClass* evt);
+
+  void Fill_Dec81(EventClass* evt);
   //void Flush_Dec_old();
   int Wr_Dec(UChar_t* buf, int len);
   void Flush_Dec();

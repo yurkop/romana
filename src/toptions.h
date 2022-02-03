@@ -103,7 +103,7 @@ public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
 
-  ClassDef(Coptions, 127)
+  ClassDef(Coptions, 129)
 };
 
 //------------------------------------
@@ -204,6 +204,7 @@ public:
   Int_t raw_compr; //raw data compr level
   Int_t dec_compr; //decoded data compr level
   Int_t root_compr; //root compr level
+  Int_t dec_format;
   //char fname_raw[199];
   //char fname_dec[199];
   //char fname_root[199];
@@ -226,7 +227,7 @@ public:
   Int_t maintrig;
 
   //hardware logic
-  Bool_t hard_logic; //0 - use software logic; 1 - use hardware logic
+  //Bool_t hard_logic; //0 - use software logic; 1 - use hardware logic
 
   Int_t seltab;
 
@@ -317,7 +318,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 127)
+  ClassDef(Toptions, 129)
 };
 
 //ClassImp(Toptions)

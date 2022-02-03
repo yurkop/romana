@@ -449,6 +449,8 @@ void *handle_ana(void *ctx) {
       if ((int)m_event->pulses.size()>=opt.mult1 &&
 	  (int)m_event->pulses.size()<=opt.mult2) {
 
+	m_event->FillHist(true);
+	m_event->FillHist(false);
 	if (m_event->Spin & 2) {
 	  if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
 	    ++crs->mtrig;
@@ -466,8 +468,6 @@ void *handle_ana(void *ctx) {
 	    }
 	  } //maintrig
 	} // if spin
-	m_event->FillHist(true);
-	m_event->FillHist(false);
       }
       // else {
       // 	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
@@ -823,8 +823,8 @@ void CRS::Ana2(int all) {
     if ((int)m_event->pulses.size()>=opt.mult1 &&
 	(int)m_event->pulses.size()<=opt.mult2) {
 
-      //m_event->FillHist(true);
-      //m_event->FillHist(false);
+      m_event->FillHist(true);
+      m_event->FillHist(false);
       //prnt("ssl ds;",BGRN,"EV2: ",m_event->Nevt,m_event->Spin,RST);
       if (m_event->Spin & 2) {
 	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
@@ -844,8 +844,6 @@ void CRS::Ana2(int all) {
 	  }
 	} //maintrig
       } // if spin
-      m_event->FillHist(true);
-      m_event->FillHist(false);
       ++m_event;
     } // mult
     else {
@@ -1844,6 +1842,11 @@ void CRS::AllParameters43() {
 
   AllParameters35();
 
+  int hard_logic=0;
+  if (cpar.Trigger==2) { //Coinc
+    hard_logic=1;
+  }
+
   for (UChar_t chan = 0; chan < chan_in_module; chan++) {
     if (cpar.on[chan]) {
 
@@ -1904,7 +1907,7 @@ void CRS::AllParameters43() {
   //Общие параметры:
 
   Command32(11,1,0,cpar.Smpl);            // Sampling rate
-  Command32(11,4,0,(int) opt.hard_logic); // Использование схемы совпадений
+  Command32(11,4,0,(int) hard_logic); // Использование схемы совпадений
   Command32(11,5,0,(int) cpar.mult_w1[0]); // минимальная множественность 0
   Command32(11,6,0,(int) cpar.mult_w2[0]); // максимальная множественность 0
   Command32(11,7,0,(int) cpar.mult_w1[1]); // минимальная множественность 1
@@ -2399,6 +2402,7 @@ void CRS::DoReset(int rst) {
     Tstart64=0;
     Offset64=0;
     Tstart0=0;
+    Time0=0;
 
     //Pstamp64=P64_0;
     Pstamp64=0;
@@ -2592,15 +2596,30 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   }
   else {
     mod=fmt;
-    //fmt=129;
+    fmt=129;
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
   //prnt("sss d d ds;",BGRN,"rpgz: ",pname,fmt,mod,sz,RST);
 
   //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
-  //if (fmt!=129 || mod==0 || mod>100 || sz>1e6){//возможно, это текстовый файл
-  //}
+  if (fmt!=129 || mod>100 || sz>5e5){//возможно, это текстовый файл
+    //или старый файл без параметров
+    prnt("sss d d ds;",BRED,"Header not found: ",pname,fmt,mod,sz,RST);
+    return 1;
+    
+    /*
+    prnt("sss d d ds;",BRED,"Header not found. Assuming module=2: ",pname,fmt,mod,sz,RST);
+    if (f_read) gzclose(f_read);
+    f_read = gzopen(Fname,"rb");
+    if (!f_read) {
+      cout << "Can't open file: " << Fname << endl;
+      f_read=0;
+    }
+    module=22;
+    return 0;
+    */    
+  }
   //cout << "ReadParGz: "<<pname<<" "<<sz<<" "<<m1<<" "<<cp<<" "<<op<<endl;
 
   //char* buf = new char[sz];
@@ -5568,7 +5587,7 @@ template <typename T> int sgn(T val) {
 // int sgn(int a) {
 // }
 
-void CRS::Fill_Dec80(EventClass* evt) {
+void CRS::Fill_Dec81(EventClass* evt) {
   // эти параметры должны быть заданы в opt
   const bool bit_area=true;
   const bool bit_time=true;
@@ -5578,7 +5597,7 @@ void CRS::Fill_Dec80(EventClass* evt) {
   const Float_t DT=100;
   const Float_t DW=10000;
 
-  //Fill_Dec80
+  //Fill_Dec81
 
   // fill_dec is not thread safe!!! (??? - not sure)
 
@@ -5589,9 +5608,7 @@ void CRS::Fill_Dec80(EventClass* evt) {
   //   bit0=1 - write area
   //   bit1=1 - write time
   //   bit2=1 - write width
-  // --
   // 3 bytes - reserved
-  // --
   // 4 bytes: float DA - constant for converting area (see peak area below)
   // 4 bytes: float DT - constant for converting time (see peak time below)
   // 4 bytes: float DW - constant for converting width (see peak width below)
@@ -5686,7 +5703,7 @@ void CRS::Fill_Dec80(EventClass* evt) {
     Flush_Dec();
   }
 
-} //Fill_Dec80
+} //Fill_Dec81
 
 int CRS::Wr_Dec(UChar_t* buf, int len) {
   //return >0 if error

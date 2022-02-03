@@ -270,6 +270,8 @@ Toptions::Toptions() {
   dec_compr=1;
   root_compr=1;
 
+  dec_format=79;
+
   memset(Filename,0,sizeof(Filename));
   memset(ch_name,0,sizeof(ch_name));
 
@@ -286,7 +288,7 @@ Toptions::Toptions() {
   ev_min=10;
   ev_max=1000;
 
-  hard_logic=0;
+  //hard_logic=0;
   tgate=500;
   tveto=10;
   mult1=1;

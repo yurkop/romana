@@ -1472,7 +1472,7 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
   tip1= "Decoded data format";
   label="Dec format";
-  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+  AddLine_1opt(fF6,ww,&opt.dec_format,tip1,label,k_int,79,80);
 
   tip1= "";
   label="Bitmask for START";

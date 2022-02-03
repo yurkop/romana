@@ -948,11 +948,17 @@ void EventClass::FillHist(Bool_t first) {
       if (opt.h_ntof.b || opt.h_etof.b || opt.h_ltof.b) {
 	// определяем старт
 	if (ch==opt.start_ch) {
-	  crs->Tstart0 = Tstmp + Long64_t(ipls->Time);
+	  //crs->Tstart0 = Tstmp + Long64_t(ipls->Time);
+	  crs->Tstart0 = Tstmp;
+	  crs->Time0 = ipls->Time;
 	}
 	if (crs->Tstart0>0) {
-	  tm = Tstmp + Long64_t(ipls->Time);
-	  tt = (tm - crs->Tstart0)*mks*opt.Period;
+	  //tm = Tstmp + Long64_t(ipls->Time);
+	  //tt = (tm - crs->Tstart0)*mks*opt.Period;
+
+	  tt = Tstmp - crs->Tstart0;
+	  tt+= ipls->Time - crs->Time0;
+	  tt*= mks*opt.Period;
 
 	  if (tt>0) {
 	    //check for missed starts
