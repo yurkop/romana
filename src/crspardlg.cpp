@@ -1628,6 +1628,10 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Count";
   AddLine_hist(frame1d,&opt.h_count,tip1,label);
 
+  tip1= "Event multiplicity";
+  label="Mult";
+  AddLine_hist(frame1d,&opt.h_mult,tip1,label);
+
   tip1= "Area of the pulse or energy, calibrated (see Channels->EM for calibration)";
   label="Area";
   AddLine_hist(frame1d,&opt.h_area,tip1,label);

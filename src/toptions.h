@@ -277,6 +277,7 @@ public:
 
   Hdef h_rate;
   Hdef h_count;
+  Hdef h_mult;
   Hdef h_area;
   Hdef h_area0;
   Hdef h_base;

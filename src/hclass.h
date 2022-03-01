@@ -66,6 +66,7 @@ class HClass {
 
   HMap* m_rate[MAX_CH+NGRP]; // software rate in real time
   HMap* m_count[MAX_CH+NGRP]; // hardware counter in real time
+  HMap* m_mult[MAX_CH+NGRP]; // event multiplicity
   HMap* m_area[MAX_CH+NGRP]; //area of the peak
   HMap* m_area0[MAX_CH+NGRP]; //area of the peak w/o bkg
   HMap* m_base[MAX_CH+NGRP]; //baseline - background
@@ -156,6 +157,9 @@ class HClass {
 		 const char* title,HMap* map[],Hdef* hd);
   void Make_prof_xy(const char* dname, HMap* map[], HMap* map2[],
 		    Hdef* hd, Hdef* hd2);
+
+  void Make_Mult(const char* dname, const char* name, const char* title,
+	       HMap* map[], Hdef* hd);
 
   void Make_hist();
   void Clone_Hist(HMap* map);

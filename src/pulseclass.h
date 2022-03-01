@@ -159,7 +159,10 @@ class EventClass { //event of pulses
   //Bool_t Analyzed;
   //Bool_t ecut[MAXCUTS];
 
- public:
+ private:
+  void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w=1);
+
+public:
   EventClass();
   virtual ~EventClass() {};
   //void Make_Mean_Event();
@@ -169,7 +172,8 @@ class EventClass { //event of pulses
   void AddPulse(PulseClass *pls);
   void Fill_Time_Extend(HMap* map);
   void Fill1d(Bool_t first, HMap* map[], int ch, Float_t x);
-  static void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w);
+
+  static void Fill1dwSt(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w);
   void Fill_Mean_Pulse(Bool_t first, HMap* map,
 		       pulse_vect::iterator pls, int ideriv);
   void Fill_Mean1(TH1F* hh,  Float_t* Data, Int_t nbins, int ideriv);

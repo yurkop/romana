@@ -649,55 +649,17 @@ void EventClass::Fill_Time_Extend(HMap* map) {
   }
 }
 
-void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
-  if (!map[ch]) return;
-  // if first -> check cuts and set cut_flag
-  if (first) {
-    //int bin = map[ch]->hst->FindFixBin(x);
-    //map[ch]->hst->AddBinContent(bin);
-    map[ch]->hst->Fill(x);
-    if (opt.ncuts) {
-      for (int i=1;i<opt.ncuts;i++) {
-	if (getbit(*(map[ch]->hd->cut+map[ch]->nn),i)) {
-	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
-	    //if (hcl->cut_flag[i]==0)
-	    hcl->cut_flag[i]=1;
-	  }
-	  //else
-	  //hcl->cut_flag[i]=-1;
-	}
-      }
-    }
-  }
-  else if (*(map[ch]->hd->w+map[ch]->nn)) {
-    for (int i=1;i<opt.ncuts;i++) {
-      if (hcl->cut_flag[i]) {
-	//int bin = map[ch]->h_cuts[i]->hst->FindFixBin(x);
-	//map[ch]->h_cuts[i]->hst->AddBinContent(bin);
-	map[ch]->h_cuts[i]->hst->Fill(x);
-      }
-    }
-    // if (crs->cut_main) {
-    //   map[ch]->h_MT->hst->Fill(x);
-    // }
-  }
-
-  if (ch<MAX_CH)
-    for (int j=0;j<NGRP;j++)
-      if (opt.Grp[ch][j])
-        Fill1d(first,map,MAX_CH+j,x);
-}
-
 void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
 			 Double_t w) {
-  if (!map[ch]) return;
-  // if first -> check cuts and set cut_flag
+  // базовый метод для заполнения 1-гистограмм:
+  // без проверки на существование и без заполнения групп
+
+  // if first -> заполняем гистограмму, проверяем cuts и устанавливаем cut_flag
   if (first) {
     map[ch]->hst->Fill(x,w);
     if (opt.ncuts) {
       for (int i=1;i<opt.ncuts;i++) {
 	if (getbit(*(map[ch]->hd->cut+map[ch]->nn),i)) {
-	  //if (getbit(*(map[ch]->cut_index),i)) {
 	  if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
 	    hcl->cut_flag[i]=1;
 	  }
@@ -714,10 +676,17 @@ void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
     }
   }
 
+}
+
+void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
+  if (!map[ch]) return;
+
+  Fill1dw(first,map,ch,x);
+
   if (ch<MAX_CH)
     for (int j=0;j<NGRP;j++)
       if (opt.Grp[ch][j])
-        Fill1dw(first,map,MAX_CH+j,x,w);
+        Fill1d(first,map,MAX_CH+j,x);
 }
 
 void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
@@ -819,7 +788,7 @@ void EventClass::FillHist(Bool_t first) {
   double DT = opt.Period*1e-9;
   Double_t tt;
   Double_t ee,sqee;
-  //int mult=0;
+  int mult[NGRP+1];
   Long64_t tm;
 
   //prnt("s l l l;","evnt:",Nevt,Tstmp,T0);
@@ -857,13 +826,21 @@ void EventClass::FillHist(Bool_t first) {
     }
   }
 
+  memset(mult,0,sizeof(mult));
   for (pulse_vect::iterator ipls=pulses.begin();ipls!=pulses.end();++ipls) {
     //cout << "pulse: " << Nevt << " " << Tstmp << " " << (int) ipls->Chan << " " << ipls->Pos << endl;
     if (ipls->Pos>-32222) { // пропускаем импульсы, где не найден пик
-    
+
       //ipls->Ecalibr();
       //for (UInt_t i=0;i<pulses.size();i++) {
       int ch = ipls->Chan;
+
+
+      mult[NGRP]++;
+      for (int j=0;j<NGRP;j++)
+	if (opt.Grp[ch][j])
+	  mult[j]++;
+
 
       if (opt.h_pulse.b) {
 	Fill_Mean_Pulse(first,hcl->m_pulse[ch],ipls,0);
@@ -1007,7 +984,14 @@ void EventClass::FillHist(Bool_t first) {
 	hcl->T_prev[ch]=tm;
       }
     } //if Pos
-  } //for (UInt_t i=0;i<pulses.size()...
+  } //for (pulse_vect::iterator ipls=pulses.begin()...
+
+  if (opt.h_mult.b) {
+    Fill1dw(first,hcl->m_mult,0,mult[NGRP]);
+      for (int j=0;j<NGRP;j++)
+	if (hcl->m_mult[MAX_CH+j])
+	  Fill1dw(first,hcl->m_mult,MAX_CH+j,mult[j]);
+  }
 
   if (opt.h_axay.b) {
     int ii=0;

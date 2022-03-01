@@ -168,7 +168,7 @@ void NameTitle(char* name, char* title, int i, int cc,
 void HClass::Make_1d(const char* dname, const char* name, const char* title,
 		     HMap* map[], Hdef* hd) {
 
-  memset(map,0,sizeof(HMap*)*MAX_CH+NGRP);
+  memset(map,0,sizeof(HMap*)*(MAX_CH+NGRP));
 
   if (!hd->b) return;
 
@@ -391,6 +391,57 @@ void HClass::Make_axay(const char* dname, const char* name, const char* title,
   }
 }
 
+void HClass::Make_Mult(const char* dname, const char* name, const char* title,
+		     HMap* map[], Hdef* hd) {
+
+  // нужно ли перевести все HMap'ы в векторы (?) - нет, не нужно!
+
+  // cout << "make_mult1: " << endl;
+  // for (int i=0;i<MAX_CH+NGRP;i++) {
+  //   if (map[i]) {
+  //     prnt("s d ls;",BGRN,i,map[i],RST);
+  //     //delete map[i];
+  //   }
+  // }
+  // cout << "make_mult2: " << endl;
+
+  memset(map,0,sizeof(HMap*)*(MAX_CH+NGRP));
+
+  if (!hd->b) return;
+
+  char name2[100];
+  char title2[100];
+
+  sprintf(name2,"%s",name);
+  sprintf(title2,"%s%s",name,title);
+  int nn=hd->bins*(hd->max - hd->min);
+  if (nn<1) nn=1;
+  TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
+  map[0] = new HMap(dname,hh,hd,0);
+  map_list->Add(map[0]);
+  allmap_list->Add(map[0]);
+
+
+  for (int j=0;j<NGRP;j++) {
+
+    for (int ch=0;ch<opt.Nchan;ch++) {
+      if (opt.Grp[ch][j]) {
+	sprintf(name2,"%s_g%d",name,j+1);
+	sprintf(title2,"%s_g%d%s",name,j+1,title);
+	int nn=hd->bins*(hd->max - hd->min);
+	if (nn<1) nn=1;
+	TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
+	map[MAX_CH+j] = new HMap(dname,hh,hd,MAX_CH+j);
+	map_list->Add(map[MAX_CH+j]);
+	allmap_list->Add(map[MAX_CH+j]);
+	break;
+      }
+    }
+
+  }
+
+}
+
 void HClass::Clone_Hist(HMap* map) {
   char cutname[99];
   char name[99],htitle[99];
@@ -576,6 +627,7 @@ void HClass::Make_hist() {
 
   Make_1d("Rate","rate",";T(sec);Counts",m_rate,&opt.h_rate);
   Make_1d("Count","count",";T(sec);Counts",m_count,&opt.h_count);
+  Make_Mult("Mult","mult",";Multiplicity;Counts",m_mult,&opt.h_mult);
   Make_1d("Area","area",";Channel;Counts",m_area,&opt.h_area);
   Make_1d("Area0","area0",";Channel;Counts",m_area0,&opt.h_area0);
   Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);

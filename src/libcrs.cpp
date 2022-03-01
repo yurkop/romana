@@ -4251,8 +4251,8 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	// if (opt.h_counter.b) {
 	//   Blist->rbegin()->Fill_Time_Extend(hcl->m_counter[ch]);
 	//   //cout << "counters: " << (int) ch << " " << rate << " " << data << endl;
-	//   EventClass::Fill1dw(true,hcl->m_counter,ch,opt.T_acq,rate);
-	//   EventClass::Fill1dw(false,hcl->m_counter,ch,opt.T_acq,rate);
+	//   EventClass::Fill1dwSt(true,hcl->m_counter,ch,opt.T_acq,rate);
+	//   EventClass::Fill1dwSt(false,hcl->m_counter,ch,opt.T_acq,rate);
 	// }
 	*/
 	break;
