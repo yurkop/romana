@@ -160,6 +160,9 @@ public:
 
   //TThread *trd;
 
+  TText ttxt;
+  int tx,ty;
+
 public:
   EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
   virtual ~EventFrame();
@@ -173,6 +176,7 @@ public:
   void SetRanges(int dr);
   void DrawEvent2();
   void DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2);
+  void DrawShapeTxt(PulseClass* pulse);
   void DrawProf(int i, double y1, double y2);
   void ReDraw();
   void Plus1();

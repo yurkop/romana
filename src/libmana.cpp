@@ -1921,17 +1921,17 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
-  TGPopupMenu* fMenuProf = new TGPopupMenu(gClient->GetRoot());
+  TGPopupMenu* fMenuDet = new TGPopupMenu(gClient->GetRoot());
 
-  fMenuBar->AddPopup("&Profilometer", fMenuProf, 
+  fMenuBar->AddPopup("&Detectors", fMenuDet, 
 		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
-  fMenuProf->AddEntry("Profilometer 8x8", M_EDIT_PROF8);
-  fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
+  fMenuDet->AddEntry("Profilometer 8x8", M_EDIT_PROF8);
+  fMenuDet->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
-  fMenuProf->AddEntry("Profilometer 64x64", M_EDIT_PROF64);
-  fMenuProf->Connect("Activated(Int_t)", "MainFrame", this,
+  fMenuDet->AddEntry("Profilometer 64x64", M_EDIT_PROF64);
+  fMenuDet->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
   // fMenuProf->AddEntry("Profilometer time calibration", M_PROF_TIME);

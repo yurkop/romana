@@ -1424,7 +1424,7 @@ int ParParDlg::AddLogic(TGCompositeFrame* frame) {
 void ParParDlg::AddTrigger(TGGroupFrame* frame) {
 
   const char* tip1 = "Trigger type";
-  const char* label[3] = {"Normal","START","Coincidence"};
+  const char* label[3] = {"Normal","START","Hardw.Coinc."};
 
   TGHorizontalFrame *hfr = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr,LayLT1);
@@ -2000,9 +2000,9 @@ void HistParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
 
   //1d checkbutton
   id = Plist.size()+1;
-  TGCheckButton *chk_1d = new TGCheckButton(hfr1, "1D + sum", id);
-  chk_1d->SetToolTipText("Create 1D histograms (only for the new profilometer)");
-  DoMap(chk_1d,&opt.h_prof_xy.b,p_chk,0,0x100);
+  TGCheckButton *chk_1d = new TGCheckButton(hfr1, "64x64", id);
+  chk_1d->SetToolTipText("checked: new profilometer 64x64; unchecked: old profilometer 8x8");
+  DoMap(chk_1d,&opt.h_prof64.b,p_chk,0,0x100);
   chk_1d->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_1d,LayCC1);
   //id0=id;

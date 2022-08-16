@@ -791,7 +791,7 @@ void EventClass::FillHist(Bool_t first) {
   int mult[NGRP+1];
   Long64_t tm;
 
-  //prnt("s l l l;","evnt:",Nevt,Tstmp,T0);
+  //prnt("ss l l fs;",BRED,"evnt:",Nevt,Tstmp,T0,RST);
 
 
   Float_t AA[MAX_CH+1] = {}; //initialize to zero
@@ -1015,260 +1015,157 @@ void EventClass::FillHist(Bool_t first) {
     }
   */
 
+  //Fill variables for Profilometer (new or old)
+  if (first && opt.h_prof.b) { //Profilometer
 
+    if (opt.h_prof64.b) { //new profilometer
+      memset(hcl->h_sum,0,sizeof(hcl->h_sum));
+      int ax=999,ay=999;
+      //int px=999,py=999;
 
-  //fill variables for profilometer
-  if (first && (opt.h_prof.b || opt.h_prof_xy.b)) {
-    memset(hcl->h_sum,0,sizeof(hcl->h_sum));
-    int ax=999,ay=999;
-    //int px=999,py=999;
+      for (UInt_t i=0;i<pulses.size();i++) {
+	Int_t pp = crs->prof_ch[pulses[i].Chan];
+	int h_xy=-1;
+	int h_off=1;
+	int sgn=1;
+	if (pp>=crs->PROF_64) {
+	  pp-=crs->PROF_64;
+	  switch (pp) {
+	  case 0: //P+(33-64) (X)
+	    h_xy=0;
+	    //h_off=33;
+	    h_off=62;
+	    sgn=-1;
+	    break;
+	  case 1: //P+(1-32) (X)
+	    h_xy=0;
+	    break;
+	  case 2: //N+(33-64) (Y)
+	    h_xy=1;
+	    break;
+	  case 3: //N+(1-32) (Y)
+	    h_xy=1;
+	    h_off=62;
+	    sgn=-1;
+	    break;
+	  case 4:
+	    // do nothing
+	    break;
+	  default:
+	    cout << "wrong prof channel: " << pp << " " << pulses[i].Chan << endl;
+	  } //switch
 
-    for (UInt_t i=0;i<pulses.size();i++) {
-      Int_t pp = crs->prof_ch[pulses[i].Chan];
-      int h_xy=-1;
-      int h_off=1;
-      int sgn=1;
-      if (pp>=crs->PROF_64) {
-	pp-=crs->PROF_64;
-	switch (pp) {
-	case 0: //P+(33-64) (X)
-	  h_xy=0;
-	  //h_off=33;
-	  h_off=62;
-	  sgn=-1;
-	  break;
-	case 1: //P+(1-32) (X)
-	  h_xy=0;
-	  break;
-	// case 2: //N+(33-64) (Y)
-	//   h_xy=1;
-	//   //h_off=33;
-	//   h_off=62;
-	//   sgn=-1;
-	//   break;
-	// case 3: //N+(1-32) (Y)
-	//   h_xy=1;
-	//   break;
-	case 2: //N+(33-64) (Y)
-	  h_xy=1;
-	  break;
-	case 3: //N+(1-32) (Y)
-	  h_xy=1;
-	  h_off=62;
-	  sgn=-1;
-	  break;
-	case 4:
-	  // do nothing
-	  break;
-	default:
-	  cout << "wrong prof channel: " << pp << " " << pulses[i].Chan << endl;
-	} //switch
+	  if (h_xy>=0) {//one of Prof64 position channels
+	    PulseClass *pulse = &pulses[i];  
+	    int dt=(pulse->Tstamp64-Tstmp) - cpar.Pre[pulse->Chan] - T0;
+	    int size = pulse->sData.size();
 
-	if (h_xy>=0) {//one of Prof64 position channels
-	  PulseClass *pulse = &pulses[i];  
-	  int dt=(pulse->Tstamp64-Tstmp) - cpar.Pre[pulse->Chan] - T0;
-	  int size = pulse->sData.size();
-
-	  for (int kk=-1;kk<31;kk++) {
-	    int jj=h_off+kk*sgn;
-	    int x1 = opt.Prof64_W[1] + opt.Prof64_W[0]*kk - dt;
-	    int x2 = x1 + opt.Prof64_W[2];
-	    int xmin = TMath::Max(x1,0);
-	    int xmax = TMath::Min(x2,size);
-	    if (xmax-xmin>0) {
-	      for (int j=xmin;j<xmax;j++) {
-		hcl->h_sum[h_xy][jj]+=pulse->sData[j];
+	    for (int kk=-1;kk<31;kk++) {
+	      int jj=h_off+kk*sgn;
+	      int x1 = opt.Prof64_W[1] + opt.Prof64_W[0]*kk - dt;
+	      int x2 = x1 + opt.Prof64_W[2];
+	      int xmin = TMath::Max(x1,0);
+	      int xmax = TMath::Min(x2,size);
+	      if (xmax-xmin>0) {
+		for (int j=xmin;j<xmax;j++) {
+		  hcl->h_sum[h_xy][jj]+=pulse->sData[j];
+		}
+		hcl->h_sum[h_xy][jj]*=-1.0/(xmax-xmin);
+		// if (kk==1) {
+		//   prnt("sd d fs;",BRED,Nevt,pulse->Chan,hcl->h_sum[h_xy][h_off+kk],RST);
+		// }
 	      }
-	      hcl->h_sum[h_xy][jj]*=-1.0/(xmax-xmin);
-	      // if (kk==1) {
-	      //   prnt("sd d fs;",BRED,Nevt,pulse->Chan,hcl->h_sum[h_xy][h_off+kk],RST);
-	      // }
-	    }
-	  } //for kk
-	} //if xy>0  
-      } //if pp>=crs->PROF_64
+	    } //for kk
+	  } //if xy>0  
+	} //if pp>=crs->PROF_64
 
-      else if (pp>=crs->ING_Y) {
-	tt = (pulses[i].Time - T0)*opt.Period+opt.sD[pulses[i].Chan];
-	if (abs(tt)<=opt.Prof64_GAT) {
-	  ay=pp-crs->ING_Y;
-	  //Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
+	else if (pp>=crs->ING_Y) {
+	  tt = (pulses[i].Time - T0)*opt.Period+opt.sD[pulses[i].Chan];
+	  if (abs(tt)<=opt.Prof64_GAT) {
+	    ay=pp-crs->ING_Y;
+	    //Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
+	  }
 	}
-      }
-      else if (pp>=crs->ING_X) {
-	tt = (pulses[i].Time - T0)*opt.Period+opt.sD[pulses[i].Chan];
-	if (abs(tt)<=opt.Prof64_GAT) {
-	  ax=pp-crs->ING_X;
-	  //Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
+	else if (pp>=crs->ING_X) {
+	  tt = (pulses[i].Time - T0)*opt.Period+opt.sD[pulses[i].Chan];
+	  if (abs(tt)<=opt.Prof64_GAT) {
+	    ax=pp-crs->ING_X;
+	    //Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
+	  }
 	}
-      }
-      // else if (pp>=crs->PROF_Y)
-      // 	py=pp-crs->PROF_Y;
-      // else if (pp>=crs->PROF_X)
-      // 	px=pp-crs->PROF_X;
+	// else if (pp>=crs->PROF_Y)
+	// 	py=pp-crs->PROF_Y;
+	// else if (pp>=crs->PROF_X)
+	// 	px=pp-crs->PROF_X;
 
-    } //for i pulses.size()
+      } //for i pulses.size()
 
       // for (int i=0;i<64;i++) {
       // 	cout << "sum: " << Nevt << " " << i << " " << hcl->h_sum[0][i]
       // 	     << " " << hcl->h_sum[1][i] << endl;
       // }
 
-    hcl->ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
+      hcl->ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
 
-    // if (hcl->ch_alpha>=0 && hcl->ch_alpha<opt.prof_ny*opt.prof_nx) {
-    //   if (ax==3) {
-    // 	prnt("ss l d d ds;",BRED,"Prof:",Nevt,ax,ay,hcl->ch_alpha,RST);
-    //   }
-    // }
-
-  } //if (first && ... opt.h_prof.b || opt.h_prof_xy.b)
-
-
-
-  
-  /*
-
-  //fill variables for profilometer
-  if (first && (opt.h_prof.b || opt.h_prof_xy.b)) {
-    memset(hcl->h_sum,0,sizeof(hcl->h_sum));
-    int ax=999,ay=999;
-    //int px=999,py=999;
-
-    for (UInt_t i=0;i<pulses.size();i++) {
-      Int_t pp = crs->prof_ch[pulses[i].Chan];
-      hcl->h_xy=-1;
-      hcl->h_off=1;
-      if (pp>=crs->PROF_64) {
-	pp-=crs->PROF_64;
-	switch (pp) {
-	case 0: //P+(33-64) (X)
-	  hcl->h_xy=0;
-	  hcl->h_off=33;
-	  break;
-	case 1: //P+(1-32) (X)
-	  hcl->h_xy=0;
-	  break;
-	case 2: //N+(33-64) (Y)
-	  hcl->h_xy=1;
-	  hcl->h_off=33;
-	  break;
-	case 3: //N+(1-32) (Y)
-	  hcl->h_xy=1;
-	  break;
-	case 4:
-	  // do nothing
-	  break;
-	default:
-	  cout << "wrong prof channel: " << pp << " " << pulses[i].Chan << endl;
-	} //switch
-
-	if (hcl->h_xy>=0) {//one of Prof64 position channels
-	  PulseClass *pulse = &pulses[i];  
-	  int dt=(pulse->Tstamp64-Tstmp) - cpar.Pre[pulse->Chan] - T0;
-	  int size = pulse->sData.size();
-
-	  for (int kk=-1;kk<31;kk++) {
-	    int x1 = opt.Prof64_W[1] + opt.Prof64_W[0]*kk - dt;
-	    int x2 = x1 + opt.Prof64_W[2];
-	    int xmin = TMath::Max(x1,0);
-	    int xmax = TMath::Min(x2,size);
-	    if (xmax-xmin>0) {
-	      for (int j=xmin;j<xmax;j++) {
-		hcl->h_sum[hcl->h_xy][hcl->h_off+kk]+=pulse->sData[j];
-	      }
-	      hcl->h_sum[hcl->h_xy][hcl->h_off+kk]*=-1.0/(xmax-xmin);
-	      // if (kk==1) {
-	      //   prnt("sd d fs;",BRED,Nevt,pulse->Chan,hcl->h_sum[hcl->h_xy][hcl->h_off+kk],RST);
-	      // }
-	    }
-	  } //for kk
-	} //if xy>0  
-      } //if pp>=crs->PROF_64
-
-      else if (pp>=crs->ING_Y) {
-	tt = (pulses[i].Time - T0)*opt.Period+opt.sD[pulses[i].Chan];
-	if (abs(tt)<=opt.Prof64_GAT) {
-	  ay=pp-crs->ING_Y;
-	  Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
-	}
-      }
-      else if (pp>=crs->ING_X) {
-	tt = (pulses[i].Time - T0)*opt.Period+opt.sD[pulses[i].Chan];
-	if (abs(tt)<=opt.Prof64_GAT) {
-	  ax=pp-crs->ING_X;
-	  Fill1d(first,hcl->m_time,pulses[i].Chan-16,tt);
-	}
-      }
-      // else if (pp>=crs->PROF_Y)
-      // 	py=pp-crs->PROF_Y;
-      // else if (pp>=crs->PROF_X)
-      // 	px=pp-crs->PROF_X;
-
-    } //for i pulses.size()
-
-      // for (int i=0;i<64;i++) {
-      // 	cout << "sum: " << Nevt << " " << i << " " << hcl->h_sum[0][i]
-      // 	     << " " << hcl->h_sum[1][i] << endl;
+      // if (hcl->ch_alpha>=0 && hcl->ch_alpha<opt.prof_ny*opt.prof_nx) {
+      //   if (ax==3) {
+      // 	prnt("ss l d d ds;",BRED,"Prof:",Nevt,ax,ay,hcl->ch_alpha,RST);
+      //   }
       // }
 
-    hcl->ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
-
-    //prnt("ss l d d ds;",BRED,"Prof:",Nevt,ax,ay,hcl->ch_alpha,RST);
-
-  } //if (first && ... opt.h_prof.b || opt.h_prof_xy.b)
-
-*/
+    } //if (opt.h_prof64.b) //new profilometer
+    else { //old profilometer
+    }
+  } //if (first && opt.h_prof.b) //Profilometer
 
 
-  // profilometer 2d histograms
-  if (opt.h_prof.b) {
+    // profilometer 2d histograms (new)
+    if (opt.h_prof.b) {
 
-    if (hcl->ch_alpha>=0 && hcl->ch_alpha<opt.prof_ny*opt.prof_nx) {
+      if (hcl->ch_alpha>=0 && hcl->ch_alpha<opt.prof_ny*opt.prof_nx) {
+	for (int i=0;i<64;i++) {
+	  if (hcl->h_sum[0][i]>opt.Prof64_THR) {
+	    for (int j=0;j<64;j++) {
+	      if (hcl->h_sum[1][j]>opt.Prof64_THR) {
+		Fill2d(first,hcl->m_prof[hcl->ch_alpha],(i+0.5)*1.875,(j+0.5)*1.875);
+		//Fill2d(first,hcl->m_prof[hcl->ch_alpha],(i+0.5),(j+0.5));
+	      } //if Y
+	    }
+	  } //if X
+	}
+      }
+
+    }
+
+    if (opt.h_prof64.b) { //histograms for new 64x64 profilometer
+
+      Fill_Mean1((TH1F*)hcl->m_prof64[2]->hst, hcl->h_sum[0], 64, 0); //X
+      Fill_Mean1((TH1F*)hcl->m_prof64[3]->hst, hcl->h_sum[1], 64, 0); //Y
+
       for (int i=0;i<64;i++) {
 	if (hcl->h_sum[0][i]>opt.Prof64_THR) {
+	  //prnt("ss3d f ds;",BRED,"X:",i,hcl->h_sum[0][i],opt.Prof64_THR,RST);
+	  Fill1d(first,hcl->m_prof64,0,i+0.5);
 	  for (int j=0;j<64;j++) {
 	    if (hcl->h_sum[1][j]>opt.Prof64_THR) {
-	      Fill2d(first,hcl->m_prof[hcl->ch_alpha],(i+0.5)*1.875,(j+0.5)*1.875);
-	      //Fill2d(first,hcl->m_prof[hcl->ch_alpha],(i+0.5),(j+0.5));
+	      //cout << "xy: " << i << " " << j << endl;
+	      Fill2d(first,hcl->m_prof64[4],i+0.5,j+0.5);
+	      Fill2d(first,hcl->m_prof64[5],(i+0.5)*1.875,(j+0.5)*1.875);
 	    } //if Y
 	  }
 	} //if X
       }
-    }
 
-  }
+      for (int i=0;i<64;i++) {
+	if (hcl->h_sum[1][i]>opt.Prof64_THR) {
+	  //prnt("ss3d f ds;",BGRN,"Y:",i,hcl->h_sum[1][i],opt.Prof64_THR,RST);
+	  Fill1d(first,hcl->m_prof64,1,i+0.5);
+	} //if Y
+      }
 
-  if (opt.h_prof_xy.b) {
+    } //if h_prof.b
 
-    Fill_Mean1((TH1F*)hcl->m_prof_xy[2]->hst, hcl->h_sum[0], 64, 0); //X
-    Fill_Mean1((TH1F*)hcl->m_prof_xy[3]->hst, hcl->h_sum[1], 64, 0); //Y
-
-    for (int i=0;i<64;i++) {
-      if (hcl->h_sum[0][i]>opt.Prof64_THR) {
-	//prnt("ss3d f ds;",BRED,"X:",i,hcl->h_sum[0][i],opt.Prof64_THR,RST);
-	Fill1d(first,hcl->m_prof_xy,0,i+0.5);
-	for (int j=0;j<64;j++) {
-	  if (hcl->h_sum[1][j]>opt.Prof64_THR) {
-	    //cout << "xy: " << i << " " << j << endl;
-	    Fill2d(first,hcl->m_prof_xy[4],i+0.5,j+0.5);
-	    Fill2d(first,hcl->m_prof_xy[5],(i+0.5)*1.875,(j+0.5)*1.875);
-	  } //if Y
-	}
-      } //if X
-    }
-
-    for (int i=0;i<64;i++) {
-      if (hcl->h_sum[1][i]>opt.Prof64_THR) {
-	//prnt("ss3d f ds;",BGRN,"Y:",i,hcl->h_sum[1][i],opt.Prof64_THR,RST);
-	Fill1d(first,hcl->m_prof_xy,1,i+0.5);
-      } //if Y
-    }
-
-  } //if h_prof.b
-
-
-
+  // "formula cuts"
   if (first) {
     // for (int i=0;i<opt.ncuts;i++) {
     //   hcl->cut_flag[i]=(hcl->cut_flag[i]>0);

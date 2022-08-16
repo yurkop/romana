@@ -1,5 +1,7 @@
 # make TIMES=1 to compile with TIMES option
 # make DEBUG=1 to compile with debug option
+
+
 GIT_VERSION := $(shell git describe --abbrev=4 --always --tags --dirty)
 SRC_D = src
 OBJ_D = obj
@@ -29,6 +31,10 @@ ifdef TIMES
   CPPFLAGS += -D TIMES=1
 endif
 
+ifeq (yumo,$(findstring $(MAKECMDGOALS),yumo))
+  CPPFLAGS += -D YUMO=1
+endif
+
 CPPFLAGS += $(LFS) -MD -MP -DLINUX=1 -I. #-I$(LIB_D)
 CXXFLAGS += -O3 -Wall -Wno-maybe-uninitialized #-Wextra
 LDFLAGS += -lz
@@ -55,8 +61,13 @@ ifdef ROOTSYS
   VER2 = $(findstring 5.,$(VER))
 endif
 
+#yumo1:
+#	echo $(MAKECMDGOALS) $(YM)
+
 all: $(OBJ_D) $(PROG).x
 #all: svnver $(PROG).x
+
+yumo: all
 
 #$(PROG).x: $(OBJ) $(OBJL) $(OBJ_D)/romdict.o
 $(PROG).x: $(OBJ) $(OBJ_D)/romdict.o

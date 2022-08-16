@@ -310,7 +310,7 @@ public:
   // Hdef h_prof_ax;
   // Hdef h_prof_ay;
   // Hdef h_prof_nm;
-  Hdef h_prof_xy;
+  Hdef h_prof64;
   //Hdef h_area_width3;
   //Hdef h_width_12;
 public:

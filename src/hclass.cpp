@@ -316,7 +316,7 @@ void HClass::Make_prof(const char* dname, const char* name,
 
 }
 
-void HClass::Make_prof_xy(const char* dname, HMap* map[], HMap* map2[],
+void HClass::Make_prof64(const char* dname, HMap* map[], HMap* map2[],
 			  Hdef* hd, Hdef* hd2) {
 
   if (!hd->b) return;
@@ -658,7 +658,7 @@ void HClass::Make_hist() {
   //Make_2d("Width_12","Width_12",";Width(a.u.);Width2(a.u.)",m_width_12,&opt.h_width_12,&opt.h_width,&opt.h_width2);
 
   Make_prof("Prof","prof",";X (mm);Y (mm)",m_prof,&opt.h_prof);
-  Make_prof_xy("Prof_xy",m_prof_xy,m_prof,&opt.h_prof_xy,&opt.h_prof);
+  Make_prof64("Prof64",m_prof64,m_prof,&opt.h_prof64,&opt.h_prof);
 
   b_formula=false;
   if (opt.ncuts)

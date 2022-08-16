@@ -2646,6 +2646,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
       opt.chtype[i]=MAX_TP+1;// other; was =1;
     }
   }
+
   Make_prof_ch();
   Text_time("S:",cpar.F_start);
 
@@ -2763,7 +2764,9 @@ void CRS::DoProf(Int_t nn, Int_t *aa, Int_t off) {
     if (prof_ch[aa[nn]]<0)
       prof_ch[aa[nn]]=nn+off;
     else
-      cout << "Profilometer: chan " << aa[nn] << " is already used" << endl; 
+      prnt("ssd d ds;",BRED,"Profilometer: chan is already used: ",
+	   nn,aa[nn],off,RST);
+    //cout << "Profilometer: chan " << aa[nn] << " is already used:" << endl; 
   }
 }
 
@@ -2773,13 +2776,18 @@ void CRS::Make_prof_ch() {
     //cout << "prof_ch: " << i << " " << prof_ch[i] << endl;
   }
 
-  for (int i=0;i<5;i++) {
-    DoProf(i,opt.Prof64,PROF_64);
+  if (opt.h_prof64.b) { //new 64x64
+    for (int i=0;i<5;i++) {
+      DoProf(i,opt.Prof64,PROF_64);
+    }
   }
-  for (int i=0;i<8;i++) {
-    DoProf(i,opt.Prof_x,PROF_X);
-    DoProf(i,opt.Prof_y,PROF_Y);
+  else { //old 8x8
+    for (int i=0;i<8;i++) {
+      DoProf(i,opt.Prof_x,PROF_X);
+      DoProf(i,opt.Prof_y,PROF_Y);
+    }
   }
+
   for (int i=0;i<16;i++) {
     DoProf(i,opt.Ing_x,ING_X);
     DoProf(i,opt.Ing_y,ING_Y);
@@ -5024,18 +5032,46 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
       struct stor_ev_hdr_t *eh = (struct stor_ev_hdr_t *) (GLBuf+dp);
       //int n;
       nev++;
+      // вставляем новое пустое событие
       evt = &*Blist->insert(Blist->end(),EventClass());
+      UInt_t* t32 = (UInt_t*) &evt->Tstmp;
+
+      //evt->Tstmp = 11111111111;
+      // cout << "ttxx: " << hex << evt->Tstmp << " " << t32[0] << " "
+      // 	   << t32[1] << dec << endl;
+
       evt->Nevt=nevents;
       nevents++;
-      //static Long64_t T_prev;
-      evt->Tstmp = eh->ts;
-      // if (evt->Tstmp<T_prev) {
-      //   prnt("ss l d l ls;",BRED,"ts:",nevents,eh->ts,evt->Tstmp,T_prev,RST);
-      // }
+
+      
+      evt->Tstmp = (Pstamp64 & 0xFFFFFFFF00000000) + eh->ts;
+      //t32[0] = eh->ts;
+      //t32[1] = T_prev1;
+      Long64_t dt=evt->Tstmp-Pstamp64;
+
+      if (abs(dt) > 0x7FFFFFFF) { //
+	// разные по знаку dt обрабатываются по-разному в случае, если есть
+	// события с "перепутанными" ts (маленькие чередуются с большими,
+	// на грани переполнения)
+	if (dt<0) {
+	  // prnt("ss l l l l f ls;",BRED,"ts:",nevents,eh->ts,evt->Tstmp,
+	  //      Pstamp64,evt->Tstmp*opt.Period*1e-9,0x7FFFFFFF,RST);
+	  evt->Tstmp += 0x100000000;
+	  // prnt("ss l l l l fs;",BBLU,"ts:",nevents,eh->ts,evt->Tstmp,
+	  //      Pstamp64,evt->Tstmp*opt.Period*1e-9,RST);
+	}
+	else {
+	  // prnt("ss l l l l f ls;",BMAG,"ts:",nevents,eh->ts,evt->Tstmp,
+	  //      Pstamp64,evt->Tstmp*opt.Period*1e-9,0x7FFFFFFF,RST);
+	  evt->Tstmp -= 0x100000000;
+	  // prnt("ss l l l l fs;",BCYN,"ts:",nevents,eh->ts,evt->Tstmp,
+	  //      Pstamp64,evt->Tstmp*opt.Period*1e-9,RST);
+	}
+      }
       // else {
       //   prnt("ss l d l ls;",BGRN,"ts:",nevents,eh->ts,evt->Tstmp,T_prev,RST);
       // }
-      // T_prev = eh->ts;
+      Pstamp64 = evt->Tstmp;
 
       for (int n = 0; n < eh->np; n++) {
 	struct stor_puls_t *hit = (struct stor_puls_t *) (GLBuf+dp + sizeof(struct stor_ev_hdr_t) + n * sizeof(struct stor_puls_t));
@@ -5048,6 +5084,7 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
 	ipls->Time = hit->t //?? in ns ??
 	  + opt.sD[ipls->Chan]; //in ns (not in samples)
 	ipls->Width = hit->w;
+	ipls->Pos = ipls->Time;
 	if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
 	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	  evt->T0=ipls->Time;
@@ -5065,9 +5102,15 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
       return;
     }
     p += hdr->size;
-  }
 
-  fprintf (stderr, "Complete %lld bytes, %u events, %u counters, %u maps\n", p, nev, ncnt, nmap);
+    //PulseAna(ipls);
+    //Event_Insert_Pulse(Blist,&ipls);
+
+  } //while... (main event loop)
+
+  //Dec_End(Blist,iread,255);
+
+  //fprintf (stderr, "Complete %lld bytes, %u events, %u counters, %u maps\n", p, nev, ncnt, nmap);
 
   // if (!ipls.ptype) {
   //   PulseAna(ipls);
@@ -5258,6 +5301,7 @@ void CRS::Print_Buf8(UChar_t* buf, Long64_t size, const char* file) {
 
 void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
   // вставляем импульс в список событий, анализируя окно совпадений
+  // при необходимости, создается новое событие
 
   event_iter it;
   event_reviter rit;

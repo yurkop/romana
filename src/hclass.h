@@ -95,7 +95,7 @@ class HClass {
   HMap* m_area_width2[MAX_CH];
   HMap* m_area_ntof[MAX_CH];
   HMap* m_prof[256];
-  HMap* m_prof_xy[6];
+  HMap* m_prof64[6];
   //HMap* m_prof_y[1];
   //HMap* m_prof_ax[1];
   //HMap* m_prof_ay[1];
@@ -155,7 +155,7 @@ class HClass {
 	       HMap* map[], Hdef* hd, Hdef* hd1); //, int nmax);
   void Make_prof(const char* dname,const char* name,
 		 const char* title,HMap* map[],Hdef* hd);
-  void Make_prof_xy(const char* dname, HMap* map[], HMap* map2[],
+  void Make_prof64(const char* dname, HMap* map[], HMap* map2[],
 		    Hdef* hd, Hdef* hd2);
 
   void Make_Mult(const char* dname, const char* name, const char* title,

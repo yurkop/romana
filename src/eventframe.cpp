@@ -52,6 +52,7 @@ const char* fPeakName[MXPK] =
   "Stat", //[10]
   "Norm",
   "Prof",
+  "Shape", //[13]
   };
 const char* fPeakTool[MXPK] =
   {
@@ -68,6 +69,7 @@ const char* fPeakTool[MXPK] =
    "Show stats", //[10]
    "Normalize peaks",
    "Show new profilometer pulse analysis",
+   "Peak shape",
 };
 
 
@@ -275,7 +277,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns)";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns) //doesn't work correctly";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);
   tEnt->SetWidth(100);
@@ -333,10 +335,13 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fPeak[PKPROF]->SetForegroundColor(gROOT->GetColor(9)->GetPixel()); //Prof
 
   //fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
-  for (int i=0;i<MXPK;i++) {
+  for (int i=0;i<MXPK-1;i++) {
     if (i==0 || i==PKSTAT || i==PKPROF)
       fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
     fVer_d->AddFrame(fPeak[i], fLay4);
+    if (i==9)
+      fVer_d->AddFrame(fPeak[13], fLay4);
+
   }
   // //fVer_d->AddFrame(new TGHorizontal3DLine(fVer_d),fLay3);
   // for (int i=MXPK-2;i<MXPK;i++) {
@@ -677,6 +682,7 @@ void EventFrame::DoCheckPoint() {
 	par[6]=tt*opt.Period;
 	res = formula->EvalPar(0,par);
 	if (res) {
+	  //YK cout << "tt2: " << 
 	  DrawEvent2();
 	  return;
 	}
@@ -949,6 +955,7 @@ void EventFrame::SetRanges(int dr) {
   //cout << "psize: " << d_event->pulses.size() << endl;
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     UInt_t ch= d_event->pulses.at(i).Chan;
+    //cout << "ch: " << i << " " << ch << endl;
     if (fChn[ch]->IsOn()) {
       if (gx1[i]<mx1) mx1=gx1[i];
       if (gx2[i]>mx2) mx2=gx2[i];
@@ -1145,6 +1152,36 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
 
 }
 
+void EventFrame::DrawShapeTxt(PulseClass* pulse) {
+
+  if (opt.b_peak[9]) { //draw text
+    char ss[256];
+    sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
+	    pulse->Chan,pulse->Area,pulse->Base,
+	    pulse->Time,pulse->Width);
+
+    ttxt.SetTextAlign(0);
+    double sz=0.025*ndiv;
+    ttxt.SetTextSize(sz);
+    ttxt.SetTextColor(chcol[pulse->Chan]);
+    double dd=0.74*2.0/32;
+
+    ttxt.DrawTextNDC(0.17+tx*0.35,0.85-ty*dd,ss);
+    tx++;
+    if (tx>1) {
+      tx=0;
+      ty++;
+    }
+  }
+
+  if (opt.b_peak[13]) { //draw shape
+
+  }
+
+
+
+}
+
 void EventFrame::DrawProf(int i, double y1, double y2) {
   bx.SetFillStyle(3013);
   bx.SetFillColor(3);
@@ -1212,14 +1249,14 @@ void EventFrame::ReDraw() {
     return;
   }
 
-  //cout << "ReDraw: " << d_event->pulses.size() << endl;
   int nn=1;
   for (int i=0;i<3;i++) {
     if (opt.b_deriv[i]) {
 
-      int tx=0,ty=0;
-      int ny=d_event->pulses.size();
-      double dd = 0.74*2.0/ny;
+      tx=0;ty=0;
+      //int ny=d_event->pulses.size();
+      //double dd = 0.74*2.0/ny;
+
 
       cv->cd(nn++);
 
@@ -1255,6 +1292,7 @@ void EventFrame::ReDraw() {
 	mk.DrawMarker(d_event->T0,y2-dy*0.1);
       }
 
+      //cout << "pss: " << d_event->pulses.size() << endl;
       for (UInt_t j=0;j<d_event->pulses.size();j++) {
 	PulseClass *pulse = &d_event->pulses.at(j);
 	if (fChn[pulse->Chan]->IsOn()) {
@@ -1263,7 +1301,9 @@ void EventFrame::ReDraw() {
 	    if (opt.b_peak[0]) //draw peaks
 	      DrawPeaks(i,j,pulse,y1,y2);
 	  }
-	  if (opt.b_peak[0] && opt.b_peak[9]) { //draw text
+	  if (opt.b_peak[0]) { //draw text & shape
+	    DrawShapeTxt(pulse);
+	    /*
 	    char ss[256];
 	    sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
 		    pulse->Chan,pulse->Area,pulse->Base,
@@ -1273,7 +1313,7 @@ void EventFrame::ReDraw() {
 	    double sz=0.025*ndiv;
 	    tt.SetTextSize(sz);
 	    tt.SetTextColor(chcol[pulse->Chan]);
-	    dd=0.74*2.0/32;
+	    double dd=0.74*2.0/32;
 
 	    tt.DrawTextNDC(0.17+tx*0.35,0.85-ty*dd,ss);
 	    tx++;
@@ -1281,6 +1321,7 @@ void EventFrame::ReDraw() {
 	      tx=0;
 	      ty++;
 	    }
+	    */
 	  }
 	}
       } //for (UInt_t j=0;j<d_event->pulses.size();j++) {
