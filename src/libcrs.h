@@ -318,6 +318,7 @@ RQ_OBJECT("CRS")
   void PulseAna(PulseClass &ipls);
   void Dec_Init(eventlist* &Blist, UChar_t frmt);
   void Dec_End(eventlist* &Blist, UInt_t iread, UChar_t sp);
+  void Decode80(UInt_t iread, UInt_t ibuf);
   void Decode79(UInt_t iread, UInt_t ibuf);
   //void Decode79a(UInt_t iread, UInt_t ibuf);
   void Decode78(UInt_t iread, UInt_t ibuf);

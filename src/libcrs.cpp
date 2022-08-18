@@ -28,6 +28,7 @@
 #include "TRandom.h"
 #include "TApplication.h"
 
+#include <bitset>
 
 //int buf_inits=0;
 //int buf_erase=0;
@@ -207,6 +208,10 @@ EventClass levt;
 
 #ifdef CYUSB
 cyusb_handle *cy_handle;
+
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 void *handle_events_func(void *ctx)
 {
@@ -455,13 +460,18 @@ void *handle_ana(void *ctx) {
 	  if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
 	    ++crs->mtrig;
 	    if (opt.dec_write) {
-	      //crs->Fill_Dec73(&(*m_event));
-	      //crs->Fill_Dec74(&(*m_event));
-	      //crs->Fill_Dec75(&(*m_event));
-	      //crs->Fill_Dec76(&(*m_event));
-	      //crs->Fill_Dec77(&(*m_event));
-	      //crs->Fill_Dec78(&(*m_event));
-	      crs->Fill_Dec79(&(*m_event));
+	      if (cpar.Trigger==1) { //trigger on START channel
+		crs->Fill_Dec80(&(*m_event));
+	      }
+	      else {
+		//crs->Fill_Dec73(&(*m_event));
+		//crs->Fill_Dec74(&(*m_event));
+		//crs->Fill_Dec75(&(*m_event));
+		//crs->Fill_Dec76(&(*m_event));
+		//crs->Fill_Dec77(&(*m_event));
+		//crs->Fill_Dec78(&(*m_event));
+		crs->Fill_Dec79(&(*m_event));
+	      }
 	    }
 	    if (opt.raw_write && opt.fProc) {
 	      crs->Fill_Raw(&(*m_event));
@@ -831,13 +841,18 @@ void CRS::Ana2(int all) {
 	  //prnt("ssl ls;",BRED,"EV3: ",m_event->Nevt,m_event->Tstmp,RST);
 	  ++crs->mtrig;
 	  if (opt.dec_write) {
-	    //crs->Fill_Dec73(&(*m_event));
-	    //crs->Fill_Dec74(&(*m_event));
-	    //crs->Fill_Dec75(&(*m_event));
-	    //crs->Fill_Dec76(&(*m_event));
-	    //crs->Fill_Dec77(&(*m_event));
-	    //crs->Fill_Dec78(&(*m_event));
-	    crs->Fill_Dec79(&(*m_event));
+	    if (cpar.Trigger==1) { //trigger on START channel
+	      crs->Fill_Dec80(&(*m_event));
+	    }
+	    else {
+	      //crs->Fill_Dec73(&(*m_event));
+	      //crs->Fill_Dec74(&(*m_event));
+	      //crs->Fill_Dec75(&(*m_event));
+	      //crs->Fill_Dec76(&(*m_event));
+	      //crs->Fill_Dec77(&(*m_event));
+	      //crs->Fill_Dec78(&(*m_event));
+	      crs->Fill_Dec79(&(*m_event));
+	    }
 	  }
 	  if (opt.raw_write && opt.fProc) {
 	    crs->Fill_Raw(&(*m_event));
@@ -3335,6 +3350,9 @@ void CRS::Decode_switch(UInt_t ibuf) {
     Decode35(dec_iread[ibuf]-1,ibuf);
     //Decode42(dec_iread[ibuf]-1,ibuf);
     break;
+  case 80:
+    Decode80(dec_iread[ibuf]-1,ibuf);
+    break;
   case 79:
     Decode79(dec_iread[ibuf]-1,ibuf);
     break;
@@ -3510,6 +3528,7 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   case 77:
   case 78:
   case 79:
+  case 80:
     for (Long64_t i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==1 -> this is the start of a pulse
       frmt = GLBuf[i+7] & 0x80; //event start bit
@@ -3656,6 +3675,75 @@ void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
 
 } //decode79a
 */
+
+void CRS::Decode80(UInt_t iread, UInt_t ibuf) {
+  //trigger on START channel
+
+  //ibuf - current sub-buffer
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  UChar_t frmt = GLBuf[idx1+7] & 0x80;
+  Dec_Init(Blist,!frmt);
+  PulseClass pls=good_pulse;
+  PulseClass* ipls=&pls;
+
+  static std::bitset<MAX_CH> Channels; 
+  //prnt("sl;","d80: ",nevents);
+
+  while (idx1<b_end[ibuf]) {
+    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+
+    if (frmt) { //event start	
+      ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
+      evt = &*Blist->insert(Blist->end(),good_event);
+      evt->Nevt=nevents;
+      nevents++;
+      evt->Tstmp = (*buf8) & sixbytes;
+      (*buf8)>>=48;
+      evt->Spin |= UChar_t((*buf8) & 1);
+      //evt->Spin|=2;
+      Channels.reset();
+      //prnt("ss l l ls;",BBLU,"Dc:",evt->Nevt,evt->Tstmp,2,RST);
+    }
+    else {
+      Int_t* buf4 = (Int_t*) (GLBuf+idx1);
+
+      int ch = buf4[1];
+      if (ch>=opt.Nchan || ch<0) { //bad channel
+	++errors[ER_CH];
+	cout << "Dec80 Bad channel: " << endl;
+	idx1+=8;
+	continue;
+      }
+      if (!Channels.test(ch)) {
+	Channels.set(ch);
+	pulse_vect::iterator itpls =
+	  evt->pulses.insert(evt->pulses.end(),pls);
+	itpls->Chan=ch;
+	ipls = &(*itpls);
+      }
+      ipls->sData.push_back(buf4[0]);
+
+      
+      if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
+	//prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
+	evt->T0=ipls->Time;
+      }
+    }
+
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+  // if (evt->Spin)
+  //   cout << "Dec80: " << evt->Tstmp << " " << evt->pulses[1].sData.size() << " " << idx1 << " " << b_end[ibuf] << endl;
+
+  Dec_End(Blist,iread,254);
+
+
+} //decode80
 
 void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
   //Decode79 - the same as 78, but different factor for Area
@@ -5538,6 +5626,9 @@ void CRS::Reset_Raw() {
 void CRS::Reset_Dec(Short_t mod) {
   sprintf(dec_opt,"wb%d",opt.dec_compr);
 
+  if (cpar.Trigger==1) //trigger on START channel
+    mod=80;
+
   f_dec = gzopen(crs->decname.c_str(),dec_opt);
   if (f_dec) {
     cout << "Writing parameters... : " << crs->decname.c_str() << endl;
@@ -5624,9 +5715,63 @@ void CRS::Fill_Dec79(EventClass* evt) {
 
 } //Fill_Dec79
 
-template <typename T> int sgn(T val) {
-    return (T(0) < val) - (val < T(0));
-}
+void CRS::Fill_Dec80(EventClass* evt) {
+  //Fill_Dec80 - for START trigger type
+
+  // fill_dec is not thread safe!!!
+  //format of decoded data:
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - Spin
+  // 2) N 8-byte words, each containing one peak
+  //    1st (lowest) 2 bytes - (unsigned) Area*5+1
+  //    2 bytes - Time*100
+  //    2 bytes - Width*1000
+  //    1 byte - channel
+
+  *DecBuf8 = 1;
+  *DecBuf8<<=63;
+  *DecBuf8 |= evt->Tstmp & sixbytes;
+  if (evt->Spin & 1) {
+    *DecBuf8 |= 0x1000000000000;
+  }
+
+  ++DecBuf8;
+
+  //prnt("ss l l ls;",BBLU,"Dc:",evt->Nevt,evt->Tstmp,evt->pulses.size(),RST);
+
+  for (pulse_vect::iterator ipls=evt->pulses.begin();
+       ipls!=evt->pulses.end();++ipls) {
+
+    //prnt("ss d ls;",BMAG,"pls:",ipls->Chan,ipls->sData.size(),RST);
+
+    for (UInt_t i=0;i<ipls->sData.size();++i) {
+
+      Int_t* DecBuf4 = (Int_t*) DecBuf8;
+      DecBuf4[0]=ipls->sData[i];
+      DecBuf4[1]=ipls->Chan;
+      ++DecBuf8;
+
+    }
+    
+  }
+
+  //prnt("ss l l ls;",BBLU,"Dc:",evt->Nevt,evt->Tstmp,evt->pulses[1].sData.size(),RST);
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    //levt=*evt;
+    //CRS::eventlist Blist;
+    //D79(DecBuf,idec,Blist);
+    //ULong64_t* buf8 = (ULong64_t*) (GLBuf);
+    //prnt("s l l l l x;", "Flush:", levt.Tstmp, Blist.size(),
+    // Blist.front().Tstmp, Blist.back().Tstmp, *buf8);
+    //cout << "Flush: " << levt.Tstmp << endl;
+    Flush_Dec();
+  }
+
+} //Fill_Dec80
 
 // int sgn(int a) {
 // }
