@@ -206,12 +206,12 @@ EventClass levt;
 
 //static int timeout = 0;
 
-#ifdef CYUSB
-cyusb_handle *cy_handle;
-
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
+
+#ifdef CYUSB
+cyusb_handle *cy_handle;
 
 void *handle_events_func(void *ctx)
 {
@@ -1850,10 +1850,12 @@ void CRS::Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max) {
 }
 
 void CRS::AllParameters43() {
-  //cout << "Allparameters43: " << opt.hard_logic << endl;
-  UInt_t mask, //маска для дискр,СС и пересчета 
-    mask2, //маска для СТАРТ
+  //cout << "Allparameters43: " << endl;
+  UInt_t mask_discr, //маска для дискр,СС и пересчета 
+    mask_start, //маска для СТАРТ
     wmask; //маска разрешений записи
+
+  UInt_t mask;
 
   AllParameters35();
 
@@ -1865,16 +1867,16 @@ void CRS::AllParameters43() {
   for (UChar_t chan = 0; chan < chan_in_module; chan++) {
     if (cpar.on[chan]) {
 
-      mask=0b1100000000011; //bits 0,1,11,12
+      mask_discr=0b0000000000011; //bits 0,1 (было еще 11,12)
       if (opt.dsp[chan]) {
-	mask|=0b11101110000; // write DSP data
+	mask_discr|=0b11101110000; // write DSP data
       }
 
       if (cpar.pls[chan]) { //add 1100
-	mask|=0b1100; // write pulse
+	mask_discr|=0b1100; // write pulse
       }
 
-      mask2=0b1000000000011; //bits 0,1,12 - bitmask for START: tst,count48,overflow
+      mask_start=0b1100000000001; //bits 0,11,12 - bitmask for START: tst,count48,overflow
 
       wmask=2; // 0010 - запись по сигналу СТАРТ - всегда
 
@@ -1882,7 +1884,7 @@ void CRS::AllParameters43() {
 	wmask|=1;
       }
       else if (cpar.Trigger==1) { //START
-	mask2|=mask; //добавляем запись импульса по старту
+	mask_start|=mask_discr; //добавляем запись импульса по старту
       }
       else { //coinc
 	wmask|=4; // запись по СС
@@ -1890,9 +1892,9 @@ void CRS::AllParameters43() {
 	  wmask|=8; // запись по пересчету	
       }
 
-      //Command32(2,chan,23,mask); //bitmask для дискриминатора
-      Command32(2,chan,24,mask2); //bitmask для START
-      Command32(2,chan,26,mask); //bitmask для СС и пересчета
+      Command32(2,chan,23,mask_discr); //bitmask для дискр overwr AllPrms35
+      Command32(2,chan,24,mask_start); //bitmask для START
+      Command32(2,chan,26,mask_discr); //bitmask для СС и пересчета
 
       Command32(2,chan,25,wmask); // битовая маска разрешений записи
 
@@ -4447,6 +4449,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
     if (ch==255) { //ignore start channel
       idx1+=8;
+      //prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
       continue;
     }
 
@@ -4462,6 +4465,12 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       idx1+=8;
       continue;
     }
+
+    //prnt(" d",frmt);
+
+    // if (ch==1) {
+    //   prnt("s d d;","FRMT: ",ch,frmt);
+    // }
 
     switch (frmt) {
     case 0:
@@ -4484,6 +4493,16 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       npulses++;
       ipls.Chan=ch;
       ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.Pre[ch];
+
+
+      //if (ch==1) {
+      //prnt("s;",RST);
+      //prnt("ss d l",KRED," d35:",ch,ipls.Tstamp64);
+      //}
+
+      //prnt("ss d l ls;",BBLU,"ZER:",ch,ipls.Tstamp64,data,RST);
+
+
       break;
     case 1:
       ipls.Spin = GLBuf[idx1+5];
@@ -4573,9 +4592,12 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       break;
     case 11:
       ipls.Counter = data;
+      //prnt("ss d l ls;",KRED,"CONT:",ch,ipls.Tstamp64,ipls.Counter,RST);
       break;
     case 12:
-      ++errors[ER_OVF];
+      if (data & 1)
+	++errors[ER_OVF];
+      //prnt("ss d l ls;",KGRN,"OVF:",ch,ipls.Tstamp64,data&1,RST);
       break;
     default:
       ++errors[ER_FRMT];
@@ -5724,11 +5746,9 @@ void CRS::Fill_Dec80(EventClass* evt) {
   //    bit63=1 - start of event
   //    lowest 6 bytes - Tstamp
   //    byte 7 - Spin
-  // 2) N 8-byte words, each containing one peak
-  //    1st (lowest) 2 bytes - (unsigned) Area*5+1
-  //    2 bytes - Time*100
-  //    2 bytes - Width*1000
-  //    1 byte - channel
+  // 2) N 8-byte words, each containing one sample
+  //    (low) 4 bytes - (Int_t) data
+  //    (high) 4 bytes - (Int_t) channel
 
   *DecBuf8 = 1;
   *DecBuf8<<=63;
