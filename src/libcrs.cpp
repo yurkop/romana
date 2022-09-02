@@ -456,7 +456,7 @@ void *handle_ana(void *ctx) {
 
 	m_event->FillHist(true);
 	m_event->FillHist(false);
-	if (m_event->Spin & 2) {
+	if (m_event->Spin & 2) { //Ms channel
 	  if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
 	    ++crs->mtrig;
 	    if (opt.dec_write) {
@@ -829,14 +829,13 @@ void CRS::Ana2(int all) {
 
   // analyze events from m_event to m_end
   while (m_event!=m_end) {
-    //prnt("ssl l ds;",BBLU,"EV1: ",m_event->Nevt,m_event->Tstmp,m_event->pulses.size(),RST);
     if ((int)m_event->pulses.size()>=opt.mult1 &&
 	(int)m_event->pulses.size()<=opt.mult2) {
 
       m_event->FillHist(true);
       m_event->FillHist(false);
       //prnt("ssl ds;",BGRN,"EV2: ",m_event->Nevt,m_event->Spin,RST);
-      if (m_event->Spin & 2) {
+      if (m_event->Spin & 2) { //Ms channel
 	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
 	  //prnt("ssl ls;",BRED,"EV3: ",m_event->Nevt,m_event->Tstmp,RST);
 	  ++crs->mtrig;
@@ -862,7 +861,7 @@ void CRS::Ana2(int all) {
       ++m_event;
     } // mult
     else {
-      //cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
+      //prnt("ss l l f d ls;",BMAG,"Erase:",m_event->Nevt,m_event->Tstmp,m_event->T0,m_event->Spin,m_event->pulses.size(),RST);
       m_event=Levents.erase(m_event);
     }
   }
@@ -2860,7 +2859,6 @@ void CRS::AnaBuf(int loc_ibuf) {
 
 
 
-
   if (Fmode>1) { //только для чтения файла
     if (N4>3) {
       SLP+=5;
@@ -3549,7 +3547,7 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
 }
 
 void CRS::PulseAna(PulseClass &ipls) {
-  //cout << "PulseAna: " << endl;
+  //prnt("ss d l ds;",BRED,"Pls1:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
   if (!opt.dsp[ipls.Chan]) {
     if (opt.sS[ipls.Chan]) {
       ipls.Smooth(opt.sS[ipls.Chan]);
@@ -3567,6 +3565,7 @@ void CRS::PulseAna(PulseClass &ipls) {
     }
   }
   ipls.Ecalibr();
+  //prnt("ss d l ds;",BGRN,"Pls2:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
 }
 
 void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
@@ -3762,36 +3761,41 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
   PulseClass* ipls=&pls;
   static Long64_t Tst;
   static UChar_t Spn;
+  ULong64_t* buf8;
 
   //prnt("sl;","d79: ",nevents);
 
   if (opt.fProc) { //fill pulses for reanalysis
     while (idx1<b_end[ibuf]) {
       frmt = GLBuf[idx1+7] & 0x80; //event start bit
+      buf8 = (ULong64_t*) (GLBuf+idx1);
 
       if (frmt) { //event start
-	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
 	Tst = (*buf8) & sixbytes;
 	(*buf8)>>=48;
-	Spn = UChar_t((*buf8) & 1);
-	//Spn|=2;
+	//Spn = UChar_t((*buf8) & 1);
+	Spn = UChar_t(*buf8);
       }
       else {
-	//pls=PulseClass();
-
 	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
 	UShort_t* buf2u = (UShort_t*) buf2;
 	ipls->Chan = buf2[3];
-	ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
 
-	//new2
-	ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	ipls->Tstamp64=Tst;//*opt.Period;
+	if (Spn & 128) { //Counters
+	  ipls->Counter = (*buf8) & sixbytes;
+	}
+	else { //Peaks
+	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
 
-	ipls->Spin=Spn;
-	ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	  //new2
+	  ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	  ipls->Tstamp64=Tst;//*opt.Period;
 
-	ipls->Ecalibr();
+	  ipls->Spin=Spn;
+	  ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+
+	  ipls->Ecalibr();
+	}
 	Event_Insert_Pulse(Blist,ipls);
       }
 
@@ -3805,16 +3809,17 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
   else { //!opt.fProc -> fill event
     while (idx1<b_end[ibuf]) {
       frmt = GLBuf[idx1+7] & 0x80; //event start bit
+      buf8 = (ULong64_t*) (GLBuf+idx1);
 
       if (frmt) { //event start	
-	ULong64_t* buf8 = (ULong64_t*) (GLBuf+idx1);
 	evt = &*Blist->insert(Blist->end(),good_event);
 	evt->Nevt=nevents;
 	nevents++;
 	evt->Tstmp = (*buf8) & sixbytes;
 	(*buf8)>>=48;
-	evt->Spin |= UChar_t((*buf8) & 1);
-	//evt->Spin|=2;
+	//evt->Spin |= UChar_t((*buf8) & 1);
+	evt->Spin |= UChar_t(*buf8);
+	//prnt("ss l ds;",BGRN,"d79:",evt->Tstmp,evt->Spin,RST);
       }
       else {
 	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
@@ -3823,16 +3828,24 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	  evt->pulses.insert(evt->pulses.end(),pls);
 	ipls = &(*itpls);
 	ipls->Chan = buf2[3];
-	ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01
-	  + opt.sD[ipls->Chan]/opt.Period; //in samples
-	ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
-	if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
-	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
-	  evt->T0=ipls->Time;
+
+	if (evt->Spin & 128) { //Counters
+	  ipls->Counter = (*buf8) & sixbytes;
 	}
-	ipls->Ecalibr();
+	else { //Peaks
+	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	  ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01
+	    + opt.sD[ipls->Chan]/opt.Period; //in samples
+	  ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+	  if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
+	    //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
+	    evt->T0=ipls->Time;
+	  }
+	  ipls->Ecalibr();
+	}
       }
+
+      //prnt("ss l d ls;",BCYN,"d79:",evt->Tstmp,evt->Spin,evt->pulses.size(),RST);
 
       idx1+=8;
     } //while (idx1<buf_len)
@@ -4505,7 +4518,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
       break;
     case 1:
-      ipls.Spin = GLBuf[idx1+5];
+      ipls.Spin = GLBuf[idx1+5] & 1;
       ipls.Counter = data & 0xFFFFFFFFFF;
       break;
     case 2:
@@ -4592,6 +4605,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       break;
     case 11:
       ipls.Counter = data;
+      ipls.Spin|=128; //bit 7 - hardware counters
       //prnt("ss d l ls;",KRED,"CONT:",ch,ipls.Tstamp64,ipls.Counter,RST);
       break;
     case 12:
@@ -5465,6 +5479,7 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
     dt = (T64 - rit->Tstmp);
     //cout << "new: " << nevents << " " << Elist->size() << " " << dt << " " << nn << endl;
     if (dt > opt.tgate) {
+      //pls пришел позже, чем tgate -> добавляем новое событие в конец
       //add new event AFTER rit.base()
       it=Elist->insert(rit.base(),EventClass());
       it->Nevt=nevents;
@@ -5485,8 +5500,13 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
       return;
     }
     else if (TMath::Abs(dt) <= opt.tgate) { //add pls to existing event
-      //cout << "t2: " << endl;
       // coincidence event
+
+      //if ((rit->Spin&128) != (pls->Spin&128)) {
+      //prnt("ss l d l ds;",KGRN,"Spin128:",rit->Tstmp,rit->Spin,
+      //pls->Tstamp64,pls->Spin,RST);
+      //}
+
       rit->AddPulse(pls);
       return;
     }
@@ -5582,7 +5602,7 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   Levents.splice(Levents.end(),*BB);
 
   // for (event_iter it=Levents.begin(); it!=Levents.end(); ++it) {
-  //   prnt("ss l l f ds;","Le:",BRED,it->Nevt,it->Tstmp,it->T0,it->Spin,RST);
+  //   prnt("ss l l f d ls;","Le:",BRED,it->Nevt,it->Tstmp,it->T0,it->Spin,it->pulses.size(),RST);
   // }
 
   Bufevents.erase(BB);
@@ -5682,44 +5702,74 @@ void CRS::Fill_Dec79(EventClass* evt) {
   //    bit63=1 - start of event
   //    lowest 6 bytes - Tstamp
   //    byte 7 - Spin
-  // 2) N 8-byte words, each containing one peak
+  // 2a) if Spin7(bit7):
+  //  N 8-byte words, each containing one pulse counter
+  //    bytes 0-5 - Counter
+  //    byte 7 - channel
+  // 2b) else (!Spin7(bit7)):
+  //  N 8-byte words, each containing one peak
   //    1st (lowest) 2 bytes - (unsigned) Area*5+1
   //    2 bytes - Time*100
   //    2 bytes - Width*1000
   //    1 byte - channel
 
+  /*
   *DecBuf8 = 1;
   *DecBuf8<<=63;
   *DecBuf8 |= evt->Tstmp & sixbytes;
   if (evt->Spin & 1) {
     *DecBuf8 |= 0x1000000000000;
   }
+  */
+
+
+  *DecBuf8 = 0x8000 | evt->Spin;
+  *DecBuf8<<=48;
+  *DecBuf8 |= evt->Tstmp & sixbytes;
+  //if (evt->Spin & 1) {
+  //*DecBuf8 |= 0x1000000000000;
+  //}
+
+
+
   //prnt("ss d l x ls;",BGRN,"Dec:",nevents,evt->Tstmp,*DecBuf8,(UChar_t*)DecBuf8-DecBuf,RST);
   // if ((UChar_t*)DecBuf8==DecBuf) {
   //   prnt("ss d l x ls;",BGRN,"Dec:",nevents,evt->Tstmp,*DecBuf8,(UChar_t*)DecBuf8-DecBuf,RST);
   // }
   ++DecBuf8;
 
-  for (pulse_vect::iterator ipls=evt->pulses.begin();
-       ipls!=evt->pulses.end();++ipls) {
-    if (ipls->Pos>-32222) {
-      *DecBuf8=0;
+  if (evt->Spin & 128) { //Counters
+    //prnt("ss ls;",BRED,"Counter:",evt->Tstmp,RST);
+    for (pulse_vect::iterator ipls=evt->pulses.begin();
+	 ipls!=evt->pulses.end();++ipls) {
+      *DecBuf8=ipls->Counter;
       Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
-      if (ipls->Area<0) {
-	*Decbuf2u = 0;
-      }
-      else if (ipls->Area>13106){
-	*Decbuf2u = 65535;
-      }
-      else {
-	*Decbuf2u = ipls->Area*5+1;
-      }
-      Decbuf2[1] = ipls->Time*100;
-      Decbuf2[2] = ipls->Width*1000;
       Decbuf2[3] = ipls->Chan;
-      //cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
       ++DecBuf8;
+    }
+  }
+  else { //Peaks
+    for (pulse_vect::iterator ipls=evt->pulses.begin();
+	 ipls!=evt->pulses.end();++ipls) {
+      if (ipls->Pos>-32222) {
+	*DecBuf8=0;
+	Short_t* Decbuf2 = (Short_t*) DecBuf8;
+	UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
+	if (ipls->Area<0) {
+	  *Decbuf2u = 0;
+	}
+	else if (ipls->Area>13106){
+	  *Decbuf2u = 65535;
+	}
+	else {
+	  *Decbuf2u = ipls->Area*5+1;
+	}
+	Decbuf2[1] = ipls->Time*100;
+	Decbuf2[2] = ipls->Width*1000;
+	Decbuf2[3] = ipls->Chan;
+	//cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
+	++DecBuf8;
+      }
     }
   }
 

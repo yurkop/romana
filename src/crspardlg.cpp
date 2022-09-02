@@ -84,7 +84,7 @@ const char* ttip2[n_apar]={
   ttip_type,
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Master/slave channel:\nEvents containing only slave channels are rejected\nEach event must contain at least one master channel",
-  "Software smoothing",
+  "Software smoothing. If negative - data are truncated to integer (imitates hS)",
   "Software delay in ns (can be negative or positive)",
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",

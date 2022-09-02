@@ -545,9 +545,10 @@ void EventClass::AddPulse(PulseClass *pls) {
     Spin|=2;
   }
 
-  if (pls->Spin & 1) {
-    Spin|=1;
-  }
+  //if (pls->Spin & 1) {
+  //Spin|=1;
+  //}
+  Spin|=(pls->Spin & 129); //копируем bit7 и bit0 to event spin
 
   if (pulses.empty()) { //this is the first pulse in the event
     int i_dt = opt.sD[pls->Chan]/opt.Period;
@@ -1185,9 +1186,10 @@ void EventClass::FillHist(Bool_t first) {
 
 }
 
-void PulseClass::Smooth(int nn) {
+/*
+void PulseClass::Smooth_old(int nn) {
 
-  int n2=abs(nn);
+  int n2=abs(nn-1);
   //sData = new double[nsamp];
   //memset(sData,0,nsamp*sizeof(double));
 
@@ -1210,6 +1212,46 @@ void PulseClass::Smooth(int nn) {
     else {
       ndiv=n2+1;
     }
+
+    sData[i]/=ndiv;
+    if (nn<0)
+      sData[i] = roundf(sData[i]);
+    //printf("Smooth: %d %d %d %d %f\n",i,nsamp-i, opt.sS, ndiv, sData[i]);
+
+  }
+
+}
+*/
+
+void PulseClass::Smooth(int nn) {
+
+  int n2=abs(nn)-1;
+  //sData = new double[nsamp];
+  //memset(sData,0,nsamp*sizeof(double));
+
+  int Nsamp = sData.size();
+
+  for (int i=Nsamp-1;i>0;i--) {
+    //int ll=1;
+    for (int j=1;j<=n2;j++) {
+      int k=i-j;
+      if (k>0) {
+	sData[i]+=sData[k];
+	//ll++;
+      }
+    }
+
+    int ndiv;
+    if (i <= n2) {
+      ndiv=i;
+    }
+    else {
+      ndiv=n2+1;
+    }
+
+    //if (i<10) {
+    //cout << "ll: " << i << " " << n2 << " " << ll << " " << ndiv << endl;
+    //}
 
     sData[i]/=ndiv;
     if (nn<0)
