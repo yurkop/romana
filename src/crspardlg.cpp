@@ -2440,10 +2440,10 @@ void DaqParDlg::UpdateStatus(int rst) {
   static Long64_t allbad;
   static double t1;
   static Long64_t npulses2o[MAX_CH];
-  static Long64_t npulses3o[MAX_CH];
+  //static Long64_t npulses3o[MAX_CH];
   static double rate2[MAX_CH];
   static double rate_all2;
-  static double rate3[MAX_CH];
+  //static double rate3[MAX_CH];
   static double rate_all3;
 
   if (rst) {
@@ -2451,9 +2451,9 @@ void DaqParDlg::UpdateStatus(int rst) {
     t1=0;
     opt.T_acq=0;
     memset(npulses2o,0,sizeof(npulses2o));
-    memset(npulses3o,0,sizeof(npulses3o));
+    //memset(npulses3o,0,sizeof(npulses3o));
     memset(rate2,0,sizeof(rate2));
-    memset(rate3,0,sizeof(rate3));
+    //memset(rate3,0,sizeof(rate3));
   }
 
   TGString txt;
@@ -2467,11 +2467,11 @@ void DaqParDlg::UpdateStatus(int rst) {
     for (int i=0;i<pmax;i++) {
       rate2[i] = (crs->npulses2[i]-npulses2o[i])/dt;
       npulses2o[i]=crs->npulses2[i];
-      rate3[i] = (crs->npulses3[i]-npulses3o[i])/dt;
-      npulses3o[i]=crs->npulses3[i];
+      //rate3[i] = (crs->npulses3[i]-npulses3o[i])/dt;
+      //npulses3o[i]=crs->npulses3[i];
 
       rate_all2+=rate2[i];
-      rate_all3+=rate3[i];
+      rate_all3+=crs->rate3[i];
       allbad+=crs->npulses_bad[i];
     }
     t1=opt.T_acq;
@@ -2480,7 +2480,7 @@ void DaqParDlg::UpdateStatus(int rst) {
   for (int i=0;i<pmax;i++) {
     txt.Form("%0.0f",rate2[i]);
     fStat2[i]->SetText(txt);
-    txt.Form("%0.0f",rate3[i]);
+    txt.Form("%0.0f",crs->rate3[i]);
     fStat3[i]->SetText(txt);
     txt.Form("%d",crs->npulses_bad[i]);
     fStatBad[i]->SetText(txt);

@@ -180,7 +180,9 @@ RQ_OBJECT("CRS")
   //double mb_rate;
   //double ev_rate;
   Long64_t npulses2[MAX_CH]; //number of pulses per channel (softw)
-  Long64_t npulses3[MAX_CH]; //number of pulses per channel (hardw)
+  Long64_t npulses3o[MAX_CH]; //old number of pulses per channel (hardw)
+  Long64_t Tst3o[MAX_CH]; //old TimeStamp per channel (hardw)
+  double rate3[MAX_CH]; //pulse rate per channel (hardw)
   //Long64_t npulses3o[MAX_CH]; //number of pulses per channel (hardw)
 
   Int_t npulses_bad[MAX_CH]; //number of bad pulses per channel

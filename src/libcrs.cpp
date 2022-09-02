@@ -2433,7 +2433,9 @@ void CRS::DoReset(int rst) {
     npulses=0;
     nbuffers=0;
     memset(npulses2,0,sizeof(npulses2));
-    memset(npulses3,0,sizeof(npulses3));
+    memset(npulses3o,0,sizeof(npulses3o));
+    memset(Tst3o,0,sizeof(Tst3o));
+    memset(rate3,0,sizeof(rate3));
     memset(npulses_bad,0,sizeof(npulses_bad));
     memset(errors,0,sizeof(errors));
 
@@ -4356,10 +4358,14 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	//if (!(ipls.Spin & 0x80)) {
 	//ipls.Spin|=0x80;
 	//}
-	npulses3[ch]=data;
+
+
+	npulses3o[ch]=data;
+
+
 
 	/*
-	// if (opt.h_counter.b) {
+	// if (opt.h_count.b) {
 	//   Blist->rbegin()->Fill_Time_Extend(hcl->m_counter[ch]);
 	//   //cout << "counters: " << (int) ch << " " << rate << " " << data << endl;
 	//   EventClass::Fill1dwSt(true,hcl->m_counter,ch,opt.T_acq,rate);
@@ -4603,11 +4609,20 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       pk.QX = data & 0xFFFFFFFFFF;
       pk.QX = (pk.QX<<24)>>24;
       break;
-    case 11:
+    case 11: { //Counters
       ipls.Counter = data;
       ipls.Spin|=128; //bit 7 - hardware counters
-      //prnt("ss d l ls;",KRED,"CONT:",ch,ipls.Tstamp64,ipls.Counter,RST);
+
+      double dt = (ipls.Tstamp64 - Tst3o[ipls.Chan])*1e-9*opt.Period;
+      if (dt) {
+	rate3[ipls.Chan] = (ipls.Counter - npulses3o[ipls.Chan])/dt;
+      }
+      Tst3o[ipls.Chan] = ipls.Tstamp64;
+      npulses3o[ipls.Chan] = ipls.Counter;
+
+      //prnt("ss d l l f fs;",KGRN,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate3[ipls.Chan],RST);
       break;
+    }
     case 12:
       if (data & 1)
 	++errors[ER_OVF];
