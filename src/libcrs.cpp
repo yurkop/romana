@@ -1119,9 +1119,9 @@ CRS::CRS() {
   // dummy_peak.Width=0;
   // dummy_peak.Time=-100;
 
-  for (int i=0;i<MAX_CHTP;i++) {
-    type_ch[i]=255;
-  }
+  //for (int i=0;i<MAX_CHTP;i++) {
+  //type_ch[i]=255;
+  //}
 
   MAXTRANS2=MAXTRANS7;
   //memset(Pre,0,sizeof(Pre));
@@ -1341,7 +1341,8 @@ int CRS::Detect_device() {
       nch2=2;
       opt.Nchan=2;
       for (int j=0;j<chan_in_module;j++) {
-	type_ch[j]=0;
+	cpar.crs_ch[j]=0;
+	//type_ch[j]=0;
       }
       break;
     }
@@ -1353,8 +1354,9 @@ int CRS::Detect_device() {
       for (int i=0;i<nplates;i++) {
 	cout << "Channels(" << i << "):";
 	for (int j=0;j<4;j++) {
-	  type_ch[i*4+j]=0;
-	  cout << " " << type_ch[i*4+j];
+	  cpar.crs_ch[i*4+j]=0;
+	  //type_ch[i*4+j]=0;
+	  cout << " " << cpar.crs_ch[i*4+j];
 	  nch2++;
 	}
 	cout << endl;
@@ -1368,8 +1370,9 @@ int CRS::Detect_device() {
       for (int i=0;i<nplates;i++) {
 	cout << "Channels(" << i << "):";
 	for (int j=0;j<4;j++) {
-	  type_ch[i*4+j]=buf_in[sz];
-	  cout << " " << type_ch[i*4+j];
+	  cpar.crs_ch[i*4+j]=buf_in[sz];
+	  //type_ch[i*4+j]=buf_in[sz];
+	  cout << " " << cpar.crs_ch[i*4+j];
 	  nch2++;
 	}
 	cout << endl;
@@ -1396,8 +1399,8 @@ int CRS::Detect_device() {
     opt.Period=10;
     chan_in_module=nplates*8;
     for (int j=0;j<chan_in_module;j++) {
-      type_ch[j]=2;
-      cout << " " << type_ch[j];
+      cpar.crs_ch[j]=2;
+      cout << " " << cpar.crs_ch[j];
       nch2++;
     }
     cout << endl;
@@ -1409,8 +1412,8 @@ int CRS::Detect_device() {
     opt.Period=10;
     chan_in_module=nplates*16;
     for (int j=0;j<chan_in_module;j++) {
-      type_ch[j]=3;
-      cout << " " << type_ch[j];
+      cpar.crs_ch[j]=2;
+      cout << " " << cpar.crs_ch[j];
       nch2++;
     }
     cout << endl;
@@ -1703,8 +1706,8 @@ int CRS::Command32_old(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
 }
 
 int CRS::Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
-  // if (cpar.on[ch]) {
-  //   prnt("ssd d d ds;",KGRN,"Cmd: ",(int) cmd, (int) ch, (int) type, par, RST);
+  // if (cmd !=2 || cpar.on[ch]) {
+  //    prnt("ssd d d ds;",KGRN,"Cmd: ",(int) cmd, (int) ch, (int) type, par, RST);
   // }
 
   //для версии ПО 2
@@ -1854,7 +1857,7 @@ void CRS::AllParameters43() {
     mask_start, //маска для СТАРТ
     wmask; //маска разрешений записи
 
-  UInt_t mask;
+  UInt_t mask_group;
 
   AllParameters35();
 
@@ -1877,6 +1880,16 @@ void CRS::AllParameters43() {
 
       mask_start=0b1100000000001; //bits 0,11,12 - bitmask for START: tst,count48,overflow
 
+      int w = 1;
+      mask_group=0;
+      for (int j=0;j<2;j++) {
+	if (cpar.group[chan][j]) {
+	  if (cpar.coinc_w[j]>w)
+	    w=cpar.coinc_w[j];
+	  mask_group+=j+1;
+	}
+      }
+
       wmask=2; // 0010 - запись по сигналу СТАРТ - всегда
 
       if (cpar.Trigger==0) { //discr
@@ -1887,32 +1900,25 @@ void CRS::AllParameters43() {
       }
       else { //coinc
 	wmask|=4; // запись по СС
-	if (cpar.ratediv[chan])
-	  wmask|=8; // запись по пересчету	
+	if (cpar.ratediv[chan]) {
+	  wmask|=8; // запись по пересчету
+	  //wmask|=4; // запись по СС
+	}
       }
 
       Command32(2,chan,23,mask_discr); //bitmask для дискр overwr AllPrms35
       Command32(2,chan,24,mask_start); //bitmask для START
+      Command32(2,chan,25,wmask); // битовая маска разрешений записи
       Command32(2,chan,26,mask_discr); //bitmask для СС и пересчета
 
-      Command32(2,chan,25,wmask); // битовая маска разрешений записи
 
-      int w = 1;
-      mask=0;
-      for (int j=0;j<2;j++) {
-	if (cpar.group[chan][j]) {
-	  if (cpar.coinc_w[j]>w)
-	    w=cpar.coinc_w[j];
-	  mask+=j+1;
-	}
-      }
       Command32(2,chan,27,(int) w); // длительность окна совпадений
       Command32(2,chan,28,(int) 0); // тип обработки повторных
       int red = cpar.ratediv[chan]-1;
       if (red<0) red=0;
       Command32(2,chan,29,(int) red); // величина пересчета P
-      Command32(2,chan,31,(int) mask); //битовая маска принадлежности к группам
       Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
+      Command32(2,chan,31,(int) mask_group); //битовая маска принадлежности к группам
       Command32(2,chan,34,cpar.F24); // разрядность форматирования отсчетов сигнала
     } // if (cpar.on[chan])
     else {
@@ -2189,7 +2195,7 @@ void CRS::AllParameters2()
     }
     else {
       int tmp,max;
-      cpar.GetPar("thresh",module,chan,type_ch[chan],tmp,tmp,max);
+      cpar.GetPar("thresh",module,chan,cpar.crs_ch[chan],tmp,tmp,max);
       //cout << "Off: " << (int) chan << " " << max << endl;
       Command2(2,chan,3,0);
       Command2(2,chan,4,max);
@@ -3781,6 +3787,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
       else {
 	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
 	UShort_t* buf2u = (UShort_t*) buf2;
+	UChar_t* buf1u = (UChar_t*) buf2;
 	ipls->Chan = buf2[3];
 
 	if (Spn & 128) { //Counters
@@ -3795,6 +3802,8 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 
 	  ipls->Spin=Spn;
 	  ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+
+	  ipls->Height = ((UInt_t) buf1u[7])<<8;
 
 	  ipls->Ecalibr();
 	}
@@ -3826,6 +3835,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
       else {
 	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
 	UShort_t* buf2u = (UShort_t*) buf2;
+	UChar_t* buf1u = (UChar_t*) buf2;
 	pulse_vect::iterator itpls =
 	  evt->pulses.insert(evt->pulses.end(),pls);
 	ipls = &(*itpls);
@@ -3839,6 +3849,9 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	  ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01
 	    + opt.sD[ipls->Chan]/opt.Period; //in samples
 	  ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+
+	  ipls->Height = ((UInt_t) buf1u[7])<<8;
+
 	  if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
 	    //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	    evt->T0=ipls->Time;
@@ -4526,6 +4539,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
     case 1:
       ipls.Spin = GLBuf[idx1+5] & 1;
       ipls.Counter = data & 0xFFFFFFFFFF;
+      //prnt("ss d l ls;",BMAG,"CONT1:",ch,ipls.Tstamp64,ipls.Counter,RST);
       break;
     case 2:
       if ((int)ipls.sData.size()>=cpar.Len[ipls.Chan]) {
@@ -4620,7 +4634,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       Tst3o[ipls.Chan] = ipls.Tstamp64;
       npulses3o[ipls.Chan] = ipls.Counter;
 
-      //prnt("ss d l l f fs;",KGRN,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate3[ipls.Chan],RST);
+      //prnt("ss d l l f fs;",BBLU,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate3[ipls.Chan],RST);
       break;
     }
     case 12:
@@ -5342,14 +5356,14 @@ void CRS::Print_Peaks(const char* file) {
   }
   std::ostream out(buf);
 
-  out << "Nevt Chan Tstamp(ns) Area" << endl;
+  out << "Nevt Chan Tstamp(ns) Area Time" << endl;
   for (std::list<EventClass>::iterator it=Levents.begin();
        it!=Levents.end();++it) {
     for (UInt_t i=0;i<it->pulses.size();i++) {
       PulseClass pp = it->pulses.at(i);
       // for (std::vector<PeakClass>::iterator pk=pp.Peaks.begin();
       // 	   pk!=pp.Peaks.end();++pk) {
-      out << it->Nevt << " " << (int)pp.Chan << " " << pp.Tstamp64*int(opt.Period) << " " << pp.Area << endl;
+      out << it->Nevt << " " << (int)pp.Chan << " " << it->Tstmp << " " << pp.Tstamp64*int(opt.Period) << " " << pp.Area << " " << pp.Time << endl;
       //}
     }
     //out << endl;
@@ -5459,11 +5473,15 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
 
   ++npulses2[pls->Chan];
 
+  //YK1 prnt("ssl fs;",BRED,"Ts1: ",pls->Tstamp64,pls->Time,RST);
+
   // оставляем только дробную часть в pls->Time, остальное загоняем в Tstamp64
   int i_dt = pls->Time;
   pls->Time -= i_dt;
   pls->Tstamp64+=i_dt;
   Long64_t T64 = pls->Tstamp64+Long64_t(opt.sD[pls->Chan]/opt.Period);
+
+  //YK2 prnt("ssl f ds;",BGRN,"Ts2: ",pls->Tstamp64,pls->Time,i_dt,RST);
 
   // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
   int nn=0;
@@ -5727,6 +5745,7 @@ void CRS::Fill_Dec79(EventClass* evt) {
   //    2 bytes - Time*100
   //    2 bytes - Width*1000
   //    1 byte - channel
+  //    7 bits - amplitude
 
   /*
   *DecBuf8 = 1;
@@ -5770,6 +5789,7 @@ void CRS::Fill_Dec79(EventClass* evt) {
 	*DecBuf8=0;
 	Short_t* Decbuf2 = (Short_t*) DecBuf8;
 	UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
+	UChar_t* Decbuf1u = (UChar_t*) DecBuf8;
 	if (ipls->Area<0) {
 	  *Decbuf2u = 0;
 	}
@@ -5779,9 +5799,25 @@ void CRS::Fill_Dec79(EventClass* evt) {
 	else {
 	  *Decbuf2u = ipls->Area*5+1;
 	}
-	Decbuf2[1] = ipls->Time*100;
-	Decbuf2[2] = ipls->Width*1000;
+	if (ipls->Time>327.6)
+	  Decbuf2[1] = 32767;
+	else if (ipls->Time<-327)
+	  Decbuf2[1] = -32767;
+	else
+	  Decbuf2[1] = ipls->Time*100;
+
+	if (ipls->Width>32.76)
+	  Decbuf2[2] = 32767;
+	else if (ipls->Width<-32.76)
+	  Decbuf2[2] = -32767;
+	else
+	  Decbuf2[2] = ipls->Width*1000;
+
 	Decbuf2[3] = ipls->Chan;
+	if (ipls->Height<0)
+	  Decbuf1u[7] = 0;
+	else
+	  Decbuf1u[7] = ((int)ipls->Height)>>8;
 	//cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
 	++DecBuf8;
       }
@@ -6071,7 +6107,7 @@ void CRS::Flush_Dec() {
     
     DecBuf+=idec;
     if (DecBuf_ring+DECSIZE*NDEC-DecBuf<2*DECSIZE) {
-      prnt("sss;",BYEL,"---100---",RST);
+      prnt("ssds;",BYEL,"---end of DecBuf---: ",NDEC,RST);
       DecBuf=DecBuf_ring;
     }
     DecBuf8 = (ULong64_t*) DecBuf;

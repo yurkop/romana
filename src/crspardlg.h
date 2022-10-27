@@ -69,6 +69,18 @@ struct pmap {
 
 typedef std::vector<pmap>::iterator piter;
 //-----------------------------------------------
+class TrigFrame: public TGHorizontalFrame {
+public:
+  TrigFrame(TGGroupFrame *p, int opt=0);
+  virtual ~TrigFrame() {};
+
+  void DoCheckTrigger();
+  void UpdateTrigger();
+
+  TGCheckButton *fchkTrig[3];
+  
+};
+//-----------------------------------------------
 class ParDlg: public TGCompositeFrame {
 
 public:
@@ -212,7 +224,8 @@ protected:
   const char* tip2;
   const char* label;
 
-  TGTextEntry* tTrig;
+public:
+  TrigFrame* tTrig;
 
 public:
 
@@ -223,7 +236,7 @@ public:
   int AddOpt(TGCompositeFrame* frame);
   int AddAna(TGCompositeFrame* frame);
   int AddLogic(TGCompositeFrame* frame);
-  void AddTrigger(TGGroupFrame* frame);
+  //void AddTrigger(TGGroupFrame* frame);
   int AddExpert(TGCompositeFrame* frame);
   void DoCheckTrigger();
 
@@ -231,7 +244,7 @@ public:
 
   void Update();
   //void UpdateLL(wlist &llist, Bool_t state);
-  void UpdateTrigger();
+  //void UpdateTrigger();
 
   ClassDef(ParParDlg, 0)
 };
@@ -251,7 +264,7 @@ protected:
   const char* tip2;
   const char* label;
 
-  TGTextEntry* tTrig;
+  //TGTextEntry* tTrig;
 
 public:
 
@@ -308,7 +321,8 @@ public:
   //TGCheckButton *fchkHard;
 
   TGGroupFrame* cGrp;
-  TGLabel *cLabel;
+  //TGLabel *cLabel;
+  TrigFrame* tTrig;
 
 public:
   DaqParDlg(const TGWindow *p,UInt_t w,UInt_t h);
@@ -322,6 +336,7 @@ public:
   void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
 		   const char* ttip, int &kk);
   void UpdateStatus(int rst=0);
+  void Update();
 
   ClassDef(DaqParDlg, 0)
 };

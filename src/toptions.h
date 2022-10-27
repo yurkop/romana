@@ -61,7 +61,11 @@ public:
   //Version_t ver;
   // parameters of the crs32 or crs2 module
 
-  //Int_t chtype[MAX_CHTP]; //channel type
+  Int_t crs_ch[MAX_CHTP]; //CRS channel type:
+  //0 - CRS2/CRS32 (11 bit)
+  //1 - CRS-6/16 (16 bit)
+  //2 - CRS-8/16 or CRS-128 (16 bit)
+
   //Int_t test; // [ts1] [ts2] test
   Int_t hS[MAX_CHTP]; // [smooth] Hardware Smooth - SS=0..10; S=2^SS
   Int_t Dt[MAX_CHTP]; // [deadTime] B = 1..16383

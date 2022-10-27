@@ -79,7 +79,7 @@ RQ_OBJECT("CRS")
   static const int RAWSIZE=10485760; //10 MB
 
   static const int DECSIZE=1048576; //1 MB
-  static const int NDEC=100; // number of Dec buffers in ring
+  static const int NDEC=300; // number of Dec buffers in ring
 
   //--------variables---------
 
@@ -155,7 +155,7 @@ RQ_OBJECT("CRS")
   // 43,53 - new format (decode35)
   // 72..80 - decoded file
 
-  Int_t type_ch[MAX_CHTP];
+  //Int_t type_ch[MAX_CHTP];
   //0: 4-11bit;
   //1: crs-6/16 2-16bit;
   //2: crs-8/16 (16bit)

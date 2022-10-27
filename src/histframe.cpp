@@ -360,12 +360,12 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   but = new TGTextButton(fHor3,"Del",3);
   but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
-  but->SetToolTipText("Delete all cuts. Use right mouse button on a cut to delete it");
+  but->SetToolTipText("Delete all cuts. Use right mouse button on a single cut to delete it");
   fHor3->AddFrame(but, LayLC1);
 
   but = new TGTextButton(fHor3,"Edit",4);
   but->Connect("Clicked()", "HistFrame", this, "EditCutG()");
-  but->SetToolTipText("Edit all cuts");
+  but->SetToolTipText("Edit all cuts (not implemented)");
   fHor3->AddFrame(but, LayLC1);
 
   // but = new TGTextButton(fHor3,"Sort",4);
@@ -414,7 +414,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   but = new TGTextButton(fHor5,"Del",9);
   //but->Connect("Clicked()", "HistFrame", this, "StartMouse()");
-  but->SetToolTipText("Delete all ROI (not implemented). Use right mouse button on a ROI to delete it");
+  but->SetToolTipText("Delete all ROI (not implemented). Use right mouse button on a single ROI to delete it");
   fHor5->AddFrame(but, LayLC1);
 
   but = new TGTextButton(fHor5,"Edit",9);

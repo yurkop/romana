@@ -1099,6 +1099,101 @@ void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1,
   hfr1->AddFrame(fLabel,LayLT4);
 }
 
+//------ TrigFrame -------
+TrigFrame::TrigFrame(TGGroupFrame *p, int opt)
+  :TGHorizontalFrame(p)
+{
+  const char* tip1 = "Hardware trigger type";
+  const char* tip2[3] = {
+			 "Trigger on Discriminator (normal trigger)",
+			 "Trigger on START channel",
+			 "Use hardware coincidence scheme",
+  };
+  //const char* label[3] = {"Normal","START","Hardw.Coinc."};
+  const char* label0[3] = {"D","S","Hw.Coin."};
+  const char* label1[3] = {"Discr.","START","Hw.Coinc."};
+  const char** label = label0;
+
+  TGLayoutHints* LayLC1 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 1, 6, 1, 1);
+
+  //TGHorizontalFrame *hfr = new TGHorizontalFrame(frame);
+  p->AddFrame(this,new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 5, 5, 5));
+
+  if (opt) {
+    TGTextEntry* fLabel=new TGTextEntry(this, "Trigger:");
+    fLabel->ChangeOptions(fLabel->GetOptions()|kRaisedFrame);
+    fLabel->SetState(false);
+    fLabel->SetToolTipText(tip1);
+
+    //TGLabel* fLabel = new TGLabel(this, "Trigger:");
+    this->AddFrame(fLabel,LayLC1);
+    label = label1;
+  }
+
+  for (int i=0;i<3;i++) {
+    fchkTrig[i] = new TGCheckButton(this, label[i], i);
+    fchkTrig[i]->SetToolTipText(tip2[i]);
+    fchkTrig[i]->Connect("Clicked()", "TrigFrame", this, "DoCheckTrigger()");
+    this->AddFrame(fchkTrig[i],LayLC1);
+  }
+}
+
+void TrigFrame::DoCheckTrigger() {
+
+  TGCheckButton *te = (TGCheckButton*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  cpar.Trigger = id;
+  
+  parpar->tTrig->UpdateTrigger();
+  daqpar->tTrig->UpdateTrigger();
+
+#ifdef CYUSB
+  if (crs->b_acq) {// && !jtrig) {
+    crs->Command2(4,0,0,0);
+    crs->SetPar();
+    gzFile ff = gzopen("last.par","wb");
+    crs->SaveParGz(ff,crs->module);
+    gzclose(ff);
+    crs->Command2(3,0,0,0);
+  }
+#endif
+
+}
+
+void TrigFrame::UpdateTrigger() {
+  Pixel_t col[3] = {fGrey,fGreen,fMagenta};
+  Pixel_t fcol;
+  for (int i=0;i<3;i++) {
+    int state = (cpar.Trigger==i);
+    fchkTrig[i]->SetState((EButtonState) state);
+    if (state)
+      fcol=col[i];
+    else
+      fcol=col[0];
+    fchkTrig[i]->ChangeBackground(fcol);
+  }
+  this->ChangeBackground(col[cpar.Trigger]);
+
+  if (daqpar) {
+    daqpar->cGrp->ChangeBackground(col[cpar.Trigger]);
+  }
+  /*
+  if (daqpar) {
+    if (cpar.Trigger==2) {
+      //daqpar->cLabel->SetText("Use hard coincidences");
+      //daqpar->cLabel->ChangeBackground(fMagenta);
+      daqpar->cGrp->ChangeBackground(fMagenta);
+    }
+    else {
+      //daqpar->cLabel->SetText("Use soft coincidences");
+      //daqpar->cLabel->ChangeBackground(fGrey);
+      daqpar->cGrp->ChangeBackground(fGrey);
+    }
+  }
+  */
+}
+
 //------ ParParDlg -------
 
 ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
@@ -1390,7 +1485,8 @@ int ParParDlg::AddLogic(TGCompositeFrame* frame) {
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, LayLT1);
 
-  AddTrigger(fF6);
+  //AddTrigger(fF6);
+  tTrig = new TrigFrame(fF6,1);
 
   tip1= "Coincidence window for making events (in samples)";
   tip2= "Veto window (in samples): \nsubsequent pulses from the same channel coming within this window are ignored";
@@ -1419,46 +1515,6 @@ int ParParDlg::AddLogic(TGCompositeFrame* frame) {
 
   return fF6->GetDefaultWidth();
 
-}
-
-void ParParDlg::AddTrigger(TGGroupFrame* frame) {
-
-  const char* tip1 = "Trigger type";
-  const char* label[3] = {"Normal","START","Hardw.Coinc."};
-
-  TGHorizontalFrame *hfr = new TGHorizontalFrame(frame);
-  frame->AddFrame(hfr,LayLT1);
-
-  TGLabel* fLabel = new TGLabel(hfr, "Trigger:");
-  hfr->AddFrame(fLabel,LayLC1);
-
-  for (int i=0;i<3;i++) {
-    fchkTrig[i] = new TGCheckButton(hfr, label[i], i);
-    fchkTrig[i]->SetToolTipText(tip1);
-    fchkTrig[i]->Connect("Clicked()", "ParParDlg", this, "DoCheckTrigger()");
-    hfr->AddFrame(fchkTrig[i],LayLC1);
-  }
-
-  /*
-  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
-  frame->AddFrame(hfr1);
-
-  tip1= "Use software coincidences";
-  label="SoftCoinc.";
-  fchkSoft = new TGCheckButton(frame, label, 0);
-  hfr1->AddFrame(fchkSoft, LayLT6);
-  //DoMap(fchkSoft,&opt.hard_logic,p_chk);
-  fchkSoft->SetToolTipText(tip1);
-  fchkSoft->Connect("Clicked()", "ParParDlg", this, "DoCheckTrigger()");
-
-  tip1= "Use hardware coincidences";
-  label="HardCoinc.";
-  fchkHard = new TGCheckButton(frame, label, 1);
-  hfr1->AddFrame(fchkHard, LayLT6);
-  //DoMap(fchkSoft,&opt.hard_logic,p_chk);
-  fchkHard->SetToolTipText(tip1);
-  fchkHard->Connect("Clicked()", "ParParDlg", this, "DoCheckTrigger()");
-  */
 }
 
 int ParParDlg::AddExpert(TGCompositeFrame* frame) {
@@ -1508,34 +1564,9 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
 void ParParDlg::Update() {
   ParDlg::Update();
-  UpdateTrigger();
+  tTrig->UpdateTrigger();
   MapSubwindows();
   Layout();
-}
-
-void ParParDlg::DoCheckTrigger() {
-
-  TGCheckButton *te = (TGCheckButton*) gTQSender;
-  Int_t id = te->WidgetId();
-
-  cpar.Trigger = id;
-  
-  //opt.hard_logic=((Bool_t)!te->GetState());
-  //if (id) opt.hard_logic=!opt.hard_logic;
-  //cout << "trigger: " << id << endl;
-  UpdateTrigger();
-
-#ifdef CYUSB
-  if (crs->b_acq) {// && !jtrig) {
-    crs->Command2(4,0,0,0);
-    crs->SetPar();
-    gzFile ff = gzopen("last.par","wb");
-    crs->SaveParGz(ff,crs->module);
-    gzclose(ff);
-    crs->Command2(3,0,0,0);
-  }
-#endif
-
 }
 
 // void ParParDlg::UpdateLL(wlist &llist, Bool_t state) {
@@ -1548,40 +1579,6 @@ void ParParDlg::DoCheckTrigger() {
 //     }
 //   }
 // }
-
-void ParParDlg::UpdateTrigger() {
-  Pixel_t col[3] = {fGrey,fRed,fMagenta};
-  Pixel_t fcol;
-  for (int i=0;i<3;i++) {
-    int state = (cpar.Trigger==i);
-    fchkTrig[i]->SetState((EButtonState) state);
-    if (state)
-      fcol=col[i];
-    else
-      fcol=col[0];
-    fchkTrig[i]->ChangeBackground(fcol);
-  }
-
-  //fchkSoft->SetState((EButtonState) !opt.hard_logic,false);
-  //fchkHard->SetState((EButtonState) opt.hard_logic,false);
-
-  if (daqpar) {
-    if (cpar.Trigger==2) {
-      //fchkHard->ChangeBackground(fMagenta);
-      daqpar->cLabel->SetText("Use hard coincidences");
-      daqpar->cLabel->ChangeBackground(fMagenta);
-      daqpar->cGrp->ChangeBackground(fGreen);
-    }
-    else {
-      //fchkHard->ChangeBackground(fGrey);
-      daqpar->cLabel->SetText("Use soft coincidences");
-      daqpar->cLabel->ChangeBackground(fGrey);
-      daqpar->cGrp->ChangeBackground(fGrey);
-    }
-  }
-  //UpdateLL(soft_list,!opt.hard_logic);
-  //UpdateLL(hard_list,opt.hard_logic);
-}
 
 //------ HistParDlg -------
 
@@ -2286,10 +2283,18 @@ void DaqParDlg::Build() {
   //   hard_list.push_back(FindWidget(&opt.mult_w2[i]));
   // }
 
-  cLabel = new TGLabel(cGrp);
-  cLabel->ChangeOptions(cLabel->GetOptions()|kFixedWidth);
-  cLabel->SetWidth(130);
-  cGrp->AddFrame(cLabel,LayLT1a);
+  // cLabel = new TGLabel(cGrp);
+  // cLabel->ChangeOptions(cLabel->GetOptions()|kFixedWidth);
+  // cLabel->SetWidth(130);
+  // cGrp->AddFrame(cLabel,LayLT1a);
+
+  TGLabel* cLab = new TGLabel(cGrp,"Trigger: ");
+   cLab->ChangeOptions(cLab->GetOptions()|kFixedWidth);
+   cLab->SetWidth(130);
+   cGrp->AddFrame(cLab,LayLT1a);
+
+  tTrig = new TrigFrame(cGrp,0);
+  //TrigFrame* TrFrame = new TrigFrame(cGrp,0);
 
   //cGrp->Resize();
 
@@ -2386,7 +2391,7 @@ void DaqParDlg::AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
   int par, min, max;
 
-  cpar.GetPar(name,crs->module,i,crs->type_ch[i],par,min,max);
+  cpar.GetPar(name,crs->module,i,cpar.crs_ch[i],par,min,max);
   //cout << "getpar1: " << i << " " << min << " " << max << endl;
 
   TGNumberFormat::ELimit limits;
@@ -2496,11 +2501,13 @@ void DaqParDlg::UpdateStatus(int rst) {
   //cout << "Updatestatus3: " << pmax << endl;
 }
 
-// void DaqParDlg::Update() {
-//   ParDlg::Update();
-//   MapSubwindows();
-//   Layout();
-// }
+void DaqParDlg::Update() {
+  ParDlg::Update();
+  tTrig->UpdateTrigger();
+  
+  //MapSubwindows();
+  //Layout();
+}
 
 //------ AnaParDlg -------
 
@@ -2669,7 +2676,7 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   ttip7 = (char**) ttip3;
 
   int amax=1023;
-  if (crs->type_ch[i]>=1)
+  if (cpar.crs_ch[i]>=1)
     amax=511;
 
   AddNumChan(i,kk++,all,cframe[i],&opt.sTg[i],-1,5,p_inum);

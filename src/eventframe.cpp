@@ -277,7 +277,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns) //doesn't work correctly";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns) //doesn't work correctly;\n[7] - Height;\n[8] - Width";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);
   tEnt->SetWidth(100);
@@ -289,15 +289,15 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
 
   ttip = "Print events from First to Last.\nThe data are saved to file 'events.dat' in the current directory.";
-  fPrint = new TGTextButton(fHor_but,"Print",2);
+  fPrint = new TGTextButton(fHor_but,"Prnt_E",2);
   fPrint->SetToolTipText(ttip);
-  fPrint->Connect("Clicked()","EventFrame",this,"DoPrint()");
+  fPrint->Connect("Clicked()","EventFrame",this,"DoPrintE()");
   fHor_but->AddFrame(fPrint, fLay4);
 
-  ttip = "Print peaks from First to Last.\nThe data are saved to file 'events.dat' in the current directory.";
-  fPrint = new TGTextButton(fHor_but,"Pr2",2);
+  ttip = "Print peaks from First to Last.\nThe data are saved to file 'peaks.dat' in the current directory.";
+  fPrint = new TGTextButton(fHor_but,"Prnt_P",2);
   fPrint->SetToolTipText(ttip);
-  fPrint->Connect("Clicked()","EventFrame",this,"DoPrint2()");
+  fPrint->Connect("Clicked()","EventFrame",this,"DoPrintP()");
   fHor_but->AddFrame(fPrint, fLay4);
 
   
@@ -632,7 +632,7 @@ void EventFrame::DoCheckPoint() {
   Int_t id = btn->WidgetId();
 
   Pixel_t color;
-  Double_t par[7];
+  Double_t par[9];
   formula->SetTitle(opt.formula);
   formula->Clear();
   int ires = formula->Compile();
@@ -680,6 +680,8 @@ void EventFrame::DoCheckPoint() {
 	double tt = ipls->Time - d_event->T0;
 
 	par[6]=tt*opt.Period;
+	par[7]=ipls->Height;
+	par[8]=ipls->Width;
 	res = formula->EvalPar(0,par);
 	if (res) {
 	  //YK cout << "tt2: " << 
@@ -699,13 +701,13 @@ void EventFrame::DoCheckPoint() {
   } //else
 }
 
-void EventFrame::DoPrint() {
+void EventFrame::DoPrintE() {
   crs->Print_Events("events.dat");
   //crs->Print_Events();
 }
 
-void EventFrame::DoPrint2() {
-  crs->Print_Peaks("events.dat");
+void EventFrame::DoPrintP() {
+  crs->Print_Peaks("peaks.dat");
   //crs->Print_Events();
 }
 
@@ -1109,7 +1111,7 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch];
 
     if (pulse->Pos<=-32222) {
-      prnt("ssd d l;",BRED,"ErrPos: ",pulse->Pos,pulse->Chan,pulse->Tstamp64,RST);
+      prnt("ssd d ls;",BRED,"ErrPos: ",pulse->Pos,pulse->Chan,pulse->Tstamp64,RST);
     }
 
     B1=pulse->Pos+opt.Base1[ch];

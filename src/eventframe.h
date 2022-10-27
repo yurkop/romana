@@ -186,8 +186,8 @@ public:
   void First();
   void Last();
   void DoCheckPoint();
-  void DoPrint();
-  void DoPrint2();
+  void DoPrintE();
+  void DoPrintP();
   void DoFormula();
   void DoSlider();
   void DoChkDeriv();
