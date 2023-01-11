@@ -5262,7 +5262,7 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
 	ipls = &(*itpls);
 	ipls->Chan = hit->ch;
 	ipls->Area = hit->a;
-	ipls->Time = hit->t/opt.Period //?? in ns -> in samples
+	ipls->Time = hit->t/10.0 //opt.Period //?? in ns -> in samples (10/16ns error in adcm format)
 	  + opt.sD[ipls->Chan]; //in ns (not in samples)
 	ipls->Width = hit->w;
 	ipls->Pos = ipls->Time;
