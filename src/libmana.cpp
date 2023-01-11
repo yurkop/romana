@@ -112,6 +112,7 @@ char* abatch_name=0;
 
 bool b_raw=false,b_dec=false,b_root=false,b_force=false;
 bool rd_root=false; //readroot from comand line
+bool b_resetusb=false;
 
 char startdir[200];
 char pr_name[200];
@@ -218,7 +219,35 @@ void debug_mess(bool cond, const char* mess, double par1, int par2) {
     cout << endl;
   }
 }
+/*
+void *run_build(void *ptr)
+{
+  long nr = (long) ptr;
+  //prnt("ssds;",BYEL,"nr=",nr,RST);
 
+  switch (nr) {
+  case 1:
+    prnt("ssds;",BMAG,"nr1=",nr,RST);
+    daqpar->Build();
+    prnt("ssds;",BMAG,"nr2=",nr,RST);
+    daqpar->Update();
+    prnt("ssds;",BMAG,"endnr=",nr,RST);
+    break;
+  case 2:
+    anapar->Build();
+    anapar->Update();
+    prnt("ssds;",BMAG,"endnr=",nr,RST);
+    break;
+  case 3:
+    pikpar->Build();
+    pikpar->Update();
+    prnt("ssds;",BMAG,"endnr=",nr,RST);
+    break;
+  }
+
+  return 0;
+}
+*/
 void print_var(int tp, TDataMember *dm, TString vname, TString memname, int len=0, int len2=0) {
   const char* dmname = "--";
   const char* col=BGRN;
@@ -966,10 +995,11 @@ int main(int argc, char **argv)
     "filename: read data and parameters from filename\n"
     "options: \n"
     "-h: print usage and exit\n"
+    "-u: reset USB after detecting device\n"
     "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
-    "-a file: start acquisition in batch mode (without gui)\n"
-    "   Data are saved in file[.raw/.dec/.root] depending on batch parameters\n"
+    "-a filename: start acquisition in batch mode (without gui)\n"
+    "   Data are saved in filename[.raw/.dec/.root] depending on batch parameters\n"
     "   Program exits after Tstop time is reached\n"
     "-b: analyze file in batch mode (without gui) and exit\n"
     "-s [n] (only in batch mode): screen output frequency (0 - no output; n - every n-th buffer) \n"
@@ -977,7 +1007,8 @@ int main(int argc, char **argv)
     "-d (only in batch mode): create decoded .dec file in subdirectory Dec/\n"
     "-r (only in batch mode): create .root file in subdirectory Root/\n"
     "-f (only in batch mode): force overwriting .raw/.dec/.root files\n"
-    "   Parameters <Filename>, <Write raw/decoded/root data> are ignored in batch mode\n"
+    "   Parameters <Filename>, <Write raw/decoded/root data> from input file\n"
+    "   are ignored in batch mode\n"
     "[par=val] - set parameter par to val (see toptions.h for parameter names)\n"
     "   examples: Tstop=10 (set time limit to 10 sec)\n"
     "             Thr[5]=20 (set threshold for ch5 to 20)\n"
@@ -1009,6 +1040,9 @@ int main(int argc, char **argv)
 	switch (tolower(sarg[1])) {
 	case 'h':
 	  exit(0);
+	case 'u': //reset usb
+	  b_resetusb=true;
+	  continue;
 	case 'a': //acquisition in batch
 	  ++i;
 	  if (i<argc) {
@@ -1153,6 +1187,8 @@ int main(int argc, char **argv)
     }
   }
 
+  //cout << "rd_root0: " << rd_root << endl;
+
   if (datfname) {
     string dir, name, ext;
     SplitFilename(string(datfname),dir,name,ext);
@@ -1192,15 +1228,20 @@ int main(int argc, char **argv)
   //hcl->Make_hist();
   //cout << "gStyle2: " << gStyle << endl;
 
+  //cout << "detect: " << crs->abatch << " " << endl;
+
   int ret=1;
 #ifdef CYUSB
   if (crs->abatch) {
-    if (crs->Fmode!=2) {
+    if (crs->Fmode!=2 && !rd_root) {
+      //if (crs->Fmode!=2) {
       bool d = opt.directraw;
       bool w = opt.raw_write;
       opt.directraw=1;
       opt.raw_write=0;
       ret=crs->Detect_device();
+      if (b_resetusb)
+	crs->DoResetUSB();
       opt.directraw=d;
       opt.raw_write=w;
     }
@@ -1269,8 +1310,7 @@ int main(int argc, char **argv)
   }
 
   TApplication theApp("App",&argc,argv);
-  //example();
-  // myM=0;
+
   myM = new MyMainFrame(gClient->GetRoot(),800,600);
 
   glb = new GlbClass();
@@ -1284,6 +1324,7 @@ int main(int argc, char **argv)
   //gClient->GetColorByName("yellow", yellow);
   //cout << "Init end2" << endl;
 
+  //prtime("theRun");
   theApp.Run();
 
   //cout << "Init end3" << endl;
@@ -1764,7 +1805,7 @@ int CheckMem(bool pr) {
 
 }
 //---------------------------------
-TTimeStamp prtime(const char* txt, int set) {
+TTimeStamp prtime(const char* txt, int set, const char* col) {
   static TTimeStamp tt1,tt2,tt0;
   if (set<0) {
     tt0.Set();
@@ -1773,8 +1814,12 @@ TTimeStamp prtime(const char* txt, int set) {
   }
   tt1=tt2;
   tt2.Set();
-  if (set!=0)
-    printf("%s: %8.3f\n",txt, tt2.AsDouble()-tt0.AsDouble());
+  if (set!=0) {
+    double dt0 = tt2.AsDouble()-tt0.AsDouble(),
+      dt1 = tt2.AsDouble()-tt1.AsDouble();
+    prnt("ss   f   fs;",col,txt,dt0,dt1,RST);
+  }
+  //printf("%s: %8.3f\n",txt, tt2.AsDouble()-tt0.AsDouble());
 
   // printf("%s: %9d %8.3f\n",txt,int((tt2.AsDouble()-tt1.AsDouble())*1e6),
   // 	   tt2.AsDouble()-tt0.AsDouble());
@@ -2011,8 +2056,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   FontStruct_t tfont14 = font14->GetFontStruct();
 
 
-
-
   fTab = new TGTab(hframe1, 300, 300);
   hframe1->AddFrame(fTab, new TGLayoutHints(kLHintsExpandX |
 					    kLHintsExpandY,3,3,2,2));
@@ -2022,7 +2065,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //cout << "tab1: " << endl;
 
   MakeTabs();
-
 
   const int butx=70,buty=30;
 
@@ -2132,7 +2174,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fGr2->AddFrame(hfr1, LayET1);
 
 
-
   TGLabel *ver = new TGLabel(vframe1,GITVERSION);
   //cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
 	
@@ -2162,9 +2203,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
   fGr2->AddFrame(fNb, LayET1b);
 
-
-
-  //cout << "rd_root: " << rd_root << endl;
   if (rd_root) {
     if (readroot(datfname))
       exit(-1);
@@ -2297,7 +2335,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //p_ed=0;
   //p_pop=0;
-  //prtime("MainFrame_end");
 }
 
 MainFrame::~MainFrame() {
@@ -2394,40 +2431,32 @@ void MainFrame::MakeTabs(bool reb) {
 
   TGCompositeFrame* tb;
 
-  //cout << "tab0: " << endl;
-
   tb = fTab->AddTab("Parameters");
   tabfr.push_back(tb);
   parpar = new ParParDlg(tb, 1, MAIN_HEIGHT);
-  parpar->Update();
   tb->AddFrame(parpar, LayEE1);
+  parpar->Update();
   ntab++;
 
   //cout << "tab2: " << endl;
   tb = fTab->AddTab("DAQ");
   tabfr.push_back(tb);
   daqpar = new DaqParDlg(tb, 1, MAIN_HEIGHT);
-  daqpar->Build();
   tb->AddFrame(daqpar, LayEE2);
   ntab++;
-  daqpar->Update();
   //cout << "tab3: " << endl;
 
   tb = fTab->AddTab("Analysis");
   tabfr.push_back(tb);
   anapar = new AnaParDlg(tb, 1, MAIN_HEIGHT);
-  anapar->Build();
   tb->AddFrame(anapar, LayEE2);
   ntab++;
-  anapar->Update();
 
   tb = fTab->AddTab("Peaks");
   tabfr.push_back(tb);
   pikpar = new PikParDlg(tb, 1, MAIN_HEIGHT);
-  pikpar->Build();
   tb->AddFrame(pikpar, LayEE2);
   ntab++;
-  pikpar->Update();
 
   tb = fTab->AddTab("Events");
   tabfr.push_back(tb);
@@ -2439,14 +2468,12 @@ void MainFrame::MakeTabs(bool reb) {
   tabfr.push_back(tb);
   //histpar = new HistParDlg(tb, 600, MAIN_HEIGHT);
   histpar = new HistParDlg(tb, 400, MAIN_HEIGHT);
-  histpar->Update();
   tb->AddFrame(histpar, LayEE1);
   ntab++;
 
   tb = fTab->AddTab("Plots");
   tabfr.push_back(tb);
   HiFrm = new HistFrame(tb, 1, MAIN_HEIGHT,ntab);
-  HiFrm->HiReset();
   tb->AddFrame(HiFrm, LayEE1);
   ntab++;
 
@@ -2456,10 +2483,47 @@ void MainFrame::MakeTabs(bool reb) {
   tb->AddFrame(ErrFrm, LayEE1);
   ntab++;
 
+
+  // prtime("tab01",1,BGRN);
+  // TThread *tr1 = new TThread("tr1", run_build, (void*) 1);
+  // tr1->Run();
+
+  // prtime("tab02",1,BGRN);
+  // TThread *tr2 = new TThread("tr2", run_build, (void*) 2);
+  // tr2->Run();
+
+  // prtime("tab03",1,BGRN);
+  // TThread *tr3 = new TThread("tr3", run_build, (void*) 3);
+  // tr3->Run();
+
+
+
+
+  daqpar->Build();
+  daqpar->Update();
+  anapar->Build();
+  anapar->Update();
+  pikpar->Build();
+  pikpar->Update();
+
+  //prtime("tab04",1,BGRN);
+  histpar->Update();
+
+  //prtime("tab05",1,BGRN);
+  HiFrm->HiReset();
+
+  //prtime("tab06",1,BGRN);
   local_nch=opt.Nchan;
 
+  // tr1->Join();
+  // tr2->Join();
+  // tr3->Join();
+  // tr1->Delete();
+  // tr2->Delete();
+  // tr3->Delete();
+  //TThread::Ps();
+
   //parpar->DaqDisable();
-  //cout << "tab9: " << tabfr.size() << endl;
 
   // MapSubwindows();
   // Resize(GetDefaultSize());
@@ -2673,7 +2737,7 @@ void MainFrame::DoAna() {
 
   //cout << "DoAna: " << gROOT->FindObject("Start") << endl;
 
-  if (!crs->f_read) {
+  if (crs->Fmode<2) {
     cout << "File not open" << endl;
     return;
   }
@@ -2730,7 +2794,7 @@ void MainFrame::Do1buf() {
 
   //cout << "DoNbuf" << endl;
 
-  if (!crs->f_read) {
+  if (crs->Fmode<2) {
     cout << "File not open" << endl;
     return;
   }
@@ -2749,7 +2813,7 @@ void MainFrame::DoNbuf() {
 
   //cout << "DoNbuf" << endl;
 
-  if (!crs->f_read) {
+  if (crs->Fmode<2) {
     cout << "File not open" << endl;
     return;
   }

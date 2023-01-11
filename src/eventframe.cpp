@@ -277,7 +277,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns) //doesn't work correctly;\n[7] - Height;\n[8] - Width";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns);\n[7] - Height;\n[8] - Width";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);
   tEnt->SetWidth(100);
@@ -671,6 +671,7 @@ void EventFrame::DoCheckPoint() {
       par[2]=(d_event->Tstmp/*-crs->Tstart64*/)*opt.Period*1e-9;
       par[1]=d_event->Tstmp;
 
+      //prnt("ss ls;",BGRN,"p6:",d_event->Tstmp,RST);
       for (pulse_vect::iterator ipls=d_event->pulses.begin();
 	   ipls!=d_event->pulses.end();++ipls) {
 	par[0]=ipls->Chan;
@@ -680,10 +681,12 @@ void EventFrame::DoCheckPoint() {
 	double tt = ipls->Time - d_event->T0;
 
 	par[6]=tt*opt.Period;
+	//prnt("ss d fs;",BRED,"p6:",ipls->Chan,tt,RST);
 	par[7]=ipls->Height;
 	par[8]=ipls->Width;
 	res = formula->EvalPar(0,par);
 	if (res) {
+	  //prnt("ss f fs;",BYEL,"res:",res,par[6],RST);
 	  //YK cout << "tt2: " << 
 	  DrawEvent2();
 	  return;

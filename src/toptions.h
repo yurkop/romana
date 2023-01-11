@@ -106,8 +106,9 @@ public:
 public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
+  Int_t ChkLen(Int_t i, Int_t module);
 
-  ClassDef(Coptions, 129)
+  ClassDef(Coptions, 130)
 };
 
 //------------------------------------
@@ -203,6 +204,7 @@ public:
 
   Bool_t raw_write;
   Bool_t fProc; //0 - write direct raw stream; 1 - write processed events
+  Bool_t fTxt; //1 - write txt file with events
   Bool_t dec_write;
   Bool_t root_write;
   Int_t raw_compr; //raw data compr level
@@ -323,7 +325,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 129)
+  ClassDef(Toptions, 130)
 };
 
 //ClassImp(Toptions)

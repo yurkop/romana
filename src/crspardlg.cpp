@@ -266,6 +266,7 @@ void ParDlg::DoNum() {
 }
 
 void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
+
   pmap* pp = &Plist[id-1];
   int act = (pp->cmd>>4)&0xF;
 
@@ -326,6 +327,19 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
 	UpdateField((l4+i)*nfld+kk);
       }
     }
+    break;
+  case 6:
+
+    //int kk = (id-1)%nfld; //column number
+    int ll = (id-1)/nfld; //line number
+
+    int l2 = cpar.ChkLen(ll,crs->module);
+    if (l2-cpar.Len[ll]==1)
+      cpar.Len[ll]-=4;
+    //prnt("ss d ds;",BBLU,"DoAct:",cpar.Len[ll],l2,RST);
+
+    UpdateField(id-1);
+
     break;
   } //switch
 
@@ -705,11 +719,21 @@ void ParDlg::UpdateField(int nn) {
   Float_t val=0;
   Bool_t bb;
 
+  int act = (pp->cmd>>4)&0xF;
+
   switch (pp->type) {
   case p_inum: {
     TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
     Int_t *dat = (Int_t*) pp->data;
     val=*dat;
+    if (act==6) {
+      int ll = (nn)/nfld; //line number
+      if (ll<pmax) {
+	//prnt("ss f d ds;",BRED,"U1:",val,cpar.Len[ll],cpar.crs_ch[ll],RST);
+	cpar.Len[ll]=cpar.ChkLen(ll,crs->module);
+	//prnt("ss f d ds;",BGRN,"U2:",val,cpar.Len[ll],cpar.crs_ch[ll],RST);
+      }
+    }
     if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
       *dat = te->GetNumMax();
     }
@@ -1368,9 +1392,15 @@ int ParParDlg::AddFiles(TGCompositeFrame* frame) {
   //fchk2->SetName(txt);
   //fchk2->ChangeOptions(fchk2->GetOptions()|kFixedWidth);
   //fchk2->SetWidth(230);
-
   hframe3->AddFrame(fchk,LayCC1);
   DoMap(fchk,&opt.fProc,p_chk,0,0x100|(7<<1));
+  fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
+
+  id = Plist.size()+1;
+  fchk = new TGCheckButton(hframe3, "fTxt", id);
+  fchk->SetToolTipText("Checked - write events in text file [Filename].txt");
+  hframe3->AddFrame(fchk,LayCC1);
+  DoMap(fchk,&opt.fTxt,p_chk,0,0x100|(2<<1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
 
   fF6->Resize();
@@ -1394,8 +1424,8 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   AddLine_opt(fF6,ww,&opt.Nchan,&opt.nthreads,tip1,tip2,label,k_int,k_int,1,MAX_CH,1,8,0x100,0x100);
 
   tip1= "Analysis start (in sec) - only for analyzing files";
-  tip2= "Analysis stop (in sec)";
-  label="Time limits";
+  tip2= "Analysis/acquisition stop (in sec)";
+  label="Tstart / Tstop";
   AddLine_opt(fF6,ww,&opt.Tstart,&opt.Tstop,tip1,tip2,label,k_r0,k_r0,0,0,0,0,3<<1,1<<1);
 
   tip1= "";
@@ -2368,7 +2398,7 @@ void DaqParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
   AddNumDaq(i,kk++,all,cframe[i],"delay" ,&cpar.hD[i]);
   AddNumDaq(i,kk++,all,cframe[i],"dt"    ,&cpar.Dt[i]);
   AddNumDaq(i,kk++,all,cframe[i],"pre"   ,&cpar.Pre[i]);
-  AddNumDaq(i,kk++,all,cframe[i],"len"   ,&cpar.Len[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"len"   ,&cpar.Len[i],0,1|(6<<4));
   if (crs->module==22) 
     AddNumDaq(i,kk++,1,cframe[i],"gain"  ,&cpar.G[i]);
   else
@@ -2623,17 +2653,13 @@ void PikParDlg::Build() {
 
   AddHeader();
 
-  //prtime("DS1--");
   for (int i=0;i<pmax;i++) {
     AddLine_Pik(i,fcont1);
   }
 
-  //prtime("DS2--");
-
   for (int i=0;i<MAX_TP+1;i++) { //ZZ
     AddLine_Pik(MAX_CH+i,fcont2);
   }
-  //prtime("DS4--");
 
   fCanvas1->SetWidth(cframe[0]->GetDefaultWidth()+20);
   fCanvas2->SetWidth(cframe[0]->GetDefaultWidth()+20);

@@ -268,7 +268,7 @@ void PulseClass::PeakAna33() {
 
   Time-=cpar.Pre[Chan];
 
-  //cout << "Peakana33: " << (int) Chan << " " << Time << endl;
+  //cout << "Peakana33: " << (int) Chan << " " << Tstamp64 << " " << Time << endl;
 
   //pk->Time=sum;
 

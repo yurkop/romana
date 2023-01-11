@@ -2,7 +2,6 @@
 #include "adcm_df.h"
 
 //#include <iostream>
-#include <fstream>
 #include <zlib.h>
 #include <sys/stat.h>
 #include <iomanip>
@@ -476,6 +475,9 @@ void *handle_ana(void *ctx) {
 	    if (opt.raw_write && opt.fProc) {
 	      crs->Fill_Raw(&(*m_event));
 	    }
+	    if (opt.fTxt) {
+	      crs->Print_OneEvent(&(*m_event));
+	    }
 	  } //maintrig
 	} // if spin
       }
@@ -856,6 +858,9 @@ void CRS::Ana2(int all) {
 	  if (opt.raw_write && opt.fProc) {
 	    crs->Fill_Raw(&(*m_event));
 	  }
+	  if (opt.fTxt) {
+	    crs->Print_OneEvent(&(*m_event));
+	  }
 	} //maintrig
       } // if spin
       ++m_event;
@@ -1144,6 +1149,8 @@ CRS::CRS() {
   b_run=0;
   //justopened=true;
 
+  txt_out=0;
+
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
 
@@ -1222,23 +1229,29 @@ void CRS::DoResetUSB() {
   if (!b_stop)
     return;
   if (Fmode==1 && module>=32) {
-    cout << "Reset USB" << endl;
 
     event_thread_run=0;
     if (Fmode==1) {
       //cyusb_close();
       if (trd_crs) {
 	trd_crs->Delete();
+	trd_crs=0;
       }
+      Fmode=0;
     }
 		
-    Command32(7,0,0,0); //reset usb command
-    //gSystem->Sleep(500);
-    cyusb_close();
+    prnt("sss",BGRN,"Reset USB... ",RST);
+    if (cy_handle) {
+      Command32(7,0,0,0); //reset usb command
+      cyusb_close();
+      cy_handle=0;
+      gSystem->Sleep(2000);
+    }
+    prnt("sss;",BGRN,"Done.",RST);
     Detect_device();
   }
   else {
-    cout << "Module not found or reset not possible" << endl;
+    prnt("sss;",BRED,"Module not found or reset not possible",RST);
   }  
 #endif
 }
@@ -1248,6 +1261,7 @@ void CRS::DoResetUSB() {
 int CRS::Detect_device() {
 
   int r;
+  Fmode=0;
   //Short_t firmw=0;
 
   r = cyusb_open();
@@ -1269,6 +1283,7 @@ int CRS::Detect_device() {
   if ( cyusb_getvendor(cy_handle) != 0x04b4 ) {
     printf("Cypress chipset not detected\n");
     cyusb_close();
+    cy_handle=0;
     return 4;
   }
 
@@ -1280,6 +1295,7 @@ int CRS::Detect_device() {
   if ( r != 0 ) {
     printf("Can't reset device. Exitting: %d\n",r);
     cyusb_close();
+    cy_handle=0;
     return 5;
   }
   //*/
@@ -1288,12 +1304,14 @@ int CRS::Detect_device() {
   if ( r != 0 ) {
     printf("kernel driver active. Exitting\n");
     cyusb_close();
+    cy_handle=0;
     return 6;
   }
   r = cyusb_claim_interface(cy_handle, 0);
   if ( r != 0 ) {
     printf("Error in claiming interface: %d\n",r);
     cyusb_close();
+    cy_handle=0;
     return 7;
   }
   else printf("Successfully claimed interface\n");
@@ -1428,6 +1446,10 @@ int CRS::Detect_device() {
     opt.Nchan=nch2;
   }
 
+  for (int i=0;i<MAX_CH;i++) {
+    cpar.Len[i]=cpar.ChkLen(i,module);
+  }
+  
   cout << "module: " << module << " chan_in_module: " << chan_in_module << endl;
 
   if (module>=22)
@@ -2285,6 +2307,9 @@ int CRS::DoStartStop(int rst) {
       if (opt.dec_write) {
 	Reset_Dec(79);
       }
+      if (opt.fTxt) {
+	Reset_Txt();
+      }
     }
 
     //cout << "Acquisition started" << endl;
@@ -2386,6 +2411,7 @@ void CRS::DoExit()
 #ifdef CYUSB
   if (Fmode==1) {
     cyusb_close();
+    cy_handle=0;
     if (trd_crs) {
       trd_crs->Delete();
       trd_crs=0;
@@ -2484,6 +2510,22 @@ int CRS::DoFopen(char* oname, int popt) {
   Tstart64=0;
   Offset64=0;
 
+  if (!strcmp(Fname,"201")) {
+    module=201;
+
+    Fmode=2;
+    InitBuf();
+
+    strcpy(mainname,Fname);
+    if (myM) {
+      myM->SetTitle(Fname);
+      daqpar->AllEnabled(false);
+    }
+
+    return 0;
+    
+  }
+
   if (ext.EqualTo(".dat")) {
     //determine file date/time and Tstart64
     int res = Detect_adcm();
@@ -2557,17 +2599,9 @@ int CRS::DoFopen(char* oname, int popt) {
 
     char header[256];
     gzread(f_read,header,256);
-
-    // Int_t *fmt = (Int_t*) header;
-    // Int_t *style = (Int_t*) &header[4];
-    // Double_t *start_t = (Double_t*) &header[8];
-    // char txt[90];
-    // strncpy(txt,header+121,80);
-    // printf("hdr: %d %d %f %s\n",*fmt,*style,*start_t,txt);
   }
 
   Fmode=2;
-
   InitBuf();
 
   // if (tp==1) { //adcm raw - determine durwr
@@ -2624,7 +2658,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  //prnt("sss d d ds;",BGRN,"rpgz: ",pname,fmt,mod,sz,RST);
+  //prnt("sss d d d d d ds;",BGRN,"rpgz: ",pname,fmt,mod,sz,m1,cp,op,RST);
 
   //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
   if (fmt!=129 || mod>100 || sz>5e5){//возможно, это текстовый файл
@@ -2688,6 +2722,10 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
       cout << "Unknown file type: " << Fname << " " << mod << endl;
       res=1;
     }
+  }
+
+  for (int i=0;i<MAX_CH;i++) {
+    cpar.Len[i]=cpar.ChkLen(i,module);
   }
 
   //Set_Trigger();
@@ -2938,27 +2976,38 @@ int CRS::DoBuf() {
 #ifdef TIMES
   tt1[0].Set();
 #endif
+  Long64_t length=0;
 
-  while (dec_iread[gl_ibuf])
-    gSystem->Sleep(1);
+  if (module==201) {
+    while (dec_iread[gl_ibuf])
+      gSystem->Sleep(1);
 
-  // cout << "gzread1: " << Fmode << " " << nbuffers << " " << opt.rbuf_size*1024 << " " << gl_ibuf << " " << dec_iread[gl_ibuf] << endl;
+    //length=Fill_Dec_Simul(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
+    b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
-  Long64_t length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
-  // if (nbuffers==4) {
-  //   Print_Buf8(GLBuf+b_fill[gl_ibuf],length);
-  // }
-  b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
+  }
+  else {
+    while (dec_iread[gl_ibuf])
+      gSystem->Sleep(1);
 
-  if (opt.raw_write && !opt.fProc) {
-    crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
-    if (crs->f_raw) {
-      int res=gzwrite(crs->f_raw,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
-      gzclose(crs->f_raw);
-      crs->rawbytes+=res;
-    }
-    else {
-      cout << "Can't open file: " << crs->rawname.c_str() << endl;
+    // cout << "gzread1: " << Fmode << " " << nbuffers << " " << opt.rbuf_size*1024 << " " << gl_ibuf << " " << dec_iread[gl_ibuf] << endl;
+
+    length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
+    // if (nbuffers==4) {
+    //   Print_Buf8(GLBuf+b_fill[gl_ibuf],length);
+    // }
+    b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
+
+    if (opt.raw_write && !opt.fProc) {
+      crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
+      if (crs->f_raw) {
+	int res=gzwrite(crs->f_raw,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
+	gzclose(crs->f_raw);
+	crs->rawbytes+=res;
+      }
+      else {
+	cout << "Can't open file: " << crs->rawname.c_str() << endl;
+      }
     }
   }
 
@@ -3153,6 +3202,9 @@ void CRS::FAnalyze2(bool nobatch) {
     if (opt.dec_write) {
       Reset_Dec(79);
     }   
+    if (opt.fTxt) {
+      Reset_Txt();
+    }
   }
   juststarted=false;
 
@@ -3209,6 +3261,9 @@ void CRS::DoNBuf2(int nb) {
     if (opt.dec_write) {
       Reset_Dec(79);
     }   
+    if (opt.fTxt) {
+      Reset_Txt();
+    }
   }
   juststarted=false;
 
@@ -4081,6 +4136,8 @@ void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
 } //decode75
 
 void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
+  //устаревший. Может не работать при Nchan меньшем, чем реально записанные каналы.
+
   //ibuf - current sub-buffer
 
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
@@ -4112,22 +4169,9 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 
   while (idx1<b_end[ibuf]) {
     frmt = (GLBuf[idx1+6] & 0xF0) >> 4;
-    // frmt = GLBuf[idx1+6];
-    //YKYKYK!!!! do something with cnt - ???
-    //int cnt = frmt & 0x0F;
-    // frmt = (frmt & 0xF0)>>4;
     data = buf8[idx1/8] & sixbytes;
     UChar_t ch = GLBuf[idx1+7];
 
-    // cout << "frmt: " << (int)frmt << " " << (int) ch << " " << nevents
-    // 	 << " " << ipls.Tstamp64 << endl;
-
-    // if (!frmt && Blist->empty()) {
-    //   ++errors[0];
-    //   //cout << "dec34: bad buf start: " << idx1 << " " << (int) ch << " " << frmt << endl;
-    //   idx1+=8;
-    //   continue;
-    // }
     if (ch==255) {
       //double tt = start_pls.Tstamp64*opt.Period*1e-9;
       //cout << "c255: " << ibuf << " " << data << " " << (int) frmt << endl;
@@ -4479,18 +4523,8 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
     data = buf8[idx1/8] & sixbytes;
     UChar_t ch = GLBuf[idx1+7];
 
-    if (ch==255) { //ignore start channel
-      idx1+=8;
-      //prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
-      continue;
-    }
+    //prnt("ss l d ds;",BGRN,"CH:",idx1,ch,ipls.ptype,RST);
 
-    if (ch!=255 && ch>=opt.Nchan) { //bad channel
-      ++errors[ER_CH];
-      ipls.ptype|=P_BADCH;
-      idx1+=8;
-      continue;
-    }
     if (frmt && ch!=ipls.Chan) { //channel mismatch
       ++errors[ER_MIS];
       ipls.ptype|=P_BADCH;
@@ -4498,14 +4532,12 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       continue;
     }
 
+    //prnt("sss;",BRED,"Good",RST);
     //prnt(" d",frmt);
-
-    // if (ch==1) {
-    //   prnt("s d d;","FRMT: ",ch,frmt);
-    // }
 
     switch (frmt) {
     case 0:
+      //prnt("ss l d d ds;",BBLU,"CH:",idx1,ch,ipls.Chan,ipls.ptype,RST);
       if (buf8[idx1/8]==0) {
 	++errors[ER_ZERO]; //zero data
 	idx1+=8;
@@ -4520,22 +4552,29 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 	Event_Insert_Pulse(Blist,&ipls);
       }
 
-      // create new pulse
+      // test ch, then create new pulse
+
+      if (ch==255) { //ignore start channel
+	//idx1+=8;
+	//prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
+	//continue;
+	break;
+      }
+
+      if (ch!=255 && ch>=opt.Nchan) { //bad channel
+	++errors[ER_CH];
+	ipls.ptype|=P_BADCH;
+	//idx1+=8;
+	//continue;
+	break;
+      }
+
       ipls=PulseClass();
       npulses++;
       ipls.Chan=ch;
       ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.Pre[ch];
-
-
-      //if (ch==1) {
-      //prnt("s;",RST);
-      //prnt("ss d l",KRED," d35:",ch,ipls.Tstamp64);
-      //}
-
-      //prnt("ss d l ls;",BBLU,"ZER:",ch,ipls.Tstamp64,data,RST);
-
-
       break;
+
     case 1:
       ipls.Spin = GLBuf[idx1+5] & 1;
       ipls.Counter = data & 0xFFFFFFFFFF;
@@ -4685,33 +4724,14 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
     short data = uword & 0xFFF;
     UChar_t ch = (uword & 0x8000)>>15;
 
-    // if (frmt && Blist->empty()) {
-    //   cout << "dec2: bad buf start: " << idx2 << " " << (int) ch << " " << frmt << endl;
-    //   idx2++;
-    //   continue;
-    // }
-    // if ((ch>=opt.Nchan) || (frmt && ch!=ipls.Chan)) {
-    //   cout << "decode2: Bad channel: " << (int) ch
-    // 	   << " " << (int) ipls.Chan << " " << frmt << " " << ipls.sData.size() << endl;
-    //   ipls.ptype|=P_BADCH;
-
-    //   idx2++;
-    //   continue;
-    // }
-
-    if (ch>=opt.Nchan) { //bad channel
-
-      ++errors[ER_CH];
-      ipls.ptype|=P_BADCH;
-      idx2++;
-      continue;
-    }
     if (frmt && ch!=ipls.Chan) { //channel mismatch
       ++errors[ER_MIS];
       ipls.ptype|=P_BADCH;
       idx2++;
       continue;
     }
+
+    //prnt("ss l d d ds;",BGRN,"CH:",idx2,frmt,ch,ipls.ptype,RST);
 
     if (frmt==0) {
       //ipls.ptype&=~P_NOLAST; //pulse has stop
@@ -4723,7 +4743,15 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
 	//cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
       }
 
-      // create new pulse
+      // test ch, then create new pulse
+      if (ch>=opt.Nchan) { //bad channel
+
+	++errors[ER_CH];
+	ipls.ptype|=P_BADCH;
+	idx2++;
+	continue;
+      }
+
       ipls=PulseClass();
       npulses++;
       ipls.Chan = ch;
@@ -5234,7 +5262,7 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
 	ipls = &(*itpls);
 	ipls->Chan = hit->ch;
 	ipls->Area = hit->a;
-	ipls->Time = hit->t //?? in ns ??
+	ipls->Time = hit->t/opt.Period //?? in ns -> in samples
 	  + opt.sD[ipls->Chan]; //in ns (not in samples)
 	ipls->Width = hit->w;
 	ipls->Pos = ipls->Time;
@@ -5242,6 +5270,7 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
 	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	  evt->T0=ipls->Time;
 	}
+	ipls->Ecalibr();
       }
       break;
     }
@@ -5305,6 +5334,28 @@ cout << endl;
 
 }
 */
+
+void CRS::Print_OneEvent(EventClass* evt) {
+
+  *txt_out << "--- Event: " << evt->Nevt << " M: " << evt->pulses.size() << " Tstamp: " << evt->Tstmp << endl;
+  for (UInt_t i=0;i<evt->pulses.size();i++) {
+    PulseClass pp = evt->pulses.at(i);
+    *txt_out << "Ch: " << (int)pp.Chan << " Tstamp: " << pp.Tstamp64;
+    // for (std::vector<PeakClass>::iterator pk=pp.Peaks.begin();
+    // 	   pk!=pp.Peaks.end();++pk) {
+    *txt_out << " Pk: " << pp.Time << " " << pp.Area << " " << pp.Width;
+    //}
+    *txt_out << endl;
+
+    for (int j=0;j<(int)pp.sData.size();j++) {
+      //*txt_out << j << " " << pp.sData[j] << endl;
+      *txt_out << pp.sData[j] << " ";
+    }
+    *txt_out << endl;
+
+  }
+
+}
 
 void CRS::Print_Events(const char* file) {
   std::streambuf * buf;
@@ -5724,6 +5775,43 @@ void CRS::Reset_Dec(Short_t mod) {
   // mdec1=0;
   // mdec2=0;
   // memset(b_decwrite,0,sizeof(b_decwrite));
+}
+
+void CRS::Reset_Txt() {
+
+  if (txt_out) {
+    delete txt_out;
+    txt_out=0;
+  }
+
+  if (txt_of.is_open()) {
+    txt_of.close();
+  }
+
+  //SplitFilename(string(crs->Fname),dir,name,ext);
+  //txtname=dir;
+  //txtname.append(name);
+
+  string txtname = opt.Filename;
+  txtname.append(".txt");
+  //cout << "txt_file: " << txtname << " " << txtname.size() << endl;
+
+  std::streambuf * buf;
+  //std::ofstream of;
+
+  if (txtname.size()>4) { //4=".txt"
+    txt_of.open(txtname);
+    buf = txt_of.rdbuf();
+    cout << "txt_file: " << txtname << " " << txtname.size() << endl;
+  }
+  else {
+    buf = std::cout.rdbuf();
+    cout << "txt_file: " << "cout" << " " << txtname.size() << endl;
+  }
+  txt_out = new std::ostream(buf);
+  //std::ostream out(buf);
+  //*txt_out << "--- Event: " << endl;
+  //exit(-1);
 }
 
 void CRS::Fill_Dec79(EventClass* evt) {

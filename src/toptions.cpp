@@ -4,6 +4,7 @@
 #include <TSystem.h>
 #include <TDataMember.h>
 #include <cstdlib>
+#include "romana.h"
 
 extern Coptions cpar;
 using namespace std;
@@ -63,8 +64,9 @@ void Coptions::InitPar(int zero) {
 
 void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &par, int &min, int &max) {
 
-  min=0;
-  max=-1;
+  min=-9999999;//0;
+  max=9999999;//-1;
+
   //cout << "GetPAr7: " << module << " " << name << endl;
     if (!strcmp(name,"smooth")) {
       par = hS[i];
@@ -114,6 +116,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       }
     }
     else if (!strcmp(name,"len")) {
+      //prnt("ss d ds;",KRED,"len: ",i,Len[i],RST);
       par = Len[i];
       min = 1;
       max=1;
@@ -206,8 +209,8 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
 	min=1;
         max=1;
       }
-      else
-        max=0;
+      //else
+      //max=0;
       // cout << "trig: " << module << " " << min << " " << max << endl;
     }
     else if (!strcmp(name,"ratediv")) {
@@ -226,6 +229,21 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     max= 65535;
   }
 
+}
+
+Int_t Coptions::ChkLen(Int_t i, Int_t module) {
+  if (module==2 || module==22) return Len[i];
+  int dd;
+  if (crs_ch[i]) {//16 bit
+    dd=3;
+  }
+  else {//11 bit
+    dd=4;
+  }
+
+  dd=3;
+  //prnt("ss d d d ds;",BRED,"ChkLen: ",i,Len[i],crs_ch[i],module,RST);
+  return ((Len[i]+dd-1)/dd)*dd;
 }
 
 Toptions::Toptions() {
@@ -283,6 +301,7 @@ Toptions::Toptions() {
 
   raw_write=false;
   fProc=false;
+  fTxt=false;
   dec_write=false;
   root_write=false;
 

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
 #include <sys/time.h>
 #include <list>
 
@@ -90,6 +91,10 @@ RQ_OBJECT("CRS")
   gzFile f_dec;
   bool juststarted;
 
+  std::ostream *txt_out;
+  //std::streambuf *txt_buf;
+  std::ofstream txt_of;
+
   char raw_opt[5];
   char dec_opt[5];
   char Fname[255]; //имя файла для чтения/обработки
@@ -154,6 +159,7 @@ RQ_OBJECT("CRS")
   // 51,52,53 - crs-128
   // 43,53 - new format (decode35)
   // 72..80 - decoded file
+  // 201 - simulated data
 
   //Int_t type_ch[MAX_CHTP];
   //0: 4-11bit;
@@ -352,6 +358,7 @@ RQ_OBJECT("CRS")
 
   void Reset_Raw();
   void Reset_Dec(Short_t mod);
+  void Reset_Txt();
 
   void Fill_Dec75(EventClass* evt);
   void Fill_Dec76(EventClass* evt);
@@ -361,6 +368,10 @@ RQ_OBJECT("CRS")
   void Fill_Dec80(EventClass* evt);
 
   void Fill_Dec81(EventClass* evt);
+
+  //void Fill_Txt(EventClass* evt);
+
+  void Fill_Dec_Simul();
   //void Flush_Dec_old();
   int Wr_Dec(UChar_t* buf, int len);
   void Flush_Dec();
@@ -370,6 +381,7 @@ RQ_OBJECT("CRS")
   void Flush_Raw_MT(UChar_t* buf, int len);
 
   //void Print_Pulses();
+  void Print_OneEvent(EventClass* evt);
   void Print_Events(const char* file=0);
   void Print_Peaks(const char* file=0);
   void Print_b1(int idx1, std::ostream *out);

@@ -78,7 +78,7 @@ void setbit(int &n, int bit, int set);
 
 bool TestFile();
 
-TTimeStamp prtime(const char* txt, int set=1);
+TTimeStamp prtime(const char* txt, int set=1, const char* col=BRED);
 int CheckMem(bool pr=false);
 
 class MyMainFrame;
