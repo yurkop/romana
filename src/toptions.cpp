@@ -119,7 +119,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       //prnt("ss d ds;",KRED,"len: ",i,Len[i],RST);
       par = Len[i];
       min = 1;
-      max=1;
+      max=16379;
       if (module==22)
         max=16379;
       else if (module==32)
@@ -147,6 +147,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
     else if (!strcmp(name,"deriv")) {
       par = Drv[i];
+      min = 1;
       //if (type_ch==3)
       if (module==53)
 	max=255;
@@ -156,7 +157,6 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       // if (module<=32) //22 or 32
       //   min = 0;
       // else
-        min = 1;
     }
     else if (!strcmp(name,"thresh")) {
       par = Thr[i];
@@ -183,6 +183,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     else if (!strcmp(name,"delay")) {
       par = hD[i];
       min=0;
+      max=9999;
       if (module==22) {
         max=0;
       }
@@ -201,6 +202,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     else if (!strcmp(name,"trig")) {
       par = Trg[i];
       min=0;
+      max=9;
       if (module>=35 && module<=70)
         max=5;
       else if (module>=32 && module<=34) //33,34
@@ -422,6 +424,8 @@ Toptions::Toptions() {
   }
   //memset(maintrig,0,sizeof(maintrig));
   //strcpy(formula,"0");
+  SimAmp=1000;
+  SimSig=1;
 }
 
 Hdef::Hdef() {

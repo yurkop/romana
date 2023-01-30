@@ -32,6 +32,7 @@ enum MENU_COM {
   //M_PRECALIBR,
   M_ECALIBR,
   M_TCALIBR,
+  M_SIMUL,
   M_HELP,
 };
 
@@ -160,6 +161,7 @@ class MainFrame : public TGMainFrame {
   void DoOpen(Int_t id);
   void DoClose();
   void DoAna();
+  void DoSimul();
   void DoRWinit(EFileDialogMode);
   void DoReadRoot();
   void Export();

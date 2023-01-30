@@ -1447,7 +1447,8 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,k_int,1,1000000,1,1000000);
 
   tip1= "[CRS-8/16] Sampling rate, MHz (0: 100, 1: 50, 2: 25 .. 14: ~0.006)";
-  tip2= "[CRS-8/16] Soft start (imitator) period: (0->use LEMO START input)\n"
+  tip2= "[CRS-8/16] Soft start (imitator) period (sec):\n"
+    "(0->use LEMO START input)\n"
     "If non-zero, LEMO START input is blocked\n"
     "1: 0.08, 2: 0.17, 3: 0.33, 4: 0.67, 5: 1.34, 6: 2.68, 7: 5.36, 8: 10.7";
   label="Sampling Rate / Start period";

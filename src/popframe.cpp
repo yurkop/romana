@@ -57,6 +57,9 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   else if (menu_id==M_TCALIBR) {
     AddTcalibr();
   }
+  else if (menu_id==M_SIMUL) {
+    AddSimul();
+  }
 
   fMain->MapSubwindows();
   fMain->Resize();
@@ -360,6 +363,53 @@ void PopFrame::AddTcalibr() {
   fLabel = new TGLabel(hframe, "Peak width (fwhm)");
   hframe->AddFrame(fLabel, LayLC2);
 
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe, LayLC2);
+  fNum = new TGNumberEntry(hframe, range, 8, 12, kr, ka, kn);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum, LayLC2);
+  fLabel = new TGLabel(hframe, "+/- fit range");
+  hframe->AddFrame(fLabel, LayLC2);
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe, LayLC2);
+  fNum = new TGNumberEntry(hframe, npeaks, 8, 14, ki, ka, kl, 1, 10);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum, LayLC2);
+  fLabel = new TGLabel(hframe, "Number of peaks");
+  hframe->AddFrame(fLabel, LayLC2);
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
+  TGTextButton* fCalibr = new TGTextButton(hframe, "  &Calibr  ");
+  fCalibr->Connect("Clicked()", "PopFrame", this, "Do_Tcalibr()");
+  hframe->AddFrame(fCalibr, LayBut1);
+  TGTextButton* fTApply = new TGTextButton(hframe, "  &Apply  ");
+  fTApply->Connect("Clicked()", "PopFrame", this, "Do_TApply()");
+  hframe->AddFrame(fTApply, LayBut1);
+
+}
+
+void PopFrame::AddSimul() {
+
+  fMain->SetWindowName("Event Simulation");
+
+
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe, LayLC2);
+  fNum = new TGNumberEntry(fMain, fwhm, 8, 11, kr, ka, kn);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  hframe->AddFrame(fNum, LayLC2);
+  fLabel = new TGLabel(hframe, "Peak width (fwhm)");
+  hframe->AddFrame(fLabel, LayLC2);
+
+
+
+  
   hframe = new TGHorizontalFrame(fMain,10,10);
   fMain->AddFrame(hframe, LayLC2);
   fNum = new TGNumberEntry(hframe, range, 8, 12, kr, ka, kn);

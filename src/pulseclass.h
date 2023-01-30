@@ -105,6 +105,7 @@ class PulseClass {
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 1 (Spin|=2): event is writable in Dec (Ms - master channel)
+  //bit 2 (Spin|=4): было переполнение канального буфера (ER_OVF)
   //bit 7: hardware counters
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
@@ -136,6 +137,7 @@ class PulseClass {
   void Ecalibr();
   void Smooth(int n);
   void PrintPulse(int pdata=0);
+  void SimulatePulse();
 
   //ClassDef(PulseClass, 0)
 };
@@ -156,6 +158,7 @@ class EventClass { //event of pulses
   Long64_t Tstmp; //Timestamp of the earliest pulse (threshold crossig)
   Float_t T0; //time of the earliest *START* peak, relative to Tstmp, in samples
   std::vector <PulseClass> pulses;
+  //std::vector <Long64_t> *Counters;
   //Bool_t Analyzed;
   //Bool_t ecut[MAXCUTS];
 

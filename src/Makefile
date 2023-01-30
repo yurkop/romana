@@ -35,6 +35,10 @@ ifeq (yumo,$(findstring $(MAKECMDGOALS),yumo))
   CPPFLAGS += -D YUMO=1
 endif
 
+ifeq (simul,$(findstring $(MAKECMDGOALS),simul))
+  CPPFLAGS += -D SIMUL=1
+endif
+
 CPPFLAGS += $(LFS) -MD -MP -DLINUX=1 -I. #-I$(LIB_D)
 CXXFLAGS += -O3 -Wall -Wno-maybe-uninitialized #-Wextra
 LDFLAGS += -lz
@@ -68,6 +72,8 @@ all: $(OBJ_D) $(PROG).x
 #all: svnver $(PROG).x
 
 yumo: all
+
+simul: all
 
 #$(PROG).x: $(OBJ) $(OBJL) $(OBJ_D)/romdict.o
 $(PROG).x: $(OBJ) $(OBJ_D)/romdict.o

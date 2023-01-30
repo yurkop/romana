@@ -108,7 +108,7 @@ public:
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
   Int_t ChkLen(Int_t i, Int_t module);
 
-  ClassDef(Coptions, 130)
+  ClassDef(Coptions, 131)
 };
 
 //------------------------------------
@@ -281,6 +281,9 @@ public:
   char formula[100];
   //char maintrig[22];
 
+  Float_t SimAmp;
+  Float_t SimSig;
+
   Hdef h_rate;
   Hdef h_count;
   Hdef h_mult;
@@ -325,7 +328,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 130)
+  ClassDef(Toptions, 131)
 };
 
 //ClassImp(Toptions)

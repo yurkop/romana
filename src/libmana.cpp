@@ -2123,8 +2123,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fOpen2->Connect("Clicked()","MainFrame",this,"DoOpen(=0)");
   fGr2->AddFrame(fOpen2, LayET1b);
 
-
-  
   TGTextButton *fClose = new TGTextButton(fGr2,new TGHotString("&Close"));
   fClose->SetToolTipText("Close data file");
   fClose->SetFont(tfont,false);
@@ -2134,6 +2132,16 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fClose->Connect("Clicked()","MainFrame",this,"DoClose()");
   fGr2->AddFrame(fClose, LayET1);
 
+#ifdef SIMUL
+  fAna = new TGTextButton(fGr2,"&Simul");
+  fAna->SetToolTipText("Simulations");
+  fAna->SetFont(tfont,false);
+  fAna->Resize(butx,buty);
+  fAna->ChangeOptions(fAna->GetOptions() | kFixedSize);
+  fAna->ChangeBackground(fGreen);
+  fAna->Connect("Clicked()","MainFrame",this,"DoSimul()");
+  fGr2->AddFrame(fAna, LayET1);
+#else
   fAna = new TGTextButton(fGr2,"&Analyze");
   fAna->SetToolTipText("Analyze data file");
   fAna->SetFont(tfont,false);
@@ -2142,6 +2150,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fAna->ChangeBackground(fGreen);
   fAna->Connect("Clicked()","MainFrame",this,"DoAna()");
   fGr2->AddFrame(fAna, LayET1);
+#endif
 
   TGTextButton* f1b = new TGTextButton(fGr2,new TGHotString("&1 buf"));
   f1b->SetToolTipText("Analyze one buffer");
@@ -2184,7 +2193,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 					   TGNumberFormat::kNESInteger,
 					   TGNumberFormat::kNEAAnyNumber,
 					   TGNumberFormat::kNELLimitMinMax,
-					   1,100000);
+					   1,(Long64_t(1)<<31)-1);
+  // 					   1,100000);
+  //opt.num_buf=(Long64_t(1)<<31)-1;
   parpar->DoMap(fNum1->GetNumberEntry(),&opt.num_buf,p_inum,0);
   fNum1->GetNumberEntry()->SetToolTipText("Number of buffers to analyze");
   //fNum1->Resize(butx,buty);
@@ -2788,6 +2799,10 @@ void MainFrame::DoAna() {
   //cout << "mainframe::doana: " << endl;
 	
   //crs->DoFAna();
+}
+
+void MainFrame::DoSimul() {
+  new PopFrame(this,100,600,M_SIMUL);
 }
 
 void MainFrame::Do1buf() {

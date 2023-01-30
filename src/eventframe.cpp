@@ -982,7 +982,7 @@ void EventFrame::SetRanges(int dr) {
 
 void EventFrame::DrawEvent2() {
 
-  //cout << "draw0:" << " " << Pevents->empty() << endl;
+  //cout << "draw0:" << " " << Pevents->empty() << " " << endl;
   //return;
   //Emut2.Lock();
 
@@ -1011,6 +1011,21 @@ void EventFrame::DrawEvent2() {
   }
   */
   //cout << "draw1a:" << endl;
+
+
+  char ss[99];
+  sprintf(ss,"%lld",d_event->Nevt);
+  fStat[0]->SetText(ss);
+  sprintf(ss,"%lld",d_event->Tstmp);
+  fStat[1]->SetText(ss);
+  sprintf(ss,"%ld",d_event->pulses.size());
+  fStat[2]->SetText(ss);
+  sprintf(ss,"%d",d_event->Spin);
+  fStat[3]->SetText(ss);
+
+
+
+
   if (d_event->pulses.empty()) {
     //TText tt;
     txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
@@ -1019,7 +1034,20 @@ void EventFrame::DrawEvent2() {
     return;
   }
 
-  //cout << "draw1b: " << d_event->pulses.size() << endl;
+  if (d_event->Spin & 128) {
+
+    // for (UInt_t i=0;i<d_event->pulses.size();i++) {
+    //   PulseClass *pulse = &d_event->pulses.at(i);
+    //   UInt_t ch= pulse->Chan;
+    //   prnt("ss d d d d ds;",KGRN,"DrEv2:",d_event->Spin,
+    // 	   d_event->pulses.size(),i,ch,pulse->Spin,RST);
+    // }
+
+    txt.DrawTextNDC(0.2,0.7,"Start trigger event");
+    cv->Update();
+    return;
+  }
+
   ULong64_t mask=0;
   ULong64_t one=1;
   
@@ -1027,9 +1055,6 @@ void EventFrame::DrawEvent2() {
     UInt_t ch= d_event->pulses.at(i).Chan;
     mask|=one<<ch;
   }
-
-
-  //markt[0]=gSystem->Now();
 
   for (int i=0;i<opt.Nchan;i++) {
     Pixel_t cc;
@@ -1041,11 +1066,7 @@ void EventFrame::DrawEvent2() {
     }
     if (cc!=fChn[i]->GetBackground())
       fChn[i]->ChangeBackground(cc);
-
-    //fChn[i]->ChangeBackground(gcol[i]);
   }
-
-  //markt[1]=gSystem->Now();
 
   ndiv=0;
 
@@ -1056,29 +1077,8 @@ void EventFrame::DrawEvent2() {
     }
   }
 
-  //markt[2]=gSystem->Now();
-
   cv->Divide(1,ndiv);
-
-  //markt[3]=gSystem->Now();
-
-  //cout << "ReDraw: " << gSystem->Now().AsString() << endl;
   ReDraw();
-
-  //markt[4]=gSystem->Now();
-  char ss[99];
-
-  sprintf(ss,"%lld",d_event->Nevt);
-  fStat[0]->SetText(ss);
-
-  sprintf(ss,"%lld",d_event->Tstmp);
-  fStat[1]->SetText(ss);
-
-  sprintf(ss,"%ld",d_event->pulses.size());
-  fStat[2]->SetText(ss);
-
-  sprintf(ss,"%d",d_event->Spin);
-  fStat[3]->SetText(ss);
 
   // for (int i=0;i<4;i++) {
   //   sprintf(ss,"%d: %lld",i+1,markt[i+1]-markt[i]);

@@ -159,7 +159,7 @@ RQ_OBJECT("CRS")
   // 51,52,53 - crs-128
   // 43,53 - new format (decode35)
   // 72..80 - decoded file
-  // 201 - simulated data
+  // 17 - simulated data
 
   //Int_t type_ch[MAX_CHTP];
   //0: 4-11bit;
@@ -387,6 +387,11 @@ RQ_OBJECT("CRS")
   void Print_b1(int idx1, std::ostream *out);
   void Print_Buf_err(UInt_t ibuf, const char* file=0);
   void Print_Buf8(UChar_t* buf, Long64_t size, const char* file=0);
+
+  void SimulatePulse(EventClass* evt, int i);
+  void SimulateOneEvent(EventClass* evt);
+  void SimulateEvents(Long64_t n_evts, Long64_t Tst0);
+
   ClassDef(CRS, 0)
 };
 

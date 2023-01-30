@@ -22,6 +22,8 @@
 
 //#include <TSemaphore.h>
 //TSemaphore sem;
+#include "TMath.h"
+
 #include "TThread.h"
 #include "TMutex.h"
 #include "TRandom.h"
@@ -910,7 +912,11 @@ void CRS::Ana2(int all) {
 
 CRS::CRS() {
 
+
   /*
+  cout << sizeof(EventClass) << endl;
+  cout << sizeof(PulseClass) << endl;
+  exit(-1);
 
   string command = ".x ";
   command+=MACRO;
@@ -2510,8 +2516,15 @@ int CRS::DoFopen(char* oname, int popt) {
   Tstart64=0;
   Offset64=0;
 
-  if (!strcmp(Fname,"201")) {
-    module=201;
+  if (!strcmp(Fname,"17")) {
+    module=17;
+
+    for (int i=0;i<MAX_CHTP;i++) {
+      cpar.Pre[i]=0;
+      cpar.Len[i]=24;
+    }
+    opt.Nchan=4;
+
 
     Fmode=2;
     InitBuf();
@@ -2978,24 +2991,23 @@ int CRS::DoBuf() {
 #endif
   Long64_t length=0;
 
-  if (module==201) {
-    while (dec_iread[gl_ibuf])
-      gSystem->Sleep(1);
+  if (module==17) {
 
-    //length=Fill_Dec_Simul(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
-    b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
+    SimulateEvents(opt.ev_max,nbuffers*10000);
+    prnt("ss l ls;",BRED,"17:",nbuffers,nevents,RST);
+    //gSystem->Sleep(100);
+    
+    crs->Ana2(0);
+
+    nbuffers++;
+    return nbuffers;
 
   }
   else {
     while (dec_iread[gl_ibuf])
       gSystem->Sleep(1);
 
-    // cout << "gzread1: " << Fmode << " " << nbuffers << " " << opt.rbuf_size*1024 << " " << gl_ibuf << " " << dec_iread[gl_ibuf] << endl;
-
     length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
-    // if (nbuffers==4) {
-    //   Print_Buf8(GLBuf+b_fill[gl_ibuf],length);
-    // }
     b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
     if (opt.raw_write && !opt.fProc) {
@@ -3009,20 +3021,16 @@ int CRS::DoBuf() {
 	cout << "Can't open file: " << crs->rawname.c_str() << endl;
       }
     }
-  }
 
-  // cout << "gzread: " << Fmode << " " << module << " "
-  //      << gl_iread << " " << gl_ibuf << " " << gl_Nbuf << " " << length
-  //      << " " << b_fill[gl_ibuf] << endl;
-
-  if (length>0) {
-    AnaBuf(1); // YK (1 - loc_ibuf, fake number)
-    nbuffers++;
-    inputbytes+=length;
-    return nbuffers;
-  }
-  else {
-    return 0;
+    if (length>0) {
+      AnaBuf(1); // YK (1 - loc_ibuf, fake number)
+      nbuffers++;
+      inputbytes+=length;
+      return nbuffers;
+    }
+    else {
+      return 0;
+    }
   }
 
 }
@@ -4476,7 +4484,6 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
     ipls.Time=Double_t(pk.QX)/pk.RX;
   else {
     ++errors[ER_TIME];
-    //prnt("ssd ls;",BRED,"ErrTime2: ",pk.RX,ipls.Tstamp64,RST);
     ipls.Time=-999;
     //YK;
   }
@@ -4511,6 +4518,8 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
   Short_t d16;
   PkClass pk;
 
+  //UChar_t initevt; //инициирующее запись событие
+
   //PeakClass *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
 
   eventlist *Blist;
@@ -4520,12 +4529,18 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
   while (idx1<b_end[ibuf]) {
     frmt = (GLBuf[idx1+6] & 0xF0) >> 4;
+    //initevt = (GLBuf[idx1+6] & 0x0F) >> 1;
     data = buf8[idx1/8] & sixbytes;
     UChar_t ch = GLBuf[idx1+7];
 
-    //prnt("ss l d ds;",BGRN,"CH:",idx1,ch,ipls.ptype,RST);
+    // if (initevt!=3) {
+    //   prnt("ss l d d d ds;",BGRN,"d35:",idx1,ch,frmt,initevt,ipls.ptype,RST);
+    // }
 
     if (frmt && ch!=ipls.Chan) { //channel mismatch
+      // if (initevt!=3) {
+      // 	prnt("ss d d d ds;",BRED,"m35:",ch,ipls.Chan,frmt,initevt,RST);
+      // }
       ++errors[ER_MIS];
       ipls.ptype|=P_BADCH;
       idx1+=8;
@@ -4554,13 +4569,6 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
       // test ch, then create new pulse
 
-      if (ch==255) { //ignore start channel
-	//idx1+=8;
-	//prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
-	//continue;
-	break;
-      }
-
       if (ch!=255 && ch>=opt.Nchan) { //bad channel
 	++errors[ER_CH];
 	ipls.ptype|=P_BADCH;
@@ -4573,10 +4581,16 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       npulses++;
       ipls.Chan=ch;
       ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.Pre[ch];
+
+      if (ch==255) { //start channel
+	ipls.Spin|=128; //bit 7 - hardware counters
+	//prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
+      }
+
       break;
 
     case 1:
-      ipls.Spin = GLBuf[idx1+5] & 1;
+      ipls.Spin |= GLBuf[idx1+5] & 1;
       ipls.Counter = data & 0xFFFFFFFFFF;
       //prnt("ss d l ls;",BMAG,"CONT1:",ch,ipls.Tstamp64,ipls.Counter,RST);
       break;
@@ -4677,8 +4691,11 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       break;
     }
     case 12:
-      if (data & 1)
+      if (data & 1) {
 	++errors[ER_OVF];
+	ipls.Spin|=128; //bit 7 - hardware counters
+	ipls.Spin|=4; //bit 2 - ER_OVF
+      }
       //prnt("ss d l ls;",KGRN,"OVF:",ch,ipls.Tstamp64,data&1,RST);
       break;
     default:
@@ -5864,6 +5881,7 @@ void CRS::Fill_Dec79(EventClass* evt) {
     //prnt("ss ls;",BRED,"Counter:",evt->Tstmp,RST);
     for (pulse_vect::iterator ipls=evt->pulses.begin();
 	 ipls!=evt->pulses.end();++ipls) {
+      //prnt("ss d d ls;",BGRN,"Ch:",ipls->Chan,ipls->Pos,ipls->Counter,RST);
       *DecBuf8=ipls->Counter;
       Short_t* Decbuf2 = (Short_t*) DecBuf8;
       Decbuf2[3] = ipls->Chan;
@@ -6377,3 +6395,54 @@ void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
 
 }
 
+
+double Pshape(double x, double pos) {
+  //double pos = 6+nn+gRandom->Rndm();
+  return opt.SimAmp*TMath::Gaus(x,pos,opt.SimSig,1);
+}
+
+void CRS::SimulatePulse(EventClass* evt, int i) {
+  for (int j=0;j<cpar.Len[i];j++) {
+    evt->pulses[i].sData[j]=Pshape(i,5.0);
+  }
+}
+
+void CRS::SimulateOneEvent(EventClass* evt) {
+
+  evt->T0=99999;
+  for (int i=0;i<2;i++) {
+    for (int j=0;j<cpar.Len[i];j++) {
+      evt->pulses[i].sData[j]=Pshape(i,5.0);
+    }
+    evt->pulses[i].Tstamp64=evt->Tstmp;
+    PulseAna(evt->pulses[i]);
+
+    if (opt.St[evt->pulses[i].Chan]) {
+      Float_t T1 = evt->pulses[i].Time+opt.sD[evt->pulses[i].Chan]/opt.Period;
+      if (T1<evt->T0) {
+	evt->T0=T1;
+      }
+    }
+
+  }
+
+}
+
+void CRS::SimulateEvents(Long64_t n_evts, Long64_t Tst0) {
+  EventClass evt;
+  PulseClass pls;
+
+  for (int i=0;i<2;i++) {
+    pls.Chan=i;
+    pls.sData.resize(cpar.Len[i], 0);
+    evt.pulses.push_back(pls);
+  }
+
+  for (int i=0;i<n_evts;i++) {
+    evt.Nevt=nevents;
+    evt.Tstmp=Tst0+i*10000;
+    SimulateOneEvent(&evt);
+    Levents.push_back(evt);
+    nevents++;
+  }
+}
