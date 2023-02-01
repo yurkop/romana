@@ -626,13 +626,14 @@ void HClass::Make_hist() {
   map_list->SetOwner(true);
 
   Make_1d("Rate","rate",";T(sec);Counts",m_rate,&opt.h_rate);
-  Make_1d("Count","count",";T(sec);Counts",m_count,&opt.h_count);
+  Make_1d("HWRate","hwrate",";T(sec);Counts",m_hwrate,&opt.h_hwrate);
   Make_Mult("Mult","mult",";Multiplicity;Counts",m_mult,&opt.h_mult);
   Make_1d("Area","area",";Channel;Counts",m_area,&opt.h_area);
   Make_1d("Area0","area0",";Channel;Counts",m_area0,&opt.h_area0);
   Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);
   Make_1d("Slope1","slope1",";Channel;Counts",m_slope1,&opt.h_slope1);
-  Make_1d("Slope2","slope2",";Channel;Counts",m_slope2,&opt.h_slope2);
+  //Make_1d("Slope2","slope2",";Channel;Counts",m_slope2,&opt.h_slope2);
+  Make_1d("Simul","simul",";Channel;Counts",m_simul,&opt.h_simul);
   Make_1d("Height","height",";Channel;Counts",m_height,&opt.h_hei);
   Make_1d("Time","time",";t(ns);Counts",m_time,&opt.h_time);
   Make_1d("Ntof","ntof",";t(mks);Counts",m_ntof,&opt.h_ntof);
@@ -648,8 +649,9 @@ void HClass::Make_hist() {
   Make_axay("AXAY","A",";Channel;Channel",m_axay,&opt.h_axay,&opt.h_area);//,A0A1_MAX);
   Make_2d("Area_Base","Area_Base",";Channel;Channel",m_area_base,&opt.h_area_base,&opt.h_area,&opt.h_base);
   Make_2d("Area_Sl1","Area_Sl1",";Channel;Channel",m_area_sl1,&opt.h_area_sl1,&opt.h_area,&opt.h_slope1);
-  Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);
-  Make_2d("Slope_12","Slope_12",";Channel;Channel",m_slope_12,&opt.h_slope_12,&opt.h_slope1,&opt.h_slope2);
+  // Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);
+  // Make_2d("Slope_12","Slope_12",";Channel;Channel",m_slope_12,&opt.h_slope_12,&opt.h_slope1,&opt.h_slope2);
+  Make_2d("Time_Simul","Time_Simul",";Channel;Channel",m_time_simul,&opt.h_time_simul,&opt.h_time,&opt.h_simul);
   Make_2d("Area_Time","Area_Time",";Channel;Time (sec)",m_area_time,&opt.h_area_time,&opt.h_area,&opt.h_rate);
   Make_2d("Area_Width","Area_Width",";Channel;Width (a.u.)",m_area_width,&opt.h_area_width,&opt.h_area,&opt.h_width);
   //Make_2d("Area_Width2","Area_Width2",";Channel;Width (a.u.)",m_area_width2,&opt.h_area_width2,&opt.h_area,&opt.h_width2);

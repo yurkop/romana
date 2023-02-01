@@ -116,7 +116,10 @@ class PulseClass {
   Float_t Area0; //area+background
   Float_t Area; //pure area (Area0-Base)
   Float_t Slope1; //slope of background
-  Float_t Slope2; //slope of peak
+  //Float_t Slope2; //slope of peak
+  Float_t Simul; //slope of peak
+
+
   //Float_t Noise1;
   //Float_t Noise2;
   Float_t Height; //maximum of pulse in the same region as Area
@@ -137,7 +140,6 @@ class PulseClass {
   void Ecalibr();
   void Smooth(int n);
   void PrintPulse(int pdata=0);
-  void SimulatePulse();
 
   //ClassDef(PulseClass, 0)
 };
@@ -173,7 +175,7 @@ public:
 
   //void Pulse_Ana_Add(pulse_vect::iterator pls);
   void AddPulse(PulseClass *pls);
-  void Fill_Time_Extend(HMap* map);
+  void Fill_Time_Extend(HMap* map, void* hd);
   void Fill1d(Bool_t first, HMap* map[], int ch, Float_t x);
 
   static void Fill1dwSt(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w);

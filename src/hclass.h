@@ -65,13 +65,14 @@ class HClass {
   //static const int MAX_ING=256;
 
   HMap* m_rate[MAX_CH+NGRP]; // software rate in real time
-  HMap* m_count[MAX_CH+NGRP]; // hardware counter in real time
+  HMap* m_hwrate[MAX_CH+NGRP]; // hardware counter in real time
   HMap* m_mult[MAX_CH+NGRP]; // event multiplicity
   HMap* m_area[MAX_CH+NGRP]; //area of the peak
   HMap* m_area0[MAX_CH+NGRP]; //area of the peak w/o bkg
   HMap* m_base[MAX_CH+NGRP]; //baseline - background
   HMap* m_slope1[MAX_CH+NGRP]; //slope1 - baseline
-  HMap* m_slope2[MAX_CH+NGRP]; //slope2 - peak
+  //HMap* m_slope2[MAX_CH+NGRP]; //slope2 - peak
+  HMap* m_simul[MAX_CH+NGRP]; //simul
   HMap* m_height[MAX_CH+NGRP]; //height of the peak
   HMap* m_time[MAX_CH+NGRP]; // time of flight
   HMap* m_ntof[MAX_CH+NGRP]; // neutron time of flight
@@ -88,8 +89,9 @@ class HClass {
   HMap* m_axay[MAX_CH*(MAX_CH+1)/2];
   HMap* m_area_base[MAX_CH];
   HMap* m_area_sl1[MAX_CH];
-  HMap* m_area_sl2[MAX_CH];
-  HMap* m_slope_12[MAX_CH];
+  //HMap* m_area_sl2[MAX_CH];
+  //HMap* m_slope_12[MAX_CH];
+  HMap* m_time_simul[MAX_CH];
   HMap* m_area_time[MAX_CH];
   HMap* m_area_width[MAX_CH];
   HMap* m_area_width2[MAX_CH];

@@ -388,7 +388,8 @@ RQ_OBJECT("CRS")
   void Print_Buf_err(UInt_t ibuf, const char* file=0);
   void Print_Buf8(UChar_t* buf, Long64_t size, const char* file=0);
 
-  void SimulatePulse(EventClass* evt, int i);
+  void SimulateInit();
+  void SimulatePulse(EventClass* evt, int i, double pos);
   void SimulateOneEvent(EventClass* evt);
   void SimulateEvents(Long64_t n_evts, Long64_t Tst0);
 

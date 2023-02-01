@@ -1492,7 +1492,7 @@ int ParParDlg::AddAna(TGCompositeFrame* frame) {
   frame->AddFrame(fF6, LayLT1);
 
   tip1= "Ntof period (mks) (should be always zero if unsure why it's needed)";
-  tip2= "Ntof start channel";
+  tip2= "Ntof start channel (255 for START input)";
   label="Ntof period / start channel";
   AddLine_opt(fF6,ww,&opt.ntof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
 	      0,1e9,0,255);
@@ -1653,8 +1653,8 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   AddLine_hist(frame1d,&opt.h_rate,tip1,label);
 
   tip1= "Hardware counters as a funtion of time in seconds";
-  label="Count";
-  AddLine_hist(frame1d,&opt.h_count,tip1,label);
+  label="HWRate";
+  AddLine_hist(frame1d,&opt.h_hwrate,tip1,label);
 
   tip1= "Event multiplicity";
   label="Mult";
@@ -1676,9 +1676,13 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Slope1";
   AddLine_hist(frame1d,&opt.h_slope1,tip1,label);
 
-  tip1= "Slope2 (peak)";
-  label="Slope2";
-  AddLine_hist(frame1d,&opt.h_slope2,tip1,label);
+  // tip1= "Slope2 (peak)";
+  // label="Slope2";
+  // AddLine_hist(frame1d,&opt.h_slope2,tip1,label);
+
+  tip1= "Simul";
+  label="Simul";
+  AddLine_hist(frame1d,&opt.h_simul,tip1,label);
 
   tip1= "Maximal pulse height (in channels)";
   label="Height";
@@ -1770,13 +1774,17 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Area_Sl1";
   AddLine_2d(frame2d,&opt.h_area_sl1,tip1,label,1);
 
-  tip1= "2-dimensional histogram (Area_Slope2)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Sl2";
-  AddLine_2d(frame2d,&opt.h_area_sl2,tip1,label,1);
+  // tip1= "2-dimensional histogram (Area_Slope2)\nMin Max are taken from the corresponding 1d histograms";
+  // label="Area_Sl2";
+  // AddLine_2d(frame2d,&opt.h_area_sl2,tip1,label,1);
 
-  tip1= "2-dimensional histogram (Slope1-Slope2)\nMin Max are taken from the corresponding 1d histograms";
-  label="Slope_12";
-  AddLine_2d(frame2d,&opt.h_slope_12,tip1,label,1);
+  // tip1= "2-dimensional histogram (Slope1-Slope2)\nMin Max are taken from the corresponding 1d histograms";
+  // label="Slope_12";
+  // AddLine_2d(frame2d,&opt.h_slope_12,tip1,label,1);
+
+  tip1= "2-dimensional histogram (Time_Simul)\nMin Max are taken from the corresponding 1d histograms";
+  label="Time_Simul";
+  AddLine_2d(frame2d,&opt.h_time_simul,tip1,label,1);
 
   tip1= "2-dimensional histogram (Area_Time)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Time";

@@ -285,13 +285,14 @@ public:
   Float_t SimSig;
 
   Hdef h_rate;
-  Hdef h_count;
+  Hdef h_hwrate;
   Hdef h_mult;
   Hdef h_area;
   Hdef h_area0;
   Hdef h_base;
   Hdef h_slope1;
-  Hdef h_slope2;
+  //Hdef h_slope2;
+  Hdef h_simul;
   Hdef h_hei;
   Hdef h_time;
   Hdef h_ntof;
@@ -307,8 +308,9 @@ public:
   Hdef h_axay;
   Hdef h_area_base;
   Hdef h_area_sl1;
-  Hdef h_area_sl2;
-  Hdef h_slope_12;
+  //Hdef h_area_sl2;
+  //Hdef h_slope_12;
+  Hdef h_time_simul;
   Hdef h_area_time;
   Hdef h_area_width;
   Hdef h_area_width2;

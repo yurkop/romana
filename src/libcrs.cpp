@@ -2519,12 +2519,7 @@ int CRS::DoFopen(char* oname, int popt) {
   if (!strcmp(Fname,"17")) {
     module=17;
 
-    for (int i=0;i<MAX_CHTP;i++) {
-      cpar.Pre[i]=0;
-      cpar.Len[i]=24;
-    }
-    opt.Nchan=4;
-
+    SimulateInit();
 
     Fmode=2;
     InitBuf();
@@ -2994,7 +2989,7 @@ int CRS::DoBuf() {
   if (module==17) {
 
     SimulateEvents(opt.ev_max,nbuffers*10000);
-    prnt("ss l ls;",BRED,"17:",nbuffers,nevents,RST);
+    //prnt("ss l ls;",BRED,"17:",nbuffers,nevents,RST);
     //gSystem->Sleep(100);
     
     crs->Ana2(0);
@@ -6396,35 +6391,60 @@ void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
 }
 
 
-double Pshape(double x, double pos) {
+double Pshape(int i, int j, double pos) {
   //double pos = 6+nn+gRandom->Rndm();
-  return opt.SimAmp*TMath::Gaus(x,pos,opt.SimSig,1);
+  //double x = j+cpar.Pre[i];
+  //cout << x << " " << pos << " " << opt.SimSig << " " << opt.SimAmp << endl;
+  return opt.SimAmp*TMath::Gaus(j,pos+cpar.Pre[i],opt.SimSig,1);
 }
 
-void CRS::SimulatePulse(EventClass* evt, int i) {
-  for (int j=0;j<cpar.Len[i];j++) {
-    evt->pulses[i].sData[j]=Pshape(i,5.0);
+void CRS::SimulateInit() {
+  opt.Period = 10;
+  opt.SimSig=0.5;
+  for (int i=0;i<MAX_CHTP;i++) {
+    cpar.Pre[i]=10;
+    cpar.Len[i]=24;
   }
+  opt.Nchan=2;
+  cout << "opt.Period: " << opt.Period << endl;
+}
+
+void CRS::SimulatePulse(EventClass* evt, int i, double pos) {
+  for (int j=0;j<cpar.Len[i];j++) {
+    evt->pulses[i].sData[j]=Pshape(i,j,pos);
+    //cout << i << " " << j << " " << evt->pulses[i].sData[j] << endl;
+  }
+  evt->pulses[i].Tstamp64=evt->Tstmp;
+  PulseAna(evt->pulses[i]);
 }
 
 void CRS::SimulateOneEvent(EventClass* evt) {
 
-  evt->T0=99999;
-  for (int i=0;i<2;i++) {
-    for (int j=0;j<cpar.Len[i];j++) {
-      evt->pulses[i].sData[j]=Pshape(i,5.0);
-    }
-    evt->pulses[i].Tstamp64=evt->Tstmp;
-    PulseAna(evt->pulses[i]);
+  //opt.tgate == ns
 
-    if (opt.St[evt->pulses[i].Chan]) {
-      Float_t T1 = evt->pulses[i].Time+opt.sD[evt->pulses[i].Chan]/opt.Period;
-      if (T1<evt->T0) {
-	evt->T0=T1;
-      }
-    }
+  // реальная разница во времени между 2 импульсами (ns)
+  double delta = opt.tgate*gRandom->Rndm()-opt.tgate*0.5;
+  //delta = 20;
 
-  }
+  // положение p0 относительно ноля (samples)
+  double pos0 = 2*gRandom->Rndm()-1;
+  //pos0=0;
+
+  // реальное положение p1 относительно p0
+  double pos1 = pos0 + delta/opt.Period;
+
+  // 
+  Long64_t idelta = delta/opt.Period;
+  pos1-=idelta;
+
+  //evt->T0=99999;
+  SimulatePulse(evt, 0, pos0);
+  evt->T0 = evt->pulses[0].Time;
+  evt->pulses[0].Time = pos0;
+  SimulatePulse(evt, 1, pos1);
+  evt->pulses[1].Tstamp64+=idelta;
+  evt->pulses[1].Time+=idelta;
+  evt->pulses[1].Simul+=idelta;
 
 }
 

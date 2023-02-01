@@ -316,8 +316,6 @@ void PulseClass::PeakAna33() {
   pk->Width2=sqrt(rms2/asum2-mean2*mean2);
   */
 
-
-
   //cout << "Width2: " << (int) Chan << " " << Tstamp64 << " " << pk->Width2 << endl;
   //pk->Width+=0.1;
 
@@ -340,7 +338,7 @@ void PulseClass::PeakAna33() {
   int nn=0;
   //peak Area & Height
   Area0=0;
-  Height=-1e30;
+  Height=-99999;
   for (int j=P1;j<P2;j++) {
     Area0+=sData[j];
     if (sData[j]>Height) Height = sData[j];
@@ -392,20 +390,36 @@ void PulseClass::PeakAna33() {
     Slope1+=sData[j]-sData[j-1];
     nbkg++;
   }
-
   if (nbkg)
     Slope1/=nbkg;
 
   //slope2 (peak)
+  /*
   Slope2=0;
   nbkg=0;
   for (int j=P1+1;j<P2;j++) {
     Slope2+=sData[j]-sData[j-1];
     nbkg++;
   }
-
   if (nbkg)
     Slope2/=nbkg;
+  */
+
+  //Simul
+  if (Pos<1 || Pos+1>=sz) {
+    Simul=-99999;
+  }
+  else {
+    Float_t y1=sData[Pos]-sData[Pos-kk];
+    Float_t y2=sData[Pos+1]-sData[Pos+1-kk];
+    if (y2<y1)
+      Simul= Pos - y1/(y2-y1);
+    else
+      Simul=Pos+0.5;
+  }
+  Simul-=cpar.Pre[Chan]+1;
+
+  //prnt("ss l d f fs;",BGRN,"Simul:",Tstamp64,Pos,Simul,Time,RST);
 
 } //PeakAna33()
 
@@ -575,7 +589,7 @@ void EventClass::AddPulse(PulseClass *pls) {
   //prnt("ss d f l l fs;",BRED,"PAA1:",pls->Chan,pls->Time,Nevt,Tstmp,T0,RST);
 }
 
-void EventClass::Fill_Time_Extend(HMap* map) {
+void EventClass::Fill_Time_Extend(HMap* map, void* hd) {
   if (!map) return;
 
   TH1F* hh = (TH1F*) map->hst;
@@ -611,7 +625,8 @@ void EventClass::Fill_Time_Extend(HMap* map) {
       TObject* obj;
       while ( (obj=(TObject*)next()) ) {
 	HMap* map2 = (HMap*) obj;
-	if (map2->hd==&opt.h_rate) {
+	//if (map2->hd==&opt.h_rate) {
+	if (map2->hd==hd) {
 	  TH1F* hh2 = (TH1F*) map2->hst;
 	  hh2->SetBins(nbin,0,max);
 	}
@@ -687,7 +702,7 @@ void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
   if (ch<MAX_CH)
     for (int j=0;j<NGRP;j++)
       if (opt.Grp[ch][j])
-        Fill1d(first,map,MAX_CH+j,x);
+        Fill1dw(first,map,MAX_CH+j,x);
 }
 
 void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {
@@ -799,13 +814,8 @@ void EventClass::FillHist(Bool_t first) {
   //int ch_alpha=-1;
 
   // инициализация
-  if (first) {
-    // if (crs->Tstart64<0) {
-    //   crs->Tstart64 = Tstmp;
-    // }
-  	
+  if (first) {  	
     opt.T_acq=(Tstmp/*- crs->Tstart64*/)*DT;
-    //cout << "T_acq: " << Nevt << " " << opt.T_acq << " " << Tstmp << " " << opt.Period << " " << DT << endl;
 
     if (opt.Tstop) {
       if (opt.T_acq > opt.Tstop) {
@@ -822,12 +832,44 @@ void EventClass::FillHist(Bool_t first) {
     }
 
     if (opt.ncuts) {
-      //memcpy(hcl->cut_flag,initcuts,sizeof(hcl->cut_flag));
       memset(hcl->cut_flag,0,sizeof(hcl->cut_flag));
     }
   }
 
+  // обработка сигналов Старт/счетчиков
+  if (Spin & 128) { //Start channel
+    if (first) {
+      if (opt.start_ch==255) {
+	//crs->Tstart0 = Tstmp + Long64_t(ipls->Time);
+	crs->Tstart0 = Tstmp;
+	crs->Time0 = 0;
+      }
+
+      if (opt.h_hwrate.b) {
+	for (pulse_vect::iterator ipls=pulses.begin();ipls!=pulses.end();
+	     ++ipls) {
+	  int ch = ipls->Chan;
+
+	  if (first) {
+	    Fill_Time_Extend(hcl->m_hwrate[ch],&opt.h_hwrate);
+	  }
+	  if (ch<opt.Nchan) {
+	    //cout << ch << " " << ipls->Counter << endl;
+	    Fill1dw(first,hcl->m_hwrate,ch,opt.T_acq,ipls->Counter);
+	    // if (ch==0) {
+	    //   prnt("ss d ls;",BGRN,"cntr: ",ch,ipls->Counter,RST);
+	    // }
+	    //Fill1d(first,hcl->m_hwrate,ch,opt.T_acq);
+	  }
+	}
+      }
+
+    }
+    return;
+  }
+
   memset(mult,0,sizeof(mult));
+
   for (pulse_vect::iterator ipls=pulses.begin();ipls!=pulses.end();++ipls) {
     //cout << "pulse: " << Nevt << " " << Tstmp << " " << (int) ipls->Chan << " " << ipls->Pos << endl;
     if (ipls->Pos<=-32222) // пропускаем импульсы, где не найден пик
@@ -859,7 +901,7 @@ void EventClass::FillHist(Bool_t first) {
 
     if (opt.h_rate.b) {
       if (first) {
-	Fill_Time_Extend(hcl->m_rate[ch]);
+	Fill_Time_Extend(hcl->m_rate[ch],&opt.h_rate);
       }
       Fill1d(first,hcl->m_rate,ch,opt.T_acq);
     }
@@ -880,8 +922,12 @@ void EventClass::FillHist(Bool_t first) {
       Fill1d(first,hcl->m_slope1,ch,ipls->Slope1);
     }
 
-    if (opt.h_slope2.b) {
-      Fill1d(first,hcl->m_slope2,ch,ipls->Slope2);
+    // if (opt.h_slope2.b) {
+    //   Fill1d(first,hcl->m_slope2,ch,ipls->Slope2);
+    // }
+    if (opt.h_simul.b) {
+      Double_t tt2 = ipls->Simul - T0;
+      Fill1d(first,hcl->m_simul,ch,tt2*opt.Period+opt.sD[ch]);
     }
 
     if (opt.h_width.b) {
@@ -896,12 +942,19 @@ void EventClass::FillHist(Bool_t first) {
       Fill2d(first,hcl->m_area_sl1[ch],ipls->Area,ipls->Slope1);
     }
 
-    if (opt.h_area_sl2.b) {
-      Fill2d(first,hcl->m_area_sl2[ch],ipls->Area,ipls->Slope2);
-    }
+    // if (opt.h_area_sl2.b) {
+    //   Fill2d(first,hcl->m_area_sl2[ch],ipls->Area,ipls->Slope2);
+    // }
 
-    if (opt.h_slope_12.b) {
-      Fill2d(first,hcl->m_slope_12[ch],ipls->Slope1,ipls->Slope2);
+    // if (opt.h_slope_12.b) {
+    //   Fill2d(first,hcl->m_slope_12[ch],ipls->Slope1,ipls->Slope2);
+    // }
+
+    if (opt.h_time_simul.b) {
+      tt = ipls->Time - T0;
+      Double_t tt2 = ipls->Simul - T0;
+      Fill2d(first,hcl->m_time_simul[ch],tt*opt.Period+opt.sD[ch],
+	     tt2*opt.Period+opt.sD[ch]);
     }
 
     if (opt.h_area_time.b) {
@@ -1278,15 +1331,5 @@ void EventClass::PrintEvent(bool pls) {
     for (UInt_t i=0;i<pulses.size();i++) {
       printf("  %3d %lld %10.2f\n",pulses[i].Chan,pulses[i].Tstamp64,pulses[i].Time);
     }
-}
-
-
-
-
-
-void PulseClass::SimulatePulse() {
-  for (int i=0;i<10;i++) {
-    sData.push_back(gRandom->Rndm()*5);
-  }
 }
 

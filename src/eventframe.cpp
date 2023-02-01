@@ -680,13 +680,13 @@ void EventFrame::DoCheckPoint() {
 	par[5]=ipls->Base;
 	double tt = ipls->Time - d_event->T0;
 
-	par[6]=tt*opt.Period;
+	par[6]=tt*opt.Period+opt.sD[ipls->Chan];
 	//prnt("ss d fs;",BRED,"p6:",ipls->Chan,tt,RST);
 	par[7]=ipls->Height;
 	par[8]=ipls->Width;
 	res = formula->EvalPar(0,par);
 	if (res) {
-	  //prnt("ss f fs;",BYEL,"res:",res,par[6],RST);
+	  //prnt("ss f f f fs;",BYEL,"res:",res,par[6],ipls->Time,d_event->T0,RST);
 	  //YK cout << "tt2: " << 
 	  DrawEvent2();
 	  return;
