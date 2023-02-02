@@ -695,14 +695,12 @@ void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
 }
 
 void EventClass::Fill1d(Bool_t first, HMap* map[], int ch, Float_t x) {
-  if (!map[ch]) return;
-
-  Fill1dw(first,map,ch,x);
-
-  if (ch<MAX_CH)
+  if (ch<opt.Nchan && map[ch]) {
+    Fill1dw(first,map,ch,x);
     for (int j=0;j<NGRP;j++)
       if (opt.Grp[ch][j])
-        Fill1dw(first,map,MAX_CH+j,x);
+	Fill1dw(first,map,MAX_CH+j,x);
+  }
 }
 
 void EventClass::Fill_Mean1(TH1F* hh, Float_t* Data, Int_t nbins, int ideriv) {

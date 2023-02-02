@@ -17,6 +17,7 @@ TRandom rnd;
 
 class Pulse {
 public:
+  Long64_t Counter;
   Double_t Area;
   Double_t Time;
   Double_t Width;
@@ -30,7 +31,7 @@ class Event {
 public:
   vector<Pulse> pulses;
   Long64_t Tstmp;
-  Bool_t State;
+  UChar_t State;
   
   Event() {
     Tstmp=-1;
@@ -74,11 +75,14 @@ void end_of_file() {
 
 //-----------------------------------
 void Process_event(Event* ev) {
-  cout << "evt: " << Nevt << " " << ev->Tstmp << " " << ev->pulses.size();
-  for (int i=0;i<ev->pulses.size();i++) {
-    cout << " " << ev->pulses[i].sData.size();
+  if (ev->State & 128) {
+    cout << "evt: " << Nevt << " " << (int) ev->State << " "
+	 << ev->Tstmp << " " << ev->pulses.size();
+    for (int i=0;i<ev->pulses.size();i++) {
+      cout << " " << ev->pulses[i].sData.size();
+    }
+    cout << endl;
   }
-  cout << endl;
   //rt.FillHist(ev);
   ++Nevt;
 }
@@ -123,19 +127,26 @@ void Decoder_class::Decode79() {
 	Process_event(&ev);
       }
       ev.Tstmp = word & sixbytes; //in samples, use *Period for ns
-      ev.State = Bool_t(word & 0x1000000000000);
+      //ev.State = Bool_t(word & 0x1000000000000);
+      word>>=48;
+      ev.State = UChar_t(word);
       ev.pulses.clear();
     }
     else {
       ev.pulses.push_back(Pulse());
       Pulse *pls = &ev.pulses.back();
-
       Short_t* buf2 = (Short_t*) &word;
-      UShort_t* buf2u = (UShort_t*) &word;
-      pls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-      pls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples, use *Period for ns
-      pls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
       pls->Chan = buf2[3];
+
+      if (ev.State & 128) { //Counters
+	pls->Counter = (word) & sixbytes;
+      }
+      else {
+	UShort_t* buf2u = (UShort_t*) &word;
+	pls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	pls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples, use *Period for ns
+	pls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+      }
     }
   }
 
