@@ -9,7 +9,6 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-
 /*
 #include <list>
 //------------------------------------
@@ -37,7 +36,7 @@ public:
   Float_t bins,min,max,bins2;
   Bool_t b; //book histogram or not
   Bool_t c[MAX_CH+NGRP]; //check histogram
-  Bool_t w[MAX_CH+NGRP]; //work - гистограмма присутствует в WORK*
+  Bool_t w[MAX_CH+NGRP]; //MAIN - гистограмма присутствует в MAIN*
   Int_t cut[MAX_CH+NGRP]; //see cut_index in HMap
   // список окон (cuts), заданных на этой гистограмме (hst)
   // положение бита в этой маске соответствует номеру соответствующего окна
@@ -65,6 +64,7 @@ public:
   //0 - CRS2/CRS32 (11 bit)
   //1 - CRS-6/16 (16 bit)
   //2 - CRS-8/16 or CRS-128 (16 bit)
+  //255 - no module (undefined)
 
   //Int_t test; // [ts1] [ts2] test
   Int_t hS[MAX_CHTP]; // [smooth] Hardware Smooth - SS=0..10; S=2^SS
@@ -108,7 +108,7 @@ public:
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
   Int_t ChkLen(Int_t i, Int_t module);
 
-  ClassDef(Coptions, 131)
+  ClassDef(Coptions, 132)
 };
 
 //------------------------------------
@@ -264,7 +264,7 @@ public:
   Bool_t b_stat;
   Bool_t b_gcuts;
   Bool_t b_roi;
-  Bool_t b_deriv[3];
+  Bool_t b_deriv[4];
   Bool_t b_peak[MXPK];
 
   Float_t adcm_period;
@@ -281,8 +281,9 @@ public:
   char formula[100];
   //char maintrig[22];
 
-  Float_t SimAmp;
-  Float_t SimSig;
+  Float_t SimSim[20]; // see toptions.cpp
+  //
+  //Float_t SimSig;
 
   Hdef h_rate;
   Hdef h_hwrate;
@@ -291,8 +292,8 @@ public:
   Hdef h_area0;
   Hdef h_base;
   Hdef h_slope1;
-  //Hdef h_slope2;
-  Hdef h_simul;
+  Hdef h_slope2;
+  //Hdef h_simul;
   Hdef h_hei;
   Hdef h_time;
   Hdef h_ntof;
@@ -308,9 +309,9 @@ public:
   Hdef h_axay;
   Hdef h_area_base;
   Hdef h_area_sl1;
-  //Hdef h_area_sl2;
-  //Hdef h_slope_12;
-  Hdef h_time_simul;
+  Hdef h_area_sl2;
+  Hdef h_slope_12;
+  //Hdef h_time_simul;
   Hdef h_area_time;
   Hdef h_area_width;
   Hdef h_area_width2;
@@ -330,7 +331,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 131)
+  ClassDef(Toptions, 132)
 };
 
 //ClassImp(Toptions)

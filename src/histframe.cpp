@@ -294,14 +294,14 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   chkbut->SetToolTipText("check/uncheck all");
   fHor4->AddFrame(chkbut, LayLC1);
 
-  but = new TGTextButton(fHor4,"w+",1);
-  but->Connect("Clicked()", "HistFrame", this, "CheckWork()");
-  but->SetToolTipText("Add all checked histograms to WORK*");
+  but = new TGTextButton(fHor4,"m+",1);
+  but->Connect("Clicked()", "HistFrame", this, "CheckMAIN()");
+  but->SetToolTipText("Add all checked histograms to MAIN*");
   fHor4->AddFrame(but, LayLC1);
 
-  but = new TGTextButton(fHor4,"w-",2);
-  but->Connect("Clicked()", "HistFrame", this, "ClearWork()");
-  but->SetToolTipText("Remove all histograms from WORK*");
+  but = new TGTextButton(fHor4,"m-",2);
+  but->Connect("Clicked()", "HistFrame", this, "ClearMAIN()");
+  but->SetToolTipText("Remove all histograms from MAIN*");
   fHor4->AddFrame(but, LayLC1);
 
   but = new TGTextButton(fHor4,"Rst",2);
@@ -615,7 +615,7 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
   }
   else { //folder
     Hdef* hd2 = 0;
-    if (userData) { // not WORK*
+    if (userData) { // not MAIN*
       hd2 = map2->hd;
     }
     HMap* map = new HMap(string,hd2);
@@ -665,11 +665,11 @@ void HistFrame::Make_Ltree() {
   hcl->dir_list->SetOwner(true);
 
 
-  iWork = Item_Ltree(iroot, "WORK",0,0,0);
+  iMAIN = Item_Ltree(iroot, "MAIN",0,0,0);
   for (int cc=1;cc<opt.ncuts;cc++) {
     if (opt.pcuts[cc]) {
-      sprintf(cutname,"WORK_cut%d",cc);
-      iWork_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
+      sprintf(cutname,"MAIN_cut%d",cc);
+      iMAIN_cut[cc] = Item_Ltree(iroot, cutname,0,0,0);
     }
   }
 
@@ -690,17 +690,17 @@ void HistFrame::Make_Ltree() {
       Item_Ltree(idir, map->GetName(), map, pic, pic);
 
       if (*(map->hd->w+map->nn)) {
-	Item_Ltree(iWork, map->GetName(), map, pic, pic);
-	//make clones of _work_ histograms and their hmaps
+	Item_Ltree(iMAIN, map->GetName(), map, pic, pic);
+	//make clones of _MAIN_ histograms and their hmaps
 	Clone_Ltree(map);
       }
       //} //if
   } //while
 
-  fListTree->CheckAllChildren(iWork,wrk_check[0]);
+  fListTree->CheckAllChildren(iMAIN,wrk_check[0]);
   for (int cc=1;cc<opt.ncuts;cc++) {
     if (opt.pcuts[cc]) {
-      fListTree->CheckAllChildren(iWork_cut[cc],wrk_check[cc+1]);
+      fListTree->CheckAllChildren(iMAIN_cut[cc],wrk_check[cc]);
     }
   }
 
@@ -769,7 +769,7 @@ void HistFrame::Clear_Ltree()
   idir = fListTree->GetFirstItem();
   int ii=0;
   while (idir) {
-    if (TString(idir->GetText()).Contains("work",TString::kIgnoreCase)) {
+    if (TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase)) {
       wrk_check[ii]=idir->IsChecked();
       ii++;
     }
@@ -809,16 +809,16 @@ TGListTreeItem* HistFrame::FindItem(const char* name) {
   return 0;
 }
 
-void HistFrame::AddWork(TGListTreeItem *item) {
+void HistFrame::AddMAIN(TGListTreeItem *item) {
   TGListTreeItem *item2 =
-    fListTree->FindChildByData(iWork, item->GetUserData());
+    fListTree->FindChildByData(iMAIN, item->GetUserData());
   if (!item2) {
     //cout << "Item2: " << item2 << endl;
 
     TObject* hh = (TObject*) item->GetUserData();
     //strcpy(hname,hh->GetName());
     const TGPicture *pic = item->GetPicture();
-    Item_Ltree(iWork, hh->GetName(), hh, pic, pic);
+    Item_Ltree(iMAIN, hh->GetName(), hh, pic, pic);
 
     HMap* map = (HMap*) item->GetUserData();
     *(map->hd->w+map->nn)=true;
@@ -828,10 +828,10 @@ void HistFrame::AddWork(TGListTreeItem *item) {
   }
 }
 
-void HistFrame::ClearWork() {
+void HistFrame::ClearMAIN() {
   hmap_chklist->Clear();
 
-  TGListTreeItem* item2 = iWork->GetFirstChild();
+  TGListTreeItem* item2 = iMAIN->GetFirstChild();
   while (item2) {
     HMap* map = (HMap*) item2->GetUserData();
     *(map->hd->w+map->nn)=false;
@@ -839,10 +839,10 @@ void HistFrame::ClearWork() {
     item2 = item2->GetNextSibling();
   }
     
-  fListTree->DeleteChildren(iWork);
+  fListTree->DeleteChildren(iMAIN);
   for (int cc=1;cc<opt.ncuts;cc++) {
     if (opt.pcuts[cc]) {
-      fListTree->DeleteChildren(iWork_cut[cc]);
+      fListTree->DeleteChildren(iMAIN_cut[cc]);
     }
   }
 }
@@ -856,19 +856,19 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
   char hname2[100]; 
   TGListTreeItem* item2;
 
-   //clear all work* if middle button is clicked on WORK
-  if (but==2 && TString(item->GetText()).EqualTo("work",TString::kIgnoreCase)) {
-    ClearWork();
+   //clear all MAIN* if middle button is clicked on MAIN
+  if (but==2 && TString(item->GetText()).EqualTo("MAIN",TString::kIgnoreCase)) {
+    ClearMAIN();
   }
 
   if (item->GetParent() && (but==2 || but==3)) {
-    if (TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) {
-      // если клик мышкой (2 или 3) на гистограмму в папке work*,
-      // удаляем ее из всех work*
+    if (TString(item->GetParent()->GetText()).Contains("MAIN",TString::kIgnoreCase)) {
+      // если клик мышкой (2 или 3) на гистограмму в папке MAIN*,
+      // удаляем ее из всех MAIN*
 
       hmap_chklist->Clear();
       //remove items
-      //cout << "work or work_cut*: " << endl;
+      //cout << "MAIN or MAIN_cut*: " << endl;
       TObject* hh = (TObject*) item->GetUserData();
       strcpy(hname2,hh->GetName());
       char* str = strstr(hname2,"_cut");
@@ -885,7 +885,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 	strcpy(hname,hname2);
       }
 
-      item2 = fListTree->FindChildByName(iWork,hname);
+      item2 = fListTree->FindChildByName(iMAIN,hname);
 
       if (item2) {
 	HMap* map = (HMap*) item2->GetUserData();
@@ -897,7 +897,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       for (int cc=1;cc<opt.ncuts;cc++) {
 	if (opt.pcuts[cc]) {
 	  sprintf(hname2,"%s_cut%d",hname,cc);
-	  item2 = fListTree->FindChildByName(iWork_cut[cc],hname2);
+	  item2 = fListTree->FindChildByName(iMAIN_cut[cc],hname2);
 	  //cout << "cc: " << cc << " " << hname2 << " " << item2 << endl;
 	  if (item2)
 	    fListTree->DeleteItem(item2);
@@ -905,14 +905,14 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
       }
       // if (crs->b_maintrig) {
       // 	sprintf(hname2,"%s_MT",hname);
-      // 	item2 = fListTree->FindChildByName(iWork_MT,hname2);
+      // 	item2 = fListTree->FindChildByName(iMAIN_MT,hname2);
       // 	if (item2)
       // 	  fListTree->DeleteItem(item2);
       // }
-      //cout << "work3: " << item << " " << hname << endl;
-    } //work*
-    else { //not work* -> добавляем гистограмму в work*
-      AddWork(item);
+      //cout << "MAIN3: " << item << " " << hname << endl;
+    } //MAIN*
+    else { //not MAIN* -> добавляем гистограмму в main*
+      AddMAIN(item);
     }
   } //if (item->GetParent() && (but==2 || but==3))
   
@@ -935,15 +935,15 @@ void HistFrame::CheckAll(Bool_t on) {
   ReDraw();
 }
 
-void HistFrame::CheckWork() {
-  //добавляем все помеченные гистограмы в Work 
+void HistFrame::CheckMAIN() {
+  //добавляем все помеченные гистограмы в MAIN 
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     TGListTreeItem *item = idir->GetFirstChild();
     while (item) {
       if (item->GetUserData()) {
 	if (item->IsChecked()) {
-	  AddWork(item);
+	  AddMAIN(item);
 	}
       }
       item = item->GetNextSibling();
@@ -972,14 +972,14 @@ void HistFrame::Clone_Ltree(HMap* map) {
       if (opt.pcuts[i]) {
 	HMap* mcut = map->h_cuts[i];
 	if (mcut)
-	  Item_Ltree(iWork_cut[i], mcut->GetName(), mcut, pic, pic);
+	  Item_Ltree(iMAIN_cut[i], mcut->GetName(), mcut, pic, pic);
       }
     }
 
     // if (crs->b_maintrig) {
     //   HMap* mcut = map->h_MT;
     //   if (mcut)
-    // 	Item_Ltree(iWork_MT, mcut->GetName(), mcut, pic, pic);
+    // 	Item_Ltree(iMAIN_MT, mcut->GetName(), mcut, pic, pic);
     // }
 
   }
@@ -1001,7 +1001,7 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
 
   if (item) {
     if (item->GetParent()) { //single item
-      if (!TString(item->GetParent()->GetText()).Contains("work",TString::kIgnoreCase)) { //not in works* folder
+      if (!TString(item->GetParent()->GetText()).Contains("MAIN",TString::kIgnoreCase)) { //not in MAIN* folder
 	map = (HMap*) item->GetUserData();
 	if (map) {
 	  *(map->hd->c+map->nn) = item->IsChecked();
@@ -1009,7 +1009,7 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
       }
     }
     else { //folder
-      if (!TString(item->GetText()).Contains("work",TString::kIgnoreCase)) { //not work* folder
+      if (!TString(item->GetText()).Contains("MAIN",TString::kIgnoreCase)) { //not MAIN* folder
 	TGListTreeItem *item2 = item->GetFirstChild();
 	while (item2) {
 	  map = (HMap*) item2->GetUserData();
@@ -1262,8 +1262,8 @@ void HistFrame::MakeCutG(TPolyLine *pl, HMap* map) {
   //cout << "ncuts: " << icut << " " << opt.ncuts << endl;
 
   TGListTreeItem *idir = fListTree->GetFirstItem();
-  if (strcmp(idir->GetText(),"WORK")) {
-    cout << "first item is not WORK" << endl;
+  if (strcmp(idir->GetText(),"MAIN")) {
+    cout << "first item is not MAIN" << endl;
     return;
   }
 
@@ -2069,6 +2069,10 @@ void HistFrame::HiReset()
   //cv->SetEditable(false);
   //cv->Draw();
   cv->Update();
+
+#ifdef SIMUL
+  crs->SimNameHist();
+#endif
 
   Update();
   //cout << "HiReset2: " << endl;

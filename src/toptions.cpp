@@ -127,7 +127,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       else { //33,34,35,41,51,52
         if (module>=33 && module<=35 && type_ch==0)
           max=4068;
-        if (module>=33 && module<=35 && type_ch==1)
+        else if (module>=33 && module<=35 && type_ch==1)
           max=3048;
         else if (module==43)
           max=6114;
@@ -235,15 +235,17 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
 
 Int_t Coptions::ChkLen(Int_t i, Int_t module) {
   if (module==2 || module==22) return Len[i];
-  int dd;
-  if (crs_ch[i]) {//16 bit
+
+  int dd=1;
+  switch (crs_ch[i]) {
+  case 0:
     dd=3;
-  }
-  else {//11 bit
+    break;
+  case 1:
+  case 2:
     dd=4;
   }
 
-  dd=3;
   //prnt("ss d d d ds;",BRED,"ChkLen: ",i,Len[i],crs_ch[i],module,RST);
   return ((Len[i]+dd-1)/dd)*dd;
 }
@@ -424,8 +426,24 @@ Toptions::Toptions() {
   }
   //memset(maintrig,0,sizeof(maintrig));
   //strcpy(formula,"0");
-  SimAmp=1000;
-  SimSig=1;
+  SimSim[0]=10; //opt.Period
+  SimSim[1]=10; //cpar.Pre
+  SimSim[2]=24; //cpar.Len
+  SimSim[3]=0; //Pulse type
+  SimSim[4]=1000; //Amp
+  SimSim[5]=1; //Sig/RC_Width
+  SimSim[6]=1; //RC
+
+  SimSim[7]=-10; //Pos min
+  SimSim[8]=20; //Pos spread
+  SimSim[9]=15; //Window
+  SimSim[10]=0; //Time delta (time-pos)
+
+  //SimSim[9]=0; //Simul2-pos
+
+  // SimSim[10]=1; //CFD delay
+  // SimSim[11]=1; //CFD fraction
+
 }
 
 Hdef::Hdef() {

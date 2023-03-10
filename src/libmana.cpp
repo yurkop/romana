@@ -108,7 +108,7 @@ gzFile ff;
 char* parfile=(char*)"romana.par";;
 char* parfile2=0;
 char* datfname=0;
-char* abatch_name=0;
+char* batch_fname=0;
 
 bool b_raw=false,b_dec=false,b_root=false,b_force=false;
 bool rd_root=false; //readroot from comand line
@@ -144,7 +144,7 @@ void prnt(const char* fmt...)
   // x - ULong64_t hex
   // s - char*
   // f - double
-  // [0..9] - set width (only 1 digit)
+  // [0..9] - set width (only 1 digit) of next output
   // . - set precision (e.g 3.2 - width3.precision2)
   // ; - endl;
   cmut.Lock();
@@ -999,14 +999,17 @@ int main(int argc, char **argv)
     "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
+    "-b [filename]: analyze file in batch mode (without gui) and exit\n"
     "   Data are saved in filename[.raw/.dec/.root] depending on batch parameters\n"
+    "   [filename] is optional for -b. If omitted, the input filename is used.\n"
     "   Program exits after Tstop time is reached\n"
-    "-b: analyze file in batch mode (without gui) and exit\n"
+
     "-s [n] (only in batch mode): screen output frequency (0 - no output; n - every n-th buffer) \n"
     "-w (only in batch mode): create processed .raw file in subdirectory Raw/\n"
     "-d (only in batch mode): create decoded .dec file in subdirectory Dec/\n"
     "-r (only in batch mode): create .root file in subdirectory Root/\n"
     "-f (only in batch mode): force overwriting .raw/.dec/.root files\n"
+    "\n"
     "   Parameters <Filename>, <Write raw/decoded/root data> from input file\n"
     "   are ignored in batch mode\n"
     "[par=val] - set parameter par to val (see toptions.h for parameter names)\n"
@@ -1046,9 +1049,8 @@ int main(int argc, char **argv)
 	case 'a': //acquisition in batch
 	  ++i;
 	  if (i<argc) {
-	    abatch_name = argv[i];
-	    //strcpy(opt.Filename,argv[i]);
-	    if (abatch_name[0]!='-') {
+	    batch_fname = argv[i];
+	    if (batch_fname[0]!='-') {
 	      crs->batch=true;
 	      crs->abatch=true;
 	      continue;
@@ -1060,6 +1062,18 @@ int main(int argc, char **argv)
 	case 'b': //file in batch
 	  crs->batch=true;
 	  crs->abatch=false;
+
+	  ++i;
+	  if (i<argc) {
+	    if (argv[i][0]=='-') {
+	      --i;
+	    }
+	    else {
+	      batch_fname = argv[i];
+	      //strcpy(opt.Filename,argv[i]);
+	    }	    
+	  }
+
 	  continue;
 	case 's': {
 	  ++i;
@@ -1261,9 +1275,15 @@ int main(int argc, char **argv)
       exit(0);
     }
 
-    if (crs->abatch) {
-      strcpy(crs->Fname,abatch_name);
+    if (batch_fname) {
+      strcpy(opt.Filename,batch_fname);
     }
+    else {
+      strcpy(opt.Filename,crs->Fname);
+    }
+    // if (crs->abatch) {
+    //   strcpy(crs->Fname,batch_fname);
+    // }
 
     if (!TestFile()) {
       exit(0);
@@ -1280,7 +1300,7 @@ int main(int argc, char **argv)
     if (crs->abatch) {
       prnt("sss;",BGRN,"Starting in batch mode.",RST);
       //prnt("ssss;",BGRN,"File = ",opt.Filename,RST);
-      prnt("ssss;",BGRN,"File = ",crs->Fname,RST);
+      prnt("ssss;",BGRN,"Output file: ",opt.Filename,RST);
       prnt("ssfs;",BGRN,"Tstop=",opt.Tstop,RST);
       //prnt("ssss;",BGRN,"rawname=",crs->rawname.c_str(),RST);
 #ifdef CYUSB
@@ -1637,9 +1657,10 @@ bool TestFile() {
 
   string dir, name, ext;
 
+  SplitFilename(string(opt.Filename),dir,name,ext);
+
   if (crs->batch) {
-    //strcpy(opt.Filename,crs->Fname);
-    SplitFilename(string(crs->Fname),dir,name,ext);
+    //SplitFilename(string(crs->Fname),dir,name,ext);
     dir = TString(startdir);
     //cout << "Root_dir: " << dir << endl;
 
@@ -1686,7 +1707,7 @@ bool TestFile() {
     crs->rawname.append(name);
   } //batch
   else { //not batch
-    SplitFilename(string(opt.Filename),dir,name,ext);
+    //SplitFilename(string(opt.Filename),dir,name,ext);
     dir.append(name);
     crs->rawname=dir;
     crs->decname=dir;
@@ -1742,8 +1763,6 @@ bool TestFile() {
 		   "File exists",
 		   msg_exists, kMBIconAsterisk, kMBOk|kMBCancel, &retval);
     }
-
-
 
     if (retval == kMBOk) {
       return true;
@@ -2132,16 +2151,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fClose->Connect("Clicked()","MainFrame",this,"DoClose()");
   fGr2->AddFrame(fClose, LayET1);
 
-#ifdef SIMUL
-  fAna = new TGTextButton(fGr2,"&Simul");
-  fAna->SetToolTipText("Simulations");
-  fAna->SetFont(tfont,false);
-  fAna->Resize(butx,buty);
-  fAna->ChangeOptions(fAna->GetOptions() | kFixedSize);
-  fAna->ChangeBackground(fGreen);
-  fAna->Connect("Clicked()","MainFrame",this,"DoSimul()");
-  fGr2->AddFrame(fAna, LayET1);
-#else
   fAna = new TGTextButton(fGr2,"&Analyze");
   fAna->SetToolTipText("Analyze data file");
   fAna->SetFont(tfont,false);
@@ -2150,7 +2159,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fAna->ChangeBackground(fGreen);
   fAna->Connect("Clicked()","MainFrame",this,"DoAna()");
   fGr2->AddFrame(fAna, LayET1);
-#endif
 
   TGTextButton* f1b = new TGTextButton(fGr2,new TGHotString("&1 buf"));
   f1b->SetToolTipText("Analyze one buffer");
@@ -2160,33 +2168,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   f1b->ChangeBackground(fGreen);
   f1b->Connect("Clicked()","MainFrame",this,"Do1buf()");
   fGr2->AddFrame(f1b, LayET1);
-
-
-  // TGTextButton *fReset2 = new TGTextButton(fGr2,new TGHotString("&Reset"));
-  // fGr2->AddFrame(fReset2, LayET1);
-
-  fReset2 = new TGTextButton(vframe1,new TGHotString("&Reset"));
-  vframe1->AddFrame(fReset2, LayET2);
-
-  fReset2->SetToolTipText("Reset/clear everything (doesn't work during acquisition/analysis)");
-  fReset2->SetFont(tfont,false);
-  fReset2->Resize(butx,buty);
-  fReset2->ChangeOptions(fReset2->GetOptions() | kFixedSize);
-  fReset2->ChangeBackground(fCyan);
-  fReset2->Connect("Clicked()","MainFrame",this,"DoReset()");
-  //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
-
-  TGHorizontal3DLine* v3d = new TGHorizontal3DLine(vframe1);
-  vframe1->AddFrame(v3d,LayET3);
-
-  //TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
-  //fGr2->AddFrame(hfr1, LayET1);
-
-
-  TGLabel *ver = new TGLabel(vframe1,GITVERSION);
-  //cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
-	
-  vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
   int id = parpar->Plist.size()+1;
   TGNumberEntry* fNum1 = new TGNumberEntry(fGr2, 0, 0, id,
@@ -2213,6 +2194,32 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fNb->ChangeBackground(fGreen);
   fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
   fGr2->AddFrame(fNb, LayET1b);
+
+  // TGTextButton *fReset2 = new TGTextButton(fGr2,new TGHotString("&Reset"));
+  // fGr2->AddFrame(fReset2, LayET1);
+
+  fReset2 = new TGTextButton(vframe1,new TGHotString("&Reset"));
+  vframe1->AddFrame(fReset2, LayET2);
+
+  fReset2->SetToolTipText("Reset/clear everything (doesn't work during acquisition/analysis)");
+  fReset2->SetFont(tfont,false);
+  fReset2->Resize(butx,buty);
+  fReset2->ChangeOptions(fReset2->GetOptions() | kFixedSize);
+  fReset2->ChangeBackground(fCyan);
+  fReset2->Connect("Clicked()","MainFrame",this,"DoReset()");
+  //fReset2->Connect("Clicked()","CRS",crs,"Reset()");
+
+  TGHorizontal3DLine* v3d = new TGHorizontal3DLine(vframe1);
+  vframe1->AddFrame(v3d,LayET3);
+
+  //TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fGr2);
+  //fGr2->AddFrame(hfr1, LayET1);
+
+
+  TGLabel *ver = new TGLabel(vframe1,GITVERSION);
+  //cout << "gitversion: " << GITVERSION << " " << strlen(GITVERSION) << endl;
+	
+  vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
   if (rd_root) {
     if (readroot(datfname))
@@ -2799,10 +2806,6 @@ void MainFrame::DoAna() {
   //cout << "mainframe::doana: " << endl;
 	
   //crs->DoFAna();
-}
-
-void MainFrame::DoSimul() {
-  new PopFrame(this,100,600,M_SIMUL);
 }
 
 void MainFrame::Do1buf() {

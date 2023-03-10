@@ -29,9 +29,17 @@ TBox bx;
 //    259,491,635,819,785,513
 //};
 
-const char* mgr_name[3] = {"pulse","1deriv","2deriv"};
-const char* mgr_title[3] = {"pulse;samples","1 deriv;samples",
-			    "2 deriv;samples"};
+const char* mgr_name[4] = {"pulse","1deriv","2deriv","CFD"};
+const char* mgr_title[4] = {"pulse;samples","1 deriv;samples",
+			    "2 deriv;samples","CFD;samples"};
+
+const char* drv_name[4] = {"Pulse"," ' "," ' ' ","CFD"};
+const char* drv_tip[4] = {
+			  "Show pulse",
+			  "Show 1st derivative",
+			  "Show 2nd derivative",
+			  "Show CFD",
+};
 
 const int PKSTAT=10;
 const int PKNORM=11;
@@ -115,11 +123,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
    //:TGCompositeFrame(p,w,h,kVerticalFrame)
 {
 
-
   TGLayoutHints* LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
   TGLayoutHints* LayEy0 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
-
-
 
   Float_t rr[3];
   for (int i=0;i<MAX_CH+NGRP;i++) {
@@ -141,7 +146,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //Emut = new TMutex();
   //Emut2 = new TMutex();
 
-  for (int i=0;i<3;i++) {
+  for (int i=0;i<NDIV;i++) {
     fHist[i] = new TH1F();
     fHist[i]->SetDirectory(0);
     for (int j=0;j<MAX_CH;j++) {
@@ -304,18 +309,19 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   opt.b_deriv[0]=true;
 
-  fDeriv[0] = new TGCheckButton(fVer_d, "Pulse", 0);
-  fDeriv[1] = new TGCheckButton(fVer_d, " ' ", 1);
-  fDeriv[2] = new TGCheckButton(fVer_d, " ' ' ", 2);
-  for (int i=0;i<3;i++) {
+  // fDeriv[0] = new TGCheckButton(fVer_d, "Pulse", 0);
+  // fDeriv[1] = new TGCheckButton(fVer_d, " ' ", 1);
+  // fDeriv[2] = new TGCheckButton(fVer_d, " ' ' ", 2);
+  for (int i=0;i<NDIV;i++) {
+    fDeriv[i] = new TGCheckButton(fVer_d, drv_name[i], i);
     fDeriv[i]->SetState((EButtonState) opt.b_deriv[i]);
+    fDeriv[i]->SetToolTipText(drv_tip[i]);
     fDeriv[i]->Connect("Clicked()","EventFrame",this,"DoChkDeriv()");
     fVer_d->AddFrame(fDeriv[i], fLay4);
   }
-  //fVer_d->AddFrame(fDeriv[1], fLay4);
-  fDeriv[0]->SetToolTipText("Show pulse");
-  fDeriv[1]->SetToolTipText("Show 1st derivative");
-  fDeriv[2]->SetToolTipText("Show 2nd derivative");
+  // fDeriv[0]->SetToolTipText("Show pulse");
+  // fDeriv[1]->SetToolTipText("Show 1st derivative");
+  // fDeriv[2]->SetToolTipText("Show 2nd derivative");
 
   for (int i=0;i<MXPK;i++) {
     fPeak[i] = new TGCheckButton(fVer_d, fPeakName[i], i);
@@ -430,9 +436,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //cout << "fCanvas: " << fCanvas << endl;
 
   for (int i=0;i<MAX_CH;i++) {
-    for (int j=0;j<3;j++) {
+    for (int j=0;j<NGR;j++) {
       //sprintf(ss,"gr_%d_%d",i,j);
-      Gr[j][i]=new TGraph(10);
+      Gr[j][i]=new TGraph(1);
       //Gr[j][i]->SetNameTitle(ss,";Time(ns);");
       Gr[j][i]->SetLineColor(chcol[i]);
       //Gr[j][i]->SetMarkerColor(chcol[i]);
@@ -440,6 +446,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
       Gr[j][i]->SetMarkerStyle(20);
       Gr[j][i]->SetMarkerSize(0.5);
     }
+    Gr[4][i]->SetLineStyle(2);
+    Gr[5][i]->SetLineStyle(3);
   }  
 
   //cout << "Compile1: " << opt.formula << endl;
@@ -829,6 +837,69 @@ void EventFrame::DoPulseOff() {
 
 }
 
+void EventFrame::FillDeriv1(int dr, int i, int delay, double frac, PulseClass* pulse, double dt) {
+  Int_t kk=opt.sDrv[pulse->Chan];
+  if (kk<1) kk=1;
+  if (kk>(Int_t)pulse->sData.size()) kk=(Int_t)pulse->sData.size();
+
+  for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+    Gr[dr][i]->GetX()[j]=(j+dt);
+    double dd=0;
+    int k0;
+    int j0 = j-delay;
+
+    if (j0>0 && j0<(Int_t)pulse->sData.size()) {
+      j0<kk ? k0=0 : k0=j0-kk;
+      dd=(pulse->sData[j0]-pulse->sData[k0])*frac;
+
+      if (opt.b_peak[11] && pulse->Area) { //normalize
+	dd*=1000/pulse->Area;
+      }
+
+      if (dd<gy1[dr][i])
+	gy1[dr][i]=dd;
+      if (dd>gy2[dr][i])
+	gy2[dr][i]=dd;
+    }
+
+    Gr[dr][i]->GetY()[j]=dd;
+
+  }
+}
+/*
+void EventFrame::FillCFD(int dr, int i, int delay, double frac, PulseClass* pulse, double dt) {
+  Int_t kk=opt.sDrv[pulse->Chan];
+  if (kk<1) kk=1;
+  if (kk>(Int_t)pulse->sData.size()) kk=(Int_t)pulse->sData.size();
+
+  for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+    Gr[dr][i]->GetX()[j]=(j+dt);
+    double d0,d1,cfd;
+    int k0;
+    int j0 = j-delay;
+
+    if (j0>0 && j0<(Int_t)pulse->sData.size()) {
+      j0<kk ? k0=0 : k0=j0-kk;
+
+      d0=(pulse->sData[j0]-pulse->sData[k0])*frac;
+
+      if (opt.b_peak[11] && pulse->Area) { //normalize
+	dd*=1000/pulse->Area;
+      }
+
+      Gr[dr][i]->GetY()[j]=dd;
+
+      if (dd<gy1[dr][i])
+	gy1[dr][i]=dd;
+      if (dd>gy2[dr][i])
+	gy2[dr][i]=dd;
+    }
+    else {
+      Gr[dr][i]->GetY()[j]=0;
+    }
+  }
+}
+*/
 void EventFrame::FillGraph(int dr) {
   //Float_t dat[40000];
   //Float_t *pdat=0;
@@ -850,7 +921,6 @@ void EventFrame::FillGraph(int dr) {
       gy2[dr][i]=1;
       continue;
     }
-    //cout << "sData: " << i << " " << pulse->sData.size() << " " << Gr[dr][i]->GetN() << endl;
 
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch[i]];
 
@@ -876,33 +946,7 @@ void EventFrame::FillGraph(int dr) {
       }
     }
     else if (dr==1) { //1st derivaive
-
-      Int_t kk=opt.sDrv[ch[i]];
-      if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
-
-      //cout << "kk=" << kk << " " << ch[i] << " " << opt.sDrv[ch[i]] << endl;
-      //dat = new Float_t[pulse->sData.size()];
-      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-	Gr[dr][i]->GetX()[j]=(j+dt);
-	double dd;
-	if (j<kk)
-	  dd=pulse->sData[j]-pulse->sData[0];
-	//dat[j]=0;
-	else
-	  dd=pulse->sData[j]-pulse->sData[j-kk];
-
-	if (opt.b_peak[11] && pulse->Area) { //normalize
-	  dd*=1000/pulse->Area;
-	}
-
-	Gr[dr][i]->GetY()[j]=dd;
-
-	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
-	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
-	if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
-	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
-
-      }
+      FillDeriv1(dr, i, 0, 1, pulse, dt);
     }
     else if (dr==2) { //2nd derivative
 
@@ -934,13 +978,37 @@ void EventFrame::FillGraph(int dr) {
 
 	Gr[dr][i]->GetY()[j]=dd;
 
-	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
-	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
-	if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
-	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
+	if (dd<gy1[dr][i])
+	  gy1[dr][i]=dd;
+	if (dd>gy2[dr][i])
+	  gy2[dr][i]=dd;
 
       }
-    }
+    } //dr==2
+    else if (dr==3) { //CFD
+
+      int delay = abs(opt.T1[pulse->Chan]);
+
+      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+	Gr[dr][i]->GetX()[j]=(j+dt);
+	double dd=0;
+	if (j-opt.sDrv[pulse->Chan]-delay>=0)
+	  dd=pulse->CFD(j,opt.sDrv[pulse->Chan],delay,opt.T2[pulse->Chan]);
+
+	if (opt.b_peak[11] && pulse->Area) { //normalize
+	  dd*=1000/pulse->Area;
+	}
+
+	Gr[dr][i]->GetY()[j]=dd;
+
+	if (dd<gy1[dr][i])
+	  gy1[dr][i]=dd;
+	if (dd>gy2[dr][i])
+	  gy2[dr][i]=dd;
+
+      }
+
+    } //dr==3
   } 
 }
 
@@ -967,8 +1035,9 @@ void EventFrame::SetRanges(int dr) {
       if (gy1[dr][i]<my1[dr]) my1[dr]=gy1[dr][i];
       if (gy2[dr][i]>my2[dr]) my2[dr]=gy2[dr][i];
 
-      //cout << "Graph1: " << dr << " " << mx1 << " " << mx2 << " " 
-      //<< my1[dr] << " " << my2[dr] << endl;
+      // cout << "Graph1: " << dr << " " << mx1 << " " << mx2 << " " 
+      // 	   << gx1[i] << " " << gx2[i] << " "
+      // 	   << my1[dr] << " " << my2[dr] << endl;
 
       //mgr[dr]->Add(Gr[dr][ch]);
     }
@@ -1070,7 +1139,7 @@ void EventFrame::DrawEvent2() {
 
   ndiv=0;
 
-  for (int i=0;i<3;i++) {
+  for (int i=0;i<NDIV;i++) {
     if (opt.b_deriv[i]) {
       FillGraph(i);
       ndiv++;
@@ -1107,7 +1176,7 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
   Short_t W2; //right width window
 
   double dy=y2-y1;
-  if (dr>0) y1=0;
+  //if (dr>0) y1=0;
   
   UInt_t ch= pulse->Chan;
   if (fChn[ch]->IsOn()) {
@@ -1126,10 +1195,14 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
     W1=pulse->Pos+opt.W1[ch];
     W2=pulse->Pos+opt.W2[ch]+1;
 
-    if (opt.b_peak[1]) // Pos
-      doXline(pulse->Pos+dt,y1,y2-dy*0.3,2,1);
+    if (opt.b_peak[1]) {// Pos
+      //prnt("ss d d f f fs;",KRED,"Pos:",dr,pulse->Pos,pulse->Pos+dt,y1,y2-dy*0.4,RST);
+      doXline(pulse->Pos+dt,y1,y2-dy*0.4,2,1);
+    }
     if (opt.b_peak[2]) {// Time
-      doXline(pulse->Time,y2-dy*0.2,y2,3,1);
+      //prnt("ss l d d f fs;",BRED,"Pk:",pulse->Tstamp64,pulse->Chan,pulse->Pos,pulse->Time,dt,RST);
+      //doXline(pulse->Time,y2-dy*0.2,y2,3,1);
+      doXline(pulse->Time,y1+dy*0.1,y2-dy*0.2,3,1);
     }
     if (dr==0 && opt.b_peak[3]) { // WBase
       doXline(B1+dt,y1,y2-dy*0.2,6,3);
@@ -1139,9 +1212,9 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
       doXline(P1+dt,y1,y2-dy*0.2,1,2);
       doXline(P2-1+dt,y1,y2-dy*0.1,1,2);
     }
-    if (dr!=0 && opt.b_peak[5]) { //WTime
-      doXline(T1+dt,y1,y2-dy*0.2,3,2);
-      doXline(T2-1+dt,y1,y2-dy*0.1,3,2);
+    if (dr==1 && opt.b_peak[5]) { //WTime
+      doXline(T1+dt,0,y2-dy*0.2,3,2);
+      doXline(T2-1+dt,0,y2-dy*0.1,3,2);
     }
     if (dr==0 && opt.b_peak[6]) { //WWidth
       doXline(W1+dt,y1,y2-dy*0.2,4,4);
@@ -1255,7 +1328,7 @@ void EventFrame::ReDraw() {
   }
 
   int nn=1;
-  for (int i=0;i<3;i++) {
+  for (int i=0;i<NDIV;i++) {
     if (opt.b_deriv[i]) {
 
       tx=0;ty=0;
@@ -1295,6 +1368,7 @@ void EventFrame::ReDraw() {
       doYline(0,x1,x2,4,2);
       if (opt.b_peak[0] && opt.b_peak[7]) { //T0
 	mk.DrawMarker(d_event->T0,y2-dy*0.1);
+	//prnt("ss fs;",BBLU,"T0:",d_event->T0,RST);
       }
 
       //cout << "pss: " << d_event->pulses.size() << endl;
@@ -1306,6 +1380,12 @@ void EventFrame::ReDraw() {
 	    if (opt.b_peak[0]) //draw peaks
 	      DrawPeaks(i,j,pulse,y1,y2);
 	  }
+	  /*
+	  if (i==3 && Gr[4][j]->GetN()) {
+	      Gr[4][j]->Draw("lp");
+	      Gr[5][j]->Draw("lp");
+	  }
+	  */
 	  if (opt.b_peak[0]) { //draw text & shape
 	    DrawShapeTxt(pulse);
 	    /*

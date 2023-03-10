@@ -238,6 +238,7 @@ public:
   int AddLogic(TGCompositeFrame* frame);
   //void AddTrigger(TGGroupFrame* frame);
   int AddExpert(TGCompositeFrame* frame);
+  int AddSimul(TGCompositeFrame* frame);
   void DoCheckTrigger();
 
   void Add2d();

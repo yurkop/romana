@@ -69,6 +69,9 @@ public:
   Int_t chcol[MAX_CH+NGRP];
   ULong_t gcol[MAX_CH+NGRP];
 
+  static const int NDIV=4; //количество делений окна Events (3 или 4)
+  static const int NGR=6; //количество графов (всегда 6!!!)
+
 protected:
 
   TGVertical3DLine       *separator1;
@@ -90,7 +93,7 @@ protected:
 
   TGGroupFrame           *fGroupCh; //contains channels: frCh[i]
   TGHorizontalFrame      *frCh[MAX_CH+1];
-  TGCheckButton          *fDeriv[3];
+  TGCheckButton          *fDeriv[NDIV];
   TGCheckButton          *fPeak[MXPK];
   TGCheckButton          *fChn[MAX_CH+1];
 
@@ -146,10 +149,10 @@ public:
   int ndiv;
   //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
   //int NGr;
-  TH1F* fHist[3];
-  TGraph *Gr[3][MAX_CH];
-  double gx1[MAX_CH],gx2[MAX_CH],gy1[3][MAX_CH],gy2[3][MAX_CH];
-  double mx1,mx2,my1[3],my2[3];
+  TH1F* fHist[NDIV];
+  TGraph *Gr[NGR][MAX_CH];
+  double gx1[MAX_CH],gx2[MAX_CH],gy1[NGR][MAX_CH],gy2[NGR][MAX_CH];
+  double mx1,mx2,my1[NDIV],my2[NDIV];
   //TH1F *histo[3][MAX_CH];
   //double gx1,gx2,gy1[3],gy2[3];
   //TH2F fPaint[3];
@@ -172,6 +175,7 @@ public:
   void ChkpkUpdate();
   void AddCh();
   void DoReset();
+  void FillDeriv1(int dr, int i, int delay, double frac, PulseClass* pulse, double dt);
   void FillGraph(int dr);
   void SetRanges(int dr);
   void DrawEvent2();

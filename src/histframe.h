@@ -45,9 +45,9 @@ public:
   TGListTree             *fCutTree;    // list tree with cuts
   TGListTree             *fRoiTree;    // list tree with roi
 
-  TGListTreeItem         *iWork;
-  TGListTreeItem         *iWork_cut[MAXCUTS];
-  TGListTreeItem         *iWork_MT;
+  TGListTreeItem         *iMAIN;
+  TGListTreeItem         *iMAIN_cut[MAXCUTS];
+  //TGListTreeItem         *iMAIN_MT;
 
   TGStatusBar            *fStatus;
 
@@ -77,9 +77,9 @@ public:
 
   int ntab; //tab number where eventframe is placed
 
-  Bool_t wrk_check[MAXCUTS+1]; //is work* checked before deleting ltree
-  //work,work_cut[MAXCUTS]
-  //Bool_t wrk_check_MT; //is work_MT checked before deleting ltree
+  Bool_t wrk_check[MAXCUTS+1]; //is MAIN* checked before deleting ltree
+  //MAIN,MAIN_cut[MAXCUTS]
+  //Bool_t wrk_check_MT; //is MAIN_MT checked before deleting ltree
   Bool_t changed;
   Bool_t started;
   Int_t in_gcut; //0-cancel;1-cut;2-roi
@@ -105,11 +105,11 @@ public:
   void Clear_Ltree();
   TGListTreeItem* FindItem(const char* name);
   void Clone_Ltree(HMap* hmap);
-  void AddWork(TGListTreeItem *item);
-  void ClearWork();
+  void AddMAIN(TGListTreeItem *item);
+  void ClearMAIN();
   void DoClick(TGListTreeItem* item,Int_t but);
   void CheckAll(Bool_t on);
-  void CheckWork();
+  void CheckMAIN();
 
   void CutClick(TGListTreeItem* item,Int_t but);
   void RoiClick(TGListTreeItem* item,Int_t but);

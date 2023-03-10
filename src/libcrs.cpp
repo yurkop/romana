@@ -2429,7 +2429,7 @@ void CRS::DoExit()
 
 void CRS::DoReset(int rst) {
 
-  //cout << "DoReset1: " << b_stop << " " << rst << endl;
+  //cout << "DoReset1: " << b_stop << " " << rst << " " << Fmode << endl;
 
   if (!b_stop) return;
 
@@ -2477,7 +2477,8 @@ void CRS::DoReset(int rst) {
     memset(npulses_bad,0,sizeof(npulses_bad));
     memset(errors,0,sizeof(errors));
 
-    if (f_read)
+    //if (f_read)
+    if (Fmode==2)
       DoFopen(NULL,0);
     juststarted=true;
 
@@ -2503,7 +2504,6 @@ int CRS::DoFopen(char* oname, int popt) {
   if (oname)
     strcpy(Fname,oname);
 
-  //cout << "DoFopen: " << Fname << endl;
   // if (TString(Fname).EqualTo(" ",TString::kIgnoreCase)) {
   //   return;
   // }
@@ -2516,7 +2516,9 @@ int CRS::DoFopen(char* oname, int popt) {
   Tstart64=0;
   Offset64=0;
 
-  if (!strcmp(Fname,"17")) {
+  cout << "DoFopen: " << Fname << " " << name << endl;
+
+  if (!name.compare("17")) {
     module=17;
 
     SimulateInit();
@@ -2911,8 +2913,6 @@ void CRS::AnaBuf(int loc_ibuf) {
   // gSystem->Sleep(500);
 
 
-
-
   if (Fmode>1) { //только для чтения файла
     if (N4>3) {
       SLP+=5;
@@ -2926,38 +2926,7 @@ void CRS::AnaBuf(int loc_ibuf) {
       gSystem->Sleep(SLP);
   }
 
-  //cout << "L4: " << Fmode << " " << L4 << " " << N4 << " " << SLP << endl;
-
-
   /*
-  // if (!b_mem && CheckMem(70)) {
-  if (false) {
-  // if (!b_mem && true) {
-  cout << "Memory is too low. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
-  b_mem=true;
-
-  // gSystem->Sleep(300);
-  // EndAna(1);
-  // opt.Tstop=0.001;
-  // gSystem->Sleep(5000);
-  // Command2(4,0,0,0);
-
-  // myM->fStart->Emit("Clicked()");
-  // myM->DoStartStop();
-
-  cout << "Terminate..." << endl;
-  gApplication->Terminate(0);
-  delete myM;
-  // myM->CloseWindow();
-	
-  // EndAna(1);
-  // DoExit();
-  //exit(-1);
-  // myM->DoExit();
-  }
-  */
-
-  //static int nn=0;
   if (batch && scrn) {
     //++nn;
     if (nbuffers%scrn==0) {
@@ -2965,17 +2934,9 @@ void CRS::AnaBuf(int loc_ibuf) {
       	   "Buf: ", nbuffers, "  Dec. MB: ",
       	   inputbytes/MB, "  T(s): ",int(opt.T_acq*10)*0.1,
       	   " %mem: ", CheckMem()/10.0, " slp: ", SLP);
-
-      // cout << "Buf: " << nbuffers << "  Dec. MB: "
-      // 	   << inputbytes/MB << "  T(s): " << int(opt.T_acq*10)*0.1
-      // 	   << " %mem: " << CheckMem()/10.0 << " slp: " << SLP << endl;
-      //nn=0;
     }
   }
-  //if (!b_stop) {
-  //opt.T_acq = (Levents.back().T - Tstart64)*1e-9*opt.Period;
-  //}
-
+  */
 }
 
 int CRS::DoBuf() {
@@ -2986,16 +2947,26 @@ int CRS::DoBuf() {
 #endif
   Long64_t length=0;
 
+  if (batch && scrn) {
+    //++nn;
+    if (nbuffers%scrn==0) {
+      prnt("sls0.2fs0.1fs0.1fsd;",
+      	   "Buf: ", nbuffers, "  Dec. MB: ",
+      	   inputbytes/MB, "  T(s): ",int(opt.T_acq*10)*0.1,
+      	   " %mem: ", CheckMem()/10.0, " slp: ", SLP);
+    }
+  }
+
   if (module==17) {
 
-    SimulateEvents(opt.ev_max,nbuffers*10000);
+    SimulateEvents(opt.ev_max,nbuffers);
     //prnt("ss l ls;",BRED,"17:",nbuffers,nevents,RST);
     //gSystem->Sleep(100);
     
     crs->Ana2(0);
 
     nbuffers++;
-    return nbuffers;
+    //return nbuffers;
 
   }
   else {
@@ -3021,13 +2992,14 @@ int CRS::DoBuf() {
       AnaBuf(1); // YK (1 - loc_ibuf, fake number)
       nbuffers++;
       inputbytes+=length;
-      return nbuffers;
+      //return nbuffers;
     }
     else {
       return 0;
     }
   }
 
+  return nbuffers;
 }
 
 void CRS::InitBuf() {
@@ -5524,8 +5496,6 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
   //event_iter it_last;
   Long64_t dt;
 
-  //cout << "Event_Insert_Pulse: " << nevents << " " << (int) pls->Chan << " " << pls->Counter << " " << (int) pls->Spin << " " << npulses << " " << pls->Tstamp64 << " " << (int) pls->ptype << endl;
-
   if (pls->ptype) { //any bad pulse
     // cout << "bad pulse: " << (int) pls->ptype << " " << (int) pls->Chan
     // 	 << " " << pls->Counter << " " << pls->Tstamp64 << endl;
@@ -5536,15 +5506,20 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
 
   ++npulses2[pls->Chan];
 
+  //prnt("ss d ls;",BMAG,"ev_ins_pls:",pls->Chan,pls->Tstamp64,RST);
+
   //YK1 prnt("ssl fs;",BRED,"Ts1: ",pls->Tstamp64,pls->Time,RST);
 
+  /*
   // оставляем только дробную часть в pls->Time, остальное загоняем в Tstamp64
   int i_dt = pls->Time;
   pls->Time -= i_dt;
+  pls->Simul2 -= i_dt;
   pls->Tstamp64+=i_dt;
-  Long64_t T64 = pls->Tstamp64+Long64_t(opt.sD[pls->Chan]/opt.Period);
+  */
 
-  //YK2 prnt("ssl f ds;",BGRN,"Ts2: ",pls->Tstamp64,pls->Time,i_dt,RST);
+  
+  Long64_t T64 = pls->Tstamp64+Long64_t(opt.sD[pls->Chan]/opt.Period);
 
   // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
   int nn=0;
@@ -5573,14 +5548,16 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
       return;
     }
     dt = (T64 - rit->Tstmp);
-    //cout << "new: " << nevents << " " << Elist->size() << " " << dt << " " << nn << endl;
+
     if (dt > opt.tgate) {
       //pls пришел позже, чем tgate -> добавляем новое событие в конец
       //add new event AFTER rit.base()
+      //prnt("sss;",BYEL,"Ev_new0:",RST);
       it=Elist->insert(rit.base(),EventClass());
       it->Nevt=nevents;
       it->AddPulse(pls);
       nevents++;
+      //prnt("ss d fs;",BGRN,"Ev_new:",it->pulses.size(),it->T0,RST);
 
 
 
@@ -5603,7 +5580,9 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
       //pls->Tstamp64,pls->Spin,RST);
       //}
 
+      //prnt("sss;",BYEL,"Ev_add0:",RST);
       rit->AddPulse(pls);
+      //prnt("sss;",BYEL,"Ev_add1:",RST);
       return;
     }
   }
@@ -6391,78 +6370,137 @@ void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
 }
 
 
-double Pshape(int i, int j, double pos) {
-  //double pos = 6+nn+gRandom->Rndm();
-  //double x = j+cpar.Pre[i];
-  //cout << x << " " << pos << " " << opt.SimSig << " " << opt.SimAmp << endl;
-  return opt.SimAmp*TMath::Gaus(j,pos+cpar.Pre[i],opt.SimSig,1);
+double Pshape_Gaus(int j, double pos) {
+  // return opt.SimSim[4]*(-TMath::Gaus(j,pos-10,opt.SimSim[5]/opt.Period,1) +
+  //  			TMath::Gaus(j,pos,opt.SimSim[5]/opt.Period,1));
+  return opt.SimSim[4]*TMath::Gaus(j,pos,opt.SimSim[5]/opt.Period,1);
+}
+
+double Pshape_RC(int j, double pos) {
+  double lam=0;
+  if (opt.SimSim[6]) lam=opt.Period/opt.SimSim[6];
+
+  if (j<pos)
+    return 0;
+  else if (j<=pos+opt.SimSim[5]/opt.Period)
+    return opt.SimSim[4]*(1-exp((pos-j)*lam));
+  else
+    return opt.SimSim[4]*(1-exp(-opt.SimSim[5]/opt.Period*lam))
+      * exp((pos+opt.SimSim[5]/opt.Period-j)*lam);
 }
 
 void CRS::SimulateInit() {
-  opt.Period = 10;
-  opt.SimSig=0.5;
+  opt.Nchan=4;
+
+  opt.Period = opt.SimSim[0];
+
   for (int i=0;i<MAX_CHTP;i++) {
-    cpar.Pre[i]=10;
-    cpar.Len[i]=24;
+    cpar.Pre[i]=opt.SimSim[1];
+    cpar.Len[i]=opt.SimSim[2];
+    opt.St[i]=0;
   }
-  opt.Nchan=2;
-  cout << "opt.Period: " << opt.Period << endl;
+
+  opt.St[0]=1;
+
+  //prnt("ss ds;",BGRN,"SimInit:",opt.h_time.b,RST);
+  SimNameHist();
+
 }
 
-void CRS::SimulatePulse(EventClass* evt, int i, double pos) {
-  for (int j=0;j<cpar.Len[i];j++) {
-    evt->pulses[i].sData[j]=Pshape(i,j,pos);
-    //cout << i << " " << j << " " << evt->pulses[i].sData[j] << endl;
+void CRS::SimNameHist() {
+
+  if (hcl->m_time[2]) {
+    hcl->m_time[2]->hst->SetTitle("Exact time0 - pos0");
   }
-  evt->pulses[i].Tstamp64=evt->Tstmp;
-  PulseAna(evt->pulses[i]);
+
+  if (hcl->m_time[3]) {
+    hcl->m_time[3]->hst->SetTitle("Exact time1 - time0");
+  }
+
 }
 
-void CRS::SimulateOneEvent(EventClass* evt) {
+void CRS::SimulatePulse(int ch, Long64_t tst, double pos) {
+  PulseClass ipls=PulseClass();
+  ipls.Chan=ch;
+  ipls.Tstamp64=tst;
+  
+  ipls.sData.resize(cpar.Len[ch]);
+  if (opt.SimSim[3]==0) { //Gauss
+    for (int j=0;j<cpar.Len[ch];j++) {
+      ipls.sData[j]=Pshape_Gaus(j,pos+cpar.Pre[ch]);
+      //cout << i << " " << j << " " << evt->pulses[i].sData[j] << endl;
+    }
+  }
+  else { //RC
+    for (int j=0;j<cpar.Len[ch];j++) {
+      ipls.sData[j]=Pshape_RC(j,pos+cpar.Pre[ch]);
+      //cout << i << " " << j << " " << evt->pulses[i].sData[j] << endl;
+    }
+  }
 
-  //opt.tgate == ns
+  PulseAna(ipls);
+  // if (ipls.Chan==0)
+  //   prnt("ss fs;",BRED,"Time1:",ipls.Time,RST);
+  Event_Insert_Pulse(&Levents,&ipls);
+  // if (ipls.Chan==0)
+  //   prnt("ss fs;",BMAG,"Time2:",Levents.back().pulses[0].Time,RST);
+}
 
-  // реальная разница во времени между 2 импульсами (ns)
-  double delta = opt.tgate*gRandom->Rndm()-opt.tgate*0.5;
-  //delta = 20;
+void CRS::SimulateOneEvent(Long64_t Tst) {
 
-  // положение p0 относительно ноля (samples)
-  double pos0 = 2*gRandom->Rndm()-1;
-  //pos0=0;
+  PulseClass pls;
+  PulseClass *ipls;
 
-  // реальное положение p1 относительно p0
-  double pos1 = pos0 + delta/opt.Period;
+  //time_00  - отклонение Time0 от pos0 (Time0-pos0)
+  //simul_00 - отклонение Simul0 от pos0 (Simul0-pos0)
+  //time_01  - разница между Time1 и Time0
+  //simul_01 - разница между Simul1 и Simul0
 
-  // 
-  Long64_t idelta = delta/opt.Period;
+  // реальная разница во времени между 2 импульсами (в ns)
+  double delta = opt.SimSim[9]*gRandom->Rndm()-opt.SimSim[9]*0.5;
+  delta/=opt.Period; //в сэмплах
+
+  // положение p0 относительно дискриминатора (начала+Pre) (в нс)
+  double pos0 = opt.SimSim[7]+opt.SimSim[8]*gRandom->Rndm();
+  pos0/=opt.Period; //в сэмплах
+
+  // положение p1 относительно p0 (в сэмплах)
+  double pos1 = pos0 + delta;
+
+  // (целая) разница между двумя импульсами в сэмплах
+  Long64_t idelta = delta;
   pos1-=idelta;
 
-  //evt->T0=99999;
-  SimulatePulse(evt, 0, pos0);
-  evt->T0 = evt->pulses[0].Time;
-  evt->pulses[0].Time = pos0;
-  SimulatePulse(evt, 1, pos1);
-  evt->pulses[1].Tstamp64+=idelta;
-  evt->pulses[1].Time+=idelta;
-  evt->pulses[1].Simul+=idelta;
+  SimulatePulse(0, Tst, pos0);
+
+  EventClass* evt = &Levents.back();
+  ipls=&evt->pulses[0];
+  //prnt("ss 9l 8.5f 8.5f 8.5f 8.5fs;",BWHT,"Pos0:",evt->Tstmp,evt->T0,pos0,ipls->Time-pos0,ipls->Simul2-pos0,RST);
+
+  SimulatePulse(1, Tst+idelta, pos1);
+
+  ipls=&pls;
+  ipls->Chan=2;
+  ipls->Tstamp64=Tst;
+  ipls->Pos=evt->pulses[0].Pos;
+  //ipls->Time=delta+evt->T0;
+  ipls->Time=opt.SimSim[10]/opt.Period+pos0;
+  //YK ipls->Simul2=pos0;//pos0+evt->T0;
+  //prnt("ss f f fs;",BGRN,"Sim:",ipls->Time,pos0,pos1,RST);
+
+  Event_Insert_Pulse(&Levents,ipls);
+
+  ipls->Chan=3;
+  ipls->Time=delta+evt->T0;
+
+  Event_Insert_Pulse(&Levents,ipls);
 
 }
 
 void CRS::SimulateEvents(Long64_t n_evts, Long64_t Tst0) {
-  EventClass evt;
-  PulseClass pls;
-
-  for (int i=0;i<2;i++) {
-    pls.Chan=i;
-    pls.sData.resize(cpar.Len[i], 0);
-    evt.pulses.push_back(pls);
-  }
-
   for (int i=0;i<n_evts;i++) {
-    evt.Nevt=nevents;
-    evt.Tstmp=Tst0+i*10000;
-    SimulateOneEvent(&evt);
-    Levents.push_back(evt);
-    nevents++;
+    SimulateOneEvent((Tst0*n_evts+i)*10000);
+    //prnt("ss l l ls;",BGRN,"Sim:",i,Tst0,(Tst0*n_evts+i)*100000,RST);
   }
+  //prnt("ss ls;",BGRN,"Sim:",(Tst0*n_evts),RST);
 }

@@ -46,6 +46,12 @@ PulseClass::PulseClass() {
   //Width=88888;
 }
 
+Double_t PulseClass::CFD(int j, int kk, int delay, double frac) {
+  Double_t d0 = sData[j] - sData[j-kk];
+  Double_t d1 = sData[j-delay] - sData[j-kk-delay];
+  return d1*frac-d0;
+}
+
 void PulseClass::FindPeaks() {
   //Находим только первый пик
 
@@ -55,10 +61,12 @@ void PulseClass::FindPeaks() {
   //      3 - rise of derivative;
   //      4 - fall of derivative;
   //      5 - threshold crossing of derivative, use 2nd deriv for timing.
+  //      6 - fall of derivative, zero crossing
+  //      7 - CFD, zero crossing
 
   //Pos=-32222;
 
-  if (sData.size()<2) {
+  if (sData.size()<2) { // нужно минимум 2 точки
     return;
   }
 
@@ -70,6 +78,8 @@ void PulseClass::FindPeaks() {
   Float_t Dpr;
   //Float_t jmax=0;
 
+  //cout << sizeof(Float_t)*sData.size() <<endl;
+  //memset (D,0,sizeof(Float_t)*sData.size());
   D[0]=0;
   UInt_t j;
   UInt_t jj=0;
@@ -128,23 +138,56 @@ void PulseClass::FindPeaks() {
     }
     break;
   case 4: // fall of derivative;
-    Dpr=1;
+  case 6: // fall of derivative;
+    D[kk-1]=0;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (D[j] <= 0 && jj) {
 	Pos=j-1;
-	//Peaks.push_back(pk);
+	if (opt.sTg[Chan]==6) { //zero crossing
+	  if (D[Pos]!=D[j])
+	    Time = Pos - D[Pos]/(D[j]-D[Pos]);
+	  else
+	    Time = Pos;
+	}
 	break;
       }
       if (D[j] >= opt.sThr[Chan]) {
 	jj=1;
       }
-      // else {
-      //    break;
-      // }
-      //Dpr=D[j];
     }
     break;
+
+  case 7: {// CFD
+    int delay = abs(opt.T1[Chan]);
+
+    //kk+delay всегда >=1
+    jj=kk+delay-1;
+    D[jj]=0;
+
+    for (j=kk+delay;j<sData.size();j++) {
+      D[j] = CFD(j,kk,delay,opt.T2[Chan]);
+      if (D[j] >= opt.sThr[Chan]) {
+	delay=-1;
+	break;
+      }
+      else if (D[j] <= 0) {
+	jj=j;
+      }
+    }
+    
+    if (delay==-1) { //если выполнено, то jj и jj+1 существуют
+      Pos=jj;
+
+      if (D[Pos+1]!=D[Pos])
+	Time = Pos - D[Pos]/(D[Pos+1] - D[Pos]);
+      else
+	Time = Pos;
+    }
+
+    break;
+  }
+
   default:
     break;
   }
@@ -231,44 +274,49 @@ void PulseClass::PeakAna33() {
   if (W1>sz) W1=sz-1;
   if (W2>sz) W2=sz;
 
-  Time=0;
-  sum=0;
+  if (opt.sTg[Chan]<6) { //not zero crossing
+    Time=0;
+    sum=0;
 
-  if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv
-    // 05.10.2020
-    for (int j=T1;j<T2;j++) {
-      if (j<kk+1)
-	continue;
-      Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
-      if (dif2>0) {
-	Time+=dif2*j;
-	sum+=dif2;
+    if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv
+      // 05.10.2020
+      for (int j=T1;j<T2;j++) {
+	if (j<kk+1)
+	  continue;
+	Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
+	if (dif2>0) {
+	  Time+=dif2*j;
+	  sum+=dif2;
+	}
       }
     }
-  }
-  else { //use 1st deriv
-    for (int j=T1;j<T2;j++) {
-      if (j<kk)
-	continue;
-      Float_t dif=sData[j]-sData[j-kk];
-      if (dif>0) {
-	Time+=dif*j;
-	sum+=dif;
+    else { //use 1st deriv
+      for (int j=T1;j<T2;j++) {
+	if (j<kk)
+	  continue;
+	Float_t dif=sData[j]-sData[j-kk];
+	if (dif>0) {
+	  Time+=dif*j;
+	  sum+=dif;
+	}
       }
     }
-  }
-  if (abs(sum)>1e-5) {
-    Time/=sum;
-  }
-  else {
-    ++crs->errors[ER_TIME];
-    //prnt("ssfs;",BGRN,"ErrTime1: ",sum,RST);
-    Time=(T1+T2)*0.5;
-  }
 
+    if (abs(sum)>1e-5) {
+      Time/=sum;
+    }
+    else {
+      ++crs->errors[ER_TIME];
+      //prnt("ssfs;",BGRN,"ErrTime1: ",sum,RST);
+      Time=(T1+T2)*0.5;
+    }
+  } // if not zero crossing
+
+  //prnt("ss d l d d fs;",BYEL,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
   Time-=cpar.Pre[Chan];
+  //Time-=Pos;
 
-  //cout << "Peakana33: " << (int) Chan << " " << Tstamp64 << " " << Time << endl;
+  //prnt("ss d l d d fs;",BGRN,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
 
   //pk->Time=sum;
 
@@ -394,7 +442,7 @@ void PulseClass::PeakAna33() {
     Slope1/=nbkg;
 
   //slope2 (peak)
-  /*
+
   Slope2=0;
   nbkg=0;
   for (int j=P1+1;j<P2;j++) {
@@ -403,23 +451,30 @@ void PulseClass::PeakAna33() {
   }
   if (nbkg)
     Slope2/=nbkg;
-  */
 
-  //Simul
+  /*
+  //Simul2
   if (Pos<1 || Pos+1>=sz) {
-    Simul=-99999;
+    Simul2=-99999;
   }
   else {
     Float_t y1=sData[Pos]-sData[Pos-kk];
     Float_t y2=sData[Pos+1]-sData[Pos+1-kk];
     if (y2<y1)
-      Simul= Pos - y1/(y2-y1);
+      Simul2= Pos - y1/(y2-y1);
     else
-      Simul=Pos+0.5;
+      Simul2=Pos+0.5;
   }
-  Simul-=cpar.Pre[Chan]+1;
+  Simul2-=cpar.Pre[Chan];//+opt.SimSim[9]/opt.Period;
 
-  //prnt("ss l d f fs;",BGRN,"Simul:",Tstamp64,Pos,Simul,Time,RST);
+  //Time=(Time+Simul2)/2;
+
+  //Simul2-=Pos;
+
+  //Time = Simul2;
+
+  //prnt("ss l d f fs;",KGRN,"Simul2:",Tstamp64,Pos,Simul2,Time,RST);
+  */
 
 } //PeakAna33()
 
@@ -537,6 +592,7 @@ void EventClass::AddPulse(PulseClass *pls) {
   // определяет T0
   // поправляет pls->Time
 
+  //prnt("ss d d fs;",BYEL,"Add1:",pls->Chan,pls->Pos,pls->Time,RST);
   
   //void EventClass::AddPulse(pulse_vect::iterator pls) {
 
@@ -568,10 +624,11 @@ void EventClass::AddPulse(PulseClass *pls) {
     int i_dt = opt.sD[pls->Chan]/opt.Period;
     Tstmp=pls->Tstamp64+i_dt;
     pls->Time-=i_dt;
-    //Tstmp=pls->Tstamp64;
+    //pls->Simul2-=i_dt;
   }
   else {
     pls->Time+=pls->Tstamp64 - Tstmp;
+    //pls->Simul2+=pls->Tstamp64 - Tstmp;
   }
 
   pulses.push_back(*pls);
@@ -920,13 +977,13 @@ void EventClass::FillHist(Bool_t first) {
       Fill1d(first,hcl->m_slope1,ch,ipls->Slope1);
     }
 
-    // if (opt.h_slope2.b) {
-    //   Fill1d(first,hcl->m_slope2,ch,ipls->Slope2);
-    // }
-    if (opt.h_simul.b) {
-      Double_t tt2 = ipls->Simul - T0;
-      Fill1d(first,hcl->m_simul,ch,tt2*opt.Period+opt.sD[ch]);
+    if (opt.h_slope2.b) {
+      Fill1d(first,hcl->m_slope2,ch,ipls->Slope2);
     }
+    // if (opt.h_simul.b) {
+    //   Double_t tt2 = ipls->Simul2;// - T0;
+    //   Fill1d(first,hcl->m_simul,ch,tt2*opt.Period+opt.sD[ch]);
+    // }
 
     if (opt.h_width.b) {
       Fill1d(first,hcl->m_width,ch,ipls->Width);
@@ -940,20 +997,20 @@ void EventClass::FillHist(Bool_t first) {
       Fill2d(first,hcl->m_area_sl1[ch],ipls->Area,ipls->Slope1);
     }
 
-    // if (opt.h_area_sl2.b) {
-    //   Fill2d(first,hcl->m_area_sl2[ch],ipls->Area,ipls->Slope2);
-    // }
-
-    // if (opt.h_slope_12.b) {
-    //   Fill2d(first,hcl->m_slope_12[ch],ipls->Slope1,ipls->Slope2);
-    // }
-
-    if (opt.h_time_simul.b) {
-      tt = ipls->Time - T0;
-      Double_t tt2 = ipls->Simul - T0;
-      Fill2d(first,hcl->m_time_simul[ch],tt*opt.Period+opt.sD[ch],
-	     tt2*opt.Period+opt.sD[ch]);
+    if (opt.h_area_sl2.b) {
+      Fill2d(first,hcl->m_area_sl2[ch],ipls->Area,ipls->Slope2);
     }
+
+    if (opt.h_slope_12.b) {
+      Fill2d(first,hcl->m_slope_12[ch],ipls->Slope1,ipls->Slope2);
+    }
+
+    // if (opt.h_time_simul.b) {
+    //   tt = ipls->Time - T0;
+    //   Double_t tt2 = ipls->Simul2;// - T0;
+    //   Fill2d(first,hcl->m_time_simul[ch],tt*opt.Period+opt.sD[ch],
+    // 	     tt2*opt.Period+opt.sD[ch]);
+    // }
 
     if (opt.h_area_time.b) {
       Fill2d(first,hcl->m_area_time[ch],ipls->Area,opt.T_acq);

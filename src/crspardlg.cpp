@@ -74,9 +74,9 @@ const char* ttip1[ndaqpar]={
   "Number of bad pulses"
 };
 
-const int n_apar=15;
-const int tlen2[n_apar]={24,24,26,70,24,24,25,35,35,35,20,40,40,40,38};
-const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sS","sD","dTm","Pile","C","E0","E1","E2","Bc"};
+const int n_apar=14;
+const int tlen2[n_apar]={24,24,26,70,24,24,35,35,35,20,40,40,40,38};
+const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sD","dTm","Pile","C","E0","E1","E2","Bc"};
 const char* ttip2[n_apar]={
   "On/Off",
   "Select",
@@ -84,7 +84,6 @@ const char* ttip2[n_apar]={
   ttip_type,
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Master/slave channel:\nEvents containing only slave channels are rejected\nEach event must contain at least one master channel",
-  "Software smoothing. If negative - data are truncated to integer (imitates hS)",
   "Software delay in ns (can be negative or positive)",
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
@@ -97,24 +96,27 @@ const char* ttip2[n_apar]={
 };
 
 
-const int n_ppar=16;
-const int tlen3[n_ppar]={24,24,26,70,24,26,32,40,40,40,42,42,40,40,40,40};
-const char* tlab3[n_ppar]={"on","*","Ch","Type","dsp","sTg","sDrv","sThr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
+const int n_ppar=17;
+const int tlen3[n_ppar]={24,24,26,70,24,25,26,32,40,40,40,42,42,40,40,40,40};
+const char* tlab3[n_ppar]={"on","*","Ch","Type","dsp","sS","sTg","sDrv","sThr","Base1","Base2","Peak1","Peak2","T1","T2","W1","W2"};
 const char* ttip3[n_ppar]={
   "On/Off",
   "Select",
   "Channel number",
   ttip_type,
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
-  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n-1 - use hardware trigger",
+  "Software smoothing. If negative - data are truncated to integer (imitates hS)",
+  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing;\n7 - CFD;\n-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
   "Software trigger threshold",
   "Baseline start, relative to peak Pos (negative)",
   "Baseline end, relative to peak Pos (negative), included",
   "Peak start, relative to peak Pos (usually negative)",
   "Peak end, relative to peak Pos (usually positive), included",
-  "Timing window start, included (usually negative)",
-  "Timing window end, included (usually positive), included",
+  "Timing window start, included (usually negative)/\n"
+  "CFD delay [delay=abs(T1)]",
+  "Timing window end, included (usually positive)/\n"
+  "Inverse CFD fraction",
   "Width window start",
   "Width window end, included",
 };
@@ -1263,6 +1265,9 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fcont1->AddFrame(fV2,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY));
   AddExpert(fV2);
 
+#ifdef SIMUL
+  AddSimul(fV2);
+#endif
 
   // for (UInt_t i=0;i<Plist.size();i++) {
   //   pmap* pp = &Plist[i];
@@ -1442,7 +1447,7 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
 	      1,2048,1,64000,0x100,0x100|(1<<4));
 
   tip1= "Maximal size of the event list:\nNumber of events available for viewing in the Events Tab";
-  tip2= "Event lag:\nMaximal expected number of lagged events (see Errors/Event lag exceeded)";
+  tip2= "Event lag:\nMaximal expected number of lagged events (see Errors/Event lag exceeded\nMust be at least 1)";
   label="Event_list size / Event lag";
   AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,k_int,1,1000000,1,1000000);
 
@@ -1593,6 +1598,85 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
 }
 
+int ParParDlg::AddSimul(TGCompositeFrame* frame) {
+
+  int ww=70;
+  const char *tip1, *label;
+
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Simul", kVerticalFrame);
+  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame->AddFrame(fF6, LayLT1);
+
+  tip1= "";
+
+  label= "use 'romana 17' to start in simulation mode\n"
+    "'N buf' simulates [nbuf x Event_list_size] events.\n"
+    "Set coincidence window & peak parameters\n"
+    ;
+  TGLabel* fLabel = new TGLabel(fF6, label);
+  fF6->AddFrame(fLabel,LayLT4);
+  
+
+
+  label= "opt.Period in ns";
+  AddLine_1opt(fF6,ww,&opt.SimSim[0],label,label,k_r0,1,99999);
+
+  label="cpar.Pre in smp";
+  AddLine_1opt(fF6,ww,&opt.SimSim[1],label,label,k_r0,0,99);
+
+  label="cpar.Len in smp";
+  AddLine_1opt(fF6,ww,&opt.SimSim[2],label,label,k_r0,0,99);
+
+  label= "Pulse type: 0 - gauss; 1 - RC";
+  AddLine_1opt(fF6,ww,&opt.SimSim[3],label,label,k_r0,0,1);
+
+  label= "Pulse Amplitude";
+  AddLine_1opt(fF6,ww,&opt.SimSim[4],label,label,k_r0,1,99999);
+
+  label="Pulse Sigma/(RC_Width) in ns";
+  AddLine_1opt(fF6,ww,&opt.SimSim[5],label,label,k_r1,0,99);
+
+  label="Pulse RC in ns (only for RC pulse type)";
+  AddLine_1opt(fF6,ww,&opt.SimSim[6],label,label,k_r1,0,99);
+
+
+  label= "Pos min in ns";
+  tip1= "Pos: position of peak relative to discriminator (Pre)";
+  AddLine_1opt(fF6,ww,&opt.SimSim[7],tip1,label,k_r0,-99999,99999);
+
+  label= "Pos spread in ns";
+  tip1= "Pos: position of peak relative to discriminator (Pre)";
+  AddLine_1opt(fF6,ww,&opt.SimSim[8],tip1,label,k_r0,0,99999);
+
+  label= "Coincidence window in ns";
+  tip1= "Coincidence window in ns. Must be smaller than 'Coincidence' in samples (opt.tgate).";
+  AddLine_1opt(fF6,ww,&opt.SimSim[9],tip1,label,k_r0,0,99999);
+
+  label="Time delta";
+  tip1= "difference between Simul and Pos (in ns)";
+  AddLine_1opt(fF6,ww,&opt.SimSim[10],tip1,label,k_r1,-99,99);
+
+  // label="Simul delta";
+  // tip1= "difference between Simul and Pos (in ns)";
+  // AddLine_1opt(fF6,ww,&opt.SimSim[9],tip1,label,k_r1,-99,99);
+
+
+  // label="CFD delay";
+  // AddLine_1opt(fF6,ww,&opt.SimSim[10],label,label,k_r0,-99,99);
+
+  // label="CFD fraction";
+  // AddLine_1opt(fF6,ww,&opt.SimSim[11],label,label,k_r1,-99,99);
+
+  //label="sS";
+  //AddLine_1opt(fF6,ww,&opt.sS[MAX_CH],tip1,label,k_int,-99,99);
+
+  fF6->Resize();
+  //fF6->ChangeBackground(fRed);
+
+  return fF6->GetDefaultWidth();
+
+}
+
 void ParParDlg::Update() {
   ParDlg::Update();
   tTrig->UpdateTrigger();
@@ -1676,13 +1760,13 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Slope1";
   AddLine_hist(frame1d,&opt.h_slope1,tip1,label);
 
-  // tip1= "Slope2 (peak)";
-  // label="Slope2";
-  // AddLine_hist(frame1d,&opt.h_slope2,tip1,label);
+  tip1= "Slope2 (peak)";
+  label="Slope2";
+  AddLine_hist(frame1d,&opt.h_slope2,tip1,label);
 
-  tip1= "Simul";
-  label="Simul";
-  AddLine_hist(frame1d,&opt.h_simul,tip1,label);
+  // tip1= "Simul";
+  // label="Simul";
+  // AddLine_hist(frame1d,&opt.h_simul,tip1,label);
 
   tip1= "Maximal pulse height (in channels)";
   label="Height";
@@ -1774,17 +1858,17 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   label="Area_Sl1";
   AddLine_2d(frame2d,&opt.h_area_sl1,tip1,label,1);
 
-  // tip1= "2-dimensional histogram (Area_Slope2)\nMin Max are taken from the corresponding 1d histograms";
-  // label="Area_Sl2";
-  // AddLine_2d(frame2d,&opt.h_area_sl2,tip1,label,1);
+  tip1= "2-dimensional histogram (Area_Slope2)\nMin Max are taken from the corresponding 1d histograms";
+  label="Area_Sl2";
+  AddLine_2d(frame2d,&opt.h_area_sl2,tip1,label,1);
 
-  // tip1= "2-dimensional histogram (Slope1-Slope2)\nMin Max are taken from the corresponding 1d histograms";
-  // label="Slope_12";
-  // AddLine_2d(frame2d,&opt.h_slope_12,tip1,label,1);
+  tip1= "2-dimensional histogram (Slope1-Slope2)\nMin Max are taken from the corresponding 1d histograms";
+  label="Slope_12";
+  AddLine_2d(frame2d,&opt.h_slope_12,tip1,label,1);
 
-  tip1= "2-dimensional histogram (Time_Simul)\nMin Max are taken from the corresponding 1d histograms";
-  label="Time_Simul";
-  AddLine_2d(frame2d,&opt.h_time_simul,tip1,label,1);
+  // tip1= "2-dimensional histogram (Time_Simul)\nMin Max are taken from the corresponding 1d histograms";
+  // label="Time_Simul";
+  // AddLine_2d(frame2d,&opt.h_time_simul,tip1,label,1);
 
   tip1= "2-dimensional histogram (Area_Time)\nMin Max are taken from the corresponding 1d histograms";
   label="Area_Time";
@@ -2624,7 +2708,6 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   tlen7 = (int*) tlen2;
   ttip7 = (char**) ttip2;
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],-99,99,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.sD[i],-9999,9999,p_fnum);
   AddNumChan(i,kk++,all,cframe[i],&opt.dTm[i],0,9999,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.Pile[i],0,9999,p_inum);
@@ -2711,10 +2794,11 @@ void PikParDlg::AddLine_Pik(int i, TGCompositeFrame* fcont1) {
   ttip7 = (char**) ttip3;
 
   int amax=1023;
-  if (cpar.crs_ch[i]>=1)
+  if (cpar.crs_ch[i]==1 || cpar.crs_ch[i]==2)
     amax=511;
 
-  AddNumChan(i,kk++,all,cframe[i],&opt.sTg[i],-1,5,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sS[i],-99,99,p_inum);
+  AddNumChan(i,kk++,all,cframe[i],&opt.sTg[i],-1,7,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.sDrv[i],1,1023,p_inum);
   AddNumChan(i,kk++,all,cframe[i],&opt.sThr[i],0,65565,p_inum);
 

@@ -389,8 +389,11 @@ RQ_OBJECT("CRS")
   void Print_Buf8(UChar_t* buf, Long64_t size, const char* file=0);
 
   void SimulateInit();
-  void SimulatePulse(EventClass* evt, int i, double pos);
-  void SimulateOneEvent(EventClass* evt);
+  void SimNameHist();
+  void SimulatePulse(int ch, Long64_t tst, double pos);
+  void SimulateOneEvent(Long64_t Tst);
+  //void SimulatePulse(EventClass* evt, int i, double pos);
+  //void SimulateOneEvent(EventClass* evt);
   void SimulateEvents(Long64_t n_evts, Long64_t Tst0);
 
   ClassDef(CRS, 0)

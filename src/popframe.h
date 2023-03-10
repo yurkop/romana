@@ -66,7 +66,6 @@ public:
   void AddAdj(TGCompositeFrame* fcont1, HMap* map, int i);
   void AddEcalibr(UInt_t w, UInt_t h);
   void AddTcalibr();
-  void AddSimul();
   void DoAdj();
   void DoENum();
   void Do_Save_Ecalibr();

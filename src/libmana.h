@@ -32,7 +32,6 @@ enum MENU_COM {
   //M_PRECALIBR,
   M_ECALIBR,
   M_TCALIBR,
-  M_SIMUL,
   M_HELP,
 };
 
@@ -130,11 +129,11 @@ class MainFrame : public TGMainFrame {
 
   TGGroupFrame *fGr1, *fGr2;
 
-  TGTextButton *fStart;
-  TGTextButton *fContinue;
-  TGTextButton *fReset2;
-  TGTextButton *fAna;
-  TGTextButton *fNb;
+  TGTextButton *fStart,
+    *fContinue,
+    *fReset2,
+    *fAna,
+    *fNb;
 
   //PEditor* p_ed;
   //PopFrame* p_pop;
@@ -161,7 +160,6 @@ class MainFrame : public TGMainFrame {
   void DoOpen(Int_t id);
   void DoClose();
   void DoAna();
-  void DoSimul();
   void DoRWinit(EFileDialogMode);
   void DoReadRoot();
   void Export();
