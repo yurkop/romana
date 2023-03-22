@@ -66,7 +66,7 @@ const char* ttip1[ndaqpar]={
   "Number of samples before the trigger",
   "Total length of the pulse in samples",
   "Additional Gain\nFor CRS-8/16 and CRS-128 grouped by 4 channels",
-  "Trigget type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing\nNot all types are available for all devices",
+  "Trigger type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing\nNot all types are available for all devices",
   "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
   "Pulse rate (software)",

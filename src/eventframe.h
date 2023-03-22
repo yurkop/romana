@@ -175,7 +175,7 @@ public:
   void ChkpkUpdate();
   void AddCh();
   void DoReset();
-  void FillDeriv1(int dr, int i, int delay, double frac, PulseClass* pulse, double dt);
+  void FillDeriv1(int dr, int i, PulseClass* pulse, double dt);
   void FillGraph(int dr);
   void SetRanges(int dr);
   void DrawEvent2();

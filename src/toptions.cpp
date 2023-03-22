@@ -204,7 +204,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       min=0;
       max=9;
       if (module>=35 && module<=70)
-        max=5;
+        max=6;
       else if (module>=32 && module<=34) //33,34
         max=3;
       else if (module==22) {
@@ -239,11 +239,11 @@ Int_t Coptions::ChkLen(Int_t i, Int_t module) {
   int dd=1;
   switch (crs_ch[i]) {
   case 0:
-    dd=3;
+    dd=4;
     break;
   case 1:
   case 2:
-    dd=4;
+    dd=3;
   }
 
   //prnt("ss d d d ds;",BRED,"ChkLen: ",i,Len[i],crs_ch[i],module,RST);

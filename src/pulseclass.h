@@ -133,7 +133,8 @@ class PulseClass {
 
   Double_t CFD(int i, int kk, int delay, double frac);
   //void Analyze();
-  void FindPeaks();
+  void FindPeaks(Int_t sTrig, Int_t kk);
+  void FindZero(Int_t sTrig, Int_t kk, Int_t j0);
   //void FindPeaks(Float_t thresh, int deadtime);
   //void PeakAna();
   void PeakAna33();

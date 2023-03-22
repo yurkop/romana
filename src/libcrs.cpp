@@ -2174,7 +2174,10 @@ void CRS::AllParameters33()
       Command32(2,chan,9,(int)cpar.hD[chan]); //delay
       //Command32(2,chan,9,0); //delay
       Command32(2,chan,10,0); //test signal is off
-      Command32(2,chan,12,(int) cpar.Trg[chan]); //trigger type
+
+      Int_t trg2=cpar.Trg[chan];
+      if (trg2>5) trg2=4; //для триг6 устанавливаем триг4
+      Command32(2,chan,12,(int) trg2); //trigger type
 
       Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
       Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
@@ -4447,7 +4450,15 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
 
   ipls.Height=pk.H;
 
-  if (pk.RX!=0)
+  if (cpar.Trg[ipls.Chan]==6) {
+    int kk = cpar.Drv[ipls.Chan];
+    //cout << "pos: " << ipls.Pos << " " << kk << endl;
+    if (ipls.Pos>=kk && (int)ipls.sData.size()>ipls.Pos+1) {
+      ipls.FindZero(cpar.Trg[ipls.Chan],kk,ipls.Pos);
+      ipls.Time-=ipls.Pos;
+    }
+  }
+  else if (pk.RX!=0)
     ipls.Time=Double_t(pk.QX)/pk.RX;
   else {
     ++errors[ER_TIME];

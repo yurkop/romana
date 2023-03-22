@@ -52,12 +52,12 @@ Double_t PulseClass::CFD(int j, int kk, int delay, double frac) {
   return d1*frac-d0;
 }
 
-void PulseClass::FindPeaks() {
+void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
   //Находим только первый пик
 
   //sTg: 0 - hreshold crossing of pulse;
   //      1 - threshold crossing of derivative;
-  //      2 - maximum of derivative;
+  //      2 - максимум производной (первый локальный максимум)
   //      3 - rise of derivative;
   //      4 - fall of derivative;
   //      5 - threshold crossing of derivative, use 2nd deriv for timing.
@@ -66,17 +66,9 @@ void PulseClass::FindPeaks() {
 
   //Pos=-32222;
 
-  if (sData.size()<2) { // нужно минимум 2 точки
-    return;
-  }
-
-  UInt_t kk=opt.sDrv[Chan];
-  if (kk<1 || kk>=sData.size()) kk=1;
-
-  //bool in_peak=false;
-  Float_t* D = new Float_t[sData.size()]();
+  //Float_t* D = new Float_t[sData.size()]();
+  Float_t D[20000]; //максимальная длина записи 16379
   Float_t Dpr;
-  //Float_t jmax=0;
 
   //cout << sizeof(Float_t)*sData.size() <<endl;
   //memset (D,0,sizeof(Float_t)*sData.size());
@@ -84,7 +76,7 @@ void PulseClass::FindPeaks() {
   UInt_t j;
   UInt_t jj=0;
 
-  switch (opt.sTg[Chan]) {
+  switch (sTrig) {
   case 0: // hreshold crossing of pulse
     for (j=0;j<sData.size();j++) {
       if (sData[j] >= opt.sThr[Chan]) {
@@ -95,6 +87,8 @@ void PulseClass::FindPeaks() {
     }
     break;
   case 1: // threshold crossing of derivative;
+  case 4: // fall of derivative - сначала ищем превышение порога
+  case 6: // fall of derivative, zero crossing - сначала ищем превышение порога
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (D[j] >= opt.sThr[Chan]) {
@@ -137,8 +131,9 @@ void PulseClass::FindPeaks() {
       Dpr=D[j];
     }
     break;
-  case 4: // fall of derivative;
-  case 6: // fall of derivative;
+    /*
+    //case 4: // fall of derivative;
+  //case 6: // fall of derivative, zero crossing;
     D[kk-1]=0;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
@@ -157,7 +152,7 @@ void PulseClass::FindPeaks() {
       }
     }
     break;
-
+    */
   case 7: {// CFD
     int delay = abs(opt.T1[Chan]);
 
@@ -194,10 +189,28 @@ void PulseClass::FindPeaks() {
 
   //printf("FindPeaks: %d\n",Npeaks);
 
-  delete[] D;
+  //delete[] D;
 
 } //FindPeaks
 
+void PulseClass::FindZero(Int_t sTrig, Int_t kk, Int_t j0) {
+  Float_t Dpr=-1e6;
+  for (UInt_t j=j0;j<sData.size();j++) {
+    Float_t DD=sData[j]-sData[j-kk];
+    if (DD <= 0 && Dpr > 0) {
+      Pos=j-1;
+      if (sTrig==6) { //zero crossing
+	if (DD!=Dpr)
+	  Time = Pos - Dpr/(DD-Dpr);
+	else
+	  Time = Pos;
+      }
+      break;
+    }
+    Dpr=DD;
+  }
+  //prnt("ssfs;",BGRN,"Zero: ",Time,RST);  
+}
 
 //-----------------------------
 
@@ -228,7 +241,19 @@ void PulseClass::PeakAna33() {
   }
 
   if (opt.sTg[Chan]>=0) { //use software trigger
-    FindPeaks();
+    if (sData.size()>1) { // нужно минимум 2 точки
+      UInt_t kk=opt.sDrv[Chan];
+      if (kk<1 || kk>=sData.size()) kk=1;
+      FindPeaks(opt.sTg[Chan],kk);
+
+      if (Pos>-32222) {
+	switch (opt.sTg[Chan]) {
+	case 4:
+	case 6:
+	  FindZero(opt.sTg[Chan],kk,Pos);
+	}
+      }
+    } //if
   }
   else {//use hardware trigger
     Pos=cpar.Pre[Chan];

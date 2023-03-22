@@ -837,7 +837,7 @@ void EventFrame::DoPulseOff() {
 
 }
 
-void EventFrame::FillDeriv1(int dr, int i, int delay, double frac, PulseClass* pulse, double dt) {
+void EventFrame::FillDeriv1(int dr, int i, PulseClass* pulse, double dt) {
   Int_t kk=opt.sDrv[pulse->Chan];
   if (kk<1) kk=1;
   if (kk>(Int_t)pulse->sData.size()) kk=(Int_t)pulse->sData.size();
@@ -845,12 +845,9 @@ void EventFrame::FillDeriv1(int dr, int i, int delay, double frac, PulseClass* p
   for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
     Gr[dr][i]->GetX()[j]=(j+dt);
     double dd=0;
-    int k0;
-    int j0 = j-delay;
 
-    if (j0>0 && j0<(Int_t)pulse->sData.size()) {
-      j0<kk ? k0=0 : k0=j0-kk;
-      dd=(pulse->sData[j0]-pulse->sData[k0])*frac;
+    if (j>=kk) {
+      dd=pulse->sData[j]-pulse->sData[j-kk];
 
       if (opt.b_peak[11] && pulse->Area) { //normalize
 	dd*=1000/pulse->Area;
@@ -862,6 +859,7 @@ void EventFrame::FillDeriv1(int dr, int i, int delay, double frac, PulseClass* p
 	gy2[dr][i]=dd;
     }
 
+    //prnt("ss d d fs;",BGRN,"Deriv:",j,kk,dd,RST);
     Gr[dr][i]->GetY()[j]=dd;
 
   }
@@ -946,7 +944,7 @@ void EventFrame::FillGraph(int dr) {
       }
     }
     else if (dr==1) { //1st derivaive
-      FillDeriv1(dr, i, 0, 1, pulse, dt);
+      FillDeriv1(dr, i, pulse, dt);
     }
     else if (dr==2) { //2nd derivative
 
