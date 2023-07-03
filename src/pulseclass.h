@@ -106,7 +106,7 @@ class PulseClass {
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 1 (Spin|=2): event is writable in Dec (Ms - master channel)
   //bit 2 (Spin|=4): было переполнение канального буфера (ER_OVF)
-  //bit 7: hardware counters
+  //bit 7 (=128): hardware counters
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
   //Spin=254 - end of Blist, just splice BB and Levents
@@ -155,7 +155,7 @@ class EventClass { //event of pulses
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 1 (Spin|=2): event is writable in Dec (Ms - master channel)
-  //bit 7: hardware counters
+  //bit 7 (=128): hardware counters
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
   //Spin=254 - end of Blist, just splice BB and Levents

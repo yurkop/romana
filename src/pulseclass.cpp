@@ -917,7 +917,7 @@ void EventClass::FillHist(Bool_t first) {
   }
 
   // обработка сигналов Старт/счетчиков
-  if (Spin & 128) { //Start channel
+  if (false && Spin & 128) { //Start channel
     if (first) {
       if (opt.start_ch==255) {
 	//crs->Tstart0 = Tstmp + Long64_t(ipls->Time);
@@ -1152,9 +1152,9 @@ void EventClass::FillHist(Bool_t first) {
   //Fill variables for Profilometer (new or old)
   if (first && opt.h_prof.b) { //Profilometer
 
-    if (opt.h_prof64.b) { //new profilometer
+    if (opt.Prof_type==64) { //new profilometer
       memset(hcl->h_sum,0,sizeof(hcl->h_sum));
-      int ax=999,ay=999;
+      int ax=9999,ay=9999;
       //int px=999,py=999;
 
       for (UInt_t i=0;i<pulses.size();i++) {
@@ -1232,6 +1232,8 @@ void EventClass::FillHist(Bool_t first) {
 	// else if (pp>=crs->PROF_X)
 	// 	px=pp-crs->PROF_X;
 
+	//prnt("ss l l d ds;",BGRN,"Prof:",Nevt,Tstmp,pulses[i].Chan,pp,RST);
+
       } //for i pulses.size()
 
       // for (int i=0;i<64;i++) {
@@ -1239,7 +1241,14 @@ void EventClass::FillHist(Bool_t first) {
       // 	     << " " << hcl->h_sum[1][i] << endl;
       // }
 
-      hcl->ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
+      if (opt.Ing_type==256) {
+	hcl->ch_alpha = ax + (opt.prof_ny-ay-1)*opt.prof_ny;
+      }
+      else {
+	hcl->ch_alpha = ax;
+      }
+
+      //prnt("ss l d d ds;",BRED,"Prof:",Nevt,ax,ay,hcl->ch_alpha,RST);
 
       // if (hcl->ch_alpha>=0 && hcl->ch_alpha<opt.prof_ny*opt.prof_nx) {
       //   if (ax==3) {
@@ -1247,7 +1256,7 @@ void EventClass::FillHist(Bool_t first) {
       //   }
       // }
 
-    } //if (opt.h_prof64.b) //new profilometer
+    } //if (opt.Prof_type==64) //new profilometer
     else { //old profilometer
     }
   } //if (first && opt.h_prof.b) //Profilometer

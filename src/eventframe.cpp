@@ -1101,6 +1101,7 @@ void EventFrame::DrawEvent2() {
     return;
   }
 
+  /*
   if (d_event->Spin & 128) {
 
     // for (UInt_t i=0;i<d_event->pulses.size();i++) {
@@ -1114,6 +1115,7 @@ void EventFrame::DrawEvent2() {
     cv->Update();
     return;
   }
+  */
 
   ULong64_t mask=0;
   ULong64_t one=1;
@@ -1316,6 +1318,7 @@ void EventFrame::ReDraw() {
     return;
   }
 
+  //prnt("sss;",BGRN,"ccc01",RST);
   TCanvas *cv=fCanvas->GetCanvas();
 
   if (d_event->pulses.empty()) {
@@ -1336,8 +1339,10 @@ void EventFrame::ReDraw() {
 
       cv->cd(nn++);
 
+      //prnt("ss ds;",BGRN,"ccc02:",i,RST);
       SetRanges(i);
 
+      //prnt("ss ds;",BGRN,"ccc04:",i,RST);
       if (mx1>1e98) {
 	gPad->Clear();
 	continue;
@@ -1369,7 +1374,7 @@ void EventFrame::ReDraw() {
 	//prnt("ss fs;",BBLU,"T0:",d_event->T0,RST);
       }
 
-      //cout << "pss: " << d_event->pulses.size() << endl;
+      //prnt("ss ds;",BGRN,"ccc03:",i,RST);
       for (UInt_t j=0;j<d_event->pulses.size();j++) {
 	PulseClass *pulse = &d_event->pulses.at(j);
 	if (fChn[pulse->Chan]->IsOn()) {
@@ -1412,52 +1417,6 @@ void EventFrame::ReDraw() {
       
       if (opt.b_peak[PKPROF]) { //profilometer
 	DrawProf(i,y1,y2);
-	/*
-	bx.SetFillStyle(3013);
-	bx.SetFillColor(3);
-	//bx.SetLineColor(3);
-	//cout << "T0: " << d_event->T0 << endl;
-	for (int kk=-1;kk<31;kk++) {
-	  int x1 = opt.Prof64_W[1]+opt.Prof64_W[0]*kk+d_event->T0;
-	  int x2 = x1 + opt.Prof64_W[2]-1;
-	  bx.DrawBox(x1,y1,x2,y2);
-	  //cout << "x1: " << x1 << " " << x2 << endl;
-
-	  for (UInt_t j=0;j<d_event->pulses.size();j++) {
-	    PulseClass *pulse = &d_event->pulses.at(j);
-	    if (fChn[pulse->Chan]->IsOn()) {
-	      int dt=(pulse->Tstamp64-d_event->Tstmp)-cpar.Pre[pulse->Chan];
-	      //cout << "dt: " << j << " " << (int)pulse->Chan << " " << dt; //<< endl;
-	      //cout << " "<< Gr[i][j]->GetN() << " " << Gr[i][j]->GetX()[-dt] << " " << Gr[i][j]->GetY()[-dt] << endl;
-
-	      int xmin = TMath::Max(-dt+x1,0);
-	      //xmin = TMath::Min(xmin,Gr[i][j]->GetN()-1);
-	      int xmax = TMath::Min(Gr[i][j]->GetN(),-dt+x1+opt.Prof64_W[2]);
-	      int nnn = xmax-xmin;
-	      // cout << "Gr: " << j << " " << (int)pulse->Chan << " " << dt
-	      // 	   << " " << -dt+x1
-	      // 	   << " " << nnn << " " << xmin << " " << xmax << endl;
-	      if (nnn>0) {
-		TGraph* gg = new TGraph(nnn,Gr[i][j]->GetX()+xmin,Gr[i][j]->GetY()+xmin);
-		gg->SetMarkerColor(chcol[pulse->Chan]);
-		gg->Draw("*");
-		
-		double sum=0;
-		for (int l=0;l<gg->GetN();l++) {
-		  sum+=gg->GetY()[l];
-		}
-		// if (kk==1) {
-		//   cout << "sum/N: " << d_event->Nevt << " " << j << " " << (int)pulse->Chan << " " << kk << " " << sum/gg->GetN() << endl;
-		// }
-	      }
-	      if (nnn>opt.Prof64_W[2]) {
-		cout << "nnn is too big: " << nnn << endl;
-	      }
-	    }  //if
-	  } //for j
-
-	} //for kk
-	*/
       } //if prof
       // for (UInt_t j=0;j<32;j++) {
       // 	PulseClass *pulse = &d_event->pulses.at(0);

@@ -19,7 +19,7 @@ class PEditor {
   virtual ~PEditor();
 
   void   LoadFile(const char *file);
-  void   Load_Ing(const char* header);
+  void   Load_Ing();
   void   LoadPar8();
   void   LoadPar64();
   void   LoadCuts();

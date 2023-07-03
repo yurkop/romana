@@ -261,7 +261,8 @@ RQ_OBJECT("CRS")
   const Int_t PROF_X=0;
   const Int_t PROF_Y=10;
   const Int_t ING_X=100;
-  const Int_t ING_Y=10000;
+  const Int_t ING_Y=1000;
+  //const Int_t ING_9=10000;  
   const Int_t PROF_64=1000000;
 
   //--------functions---------

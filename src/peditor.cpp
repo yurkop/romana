@@ -131,25 +131,59 @@ void PEditor::LoadFile(const char *file)
   fEdit->LoadFile(file);
 }
 
-void PEditor::Load_Ing(const char* header)
+void PEditor::Load_Ing()
 {
   char ss[100];
-  fEdit->LoadBuffer(header);
-  fEdit->AddLine("# N: Ing27 strip number");
+
+  fEdit->LoadBuffer("Profilometer settings");
+  fEdit->AddLine("");
+  //fEdit->AddLine("# Profilometer type (64 or 8)");
+  sprintf(ss,"Prof_TYP %d # Profilometer type: 64 or 8",opt.Prof_type);
+  fEdit->AddLine(ss);
+  sprintf(ss,"Ing_TYP %d # Ing type: 256 or 9",opt.Ing_type);
+  fEdit->AddLine(ss);
+
+  fEdit->AddLine("");
+
+  fEdit->AddLine("# ---- Ing27 settings ----");
+
+  fEdit->AddLine("# Format for Ing256:");
+  fEdit->AddLine("# Ing N X-ch Y-ch");
+  fEdit->AddLine("# Format for Ing9:");
+  fEdit->AddLine("# Ing9 N Alpha-ch");
+
+  fEdit->AddLine("# N: Ing27 strip or pixel number");
   fEdit->AddLine("# X-ch: DAQ channel for the given X-strip");
   fEdit->AddLine("# Y-ch: DAQ channel for the given Y-strip");
-  fEdit->AddLine("# Set to -1 if the strip is absent/not used");
-  fEdit->AddLine("# Ing  N X-ch Y-ch");
-  for (int i=0;i<16;i++) {
-    sprintf(ss,"Ing  %2d %2d %2d",i,opt.Ing_x[i],opt.Ing_y[i]);
-    fEdit->AddLine(ss);
+  fEdit->AddLine("# Alpha-ch: DAQ channel for the given Alpha pixel");
+  fEdit->AddLine("# Set to X,Y or Alpha to -1 if the strip");
+  fEdit->AddLine("#     is absent/not used");
+  fEdit->AddLine("");
+
+  if (opt.Ing_type == 256) {
+    fEdit->AddLine("# Ing N X-ch Y-ch");
+    for (int i=0;i<16;i++) {
+      if (opt.Ing_x[i]>=0 && opt.Ing_y[i]>=0) {
+	sprintf(ss,"Ing  %2d %2d %2d",i,opt.Ing_x[i],opt.Ing_y[i]);
+	fEdit->AddLine(ss);
+      }
+    }
+  }
+  else {
+    fEdit->AddLine("# Ing9 N Alpha-ch");
+    for (int i=0;i<9;i++) {
+      if (opt.Ing_x[i]>=0) {
+	sprintf(ss,"Ing9 %2d %2d",i,opt.Ing_x[i]);
+	fEdit->AddLine(ss);
+      }
+    }
   }
 }
 
 void PEditor::LoadPar8()
 {
   char ss[100];
-  Load_Ing("# Settings for 8x8 profilometer");
+  Load_Ing();
   fEdit->AddLine("# Prof N X-ch Y-ch");
   //fEdit->AddLine("#");
   for (int i=0;i<8;i++) {
@@ -161,7 +195,8 @@ void PEditor::LoadPar8()
 void PEditor::LoadPar64()
 {
   char ss[100];
-  Load_Ing("# Settings for 64x64 profilometer");
+
+  Load_Ing();
   // fEdit->AddLine("");
   // fEdit->AddLine("# Prof64:");
   // fEdit->AddLine("# Start channel (Analysis/St) must be the \"threshold\" output");
@@ -249,9 +284,18 @@ void PEditor::DoSaveProf() {
       //cout << i << " " << chr << " " << ts << " " << a << " " << b << " " << c << endl;
       ts.ToLower();
       delete[] chr;
-      if (ts.EqualTo("ing") && j>=0 && j<16) {
+      if (ts.EqualTo("prof_typ")) {
+	opt.Prof_type = j;
+      }
+      else if (ts.EqualTo("ing_typ")) {
+	opt.Ing_type = j;
+      }
+      else if (ts.EqualTo("ing") && j>=0 && j<16) {
 	opt.Ing_x[j]=xx;
 	opt.Ing_y[j]=yy;
+      }
+      else if (ts.EqualTo("ing9") && j>=0 && j<9) {
+	opt.Ing_x[j]=xx;
       }
       else if (ts.EqualTo("prof") && j>=0 && j<8) {
 	opt.Prof_x[j]=xx;

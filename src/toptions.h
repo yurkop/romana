@@ -242,6 +242,9 @@ public:
   Float_t Flpath;
   Float_t TofZero;
 
+  Int_t Prof_type; //Profilometer type: 64 or 8
+  Int_t Ing_type; //Profilometer type: 64 or 8
+
   Int_t prof_nx;
   Int_t prof_ny;
   Int_t Ing_x[16];
@@ -331,7 +334,7 @@ public:
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 132)
+  ClassDef(Toptions, 133)
 };
 
 //ClassImp(Toptions)

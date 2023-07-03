@@ -2851,7 +2851,7 @@ void CRS::Make_prof_ch() {
     //cout << "prof_ch: " << i << " " << prof_ch[i] << endl;
   }
 
-  if (opt.h_prof64.b) { //new 64x64
+  if (opt.Prof_type==64) { //new 64x64
     for (int i=0;i<5;i++) {
       DoProf(i,opt.Prof64,PROF_64);
     }
