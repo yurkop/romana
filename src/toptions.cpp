@@ -71,11 +71,19 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     if (!strcmp(name,"smooth")) {
       par = hS[i];
       min = 0;
-      //if (type_ch==3) //CRS-128
-      if (module==53) //CRS-128
-	max=7;
-      else
+
+      switch (module) {
+      case 36:
+      case 44:
+	max=512;
+	break;
+      case 54:
+	max=128;
+	break;
+      default:
         max=9;
+      }
+
     }
     else if (!strcmp(name,"dt")) {
       par = Dt[i];

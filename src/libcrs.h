@@ -154,10 +154,12 @@ RQ_OBJECT("CRS")
   // 3 - ADCM dec
   // 7? - ortec lis,
   // 22 - crs2;
-  // 32 - old crs32, 33 - crs32 with dsp/po3, 34 - crs32/po4, 35 - crs32/po5
-  // 41,42,43 - crs-8/16
-  // 51,52,53 - crs-128
-  // 43,53 - new format (decode35)
+  // 32 - old crs32, 33 - crs32 with dsp/po3, 34 - crs32/po4
+  // 35 - crs32/po5-6
+  // 36 - crs32/po7
+  // 41,42,43,44 - crs-8/16
+  // 51,52,53,54 - crs-128
+  // 43,53,44,54 - new format (decode35)
   // 72..80 - decoded file
   // 17 - simulated data
 
@@ -285,8 +287,10 @@ RQ_OBJECT("CRS")
   int Command2(UChar_t cmd, UChar_t ch, UChar_t type, int par);
   void AllParameters2(); // load all parameters
   //void AllParameters41(); // load all parameters
-  void AllParameters43(); // load all parameters
   //void AllParameters42(); // load all parameters
+  //void AllParameters43(); // load all parameters
+  void AllParameters44(); // load all parameters
+  void AllParameters36(); // load all parameters
   void AllParameters35(); // load all parameters
   void AllParameters34(); // load all parameters
   void AllParameters33(); // load all parameters

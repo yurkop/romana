@@ -912,8 +912,63 @@ void CRS::Ana2(int all) {
 
 CRS::CRS() {
 
-
   /*
+  int chan=0;
+
+  for (int i=0;i<20;i++) {
+    cpar.hS[chan]=i;
+
+
+
+    Int_t sum=cpar.hS[chan];
+    if (sum<=0) sum=1;
+
+    Int_t kk=cpar.hS[chan]-1;
+    UInt_t div=0;
+    if (kk>0) {
+      while (kk >>= 1) {
+	div++;
+      }
+      div++;
+    }
+
+
+
+    cout << "div: " << i << " " << cpar.hS[chan] << " sum= " << sum << " " << div << " " << (1 << div) << endl;
+  }
+
+
+
+  cout << "-----------" << endl;
+
+
+
+
+  for (int i=1;i<20;i++) {
+    UInt_t sum=i-1;//cpar.hS[chan];
+    UInt_t div=0;
+    if (sum) {
+      while (sum >>= 1) {
+	div++;
+      }
+      div++;
+    }
+
+    cout << i << " " << i-1 << " " << div << " " << (1 << div) << endl;
+  }
+  exit(1);
+
+  int a=235;
+  //cout << a << " " << std::bit_width(a) << endl;
+
+  int n=1;
+  for (n=0;n<100;++n) {
+    int msb;
+    asm("bsrl %1,%0" : "=r"(msb) : "r"(n));
+    std::cout << n << " : " << msb << std::endl;
+  }
+  exit(1);
+
   cout << sizeof(EventClass) << endl;
   cout << sizeof(PulseClass) << endl;
   exit(-1);
@@ -1409,8 +1464,11 @@ int CRS::Detect_device() {
       else if (ver_po==4) {//версия ПО=4
 	module=34;
       }
-      else if (ver_po>=5) {//версия ПО=5 или выше
+      else if (ver_po>=5 && ver_po<=6) {//версия ПО=5 или 6
 	module=35;
+      }
+      else if (ver_po==7) {//версия ПО=7
+	module=36;
       }
     }
 
@@ -1419,7 +1477,8 @@ int CRS::Detect_device() {
   case 4: //crs-8/16
     //module=41;
     //module=42;
-    module=43;
+    //module=43;
+    module=44;
     opt.Period=10;
     chan_in_module=nplates*8;
     for (int j=0;j<chan_in_module;j++) {
@@ -1432,7 +1491,8 @@ int CRS::Detect_device() {
 
   case 5: //crs-128
     //module=51/52;
-    module=53;
+    //module=53;
+    module=54;
     opt.Period=10;
     chan_in_module=nplates*16;
     for (int j=0;j<chan_in_module;j++) {
@@ -1492,6 +1552,9 @@ int CRS::SetPar() {
   case 35:
     AllParameters35();
     break;
+  case 36:
+    AllParameters36();
+    break;
   // case 41:
   // case 51:
   //   AllParameters41();
@@ -1500,9 +1563,13 @@ int CRS::SetPar() {
   // case 52:
   //   AllParameters42();
   //   break;
-  case 43:
-  case 53:
-    AllParameters43();
+  // case 43:
+  // case 53:
+  //   AllParameters43();
+  //   break;
+  case 44:
+  case 54:
+    AllParameters44();
     break;
   default:
     cout << "SetPar Error! No module found" << endl;
@@ -1879,6 +1946,94 @@ void CRS::Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max) {
   // << " " << a2 << " " << len << endl;
 }
 
+void CRS::AllParameters44() {
+  //cout << "Allparameters44: " << endl;
+  UInt_t mask_discr, //маска для дискр,СС и пересчета 
+    mask_start, //маска для СТАРТ
+    wmask; //маска разрешений записи
+
+  UInt_t mask_group;
+
+  AllParameters36();
+
+  int hard_logic=0;
+  if (cpar.Trigger==2) { //Coinc
+    hard_logic=1;
+  }
+
+  for (UChar_t chan = 0; chan < chan_in_module; chan++) {
+    if (cpar.on[chan]) {
+
+      mask_discr=0b0000000000011; //bits 0,1 (было еще 11,12)
+      if (opt.dsp[chan]) {
+	mask_discr|=0b11101110000; // write DSP data
+      }
+
+      if (cpar.pls[chan]) { //add 1100
+	mask_discr|=0b1100; // write pulse
+      }
+
+      mask_start=0b1100000000001; //bits 0,11,12 - bitmask for START: tst,count48,overflow
+
+      int w = 1;
+      mask_group=0;
+      for (int j=0;j<2;j++) {
+	if (cpar.group[chan][j]) {
+	  if (cpar.coinc_w[j]>w)
+	    w=cpar.coinc_w[j];
+	  mask_group+=j+1;
+	}
+      }
+
+      wmask=2; // 0010 - запись по сигналу СТАРТ - всегда
+
+      if (cpar.Trigger==0) { //discr
+	wmask|=1;
+      }
+      else if (cpar.Trigger==1) { //START
+	mask_start|=mask_discr; //добавляем запись импульса по старту
+      }
+      else { //coinc
+	wmask|=4; // запись по СС
+	if (cpar.ratediv[chan]) {
+	  wmask|=8; // запись по пересчету
+	  //wmask|=4; // запись по СС
+	}
+      }
+
+      Command32(2,chan,23,mask_discr); //bitmask для дискр overwr AllPrms36
+      Command32(2,chan,24,mask_start); //bitmask для START
+      Command32(2,chan,25,wmask); // битовая маска разрешений записи
+      Command32(2,chan,26,mask_discr); //bitmask для СС и пересчета
+
+
+      Command32(2,chan,27,(int) w); // длительность окна совпадений
+      Command32(2,chan,28,(int) 0); // тип обработки повторных
+      int red = cpar.ratediv[chan]-1;
+      if (red<0) red=0;
+      Command32(2,chan,29,(int) red); // величина пересчета P
+      Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
+      Command32(2,chan,31,(int) mask_group); //битовая маска принадлежности к группам
+      Command32(2,chan,34,cpar.F24); // разрядность форматирования отсчетов сигнала
+    } // if (cpar.on[chan])
+    else {
+      Command32(2,chan,25,0); // битовая маска разрешений записи = 0
+    }
+  } //for
+
+  //Общие параметры:
+
+  Command32(11,1,0,cpar.Smpl);            // Sampling rate
+  Command32(11,4,0,(int) hard_logic); // Использование схемы совпадений
+  Command32(11,5,0,(int) cpar.mult_w1[0]); // минимальная множественность 0
+  Command32(11,6,0,(int) cpar.mult_w2[0]); // максимальная множественность 0
+  Command32(11,7,0,(int) cpar.mult_w1[1]); // минимальная множественность 1
+  Command32(11,8,0,(int) cpar.mult_w2[1]); // максимальная множественность 1
+  Command32(11,9,0,(int) 0); // регистрация перенапряжения
+
+} //AllParameters44()
+
+/*
 void CRS::AllParameters43() {
   //cout << "Allparameters43: " << endl;
   UInt_t mask_discr, //маска для дискр,СС и пересчета 
@@ -1965,7 +2120,6 @@ void CRS::AllParameters43() {
 
 } //AllParameters43()
 
-/*
 void CRS::AllParameters42() {
   //cout << "Allparameters42: " << opt.hard_logic << endl;
   UInt_t mask, //маска для дискр,СС и пересчета 
@@ -2056,8 +2210,94 @@ void CRS::AllParameters42() {
 } //AllParameters42
 */
 
-void CRS::AllParameters35()
-{
+void CRS::AllParameters36() {
+  //cout << "AllParameters36(): " << endl;
+
+  UInt_t mask;
+
+  //enable start channel by default
+  Command32(2,255,11,1); //enabled
+
+  for (UChar_t chan = 0; chan < chan_in_module; chan++) {
+    if (chan>=opt.Nchan)
+      cpar.on[chan]=false;
+    Command32(2,chan,11,(int) cpar.on[chan]); //enabled
+
+    if (cpar.on[chan]) {
+      Command32(2,chan,0,(int)cpar.AC[chan]);
+      Command32(2,chan,1,(int)cpar.Inv[chan]);
+      // hS - see below
+      Command32(2,chan,3,(int)cpar.Dt[chan]);
+      Command32(2,chan,4,(int)-cpar.Pre[chan]);
+      Command32(2,chan,5,(int)cpar.Len[chan]);
+      Command32(2,chan,6,(int)cpar.Drv[chan]);
+      Command32(2,chan,7,(int)cpar.Thr[chan]);
+      Command32(2,chan,8,(int)cpar.G[chan]);
+      // new commands
+      Command32(2,chan,9,(int)cpar.hD[chan]); //delay
+      //Command32(2,chan,9,0); //delay
+      Command32(2,chan,10,0); //test signal is off
+
+      Int_t trg2=cpar.Trg[chan];
+      Int_t cntr=0; //тип вычисления центроида (0,1)
+      if (trg2==5) {
+	trg2=2; //для триг5 устанавливаем триг2
+	cntr=1; //и тип центроида 1
+      }
+      else if (trg2==6)
+	trg2=4; //для триг6 устанавливаем триг4
+
+      Command32(2,chan,12,(int) trg2); //trigger type
+
+      Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
+      Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      Check33(17,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      Check33(19,chan,opt.T1[chan],opt.T2[chan],1,4095);
+      Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
+
+
+      mask=0b0000000000011; //bits 0,1 (было еще 11,12)
+      if (opt.dsp[chan]) {
+	mask|=0b11101110000; // write DSP data
+      }
+
+      if (cpar.pls[chan]) { //add 1100
+	mask|=0b1100; // write pulse
+      }
+
+      Command32(2,chan,23,mask); //bitmask for discriminator
+      Command32(2,chan,32,cntr); //type of centroid
+
+      int pwin = opt.Peak2[chan]; //окно повторных срабатываний
+      if (pwin<0) pwin=0;
+      if (pwin>4095) pwin=4095;
+      Command32(2,chan,33,pwin); //окно повторных срабатываний
+
+      Command32(2,chan,35,0); //нижний порог дискр.(3,4) = 0
+
+      //сглаживание
+      Int_t sum=cpar.hS[chan];
+      if (sum<=0) sum=1;
+
+      Int_t kk=cpar.hS[chan]-1;
+      UInt_t div=0;
+      if (kk>0) {
+	while (kk >>= 1) {
+	  div++;
+	}
+	div++;
+      }
+
+      //prnt("ss d d ds;",BGRN,"sum2:",chan,sum,div,RST);
+      Command32(2,chan,36,sum); //сглаживание: сумма
+      Command32(2,chan,2,div); //сглаживание: деление
+
+    }
+  }
+
+}
+
+void CRS::AllParameters35() {
   UInt_t mask;
 
   Int_t s_Trg[MAX_CHTP];
@@ -2089,7 +2329,7 @@ void CRS::AllParameters35()
       }
 
       Command32(2,chan,23,mask); //bitmask for discriminator
-      Command32(2,chan,32,drv[chan]); //type of derivative
+      Command32(2,chan,32,drv[chan]); //type of centroid
 
       int pwin = opt.Peak2[chan]; //окно повторных срабатываний
       if (pwin<0) pwin=0;
@@ -2671,7 +2911,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  //prnt("sss d d d d d ds;",BGRN,"rpgz: ",pname,fmt,mod,sz,m1,cp,op,RST);
+  //prnt("sss d sd sd ds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,sz,RST);
 
   //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
   if (fmt!=129 || mod>100 || sz>5e5){//возможно, это текстовый файл
@@ -3385,9 +3625,12 @@ void CRS::Decode_switch(UInt_t ibuf) {
     Decode34(dec_iread[ibuf]-1,ibuf);
     //Decode42(dec_iread[ibuf]-1,ibuf);
     break;
+  case 35:
   case 43:
   case 53:
-  case 35:
+  case 36:
+  case 44:
+  case 54:
     Decode35(dec_iread[ibuf]-1,ibuf);
     //Decode42(dec_iread[ibuf]-1,ibuf);
     break;
@@ -3543,12 +3786,15 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   case 33:
   case 34:
   case 35:
+  case 36:
   case 41:
-  case 51:
   case 42:
-  case 52:
   case 43:
+  case 44:
+  case 51:
+  case 52:
   case 53:
+  case 54:
     for (Long64_t i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);

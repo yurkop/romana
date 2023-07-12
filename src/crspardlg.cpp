@@ -60,7 +60,7 @@ const char* ttip1[ndaqpar]={
   "Only for coincidence scheme:\nRate divider (0 - don't write reduced data)",
   "Only for coincidence scheme:\nChannel belongs to coincidence group 1",
   "Only for coincidence scheme:\nChannel belongs to coincidence group 2",
-  "Hardware smoothing: Smooth=2^hS",
+  "Hardware smoothing. Set it to the power of 2 to avoid reduction of amplitude.",
   "Hardware delay (in samples)",
   "Dead time - no new trigger on the current channel within dead time from the old trigger",
   "Number of samples before the trigger",
