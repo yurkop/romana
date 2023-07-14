@@ -2256,7 +2256,7 @@ void CRS::AllParameters36() {
       Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
 
 
-      mask=0b0000000000011; //bits 0,1 (было еще 11,12)
+      mask=0b1100000000011; //bits 0,1 (было еще 11,12)
       if (opt.dsp[chan]) {
 	mask|=0b11101110000; // write DSP data
       }
@@ -2292,9 +2292,24 @@ void CRS::AllParameters36() {
       Command32(2,chan,36,sum); //сглаживание: сумма
       Command32(2,chan,2,div); //сглаживание: деление
 
-    }
-  }
+    } //if
+  } //for
 
+  // Start dead time DT
+  if (cpar.DTW<=0) cpar.DTW=1;
+  UChar_t type = cpar.DTW>>24;
+
+  //Start source
+  int st_src=cpar.St_Per ? 1 : 0;
+
+  //Start imitator period
+  int sprd=cpar.St_Per;
+  if (sprd) sprd--;
+
+  Command32(11,0,type,(UInt_t) cpar.DTW); // Start dead time DTW
+  Command32(11,2,0,st_src);               // Start source
+  Command32(11,3,0,sprd);                 // Start imitator period
+  
 }
 
 void CRS::AllParameters35() {
