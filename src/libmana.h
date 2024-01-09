@@ -4,6 +4,8 @@
 #include "common.h"
 #include "toptions.h"
 
+#include <sys/times.h>
+
 //#include "libcrs.h"
 //#include "eventframe.h"
 
@@ -64,7 +66,7 @@ void SplitFilename(string str, string &folder, string &name, string &ext);
 
 void MakeVarList(int cp, int op);
 Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf);
-int BufToClass(char* buf, char* buf2);
+int BufToClass(char* buf, char* buf2, int op);
 void SaveParTxt(const char* fname);
 int FindVar(char* buf, int sz, const char* name, char* var);
 
@@ -75,6 +77,7 @@ int readroot(const char *name);
 short int bits(int n, int i1, int i2);
 Bool_t getbit(int n, int bit);
 void setbit(int &n, int bit, int set);
+string numstr(string inpstr);
 
 bool TestFile();
 
@@ -118,7 +121,8 @@ class MainFrame : public TGMainFrame {
 
   // Int_t chcol[MAX_CH+NGRP];
   // ULong_t gcol[MAX_CH+NGRP];
-  
+
+  TTimer* fTimer;
 
   TGLayoutHints* LayEE1;
   TGLayoutHints* LayEE2;
@@ -181,7 +185,8 @@ class MainFrame : public TGMainFrame {
   void EventInfo(Int_t, Int_t, Int_t, TObject*);
   // void DoCross();
 
-  void UpdateStatus(int rst=0);
+  void UpdateTimer(int rst=0);
+  //void UpdateStatus(int rst=0);
 
   //void DoSetNumBuf();
   void HandleMenu(Int_t);

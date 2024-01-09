@@ -26,8 +26,6 @@ extern MyMainFrame *myM;
 //extern HistFrame* HiFrm;
 extern Coptions cpar;
 
-const double mks=0.001;
-
 //Double_t initcuts[MAXCUTS];
 
 using namespace std;
@@ -46,10 +44,52 @@ PulseClass::PulseClass() {
   //Width=88888;
 }
 
-Double_t PulseClass::CFD(int j, int kk, int delay, double frac) {
-  Double_t d0 = sData[j] - sData[j-kk];
-  Double_t d1 = sData[j-delay] - sData[j-kk-delay];
-  return d1*frac-d0;
+size_t PulseClass::GetPtr(Mdef* it) {
+  size_t ptr=0;
+  switch (it->hnum) {
+  case 1: //Area
+    ptr = (char*)&(this->Area) - (char*)this;
+    //cout << "area_ptrnum: " << ptr << endl;
+    break;
+  case 2: //Base
+    ptr = (char*)&(this->Base) - (char*)this;
+    break;
+  case 3: //Sl1
+    ptr = (char*)&(this->Sl1) - (char*)this;
+    break;
+  case 4: //Sl2
+    ptr = (char*)&(this->Sl2) - (char*)this;
+    break;
+  case 5: //Height
+    ptr = (char*)&(this->Height) - (char*)this;
+    break;
+  case 6: //Width
+    ptr = (char*)&(this->Width) - (char*)this;
+    break;
+  }
+  if (ptr==0) {
+    prnt("ss s ds;",BRED, "Wrong hnum number in GetPtr:", it->h_name.Data(),it->hnum, RST);
+    exit(-1);
+  }
+  return ptr;
+}
+
+// Double_t PulseClass::CFD(int j, int kk, int delay, double frac) {
+//   Double_t d0 = sData[j] - sData[j-kk];
+//   Double_t d1 = sData[j-delay] - sData[j-kk-delay];
+//   return d1*frac-d0;
+// }
+
+Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
+  // if (j+delay >= sData.size()) {
+  //   prnt("ssd ds;",BRED,"CFD: ",j,delay,RST);  
+  //   return 0;
+  // }
+  //else {
+  Float_t d0 = sData[j+delay] - sData[j-kk+delay];
+  drv = sData[j] - sData[j-kk];
+  return drv*frac-d0;
+  //}
 }
 
 void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
@@ -155,20 +195,26 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     */
   case 7: {// CFD
     int delay = abs(opt.T1[Chan]);
+    Dpr=-1e6;
+    Float_t drv;
 
     //kk+delay всегда >=1
-    jj=kk+delay-1;
-    D[jj]=0;
+    //jj=kk+delay-1;
+    //D[jj]=0;
 
-    for (j=kk+delay;j<sData.size();j++) {
-      D[j] = CFD(j,kk,delay,opt.T2[Chan]);
-      if (D[j] >= opt.sThr[Chan]) {
+    //for (j=kk+delay;j<sData.size();j++) {
+    for (j=kk;j<sData.size()-delay;j++) {
+      D[j] = CFD(j,kk,delay,opt.T2[Chan],drv);
+      if (Dpr >= opt.sThr[Chan] && drv<Dpr) {
 	delay=-1;
 	break;
       }
       else if (D[j] <= 0) {
+	//else -> значит это условие не может быть выполнено на том же шаге,
+	//что и предыдущий if. Т.е. если jj задано, есть как минимум 2 точки
 	jj=j;
       }
+      Dpr=drv;
     }
     
     if (delay==-1) { //если выполнено, то jj и jj+1 существуют
@@ -410,7 +456,8 @@ void PulseClass::PeakAna33() {
 
   int nn=0;
   //peak Area & Height
-  Area0=0;
+  Float_t Area0=0;
+  //Area0=0;
   Height=-99999;
   for (int j=P1;j<P2;j++) {
     Area0+=sData[j];
@@ -457,25 +504,25 @@ void PulseClass::PeakAna33() {
   }
 
   //slope1 (baseline)
-  Slope1=0;
+  Sl1=0;
   nbkg=0;
   for (int j=B1+1;j<B2;j++) {
-    Slope1+=sData[j]-sData[j-1];
+    Sl1+=sData[j]-sData[j-1];
     nbkg++;
   }
   if (nbkg)
-    Slope1/=nbkg;
+    Sl1/=nbkg;
 
   //slope2 (peak)
 
-  Slope2=0;
+  Sl2=0;
   nbkg=0;
   for (int j=P1+1;j<P2;j++) {
-    Slope2+=sData[j]-sData[j-1];
+    Sl2+=sData[j]-sData[j-1];
     nbkg++;
   }
   if (nbkg)
-    Slope2/=nbkg;
+    Sl2/=nbkg;
 
   /*
   //Simul2
@@ -671,6 +718,7 @@ void EventClass::AddPulse(PulseClass *pls) {
   //prnt("ss d f l l fs;",BRED,"PAA1:",pls->Chan,pls->Time,Nevt,Tstmp,T0,RST);
 }
 
+/*
 void EventClass::Fill_Time_Extend(HMap* map, void* hd) {
   if (!map) return;
 
@@ -714,36 +762,106 @@ void EventClass::Fill_Time_Extend(HMap* map, void* hd) {
 	}
       }
 
-      /*
-      TIter next(hcl->allmap_list);
-      TObject* obj;
-      while ( (obj=(TObject*)next()) ) {
-	HMap* map2 = (HMap*) obj;
-	if (map2->hd==&opt.h_rate) {
-	  //cout << "map2: " << map2->GetName() << " " << map2->GetTitle()
-	  //     << " " << (map2->hd==&opt.h_rate) << endl;
-	  TH1F* hh2 = (TH1F*) map2->hst;
-	  Float_t* arr2 = hh2->GetArray();
-	  memcpy(arr,arr2,hh2->GetSize()*sizeof(Float_t));
-	  hh2->SetBins(nbin,0,max);
-	  hh2->Adopt(nbin+2,arr);
-	}
-      }
-      */
+
+      // TIter next(hcl->allmap_list);
+      // TObject* obj;
+      // while ( (obj=(TObject*)next()) ) {
+      // 	HMap* map2 = (HMap*) obj;
+      // 	if (map2->hd==&opt.h_rate) {
+      // 	  //cout << "map2: " << map2->GetName() << " " << map2->GetTitle()
+      // 	  //     << " " << (map2->hd==&opt.h_rate) << endl;
+      // 	  TH1F* hh2 = (TH1F*) map2->hst;
+      // 	  Float_t* arr2 = hh2->GetArray();
+      // 	  memcpy(arr,arr2,hh2->GetSize()*sizeof(Float_t));
+      // 	  hh2->SetBins(nbin,0,max);
+      // 	  hh2->Adopt(nbin+2,arr);
+      // 	}
+      // }
 
 
-      /*
-      for (int i=0;i<MAX_CH+NGRP;i++) {
-	TH1F* hh2 = (TH1F*) hcl->m_rate[i]->hst;
-	Float_t* arr2 = hh2->GetArray();
-	memcpy(arr,arr2,hh2->GetSize()*sizeof(Float_t));
-	hh2->SetBins(nbin,0,max);
-	hh2->Adopt(nbin+2,arr);
-      }
-      */
+
+
+      // for (int i=0;i<MAX_CH+NGRP;i++) {
+      // 	TH1F* hh2 = (TH1F*) hcl->m_rate[i]->hst;
+      // 	Float_t* arr2 = hh2->GetArray();
+      // 	memcpy(arr,arr2,hh2->GetSize()*sizeof(Float_t));
+      // 	hh2->SetBins(nbin,0,max);
+      // 	hh2->Adopt(nbin+2,arr);
+      // }
+
 
 
     }
+  }
+}
+*/
+
+
+/*
+void EventClass::Fill10(HMap* map[], int ch, Float_t x, Double_t *hcut_flag) {
+  // заполняем 1d гистограмму и 1-мерный cut
+
+  //HMap* mm = map[ch];
+  map[ch]->hst->
+    Fill(  x  );
+
+  if (opt.ncuts) {
+    for (int i=1;i<opt.ncuts;i++) {
+      if (getbit(*(map[ch]->hd->cut+map[ch]->nn),i)) {
+	if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
+	  hcut_flag[i]=1;
+	}
+      }
+    }
+  }
+
+  // for (int j=0;j<mm->ngrp;j++) {
+  //   if (mm->grp[j]) {
+  //     map[MAX_CH+j]->hst->
+  //     	Fill(  x  );
+  //   }
+  // }
+
+  // for (int j=0;j<NGRP;j++) {
+  //   if (opt.Grp[ch][j]) {
+  //     // map[MAX_CH+j]->hst->
+  //     // 	Fill(  x  );
+  //   }
+  // }
+
+}
+*/
+
+
+
+
+
+/*
+void EventClass::Fill01dw(HMap* map[], int ch, Float_t x,
+			 Double_t w) {
+  // базовый метод для заполнения 1-гистограмм:
+  // без проверки на существование и без заполнения групп
+
+  map[ch]->hst->Fill(x,w);
+
+  if (*(map[ch]->hd->w+map[ch]->nn)) { // если эта гистограмма в MAIN
+    //else if (*(map[ch]->wrk)) {
+    for (int i=1;i<opt.ncuts;i++) {
+      //if (hcut_flag[i]) {
+	map[ch]->h_cuts[i]->hst->Fill(x,w);
+	//}
+    }
+  }
+
+}
+
+void EventClass::Fill01d(HMap* map[], int ch, Float_t x) {
+  //cout << "fill1d: " << ch << " " << map[ch] << " " << x << endl;
+  if (ch<opt.Nchan && map[ch]) {
+    Fill01dw(map,ch,x);
+    for (int j=0;j<NGRP;j++)
+      if (opt.Grp[ch][j])
+	Fill01dw(map,MAX_CH+j,x);
   }
 }
 
@@ -765,7 +883,7 @@ void EventClass::Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x,
       }
     }
   }
-  else if (*(map[ch]->hd->w+map[ch]->nn)) {
+  else if (*(map[ch]->hd->w+map[ch]->nn)) { // если эта гистограмма в MAIN
     //else if (*(map[ch]->wrk)) {
     for (int i=1;i<opt.ncuts;i++) {
       if (hcl->cut_flag[i]) {
@@ -880,8 +998,104 @@ void EventClass::Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y) {
   }
 }
 
-void EventClass::FillHist(Bool_t first) {
-  double DT = opt.Period*1e-9;
+*/
+
+
+
+
+/*
+void EventClass::FillFirst() {
+  //заполняем cuts и переменные, общие для всего события
+
+
+  // обработка сигналов Старт/счетчиков
+  // недоделано (не работает)
+  // if (false && Spin & 128) { //Start channel
+  //   if (first) {
+  //     if (opt.start_ch==255) {
+  // 	//crs->Tstart0 = Tstmp + Long64_t(ipls->Time);
+  // 	crs->Tstart0 = Tstmp;
+  // 	crs->Time0 = 0;
+  //     }
+  //     if (opt.h_hwrate.b) {
+  // 	for (pulse_vect::iterator ipls=pulses.begin();ipls!=pulses.end();
+  // 	     ++ipls) {
+  // 	  int ch = ipls->Chan;
+  // 	  if (first) {
+  // 	    Fill_Time_Extend(hcl->m_hwrate[ch],&opt.h_hwrate);
+  // 	  }
+  // 	  if (ch<opt.Nchan) {
+  // 	    Fill1dw(first,hcl->m_hwrate,ch,opt.T_acq,ipls->Counter);
+  // 	  }
+  // 	}
+  //     }
+  //   }
+  //   return;
+  // }
+
+
+
+}
+
+void EventClass::FillSecond() {
+}
+*/
+
+void EventClass::FillHist() {
+
+  // общие переменные для события
+  Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
+  //int mult[NGRP+1] = {0};
+  opt.T_acq=(Tstmp/*- crs->Tstart64*/)*crs->sPeriod;
+  
+
+  // проверка opt.Tstop -> Нужно добавить это в fTimer (?)
+  if (opt.Tstop) {
+    if (opt.T_acq > opt.Tstop) {
+      if (crs->b_fana) {
+  	crs->b_stop=true;
+  	crs->b_fana=false;
+  	crs->b_run=0;
+      }
+      return;
+    }
+    else if (opt.T_acq < opt.Tstart) {
+      return;
+    }
+  }
+
+  //заполняем все гистограммы в Actlist
+  for (auto it = hcl->MFill_list.begin();it!=hcl->MFill_list.end();++it) {
+    ((*it)->*(*it)->MFill)(this,hcut_flag,0);
+  }
+
+  // "formula cuts"
+  if (hcl->b_formula) {
+    for (int i=1;i<opt.ncuts;i++) {
+      if (opt.pcuts[i]==1) {//formula
+	hcut_flag[i]=hcl->cform[i]->EvalPar(0,hcut_flag);
+      }
+      //cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i] << endl;
+    }
+  }
+
+
+
+
+  for (int i=1;i<opt.ncuts;i++) {
+    if (hcut_flag[i]) {
+      //заполняем все cut-гистограммы в Mainlist (YK???)
+      for (auto it = hcl->Mainlist.begin();it!=hcl->Mainlist.end();++it) {
+	//cout << "ML2: " << it->h_name << " " << endl;
+	(*(&*it)->*(*(&*it))->MFill)(this,hcut_flag,i);
+      }
+    }
+  }
+
+} //FillHist
+
+/* YK_OLD
+void EventClass::FillHist_old(Bool_t first) {
   Double_t tt;
   Double_t ee,sqee;
   int mult[NGRP+1];
@@ -895,7 +1109,8 @@ void EventClass::FillHist(Bool_t first) {
 
   // инициализация
   if (first) {  	
-    opt.T_acq=(Tstmp/*- crs->Tstart64*/)*DT;
+    opt.T_acq=Tstmp*crs->sPeriod;
+    //opt.T_acq=(Tstmp - crs->Tstart64)*DT;
 
     if (opt.Tstop) {
       if (opt.T_acq > opt.Tstop) {
@@ -986,24 +1201,25 @@ void EventClass::FillHist(Bool_t first) {
       Fill1d(first,hcl->m_rate,ch,opt.T_acq);
     }
 
+    //cout << "h_area: " << opt.h_area.b << " " << hcl->m_area << endl;
     if (opt.h_area.b) {
       Fill1d(first,hcl->m_area,ch,ipls->Area);
     }
 
-    if (opt.h_area0.b) {
-      Fill1d(first,hcl->m_area0,ch,ipls->Area0);
-    }
+    // if (opt.h_area0.b) {
+    //   Fill1d(first,hcl->m_area0,ch,ipls->Area0);
+    // }
 
     if (opt.h_base.b) {
       Fill1d(first,hcl->m_base,ch,ipls->Base);
     }
 
     if (opt.h_slope1.b) {
-      Fill1d(first,hcl->m_slope1,ch,ipls->Slope1);
+      Fill1d(first,hcl->m_slope1,ch,ipls->Sl1);
     }
 
     if (opt.h_slope2.b) {
-      Fill1d(first,hcl->m_slope2,ch,ipls->Slope2);
+      Fill1d(first,hcl->m_slope2,ch,ipls->Sl2);
     }
     // if (opt.h_simul.b) {
     //   Double_t tt2 = ipls->Simul2;// - T0;
@@ -1019,15 +1235,15 @@ void EventClass::FillHist(Bool_t first) {
     }
 
     if (opt.h_area_sl1.b) {
-      Fill2d(first,hcl->m_area_sl1[ch],ipls->Area,ipls->Slope1);
+      Fill2d(first,hcl->m_area_sl1[ch],ipls->Area,ipls->Sl1);
     }
 
     if (opt.h_area_sl2.b) {
-      Fill2d(first,hcl->m_area_sl2[ch],ipls->Area,ipls->Slope2);
+      Fill2d(first,hcl->m_area_sl2[ch],ipls->Area,ipls->Sl2);
     }
 
     if (opt.h_slope_12.b) {
-      Fill2d(first,hcl->m_slope_12[ch],ipls->Slope1,ipls->Slope2);
+      Fill2d(first,hcl->m_slope_12[ch],ipls->Sl1,ipls->Sl2);
     }
 
     // if (opt.h_time_simul.b) {
@@ -1140,14 +1356,14 @@ void EventClass::FillHist(Bool_t first) {
     }
   }
 
-  /*
-    if (opt.dec_write) {
-    crs->rTime=T;
-    crs->rSpin = Spin;
-    crs->Tree->Fill();
-    crs->rPeaks.clear();
-    }
-  */
+
+  // if (opt.dec_write) {
+  // crs->rTime=T;
+  // crs->rSpin = Spin;
+  // crs->Tree->Fill();
+  // crs->rPeaks.clear();
+  // }
+
 
   //Fill variables for Profilometer (new or old)
   if (first && opt.h_prof.b) { //Profilometer
@@ -1326,7 +1542,12 @@ void EventClass::FillHist(Bool_t first) {
     // }
   }
 
-}
+} //FillHist_old
+*/
+
+
+
+
 
 /*
 void PulseClass::Smooth_old(int nn) {

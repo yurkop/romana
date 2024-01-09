@@ -476,6 +476,10 @@ EventFrame::~EventFrame()
   //cout << "~EventFrame()" << endl;
 }
 
+bool EventFrame::fChn_on(int ch) {
+  return ch<opt.Nchan && fChn[ch]->IsOn();
+}
+
 void EventFrame::AddCh() {
   char ss[100];
 
@@ -990,8 +994,11 @@ void EventFrame::FillGraph(int dr) {
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
 	double dd=0;
-	if (j-opt.sDrv[pulse->Chan]-delay>=0)
-	  dd=pulse->CFD(j,opt.sDrv[pulse->Chan],delay,opt.T2[pulse->Chan]);
+	Float_t drv;
+	// if (j-opt.sDrv[pulse->Chan]-delay>=0)
+	//   dd=pulse->CFD(j,opt.sDrv[pulse->Chan],delay,opt.T2[pulse->Chan]);
+	if (j-opt.sDrv[pulse->Chan]>=0 && j+delay < (int) pulse->sData.size())
+	  dd=pulse->CFD(j,opt.sDrv[pulse->Chan],delay,opt.T2[pulse->Chan],drv);
 
 	if (opt.b_peak[11] && pulse->Area) { //normalize
 	  dd*=1000/pulse->Area;
@@ -1027,7 +1034,8 @@ void EventFrame::SetRanges(int dr) {
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     UInt_t ch= d_event->pulses.at(i).Chan;
     //cout << "ch: " << i << " " << ch << endl;
-    if (fChn[ch]->IsOn()) {
+    //if (fChn[ch]->IsOn()) {
+    if (fChn_on(ch)) {
       if (gx1[i]<mx1) mx1=gx1[i];
       if (gx2[i]>mx2) mx2=gx2[i];
       if (gy1[dr][i]<my1[dr]) my1[dr]=gy1[dr][i];
@@ -1179,7 +1187,8 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
   //if (dr>0) y1=0;
   
   UInt_t ch= pulse->Chan;
-  if (fChn[ch]->IsOn()) {
+  //if (fChn[ch]->IsOn()) {
+  if (fChn_on(ch)) {
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch];
 
     if (pulse->Pos<=-32222) {
@@ -1273,7 +1282,8 @@ void EventFrame::DrawProf(int i, double y1, double y2) {
 
     for (UInt_t j=0;j<d_event->pulses.size();j++) {
       PulseClass *pulse = &d_event->pulses.at(j);
-      if (fChn[pulse->Chan]->IsOn()) {
+      //if (fChn[pulse->Chan]->IsOn()) {
+      if (fChn_on(pulse->Chan)) {
 	int dt=(pulse->Tstamp64-d_event->Tstmp)-cpar.Pre[pulse->Chan];
 	//cout << "dt: " << j << " " << (int)pulse->Chan << " " << dt; //<< endl;
 	//cout << " "<< Gr[i][j]->GetN() << " " << Gr[i][j]->GetX()[-dt] << " " << Gr[i][j]->GetY()[-dt] << endl;
@@ -1377,7 +1387,8 @@ void EventFrame::ReDraw() {
       //prnt("ss ds;",BGRN,"ccc03:",i,RST);
       for (UInt_t j=0;j<d_event->pulses.size();j++) {
 	PulseClass *pulse = &d_event->pulses.at(j);
-	if (fChn[pulse->Chan]->IsOn()) {
+	//if (fChn[pulse->Chan]->IsOn()) {
+	if (fChn_on(pulse->Chan)) {
 	  if (Gr[i][j]->GetN()) { //draw graph
 	    Gr[i][j]->Draw("lp");
 	    if (opt.b_peak[0]) //draw peaks

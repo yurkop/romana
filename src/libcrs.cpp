@@ -179,6 +179,7 @@ volatile char astat[CRS::MAXTRANS];
 
 int chan_in_module;
 
+Double_t tproc;
 
 #ifdef TIMES
 TTimeStamp tt1[10];
@@ -455,8 +456,8 @@ void *handle_ana(void *ctx) {
       if ((int)m_event->pulses.size()>=opt.mult1 &&
 	  (int)m_event->pulses.size()<=opt.mult2) {
 
-	m_event->FillHist(true);
-	m_event->FillHist(false);
+	m_event->FillHist();
+	//m_event->FillHist(false);
 	if (m_event->Spin & 2) { //Ms channel
 	  if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
 	    ++crs->mtrig;
@@ -722,6 +723,8 @@ void CRS::Ana_start() {
   //should be called before first call of ana2
   // b_mem=false;
 
+  tproc=0;
+
   if (!batch) {
     parpar->DaqDisable();
     histpar->DaqDisable();
@@ -738,6 +741,38 @@ void CRS::Ana_start() {
     use_2nd_deriv[i] = opt.sTg[i]==5 || (opt.sTg[i]==-1 && cpar.Trg[i]==5);
     //cout << "Use_2nd: " << i << " " << use_2nd_deriv[i] << endl;
   }
+
+  sPeriod = opt.Period*1e-9;
+
+
+  // Создаем список Mainlist (гистограмм в Main)
+  hcl->Mainlist.clear();
+  //for (auto it = hcl->Actlist.begin();it!=hcl->Actlist.end();++it) {
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->hd->b) { //активные (созданные) гистограммы
+      //Mdef md = *(*it);
+      bool inmain = false;
+
+      //prnt("ss s ss;",BGRN,"ML:",it->h_name.Data(),(*it)->h_name.Data(),RST);
+      //prnt("ss l ls;",BBLU,"ML:",it->v_map.size(),(*it)->v_map.size(),RST);
+      //cout << "md: " << it->v_map[0] << " " << (*it)->v_map[0] << " " << it->hd << endl;
+
+      for (auto map = it->v_map.begin();map!=it->v_map.end();++map) {
+	if (*(map) && *(it->hd->w+(*map)->nn)) { // если эта гистограмма в MAIN
+	  inmain=true;
+	  //prnt("ss ds;",BRED,"Main:",(*map)->nn,RST);
+	}
+	//else {
+	  //*map=0;
+	//}
+      }
+      if (inmain) {
+	hcl->Mainlist.push_back(&*it);
+      }
+    }
+  }
+
+
   //cout << "Command_start: " << endl;
 #ifdef LINUX
   if (chdir(startdir)) {}
@@ -836,8 +871,22 @@ void CRS::Ana2(int all) {
     if ((int)m_event->pulses.size()>=opt.mult1 &&
 	(int)m_event->pulses.size()<=opt.mult2) {
 
-      m_event->FillHist(true);
-      m_event->FillHist(false);
+#ifdef TPROC
+      TTimeStamp pt1,pt2;
+      pt1.Set();
+#endif
+
+      //prnt("ss ls;",BRED,"FillHist:",nevents,RST);
+
+      m_event->FillHist();
+      //m_event->FillHist_old(true);
+      //m_event->FillHist_old(false);
+#ifdef TPROC
+      pt2.Set();
+      tproc+=pt2.AsDouble()-pt1.AsDouble();
+#endif
+      //prnt("ss fs;",BRED,"t2:",tproc,RST);
+
       //prnt("ssl ds;",BGRN,"EV2: ",m_event->Nevt,m_event->Spin,RST);
       if (m_event->Spin & 2) { //Ms channel
 	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
@@ -910,9 +959,202 @@ void CRS::Ana2(int all) {
 
 } //ana2
 
+// void tt(int* i) {
+//   cout << i << " " << *i << endl;
+//   i = new int;
+//   *i=20;
+//   cout << i << " " << *i << endl;
+// }
+
 CRS::CRS() {
 
   /*
+  int aa=0xFFFFFFFF;
+  setbit(aa,31,0);
+  cout << UInt_t(aa) << endl;
+  exit(1);
+
+  string str="q-w234f.df01d";
+  //str = "4212341";
+
+  cout << str << endl;
+  cout << numstr(str) << endl;
+
+  exit(0);
+
+  cout << LLONG_MAX << endl;
+
+  Mdef md;
+  Hdef hd;
+
+  cout << sizeof(md) << " " << sizeof(hd) << endl;
+
+  std::list<Mdef> list_mdef;
+  std::list<Hdef> list_hdef;
+  CheckMem(1);
+  for (int i=0;i<1000000; i++) {
+    //list_mdef.push_back(md);
+    //list_hdef.push_back(hd);
+  }
+  CheckMem(1);
+  list_mdef.clear();
+  list_hdef.clear();
+  CheckMem(1);
+
+  exit(-1);
+
+  int *i = new int;
+  *i = 10;
+  tt(i);
+  cout << "z: " << i << " " << *i << endl;
+  exit(-1);
+  
+  for (auto i=0;i<1000000000;i++) {
+    int aa = drand48()*100;
+    if (i<10)
+      cout << i << " " << aa << endl;
+    switch (aa) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+      ++aa;
+      break;
+    case 10:
+      ++aa;
+      break;
+    case 11:
+      ++aa;
+      break;
+    case 12:
+      ++aa;
+      break;
+    case 13:
+      ++aa;
+      break;
+    case 14:
+      ++aa;
+      break;
+    case 15:
+      ++aa;
+      break;
+    case 16:
+      ++aa;
+      break;
+    case 17:
+      ++aa;
+      break;
+    case 18:
+      ++aa;
+      break;
+    case 19:
+      ++aa;
+      break;
+    case 20:
+      ++aa;
+      break;
+    case 21:
+      ++aa;
+      break;
+    case 22:
+      ++aa;
+      break;
+    case 23:
+      ++aa;
+      break;
+    case 24:
+      ++aa;
+      break;
+    case 25:
+      ++aa;
+      break;
+    case 26:
+      ++aa;
+      break;
+    case 27:
+      ++aa;
+      break;
+    case 28:
+      ++aa;
+      break;
+    case 29:
+      ++aa;
+      break;
+    case 30:
+      ++aa;
+      break;
+    case 31:
+      ++aa;
+      break;
+    case 32:
+      ++aa;
+      break;
+    case 33:
+      ++aa;
+      break;
+    case 34:
+      ++aa;
+      break;
+    case 35:
+      ++aa;
+      break;
+    case 36:
+      ++aa;
+      break;
+    case 37:
+      ++aa;
+      break;
+    case 38:
+      ++aa;
+      break;
+    case 39:
+      ++aa;
+      break;
+    case 40:
+      ++aa;
+      break;
+    case 41:
+      ++aa;
+      break;
+    case 42:
+      ++aa;
+      break;
+    case 43:
+      ++aa;
+      break;
+    case 44:
+      ++aa;
+      break;
+    case 45:
+      ++aa;
+      break;
+    case 46:
+      ++aa;
+      break;
+    case 47:
+      ++aa;
+      break;
+    case 48:
+      ++aa;
+      break;
+    case 49:
+      ++aa;
+      break;
+    case 50:
+      ++aa;
+      break;
+    }
+    //a++;
+  }
+
+  exit(1);
+
   int chan=0;
 
   for (int i=0;i<20;i++) {
@@ -1203,6 +1445,8 @@ CRS::CRS() {
 
   batch=false;
   scrn=1;
+  b_noheader=false;
+
   b_acq=false;
   b_fana=false;
   b_stop=true;
@@ -2531,7 +2775,8 @@ int CRS::DoStartStop(int rst) {
 
       cv=EvtFrm->fCanvas->GetCanvas();
       cv->SetEditable(false);
-      myM->UpdateStatus(rst);
+      myM->UpdateTimer(rst);
+      //myM->UpdateStatus(rst);
     }
 
     //if (module==32) {
@@ -2713,8 +2958,8 @@ void CRS::DoReset(int rst) {
     opt.T_acq=0;
     Tstart64=0;
     Offset64=0;
-    Tstart0=0;
-    Time0=0;
+    //Tstart0=0;
+    //Time0=0;
 
     //Pstamp64=P64_0;
     Pstamp64=0;
@@ -2757,7 +3002,7 @@ int CRS::DoFopen(char* oname, int popt) {
   //return 0 - OK; 1 - error
 
   int tp=0; //1 - adcm raw; 0 - crs2/32/dec; 7? - Ortec Lis
-  module=0;
+  //module=0; //нужно для b_noheader
 
   if (oname)
     strcpy(Fname,oname);
@@ -2850,23 +3095,27 @@ int CRS::DoFopen(char* oname, int popt) {
   }
 
   //cout << "rrr: " << f_read << " " << Fname << " " << tp << " " << popt << endl;
-  if (tp==0) { //crs32 or crs2 or dec
-    if (ReadParGz(f_read,Fname,1,1,popt)) {
-      gzclose(f_read);
-      f_read=0;
-      return 1;
-    }
-    cout << "opt.Period from file: " << opt.Period << endl;
-    cout << "Git version from file: " << opt.gitver << endl;
+  if (b_noheader) { //не читаем заголовок
   }
-  else if (tp==2) { //Ortec Lis
-    cout << "Ortec Lis File: " << Fname << endl;
-    module=3;
-    cpar.InitPar(0);
-    opt.Period=200;
+  else { //иначе читаем
+    if (tp==0) { //crs32 or crs2 or dec
+      if (ReadParGz(f_read,Fname,1,1,popt)) {
+	gzclose(f_read);
+	f_read=0;
+	return 1;
+      }
+      cout << "opt.Period from file: " << opt.Period << endl;
+      cout << "Git version from file: " << opt.gitver << endl;
+    }
+    else if (tp==2) { //Ortec Lis
+      cout << "Ortec Lis File: " << Fname << endl;
+      module=3;
+      cpar.InitPar(0);
+      opt.Period=200;
 
-    char header[256];
-    gzread(f_read,header,256);
+      char header[256];
+      gzread(f_read,header,256);
+    }
   }
 
   Fmode=2;
@@ -2926,7 +3175,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  //prnt("sss d sd sd ds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,sz,RST);
+  prnt("sss d sd sd ds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,sz,RST);
 
   //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
   if (fmt!=129 || mod>100 || sz>5e5){//возможно, это текстовый файл
@@ -2958,7 +3207,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     memset(opt.gitver,0,sizeof(opt.gitver));
   }
   //cout << "Ret2: " << ret << " " << opt.gitver << endl;
-  ret=BufToClass(buf,buf+sz);
+  ret=BufToClass(buf,buf+sz,op);
   if (!ret) {
     prnt("ssss;",BRED,"Warning: error reading parameters: ",pname,RST);
     gSystem->Sleep(1000);
@@ -3004,8 +3253,11 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     opt.root_write=false;
   }
 
-  if (HiFrm)
+  if (HiFrm) {
+    //cout << "HiFrm0:" << endl;
+    histpar->AddHist_2d();
     HiFrm->HiReset();
+  }
 
 
 
@@ -3059,15 +3311,24 @@ void CRS::SaveParGz(gzFile &ff, Short_t mod) {
   sz+=ClassToBuf("Coptions","cpar",(char*) &cpar, buf+sz);
   sz+=ClassToBuf("Toptions","opt",(char*) &opt, buf+sz);
 
+  /*
   TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
   TIter nextd(lst);
   TDataMember *dm;
   char* popt = (char*)&opt;
   while ((dm = (TDataMember *) nextd())) {
     if (dm->GetDataType()==0 && TString(dm->GetName()).Contains("h_")) {
-      //cout << "member: " << dm->GetName() << " " << dm->GetDataType() << endl;
+      cout << "member: " << dm->GetName() << " " << dm->GetDataType()
+	   << " " << hex << (ULong64_t) popt+dm->GetOffset() << dec << endl;
       sz+=ClassToBuf("Hdef",dm->GetName(),popt+dm->GetOffset(),buf+sz);
     }
+  }
+*/
+
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    //prnt("ss s ss;",BGRN,"MLst:",it->name.Data(),it->h_name.Data(),RST);
+    //cout << it->hd << endl;    
+    sz+=ClassToBuf("Hdef",it->h_name.Data(),(char*)it->hd,buf+sz);
   }
 
   //sz/=8;
@@ -3415,6 +3676,9 @@ void CRS::EndAna(int all) {
     histpar->DaqEnable();
   }
 
+#ifdef TPROC
+  prnt("ss fs;",BGRN,"tproc:",tproc,RST);
+#endif
 }
 
 void CRS::FAnalyze2(bool nobatch) {
@@ -3605,7 +3869,7 @@ void CRS::Show(bool force) {
       // }
     }
     daqpar->UpdateStatus();
-    myM->UpdateStatus();
+    //myM->UpdateStatus();
     ErrFrm->ErrUpdate();
 #ifdef TIMES
     printf("T_acq: %0.2f Read: %0.2f Dec: %0.2f Make: %0.2f Ana: %0.2f Tot: %0.2f\n",opt.T_acq,ttm[0],ttm[1],ttm[2],ttm[3],ttm[4]);
@@ -4391,6 +4655,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
   //PeakClass *ipk=&dummy_peak; //pointer to the current peak in the current pulse;
   //Double_t QX=0,QY=0,RX,RY;
   Double_t QX=0,RX,AY;
+  Float_t Area0;
 
   eventlist *Blist;
   UChar_t frmt = (GLBuf[idx1+6] & 0xF0) >> 4;
@@ -4515,15 +4780,17 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	case 0: //C – [24]; A – [24]
 	  //area
 	  iii = data & 0xFFFFFF;
-	  ipls.Area0=((iii<<8)>>8);
-	  ipls.Area0/=p_len[ipls.Chan];
+	  Area0=((iii<<8)>>8);
+	  Area0/=p_len[ipls.Chan];
+	  //ipls.Area0=((iii<<8)>>8);
+	  //ipls.Area0/=p_len[ipls.Chan];
 	  data>>=24;
 	  //bkg
 	  iii = data & 0xFFFFFF;
 	  ipls.Base=((iii<<8)>>8);
 	  ipls.Base/=b_len[ipls.Chan];
-	  ipls.Area=ipls.Area0 - ipls.Base;
-	  //ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area;
+	  ipls.Area=Area0 - ipls.Base;
+	  //ipls.Area=ipls.Area0 - ipls.Base;
 	  if (opt.Bc[ipls.Chan]) {
 	    ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
 	  }
@@ -4595,12 +4862,12 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	case 1: //A – [28]
 	  //area
 	  iii = data & 0xFFFFFFF;
-	  ipls.Area0=((iii<<4)>>4);
-	  ipls.Area0/=p_len[ipls.Chan];
-
-	  ipls.Area=ipls.Area0 - ipls.Base;
-	  //ipls.Area*=opt.emult[ipls.Chan];
-	  //ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area;
+	  Area0=((iii<<4)>>4);
+	  Area0/=p_len[ipls.Chan];
+	  ipls.Area=Area0 - ipls.Base;
+	  // ipls.Area0=((iii<<4)>>4);
+	  // ipls.Area0/=p_len[ipls.Chan];
+	  // ipls.Area=ipls.Area0 - ipls.Base;
 	  if (opt.Bc[ipls.Chan]) {
 	    ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
 	  }
@@ -4702,12 +4969,16 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
   //ipls.Peaks.push_back(PeakClass());
   //PeakClass *ipk=&ipls.Peaks[0];
+  Float_t Area0;
 
   ipls.Pos = cpar.Pre[ipls.Chan];
 
-  ipls.Area0=pk.A/p_len[ipls.Chan];
+  Area0=pk.A/p_len[ipls.Chan];
   ipls.Base=pk.C/b_len[ipls.Chan];
-  ipls.Area=ipls.Area0 - ipls.Base;
+  ipls.Area=Area0 - ipls.Base;
+  // ipls.Area0=pk.A/p_len[ipls.Chan];
+  // ipls.Base=pk.C/b_len[ipls.Chan];
+  // ipls.Area=ipls.Area0 - ipls.Base;
 
   ipls.Height=pk.H;
 
@@ -5366,9 +5637,8 @@ void CRS::Decode_adcm(UInt_t iread, UInt_t ibuf) {
 	  Offset64+=dt;
 	  //ipls.Tstamp64 -= dt;
 	  ipls.Tstamp64 = Pstamp64;
-	  double DT = opt.Period*1e-9;
 	  prnt("ssl l l f f fs;",BYEL,"Bad Tstamp: ",dt,ipls.Tstamp64,Pstamp64,
-	       dt*DT,ipls.Tstamp64*DT,Pstamp64*DT,RST);
+	       dt*sPeriod,ipls.Tstamp64*sPeriod,Pstamp64*sPeriod,RST);
 	  ipls.ptype|=P_BADTST;
 	  ++errors[ER_TST]; //bad adcm Tstamp
 	}
@@ -6662,7 +6932,8 @@ double Pshape_RC(int j, double pos) {
 }
 
 void CRS::SimulateInit() {
-  opt.Nchan=4;
+  //if (opt.Nchan<4)
+    opt.Nchan=4;
 
   opt.Period = opt.SimSim[0];
 

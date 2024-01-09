@@ -1,5 +1,9 @@
+# make TPROC=1 to compile with TPROC option
+#      TPROC -> cpu usage in FillHist, only in singlethread
 # make TIMES=1 to compile with TIMES option
 # make DEBUG=1 to compile with debug option
+# make PROF=1 to compile with profiling option
+# make simul to compile with SIMUL option
 
 
 GIT_VERSION := $(shell git describe --abbrev=4 --always --tags --dirty)
@@ -21,10 +25,19 @@ CPPFLAGS += -DGITVERSION=\"$(GIT_VERSION)\"
 
 LFS=$(shell getconf LFS_CFLAGS)
 
+ifdef PROF
+  CPPFLAGS += -pg
+  LDFLAGS += -pg
+endif
+
 ifdef DEBUG
   CPPFLAGS += -g
   #CPPFLAGS += -D_GLIBCXX_DEBUG
   #CPPFLAGS += -fsanitize=address
+endif
+
+ifdef TPROC
+  CPPFLAGS += -D TPROC=1
 endif
 
 ifdef TIMES

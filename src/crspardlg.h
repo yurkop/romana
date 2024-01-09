@@ -2,6 +2,7 @@
 #define crspardlg_H 1
 
 #include "common.h"
+#include "hclass.h"
 #include <TGFrame.h>
 #include <TGCanvas.h>
 #include <TGLabel.h>
@@ -45,6 +46,7 @@ struct pmap {
   //0xF0: (bit4-7) Action (1..15)
   //0x100 (bit8) disble during acq
   //0x200 (bit9) disble fields not existing in certain devices
+  //0x400 (bit1) enable/disble fields for ntof analysis
 
   //Action: 
   // in DoDaqNum:
@@ -53,6 +55,8 @@ struct pmap {
   // 3 - Hi->Update()
   // // 4 - match Trg & Drv for CRS2 (not realized)
   // 5 - group4
+  // 6 - проверка Len кратно 3 или 4
+  // 7 - установка tsleep в Timer
 
   // in DoDaqChk:
   // 5 - group4 for module51
@@ -104,6 +108,7 @@ public:
   TGLayoutHints* LayLE0 ;
   TGLayoutHints* LayEE0 ;
   TGLayoutHints* LayEE1 ;
+  TGLayoutHints* LayRC1 ;
 
 
   //int jtrig;
@@ -234,14 +239,14 @@ public:
   int AddFiles(TGCompositeFrame* frame);
   //void AddHist(TGCompositeFrame* frame);
   int AddOpt(TGCompositeFrame* frame);
-  int AddAna(TGCompositeFrame* frame);
+  int AddNtof(TGCompositeFrame* frame);
   int AddLogic(TGCompositeFrame* frame);
   //void AddTrigger(TGGroupFrame* frame);
   int AddExpert(TGCompositeFrame* frame);
   int AddSimul(TGCompositeFrame* frame);
-  void DoCheckTrigger();
+  void DoCheckNtof(Bool_t on);
 
-  void Add2d();
+  //void Add2d();
 
   void Update();
   //void UpdateLL(wlist &llist, Bool_t state);
@@ -260,27 +265,30 @@ protected:
 
   TGGroupFrame* frame1d;
   TGGroupFrame* frame2d;
+  //std::list<TGHorizontalFrame*> h2_frame;
 
-  const char* tip1;
-  const char* tip2;
-  const char* label;
+  TGComboBox *cmb1,*cmb2;  
+  //TGNumberEntry *cNum1, *cNum2;
 
   //TGTextEntry* tTrig;
+  TList list2d;
 
 public:
 
   void AddHist(TGCompositeFrame* frame2);
-  void AddLine_hist(TGGroupFrame* frame, Hdef* hd,
-    const char* tip, const char* label);
-  void AddLine_2d(TGGroupFrame* frame, Hdef* hd,
-    const char* tip, const char* label, int type);
-  void AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
-    const char* tip, const char* label);
+  void AddHist_2d();
+  //void RemHist_2d(TGCompositeFrame* frame2);
+  void AddLine_hist(TGGroupFrame* frame, Mdef* md);
+  void AddLine_mean(TGHorizontalFrame *hfr1, Mdef* md);
   void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
 		    P_Def pp, UInt_t cmd, const char* tip);
-  void AddLine_prof(TGGroupFrame* frame, Hdef* hd,
-    const char* tip, const char* label);
+  void AddLine_prof(TGHorizontalFrame *hfr1, Mdef* md);
+  void AddLine_prof_int(TGHorizontalFrame *hfr1, Mdef* md);
+  void AddLine_2d(TGGroupFrame* frame, Mdef* md);
+  //, Hdef* hd,
+  //const char* tip, const char* label, int type);
   void Add2d();
+  void Rem2d();
   void Update();
 
   ClassDef(HistParDlg, 0)

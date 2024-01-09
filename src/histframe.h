@@ -77,7 +77,7 @@ public:
 
   int ntab; //tab number where eventframe is placed
 
-  Bool_t wrk_check[MAXCUTS+1]; //is MAIN* checked before deleting ltree
+  //Bool_t wrk_check[MAXCUTS+1]; //is MAIN* checked before deleting ltree
   //MAIN,MAIN_cut[MAXCUTS]
   //Bool_t wrk_check_MT; //is MAIN_MT checked before deleting ltree
   Bool_t changed;
@@ -104,17 +104,19 @@ public:
   void Make_Ltree();
   void Clear_Ltree();
   TGListTreeItem* FindItem(const char* name);
-  void Clone_Ltree(HMap* hmap);
+  void AddMainCuts(HMap* hmap);
   void AddMAIN(TGListTreeItem *item);
   void ClearMAIN();
   void DoClick(TGListTreeItem* item,Int_t but);
   void CheckAll(Bool_t on);
-  void CheckMAIN();
+  void AddCheckMAIN();
+  void SortMain();
 
   void CutClick(TGListTreeItem* item,Int_t but);
   void RoiClick(TGListTreeItem* item,Int_t but);
-  void DoCheck(TObject* obj, Bool_t check);
-  void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
+  void OptToCheck();
+  void CheckToOpt(TObject* obj, Bool_t check);
+  //void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
   void DoRadio();
   void DoButton();
   void DoDrawopt();

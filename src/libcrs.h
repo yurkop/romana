@@ -198,7 +198,9 @@ RQ_OBJECT("CRS")
   bool batch; //batch mode
   bool abatch; //1 - acquisition in batch; 0 - file in batch
   int scrn; //screen output in batch mode
-  
+
+  bool b_noheader;
+
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
   bool b_stop; // true if acquisition and analysis are stopped
@@ -212,11 +214,12 @@ RQ_OBJECT("CRS")
   Long64_t Offset64; //Tstamp offset (обычно равен Tstart64)
 
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
-  Long64_t Tstart0; //Tstamp of the ntof start pulses
-  Float_t Time0; //Exact time of the ntof start pulses
+  //Long64_t Tstart0; //Tstamp of the ntof start pulses
+  //Float_t Time0; //Exact time of the ntof start pulses
   char txt_start[30]; //local text copy of F_start, start of the acquisition
 
-  Double_t sPeriod; // real period for each channel, including smpl
+  Double_t sPeriod; // Tstmp*sPeriod = sec
+  // Double_t nsPeriod; // Tstmp*nsPeriod = nsec
 
   //PeakClass dummy_peak;
   PulseClass dummy_pulse;

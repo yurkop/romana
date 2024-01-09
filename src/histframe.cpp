@@ -59,6 +59,8 @@ TMutex Hmut;
 TGLayoutHints* fLay5 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,5,5,0,0);
 TGLayoutHints* fLay9 = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
 
+int M_WCHK=sizeof(opt.wrk_check)/sizeof(int);
+
 //------------------------------
 
 void DynamicExec()
@@ -205,7 +207,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   changed=false;
   started=true;
 
-  memset(wrk_check,1,sizeof(wrk_check));
+  //memset(wrk_check,1,sizeof(wrk_check));
   //wrk_check_MT=1;
 
   //Frames.....
@@ -279,7 +281,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   fListTree = new TGListTree(gCanvas, kVerticalFrame);
   fListTree->SetCheckMode(TGListTree::kRecursive);
-  fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"DoCheck(TObject*, Bool_t)");
+  fListTree->Connect("Checked(TObject*, Bool_t)","HistFrame",this,"CheckToOpt(TObject*, Bool_t)");
   fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
    		     "DoClick(TGListTreeItem*,Int_t)");
 
@@ -295,7 +297,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor4->AddFrame(chkbut, LayLC1);
 
   but = new TGTextButton(fHor4,"m+",1);
-  but->Connect("Clicked()", "HistFrame", this, "CheckMAIN()");
+  but->Connect("Clicked()", "HistFrame", this, "AddCheckMAIN()");
   but->SetToolTipText("Add all checked histograms to MAIN*");
   fHor4->AddFrame(but, LayLC1);
 
@@ -358,7 +360,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->SetToolTipText("Cancel/interrupt adding a cut");
   fHor3->AddFrame(but, LayLC1);
 
-  but = new TGTextButton(fHor3,"Del",3);
+  but = new TGTextButton(fHor3,"Clr",3);
   but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
   but->SetToolTipText("Delete all cuts. Use right mouse button on a single cut to delete it");
   fHor3->AddFrame(but, LayLC1);
@@ -611,7 +613,7 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
   if (parent) { //single item
     item=fListTree->AddItem(parent, string, userData, open, closed, true);
     //item->SetDNDSource(kTRUE);
-    fListTree->CheckItem(item,*(map2->hd->c+map2->nn));
+    //fListTree->CheckItem(item,*(map2->hd->c+map2->nn));
   }
   else { //folder
     Hdef* hd2 = 0;
@@ -679,7 +681,6 @@ void HistFrame::Make_Ltree() {
     //if (!map->flg) {
       TString title = TString(map->GetTitle());
       if (!fListTree->FindChildByName(0,title)) {
-	//cout << "map: " << map->GetName() << " " << map->GetTitle() << " " << map->hd->rb << endl;
 	idir = Item_Ltree(iroot, title,map,0,0);
       }
       if (map->hst->InheritsFrom(TH2::Class()))
@@ -692,17 +693,20 @@ void HistFrame::Make_Ltree() {
       if (*(map->hd->w+map->nn)) {
 	Item_Ltree(iMAIN, map->GetName(), map, pic, pic);
 	//make clones of _MAIN_ histograms and their hmaps
-	Clone_Ltree(map);
+	AddMainCuts(map);
       }
       //} //if
   } //while
 
-  fListTree->CheckAllChildren(iMAIN,wrk_check[0]);
-  for (int cc=1;cc<opt.ncuts;cc++) {
-    if (opt.pcuts[cc]) {
-      fListTree->CheckAllChildren(iMAIN_cut[cc],wrk_check[cc]);
-    }
-  }
+  SortMain();
+  OptToCheck();
+  //Here!!!
+  // fListTree->CheckAllChildren(iMAIN,wrk_check[0]);
+  // for (int cc=1;cc<opt.ncuts;cc++) {
+  //   if (opt.pcuts[cc]) {
+  //     fListTree->CheckAllChildren(iMAIN_cut[cc],wrk_check[cc]);
+  //   }
+  // }
 
   //fill fCutTree
   for (int i=1;i<opt.ncuts;i++) {
@@ -753,9 +757,6 @@ void HistFrame::Make_Ltree() {
     }
   }
 
-
-
-
   //CutsToStr();
 }
 
@@ -769,10 +770,10 @@ void HistFrame::Clear_Ltree()
   idir = fListTree->GetFirstItem();
   int ii=0;
   while (idir) {
-    if (TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase)) {
-      wrk_check[ii]=idir->IsChecked();
-      ii++;
-    }
+    // if (TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase)) {
+    //   wrk_check[ii]=idir->IsChecked();
+    //   ii++;
+    // }
     fListTree->DeleteChildren(idir);
     fListTree->DeleteItem(idir);
     idir = idir->GetNextSibling();
@@ -824,7 +825,19 @@ void HistFrame::AddMAIN(TGListTreeItem *item) {
     *(map->hd->w+map->nn)=true;
 
     hcl->Clone_Hist(map);
-    Clone_Ltree(map);
+    AddMainCuts(map);
+
+  }
+}
+
+void HistFrame::SortMain() {
+  //cout << "sortMain: " << M_WCHK << endl;
+  fListTree->SortChildren(iMAIN);
+
+  for (int i=1;i<opt.ncuts;i++) {
+    if (opt.pcuts[i]) {
+      fListTree->SortChildren(iMAIN_cut[i]);
+    }
   }
 }
 
@@ -916,6 +929,9 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
     }
   } //if (item->GetParent() && (but==2 || but==3))
   
+  SortMain();
+  CheckToOpt(0,0);
+
   //cout << "Upd1: " << endl;
   if (crs->b_stop)
     Update();
@@ -931,11 +947,12 @@ void HistFrame::CheckAll(Bool_t on) {
     fListTree->CheckAllChildren(idir,on);
     idir = idir->GetNextSibling();
   }
-  changed=true;
-  ReDraw();
+  CheckToOpt(0,0);
+  //changed=true;
+  //ReDraw();
 }
 
-void HistFrame::CheckMAIN() {
+void HistFrame::AddCheckMAIN() {
   //добавляем все помеченные гистограмы в MAIN 
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
@@ -950,11 +967,16 @@ void HistFrame::CheckMAIN() {
     }
     idir = idir->GetNextSibling();
   }
+
+  SortMain();
+  CheckToOpt(0,0);
+
   changed=true;
   ReDraw();
 }
 
-void HistFrame::Clone_Ltree(HMap* map) {
+void HistFrame::AddMainCuts(HMap* map) {
+  // заполняет папки MAIN_cut*
 
   //char cutname[99];
   //char name[99],htitle[99];
@@ -985,6 +1007,7 @@ void HistFrame::Clone_Ltree(HMap* map) {
   }
 }
 
+/*
 void HistFrame::DoCheck(TObject* obj, Bool_t check)
 {
   HMap* map;
@@ -992,7 +1015,7 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
   TGListTreeItem *item = fListTree->GetFirstItem();
   item = fListTree->FindItemByObj(item,obj);
 
-  // cout << "DoCheck: " << obj << " " << item << " " << obj->GetName() << " " << obj->GetTitle() << endl;
+  cout << "DoCheck: " << obj << " " << item << " " << obj->GetName() << " " << obj->GetTitle() << endl;
   // if (item) {
   //   cout << "DoCheck: " << item->GetText() << endl;
   //   cout << "DoCheck: " << item->GetParent() << endl;
@@ -1000,12 +1023,26 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
   // }
 
   if (item) {
+    // if (item->GetParent()) { //single item
+    //   if (!TString(item->GetParent()->GetText()).Contains("MAIN",TString::kIgnoreCase)) { //not in MAIN* folder
+    // 	map = (HMap*) item->GetUserData();
+    // 	if (map) {
+    // 	  prnt("ss ds;",BGRN,"Chk1:",*(map->hd->c+map->nn),RST);
+    // 	  *(map->hd->c+map->nn) = item->IsChecked();
+    // 	  prnt("ss ds;",BBLU,"Chk2:",*(map->hd->c+map->nn),RST);
+    // 	}
+    //   }
+    // }
     if (item->GetParent()) { //single item
-      if (!TString(item->GetParent()->GetText()).Contains("MAIN",TString::kIgnoreCase)) { //not in MAIN* folder
-	map = (HMap*) item->GetUserData();
-	if (map) {
-	  *(map->hd->c+map->nn) = item->IsChecked();
-	}
+      map = (HMap*) item->GetUserData();
+      if (map) {
+	char path[256];
+	fListTree->GetPathnameFromItem(item, path, 0);
+	cout << map->GetName() << " " << map->GetTitle() << " "
+	     << item << " " << item->IsChecked() << " " << path << endl;
+	prnt("ss ds;",BGRN,"Chk1:",*(map->hd->c+map->nn),RST);
+	*(map->hd->c+map->nn) = item->IsChecked();
+	prnt("ss ds;",BBLU,"Chk2:",*(map->hd->c+map->nn),RST);
       }
     }
     else { //folder
@@ -1028,10 +1065,145 @@ void HistFrame::DoCheck(TObject* obj, Bool_t check)
     changed=true;
 
 }
+*/
 
-void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask) {
-  cout << "key: " << entry << " " << keysym << " " << mask << endl;
+// void HistFrame::OneCheck() {
+//   if (b_main) { //папка MAIN*
+//     setbit(opt.wrk_check[i],ncut,item->IsChecked());
+//     prnt("ss s s d d ds;",BGRN,"main1:",idir->GetText(),item->GetText(),ncut,i,(int)getbit(opt.wrk_check[i],ncut),RST);
+//     i++;
+//     if (i>=M_WCHK) break;
+//   }
+//   else { //не MAIN*
+//     map = (HMap*) item->GetUserData();
+//     if (map) {
+//       *(map->hd->c+map->nn) = item->IsChecked();
+//     }
+//   }
+//   item=item->GetNextSibling();
+// }
+
+/*
+void HistFrame::DoCheck(TObject* obj, Bool_t check)
+{
+  HMap* map;
+
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  while (idir) {
+    TGListTreeItem *item = idir->GetFirstChild();
+    bool b_main=TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase);
+    if (b_main) { //папка MAIN*
+      int ncut = stoi(numstr(idir->GetText()));
+      if (ncut<0)
+	ncut=0;
+      cout << "ct: " << idir->GetText() << " " << ncut << endl;
+      for (int i=0;i<M_WCHK;i++) {
+	setbit(opt.wrk_check[i],ncut,item->IsChecked());
+	prnt("ss s s d d ds;",BGRN,"main1:",idir->GetText(),item->GetText(),ncut,i,(int)getbit(opt.wrk_check[i],ncut),RST);
+	item=item->GetNextSibling();
+	if (!item) break;
+      }
+    }
+    else { //не MAIN*
+      while (item) {
+	map = (HMap*) item->GetUserData();
+	if (map) {
+	  *(map->hd->c+map->nn) = item->IsChecked();
+	}
+	item=item->GetNextSibling();
+      }
+    }
+    idir=idir->GetNextSibling();
+  }
+
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
+
 }
+*/
+
+void HistFrame::OptToCheck() {
+  HMap* map;
+
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  while (idir) {
+    TGListTreeItem *item = idir->GetFirstChild();
+    bool b_main=TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase);
+    int ncut = stoi(numstr(idir->GetText()));
+    if (ncut<0)
+      ncut=0;
+    //cout << "ct: " << idir->GetText() << " " << ncut << endl;
+    int i=0; // номер итема в папке
+    while (item) {
+      if (b_main) { //папка MAIN*
+	bool chk = getbit(opt.wrk_check[i],ncut);
+	fListTree->CheckItem(item,chk);
+	//prnt("ss s s d d ds;",BBLU,"main2:",idir->GetText(),item->GetText(),ncut,i,(int)getbit(opt.wrk_check[i],ncut),RST);
+	i++;
+	if (i>=M_WCHK) break;
+      }
+      else { //не MAIN*
+	map = (HMap*) item->GetUserData();
+	if (map) {
+	  fListTree->CheckItem(item,*(map->hd->c+map->nn));
+	  //*(map->hd->c+map->nn) = item->IsChecked();
+	}
+      }
+      item=item->GetNextSibling();
+    } //while (item)
+    idir->UpdateState();
+    idir=idir->GetNextSibling();
+  }
+
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
+
+}
+
+void HistFrame::CheckToOpt(TObject* obj, Bool_t check) {
+  HMap* map;
+
+  TGListTreeItem *idir = fListTree->GetFirstItem();
+  while (idir) {
+    TGListTreeItem *item = idir->GetFirstChild();
+    bool b_main=TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase);
+    int ncut = stoi(numstr(idir->GetText()));
+    if (ncut<0)
+      ncut=0;
+    //cout << "ct: " << idir->GetText() << " " << ncut << endl;
+    int i=0; // номер итема в папке
+    while (item) {
+      if (b_main) { //папка MAIN*
+	setbit(opt.wrk_check[i],ncut,item->IsChecked());
+	//prnt("ss s s d d ds;",BGRN,"main1:",idir->GetText(),item->GetText(),ncut,i,(int)getbit(opt.wrk_check[i],ncut),RST);
+	i++;
+	if (i>=M_WCHK) break;
+      }
+      else { //не MAIN*
+	map = (HMap*) item->GetUserData();
+	if (map) {
+	  *(map->hd->c+map->nn) = item->IsChecked();
+	}
+      }
+      item=item->GetNextSibling();
+    } //while (item)
+    idir=idir->GetNextSibling();
+  }
+
+  if (crs->b_stop)
+    Update();
+  else
+    changed=true;
+
+}
+
+// void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask) {
+//   cout << "key: " << entry << " " << keysym << " " << mask << endl;
+// }
 
 void HistFrame::DoRadio()
 {
@@ -1779,7 +1951,7 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
   if (hd2) delete hd2;
   hd2 = new Hdef();
 
-
+  //cout << "Do_ecalibr: " << endl;
   idir1 = Item_Ltree(iroot,mapname1,0,0,0);;
   idir2 = Item_Ltree(iroot,mapname2,0,0,0);;
 
@@ -2038,10 +2210,9 @@ void HistFrame::DoRst() {
     HMap* map = (HMap*) obj;
     if (map->hst->GetEntries() > 0) {
       map->hst->Reset();
+      //map->Nent=0;
     }
   }
-
-  //UpdateStatus(1);
 
 }
 
@@ -2081,6 +2252,7 @@ void HistFrame::HiReset()
 void HistFrame::Update()
 {
   //cout << "in_gcut: " << in_gcut << " " << opt.b_logy << " " << chklog << endl;
+  //cout << "Hifrm::Update:" << endl;
 
   Hmut.Lock();
 
@@ -2111,10 +2283,8 @@ void HistFrame::Update()
   //chkstat->SetState((EButtonState) opt.b_stat);
   //chkgcuts->SetState((EButtonState) opt.b_gcuts);
 
-  //cout << "HiFrm::Update()2a" << endl;
   hmap_chklist->Clear();
   //st_hlist->Clear();
-  //cout << "HiFrm::Update()2b" << endl;
 
   //Hmut.UnLock();
   //return;

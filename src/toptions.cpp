@@ -365,6 +365,7 @@ Toptions::Toptions() {
   b_gcuts=false;
   b_roi=false;
 
+  b_ntof=0;
   start_ch=0;
   ntof_period=0;
   Flpath=10;
@@ -454,6 +455,7 @@ Toptions::Toptions() {
 
   // SimSim[10]=1; //CFD delay
   // SimSim[11]=1; //CFD fraction
+  memset(wrk_check,0,sizeof(wrk_check));
 
 }
 

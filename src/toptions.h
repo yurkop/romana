@@ -9,6 +9,8 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
+#define CDEF 136
+
 /*
 #include <list>
 //------------------------------------
@@ -27,16 +29,16 @@ public:
 
 //------------------------------------
 class Hdef {
+  // класс содержит параметры гистограмм в простых переменных,
+  // которые можно легко сохранить в файл 
 public:
   Hdef();
   virtual ~Hdef() {};
   //Hdef(const Hdef& other);
   //Hdef& operator=(const Hdef& other);
 
+
   Float_t bins,min,max,bins2;
-  Bool_t b; //book histogram or not
-  Bool_t c[MAX_CH+NGRP]; //check histogram
-  Bool_t w[MAX_CH+NGRP]; //MAIN - гистограмма присутствует в MAIN*
   Int_t cut[MAX_CH+NGRP]; //see cut_index in HMap
   // список окон (cuts), заданных на этой гистограмме (hst)
   // положение бита в этой маске соответствует номеру соответствующего окна
@@ -48,7 +50,13 @@ public:
   Float_t roi[MAXROI][2];
   
   Int_t rb,rb2; //rebin
-  ClassDef(Hdef, 7)
+
+  Bool_t b; //book histogram or not
+  Bool_t c[MAX_CH+NGRP]; //check histogram
+  Bool_t w[MAX_CH+NGRP]; //MAIN - гистограмма присутствует в MAIN*
+  Bool_t tp; // type: false - Float; true - Double
+
+  ClassDef(Hdef, CDEF)
 };
 //------------------------------------
 
@@ -108,7 +116,7 @@ public:
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
   Int_t ChkLen(Int_t i, Int_t module);
 
-  ClassDef(Coptions, 132)
+  ClassDef(Coptions, CDEF)
 };
 
 //------------------------------------
@@ -237,6 +245,7 @@ public:
 
   Int_t seltab;
 
+  Bool_t b_ntof; //analyze ntof ot not
   Int_t start_ch;
   Float_t ntof_period;
   Float_t Flpath;
@@ -285,30 +294,52 @@ public:
   //char maintrig[22];
 
   Float_t SimSim[20]; // see toptions.cpp
+
+  int wrk_check[64];
   //
   //Float_t SimSig;
 
-  Hdef h_rate;
-  Hdef h_hwrate;
-  Hdef h_mult;
-  Hdef h_area;
-  Hdef h_area0;
-  Hdef h_base;
-  Hdef h_slope1;
-  Hdef h_slope2;
-  //Hdef h_simul;
-  Hdef h_hei;
-  Hdef h_time;
-  Hdef h_ntof;
-  Hdef h_etof;
-  Hdef h_ltof;
-  Hdef h_per;
-  Hdef h_width;
-  Hdef h_width2;
-  //Hdef h_width3;
-  Hdef h_pulse;
-  Hdef h_deriv;
+  // hnum: 
+  //    0 - не определено
+  //    1..9 - простые переменные из PulseClass
+  //    21..49 - common for the whole event
 
+  // format:
+  // Hdef var // hnum hname xtitle ytitle tip 
+  Hdef h_rate; // 21 Rate T(sec) Counts Software count rates as a funtion of time in seconds
+  Hdef h_hwrate; // 22 HWRate T(sec) Counts Hardware counters as a funtion of time in seconds
+  Hdef h_mult; // 49 Mult Multiplicity Counts Event multiplicity
+
+  Hdef h_area; // 1 Area Channel Counts Area of the pulse or energy, calibrated (see Analysis->E0,E1,E2 for calibration)
+  //Hdef h_area0; // 9 Area0 Channel Counts Area w/o background, not calibrated
+  Hdef h_time; // 11 Time t(ns) Counts Time (relative to the starts - see Analysis->St), in ns
+  Hdef h_base; // 2 Base Channel Counts Base line, not calibrated
+  Hdef h_slope1; // 3 Sl1 Channel Counts Slope1 (baseline)
+  Hdef h_slope2; // 4 Sl2 Channel Counts Slope2 (peak)
+  Hdef h_hei; // 5 Height Channel Counts Maximal pulse height (in channels)
+  Hdef h_width; // 6 Width width(a.u.) Counts Pulse width
+  Hdef h_ntof; // 12 Ntof t(mks) Counts Neutron time of flight, in mks
+  Hdef h_etof; // 13 Etof Energy(eV) Counts Neutron energy from NTOF, in eV
+  Hdef h_ltof; // 14 Ltof Lambda(A) Counts Neutron wavelength from NTOF, in A
+  Hdef h_per; // 15 Period t(mks) Counts Pulse period (distance between two consecutive pulses), in mks
+
+  Hdef h_pulse; // 51 Pulse samples Amplitude Average pulse shape
+  Hdef h_deriv; // 52 Deriv samples Amplitude Average pulse shape derivative
+
+  Hdef h_prof; // 53 Profilometer X(mm) Y(mm) 2d histograms for Profilometer
+  Hdef h_prof_int; // 54 Prof_int - - Integral histograms for profilometer
+
+  //Hdef h_width2;
+  //Hdef h_width3;
+  //Hdef h_simul;
+
+  // Hdef h_prof_x;
+  // Hdef h_prof_y;
+  // Hdef h_prof_ax;
+  // Hdef h_prof_ay;
+  // Hdef h_prof_nm;
+
+  /* YK_OLD
   Hdef h_axay;
   Hdef h_area_base;
   Hdef h_area_sl1;
@@ -319,22 +350,17 @@ public:
   Hdef h_area_width;
   Hdef h_area_width2;
   Hdef h_area_ntof;
-  Hdef h_prof;
-  // Hdef h_prof_x;
-  // Hdef h_prof_y;
-  // Hdef h_prof_ax;
-  // Hdef h_prof_ay;
-  // Hdef h_prof_nm;
-  Hdef h_prof64;
   //Hdef h_area_width3;
   //Hdef h_width_12;
+  */
+
 public:
   //void InitPar(Int_t module);
 
   //void GetPar(const char* name, Int_t module, Int_t i, Int_t &par, Int_t &min, Int_t &max);
 
 
-  ClassDef(Toptions, 133)
+  ClassDef(Toptions, CDEF)
 };
 
 //ClassImp(Toptions)

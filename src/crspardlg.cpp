@@ -17,7 +17,7 @@ extern Pixel_t fOrng;
 extern Pixel_t fBlue;
 extern Pixel_t fRed10;
 
-extern Pixel_t fCol[7];// = {fYellow,fGreen,fRed,fCyan,fOrng,fBlue,fRed10};
+extern Pixel_t fCol[7];// = [1..7] {fYellow,fGreen,fRed,fCyan,fOrng,fBlue,fRed10};
 
 //colors of ch_types
 namespace CP {
@@ -37,6 +37,7 @@ namespace CP {
   };
 }
 
+extern HClass* hcl;
 extern ParParDlg *parpar;
 extern DaqParDlg *daqpar;
 extern AnaParDlg *anapar;
@@ -169,6 +170,8 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   LayEE0   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
   LayEE1   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,0,0,1,1);
 
+  LayRC1   = new TGLayoutHints(kLHintsRight|kLHintsTop, 0, 0, 0, 0);
+
   //SetCleanup(kDeepCleanup);
   //jtrig=0;
   notbuilt=true;
@@ -188,7 +191,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 }
 ParDlg::~ParDlg() {
-  cout << "~ParDlg: " << this << endl;
+  //cout << "~ParDlg: " << this << endl;
   //CleanUp();
 }
 
@@ -330,8 +333,7 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
       }
     }
     break;
-  case 6:
-
+  case 6: {
     //int kk = (id-1)%nfld; //column number
     int ll = (id-1)/nfld; //line number
 
@@ -342,6 +344,10 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
 
     UpdateField(id-1);
 
+    break;
+  }
+  case 7:
+    myM->fTimer->SetTime(opt.tsleep);
     break;
   } //switch
 
@@ -356,7 +362,8 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
     crs->SaveParGz(ff,crs->module);
     gzclose(ff);
     if (crs->module==22) {//CRS2
-      myM->UpdateStatus(1);
+      myM->UpdateTimer(1);
+      //myM->UpdateStatus(1);
       daqpar->UpdateStatus(1);
     }
     crs->Command2(3,0,0,0);
@@ -694,7 +701,6 @@ void ParDlg::DoColor(pmap* pp, Float_t val) {
       break;
     }
     case p_chk: {
-      // cout << "c_chk: " << col << endl;
       TGCheckButton *te = (TGCheckButton*) pp->field;
       if (val) {
 	te->ChangeBackground(fCol[col-1]);
@@ -844,6 +850,12 @@ void ParDlg::UpdateField(int nn) {
 
     //TGNumberEntryField *wg = (TGNumberEntryField*) pp->field;
     //cout << "bit9: " << wg->IsEnabled() << " " << pp->cmd << endl;
+  }
+
+  UInt_t bit10=(pp->cmd & 0x400);
+
+  if (bit10) {
+    //EnableField(nn,opt.b_ntof);
   }
 
   //TGNumberEntryField *wg = (TGNumberEntryField*) pp->field;
@@ -1256,7 +1268,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   int ww = AddFiles(fV1);
   ww = TMath::Max(ww,AddOpt(fV1));
-  ww = TMath::Max(ww,AddAna(fV1));
+  ww = TMath::Max(ww,AddNtof(fV1));
   ww = TMath::Max(ww,AddLogic(fV1));
 
   fV1->Resize(ww+10,1);
@@ -1436,7 +1448,7 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "";
   tip2= "Delay between drawing events (in msec)";
   label="DrawEvent delay";
-  AddLine_opt(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_lab,k_int,100,10000,100,10000);
+  AddLine_opt(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_lab,k_int,100,10000,100,10000,0,7<<4);
 
   tip1= "Size of the USB buffer in kilobytes (1024 is OK)\n"
     "Small for low count rate; large for high count rate";
@@ -1488,25 +1500,55 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
 
 }
 
-int ParParDlg::AddAna(TGCompositeFrame* frame) {
+int ParParDlg::AddNtof(TGCompositeFrame* frame) {
 
   int ww=70;
+
+
+
+
+
+
+
 
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "NTOF Analysis", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, LayLT1);
 
+
+
+
+
+  //b_ntof:
+
+  // TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fF6);
+  // fF6->AddFrame(hfr1);
+
+  // int id = Plist.size()+1;
+  // TGCheckButton* fchk = new TGCheckButton(hfr1, "on/off", id);
+  // DoMap(fchk,&opt.b_ntof,p_chk,0,0x100|2<<1);
+  // fchk->SetToolTipText("b_ntof: Enable/disable NTOF analysis");
+  // //fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
+  // fchk->Connect("Toggled(Bool_t)", "ParParDlg", this, "DoCheckNtof(Bool_t)");
+  // hfr1->AddFrame(fchk,LayCC1);
+
+
+
+
+
+
+
   tip1= "Ntof period (mks) (should be always zero if unsure why it's needed)";
   tip2= "Ntof start channel (255 for START input)";
   label="Ntof period / start channel";
   AddLine_opt(fF6,ww,&opt.ntof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
-	      0,1e9,0,255);
+	      0,1e9,0,255,0x400,0x400);
 
   tip1= "Ntof Flight path (in meters) for Ntof-Energy conversion";
   tip2= "Ntof Time offset (in mks) for Ntof-Energy conversion";
   label="Ntof Flpath / NTOF Zero";
   AddLine_opt(fF6,ww,&opt.Flpath,&opt.TofZero,tip1,tip2,label,k_r0,k_r0,
-	      0,1e9,-1e9,1e9);
+	      0,1e9,-1e9,1e9,0x400,0x400);
 
   fF6->Resize();
   return fF6->GetDefaultWidth();
@@ -1677,6 +1719,15 @@ int ParParDlg::AddSimul(TGCompositeFrame* frame) {
 
 }
 
+
+void ParParDlg::DoCheckNtof(Bool_t on) {
+
+  DoDaqChk(on);
+  Update();
+
+}
+
+
 void ParParDlg::Update() {
   ParDlg::Update();
   tTrig->UpdateTrigger();
@@ -1707,7 +1758,6 @@ HistParDlg::HistParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   k_chk=TGNumberFormat::kNESMDayYear;
 
   AddFrame(fDock, LayLE0);
-  //fDock->Resize(400,600);
   fDock->SetWindowName("Histograms");  
 
   TGCompositeFrame *fMain=fDock->GetContainer();
@@ -1722,187 +1772,140 @@ HistParDlg::HistParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fCanvas1->SetContainer(fcont1);
 
   AddHist(fcont1);
+  AddHist_2d();
+
+  fDock->Resize(HFRAME_WIDTH+50,0);
 
 }
+
 void HistParDlg::AddHist(TGCompositeFrame* frame2) {
 
+  //cout << "AddHist: " << endl;
   frame1d = new TGGroupFrame(frame2, "1D Histograms", kVerticalFrame);
   //frame1d->Associate(fMain);
   frame1d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame2->AddFrame(frame1d, LayLT0);
-  //frame2->AddFrame(frame1d, LayLT0);
-
-  tip1= "Software count rates as a funtion of time in seconds";
-  label="Rate";
-  AddLine_hist(frame1d,&opt.h_rate,tip1,label);
-
-  tip1= "Hardware counters as a funtion of time in seconds";
-  label="HWRate";
-  AddLine_hist(frame1d,&opt.h_hwrate,tip1,label);
-
-  tip1= "Event multiplicity";
-  label="Mult";
-  AddLine_hist(frame1d,&opt.h_mult,tip1,label);
-
-  tip1= "Area of the pulse or energy, calibrated (see Channels->EM for calibration)";
-  label="Area";
-  AddLine_hist(frame1d,&opt.h_area,tip1,label);
-
-  tip1= "Area w/o background, not calibrated";
-  label="Area0";
-  AddLine_hist(frame1d,&opt.h_area0,tip1,label);
-
-  tip1= "Base line, not calibrated";
-  label="Base";
-  AddLine_hist(frame1d,&opt.h_base,tip1,label);
-
-  tip1= "Slope1 (baseline)";
-  label="Slope1";
-  AddLine_hist(frame1d,&opt.h_slope1,tip1,label);
-
-  tip1= "Slope2 (peak)";
-  label="Slope2";
-  AddLine_hist(frame1d,&opt.h_slope2,tip1,label);
-
-  // tip1= "Simul";
-  // label="Simul";
-  // AddLine_hist(frame1d,&opt.h_simul,tip1,label);
-
-  tip1= "Maximal pulse height (in channels)";
-  label="Height";
-  AddLine_hist(frame1d,&opt.h_hei,tip1,label);
-
-  tip1= "Time (relative to the starts - see Channels->St), in ns";
-  label="Time";
-  AddLine_hist(frame1d,&opt.h_time,tip1,label);
-
-  tip1= "Neutron time of flight, in mks";
-  label="Ntof";
-  AddLine_hist(frame1d,&opt.h_ntof,tip1,label);
-
-  tip1= "Neutron energy from NTOF, in eV";
-  label="Etof";
-  AddLine_hist(frame1d,&opt.h_etof,tip1,label);
-
-  tip1= "Neutron wavelength from NTOF, in A";
-  label="Ltof";
-  AddLine_hist(frame1d,&opt.h_ltof,tip1,label);
-
-  tip1= "Pulse period (distance between two consecutive pulses), in mks";
-  label="Period";
-  AddLine_hist(frame1d,&opt.h_per,tip1,label);
-
-  tip1= "Pulse width";
-  label="Width";
-  AddLine_hist(frame1d,&opt.h_width,tip1,label);
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame1d);
-  frame1d->AddFrame(hfr1);
-
-  tip1= "Average pulse shape";
-  label="Mean_pulses";
-  AddLine_mean(hfr1,&opt.h_pulse,tip1,label);
-
-  tip1= "Derivative of Average pulse shape";
-  label="Mean_deriv";
-  AddLine_mean(hfr1,&opt.h_deriv,tip1,label);
-
-  tip1= "1d and 2d histograms for Profilometer";
-  label="Profilometer";
-  AddLine_prof(frame1d,&opt.h_prof,tip1,label);
+  TGHorizontalFrame *hfr2 = new TGHorizontalFrame(frame1d);
+  
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->hnum < 50) { // 1d hist
+      AddLine_hist(frame1d,&*it);
+    }
+    else if (it->hnum == 51) { //mean pulses
+      frame1d->AddFrame(hfr1);
+      AddLine_mean(hfr1,&*it);
+    }
+    else if (it->hnum == 52) { //mean deriv
+      AddLine_mean(hfr1,&*it);
+    }
+    else if (it->hnum == 53) { //profilometer
+      frame1d->AddFrame(hfr2);
+      AddLine_prof(hfr2,&*it);
+    }
+    else if (it->hnum == 54) //prof_int
+      AddLine_prof_int(hfr2,&*it);
+  }
 
   frame2d = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
   frame2d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame2->AddFrame(frame2d, LayLT0);
 
   TGHorizontalFrame* h2fr = new TGHorizontalFrame(frame2d);
+  h2fr->ChangeOptions(h2fr->GetOptions()|kFixedWidth);
+  h2fr->Resize(HFRAME_WIDTH,0);
   frame2d->AddFrame(h2fr,LayLT0);
-  TGComboBox* cmb1=new TGComboBox(h2fr,0);
-  h2fr->AddFrame(cmb1,LayLE0);
-  cmb1->AddEntry("test1", 0);
-  cmb1->Resize(60, 20);
-  TGNumberEntry* fNum1 =
-    new TGNumberEntry(h2fr, 0, 0, 111, k_int,
-		      TGNumberFormat::kNEAAnyNumber,
-		      TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
 
-  fNum1->SetWidth(45);
-  h2fr->AddFrame(fNum1,LayLT2);
+  cmb1=new TGComboBox(h2fr,0);
+  h2fr->AddFrame(cmb1,LayLC2);
 
-  TGComboBox* cmb2=new TGComboBox(h2fr,1);
-  h2fr->AddFrame(cmb2,LayLE0);
-  cmb2->AddEntry("test2", 1);
-  cmb2->Resize(60, 20);
+  cmb2=new TGComboBox(h2fr,1);
+  h2fr->AddFrame(cmb2,LayLC2);
 
-  TGNumberEntry* fNum2 =
-    new TGNumberEntry(h2fr, 0, 0, 112, k_int,
-		      TGNumberFormat::kNEAAnyNumber,
-		      TGNumberFormat::kNELLimitMinMax,0,MAX_CH-1);
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->hnum<49) {
+      if (it->hnum!=21 && it->hnum!=22) //Rate и HWRate не могут быть по X
+	cmb1->AddEntry(it->name.Data(), it->hnum);
+      cmb2->AddEntry(it->name.Data(), it->hnum);
+    }
+  }
 
-  fNum2->SetWidth(45);
-  h2fr->AddFrame(fNum2,LayLT2);
+  cmb1->Select(1,false);
+  cmb2->Select(1,false);
+  cmb1->Resize(80, 20);
+  cmb2->Resize(80, 20);
 
-  TGTextButton *fbut = new TGTextButton(h2fr,"Add",0);
-  h2fr->AddFrame(fbut, LayCC1);
+  TGTextButton *fbut = new TGTextButton(h2fr," Add ",0);
+  fbut->SetToolTipText("Add new type of 2d histogram. Low and Upper edge on\nX and Y axes are taken from the corresponding 1d histogram.");
+  h2fr->AddFrame(fbut, LayRC1);
   fbut->Connect("Clicked()", "HistParDlg", this, "Add2d()");
-
-  tip1= "2-dimensional histogram AreaX-AreaY)";
-  label="AXAY";
-  AddLine_2d(frame2d,&opt.h_axay,tip1,label,2);
-
-  tip1= "2-dimensional histogram (Area_Base)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Base";
-  AddLine_2d(frame2d,&opt.h_area_base,tip1,label,1);
-
-  tip1= "2-dimensional histogram (Area_Slope1)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Sl1";
-  AddLine_2d(frame2d,&opt.h_area_sl1,tip1,label,1);
-
-  tip1= "2-dimensional histogram (Area_Slope2)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Sl2";
-  AddLine_2d(frame2d,&opt.h_area_sl2,tip1,label,1);
-
-  tip1= "2-dimensional histogram (Slope1-Slope2)\nMin Max are taken from the corresponding 1d histograms";
-  label="Slope_12";
-  AddLine_2d(frame2d,&opt.h_slope_12,tip1,label,1);
-
-  // tip1= "2-dimensional histogram (Time_Simul)\nMin Max are taken from the corresponding 1d histograms";
-  // label="Time_Simul";
-  // AddLine_2d(frame2d,&opt.h_time_simul,tip1,label,1);
-
-  tip1= "2-dimensional histogram (Area_Time)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Time";
-  AddLine_2d(frame2d,&opt.h_area_time,tip1,label,1);
-
-  tip1= "2-dimensional histogram (Area_Width)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Width";
-  AddLine_2d(frame2d,&opt.h_area_width,tip1,label,1);
-
-  // tip1= "2-dimensional histogram (Area_Width2)\nMin Max are taken from the corresponding 1d histograms";
-  // label="Area_Width2";
-  // AddLine_2d(frame2d,&opt.h_area_width2,tip1,label,1);
-
-  tip1= "2-dimensional histogram (Area_Ntof)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Ntof";
-  AddLine_2d(frame2d,&opt.h_area_ntof,tip1,label,1);
-
-  // tip1= "2-dimensional histogram (Area_Width3)\nMin Max are taken from the corresponding 1d histograms";
-  // label="Area_Width3";
-  // AddLine_2d(frame2d,&opt.h_area_width3,tip1,label,1);
-
-  // tip1= "2-dimensional histogram (Width_12)\nMin Max are taken from the corresponding 1d histograms";
-  // label="Width_12";
-  // AddLine_2d(frame,&opt.h_width_12,tip1,label,1);
 
 }
 
-void HistParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
-			     const char* tip, const char* label) {
+void HistParDlg::AddHist_2d() {
 
+  //cout << "AddHist_2d: " << endl;
+  //сначала удаляем все строки с 2d, потом добавляем из Mlist, потом Layout
+
+
+  //удаляем
+  TGHorizontalFrame* fr = (TGHorizontalFrame*) list2d.First();
+  while (fr) {
+    //cout << "fr: " << fr << " "<<fr->GetName()<<" "<< fr->GetTitle() << endl;
+
+    TGFrameElement *el;
+    TIter next(fr->GetList());
+    while ((el = (TGFrameElement *) next())) {
+      fr->HideFrame(el->fFrame);
+      fr->RemoveFrame(el->fFrame);
+      //delete el->fFrame;
+    }
+
+    frame2d->HideFrame(fr);
+    frame2d->RemoveFrame(fr);
+
+    //TGHorizontalFrame* fr2 = fr;
+    fr = (TGHorizontalFrame*) list2d.After(fr);
+  }
+
+  list2d.Clear();
+
+
+
+  //добавляем
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->hnum > 100) { // 2d hist
+      AddLine_2d(frame2d,&*it);
+    }
+  }
+
+  MapSubwindows();
+  //myM->Resize(GetDefaultSize());
+  Layout();
+  MapWindow();
+}
+
+/*
+void HistParDlg::RemHist_2d(TGCompositeFrame* frame2) {
+
+  cout << "AddHist_2d: " << endl;
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->hnum > 100) { // 2d hist
+      AddLine_2d(frame2d,&*it);
+    }
+  }
+
+}
+*/
+
+void HistParDlg::AddLine_hist(TGGroupFrame* frame, Mdef* md) {
   double ww1=50;
   double ww=70;
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  hfr1->ChangeOptions(hfr1->GetOptions()|kFixedWidth);
+  hfr1->Resize(HFRAME_WIDTH,0);
   frame->AddFrame(hfr1);
 
   int id;
@@ -1914,7 +1917,7 @@ void HistParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   //checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
-  DoMap(chk_hist,&hd->b,p_chk,0,0x100);
+  DoMap(chk_hist,&md->hd->b,p_chk,0,0x100);
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_hist,LayLT2);
 
@@ -1922,7 +1925,7 @@ void HistParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 					   TGNumberFormat::kNEAAnyNumber,
 					   lim,0.0001,10000);
-  DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0,0x100|(2<<4));
+  DoMap(fNum1->GetNumberEntry(),&md->hd->bins,p_fnum,0,0x100|(2<<4));
   fNum1->GetNumberEntry()->SetToolTipText("Number of bins per channel");
   fNum1->SetWidth(ww1);
   fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
@@ -1934,7 +1937,7 @@ void HistParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 					   TGNumberFormat::kNEAAnyNumber,
 					   nolim);
-  DoMap(fNum2->GetNumberEntry(),&hd->min,p_fnum,0,0x100|(2<<4));
+  DoMap(fNum2->GetNumberEntry(),&md->hd->min,p_fnum,0,0x100|(2<<4));
   fNum2->GetNumberEntry()->SetToolTipText("Low edge");
   fNum2->SetWidth(ww);
   fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
@@ -1946,7 +1949,7 @@ void HistParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   TGNumberEntry* fNum3 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 					   TGNumberFormat::kNEAAnyNumber,
 					   nolim);
-  DoMap(fNum3->GetNumberEntry(),&hd->max,p_fnum,0,0x100|(2<<4));
+  DoMap(fNum3->GetNumberEntry(),&md->hd->max,p_fnum,0,0x100|(2<<4));
   fNum3->GetNumberEntry()->SetToolTipText("Upper edge");
   fNum3->SetWidth(ww);
   fNum3->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
@@ -1958,7 +1961,7 @@ void HistParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   TGNumberEntry* fNum4 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
 					   TGNumberFormat::kNEAPositive,
 					   lim,1,1000);
-  DoMap(fNum4->GetNumberEntry(),&hd->rb,p_inum,0,4<<1|3<<4); //cyan + Update
+  DoMap(fNum4->GetNumberEntry(),&md->hd->rb,p_inum,0,4<<1|3<<4); //cyan + Update
   fNum4->GetNumberEntry()->SetToolTipText("Rebin (only for drawing)");
   fNum4->SetWidth(ww1);
   fNum4->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
@@ -1966,99 +1969,45 @@ void HistParDlg::AddLine_hist(TGGroupFrame* frame, Hdef* hd,
   hfr1->AddFrame(fNum4,LayLT2);
 
 
-  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, md->name.Data());
   //fLabel->SetWidth();
   fLabel->SetState(false);
   fLabel->ChangeOptions(0);
-  fLabel->SetToolTipText(tip);
+  fLabel->SetToolTipText(md->tip);
   fLabel->SetAlignment(kTextCenterY);
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
   hfr1->AddFrame(fLabel,LayLT2);
-
 }
 
-void HistParDlg::AddLine_2d(TGGroupFrame* frame, Hdef* hd,
-			   const char* tip, const char* label, int type) {
-
-  double ww1=50;
-  int min2=0.0001;
-  int max2=10000;
-  char *tip11, *tip22;
-  // byte cmd=0;
-
-  if (type==1) { //normal 2d
-    tip11= (char*) "Number of bins per channel on X-axis";
-    tip22= (char*) "Number of bins per channel on Y-axis";
-  }
-  else { //AXAY
-    ww1=60;
-    min2=0;
-    max2=opt.Nchan-1;
-    // cmd=2<<4;
-    tip11= (char*) "Number of bins per channel on X and Y axis";
-    tip22= (char*) "Maximal channel number";
-  }
-
-
-  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
-  frame->AddFrame(hfr1);
+void HistParDlg::AddLine_mean(TGHorizontalFrame *hfr1, Mdef* md) {
+  char name[20];
 
   int id;
-  //int id0;
-
-  //TGNumberFormat::ELimit nolim = TGNumberFormat::kNELNoLimits;
-  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
 
   //checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
-  DoMap(chk_hist,&hd->b,p_chk,0,0x100|(2<<4));
+  sprintf(name,"b_pulse%d",id);
+  chk_hist->SetName(name);
+  DoMap(chk_hist,&md->hd->b,p_chk,0,0x100);
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_hist,LayCC1);
-  //id0=id;
 
-  //nbins (x-axis)
-  id = Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
-					   TGNumberFormat::kNEAAnyNumber,
-					   lim,0.0001,10000);
-  DoMap(fNum1->GetNumberEntry(),&hd->bins,p_fnum,0,0x100|(2<<4));
-  fNum1->GetNumberEntry()->SetToolTipText(tip11);
-  fNum1->SetWidth(ww1);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoDaqNum()");
-  hfr1->AddFrame(fNum1,LayLT2);
-
-  //nbins2 (y-axis)
-  id = Plist.size()+1;
-  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0,
-			    TGNumberFormat::kNEAAnyNumber,
-			    lim,min2,max2);
-  DoMap(fNum1->GetNumberEntry(),&hd->bins2,p_fnum,0,0x100|(2<<4));
-  fNum1->GetNumberEntry()->SetToolTipText(tip22);
-  fNum1->SetWidth(ww1);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoDaqNum()");
-  hfr1->AddFrame(fNum1,LayLT2);
-
-  // - just to take space
-  // TGLabel* tt = new TGLabel(hfr1,"");
-  // tt->ChangeOptions(tt->GetOptions()|kFixedWidth);
-  // tt->SetWidth(ww);
-  // hfr1->AddFrame(tt,LayLT2);
-
-  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  TString lab = "Mean_"+md->name;
+  
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, lab.Data());
   //fLabel->SetWidth();
   fLabel->SetState(false);
   fLabel->ChangeOptions(0);
-  fLabel->SetToolTipText(tip);
+  fLabel->SetToolTipText(md->tip);
   fLabel->SetAlignment(kTextCenterY);
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
-  hfr1->AddFrame(fLabel,LayLT2);
+  hfr1->AddFrame(fLabel,LayLT5);
+
 }
 
 void HistParDlg::Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
@@ -2079,98 +2028,278 @@ void HistParDlg::Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
   hfr1->AddFrame(fNum1,LayLT3);
 }
 
-void HistParDlg::AddLine_prof(TGGroupFrame* frame, Hdef* hd,
-			     const char* tip, const char* label) {
-
-  //double ww1=40;
-  //TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
-
-  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
-  frame->AddFrame(hfr1);
-
+void HistParDlg::AddLine_prof(TGHorizontalFrame *hfr1, Mdef* md) {
   int id;
 
   //main checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
-  DoMap(chk_hist,&hd->b,p_chk,0,0x100|(4<<4));
+  DoMap(chk_hist,&md->hd->b,p_chk,0,0x100|(4<<4));
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_hist,LayCC1);
   //id0=id;
 
   Add_prof_num(hfr1,&opt.prof_nx,16,p_inum,0x100|(2<<4),"Number of X-strips from ING-27");
   Add_prof_num(hfr1,&opt.prof_ny,16,p_inum,0x100|(2<<4),"Number of Y-strips from ING-27");
-  Add_prof_num(hfr1,&hd->bins,64,p_fnum,0x100|(2<<4),"Number of X-bins in profilometer histograms");
-  Add_prof_num(hfr1,&hd->bins2,64,p_fnum,0x100|(2<<4),"Number of Y-bins in profilometer histograms");
-  Add_prof_num(hfr1,&hd->rb,64,p_inum,4<<1|3<<4,"Rebin X (only for drawing)");
-  Add_prof_num(hfr1,&hd->rb2,64,p_inum,4<<1|3<<4,"Rebin Y (only for drawing)");
+  Add_prof_num(hfr1,&md->hd->bins,64,p_fnum,0x100|(2<<4),"Number of X-bins in profilometer histograms");
+  Add_prof_num(hfr1,&md->hd->bins2,64,p_fnum,0x100|(2<<4),"Number of Y-bins in profilometer histograms");
+  Add_prof_num(hfr1,&md->hd->rb,64,p_inum,4<<1|3<<4,"Rebin X (only for drawing)");
+  Add_prof_num(hfr1,&md->hd->rb2,64,p_inum,4<<1|3<<4,"Rebin Y (only for drawing)");
 
 	
-  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, md->name.Data());
   //fLabel->SetWidth();
   fLabel->SetState(false);
   fLabel->ChangeOptions(0);
-  fLabel->SetToolTipText(tip);
+  fLabel->SetToolTipText(md->tip);
   fLabel->SetAlignment(kTextCenterY);
 
   //TGLabel* fLabel = new TGLabel(hfr1, label);
   //fLabel->SetToolTipText(tip);
   hfr1->AddFrame(fLabel,LayLT4);
 
+}
+
+void HistParDlg::AddLine_prof_int(TGHorizontalFrame *hfr1, Mdef* md) {
+  int id;
 
   //1d checkbutton
   id = Plist.size()+1;
-  TGCheckButton *chk_1d = new TGCheckButton(hfr1, "64x64", id);
-  chk_1d->SetToolTipText("checked: new profilometer 64x64; unchecked: old profilometer 8x8");
-  DoMap(chk_1d,&opt.h_prof64.b,p_chk,0,0x100);
+  TGCheckButton *chk_1d = new TGCheckButton(hfr1, md->name.Data(), id);
+  chk_1d->SetToolTipText(md->tip);
+  DoMap(chk_1d,&opt.h_prof_int.b,p_chk,0,0x100);
   chk_1d->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_1d,LayCC1);
   //id0=id;
 
 }
 
-void HistParDlg::AddLine_mean(TGHorizontalFrame *hfr1, Hdef* hd,
-			     const char* tip, const char* label)
-{
-  char name[20];
+void HistParDlg::AddLine_2d(TGGroupFrame* frame, Mdef* md) {
+  int id1 = md->hnum/100;
+  int id2 = md->hnum%100;
 
+  int col=0;
+  double ww1=50,ww2=40;
+  int min2=0.0001;
+  int max2=10000;
+  char *tip11, *tip22;
+
+  if (id1==id2) { //AXAY
+    col=2<<1;
+    min2=0;
+    max2=opt.Nchan-1;
+    tip11= (char*) "Number of bins per channel on X and Y axis";
+    tip22= (char*) "Maximal channel number";
+  }
+  else { //normal 2d
+    tip11= (char*) "Number of bins per channel on X-axis";
+    tip22= (char*) "Number of bins per channel on Y-axis";
+  }
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  hfr1->ChangeOptions(hfr1->GetOptions()|kFixedWidth);
+  hfr1->Resize(HFRAME_WIDTH,0);
+  frame->AddFrame(hfr1);
+
+  hfr1->SetCleanup(kDeepCleanup);
+  
   int id;
+  //int id0;
+
+  //TGNumberFormat::ELimit nolim = TGNumberFormat::kNELNoLimits;
+  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
 
   //checkbutton
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
-  sprintf(name,"b_pulse%d",id);
-  chk_hist->SetName(name);
-  DoMap(chk_hist,&hd->b,p_chk,0,0x100);
+  DoMap(chk_hist,&md->hd->b,p_chk,0,0x100|(2<<4));
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
-  hfr1->AddFrame(chk_hist,LayCC1);
+  hfr1->AddFrame(chk_hist,LayLT2);
+  //id0=id;
 
-  TGTextEntry *fLabel=new TGTextEntry(hfr1, label);
+  //nbins (x-axis)
+  id = Plist.size()+1;
+  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
+					   TGNumberFormat::kNEAAnyNumber,
+					   lim,0.0001,10000);
+  DoMap(fNum1->GetNumberEntry(),&md->hd->bins,p_fnum,0,0x100|(2<<4));
+  fNum1->GetNumberEntry()->SetToolTipText(tip11);
+  fNum1->SetWidth(ww1);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoDaqNum()");
+  hfr1->AddFrame(fNum1,LayLT2);
+
+  //nbins2 (y-axis)
+  id = Plist.size()+1;
+  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0,
+			    TGNumberFormat::kNEAAnyNumber,
+			    lim,min2,max2);
+  DoMap(fNum1->GetNumberEntry(),&md->hd->bins2,p_fnum,0,0x100|(2<<4)|col);
+  fNum1->GetNumberEntry()->SetToolTipText(tip22);
+  fNum1->SetWidth(ww1);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoDaqNum()");
+  hfr1->AddFrame(fNum1,LayLT2);
+
+  //rebin (x-axis)
+  id = Plist.size()+1;
+  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0,
+			    TGNumberFormat::kNEAAnyNumber,
+			    lim,min2,max2);
+  DoMap(fNum1->GetNumberEntry(),&md->hd->rb,p_inum,0,4<<1|3<<4);//cyan + Update
+  fNum1->GetNumberEntry()->SetToolTipText("Rebin X (only for drawing)");
+  fNum1->SetWidth(ww2);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoDaqNum()");
+  hfr1->AddFrame(fNum1,LayLT2);
+
+  //rebin (y-axis)
+  id = Plist.size()+1;
+  fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0,
+			    TGNumberFormat::kNEAAnyNumber,
+			    lim,min2,max2);
+  DoMap(fNum1->GetNumberEntry(),&md->hd->rb2,p_inum,0,4<<1|3<<4);//cyan + Update
+  fNum1->GetNumberEntry()->SetToolTipText("Rebin Y (only for drawing)");
+  fNum1->SetWidth(ww2);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+				   "DoDaqNum()");
+  hfr1->AddFrame(fNum1,LayLT2);
+
+  // - just to take space
+  // TGLabel* tt = new TGLabel(hfr1,"");
+  // tt->ChangeOptions(tt->GetOptions()|kFixedWidth);
+  // tt->SetWidth(ww);
+  // hfr1->AddFrame(tt,LayLT2);
+
+  TGTextEntry *fLabel=new TGTextEntry(hfr1, md->name.Data());
   //fLabel->SetWidth();
   fLabel->SetState(false);
   fLabel->ChangeOptions(0);
-  fLabel->SetToolTipText(tip);
+  fLabel->SetToolTipText(md->tip);
   fLabel->SetAlignment(kTextCenterY);
 
-  //TGLabel* fLabel = new TGLabel(hfr1, label);
-  //fLabel->SetToolTipText(tip);
-  hfr1->AddFrame(fLabel,LayLT5);
+  hfr1->AddFrame(fLabel,LayLT2);
 
+  // cout << "d2: " << hfr1 << " " << hfr1->GetName() << endl;
+  // hfr1->SetName(TString(md->hnum).Data());
+  // hfr1->SetName("sdfsdf");
+  // cout << "d2: " << hfr1->GetName() << endl;
+
+  // TGFrameElement* d3 = (TGFrameElement*) frame2d->GetList()->First();
+  // while (d3) {
+  //   cout << "d33: " << d3 << " " << d3->GetName() << endl;
+  //   d3 = (TGFrameElement*)frame2d->GetList()->After(d3);
+  // }
+
+  
+  TGTextButton *fbut = new TGTextButton(hfr1,"Remove",md->hnum);
+  fbut->SetToolTipText("Remove this type of 2d histograms");
+  hfr1->AddFrame(fbut, LayRC1);
+  fbut->Connect("Clicked()", "HistParDlg", this, "Rem2d()");
+
+  // TGHorizontalFrame* parent = (TGHorizontalFrame*) fbut->GetParent();
+  // cout << "Rem2d: " << id << " " << parent << endl;
+
+  list2d.Add(hfr1);
+  //ParDlg::Update();
+  Update();
 }
 
 void HistParDlg::Add2d() {
-  cout << "Add2d: " << endl;
-  tip1= "2-dimensional histogram (Area_Width)\nMin Max are taken from the corresponding 1d histograms";
-  label="Area_Width4";
-  AddLine_2d(frame2d,&opt.h_area_width,tip1,label,1);
+  //cout << "Add2d: " << cmb1->GetSelected() << " " << cmb2->GetSelected() << endl;
+
+  int id1 = cmb1->GetSelected();
+  int id2 = cmb2->GetSelected();
+
+  if (hcl->Find_Mdef(100*id1+id2)!=hcl->Mlist.end()) { //already exists
+    return;
+  }
+
+  //cout << "Add2d_1: " << id1 << " " << id2 << endl;
+
+  Mdef* md = hcl->Add_h2(id1,id2);
+
+  if (md) {
+    AddHist_2d();
+  }
+
+
+
+
+
+  /*
+  //cout << "Add2d_2: " << id1 << " " << id2 << " " << md << endl;
+
+  if (md) {
+    AddLine_2d(frame2d,md);
+  }
+  //cout << "Add2d_3: " << id1 << " " << id2 << " " << md << endl;
   MapSubwindows();
   Layout();
+
+  //cout << "Add2d_4: " << id1 << " " << id2 << " " << md << endl;
+
+  // cout << endl;
+  // for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+  //   if (it->hnum>=100) {
+  //     cout << "2d: " << it->hnum << " " << it->name << endl;
+  //   }
+  // }
+  */
+
+}
+
+void HistParDlg::Rem2d() {
+  TGButton *btn = (TGButton *) gTQSender;
+  int id = btn->WidgetId();
+
+  mdef_iter it = hcl->Find_Mdef(id);
+  if (it!=hcl->Mlist.end()) {
+    //delete it->hd;
+    hcl->Mlist.erase(it);
+  }
+
+  AddHist_2d();
+  return;
+
+
+  
+  /*
+  myM->MapSubwindows();
+  //myM->Resize(GetDefaultSize());
+  myM->Layout();
+  myM->MapWindow();
+
+
+
+  MapSubwindows();
+  //myM->Resize(GetDefaultSize());
+  Layout();
+  MapWindow();
+
+  */
+
+
+
+
+  HiFrm->HiReset();
 }
 
 void HistParDlg::Update() {
+  //cout << "HistParDlg::Update()" << endl;
   ParDlg::Update();
-  MapSubwindows();
-  Layout();
+  //AddHist_2d();
+
+  if (myM) {
+    myM->MapSubwindows();
+    myM->Layout();
+    myM->MapWindow();
+  }
+
+  // MapSubwindows();
+  // Layout();
+  // MapWindow();
+
 }
 
 //------ ChanParDlg -------

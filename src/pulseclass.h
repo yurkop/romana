@@ -5,6 +5,7 @@
 #include <TH1.h>
 
 class HMap;
+class Mdef;
 
 /*
 enum PeakDef {
@@ -29,50 +30,6 @@ const UChar_t P_B2=1<<3; //bad right side (opt.peak2 is out of range)
 const UChar_t P_B11=1<<4; //bad left or right side in timing (T3 or T4 is out of range)
 const UChar_t P_B22=1<<5; //bad left or right side in width (T5 or T6 is out of range)
 const UChar_t P_BAD=1<<7; //bad (dummy) peak
-
-
-/*
-class PeakClass {
-public:
-  Float_t Base; //baseline
-  Float_t Area0; //area+background
-  Float_t Area; //pure area (Area0-Base)
-  Float_t Slope1;
-  Float_t Slope2;
-  //Float_t Noise1;
-  //Float_t Noise2;
-  Float_t Height; //maximum of pulse in the same region as Area
-  Float_t Width; //peak width - Alpatov (in 1st deriv)
-  //Float_t Width2; //peak width2 - romana3a
-  //Float_t Width3; //peak width3 - Alpatov2 (in pulse)
-  Float_t Time; //exact time relative to pulse start (from 1st deriv), also relative to event start, in samples
-  //Float_t Time2; //exact time (from 2nd deriv)
-
-  UChar_t Type; //peak type
-  //UChar_t Chan; //channel number
-  //Short_t Pos; //position relative to pulse start (in samples)
-  //Short_t Pos2; //position of the 1st maximum in 1st derivative after threshold
-
-  // Short_t B1; //left background window
-  // Short_t B2; //right background window
-  // Short_t P1; //left peak window
-  // Short_t P2; //right peak window
-  // Short_t T1; //left zero crossing of deriv
-  // Short_t T2; //right zero crossing of deriv
-  // Short_t T3; //left timing window
-  // Short_t T4; //right timing window
-  // Short_t T5; //left width window
-  // Short_t T6; //right width window
-
-  //Pos,T1,T2 - relative to pulse start, in samples
-  //Time - relative to discriminator (+preWr), in samples
-
-public:
-  PeakClass();// {Type=0;};
-//   virtual ~PeakClass() {};
-  
-};
-*/
 
 //ptype==0 - > pulse had start and stop
 //const unsigned char P_NOSTART=1; //pulse has no start
@@ -112,26 +69,26 @@ class PulseClass {
   //Spin=254 - end of Blist, just splice BB and Levents
   UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
 
-  Float_t Base; //baseline
-  Float_t Area0; //area+background
-  Float_t Area; //pure area (Area0-Base)
-  Float_t Slope1; //slope of background
-  Float_t Slope2; //slope of peak
+  Float_t Area; // pure area (Area0-Base)
+  Float_t Base; // baseline
+  //Float_t Area0; // area+baseline
+  Float_t Sl1; // slope of background
+  Float_t Sl2; // slope of peak
+  Float_t Height; // maximum of pulse in the same region as Area
+  Float_t Width; // peak width
+  Float_t Time; // exact time relative to Pos (pulse start)
+
   //Float_t Simul2; //another version of Time (for simulions)
-
-
   //Float_t Noise1;
   //Float_t Noise2;
-  Float_t Height; //maximum of pulse in the same region as Area
-  Float_t Width; //peak width
-  Float_t Time; //exact time relative to Pos (pulse start)
 
   //bool Analyzed; //true if pulse is already analyzed
  public:
   PulseClass();// {};
   virtual ~PulseClass() {};
 
-  Double_t CFD(int i, int kk, int delay, double frac);
+  size_t GetPtr(Mdef* it);
+  Float_t CFD(int i, int kk, int delay, Float_t frac, Float_t &drv);
   //void Analyze();
   void FindPeaks(Int_t sTrig, Int_t kk);
   void FindZero(Int_t sTrig, Int_t kk, Int_t j0);
@@ -147,6 +104,7 @@ class PulseClass {
 };
 
 typedef std::vector<PulseClass> pulse_vect;
+//typedef pulse_vect::iterator pulse_iter;
 
 class EventClass { //event of pulses
 
@@ -159,7 +117,8 @@ class EventClass { //event of pulses
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
   //Spin=254 - end of Blist, just splice BB and Levents
-  Long64_t Tstmp; //Timestamp of the earliest pulse (threshold crossig)
+  Long64_t Tstmp; //Event Timestamp (the earliest pulse threshold crossig)
+  //Long64_t Tstart0=0; //Timestamp of the start event
   Float_t T0; //time of the earliest *START* peak, relative to Tstmp, in samples
   std::vector <PulseClass> pulses;
   //std::vector <Long64_t> *Counters;
@@ -168,6 +127,8 @@ class EventClass { //event of pulses
 
  private:
   void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w=1);
+  //void Fill01dw(HMap* map[], int ch, Double_t hcut_flag[], Float_t x, Double_t w=1);
+  void Fill01dw(HMap* map[], int ch, Float_t x, Double_t w=1);
 
 public:
   EventClass();
@@ -177,17 +138,29 @@ public:
 
   //void Pulse_Ana_Add(pulse_vect::iterator pls);
   void AddPulse(PulseClass *pls);
+
+
+
+
+  /*
   void Fill_Time_Extend(HMap* map, void* hd);
   void Fill1d(Bool_t first, HMap* map[], int ch, Float_t x);
-
+  //void Fill01d(HMap* map[], int ch, Double_t hcut_flag[], Float_t x);
+  void Fill01d(HMap* map[], int ch, Float_t x);
+  //void Fill10(HMap* map[], int ch, Float_t x, Double_t *hcut_flag);
+  //void Fill11(Mdef* md, EventClass* evt, pulse_vect::iterator ipls, Double_t *hcut_flag);
   static void Fill1dwSt(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w);
   void Fill_Mean_Pulse(Bool_t first, HMap* map,
 		       pulse_vect::iterator pls, int ideriv);
   void Fill_Mean1(TH1F* hh,  Float_t* Data, Int_t nbins, int ideriv);
   //void Fill_Mean1(TH1F* hh,  PulseClass* pls, UInt_t nbins, int ideriv);
   void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);
-  void FillHist(Bool_t first);
-  void FillHist_old();
+  // void FillFirst();
+  // void FillSecond();
+  */
+
+  void FillHist();
+  //YK_OLD void FillHist_old(Bool_t first);
   void PrintEvent(bool pls=1);
   //void PeakAna();
   //ClassDef(EventClass, 0)

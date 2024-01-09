@@ -1,12 +1,15 @@
 //----- HClass ----------------
+#include <climits>
 #include "romana.h"
 #include <TStyle.h>
+#include <sstream>
 
 extern Toptions opt;
 
 extern CRS* crs;
 extern ParParDlg *parpar;
 extern Coptions cpar;
+extern HClass* hcl;
 
 // extern ULong_t fGreen;
 // extern ULong_t fRed;
@@ -15,11 +18,706 @@ extern Coptions cpar;
 //extern TH1F *hrms;
 //extern TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)
 
-extern HistFrame* EvtFrm;
+//extern HistFrame* EvtFrm;
 
 //extern Double_t initcuts[MAXCUTS];
 
 //TText txt;
+
+//------------------------------
+
+Float_t Mdef::VarTime(EventClass* e, PulseClass* p){
+  //PulseClass* pls = (PulseClass*) p;
+  //cout << "vartime: " << pls->Chan << " " << (pls->Time - e->T0)*opt.Period+opt.sD[pls->Chan] << endl;
+  return (p->Time - e->T0)*opt.Period+opt.sD[p->Chan];
+}
+
+Float_t Mdef::VarRate(EventClass* e, PulseClass* p){
+  //PulseClass* pls = (PulseClass*) p;
+  Float_t x = e->Tstmp*crs->sPeriod;
+
+  //Time_Extend(pls->Chan, x);
+  return x;
+}
+
+Float_t Mdef::VarNtof(EventClass* e, PulseClass* p){
+  static Long64_t Tstart0=LLONG_MAX; //Tstamp of the ntof start pulses
+  static Float_t Time0=0; //Exact time of the ntof start pulses
+
+  Float_t tt=0;
+  if (p->Chan==opt.start_ch) {
+    Tstart0 = e->Tstmp;
+    Time0 = p->Time;
+    return 0;
+  }
+
+  tt = e->Tstmp - Tstart0;
+  tt+= p->Time - Time0;
+  tt*= mks*opt.Period;
+
+  //check for missed starts - obsolete...
+  // if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
+  //   crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
+  //   tt = (tm - crs->Tstart0)*mks*opt.Period;
+  // }
+
+  return tt;
+}
+
+Float_t Mdef::VarEtof(EventClass* e, PulseClass* p){
+  static Long64_t Tstart0=LLONG_MAX; //Tstamp of the ntof start pulses
+  static Float_t Time0=0; //Exact time of the ntof start pulses
+
+  Float_t tt=0;
+  if (p->Chan==opt.start_ch) {
+    Tstart0 = e->Tstmp;
+    Time0 = p->Time;
+    return 0;
+  }
+
+  tt = e->Tstmp - Tstart0;
+  tt+= p->Time - Time0;
+  tt*= mks*opt.Period;
+
+  Float_t ee = 72.298*opt.Flpath/(tt-opt.TofZero);
+
+  //check for missed starts - obsolete...
+  // if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
+  //   crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
+  //   tt = (tm - crs->Tstart0)*mks*opt.Period;
+  // }
+
+  return ee*ee;
+}
+
+Float_t Mdef::VarLtof(EventClass* e, PulseClass* p){
+  static Long64_t Tstart0=LLONG_MAX; //Tstamp of the ntof start pulses
+  static Float_t Time0=0; //Exact time of the ntof start pulses
+
+  Float_t tt=0;
+  if (p->Chan==opt.start_ch) {
+    Tstart0 = e->Tstmp;
+    Time0 = p->Time;
+    return 0;
+  }
+
+  tt = e->Tstmp - Tstart0;
+  tt+= p->Time - Time0;
+  tt*= mks*opt.Period;
+
+  Float_t sqee = 72.298*opt.Flpath/(tt-opt.TofZero);
+  Float_t lambda = 0.286*sqee;
+
+  //check for missed starts - obsolete...
+  // if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
+  //   crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
+  //   tt = (tm - crs->Tstart0)*mks*opt.Period;
+  // }
+
+  return lambda;
+}
+
+void Mdef::Time_Extend(UChar_t ch, Double_t T) {
+  if (!v_map[ch]) return;
+
+  TH1F* hh = (TH1F*) v_map[ch]->hst;
+  Double_t max = hh->GetXaxis()->GetXmax();
+
+  //prnt("ss ds;",BGRN,"T:",hnum,RST);
+
+  if (T > max) {
+    //prnt("ssl l fs;",BYEL,"T: ",Nevt,Tstmp,T-max,RST);
+    if (T - max > 1e4) { //larger than several hours
+      cout << "Time leap is too large: " << crs->nevents << " " << T << " " << max << " " << crs->Tstart64 << endl;
+    }
+    else {
+      Double_t rt = T/max;
+      int nn=2;
+      while (rt>2) {
+	nn*=2;
+	rt*=0.5;
+      }
+      max*=nn;
+      int nbin = hh->GetNbinsX()*nn;
+      for (auto it = v_map.begin();it!=v_map.end();++it) {
+	if (*it) {
+	  (*it)->hst->SetBins(nbin,0,max);
+	  if (opt.ncuts) { //расширяем также все h_cuts
+	    for (int i=1;i<opt.ncuts;i++) {
+	      if ((*it)->h_cuts[i]) {
+		(*it)->h_cuts[i]->hst->SetBins(nbin,0,max);
+	      }
+	    }
+	  }
+	}
+      }
+
+    }
+  }
+}
+
+void Mdef::Time_Extend_2d(UChar_t ch, Double_t xx, Double_t yy) {
+  //только по оси Y
+  if (!v_map[ch]) return;
+
+  TH1* hh = v_map[ch]->hst;
+  if (hh->GetDimension()!=2) return;
+  //bool change=false;
+
+  int nx = hh->GetNbinsX();
+  Double_t xmin = hh->GetXaxis()->GetXmin();
+  Double_t xmax = hh->GetXaxis()->GetXmax();
+  int ny = hh->GetNbinsY();
+  Double_t ymin = hh->GetYaxis()->GetXmin();
+  Double_t ymax = hh->GetYaxis()->GetXmax();
+
+  if (my->hnum==21) {
+    if (yy > ymax) {
+      Double_t rt = yy/ymax;
+      int nn=2;
+      while (rt>2) {
+	nn*=2;
+	rt*=0.5;
+      }
+      ymax*=nn;
+      ny*=nn;
+      //change=true;
+      for (auto it = v_map.begin();it!=v_map.end();++it) {
+	if (*it) {
+	  (*it)->hst->SetBins(nx,xmin,xmax,ny,ymin,ymax);
+	  if (opt.ncuts) { //расширяем также все h_cuts
+	    for (int i=1;i<opt.ncuts;i++) {
+	      if ((*it)->h_cuts[i]) {
+		(*it)->h_cuts[i]->hst->SetBins(nx,xmin,xmax,ny,ymin,ymax);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  // if (change) {
+  //   for (auto it = v_map.begin();it!=v_map.end();++it) {
+  //     if (*it)
+  // 	(*it)->hst->SetBins(nx,xmin,xmax,ny,ymin,ymax);
+  //   }
+  // }
+
+}
+
+void Mdef::Fill_01(HMap* map, Float_t x, Double_t *hcut_flag, int ncut) {
+  // заполняем 1d гистограмму и 1-мерный cut
+  if (!map) return;
+  if (ncut) {
+    map=map->h_cuts[ncut];
+    if (!map) return;
+  }
+
+  map->hst->Fill(x);
+
+  if (opt.ncuts && !ncut) {
+    for (int i=1;i<opt.ncuts;i++) {
+      //если в этой гистограмме задан cut i
+      if (getbit(*(map->hd->cut+map->nn),i)) {
+	if (x>=hcl->cutG[i]->GetX()[0] && x<hcl->cutG[i]->GetX()[1]) {
+	  hcut_flag[i]=1;
+	}
+      }
+    }
+  }
+}
+
+void Mdef::Fill_02(HMap* map, Float_t x, Float_t y, Double_t *hcut_flag,
+		   int ncut) {
+  // заполняем 2d гистограмму и 2-мерный cut
+  if (!map) return;
+  if (ncut) {
+    map=map->h_cuts[ncut];
+    if (!map) return;
+  }
+
+  //prnt("ssf fs;",BRED,"F02: ",x,y,RST);
+
+  map->hst->Fill(x,y);
+
+  if (opt.ncuts && !ncut) {
+    for (int i=1;i<opt.ncuts;i++) {
+      if (getbit(*(map->hd->cut+map->nn),i)) {
+	if (hcl->cutG[i]->IsInside(x,y)) {
+	  hcut_flag[i]=1;
+	}
+      }
+    }
+  }
+}
+
+void Mdef::Fill_1d(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      // вызываем Fill_01 для данной гистограммы и группы, которой она принадлежит
+      Float_t x = (this->*GetX)(evt,&*ipls);
+      Fill_01(v_map[ipls->Chan],x,hcut_flag,ncut);
+
+      for (int j=0;j<NGRP;j++)
+	if (opt.Grp[ipls->Chan][j])
+	  Fill_01(v_map[MAX_CH+j],x,hcut_flag,ncut);
+
+    }
+  }
+}
+
+/*
+void Mdef::Fill_1d_cut(EventClass* evt, int i) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    int ch = ipls->Chan;
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ch<opt.Nchan && ipls->Pos>-32222 && 
+
+	//если map!=0 и данная гистограмма в Main
+	v_map[ch] && *(v_map[ch]->hd->w+v_map[ch]->nn)) {
+
+      // вызываем Fill для данной cut-гистограммы
+      if (v_map[ch]->h_cuts[i]) {
+	Float_t x = (this->*GetX)(evt,&*ipls);
+	v_map[ch]->h_cuts[i]->hst->Fill(x);
+	//Fill_01(v_map[ch]->h_cuts[i],x,0);
+      }
+    }
+  }
+}
+*/
+
+void Mdef::Fill_1d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      // вызываем Fill_01 для данной гистограммы и группы, которой она принадлежит
+      Float_t x = (this->*GetX)(evt,&*ipls);
+      Time_Extend(ipls->Chan, x);
+      Fill_01(v_map[ipls->Chan],x,hcut_flag,ncut);
+
+      //prnt("ss d d fs;",BGRN,"1d:",hnum,ipls->Chan,x,RST);
+
+      for (int j=0;j<NGRP;j++)
+	if (opt.Grp[ipls->Chan][j])
+	  Fill_01(v_map[MAX_CH+j],x,hcut_flag,ncut);
+
+    }
+  }
+}
+
+void Mdef::Fill_2d(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      // вызываем Fill_02 для данной гистограммы
+
+      Float_t x = (mx->*mx->GetX)(evt,&*ipls);
+      Float_t y = (my->*my->GetX)(evt,&*ipls);
+
+      Fill_02(v_map[ipls->Chan],x,y,hcut_flag,ncut);
+
+      //prnt("ss d d d f fs;",BRED,"1d:",hnum,mx->hnum,ipls->Chan,x,y,RST);
+
+      // for (int j=0;j<NGRP;j++)
+      // 	if (opt.Grp[ipls->Chan][j])
+      // 	  Fill_02(v_map[MAX_CH+j],x,y,hcut_flag);
+
+    }
+  }
+}
+
+void Mdef::Fill_2d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      // вызываем Fill_02 для данной гистограммы
+
+      Float_t x = (mx->*mx->GetX)(evt,&*ipls);
+      Float_t y = (my->*my->GetX)(evt,&*ipls);
+
+      Time_Extend_2d(ipls->Chan,x,y);
+      Fill_02(v_map[ipls->Chan],x,y,hcut_flag,ncut);
+
+      //prnt("ss d d d f fs;",BRED,"1d:",hnum,mx->hnum,ipls->Chan,x,y,RST);
+
+      // for (int j=0;j<NGRP;j++)
+      // 	if (opt.Grp[ipls->Chan][j])
+      // 	  Fill_02(v_map[MAX_CH+j],x,y,hcut_flag);
+
+    }
+  }
+}
+
+/*
+void Mdef::FillRate(EventClass* evt, Double_t *hcut_flag) {
+  Float_t x = evt->Tstmp*crs->sPeriod;
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      // вызываем Fill_01 для данной гистограммы и группы, которой она принадлежит
+      Time_Extend(ipls->Chan, x);
+      Fill70(v_map[ipls->Chan],x,hcut_flag);
+
+      for (int j=0;j<NGRP;j++)
+	if (opt.Grp[ipls->Chan][j])
+	  Fill70(v_map[MAX_CH+j],x,hcut_flag);
+
+    }
+  }
+}
+*/
+
+void Mdef::FillMult(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  Float_t mult[NGRP+1] = {0};
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      mult[NGRP]++;
+      for (int j=0;j<NGRP;j++)
+	if (opt.Grp[ipls->Chan][j])
+	  mult[j]++;
+    }
+  }
+
+  Fill_01(v_map[0],mult[NGRP],hcut_flag,ncut);
+
+  for (int j=0;j<NGRP;j++) {
+    if (v_map[MAX_CH+j])
+      Fill_01(v_map[MAX_CH+j],mult[j],hcut_flag,ncut);
+  }
+
+}
+
+/*
+void Mdef::FillMult_cut(EventClass* evt, int i) {
+  Float_t mult[NGRP+1] = {0};
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      mult[NGRP]++;
+      for (int j=0;j<NGRP;j++)
+	if (opt.Grp[ipls->Chan][j])
+	  mult[j]++;
+    }
+  }
+
+  //Fill_01(v_map[0],mult[NGRP],hcut_flag);
+
+  for (int j=0;j<NGRP;j++) {
+    if (v_map[MAX_CH+j])
+      ;//Fill_01(v_map[MAX_CH+j],mult[j],hcut_flag);
+  }
+
+}
+*/
+
+/*
+void Mdef::FillEvt(EventClass* evt, Double_t *hcut_flag) {
+  Float_t x = (this->*GetX)(evt,&*ipls);
+
+  Fill70(v_map[0],mult[NGRP],hcut_flag);
+  for (int j=0;j<NGRP;j++) {
+    if (v_map[MAX_CH+j])
+      Fill70(v_map[MAX_CH+j],mult[j],hcut_flag);
+  }
+
+}
+*/
+
+/*
+void Mdef::FillTime(EventClass* evt, Double_t *hcut_flag) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      // вызываем Fill10 для данной гистограммы и группы, которой она принадлежит
+      Float_t x = ipls->Time;
+      Fill70(v_map[ipls->Chan],x,hcut_flag);
+
+
+      // HMap* mm = v_map[ipls->Chan];
+      // //cout << (int) ipls->Chan << " " << (int) mm->ngrp << endl;
+      // for (int j=0;j<NGRP;j++) {
+      // 	if (mm->grp[j]) {
+      // 	  Fill70(v_map[MAX_CH+j],x,hcut_flag);
+      // 	}
+      // }
+
+
+      for (int j=0;j<NGRP;j++)
+	if (opt.Grp[ipls->Chan][j])
+	  Fill70(v_map[MAX_CH+j],x,hcut_flag);
+
+    }
+  }
+}
+*/
+
+//int g_ch;
+
+void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
+  if (!map) return;
+  if (ncut) {
+    map=map->h_cuts[ncut];
+    if (!map) return;
+  }
+  if (nbins<=0) return;
+
+  double nent=map->hst->GetEntries()/nbins;
+  double val;
+
+  //cout << "ideriv: " << g_ch << " " << ideriv << " " << nbins << " " << nent << endl;
+
+  if (ideriv==0) { //pulse
+    for (auto j=0;j<nbins;j++) {
+      val = map->hst->GetBinContent(j+1)*nent + Data[j];
+      map->hst->SetBinContent(j+1,val/(nent+1));
+    }
+    //map->Nent++;
+  }
+  else { //deriv
+    for (auto j=0;j<nbins;j++) {
+      auto jk = j-ideriv;
+      if (jk>=0 && jk<nbins)
+	val=Data[j] - Data[jk];
+      else
+	val=0;
+      val += map->hst->GetBinContent(j+1)*nent;
+      map->hst->SetBinContent(j+1,val/(nent+1));
+    }
+    //map->Nent++;
+  }
+}
+
+/*
+void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    int ch = ipls->Chan;
+    if (ch<opt.Nchan) {
+      int newsz = ipls->sData.size();
+      TH1* hh = v_map[ch]->hst;
+
+
+      //int nent=hh->GetEntries();
+
+      if (ch==16) {
+      prnt("ss l d d ds;",BGRN,"FM:",evt->Nevt,ch,hh->GetNbinsX(),newsz,RST);
+      //cout << "FM1: " << evt->Nevt << " " << ch << " " << hh->GetNbinsX() << " " << newsz << endl;
+
+      if (hh->GetNbinsX() < newsz) {
+	hh->SetBins(newsz,-cpar.Pre[ch],newsz-cpar.Pre[ch]);
+      }
+
+      Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, opt.sDrv[ch], ncut);
+      }
+
+
+	// if (hnum==51) { //pulse
+	// for (auto j=0;j<newsz;j++) {
+	// Double_t val = hh->GetBinContent(j+1)*nent + ipls->sData[j];
+	// hh->SetBinContent(j+1,val/(nent+1));
+	// }
+	// }
+	// else { //deriv
+	// for (auto j=0;j<newsz;j++) {
+	// auto jk = j-opt.sDrv[ch];
+	// Double_t val;
+	// if (jk>=0 && jk<newsz)
+	// val=ipls->sData[j] - ipls->sData[jk];
+	// else
+	// val=0;
+	// val += hh->GetBinContent(j+1)*nent;
+	// hh->SetBinContent(j+1,val/(nent+1));
+	// }
+	// }
+
+    }
+  }
+}
+*/
+
+void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    int ch = ipls->Chan;
+    if (ch<opt.Nchan) {
+      int newsz = ipls->sData.size();
+      TH1* hh = v_map[ch]->hst;
+
+      //int nent=hh->GetEntries();
+
+      //g_ch=ch;
+      // if (ch==16 || ch==17) {
+      // 	prnt("ss l d d d ds;",BGRN,"FM:",evt->Nevt,ch,hh->GetNbinsX(),newsz,hnum,RST);
+      // }
+
+      if (hh->GetNbinsX() < newsz) {
+	hh->SetBins(newsz,-cpar.Pre[ch],newsz-cpar.Pre[ch]);
+      }
+
+      if (hnum==51) { //pulse
+	Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, 0, ncut);
+      }
+      else { //deriv
+	Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, opt.sDrv[ch], ncut);
+      }
+
+    }
+  }
+}
+
+void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  int ch_alpha;
+  Float_t h_sum[2][64] = {}; //[xy][pos], initialized to zero
+  double tt;
+  if (opt.Prof_type==64) { //new profilometer
+    int a_x=-9999,a_y=-9999;
+    for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+      Int_t pp = crs->prof_ch[ipls->Chan];
+      int h_xy=-1;
+      int h_off=1;
+      int sgn=1;
+      if (pp>=crs->PROF_64) {
+	pp-=crs->PROF_64;
+	switch (pp) {
+	case 0: //P+(33-64) (X)
+	  h_xy=0;
+	  //h_off=33;
+	  h_off=62;
+	  sgn=-1;
+	  break;
+	case 1: //P+(1-32) (X)
+	  h_xy=0;
+	  break;
+	case 2: //N+(33-64) (Y)
+	  h_xy=1;
+	  break;
+	case 3: //N+(1-32) (Y)
+	  h_xy=1;
+	  h_off=62;
+	  sgn=-1;
+	  break;
+	case 4:
+	  // do nothing
+	  break;
+	default:
+	  cout << "wrong prof channel: " << pp << " " << ipls->Chan << endl;
+	} //switch
+
+	if (h_xy>=0) {//one of Prof64 position channels
+	  //PulseClass *pulse = &pulses[i];  
+	  int dt=(ipls->Tstamp64-evt->Tstmp) - cpar.Pre[ipls->Chan] - evt->T0;
+	  int size = ipls->sData.size();
+
+	  for (int kk=-1;kk<31;kk++) {
+	    int jj=h_off+kk*sgn;
+	    int x1 = opt.Prof64_W[1] + opt.Prof64_W[0]*kk - dt;
+	    int x2 = x1 + opt.Prof64_W[2];
+	    int xmin = TMath::Max(x1,0);
+	    int xmax = TMath::Min(x2,size);
+	    if (xmax-xmin>0) {
+	      for (int j=xmin;j<xmax;j++) {
+		h_sum[h_xy][jj]+=ipls->sData[j];
+	      }
+	      h_sum[h_xy][jj]*=-1.0/(xmax-xmin);
+	      // if (kk==1) {
+	      //   prnt("sd d fs;",BRED,Nevt,ipls->Chan,h_sum[h_xy][h_off+kk],RST);
+	      // }
+	    }
+	  } //for kk
+	} //if xy>0  
+      } //if pp>=crs->PROF_64
+
+      else if (pp>=crs->ING_Y) {
+	tt = (ipls->Time - evt->T0)*opt.Period+opt.sD[ipls->Chan];
+	if (abs(tt)<=opt.Prof64_GAT) {
+	  a_y=pp-crs->ING_Y;
+	  //Fill1d(first,hcl->m_time,ipls->Chan-16,tt);
+	}
+      }
+      else if (pp>=crs->ING_X) {
+	tt = (ipls->Time - evt->T0)*opt.Period+opt.sD[ipls->Chan];
+	if (abs(tt)<=opt.Prof64_GAT) {
+	  a_x=pp-crs->ING_X;
+	  //Fill1d(first,hcl->m_time,ipls->Chan-16,tt);
+	}
+      }
+      // else if (pp>=crs->PROF_Y)
+      // 	py=pp-crs->PROF_Y;
+      // else if (pp>=crs->PROF_X)
+      // 	px=pp-crs->PROF_X;
+
+      //prnt("ss l l d ds;",BGRN,"Prof:",Nevt,Tstmp,ipls->Chan,pp,RST);
+
+    } //for (auto ipls)
+
+    // for (int i=0;i<64;i++) {
+    //   cout << "sum: " << evt->Nevt << " " << i << " " << h_sum[0][i]
+    // 	   << " " << h_sum[1][i] << endl;
+    // }
+
+    if (opt.Ing_type==256) {
+      ch_alpha = a_x + (opt.prof_ny-a_y-1)*opt.prof_ny;
+    }
+    else {
+      ch_alpha = a_x;
+    }
+
+    //prnt("ss l d d ds;",BRED,"Prof:",Nevt,ax,ay,hcl->ch_alpha,RST);
+
+    // if (hcl->ch_alpha>=0 && hcl->ch_alpha<opt.prof_ny*opt.prof_nx) {
+    //   if (ax==3) {
+    // 	prnt("ss l d d ds;",BRED,"Prof:",Nevt,ax,ay,hcl->ch_alpha,RST);
+    //   }
+    // }
+
+  } //if (opt.Prof_type==64) //new profilometer
+  //else { //old profilometer
+  //}
+
+
+  //prnt("ss ls;",BRED,"F:",evt->Nevt,RST);
+  if (hcl->mdef_prof->hd->b) {
+    if (ch_alpha>=0 && ch_alpha<(int)hcl->mdef_prof->v_map.size()) {
+      for (int i=0;i<64;i++) {
+	if (h_sum[0][i]>opt.Prof64_THR) { //X
+	  for (int j=0;j<64;j++) {
+	    if (h_sum[1][j]>opt.Prof64_THR) { //Y
+	      Fill_02(hcl->mdef_prof->v_map[ch_alpha],
+		       (i+0.5)*1.875,(j+0.5)*1.875,hcut_flag,ncut);
+	    } //if Y
+	  }
+	} //if X
+      }
+    }
+  }
+
+  //prnt("ss ls;",BRED,"F:",evt->Nevt,RST);
+  if (hcl->mdef_prof_int->hd->b) {
+    Fill_Mean1(hcl->mdef_prof_int->v_map[2], h_sum[0], 64, 0, ncut); //X
+    Fill_Mean1(hcl->mdef_prof_int->v_map[3], h_sum[1], 64, 0, ncut ); //X
+
+    for (int i=0;i<64;i++) {
+      if (h_sum[0][i]>opt.Prof64_THR) {
+	Fill_01(hcl->mdef_prof_int->v_map[0],i+0.5,hcut_flag,ncut);
+	for (int j=0;j<64;j++) {
+	  if (h_sum[1][j]>opt.Prof64_THR) {
+	    Fill_02(hcl->mdef_prof_int->v_map[4],i+0.5,j+0.5,hcut_flag,ncut);
+	    Fill_02(hcl->mdef_prof_int->v_map[5],(i+0.5)*1.875,(j+0.5)*1.875,hcut_flag,ncut);
+	  } //if Y
+	}
+      } //if X
+    }
+
+    for (int i=0;i<64;i++) {
+      if (h_sum[1][i]>opt.Prof64_THR) {
+	Fill_01(hcl->mdef_prof_int->v_map[1],i+0.5,hcut_flag,ncut);
+      } //if Y
+    }
+  }
+
+} //FillProf
 
 //------------------------------
 
@@ -28,7 +726,8 @@ HMap::HMap() {
   gr = 0;
   hd = 0;
   nn = 0;
-  flg=0;
+  //Nent=0;
+  //flg=0;
   memset(h_cuts,0,sizeof(h_cuts));
   //h_MT=0;
 }
@@ -107,7 +806,8 @@ HMap::HMap(const HMap& other) : TNamed(other) {
   gr = other.gr;
   hd = other.hd;
   nn = other.nn;
-  flg = other.flg;
+  //Nent = other.Nent;
+  //flg = other.flg;
 
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
@@ -122,7 +822,8 @@ HMap& HMap::operator=(const HMap& other) {
   gr = other.gr;
   hd = other.hd;
   nn = other.nn;
-  flg = other.flg;
+  //Nent = other.Nent;
+  //flg = other.flg;
 
   for (int i=0;i<MAXCUTS;i++) {
     h_cuts[i]=other.h_cuts[i];
@@ -132,6 +833,7 @@ HMap& HMap::operator=(const HMap& other) {
 }
 
 //------------------------------
+
 
 HClass::HClass()
 {
@@ -143,191 +845,509 @@ HClass::HClass()
     strcpy(cuttitle[i],"");
   }
 
-  wfalse=false;
+  //wfalse=false;
   map_list=NULL;
   allmap_list=NULL;
   dir_list=NULL;
+
+  Make_Mlist();
+
+  //b_first = false;
+
+  /*
+  //calculate class members offset for PulseClass
+  PulseClass* pls = new PulseClass();
+
+  p_ptr[0] = (char*)&pls->Base - (char*)pls;
+  //p_ptr[1] = (char*)&pls->Area0 - (char*)pls;
+  p_ptr[2] = (char*)&pls->Area - (char*)pls;
+  p_ptr[3] = (char*)&pls->Sl1 - (char*)pls;
+  p_ptr[4] = (char*)&pls->Sl2 - (char*)pls;
+  p_ptr[5] = (char*)&pls->Height - (char*)pls;
+  p_ptr[6] = (char*)&pls->Width - (char*)pls;
+  p_ptr[7] = (char*)&pls->Time - (char*)pls;
+
+
+  // PulseClass p1;
+  // p1.Area=723;
+  // Float_t* ar = (Float_t*) ((char*)&p1 + p_ptr[2]);
+  // prnt("ss l l fs;",BRED,"pls:",pls,p_ptr[2],*ar,RST);
+
+
+  delete pls;
+  */
 }
 
 HClass::~HClass()
 {
 }
 
-void NameTitle(char* name, char* title, int i, int cc, 
-			  const char* nm, const char* axis) {
-  // if (cc) {
-  //   sprintf(name,"%s_%02d_cut%d",nm,i,cc);
-  //   sprintf(title,"%s_%02d_cut%d%s_cut%d",nm,i,cc,axis,cc);
-  // }
-  // else {
-    sprintf(name,"%s_%02d",nm,i);
-    sprintf(title,"%s_%02d%s",nm,i,axis);
-    //}
+//------------------------------
+
+void HClass::Make_Mlist() {
+  int nn = MAX_CH+NGRP;
+
+  Mlist.clear();
+
+  TList* l1 = TClass::GetClass("Toptions")->GetListOfDataMembers();
+  TDataMember *d1 = (TDataMember*) l1->First();
+  while (d1) {
+    //Hdef с комментарием
+    if (!strcmp(d1->GetTypeName(),"Hdef") && strlen(d1->GetTitle())) {
+      Mdef md;
+
+      md.hd = (Hdef*) ((char*)&opt + d1->GetOffset());
+
+      md.h_name = d1->GetName();
+      istringstream iss(d1->GetTitle());
+      iss>>md.hnum;
+      iss>>md.name;
+      iss>>md.x_title;
+      iss>>md.y_title;
+      int pos = iss.tellg();
+      if (pos>0)
+	md.tip = iss.str().substr(pos+1);
+
+      if (md.hnum==53) //prof
+	nn = 256;
+      else if (md.hnum==54) //prof_int
+	nn=6;
+
+      md.v_map.resize(nn);
+
+      //prnt("ss s ss;",BBLU,"Make_Ml:",md.h_name.Data(),md.name.Data(),RST);
+      Mlist.push_back(md);
+
+    }
+    d1 = (TDataMember*)l1->After(d1);
+  }
+
 }
 
-void HClass::Make_1d(const char* dname, const char* name, const char* title,
-		     HMap* map[], Hdef* hd) {
+Mdef* HClass::Add_h2(int id1, int id2) {
+  Mdef md;
 
-  memset(map,0,sizeof(HMap*)*(MAX_CH+NGRP));
+  md.hnum = 100*id1+id2;
 
-  if (!hd->b) return;
+  mdef_iter m1 = Find_Mdef(id1);
+  mdef_iter m2 = Find_Mdef(id2);
+
+  if (m1==Mlist.end() || m2==Mlist.end()) return 0;
+
+  md.name = m1->name + '_' +  m2->name;
+  md.h_name = m1->name+'.'+m2->name;
+  //md.h_name.ToLower();
+
+  //cout << "Add_h22: " << md.name << " " << md.h_name << endl;
+
+
+  md.hd = new Hdef();
+
+  int nn;
+  if (id1==id2) { //same 1d histograms
+    nn = MAX_CH/2;
+  }
+  else { //different 1d histograms
+    nn = MAX_CH+NGRP;
+  }
+
+  md.v_map.resize(nn);
+
+  Mlist.push_back(md);
+
+  return &Mlist.back();
+}
+
+void HClass::Make_hist() {
+
+  //opt.cut_per[9*MAXCUTS+4]=17;
+  
+  //char title[100];
+  //cout << "make_hist: " << endl;
+
+  //memset(T_prev,0,sizeof(T_prev));
+
+  if (allmap_list)
+    delete allmap_list;
+  allmap_list = new TList();
+  allmap_list->SetName("allmap_list");
+  allmap_list->SetOwner(false);
+
+  if (map_list)
+    delete map_list;
+  map_list = new TList();
+  map_list->SetName("map_list");
+  map_list->SetOwner(true);
+
+  MFill_list.clear();
+  Mdef* mprof=0;
+
+  /*
+  TList* l1 = TClass::GetClass("Toptions")->GetListOfDataMembers();
+  TDataMember *d1 = (TDataMember*) l1->First();
+  while (d1) {
+    //Hdef с комментарием
+    if (!strcmp(d1->GetTypeName(),"Hdef") && strlen(d1->GetTitle())) {
+      Hdef *var = (Hdef*) ((char*)&opt + d1->GetOffset());
+      Add_hd(MAX_CH+NGRP,var,d1->GetTitle());
+    }
+    d1 = (TDataMember*)l1->After(d1);
+  }
+  */
+
+  Hdef* hd2=0;
+  PulseClass pls;
+  for (auto it = Mlist.begin();it!=Mlist.end();++it) {
+    if (it->hnum>0 && it->hnum<10) {// standard pulse variable
+      Make_1d(it,opt.Nchan);
+      it->ptr = pls.GetPtr(&*it);
+      it->GetX = &Mdef::VarPulse;
+      it->MFill = &Mdef::Fill_1d;
+    }
+    else if (it->hnum==11) { //Time
+      Make_1d(it,opt.Nchan);
+      it->GetX = &Mdef::VarTime;
+      it->MFill = &Mdef::Fill_1d;
+      //YK: it->MFill_cut = &Mdef::Fill_1d_cut???; здесь и ниже недоделано
+    }
+    else if (it->hnum==12) { //nTOF
+      //if (opt.b_ntof) {
+      Make_1d(it,opt.Nchan);
+      it->GetX = &Mdef::VarNtof;
+      it->MFill = &Mdef::Fill_1d;
+      //}
+      //else
+      //continue;
+    }
+    else if (it->hnum==13) { //etof
+      //if (opt.b_ntof) {
+      Make_1d(it,opt.Nchan);
+      it->GetX = &Mdef::VarEtof;
+      it->MFill = &Mdef::Fill_1d;
+      //}
+      //else
+      //continue;
+    }
+    else if (it->hnum==14) { //ltof
+      //if (opt.b_ntof) {
+      Make_1d(it,opt.Nchan);
+      it->GetX = &Mdef::VarLtof;
+      it->MFill = &Mdef::Fill_1d;
+      //}
+      //else
+      //continue;
+    }
+    else if (it->hnum==15) { // Period
+      Make_1d(it,opt.Nchan);
+    }
+    else if (it->hnum==21) {//Rate
+      Make_1d(it,opt.Nchan);
+      it->GetX = &Mdef::VarRate;
+      it->MFill = &Mdef::Fill_1d_Extend;
+    }
+    else if (it->hnum==22) {//HWRate
+      //Make_1d(it,opt.Nchan);
+    }
+    else if (it->hnum==49) {//Mult
+      Make_1d(it,0);
+      it->MFill = &Mdef::FillMult;
+    }
+    else if (it->hnum==51 || it->hnum==52) {//pulse
+      Make_1d_pulse(it);
+      it->MFill = &Mdef::FillMeanPulse;
+    }
+    else if (it->hnum==53) { //prof
+      mdef_prof = &*it;
+      hd2 = it->hd;
+      Make_prof(it);
+      it->MFill = &Mdef::FillProf;
+    }
+    else if (it->hnum==54) { //prof_int
+      mdef_prof_int = &*it;
+      Make_prof_int(it,hd2);
+      it->MFill = &Mdef::FillProf;
+    }
+    else if (it->hnum>100) { //2d
+      if (Make_2d(it)) {
+	if (it->mx->hnum==21 || it->my->hnum==21)
+	  it->MFill = &Mdef::Fill_2d_Extend;
+	else
+	  it->MFill = &Mdef::Fill_2d;
+      }
+    }
+    else {
+      prnt("ss s ds;",BRED, "Wrong histogram type:", it->h_name.Data(),it->hnum, RST);
+      exit(-1);
+    }
+
+    if (it->hd->b) {
+      //добавляем все активные. Для профилометров - добавляем только одного
+      if (it->hnum==53 || it->hnum==54) {
+	if (mprof==0) {
+	  mprof = &*it;
+	  MFill_list.push_back(&*it);
+	}
+      }
+      else
+	MFill_list.push_back(&*it);
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*
+    //YK
+    for (auto i = 0;i<MAX_CH+NGRP;i++) {
+      switch (it->hnum) {
+      case 1: //Area
+	m_area[i] = it->v_map[i];
+	break;
+      case 2: //Base
+	m_base[i] = it->v_map[i];
+	break;
+      case 3: //Sl1
+	m_slope1[i] = it->v_map[i];
+	break;
+      case 4: //Sl2
+	m_slope2[i] = it->v_map[i];
+	break;
+      case 5: //Height
+	m_height[i] = it->v_map[i];
+	break;
+      case 6: //Width
+	m_width[i] = it->v_map[i];
+	break;
+      }
+    }
+    */
+
+
+
+
+
+  } //for (auto it = Mlist.begin()...
+
+  /*
+  Make_axay("AXAY","A",";Channel;Channel",m_axay,&opt.h_axay,&opt.h_area);//,A0A1_MAX);
+  Make_2d("Area_Base","Area_Base",";Channel;Channel",m_area_base,&opt.h_area_base,&opt.h_area,&opt.h_base);
+  Make_2d("Area_Sl1","Area_Sl1",";Channel;Channel",m_area_sl1,&opt.h_area_sl1,&opt.h_area,&opt.h_slope1);
+  Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);
+  Make_2d("Slope_12","Slope_12",";Channel;Channel",m_slope_12,&opt.h_slope_12,&opt.h_slope1,&opt.h_slope2);
+  // Make_2d("Time_Simul","Time_Simul",";Channel;Channel",m_time_simul,&opt.h_time_simul,&opt.h_time,&opt.h_simul);
+  Make_2d("Area_Time","Area_Time",";Channel;Time (sec)",m_area_time,&opt.h_area_time,&opt.h_area,&opt.h_rate);
+  Make_2d("Area_Width","Area_Width",";Channel;Width (a.u.)",m_area_width,&opt.h_area_width,&opt.h_area,&opt.h_width);
+  //Make_2d("Area_Width2","Area_Width2",";Channel;Width (a.u.)",m_area_width2,&opt.h_area_width2,&opt.h_area,&opt.h_width2);
+  Make_2d("Area_Ntof","Area_Ntof",";Channel;t(mks)",m_area_ntof,&opt.h_area_ntof,&opt.h_area,&opt.h_ntof);
+  //Make_2d("Area_Width3","Area_Width3",";Channel;Width (a.u.)",m_area_width3,&opt.h_area_width3,&opt.h_area,&opt.h_width3);
+  //Make_2d("Width_12","Width_12",";Width(a.u.);Width2(a.u.)",m_width_12,&opt.h_width_12,&opt.h_width,&opt.h_width2);
+*/
+
+  // оставляем только один член с профилометром в MFill_list
+  // cout << "----------" << endl;
+  // for (auto it = MFill_list.begin();it!=MFill_list.end();++it) {
+  //   prnt("sss d ds;",BYEL,"MF_list: ",(*it)->h_name.Data(),(*it)->hd->b,(*it)->hnum,RST);
+  // }
+
+  b_formula=false;
+  if (opt.ncuts)
+    Make_cuts();
+
+  //cout << "make_cuts3: " << endl;
+  //cout << "hist_list: " << m_ampl[0]->h_cuts[0]->hst << endl;
+  //hist_list->ls();
+
+  /*
+  //Profilometer
+  char name[100];
+  char title[100];
+  for (int i=0; i<64; i++){
+    sprintf(name,"Profile_strip%02d",i);
+    sprintf(title,"Profile_strip%02d;X_strip;Y_strip",i);
+    h2_prof_strip[i] = new TH2F(name,title,8,0,8,8,0,8);
+  }
+
+  for (int i=0; i<64; i++){
+    sprintf(name,"profile_real%02d",i);
+    sprintf(title,"Profile_real%02d;X (mm);Y (mm)",i);
+    h2_prof_real[i] = new TH2F(name,title,8,0,120,8,0,120); 
+  }
+  */
+    /*
+    //ibr2 - 2d
+    if (cc) {
+      sprintf(name,"h2d_cut%d",cc);
+      sprintf(title,"h2d_cut%d;Channel;Counts",cc);
+    }
+    else {
+      sprintf(name,"h2d");
+      sprintf(title,"h2d;Channel;Counts");
+    }
+    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
+    h_2d[cc]=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
+		  nn,opt.amp_min,opt.amp_max);
+    //} //for cc
+    */
+
+} //Make_hist
+
+mdef_iter HClass::Find_Mdef(int id) {
+  for (auto it = Mlist.begin();it!=Mlist.end();++it) {
+    if (it->hnum==id) return it;
+  }
+  return Mlist.end();
+}
+
+void NameTitle(char* name, char* title, int i, int maxi, 
+			  const char* nm, const char* axis) {
+  if (maxi==0) {
+    sprintf(name,"%s",nm);
+    sprintf(title,"%s%s",nm,axis);
+  }
+  else {
+    sprintf(name,"%s_%02d",nm,i);
+    sprintf(title,"%s_%02d%s",nm,i,axis);
+  }
+}
+
+void HClass::Make_1d(mdef_iter md, int maxi) {
+  if (!md->hd->b) return;
+
+  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
 
   char name2[100];
   char title2[100];
 
-  // HMap* dmap = new HMap(dname,NULL,NULL,NULL,NULL);
-  // dir_list->Add(dmap);
+  TString title = ';'+md->x_title+';'+md->y_title;
+  TString name = md->name;
+  name.ToLower();
 
-  for (int i=0;i<opt.Nchan;i++) {
-    NameTitle(name2,title2,i,0,name,title);
-    int nn=hd->bins*(hd->max - hd->min);
+  int NN=maxi;
+  if (NN<1) NN=1;
+
+  for (int i=0;i<NN;i++) {
+    NameTitle(name2,title2,i,maxi,name.Data(),title.Data());
+    int nn=md->hd->bins*(md->hd->max - md->hd->min);
     if (nn<1) nn=1;
-    TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-    map[i] = new HMap(dname,hh,hd,i);
-    //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
-    map_list->Add(map[i]);
-    allmap_list->Add(map[i]);
+    TH1F* hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
+    md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
+    map_list->Add(md->v_map[i]);
+    allmap_list->Add(md->v_map[i]);
   }
 
-  
-  // sprintf(name2,"%s_all",name);
-  // sprintf(title2,"%s_all%s",name,title);
-  // int nn=hd->bins*(hd->max - hd->min);
-  // TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-  // map[MAX_CH] = new HMap(dname,hh,hd->c+MAX_CH,hd->w+MAX_CH,hd->cut+MAX_CH);
-  // map_list->Add(map[MAX_CH]);
-  // hist_list->Add(map[MAX_CH]->hst);
-
-
   for (int j=0;j<NGRP;j++) {
-
     for (int ch=0;ch<opt.Nchan;ch++) {
       if (opt.Grp[ch][j]) {
-        sprintf(name2,"%s_g%d",name,j+1);
-        sprintf(title2,"%s_g%d%s",name,j+1,title);
-        int nn=hd->bins*(hd->max - hd->min);
+        sprintf(name2,"%s_g%d",name.Data(),j+1);
+        sprintf(title2,"%s_g%d%s",name.Data(),j+1,title.Data());
+        int nn=md->hd->bins*(md->hd->max - md->hd->min);
         if (nn<1) nn=1;
-        TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-	map[MAX_CH+j] = new HMap(dname,hh,hd,MAX_CH+j);
-        // map[MAX_CH+j] = new HMap(dname,hh,hd->c+MAX_CH+j,hd->w+MAX_CH+j,
-        //  hd->cut+MAX_CH+j);
-        map_list->Add(map[MAX_CH+j]);
-        allmap_list->Add(map[MAX_CH+j]);
+        TH1F* hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
+	md->v_map[MAX_CH+j] = new HMap(md->name.Data(),hh,md->hd,MAX_CH+j);
+        map_list->Add(md->v_map[MAX_CH+j]);
+        allmap_list->Add(md->v_map[MAX_CH+j]);
         break;
       }
     }
-
   }
+
+  /*
+  for (int i=0;i<NN;i++) {
+    //md->v_map[i]->ngrp=0;
+    md->v_map[i]->grp.reset();
+    for (int j=0;j<NGRP;j++) {
+      if (opt.Grp[i][j]) {
+	md->v_map[i]->grp.set(j);
+      }
+    }
+  }
+  */
 
 }
 
-void HClass::Make_1d_pulse(const char* dname, const char* name,
-			   const char* title, HMap* map[], Hdef* hd) {
+void HClass::Make_1d_pulse(mdef_iter md) {
+  if (!md->hd->b) return;
 
-  memset(map,0,sizeof(HMap*)*MAX_CH);
-
-  if (!hd->b) return;
+  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
 
   char name2[100];
   char title2[100];
 
-  // HMap* dmap = new HMap(dname,NULL,NULL,NULL,NULL);
-  // dir_list->Add(dmap);
+  TString title = ';'+md->x_title+';'+md->y_title;
+  TString name = md->name;
+  name.ToLower();
 
   for (int i=0;i<opt.Nchan;i++) {
-    NameTitle(name2,title2,i,0,name,title);
+    NameTitle(name2,title2,i,opt.Nchan,name.Data(),title.Data());
 
     Float_t min = -cpar.Pre[i];
     Float_t max = cpar.Len[i]-cpar.Pre[i];
     Float_t bins = 1;
 
     int nn=bins*(max-min);
-    //cout << "Hist: " << i << " " << nn << " " << min << " " << max << endl;
     TH1F* hh=new TH1F(name2,title2,nn,min,max);
     hh->Sumw2();
 
-    //cout << "cuts: " << (void*) cuts << " " << (void*) (cuts+i*MAXCUTS) << endl;
-    map[i] = new HMap(dname,hh,hd,i);
-    //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
-    map_list->Add(map[i]);
-    allmap_list->Add(map[i]);
+    md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
+    map_list->Add(md->v_map[i]);
+    allmap_list->Add(md->v_map[i]);
 
   }
 }
 
-void HClass::Make_2d(const char* dname, const char* name, const char* title,
-		     HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2) {
+void HClass::Make_prof(mdef_iter md) {
+  if (!md->hd->b) return;
 
-  memset(map,0,sizeof(HMap*)*MAX_CH);
-
-  if (!hd->b) return;
-
-  char name2[100];
-  char title2[100];
-
-  for (int i=0;i<opt.Nchan;i++) {
-    //sprintf(name2,"%s",name);
-    //sprintf(title2,"%s%s",name,title);
-    NameTitle(name2,title2,i,0,name,title);
-
-    int n1=hd->bins*(hd1->max - hd1->min);
-    int n2=hd->bins2*(hd2->max - hd2->min);
-    if (n1<1) n1=1;
-    if (n2<1) n2=1;
-    TH2F* hh=new TH2F(name2,title2,n1,hd1->min,hd1->max,n2,hd2->min,hd2->max);
-
-    map[i] = new HMap(dname,hh,hd,i);
-    map_list->Add(map[i]);
-    allmap_list->Add(map[i]);
-  }
-  //cout << "mem: " << name << " " << GetMem() << endl;
-
-}
-
-void HClass::Make_prof(const char* dname, const char* name,
-		       const char* title, HMap* map[], Hdef* hd) {
-
-  memset(map,0,sizeof(HMap*)*256);
+  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
   
-  if (!hd->b) return;
-
   char name2[100];
   char title2[100];
+
+  TString title = ';'+md->x_title+';'+md->y_title;
+  TString name = "prof";
 
   //2d
   for (int j=opt.prof_ny-1;j>=0;j--) {
   //for (int j=0;j<opt.prof_ny;j++) {
     for (int k=0;k<opt.prof_nx;k++) {
-      sprintf(name2,"%s_%d_%d",name,k+1,j+1);
-      sprintf(title2,"%s_%d_%d%s",name,k+1,j+1,title);
-      //NameTitle(name2,title2,i,0,name,title);
+      sprintf(name2,"%s_%d_%d",name.Data(),k+1,j+1);
+      sprintf(title2,"%s_%d_%d%s",name.Data(),k+1,j+1,title.Data());
 
       int i=k+(opt.prof_ny-j-1)*opt.prof_ny;
-      TH2F* hh=new TH2F(name2,title2,hd->bins,0,120,hd->bins2,0,120);
-      //TH2F* hh=new TH2F(name2,title2,hd->bins,0,64,hd->bins2,0,64);
-      //TH2F* hh=new TH2F(name2,title2,64,0,64,64,0,64);
+      TH2F* hh=new TH2F(name2,title2,md->hd->bins,0,120,md->hd->bins2,0,120);
 
-      map[i] = new HMap(dname,hh,hd,i);
-      //map[i] = new HMap(dname,hh,hd->c+i,hd->w+i,hd->cut+i);
-      map_list->Add(map[i]);
-      allmap_list->Add(map[i]);
+      md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
+      map_list->Add(md->v_map[i]);
+      allmap_list->Add(md->v_map[i]);
     }
   }
 
 }
 
-void HClass::Make_prof64(const char* dname, HMap* map[], HMap* map2[],
-			  Hdef* hd, Hdef* hd2) {
+void HClass::Make_prof_int(mdef_iter md, Hdef* hd2) {
+  if (!md->hd->b) return;
+  if (!hd2) return;
 
-  if (!hd->b) return;
+  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
 
-  memset(map,0,sizeof(HMap*)*6);
-  
   char name2[100];
   char title2[100];
 
-  //Prof64: 1d + sum 2d
-  //int bb=64;
   const char* name3[] = {"prof_x","prof_y","prof_ax","prof_ay","prof_nm","prof_xy"};
 
   for (int i=0;i<4;i++) {
@@ -338,26 +1358,80 @@ void HClass::Make_prof64(const char* dname, HMap* map[], HMap* map2[],
     hh->Sumw2();
     hh->SetOption("E");
 
-    map[i] = new HMap(dname,hh,hd,i);
-    map_list->Add(map[i]);
-    allmap_list->Add(map[i]);
+    md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
+    map_list->Add(md->v_map[i]);
+    allmap_list->Add(md->v_map[i]);
   }
 
   sprintf(name2,"%s",name3[4]);
-  sprintf(title2,"%s%s",name3[4],";X (strip);Y (strip)");
+  sprintf(title2,"%s%s",name3[4],";X(strip);Y(strip)");
   TH2F* hh=new TH2F(name2,title2,hd2->bins,0,64,hd2->bins2,0,64);
-  //TH2F* hh=new TH2F(name2,title2,64,0,64,64,0,64);
-  map[4] = new HMap(dname,hh,hd,4);
-  map_list->Add(map[4]);
-  allmap_list->Add(map[4]);
+  md->v_map[4] = new HMap(md->name.Data(),hh,md->hd,4);
+  map_list->Add(md->v_map[4]);
+  allmap_list->Add(md->v_map[4]);
 
   sprintf(name2,"%s",name3[5]);
-  sprintf(title2,"%s%s",name3[5],";X (mm);Y (mm)");
+  sprintf(title2,"%s%s",name3[5],";X(mm);Y(mm)");
   hh=new TH2F(name2,title2,hd2->bins,0,120,hd2->bins2,0,120);
-  map[5] = new HMap(dname,hh,hd,5);
-  map_list->Add(map[5]);
-  allmap_list->Add(map[5]);
+  md->v_map[5] = new HMap(md->name.Data(),hh,md->hd,5);
+  map_list->Add(md->v_map[5]);
+  allmap_list->Add(md->v_map[5]);
 
+}
+
+int HClass::Make_2d(mdef_iter md) {
+// void HClass::Make_2d(const char* dname, const char* name, const char* title,
+// 		     HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2) {
+  if (!(md->hd->b)) return 0;
+
+  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
+
+  int id1 = md->hnum/100;
+  int id2 = md->hnum%100;
+
+  mdef_iter m1 = Find_Mdef(id1);
+  mdef_iter m2 = Find_Mdef(id2);
+
+  if (m1==Mlist.end() || m2==Mlist.end()) {
+    prnt("ss s d ds;",BRED,"Can't make 2d histograms:",
+	 md->name.Data() ,id1, id2, RST);
+    return 0;
+  }
+
+  md->name = m1->name+'_'+m2->name;
+  md->x_title = m1->x_title;
+  md->y_title = m2->x_title;
+  md->tip = "2-dimensional histogram: "+md->name+"\nMin Max are taken from the corresponding 1d histograms";
+
+  char name2[100];
+  char title2[100];
+
+  TString title = ';'+md->x_title+';'+md->y_title;
+  TString name = md->name;
+  name.ToLower();
+
+  for (int i=0;i<opt.Nchan;i++) {
+    NameTitle(name2,title2,i,opt.Nchan,name.Data(),title.Data());
+
+    int n1=md->hd->bins*(m1->hd->max - m1->hd->min);
+    int n2=md->hd->bins2*(m2->hd->max - m2->hd->min);
+    if (n1<1) n1=1;
+    if (n2<1) n2=1;
+
+    //cout << "make_2d: " << hd2->min << " " << hd2->max << endl;
+
+    TH2F* hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
+		      n2,m2->hd->min,m2->hd->max);
+
+    md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
+    map_list->Add(md->v_map[i]);
+    allmap_list->Add(md->v_map[i]);
+  }
+
+  md->mx = &*m1;
+  md->my = &*m2;
+
+  return 1;
 }
 
 void HClass::Make_axay(const char* dname, const char* name, const char* title,
@@ -391,57 +1465,6 @@ void HClass::Make_axay(const char* dname, const char* name, const char* title,
   }
 }
 
-void HClass::Make_Mult(const char* dname, const char* name, const char* title,
-		     HMap* map[], Hdef* hd) {
-
-  // нужно ли перевести все HMap'ы в векторы (?) - нет, не нужно!
-
-  // cout << "make_mult1: " << endl;
-  // for (int i=0;i<MAX_CH+NGRP;i++) {
-  //   if (map[i]) {
-  //     prnt("s d ls;",BGRN,i,map[i],RST);
-  //     //delete map[i];
-  //   }
-  // }
-  // cout << "make_mult2: " << endl;
-
-  memset(map,0,sizeof(HMap*)*(MAX_CH+NGRP));
-
-  if (!hd->b) return;
-
-  char name2[100];
-  char title2[100];
-
-  sprintf(name2,"%s",name);
-  sprintf(title2,"%s%s",name,title);
-  int nn=hd->bins*(hd->max - hd->min);
-  if (nn<1) nn=1;
-  TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-  map[0] = new HMap(dname,hh,hd,0);
-  map_list->Add(map[0]);
-  allmap_list->Add(map[0]);
-
-
-  for (int j=0;j<NGRP;j++) {
-
-    for (int ch=0;ch<opt.Nchan;ch++) {
-      if (opt.Grp[ch][j]) {
-	sprintf(name2,"%s_g%d",name,j+1);
-	sprintf(title2,"%s_g%d%s",name,j+1,title);
-	int nn=hd->bins*(hd->max - hd->min);
-	if (nn<1) nn=1;
-	TH1F* hh=new TH1F(name2,title2,nn,hd->min,hd->max);
-	map[MAX_CH+j] = new HMap(dname,hh,hd,MAX_CH+j);
-	map_list->Add(map[MAX_CH+j]);
-	allmap_list->Add(map[MAX_CH+j]);
-	break;
-      }
-    }
-
-  }
-
-}
-
 void HClass::Clone_Hist(HMap* map) {
   char cutname[99];
   char name[99],htitle[99];
@@ -463,7 +1486,7 @@ void HClass::Clone_Hist(HMap* map) {
 
       //hist_list->Add(hcut);
       HMap* mcut = new HMap(cutname,hcut,map->hd,map->nn);
-      mcut->flg=1; //cut flag
+      //mcut->flg=1; //cut flag
 
       // add this map to the list h_cuts
       map->h_cuts[i]=mcut;
@@ -602,104 +1625,4 @@ void HClass::Make_cuts() {
     cutG[i]->SetLineColor(cutcolor[i]);
   }
   //cout << "make_cuts2: " << opt.ncuts << endl;
-}
-
-void HClass::Make_hist() {
-
-  //opt.cut_per[9*MAXCUTS+4]=17;
-  
-  //char title[100];
-  //cout << "make_hist: " << endl;
-
-  memset(T_prev,0,sizeof(T_prev));
-
-  if (allmap_list)
-    delete allmap_list;
-  allmap_list = new TList();
-  allmap_list->SetName("allmap_list");
-  allmap_list->SetOwner(false);
-
-  if (map_list)
-    delete map_list;
-  map_list = new TList();
-  map_list->SetName("map_list");
-  map_list->SetOwner(true);
-
-  Make_1d("Rate","rate",";T(sec);Counts",m_rate,&opt.h_rate);
-  Make_1d("HWRate","hwrate",";T(sec);Counts",m_hwrate,&opt.h_hwrate);
-  Make_Mult("Mult","mult",";Multiplicity;Counts",m_mult,&opt.h_mult);
-  Make_1d("Area","area",";Channel;Counts",m_area,&opt.h_area);
-  Make_1d("Area0","area0",";Channel;Counts",m_area0,&opt.h_area0);
-  Make_1d("Base","base",";Channel;Counts",m_base,&opt.h_base);
-  Make_1d("Slope1","slope1",";Channel;Counts",m_slope1,&opt.h_slope1);
-  Make_1d("Slope2","slope2",";Channel;Counts",m_slope2,&opt.h_slope2);
-  //Make_1d("Simul","simul",";Channel;Counts",m_simul,&opt.h_simul);
-  Make_1d("Height","height",";Channel;Counts",m_height,&opt.h_hei);
-  Make_1d("Time","time",";t(ns);Counts",m_time,&opt.h_time);
-  Make_1d("Ntof","ntof",";t(mks);Counts",m_ntof,&opt.h_ntof);
-  Make_1d("Etof","etof",";Energy(eV);Counts",m_etof,&opt.h_etof);
-  Make_1d("Ltof","ltof",";Lambda(A);Counts",m_ltof,&opt.h_ltof);
-  Make_1d("Period","period",";t(mks);Counts",m_per,&opt.h_per);
-  Make_1d("Width","width",";width(a.u.);Counts",m_width,&opt.h_width);
-  //Make_1d("Width2","width2",";width(a.u.);Counts",m_width2,&opt.h_width2);
-  //Make_1d("Width3","width3",";width(a.u.);Counts",m_width3,&opt.h_width3);
-  Make_1d_pulse("Pulse","pulse",";samples;Amplitude",m_pulse,&opt.h_pulse);
-  Make_1d_pulse("Deriv","deriv",";samples;Amplitude",m_deriv,&opt.h_deriv);
-
-  Make_axay("AXAY","A",";Channel;Channel",m_axay,&opt.h_axay,&opt.h_area);//,A0A1_MAX);
-  Make_2d("Area_Base","Area_Base",";Channel;Channel",m_area_base,&opt.h_area_base,&opt.h_area,&opt.h_base);
-  Make_2d("Area_Sl1","Area_Sl1",";Channel;Channel",m_area_sl1,&opt.h_area_sl1,&opt.h_area,&opt.h_slope1);
-  Make_2d("Area_Sl2","Area_Sl2",";Channel;Channel",m_area_sl2,&opt.h_area_sl2,&opt.h_area,&opt.h_slope2);
-  Make_2d("Slope_12","Slope_12",";Channel;Channel",m_slope_12,&opt.h_slope_12,&opt.h_slope1,&opt.h_slope2);
-  // Make_2d("Time_Simul","Time_Simul",";Channel;Channel",m_time_simul,&opt.h_time_simul,&opt.h_time,&opt.h_simul);
-  Make_2d("Area_Time","Area_Time",";Channel;Time (sec)",m_area_time,&opt.h_area_time,&opt.h_area,&opt.h_rate);
-  Make_2d("Area_Width","Area_Width",";Channel;Width (a.u.)",m_area_width,&opt.h_area_width,&opt.h_area,&opt.h_width);
-  //Make_2d("Area_Width2","Area_Width2",";Channel;Width (a.u.)",m_area_width2,&opt.h_area_width2,&opt.h_area,&opt.h_width2);
-  Make_2d("Area_Ntof","Area_Ntof",";Channel;t(mks)",m_area_ntof,&opt.h_area_ntof,&opt.h_area,&opt.h_ntof);
-  //Make_2d("Area_Width3","Area_Width3",";Channel;Width (a.u.)",m_area_width3,&opt.h_area_width3,&opt.h_area,&opt.h_width3);
-  //Make_2d("Width_12","Width_12",";Width(a.u.);Width2(a.u.)",m_width_12,&opt.h_width_12,&opt.h_width,&opt.h_width2);
-
-  Make_prof("Prof","prof",";X (mm);Y (mm)",m_prof,&opt.h_prof);
-  Make_prof64("Prof64",m_prof64,m_prof,&opt.h_prof64,&opt.h_prof);
-
-  b_formula=false;
-  if (opt.ncuts)
-    Make_cuts();
-
-  //cout << "make_cuts3: " << endl;
-  //cout << "hist_list: " << m_ampl[0]->h_cuts[0]->hst << endl;
-  //hist_list->ls();
-
-  /*
-  //Profilometer
-  char name[100];
-  char title[100];
-  for (int i=0; i<64; i++){
-    sprintf(name,"Profile_strip%02d",i);
-    sprintf(title,"Profile_strip%02d;X_strip;Y_strip",i);
-    h2_prof_strip[i] = new TH2F(name,title,8,0,8,8,0,8);
-  }
-
-  for (int i=0; i<64; i++){
-    sprintf(name,"profile_real%02d",i);
-    sprintf(title,"Profile_real%02d;X (mm);Y (mm)",i);
-    h2_prof_real[i] = new TH2F(name,title,8,0,120,8,0,120); 
-  }
-  */
-    /*
-    //ibr2 - 2d
-    if (cc) {
-      sprintf(name,"h2d_cut%d",cc);
-      sprintf(title,"h2d_cut%d;Channel;Counts",cc);
-    }
-    else {
-      sprintf(name,"h2d");
-      sprintf(title,"h2d;Channel;Counts");
-    }
-    int nn=opt.amp_bins*(opt.amp_max-opt.amp_min);
-    h_2d[cc]=new TH2F(name,title,nn,opt.amp_min,opt.amp_max,
-		  nn,opt.amp_min,opt.amp_max);
-    //} //for cc
-    */
-
 }

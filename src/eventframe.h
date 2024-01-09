@@ -170,6 +170,7 @@ public:
   EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
   virtual ~EventFrame();
 
+  bool fChn_on(int ch);
   void ShPtr(int zz);
   void Rebuild();
   void ChkpkUpdate();

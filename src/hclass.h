@@ -2,13 +2,91 @@
 #define hclass_H 1
 
 #include "common.h"
-//#include "toptions.h"
+#include "pulseclass.h"
+#include "libmana.h"
 #include <TH1.h>
 #include <TH2.h>
 #include <TFormula.h>
 #include <TGraphErrors.h>
+#include <bitset>
 
 class HMap; //forward declaration
+
+//-----------------------------------------------
+class Mdef {
+  // класс содержит указатель на Hdef
+  // (сам Hdef должен быть создан в другом месте);
+  // общее имя для всех гистограмм данного типа;
+  // вектор указателей на мапы гистограмм (N штук).
+  // сами указатели создаются при генерации гистограмм
+  // N [=v_map.size()] должно быть задано при создании Mdef
+  // (вектор должен быть создан)
+public:
+  Int_t hnum=0;
+  // =1..49 - standard 1d hist
+  // =51 - mean pulses
+  // =52 - mean deriv
+  // =53 - prof
+  // =54 - prof_int
+  // >100 - 2d hist
+
+  size_t ptr=0; //offset of PulseClass member for VarPulse
+
+  Hdef *hd; // *hd должен быть создан и удален в другом месте
+  TString h_name, name, x_title, y_title, tip;
+
+  Mdef *mx=0,*my=0;
+  std::vector <HMap*> v_map;
+public:
+
+  virtual ~Mdef() {};
+
+  Float_t VarPulse(EventClass* e, PulseClass* p){return *(Float_t*)((char*)p + ptr);}
+  Float_t  VarTime(EventClass* e, PulseClass* p);
+  Float_t  VarRate(EventClass* e, PulseClass* p);
+  Float_t  VarNtof(EventClass* e, PulseClass* p);
+  Float_t  VarEtof(EventClass* e, PulseClass* p);
+  Float_t  VarLtof(EventClass* e, PulseClass* p);
+
+  Float_t Def(EventClass* e, PulseClass* p) {return -99999;};
+  Float_t (Mdef::*GetX)(EventClass* e, PulseClass* p) = &Mdef::Def;
+
+  void Time_Extend(UChar_t ch, Double_t T);
+  void Time_Extend_2d(UChar_t ch, Double_t xx, Double_t yy);
+
+  void Fill_01(HMap* map, Float_t x, Double_t *hcut_flag, int ncut);
+  void Fill_02(HMap* map, Float_t x, Float_t y, Double_t *hcut_flag,
+	       int ncut);
+
+  void Fill_1d(EventClass* evt, Double_t *hcut_flag, int ncut);
+  void Fill_1d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut);
+  void Fill_2d(EventClass* evt, Double_t *hcut_flag, int ncut);
+  void Fill_2d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut);
+  void FillMult(EventClass* evt, Double_t *hcut_flag, int ncut);
+  void Fill_Mean1(HMap* map, Float_t* Data, int nbins, int ideriv, int ncut);
+  void FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut);
+  void FillProf(EventClass* evt, Double_t *hcut_flag, int ncut);
+
+  //void Fill_1d_cut(EventClass* evt, int i);
+  //void Fill_1d_Extend_cut(EventClass* evt, Double_t *hcut_flag);
+  //void Fill_2d_cut(EventClass* evt, Double_t *hcut_flag);
+  //void Fill_2d_Extend_cut(EventClass* evt, Double_t *hcut_flag);
+  //void FillMult_cut(EventClass* evt, int i);
+  //void FillMeanPulse_cut(EventClass* evt, Double_t *hcut_flag);
+
+
+  void MFDef(EventClass* evt, Double_t *hcut_flag, int ncut) {
+    //prnt("sss;",BRED, "Def:", RST);
+  };
+  void (Mdef::*MFill)(EventClass* evt, Double_t *hcut_flag, int ncut) = &Mdef::MFDef;
+
+  //void MFDef_cut(EventClass* evt, int i) {};
+  //void (Mdef::*MFill_cut)(EventClass* evt, int i) = &Mdef::MFDef_cut;
+
+  ClassDef(Mdef, CDEF)
+};
+
+typedef std::list<Mdef>::iterator mdef_iter;
 
 //-----------------------------------------------
 class HMap: public TNamed {
@@ -24,12 +102,17 @@ class HMap: public TNamed {
   ~HMap();
   HMap(const HMap& other);
   HMap& operator=(const HMap& other);
-  
+
   TH1* hst;
   TGraphErrors* gr;
   Hdef* hd; //Hdef, которому принадлежит этот Hmap
   UShort_t nn; //index in Hdef
-  UChar_t flg; // 0 - normal histogram, 1 - cut histogram
+
+  //ULong64_t Nent; //number of entries for mean pulses & deriv
+
+  //Bool_t notcut = true; // false - if this map is a cut
+
+  //UChar_t flg; // 0 - normal histogram, 1 - cut histogram
   //Int_t *rb; //rebin
   //Bool_t* chk; //item is checked
   //Bool_t* wrk; //item is in the MAIN directory (and in MAIN_CUT*, MAIN_MT)
@@ -54,6 +137,10 @@ class HMap: public TNamed {
   //заполняться при попадании события в мастер триггер
   //и будет храниться в папке MAIN_MT
 
+  //char ngrp=0;
+  //std::bitset<NGRP> grp;
+
+
   ClassDef(HMap, 0)
 };
 
@@ -62,13 +149,23 @@ class HClass {
 
  public:
 
+  //size_t p_ptr[8]; //offsets of PulseClass members
+  // Base;   0
+  // Area0;  1
+  // Area;   2
+  // Slope1; 3
+  // Slope2; 4
+  // Height; 5
+  // Width;  6
+  // Time;   7
+
   //static const int MAX_ING=256;
 
   HMap* m_rate[MAX_CH+NGRP]; // software rate in real time
   HMap* m_hwrate[MAX_CH+NGRP]; // hardware counter in real time
   HMap* m_mult[MAX_CH+NGRP]; // event multiplicity
   HMap* m_area[MAX_CH+NGRP]; //area of the peak
-  HMap* m_area0[MAX_CH+NGRP]; //area of the peak w/o bkg
+  //HMap* m_area0[MAX_CH+NGRP]; //area of the peak w/o bkg
   HMap* m_base[MAX_CH+NGRP]; //baseline - background
   HMap* m_slope1[MAX_CH+NGRP]; //slope1 - baseline
   HMap* m_slope2[MAX_CH+NGRP]; //slope2 - peak
@@ -98,15 +195,11 @@ class HClass {
   HMap* m_area_ntof[MAX_CH];
   HMap* m_prof[256];
   HMap* m_prof64[6];
-  //HMap* m_prof_y[1];
-  //HMap* m_prof_ax[1];
-  //HMap* m_prof_ay[1];
-
-  //HMap* m_area_width3[MAX_CH];
-  //HMap* m_width_12[MAX_CH];
 
 
   //std::vector<int> vcuts; //vector of
+  Mdef *mdef_prof;
+  Mdef *mdef_prof_int;
 
 
 
@@ -126,10 +219,26 @@ class HClass {
   TList* allmap_list; //list of all maps (including cuts)
   TList* dir_list; //list of folders
 
-  Long64_t T_prev[MAX_CH];
+  std::list<Mdef> Mlist; // содержит Hdef всех существующих Mdef
+  //в т.ч. несозданных гистограмм
+  //создается при инициализации; может дополняться в Add_h2
 
-  Bool_t wfalse;
+  //std::vector<Mdef*> Actlist; // содержит Hdef* всех активных (созданных) гистограмм
+  std::list<Mdef*> MFill_list; // содержит указатели! Mdef* всех
+  // активных (созданных) гистограмм (у которых hd.b=1) -
+  // для которых вызывается MFill.
+  // Заполняется в Make_hist
 
+  std::list<Mdef*> Mainlist; // содержит указатели! Mdef* всех гистограмм в Main
+  //заполняется в ??? (Ana_Start???)
+
+  //bool b_first; // =1 если есть хотя бы один cut или хотя бы одна "общая" гистограмма
+
+  //Long64_t T_prev[MAX_CH];
+
+  //Bool_t wfalse;
+
+  /*
   //profilometer:
   std::vector<int> px;
   std::vector<int> py;
@@ -138,32 +247,28 @@ class HClass {
   HMap *h_p,*h_a;
   int h_off; // 1 or 33 
   int h_xy; // 0: X; 1: Y; -1: ???
-  int ch_alpha;
-  Float_t h_sum[2][64]; //[xy][pos]
-  
+  //int ch_alpha;
+  //Float_t h_sum[2][64]; //[xy][pos]
+  */
+
  public:
 
   HClass();
   virtual ~HClass();
 
-   //void NameTitle();
-  void Make_1d(const char* dname, const char* name, const char* title,
-	       HMap* map[], Hdef* hd);
-  void Make_1d_pulse(const char* dname, const char* name,
-		     const char* title, HMap* map[], Hdef* hd);
-  void Make_2d(const char* dname, const char* name, const char* title,
-   	       HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2);
+  void Make_Mlist();
+  Mdef* Add_h2(int id1, int id2);
+  void Make_hist();
+
+  mdef_iter Find_Mdef(int id);
+  void Make_1d(mdef_iter md, int maxi);
+  void Make_1d_pulse(mdef_iter md);
+  void Make_prof(mdef_iter md);
+  void Make_prof_int(mdef_iter md, Hdef* hd2);
+  int Make_2d(mdef_iter md);
   void Make_axay(const char* dname, const char* name, const char* title,
 	       HMap* map[], Hdef* hd, Hdef* hd1); //, int nmax);
-  void Make_prof(const char* dname,const char* name,
-		 const char* title,HMap* map[],Hdef* hd);
-  void Make_prof64(const char* dname, HMap* map[], HMap* map2[],
-		    Hdef* hd, Hdef* hd2);
 
-  void Make_Mult(const char* dname, const char* name, const char* title,
-	       HMap* map[], Hdef* hd);
-
-  void Make_hist();
   void Clone_Hist(HMap* map);
   void Remove_Clones(HMap* map);
   void Make_cuts();

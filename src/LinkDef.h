@@ -24,6 +24,7 @@
 #pragma link C++ class Toptions+;
 #pragma link C++ class PEditor+;
 //#pragma link C++ class Hoptions+;
+#pragma link C++ class Mdef+;
 
 
 #pragma link C++ class TGMatrixLayout2;

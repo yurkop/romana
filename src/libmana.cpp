@@ -13,7 +13,6 @@
 #include "popframe.h"
 //#include "peditor.h"
 
-#include <sys/times.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -68,23 +67,23 @@ typedef std::list<VarClass>::iterator v_iter;
 extern TMutex cmut;
 
 GlbClass* glb;
-MyMainFrame* myM=0;
 
 Coptions cpar;
 Toptions opt;
 
 CRS* crs;
 
-EventFrame* EvtFrm;
-HistFrame* HiFrm;
-ErrFrame* ErrFrm;
-HClass* hcl;
+MyMainFrame* myM=0;
+EventFrame* EvtFrm=0;
+HistFrame* HiFrm=0;
+ErrFrame* ErrFrm=0;
+HClass* hcl=0;
 
-ParParDlg *parpar;
-HistParDlg *histpar;
-DaqParDlg *daqpar;
-AnaParDlg *anapar;
-PikParDlg *pikpar;
+ParParDlg *parpar=0;
+HistParDlg *histpar=0;
+DaqParDlg *daqpar=0;
+AnaParDlg *anapar=0;
+PikParDlg *pikpar=0;
 
 Pixel_t fWhite;
 Pixel_t fGrey;
@@ -128,6 +127,7 @@ std::list<TString> listpar;
 //std::list<TString> listshow;
 typedef std::list<TString>::iterator l_iter;
 
+std::vector<Mdef> list_mdef;
 //TList listmap2;
 
 int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
@@ -435,6 +435,7 @@ Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf) 
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
+    //prnt("ss ss;",BGRN,"CTB:",dm->GetName(),RST);
     if (dm->GetDataType()) {
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
@@ -512,14 +513,16 @@ void MakeVarList(int cp, int op) {
     }
   }
   // for (v_iter it=varlist.begin();it!=varlist.end();++it) {
-  //   cout << it->name << " " << it->Dm->GetName() << endl;
+  //   cout << "varlist: " << it->name << " " << it->Dm->GetName() << endl;
   // }
-  // cout << varlist.size() << endl;
+  //cout << varlist.size() << endl;
   // exit(1);
 }
 
 void OneVar(char* var, TDataMember* dm, char* data, UShort_t len,
 	    TString & memname) {
+  //копирует одну переменную из буфера *data в переменную var+dm
+
   UShort_t len2=0;
   len2=dm->GetUnitSize();
   for (int i=0;i<dm->GetArrayDim();i++) {
@@ -547,17 +550,113 @@ void OneVar(char* var, TDataMember* dm, char* data, UShort_t len,
   // }
 }
 
-int BufToClass(char* buf, char* buf2) {
-  // Ищет все параметры в буфере buf
-  // прекращает поиск в конце буфера (buf2 должно быть = buf+sz),
+void Read_Hdef(char* data, UShort_t len, TString &varname, TString &memname) {
+  Mdef* md=0;
+  for (auto it=list_mdef.rbegin();it!=list_mdef.rend();++it) {
+    if (it->h_name.EqualTo(varname)) {
+      md = &*it;
+      //prnt("ssss;",BGRN,"Found: ",varname.Data(),RST);
+      break;
+    }
+  }
+  if (!md) {
+    list_mdef.push_back(Mdef());
+    md = &list_mdef.back();
+    md->hd = new Hdef();
+    md->h_name = varname;
+    //prnt("ssss;",BRED,"Found: ",varname.Data(),RST);
+  }
+
+  TList* l1 = TClass::GetClass("Hdef")->GetListOfDataMembers();
+  TDataMember *d1 = (TDataMember*) l1->First();
+  while (d1) {
+    if (d1->GetDataType()) {
+      if (memname.EqualTo(d1->GetName())) {
+	//prnt("ssss;",BBLU,"Vname: ",d1->GetName(),RST);
+	OneVar((char*)(md->hd),d1,data,len,memname);
+      }
+    }
+    d1 = (TDataMember*)l1->After(d1);
+  }
+
+  //Hdef* 
+  //cout << "Hdef2: " << varname << " " << memname << endl;
+}
+
+void check_old_2d(Mdef* it) {
+  TString h2old[]
+    = {
+       "h_axay",         "Area.Area",
+       "h_area_base",    "Area.Base",
+       "h_area_sl1",     "Area.Sl1",
+       "h_area_sl2",     "Area.Sl2",
+       "h_slope_12",     "Sl1.Sl2",
+       "h_area_time",    "Area.Time",
+       "h_area_width",   "Area.Width",
+       "h_area_width2",  "xxx",
+       "h_area_ntof",    "Area.Ntof",
+       ""
+  };
+
+  if (!it->hd->b) return;
+  //prnt("sss d ds;",BYEL,"Old1: ",it->h_name.Data(),it->hd->b,it->hnum,RST);
+  int i=0;
+  do {
+    if (h2old[i].EqualTo(it->h_name)) {
+      it->h_name = h2old[i+1];
+      break;
+    }
+    //cout << i << " " << h2old[i] << " " << h2old[i].Length() << endl;
+    i+=2;
+  } while (h2old[i].Length()>0);
+
+  //prnt("sss d ds;",BBLU,"Old2: ",it->h_name.Data(),it->hd->b,it->hnum,RST);
+}
+
+Mdef* Create_2d(Mdef* it) {
+  Mdef* res=0;
+  int sz = it->h_name.First('.');
+  TString s1 = it->h_name(0,sz);
+  TString s2 = it->h_name(sz+1,9999);
+  //Mdef *m1=0, *m2=0;
+  //mdef_iter m1, m2;
+  int id1=0,id2=0;
+
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->name.EqualTo(s1))
+      id1 = it->hnum;
+      //m1 = &*it;
+    if (it->name.EqualTo(s2))
+      id2 = it->hnum;
+      //m2 = &*it;
+  }
+
+  if (id1 && id2) {
+    res=hcl->Add_h2(id1,id2);
+    //prnt("ss d ds;",BGRN,"C2d: ",id1,id2,RST);
+  }
+  return res;
+  //cout << "C2d: " << s1 << " " << s2 << " " << m1 << " " << m2 << endl;
+}
+
+int BufToClass(char* buf, char* buf2, int op) {
+  // Считывает все параметры в буфере buf
+  // прекращает считывание в конце буфера (buf2 должно быть = buf+sz),
   // Сравнивает имя найденного параметра со всеми именами в varlist
   // (varlist) должен быть создан до вызова BufToClass
   // Если находит, записывает значение найденного параметра
   // в соответствующую переменную
 
+  // op=1 - read opt -> читаем все hdef
+  // op=0 - не читаем hdef
+
   // Возвращает 1 - если копирование успешно
   //            0 - если произошла ошибка
 
+  for (auto it=list_mdef.rbegin();it!=list_mdef.rend();++it) {
+    delete it->hd;
+  }
+  list_mdef.clear();
 
   TString classname;
   TString varname;
@@ -574,7 +673,8 @@ int BufToClass(char* buf, char* buf2) {
     //могут быть нули в конце буфера из-за кратности 8
     if (len==0 && buf2-buf<10) {
       //cout << "len==0: " << len << " " << buf2-buf << endl;
-      return 1;
+      break;
+      //return 1;
     }
     else if (len==0 || len>=mx || buf+len>buf2) {
       prnt("ssd d ls;",BRED,"errlen1: ",len,mx,buf+len-buf2,RST);
@@ -604,60 +704,98 @@ int BufToClass(char* buf, char* buf2) {
       continue;
     }
 
-    if (classname.EqualTo("Hdef")) {
-      memname.Prepend('.');
-      memname.Prepend(varname);
+    if (classname.EqualTo("Hdef")) { // read Hdef variables
+      //memname.Prepend('.');
+      //memname.Prepend(varname);
+
+      //cout << "Hdef: " << classname << " " << varname << " " << memname << endl;
+      if (op)
+	Read_Hdef(data,len,varname,memname);
     }
+    else { //read all other variables
 
-    // ищем соответствующий член класса
-    int tp=0;
-    // тип находки:
-    // tp==0 - не найдено
-    // tp==1 - найдено
-    // tp==2 - найдено старое название //[] (в комментариях)
+      // ищем соответствующий член класса
+      int tp=0;
+      // тип находки:
+      // tp==0 - не найдено
+      // tp==1 - найдено
+      // tp==2 - найдено старое название //[] (в комментариях)
 
-    v_iter it;
-    for (it=varlist.begin();it!=varlist.end();++it) {
-      if (memname.EqualTo(it->name)) {
-	tp=1;
-	break;
-      }
-      else {
-	// ищем старое название члена класа (в комментариях []),
-	// для обратной совместимости
-	TString s1 = it->Dm->GetTitle();
-	int a,b;
+      v_iter it;
+      for (it=varlist.begin();it!=varlist.end();++it) {
+	if (memname.EqualTo(it->name)) {
+	  tp=1;
+	  break;
+	}
+	else {
+	  // ищем старое название члена класа (в комментариях []),
+	  // для обратной совместимости
+	  TString s1 = it->Dm->GetTitle();
+	  int a,b;
 
-	do {
-	  a=s1.First('[');
-	  b=s1.First(']');
-	  if (a>=0 && b>=0) {
-	    if (memname.EqualTo(s1(a+1,b-a-1))) {
-	      tp=2;
-	      break;
+	  do {
+	    a=s1.First('[');
+	    b=s1.First(']');
+	    if (a>=0 && b>=0) {
+	      if (memname.EqualTo(s1(a+1,b-a-1))) {
+		tp=2;
+		break;
+	      }
 	    }
-	  }
-	  s1 = s1(b+1,999);
-	} while (b>=0);
-	if (tp) break;
-      } //else
-    }
+	    s1 = s1(b+1,999);
+	  } while (b>=0);
+	  if (tp) break;
+	} //else
+      }
 
-    TDataMember* dm = 0;
-    if (tp) { //найдено
-      OneVar(it->Var,it->Dm,data,len,memname);
-      varlist.erase(it);
-      if (debug&0x4) {
-	print_var(tp,it->Dm,varname,memname,len);
+      TDataMember* dm = 0;
+      if (tp) { //найдено
+	OneVar(it->Var,it->Dm,data,len,memname);
+	varlist.erase(it);
+	if (debug&0x4) {
+	  print_var(tp,it->Dm,varname,memname,len);
+	}
       }
-    }
-    else { //не найдено
-      if (debug&0x4) {
-	print_var(tp,dm,varname,memname);
+      else { //не найдено
+	if (debug&0x4) {
+	  print_var(tp,dm,varname,memname);
+	}
       }
-    }
+    } //else -> read other varialbes
 
   } //while sz<size
+
+  // копируем Hdef, попутно создаем 2d-гистограммы
+  for (auto it=list_mdef.begin();it!=list_mdef.end();++it) {
+    Mdef* target = 0;
+    //bool found=0;
+    for (auto it2 = hcl->Mlist.begin();it2!=hcl->Mlist.end();++it2) {
+      if (it->h_name.EqualTo(it2->h_name)) { //найдено
+	target = &*it2;
+	//*(it2->hd) = *(it->hd);
+    	//found=1;
+    	break;
+      }
+    }
+    if (!target) { // не найдено - создаем?
+      check_old_2d(&*it);
+      //prnt("sss ds;",BRED,"Hdef-: ",it->h_name.Data(),it->hd->b,RST);
+      target = Create_2d(&*it);
+    }
+    else {// найдено - ничего не делаем
+      //prnt("sss ds;",BYEL,"Hdef+: ",it->h_name.Data(),it->hd->b,RST);
+    }
+
+    if (target) {
+      //копируем
+      *(target->hd) = *(it->hd);
+    }
+  } //for it
+
+  // for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+  //   prnt("sss d ds;",BMAG,"Mlist: ",it->h_name.Data(),it->hd->b,it->hnum,RST);
+  // }
+  
   return 1;
 } //BufToClass
 //--------------------------------
@@ -947,6 +1085,8 @@ int main(int argc, char **argv)
   //common_init();
   string s_name, dir, name, ext;
 
+  //ROOT::EnableThreadSafety();
+
   //cross check for duplicate names in opt and cpar
   duplcheck();
   
@@ -998,6 +1138,7 @@ int main(int argc, char **argv)
     "-u: reset USB after detecting device\n"
     "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
+    "-m module: set module type (see Expert -> module); assume input file without header\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
     "-b [filename]: analyze file in batch mode (without gui) and exit\n"
     "   Data are saved in filename[.raw/.dec/.root] depending on batch parameters\n"
@@ -1045,6 +1186,21 @@ int main(int argc, char **argv)
 	  exit(0);
 	case 'u': //reset usb
 	  b_resetusb=true;
+	  continue;
+	case 'm': //module
+	  crs->b_noheader=true;
+
+	  ++i;
+	  if (i<argc) {
+	    char* p;
+	    crs->module = strtol(argv[i], &p, 10);
+	    if (*p) {
+	      //crs->scrn=-1;
+	      --i;
+	    }
+	  }
+	  cout << "modl: " << crs->module << endl;
+
 	  continue;
 	case 'a': //acquisition in batch
 	  ++i;
@@ -1644,6 +1800,17 @@ void setbit(int &n, int bit, int set) {
     n = n & ~(1<<bit);
   }
 }
+
+string numstr(string inpstr) { //convert str to string containing only digits
+  string res;
+  for (UInt_t i=0;i<inpstr.size();i++) {
+    if (isdigit(inpstr[i]))
+      res+=inpstr[i];
+  }
+  if (!res.size())
+    res="-1";
+  return res;
+}
 /*
 //----- MFileDialog ----------------
 
@@ -1871,6 +2038,9 @@ GlbClass::GlbClass() {
 MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   : TGMainFrame(p,w,h) {
   // Create a main frame
+
+  fTimer = new TTimer(opt.tsleep);
+  fTimer->Connect("Timeout()", "MainFrame", this, "UpdateTimer()");
 
   gClient->GetColorByName("white", fWhite);
   fGrey=gROOT->GetColor(18)->GetPixel();
@@ -2329,9 +2499,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   }
 	
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
-  //UpdateStatus();
 
-  UpdateStatus(1);
+  UpdateTimer(1);
+  //UpdateStatus(1);
 
   // Set a name to the main frame
   SetTitle(mainname);
@@ -2351,11 +2521,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   Move(-100,-100);
 
+  fTimer->TurnOn();
   //p_ed=0;
   //p_pop=0;
 }
 
 MainFrame::~MainFrame() {
+  delete fTimer;
 }
 
 /*
@@ -2978,7 +3150,8 @@ void MainFrame::DoReadRoot() {
     //tof=opt.Tof;
 
     //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
-    UpdateStatus(1);
+    UpdateTimer(1);
+    //UpdateStatus(1);
 
     //if (fPar!=NULL) {
     //delete fPar;
@@ -3064,9 +3237,9 @@ void MainFrame::DoReset() {
 
   if (!crs->b_stop) return;
 
-  // cout << "Reset1: " << endl;
+  //cout << "Reset1: " << endl;
   crs->DoReset();
-  // cout << "Reset2: " << endl;
+  //cout << "Reset2: " << endl;
 
   if (local_nch!=opt.Nchan) {
     // cout << "Rebuild: " << endl;
@@ -3083,16 +3256,115 @@ void MainFrame::DoReset() {
   }
 
   ErrFrm->Reset();
-  HiFrm->HiReset();
+  //HiFrm->HiReset();
   parpar->Update();
   daqpar->Update();
   anapar->Update();
   pikpar->Update();
 
-  UpdateStatus(1);
-
+  UpdateTimer(1);
+  //UpdateStatus(1);
 }
 
+void MainFrame::UpdateTimer(int rst) {
+  int ii=0;
+
+  static Long64_t bytes1=0;
+  static Long64_t nevents_old=0;
+  static Long64_t mtrig_old=0;
+  static double mb_rate,ev_rate,trig_rate;
+
+  static clock_t clk_old, proc_old;
+
+  struct tms timeSample;
+
+  static Long64_t t_old=0;
+
+  Long64_t tot;
+  clock_t clk, proc;
+  static double percent=0;
+  static double pmem=0;
+
+  //gSystem->GetProcInfo(&pinfo);
+  
+  if (rst) {
+    bytes1=0;
+    nevents_old=0;
+    mtrig_old=0;
+    mb_rate=0;
+    ev_rate=0;
+    trig_rate=0;
+
+    clk_old=0;
+    proc_old=0;
+    percent=0;
+    pmem=0;
+
+    opt.T_acq=0;
+    t_old = gSystem->Now();
+  }
+
+  Long64_t tt = gSystem->Now();
+  double dt = (tt - t_old)*0.001;
+
+  //cout << "timer: " << dt << " " << tt << " " << t_old << " " << (tt-t_old) << endl;
+
+  t_old = tt;
+
+  if (dt>0.1) {
+    mb_rate = (crs->inputbytes-bytes1)/MB/dt;
+    ev_rate = (crs->nevents-nevents_old)/dt;
+    trig_rate = (crs->mtrig-mtrig_old)/dt;
+    //cout << "trig_rate: " << trig_rate << " " << dt << endl;
+
+    bytes1=crs->inputbytes;
+    nevents_old=crs->nevents;
+    mtrig_old=crs->mtrig;
+
+    //cpu
+    clk = times(&timeSample);
+    proc = timeSample.tms_stime + timeSample.tms_utime;
+    tot = clk-clk_old;
+    if (tot>10) {
+      percent = 100.*(proc-proc_old)/tot;
+      clk_old=clk;
+      proc_old=proc;
+    }
+    //else
+    //percent = 0;
+
+    //mem
+    gSystem->GetMemInfo(&minfo);
+    gSystem->GetProcInfo(&pinfo);
+    pmem = pinfo.fMemResident/minfo.fMemTotal*0.1;
+  }
+
+  fStat[ii++]->SetText(crs->txt_start,0);
+
+  fStat[ii++]->SetText(TGString::Format("%0.1f",opt.T_acq),0);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents),0);
+  fStat[ii++]->SetText(TGString::Format("%0.3f",ev_rate),0);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->mtrig),0);
+  fStat[ii++]->SetText(TGString::Format("%0.3f",trig_rate),0);
+  fStat[ii++]->SetText(TGString::Format("%lld",crs->nbuffers),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->decbytes/MB),0);
+
+  fStat[ii++]->SetText(TGString::Format("%0.2f",percent),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",pmem),0);
+
+  // cout << "Pinfo: " << clk << " " << proc << " " << percent
+  //      << " " << tot << " " << proc-proc_old
+  //      << " " << timeSample.tms_stime << " " << timeSample.tms_utime
+  //      << " " << timeSample.tms_cstime << " " << timeSample.tms_cutime
+  //      << endl;
+
+  //cout << "proc: " << rst << " " << percent << " " << tot << endl;
+}
+
+/*
 void MainFrame::UpdateStatus(int rst) {
 
   int ii=0;
@@ -3196,14 +3468,7 @@ void MainFrame::UpdateStatus(int rst) {
 
   //cout << "proc: " << rst << " " << percent << " " << tot << endl;
 }
-
-// void MainFrame::DoSetNumBuf() {
-
-//   if (bRun) return;
-
-//   opt.num_buf=(int) n_buffers->GetNumber();
-//   printf("test %d\n",opt.num_buf);
-// }
+*/
 
 void MainFrame::CloseWindow() {
 
