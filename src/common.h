@@ -26,6 +26,7 @@ const int MAX_CH=256; //256; //max number of channels
 const int MAX_TP=8; // 8 types, MAX_TP=other, MAX_TP+1=copy, MAX_TP+2=swap
 const int MAX_CHTP=MAX_CH+MAX_TP+1;
 const int NGRP=4; //number of groups of channels
+const int MAX_AXAY = sqrt(MAX_CH); //maximal number of channels used in AXAY-histograms
 
 const int MAXROI=20; //maximal number of ROI
 

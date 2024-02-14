@@ -5,6 +5,7 @@
 #include <TSystem.h>
 #include <TColor.h>
 #include <TGToolTip.h>
+#include <TVirtualX.h>
 
 extern Pixel_t fWhite;
 extern Pixel_t fGrey;
@@ -40,6 +41,7 @@ namespace CP {
 extern HClass* hcl;
 extern ParParDlg *parpar;
 extern DaqParDlg *daqpar;
+//extern ChanParDlg *chanpar;
 extern AnaParDlg *anapar;
 extern PikParDlg *pikpar;
 
@@ -1200,6 +1202,7 @@ void TrigFrame::DoCheckTrigger() {
 }
 
 void TrigFrame::UpdateTrigger() {
+
   Pixel_t col[3] = {fGrey,fGreen,fMagenta};
   Pixel_t fcol;
   for (int i=0;i<3;i++) {
@@ -1213,8 +1216,9 @@ void TrigFrame::UpdateTrigger() {
   }
   this->ChangeBackground(col[cpar.Trigger]);
 
-  if (daqpar) {
+  if (daqpar /*&& chanpar*/) {
     daqpar->cGrp->ChangeBackground(col[cpar.Trigger]);
+    //chanpar->cGrp->ChangeBackground(col[cpar.Trigger]);
   }
   /*
   if (daqpar) {
@@ -2085,9 +2089,9 @@ void HistParDlg::AddLine_2d(TGGroupFrame* frame, Mdef* md) {
   char *tip11, *tip22;
 
   if (id1==id2) { //AXAY
-    col=2<<1;
+    col=2<<1; //зеленый
     min2=0;
-    max2=opt.Nchan-1;
+    max2=MAX_AXAY-1;
     tip11= (char*) "Number of bins per channel on X and Y axis";
     tip22= (char*) "Maximal channel number";
   }
@@ -2302,9 +2306,9 @@ void HistParDlg::Update() {
 
 }
 
-//------ ChanParDlg -------
+//------ ChnParDlg -------
 
-ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
+ChnParDlg::ChnParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
   :ParDlg(p,wdth,h)
 {
 
@@ -2318,15 +2322,12 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
 						 1, 1, kVerticalFrame);
   fCanvas0->SetContainer(fcont);
   fCanvas0->SetScrolling(TGCanvas::kCanvasScrollHorizontal);
-  // fMain->AddFrame(fCanvas,new TGLayoutHints(kLHintsTop | kLHintsExpandY | 
-  // 					    kLHintsExpandX, 0, 0, 1, 1));
   fMain->AddFrame(fCanvas0,LayEE0);
 
   //AddHeader();
   head_frame = new TGHorizontalFrame(fcont,1,1);
   fcont->AddFrame(head_frame,LayLT0);
 
-  
   // Hsplitter
 
   TGHorizontalFrame *fH1 = new TGHorizontalFrame(fcont, 1, 1);
@@ -2347,6 +2348,25 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
   fCanvas1->SetScrolling(TGCanvas::kCanvasScrollVertical);
   //fCanvas1->SetVsbPosition(100);
 
+  /* YK
+  // begin... needed for mousewheel
+  fcont1->Connect("ProcessedEvent(Event_t*)", "ChnParDlg", this,
+                  "HandleMouseWheel(Event_t*)");
+  gVirtualX->GrabButton(fcont1->GetId(), kButton4, kAnyModifier,
+   			kButtonPressMask,
+			kNone, kNone);
+  gVirtualX->GrabButton(fcont1->GetId(), kButton5, kAnyModifier,
+   			kButtonPressMask,
+			kNone, kNone);
+
+  // gVirtualX->GrabButton(fcont1->GetId(), kAnyButton, kAnyModifier,
+  // 			kButtonPressMask | kButtonReleaseMask |
+  // 			kPointerMotionMask, kNone, kNone);
+
+  // end... needed for mousewheel
+  */
+
+
   fH1->AddFrame(fCanvas1,LayEE1);
 
   fCanvas2 = new TGCanvas(fH2,10,10);
@@ -2358,7 +2378,16 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
 
 }
 
-void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
+void ChnParDlg::HandleMouseWheel(Event_t *event) {
+   // Handle mouse wheel to scroll.
+
+  cout << "wheel: " << event->fType << " " << event->fCode << " " << event->fState << endl;
+  if (event->fType != kButtonPress && event->fType != kButtonRelease)
+    return;
+
+}
+
+void ChnParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
   char txt[255];
 
   //set nfld after 1st line is filled
@@ -2421,7 +2450,7 @@ void ChanParDlg::AddChCombo(int i, int &id, int &kk, int &all) {
 
 }
 
-void ChanParDlg::AddChkPar(int &kk, TGHorizontalFrame *cframe,
+void ChnParDlg::AddChkPar(int &kk, TGHorizontalFrame *cframe,
 			   Bool_t* dat, int all, const char* ttip, UInt_t cmd) {
 
   int id = Plist.size()+1;
@@ -2434,7 +2463,7 @@ void ChanParDlg::AddChkPar(int &kk, TGHorizontalFrame *cframe,
   kk++;
 }
 
-void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
+void ChnParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 			    void* apar, double min, double max, P_Def ptype, UInt_t cmd) {
 
   int id = Plist.size()+1;
@@ -2466,10 +2495,302 @@ void ChanParDlg::AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
 
 }
 
+//------ ChanParDlg -------
+
+ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
+  :ChnParDlg(p,wdth,h)
+{
+  fDock->SetWindowName("Channels");  
+}
+
+void ChanParDlg::Build() {
+
+  notbuilt=false;
+  pmax=opt.Nchan;
+
+  AddHeader();
+
+  for (int i=0;i<pmax;i++) {
+    AddLine_daq(i,fcont1);
+  }
+
+  AddLine_daq(MAX_CH,fcont2);
+
+  TGHorizontalFrame *hf1 = new TGHorizontalFrame(fcont2,1,1);
+  fcont2->AddFrame(hf1);
+  TGVerticalFrame *vf1 = new TGVerticalFrame(hf1,1,1);
+  hf1->AddFrame(vf1);
+
+  for (int i=1;i<MAX_TP+1;i++) {
+    AddLine_daq(MAX_CH+i,vf1);
+  }
+
+  const char *tip1, *tip2, *label;
+  int ww=40;
+
+  cGrp = new TGGroupFrame(hf1, "Coincidence scheme", kVerticalFrame);
+  cGrp->SetTitlePos(TGGroupFrame::kCenter);
+  hf1->AddFrame(cGrp, LayCC2);
+
+  //TGHorizontalFrame *hfr1 = new TGHorizontalFrame(cGrp);
+  //cGrp->AddFrame(hfr1);
+
+  AddLine_opt(cGrp,ww,(void*)"C1",(void*)"C2",tip1,tip2,"",
+	      k_lab,k_lab,0,0,0,0,0,0,LayLC1,LayLC2);
+
+  tip1= "Width of coincidence window for Group 1 (in samples)";
+  tip2= "Width of coincidence window for Group 2 (in samples)";
+  label="Windows";
+  AddLine_opt(cGrp,-ww,cpar.coinc_w,cpar.coinc_w+1,tip1,tip2,label,k_int,k_int,
+       1,1023,1,1023,1,1,LayLC1,LayLC2);
+
+  tip1= "Minimal multiplicity for Group 1";
+  tip2= "Minimal multiplicity for Group 2";
+  label="Min mult";
+  AddLine_opt(cGrp,-ww,cpar.mult_w1,cpar.mult_w1+1,tip1,tip2,label,k_int,k_int,
+	      0,255,0,255,1,1,LayLC1,LayLC2);
+
+  tip1= "Maximal multiplicity for Group 1";
+  tip2= "Maximal multiplicity for Group 2";
+  label="Max mult";
+  AddLine_opt(cGrp,-ww,cpar.mult_w2,cpar.mult_w2+1,tip1,tip2,label,k_int,k_int,
+	      0,255,0,255,1,1,LayLC1,LayLC2);
+
+  // for (int i=0;i<2;i++) {
+  //   hard_list.push_back(FindWidget(&opt.coinc_w[i]));
+  //   hard_list.push_back(FindWidget(&opt.mult_w1[i]));
+  //   hard_list.push_back(FindWidget(&opt.mult_w2[i]));
+  // }
+
+  // cLabel = new TGLabel(cGrp);
+  // cLabel->ChangeOptions(cLabel->GetOptions()|kFixedWidth);
+  // cLabel->SetWidth(130);
+  // cGrp->AddFrame(cLabel,LayLT1a);
+
+  TGLabel* cLab = new TGLabel(cGrp,"Trigger: ");
+  cLab->ChangeOptions(cLab->GetOptions()|kFixedWidth);
+  cLab->SetWidth(130);
+  cGrp->AddFrame(cLab,LayLT1a);
+
+  tTrig = new TrigFrame(cGrp,0);
+  //TrigFrame* TrFrame = new TrigFrame(cGrp,0);
+
+  //cGrp->Resize();
+
+  fCanvas1->SetWidth(cframe[0]->GetDefaultWidth()+20);
+  fCanvas2->SetWidth(cframe[0]->GetDefaultWidth()+20);
+  hsplitter->SetWidth(cframe[0]->GetDefaultWidth()+20);
+
+  if (crs->module==22) {
+    TGHorizontalFrame *hforce = new TGHorizontalFrame(fcont1,10,10);
+    fcont1->AddFrame(hforce,LayLT0);
+
+    int id = Plist.size()+1;
+    TGCheckButton *fforce = new TGCheckButton(hforce, "", id);
+    hforce->AddFrame(fforce,LayCC1);
+    DoMap((TGFrame*)fforce,&cpar.forcewr,p_chk,0,1);
+    fforce->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
+		
+    TGLabel* lforce = new TGLabel(hforce, "  Force_write all channels");
+    hforce->AddFrame(lforce,LayLT0);
+  }
+
+  //map cbut at the end of Plist
+  cbut_id = Plist.size()+1;
+  DoMap(cbut,&opt.chkall,p_but,1,0);
+
+}
+
+void ChanParDlg::AddHeader() {
+
+  TGTextEntry* tt[ndaqpar];
+
+  for (int i=0;i<ndaqpar;i++) {
+    // if (!strcmp(tlab1[i],"Trg") && crs->module<33) {
+    //   continue;
+    // }
+    tt[i]=new TGTextEntry(head_frame, tlab1[i]);
+    tt[i]->SetWidth(tlen1[i]);
+    tt[i]->SetState(false);
+    tt[i]->SetToolTipText(ttip1[i]);
+    tt[i]->SetAlignment(kTextCenterX);
+    head_frame->AddFrame(tt[i],LayCC0);
+  }
+
+}
+
+void ChanParDlg::AddLine_daq(int i, TGCompositeFrame* fcont1) {
+  //char txt[255];
+  int kk=0;
+  int all=0;
+  int id;
+  int act=1;
+  if (i<pmax) act=1|(5<<4);
+
+  cframe[i] = new TGHorizontalFrame(fcont1,10,10);
+  fcont1->AddFrame(cframe[i],LayLT0);
+
+  AddChCombo(i,id,kk,all);
+
+  //AddChkPar(kk, cframe[i], &cpar.on[i], all, ttip1[kk], 1);
+  AddChkPar(kk, cframe[i], &cpar.Inv[i], all, ttip1[kk], 1);
+  AddChkPar(kk, cframe[i], &cpar.AC[i], all, ttip1[kk], act);
+  AddChkPar(kk, cframe[i], &cpar.pls[i], all, ttip1[kk], 1);
+  AddChkPar(kk, cframe[i], &opt.dsp[i], all, ttip1[kk], 1);
+
+  AddNumDaq(i,kk++,all,cframe[i],"ratediv",&cpar.ratediv[i]);
+  AddChkPar(kk, cframe[i], cpar.group[i], all, ttip1[kk], 1);
+  AddChkPar(kk, cframe[i], cpar.group[i]+1, all, ttip1[kk], 1);
+
+  AddNumDaq(i,kk++,all,cframe[i],"smooth",&cpar.hS[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"delay" ,&cpar.hD[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"dt"    ,&cpar.Dt[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"pre"   ,&cpar.Pre[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"len"   ,&cpar.Len[i],0,1|(6<<4));
+  if (crs->module==22) 
+    AddNumDaq(i,kk++,1,cframe[i],"gain"  ,&cpar.G[i]);
+  else
+    AddNumDaq(i,kk++,all,cframe[i],"gain"  ,&cpar.G[i],0,act);
+
+  //act = 1|(4<<4); //match Trg & Drv for CRS2
+  AddNumDaq(i,kk++,all,cframe[i],"trig" ,&cpar.Trg[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"deriv" ,&cpar.Drv[i],&opt.sDrv[i]);
+  AddNumDaq(i,kk++,all,cframe[i],"thresh",&cpar.Thr[i],&opt.sThr[i]);
+
+  if (i<=MAX_CH) {
+    AddStat_daq(fStat2[i],cframe[i],ttip1[kk],kk);
+    AddStat_daq(fStat3[i],cframe[i],ttip1[kk],kk);
+    AddStat_daq(fStatBad[i],cframe[i],ttip1[kk],kk);
+  }
+}
+
+void ChanParDlg::AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
+			  const char* name, void* apar, void* apar2, UInt_t cmd) {  //const char* name) {
+
+  int par, min, max;
+
+  cpar.GetPar(name,crs->module,i,cpar.crs_ch[i],par,min,max);
+  //cout << "getpar1: " << i << " " << min << " " << max << endl;
+
+  TGNumberFormat::ELimit limits;
+
+  limits = TGNumberFormat::kNELLimitMinMax;
+  if (max==-1) {
+    limits = TGNumberFormat::kNELNoLimits;
+  }
+
+  int id = Plist.size()+1;
+  TGNumberEntryField* fNum =
+    new TGNumberEntryField(hframe1, id, par, TGNumberFormat::kNESInteger,
+			   TGNumberFormat::kNEAAnyNumber,
+			   limits,min,max);
+
+  char ss[100];
+  sprintf(ss,"%s%d",name,id);
+  fNum->SetName(ss);
+  DoMap(fNum,apar,p_inum, all,cmd,apar2);
+  fNum->SetToolTipText(ttip1[kk]);
+  fNum->SetWidth(tlen1[kk]);
+  fNum->SetHeight(20);
+  fNum->SetAlignment(kTextRight);
+  //fNum->SetAlignment(kTextRight);
+  fNum->Connect("TextChanged(char*)", "ParDlg", this, "DoDaqNum()");
+  hframe1->AddFrame(fNum,LayCC0);
+
+}
+
+void ChanParDlg::AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
+			    const char* ttip, int &kk) {
+  int col;
+
+  fStat = new TGTextEntry(cframe, "");
+  fStat->ChangeOptions(fStat->GetOptions()|kFixedSize|kSunkenFrame);
+
+  fStat->SetState(false);
+  fStat->SetToolTipText(ttip);
+
+  fStat->Resize(tlen1[kk],20);
+  col=gROOT->GetColor(19)->GetPixel();
+  fStat->SetBackgroundColor(col);
+  fStat->SetText(0);
+  //cframe->AddFrame(fStat,LayLT5);
+  cframe->AddFrame(fStat,LayCC0);
+  kk++;
+}
+
+void ChanParDlg::Update() {
+  ParDlg::Update();
+  tTrig->UpdateTrigger();
+  
+  //MapSubwindows();
+  //Layout();
+}
+
+void ChanParDlg::UpdateStatus(int rst) {
+
+  static Long64_t allbad;
+  static double t1;
+  static Long64_t npulses2o[MAX_CH];
+  //static Long64_t npulses3o[MAX_CH];
+  static double rate2[MAX_CH];
+  static double rate_all2;
+  //static double rate3[MAX_CH];
+  static double rate_all3;
+
+  if (rst) {
+    allbad=0;
+    t1=0;
+    opt.T_acq=0;
+    memset(npulses2o,0,sizeof(npulses2o));
+    //memset(npulses3o,0,sizeof(npulses3o));
+    memset(rate2,0,sizeof(rate2));
+    //memset(rate3,0,sizeof(rate3));
+  }
+
+  TGString txt;
+
+  double dt = opt.T_acq - t1;
+
+  if (dt>0.1) {
+    rate_all2=0;
+    rate_all3=0;
+
+    for (int i=0;i<pmax;i++) {
+      rate2[i] = (crs->npulses2[i]-npulses2o[i])/dt;
+      npulses2o[i]=crs->npulses2[i];
+      //rate3[i] = (crs->npulses3[i]-npulses3o[i])/dt;
+      //npulses3o[i]=crs->npulses3[i];
+
+      rate_all2+=rate2[i];
+      rate_all3+=crs->rate3[i];
+      allbad+=crs->npulses_bad[i];
+    }
+    t1=opt.T_acq;
+  }
+
+  for (int i=0;i<pmax;i++) {
+    txt.Form("%0.0f",rate2[i]);
+    fStat2[i]->SetText(txt);
+    txt.Form("%0.0f",crs->rate3[i]);
+    fStat3[i]->SetText(txt);
+    txt.Form("%d",crs->npulses_bad[i]);
+    fStatBad[i]->SetText(txt);
+  }
+
+  txt.Form("%0.0f",rate_all2);
+  fStat2[MAX_CH]->SetText(txt);
+  txt.Form("%0.0f",rate_all3);
+  fStat3[MAX_CH]->SetText(txt);
+  txt.Form("%lld",allbad);
+  fStatBad[MAX_CH]->SetText(txt);
+
+  //cout << "Updatestatus3: " << pmax << endl;
+}
+
 //------ DaqParDlg -------
 
 DaqParDlg::DaqParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
-  :ChanParDlg(p,wdth,h)
+  :ChnParDlg(p,wdth,h)
 {
   fDock->SetWindowName("DAQ");  
 }
@@ -2764,7 +3085,7 @@ void DaqParDlg::Update() {
 //------ AnaParDlg -------
 
 AnaParDlg::AnaParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
-  :ChanParDlg(p,wdth,h)
+  :ChnParDlg(p,wdth,h)
 {
   fDock->SetWindowName("Analysis");
 }
@@ -2862,7 +3183,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
 //------ PikParDlg -------
 
 PikParDlg::PikParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
-  :ChanParDlg(p,wdth,h)
+  :ChnParDlg(p,wdth,h)
 {
   fDock->SetWindowName("Peaks");  
 }

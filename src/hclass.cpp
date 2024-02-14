@@ -321,9 +321,10 @@ void Mdef::Fill_2d(EventClass* evt, Double_t *hcut_flag, int ncut) {
 
       //prnt("ss d d d f fs;",BRED,"1d:",hnum,mx->hnum,ipls->Chan,x,y,RST);
 
-      // for (int j=0;j<NGRP;j++)
-      // 	if (opt.Grp[ipls->Chan][j])
-      // 	  Fill_02(v_map[MAX_CH+j],x,y,hcut_flag);
+      //YK!!!
+      for (int j=0;j<NGRP;j++)
+       	if (opt.Grp[ipls->Chan][j])
+       	  Fill_02(v_map[MAX_CH+j],x,y,hcut_flag,ncut);
 
     }
   }
@@ -349,6 +350,40 @@ void Mdef::Fill_2d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut) {
 
     }
   }
+}
+
+void Mdef::Fill_axay(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  Float_t AA[MAX_CH+1] = {}; //initialize to zero
+  int nmax = hd->bins2+1;
+
+  //prnt("ss d ds;",BRED,"axay:",opt.Nchan,nmax,RST);
+
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<nmax && ipls->Pos>-32222) {
+      // вызываем Fill_02 для данной гистограммы
+
+      AA[ipls->Chan] = 1e5+(mx->*mx->GetX)(evt,&*ipls);
+      //Float_t y = (my->*my->GetX)(evt,&*ipls);
+
+
+      //YK!!! для axay-гистограмм Grp не имеет смысла... или имеет(?)
+      // for (int j=0;j<NGRP;j++)
+      //  	if (opt.Grp[ipls->Chan][j])
+      //  	  Fill_02(v_map[MAX_CH+j],x,y,hcut_flag,ncut);
+
+    }
+  }
+
+  for (int y=1;y<nmax;y++) {
+    int k0 = y*(y-1)/2;
+    for (int x=0;x<y;x++) {
+      int ii = k0+x;
+      if (AA[x] && AA[y])
+	Fill_02(v_map[ii],AA[x]-1e5,AA[y]-1e5,hcut_flag,ncut);
+    }
+  }
+
 }
 
 /*
@@ -885,8 +920,6 @@ HClass::~HClass()
 //------------------------------
 
 void HClass::Make_Mlist() {
-  int nn = MAX_CH+NGRP;
-
   Mlist.clear();
 
   TList* l1 = TClass::GetClass("Toptions")->GetListOfDataMembers();
@@ -908,6 +941,8 @@ void HClass::Make_Mlist() {
       if (pos>0)
 	md.tip = iss.str().substr(pos+1);
 
+      //YK!!!
+      int nn = MAX_CH+NGRP;
       if (md.hnum==53) //prof
 	nn = 256;
       else if (md.hnum==54) //prof_int
@@ -943,12 +978,10 @@ Mdef* HClass::Add_h2(int id1, int id2) {
 
   md.hd = new Hdef();
 
-  int nn;
-  if (id1==id2) { //same 1d histograms
-    nn = MAX_CH/2;
-  }
-  else { //different 1d histograms
-    nn = MAX_CH+NGRP;
+  //YK!!
+  int nn = MAX_CH+NGRP; //different 1d histograms
+  if (id1==id2) { //axay: same 1d histograms 
+    nn = MAX_AXAY*MAX_AXAY+NGRP;
   }
 
   md.v_map.resize(nn);
@@ -998,6 +1031,8 @@ void HClass::Make_hist() {
   Hdef* hd2=0;
   PulseClass pls;
   for (auto it = Mlist.begin();it!=Mlist.end();++it) {
+    //YK!! //Здесь можно обнулять v_map...
+    memset(it->v_map.data(),0,it->v_map.size()*sizeof(HMap*));
     if (it->hnum>0 && it->hnum<10) {// standard pulse variable
       Make_1d(it,opt.Nchan);
       it->ptr = pls.GetPtr(&*it);
@@ -1068,11 +1103,15 @@ void HClass::Make_hist() {
       it->MFill = &Mdef::FillProf;
     }
     else if (it->hnum>100) { //2d
-      if (Make_2d(it)) {
+      int res = Make_2d(it);
+      if (res==1) { //normal 2d
 	if (it->mx->hnum==21 || it->my->hnum==21)
 	  it->MFill = &Mdef::Fill_2d_Extend;
 	else
 	  it->MFill = &Mdef::Fill_2d;
+      }
+      else if (res==2) { //axay
+	it->MFill = &Mdef::Fill_axay;
       }
     }
     else {
@@ -1228,8 +1267,6 @@ void NameTitle(char* name, char* title, int i, int maxi,
 void HClass::Make_1d(mdef_iter md, int maxi) {
   if (!md->hd->b) return;
 
-  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
-
   char name2[100];
   char title2[100];
 
@@ -1283,8 +1320,6 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
 void HClass::Make_1d_pulse(mdef_iter md) {
   if (!md->hd->b) return;
 
-  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
-
   char name2[100];
   char title2[100];
 
@@ -1313,8 +1348,6 @@ void HClass::Make_1d_pulse(mdef_iter md) {
 void HClass::Make_prof(mdef_iter md) {
   if (!md->hd->b) return;
 
-  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
-  
   char name2[100];
   char title2[100];
 
@@ -1342,8 +1375,6 @@ void HClass::Make_prof(mdef_iter md) {
 void HClass::Make_prof_int(mdef_iter md, Hdef* hd2) {
   if (!md->hd->b) return;
   if (!hd2) return;
-
-  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
 
   char name2[100];
   char title2[100];
@@ -1384,8 +1415,6 @@ int HClass::Make_2d(mdef_iter md) {
 // 		     HMap* map[], Hdef* hd, Hdef* hd1, Hdef* hd2) {
   if (!(md->hd->b)) return 0;
 
-  memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
-
   int id1 = md->hnum/100;
   int id2 = md->hnum%100;
 
@@ -1401,43 +1430,96 @@ int HClass::Make_2d(mdef_iter md) {
   md->name = m1->name+'_'+m2->name;
   md->x_title = m1->x_title;
   md->y_title = m2->x_title;
-  md->tip = "2-dimensional histogram: "+md->name+"\nMin Max are taken from the corresponding 1d histograms";
+  //md->tip = "2-dimensional histogram: "+md->name+"\nMin Max are taken from the corresponding 1d histograms";
 
   char name2[100];
-  char title2[100];
+  char title2[200];
 
   TString title = ';'+md->x_title+';'+md->y_title;
   TString name = md->name;
   name.ToLower();
 
-  for (int i=0;i<opt.Nchan;i++) {
-    NameTitle(name2,title2,i,opt.Nchan,name.Data(),title.Data());
-
-    int n1=md->hd->bins*(m1->hd->max - m1->hd->min);
-    int n2=md->hd->bins2*(m2->hd->max - m2->hd->min);
-    if (n1<1) n1=1;
-    if (n2<1) n2=1;
-
-    //cout << "make_2d: " << hd2->min << " " << hd2->max << endl;
-
-    TH2F* hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
-		      n2,m2->hd->min,m2->hd->max);
-
-    md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
-    map_list->Add(md->v_map[i]);
-    allmap_list->Add(md->v_map[i]);
-  }
+  int n1=md->hd->bins*(m1->hd->max - m1->hd->min);
+  int n2=md->hd->bins2*(m2->hd->max - m2->hd->min);
+  if (n1<1) n1=1;
+  if (n2<1) n2=1;
 
   md->mx = &*m1;
   md->my = &*m2;
 
-  return 1;
+  if (id1!=id2) { //normal 2d
+  //-------------------
+    for (int i=0;i<opt.Nchan;i++) {
+      NameTitle(name2,title2,i,opt.Nchan,name.Data(),title.Data());
+      //cout << "name2: " << i << " " << name2 << " " << title2 << endl;
+	  
+      TH2F* hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
+			n2,m2->hd->min,m2->hd->max);
+
+      md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
+      map_list->Add(md->v_map[i]);
+      allmap_list->Add(md->v_map[i]);
+    }
+    for (int j=0;j<NGRP;j++) {
+      for (int ch=0;ch<opt.Nchan;ch++) {
+	if (opt.Grp[ch][j]) {
+	  sprintf(name2,"%s_g%d",name.Data(),j+1);
+	  sprintf(title2,"%s_g%d%s",name.Data(),j+1,title.Data());
+
+	  TH2F* hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
+			    n2,m2->hd->min,m2->hd->max);
+
+	  md->v_map[MAX_CH+j] = new HMap(md->name.Data(),hh,md->hd,MAX_CH+j);
+	  map_list->Add(md->v_map[MAX_CH+j]);
+	  allmap_list->Add(md->v_map[MAX_CH+j]);
+
+	  break;
+	}
+      }
+    }
+    return 1;
+  } //normal 2d
+  //-------------------
+  else { //axay
+    int nmax=md->hd->bins2+1;
+    for (int y=1;y<nmax;y++) {
+      int k0 = y*(y-1)/2;
+      for (int x=0;x<y;x++) {
+	int ii = k0+x;
+	//prnt("ss d d d ds;",BGRN,"ii:",x,y,ii,k0,RST);
+	name = m1->name+"2d";
+	name.ToLower();
+	sprintf(name2,"%s_%02d_%02d",name.Data(),x,y);
+	sprintf(title2,"%s%s",name2,title.Data());
+	//NameTitle(name2,title2,ii,opt.Nchan,name.Data(),title.Data());
+
+
+
+	//NameTitle(name2,title2,i,opt.Nchan,name.Data(),title.Data());
+	//cout << "nametit: " << i << " " << name << " " << title << " " << m1->name << " " << m2->name << " " << name2 << " " << title2 << endl;
+	//cout << "name2a: " << i << " " << name2 << " " << title2 << endl;
+
+
+	int n1=md->hd->bins*(m1->hd->max - m1->hd->min);
+	if (n1<1) n1=1;
+
+	TH2F* hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
+			n1,m1->hd->min,m1->hd->max);
+	md->v_map[ii] = new HMap(md->name.Data(),hh,md->hd,ii);
+	map_list->Add(md->v_map[ii]);
+	allmap_list->Add(md->v_map[ii]);
+      }
+    }
+    return 2;
+  }
+
 }
 
+/*
 void HClass::Make_axay(const char* dname, const char* name, const char* title,
 		     HMap* map[], Hdef* hd, Hdef* hd1) { //, int nmax) {
 
-  memset(map,0,sizeof(HMap*)*MAX_CH*(MAX_CH+1)/2);
+  //memset(map,0,sizeof(HMap*)*MAX_CH*(MAX_CH+1)/2);
 
   if (!hd->b) return;
 
@@ -1464,6 +1546,7 @@ void HClass::Make_axay(const char* dname, const char* name, const char* title,
     }
   }
 }
+*/
 
 void HClass::Clone_Hist(HMap* map) {
   char cutname[99];

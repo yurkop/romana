@@ -8,6 +8,7 @@
 #pragma link C++ class ParDlg+;
 #pragma link C++ class ParParDlg+;
 #pragma link C++ class HistParDlg+;
+#pragma link C++ class ChnParDlg+;
 #pragma link C++ class ChanParDlg+;
 #pragma link C++ class DaqParDlg+;
 #pragma link C++ class AnaParDlg+;

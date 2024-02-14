@@ -942,6 +942,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 }
 
 void HistFrame::CheckAll(Bool_t on) {
+  //cout << "CheckAll: " << on << endl;
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     fListTree->CheckAllChildren(idir,on);
@@ -1134,7 +1135,7 @@ void HistFrame::OptToCheck() {
     int ncut = stoi(numstr(idir->GetText()));
     if (ncut<0)
       ncut=0;
-    //cout << "ct: " << idir->GetText() << " " << ncut << endl;
+    //cout << "ct2: " << idir->GetText() << " " << ncut << endl;
     int i=0; // номер итема в папке
     while (item) {
       if (b_main) { //папка MAIN*

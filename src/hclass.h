@@ -62,6 +62,7 @@ public:
   void Fill_1d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_2d(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_2d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut);
+  void Fill_axay(EventClass* evt, Double_t *hcut_flag, int ncut);
   void FillMult(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_Mean1(HMap* map, Float_t* Data, int nbins, int ideriv, int ncut);
   void FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut);
@@ -75,10 +76,10 @@ public:
   //void FillMeanPulse_cut(EventClass* evt, Double_t *hcut_flag);
 
 
-  void MFDef(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  void MFillDef(EventClass* evt, Double_t *hcut_flag, int ncut) {
     //prnt("sss;",BRED, "Def:", RST);
   };
-  void (Mdef::*MFill)(EventClass* evt, Double_t *hcut_flag, int ncut) = &Mdef::MFDef;
+  void (Mdef::*MFill)(EventClass* evt, Double_t *hcut_flag, int ncut) = &Mdef::MFillDef;
 
   //void MFDef_cut(EventClass* evt, int i) {};
   //void (Mdef::*MFill_cut)(EventClass* evt, int i) = &Mdef::MFDef_cut;
@@ -266,8 +267,8 @@ class HClass {
   void Make_prof(mdef_iter md);
   void Make_prof_int(mdef_iter md, Hdef* hd2);
   int Make_2d(mdef_iter md);
-  void Make_axay(const char* dname, const char* name, const char* title,
-	       HMap* map[], Hdef* hd, Hdef* hd1); //, int nmax);
+  // void Make_axay(const char* dname, const char* name, const char* title,
+  // 	       HMap* map[], Hdef* hd, Hdef* hd1); //, int nmax);
 
   void Clone_Hist(HMap* map);
   void Remove_Clones(HMap* map);

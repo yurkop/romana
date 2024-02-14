@@ -81,6 +81,7 @@ HClass* hcl=0;
 
 ParParDlg *parpar=0;
 HistParDlg *histpar=0;
+//ChanParDlg *chanpar=0;
 DaqParDlg *daqpar=0;
 AnaParDlg *anapar=0;
 PikParDlg *pikpar=0;
@@ -2628,6 +2629,14 @@ void MainFrame::MakeTabs(bool reb) {
   parpar->Update();
   ntab++;
 
+  /* YK!!
+  tb = fTab->AddTab("Channels");
+  tabfr.push_back(tb);
+  chanpar = new ChanParDlg(tb, 1, MAIN_HEIGHT);
+  tb->AddFrame(chanpar, LayEE2);
+  ntab++;
+  YK!! */
+
   //cout << "tab2: " << endl;
   tb = fTab->AddTab("DAQ");
   tabfr.push_back(tb);
@@ -2688,9 +2697,12 @@ void MainFrame::MakeTabs(bool reb) {
 
 
 
-
+  //chanpar->Build();
   daqpar->Build();
+
+  //chanpar->Update();
   daqpar->Update();
+
   anapar->Build();
   anapar->Update();
   pikpar->Build();

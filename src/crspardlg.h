@@ -295,7 +295,7 @@ public:
 };
 
 //-----------------------------------------------
-class ChanParDlg: public ParDlg {
+class ChnParDlg: public ParDlg {
 
 public:
   TGCanvas* fCanvas0;
@@ -305,9 +305,10 @@ public:
   TGHorizontalFrame *head_frame;
 
 public:
-  ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~ChanParDlg() {};
+  ChnParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~ChnParDlg() {};
 
+  void HandleMouseWheel(Event_t *event);
   void AddChCombo(int i, int &id, int &kk, int &all);
   void AddChkPar(int &kk, TGHorizontalFrame *cframe,
 		 Bool_t* dat, int all, const char* ttip, UInt_t cmd=0);
@@ -315,11 +316,43 @@ public:
     void* apar, double min, double max, P_Def ptype, UInt_t cmd=0);
   // void ClearLines();
 
+  ClassDef(ChnParDlg, 0)
+};
+
+//-----------------------------------------------
+class ChanParDlg: public ChnParDlg {
+
+public:
+  TGTextEntry *fStat2[MAX_CH+1];
+  TGTextEntry *fStat3[MAX_CH+1];
+  TGTextEntry *fStatBad[MAX_CH+1];
+
+  //TGCheckButton *fchkSoft;
+  //TGCheckButton *fchkHard;
+
+  TGGroupFrame* cGrp;
+  //TGLabel *cLabel;
+  TrigFrame* tTrig;
+
+public:
+  ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~ChanParDlg() {};
+
+  void Build();
+  void AddHeader();
+  void AddLine_daq(int i, TGCompositeFrame* fcont1);
+  void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
+    const char* name, void* apar, void* apar2=0, UInt_t cmd=1);
+  void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
+		   const char* ttip, int &kk);
+  void UpdateStatus(int rst=0);
+  void Update();
+
   ClassDef(ChanParDlg, 0)
 };
 
 //-----------------------------------------------
-class DaqParDlg: public ChanParDlg {
+class DaqParDlg: public ChnParDlg {
 
 public:
   TGTextEntry *fStat2[MAX_CH+1];
@@ -351,7 +384,7 @@ public:
 };
 
 //-----------------------------------------------
-class AnaParDlg: public ChanParDlg {
+class AnaParDlg: public ChnParDlg {
 
 public:
   AnaParDlg(const TGWindow *p,UInt_t w,UInt_t h);
@@ -367,7 +400,7 @@ public:
 };
 
 //-----------------------------------------------
-class PikParDlg: public ChanParDlg {
+class PikParDlg: public ChnParDlg {
 
 public:
   PikParDlg(const TGWindow *p,UInt_t w,UInt_t h);
