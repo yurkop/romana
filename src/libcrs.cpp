@@ -416,124 +416,9 @@ void *handle_ana(void *ctx) {
       gSystem->Sleep(1);
     }
 
-    // вызываем ana2 после каждого cback или DoBuf
-    // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
-    // если ana_all==0 ->
-    // анализируем данные от Levents.begin() до Levents.end()-opt.ev_min
-    // если ana_all!=0 ->
-    // анализируем данные от Levents.begin() до Levents.end()
+    crs->Ana2(ana_all);
 
-    int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
-
-    // cmut.Lock();
-    // cout << "Ana2_MT: " << crs->Levents.size() << " " << ana_all << endl;
-    // cmut.UnLock();
-
-    if (m_event==crs->Levents.end()) {
-      m_event=crs->Levents.begin();
-    }
-
-    std::list<EventClass>::iterator m_end = crs->Levents.end();
-    //m_end = crs->Levents.end();
-    if (!ana_all) { //analyze up to ev_min events
-      int nmin=opt.ev_min;
-      while (m_end!=m_event && nmin>0) {
-	--m_end;
-	--nmin;
-      }
-      //std::advance(m_end,-opt.ev_min);
-    }
-
-    //cout << KBLU << "Levents2: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << RST << endl;
-    //tt1.Set();
-    //int n1=crs->mtrig;
-
-    //prnt("ss d ds;",KRED,"ana1:",
-    // 	 crs->Levents.size(),crs->Bufevents.size(),RST);
-
-    // analyze events from m_event to m_end
-    while (m_event!=m_end) {
-      if ((int)m_event->pulses.size()>=opt.mult1 &&
-	  (int)m_event->pulses.size()<=opt.mult2) {
-
-	Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
-	m_event->FillHist(hcut_flag);
-	//m_event->FillHist(false);
-	if (m_event->Spin & 2) { //Ms channel
-	  if (!opt.maintrig || hcut_flag[opt.maintrig]) {
-	    ++crs->mtrig;
-	    if (opt.dec_write) {
-	      if (cpar.Trigger==1) { //trigger on START channel
-		crs->Fill_Dec80(&(*m_event));
-	      }
-	      else {
-		//crs->Fill_Dec73(&(*m_event));
-		//crs->Fill_Dec74(&(*m_event));
-		//crs->Fill_Dec75(&(*m_event));
-		//crs->Fill_Dec76(&(*m_event));
-		//crs->Fill_Dec77(&(*m_event));
-		//crs->Fill_Dec78(&(*m_event));
-		crs->Fill_Dec79(&(*m_event));
-	      }
-	    }
-	    if (opt.raw_write && opt.fProc) {
-	      crs->Fill_Raw(&(*m_event));
-	    }
-	    // if (opt.fTxt) {
-	    //   crs->Print_OneEvent(&(*m_event));
-	    // }
-	  } //maintrig
-	} // if spin
-      }
-      // else {
-      // 	//cout << "Erase1: " << m_event->Nevt << " " << m_event->pulses.size() << endl;
-      // 	m_event=crs->Levents.erase(m_event);
-      // }
-      ++m_event;
-    }
-
-    //tt2.Set();
-    //crs->DT4=tt2.AsDouble()-tt1.AsDouble();
-    //double tt=tt2.AsDouble()-tt1.AsDouble();
-    //int n2=crs->mtrig-n1;
-    //cout << KRED << "Levents3: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << " " << tt << " " << tt/n2*1e7 << RST << endl;
-    //cout << RST << endl;
-
-    // prnt("ss d ds;",KRED,"ana2:",
-    // 	 crs->Levents.size(),crs->Bufevents.size(),RST);
-
-    // erase events if the list is too long
-    for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
-      it=crs->Levents.erase(it);
-    }
-
-
-    if (ana_all) {
-      //cout << "ana_all: " << endl;
-      if (opt.dec_write) {
-	crs->Flush_Dec();
-      }
-      if (opt.raw_write && opt.fProc) {
-	crs->Flush_Raw();
-      }
-    }
-
-    //tt2.Set();
-    //crs->DT4=tt2.AsDouble()-tt1.AsDouble();
-
-    /*
-    if (crs->Levents.size()>crs->LMAX) crs->LMAX=crs->Levents.size();
-    static int rep=0;
-    rep++;
-    if (rep>9) {
-      cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->LMAX << " " << crs->nevents << " " << nmax << " " << rep << RST << endl;
-      rep=0;
-    }
-    */
-
-    // prnt("ss d d ds;",KRED,"ana3:",
-    // 	 crs->Levents.size(),crs->Bufevents.size(),crs->Fmode,RST);
-
+    // вычисляем, нужно ли замедлять чтение файла, если анализ отстает
     if (crs->Fmode>1) { //только для чтения файла
       crs->L4=double(crs->Levents.size())/opt.ev_max;
       if (crs->L4>2) {
@@ -544,21 +429,6 @@ void *handle_ana(void *ctx) {
       }
     }
 
-    //cout << KGRN << "Levents4: " << crs->Levents.size() << " " << crs->nevents << " " << nmax << " " << crs->L4 << " " << crs->N4 << " " << crs->SLP << RST << endl;
-
-
-    // fill Tevents for EvtFrm::DrawEvent2
-    if (EvtFrm) {
-      EvtFrm->Tevents.clear();
-      if (m_event!=crs->Levents.end()) {
-	EvtFrm->Tevents.push_back(*m_event);
-      }
-      else if (!crs->Levents.empty()) {
-	EvtFrm->Tevents.push_back(crs->Levents.back());     
-      }
-      EvtFrm->d_event=EvtFrm->Pevents->begin();
-    }
-	
     //cout << "Levents5: " << crs->Levents.size() << " " << crs->nevents << endl;
     // cmut.Lock();
     // cout << "Ana2_MT_end: " << crs->Levents.size()
@@ -567,7 +437,6 @@ void *handle_ana(void *ctx) {
     // 	 << " " << ana_all << endl;
     // cout << "---------------------------------" << endl;
     // cmut.UnLock();
-
 
     //ana_mut.UnLock();
 
@@ -844,8 +713,6 @@ void CRS::Ana2(int all) {
   // если all!=0 ->
   // анализируем данные от Levents.begin() до Levents.end()
 
-  //Print_Events();
-
   int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
 
   // cmut.Lock();
@@ -877,22 +744,14 @@ void CRS::Ana2(int all) {
       pt1.Set();
 #endif
 
-      //prnt("ss ls;",BRED,"FillHist:",nevents,RST);
-
       Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
       m_event->FillHist(hcut_flag);
-      //m_event->FillHist_old(true);
-      //m_event->FillHist_old(false);
 #ifdef TPROC
       pt2.Set();
       tproc+=pt2.AsDouble()-pt1.AsDouble();
 #endif
-      //prnt("ss fs;",BRED,"t2:",tproc,RST);
-
-      //prnt("ssl ds;",BGRN,"EV2: ",m_event->Nevt,m_event->Spin,opt.maintrig,RST);
       if (m_event->Spin & 2) { //Ms channel
 	if (!opt.maintrig || hcut_flag[opt.maintrig]) {
-	  //prnt("ssl ls;",BRED,"EV3: ",m_event->Nevt,m_event->Tstmp,RST);
 	  ++crs->mtrig;
 	  if (opt.dec_write) {
 	    if (cpar.Trigger==1) { //trigger on START channel
@@ -911,25 +770,22 @@ void CRS::Ana2(int all) {
 	  if (opt.raw_write && opt.fProc) {
 	    crs->Fill_Raw(&(*m_event));
 	  }
-	  if (opt.fTxt) {
+	  if (opt.fTxt && opt.nthreads>1) {
 	    crs->Print_OneEvent(&(*m_event));
 	  }
 	} //maintrig
       } // if spin
-      ++m_event;
     } // mult
-    else {
-      //prnt("ss l l f d ls;",BMAG,"Erase:",m_event->Nevt,m_event->Tstmp,m_event->T0,m_event->Spin,m_event->pulses.size(),RST);
-      m_event=Levents.erase(m_event);
-    }
+    // else {
+    // 	m_event=crs->Levents.erase(m_event);
+    // }
+    ++m_event;
   }
 
   // erase events if the list is too long
   for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
     it=crs->Levents.erase(it);
   }
-
-  //cout << "Levents3: " << Levents.size() << " " << nevents << endl;
 
   //removed on 06.02.2020
   //cout << "Flush_ana YK: " << endl;
@@ -942,24 +798,19 @@ void CRS::Ana2(int all) {
     }
   }
 
-  //cout << "Levents4: " << Levents.size() << " " << nevents << endl;
-
   // fill Tevents for EvtFrm::DrawEvent2
   if (EvtFrm) {
     EvtFrm->Tevents.clear();
-    if (m_event!=Levents.end()) {
+    if (m_event!=crs->Levents.end()) {
       EvtFrm->Tevents.push_back(*m_event);
     }
-    else if (!Levents.empty()) {
-      EvtFrm->Tevents.push_back(Levents.back());     
+    else if (!crs->Levents.empty()) {
+      EvtFrm->Tevents.push_back(crs->Levents.back());     
     }
     EvtFrm->d_event=EvtFrm->Pevents->begin();
   }
 
-  // cout << "Levents5: " << Levents.size() << " " << nevents
-  //      << " " << EvtFrm->d_event->Tstmp << endl;
-
-} //ana2
+} //Ana2
 
 // void tt(int* i) {
 //   cout << i << " " << *i << endl;
