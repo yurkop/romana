@@ -1,3 +1,9 @@
+# commands:
+# make : compile
+# make -j3 : compile using 3 CPUs
+# make clean : clear compilation
+# make cyusblib : compile and install cyusb library (need root password)
+
 # make TPROC=1 to compile with TPROC option
 #      TPROC -> cpu usage in FillHist, only in singlethread
 # make TIMES=1 to compile with TIMES option

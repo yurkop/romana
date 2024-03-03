@@ -1372,7 +1372,7 @@ int main(int argc, char **argv)
       rd_root=true;
     }
     else { //.raw or .dec file
-      if (crs->DoFopen(datfname,rdpar)) //read file and parameters from it
+      if (crs->DoFopen(datfname,1,rdpar)) //read file and parameters from it
 	exit(-1);
     }
   }
@@ -2174,8 +2174,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // 		     "HandleMenu(Int_t)");
 
 
-
-
   TGPopupMenu* fMenuCalibr = new TGPopupMenu(gClient->GetRoot());
 
   fMenuBar->AddPopup("&Calibration", fMenuCalibr, 
@@ -2251,8 +2249,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 					    kLHintsExpandY,3,3,2,2));
 
   fTab->Connect("Selected(Int_t)", "MainFrame", this, "DoTab(Int_t)");
-
-  //cout << "tab1: " << endl;
 
   MakeTabs();
 
@@ -2637,31 +2633,34 @@ void MainFrame::MakeTabs(bool reb) {
   ntab++;
   YK!! */
 
-  //cout << "tab2: " << endl;
+  //cout << "tab2: " << ntab << endl;
   tb = fTab->AddTab("DAQ");
   tabfr.push_back(tb);
   daqpar = new DaqParDlg(tb, 1, MAIN_HEIGHT);
   tb->AddFrame(daqpar, LayEE2);
   ntab++;
-  //cout << "tab3: " << endl;
+  //cout << "tab3: " << ntab << endl;
 
   tb = fTab->AddTab("Analysis");
   tabfr.push_back(tb);
   anapar = new AnaParDlg(tb, 1, MAIN_HEIGHT);
   tb->AddFrame(anapar, LayEE2);
   ntab++;
+  //cout << "tab3: " << ntab << endl;
 
   tb = fTab->AddTab("Peaks");
   tabfr.push_back(tb);
   pikpar = new PikParDlg(tb, 1, MAIN_HEIGHT);
   tb->AddFrame(pikpar, LayEE2);
   ntab++;
+  //cout << "tab3: " << ntab << endl;
 
   tb = fTab->AddTab("Events");
   tabfr.push_back(tb);
   EvtFrm = new EventFrame(tb, MAIN_WIDTH, MAIN_HEIGHT,ntab);
   tb->AddFrame(EvtFrm, LayEE1);
   ntab++;
+  //cout << "tab3: " << ntab << endl;
 
   tb = fTab->AddTab("Histograms");
   tabfr.push_back(tb);
@@ -2669,18 +2668,21 @@ void MainFrame::MakeTabs(bool reb) {
   histpar = new HistParDlg(tb, 400, MAIN_HEIGHT);
   tb->AddFrame(histpar, LayEE1);
   ntab++;
+  //cout << "tab3: " << ntab << endl;
 
   tb = fTab->AddTab("Plots");
   tabfr.push_back(tb);
   HiFrm = new HistFrame(tb, 1, MAIN_HEIGHT,ntab);
   tb->AddFrame(HiFrm, LayEE1);
   ntab++;
+  //cout << "tab3: " << ntab << endl;
 
   tb = fTab->AddTab("Errors");
   tabfr.push_back(tb);
   ErrFrm = new ErrFrame(tb, 250, MAIN_HEIGHT);
   tb->AddFrame(ErrFrm, LayEE1);
   ntab++;
+  //cout << "tab4: " << ntab << endl;
 
 
   // prtime("tab01",1,BGRN);
@@ -2694,7 +2696,6 @@ void MainFrame::MakeTabs(bool reb) {
   // prtime("tab03",1,BGRN);
   // TThread *tr3 = new TThread("tr3", run_build, (void*) 3);
   // tr3->Run();
-
 
 
   //chanpar->Build();
@@ -2836,12 +2837,9 @@ void MainFrame::DoStartStop(int rst) {
   //cout << "Dostartstop2: " << endl;
 }
 
-void MainFrame::DoOpen(Int_t id) {
+void MainFrame::DoOpen(Int_t popt) {
 
   if (!crs->b_stop) return;
-
-  //id=12-id;
-  //cout << "DoOpen: " << id << endl;
 
   const char *dnd_types[] = {
     "all files",     "*",
@@ -2870,14 +2868,14 @@ void MainFrame::DoOpen(Int_t id) {
     ext.ToLower();
 
     if (ext.EqualTo(".root")) {
-      readpar_root(fi.fFilename,id);
+      readpar_root(fi.fFilename,popt);
       DoReset();
 
       readroot(fi.fFilename);
       HiFrm->Update();
     }
     else {
-      crs->DoFopen(fi.fFilename,id);//id - read toptions
+      crs->DoFopen(fi.fFilename,1,popt); //1 - read cpar; popt - read toptions
     }
 
     parpar->Update();

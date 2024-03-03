@@ -208,7 +208,7 @@ class HClass {
   //Name: cut[i]
   //Title: histogram name on which this cut is made
   //nr of points: 1 - formula; 2 - 1d; >2 - 2d
-  Double_t cut_flag[MAXCUTS]; //признак срабатывания окна
+  //Double_t cut_flag[MAXCUTS]; //признак срабатывания окна
   char cuttitle[MAXCUTS][99];
   int cutcolor[MAXCUTS];
   TFormula* cform[MAXCUTS]; //starts from 1, not from 0
@@ -233,25 +233,6 @@ class HClass {
   std::list<Mdef*> Mainlist; // содержит указатели! Mdef* всех гистограмм в Main
   //заполняется в ??? (Ana_Start???)
 
-  //bool b_first; // =1 если есть хотя бы один cut или хотя бы одна "общая" гистограмма
-
-  //Long64_t T_prev[MAX_CH];
-
-  //Bool_t wfalse;
-
-  /*
-  //profilometer:
-  std::vector<int> px;
-  std::vector<int> py;
-  std::vector<int> ax;
-  std::vector<int> ay;
-  HMap *h_p,*h_a;
-  int h_off; // 1 or 33 
-  int h_xy; // 0: X; 1: Y; -1: ???
-  //int ch_alpha;
-  //Float_t h_sum[2][64]; //[xy][pos]
-  */
-
  public:
 
   HClass();
@@ -267,15 +248,10 @@ class HClass {
   void Make_prof(mdef_iter md);
   void Make_prof_int(mdef_iter md, Hdef* hd2);
   int Make_2d(mdef_iter md);
-  // void Make_axay(const char* dname, const char* name, const char* title,
-  // 	       HMap* map[], Hdef* hd, Hdef* hd1); //, int nmax);
 
   void Clone_Hist(HMap* map);
   void Remove_Clones(HMap* map);
   void Make_cuts();
-   //void NewBins();
-   //void Reset_hist();
-   //void FillHist(EventClass* evt);
 
    ClassDef(HClass, 0)
 };

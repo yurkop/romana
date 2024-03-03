@@ -1419,7 +1419,7 @@ int ParParDlg::AddFiles(TGCompositeFrame* frame) {
 
   id = Plist.size()+1;
   fchk = new TGCheckButton(hframe3, "fTxt", id);
-  fchk->SetToolTipText("Checked - write events in text file [Filename].txt");
+  fchk->SetToolTipText("Checked - write events in text file [Filename].txt. Workd only in single-threaded mode.");
   hframe3->AddFrame(fchk,LayCC1);
   DoMap(fchk,&opt.fTxt,p_chk,0,0x100|(2<<1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
@@ -2264,7 +2264,7 @@ void HistParDlg::Rem2d() {
   }
 
   AddHist_2d();
-  return;
+  //return;
 
 
   
@@ -2870,7 +2870,6 @@ void DaqParDlg::Build() {
   //TrigFrame* TrFrame = new TrigFrame(cGrp,0);
 
   //cGrp->Resize();
-
 
   fCanvas1->SetWidth(cframe[0]->GetDefaultWidth()+20);
   fCanvas2->SetWidth(cframe[0]->GetDefaultWidth()+20);

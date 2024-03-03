@@ -456,10 +456,11 @@ void *handle_ana(void *ctx) {
       if ((int)m_event->pulses.size()>=opt.mult1 &&
 	  (int)m_event->pulses.size()<=opt.mult2) {
 
-	m_event->FillHist();
+	Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
+	m_event->FillHist(hcut_flag);
 	//m_event->FillHist(false);
 	if (m_event->Spin & 2) { //Ms channel
-	  if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
+	  if (!opt.maintrig || hcut_flag[opt.maintrig]) {
 	    ++crs->mtrig;
 	    if (opt.dec_write) {
 	      if (cpar.Trigger==1) { //trigger on START channel
@@ -478,9 +479,9 @@ void *handle_ana(void *ctx) {
 	    if (opt.raw_write && opt.fProc) {
 	      crs->Fill_Raw(&(*m_event));
 	    }
-	    if (opt.fTxt) {
-	      crs->Print_OneEvent(&(*m_event));
-	    }
+	    // if (opt.fTxt) {
+	    //   crs->Print_OneEvent(&(*m_event));
+	    // }
 	  } //maintrig
 	} // if spin
       }
@@ -878,7 +879,8 @@ void CRS::Ana2(int all) {
 
       //prnt("ss ls;",BRED,"FillHist:",nevents,RST);
 
-      m_event->FillHist();
+      Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
+      m_event->FillHist(hcut_flag);
       //m_event->FillHist_old(true);
       //m_event->FillHist_old(false);
 #ifdef TPROC
@@ -887,9 +889,9 @@ void CRS::Ana2(int all) {
 #endif
       //prnt("ss fs;",BRED,"t2:",tproc,RST);
 
-      //prnt("ssl ds;",BGRN,"EV2: ",m_event->Nevt,m_event->Spin,RST);
+      //prnt("ssl ds;",BGRN,"EV2: ",m_event->Nevt,m_event->Spin,opt.maintrig,RST);
       if (m_event->Spin & 2) { //Ms channel
-	if (!opt.maintrig || hcl->cut_flag[opt.maintrig]) {
+	if (!opt.maintrig || hcut_flag[opt.maintrig]) {
 	  //prnt("ssl ls;",BRED,"EV3: ",m_event->Nevt,m_event->Tstmp,RST);
 	  ++crs->mtrig;
 	  if (opt.dec_write) {
@@ -2982,7 +2984,7 @@ void CRS::DoReset(int rst) {
 
     //if (f_read)
     if (Fmode==2)
-      DoFopen(NULL,0);
+      DoFopen(NULL,0,0); //reopen file; don't read cpar & opt
     juststarted=true;
 
     if (daqpar) {
@@ -2997,7 +2999,9 @@ void CRS::DoReset(int rst) {
 
 }
 
-int CRS::DoFopen(char* oname, int popt) {
+int CRS::DoFopen(char* oname, int copt, int popt) {
+  //oname=null -> reopen the same file; !=null -> open new file 
+  //copt: 1 - read cpar from file; 0 - don't read cpar from file
   //popt: 1 - read opt from file; 0 - don't read opt from file
   //return 0 - OK; 1 - error
 
@@ -3019,7 +3023,7 @@ int CRS::DoFopen(char* oname, int popt) {
   Tstart64=0;
   Offset64=0;
 
-  cout << "DoFopen: " << Fname << " " << name << endl;
+  //cout << "DoFopen: " << Fname << " " << name << endl;
 
   if (!name.compare("17")) {
     module=17;
@@ -3099,7 +3103,7 @@ int CRS::DoFopen(char* oname, int popt) {
   }
   else { //иначе читаем
     if (tp==0) { //crs32 or crs2 or dec
-      if (ReadParGz(f_read,Fname,1,1,popt)) {
+      if (ReadParGz(f_read,Fname,1,copt,popt)) {
 	gzclose(f_read);
 	f_read=0;
 	return 1;
@@ -3108,7 +3112,7 @@ int CRS::DoFopen(char* oname, int popt) {
       cout << "Git version from file: " << opt.gitver << endl;
     }
     else if (tp==2) { //Ortec Lis
-      cout << "Ortec Lis File: " << Fname << endl;
+      //cout << "Ortec Lis File: " << Fname << endl;
       module=3;
       cpar.InitPar(0);
       opt.Period=200;
@@ -3132,6 +3136,8 @@ int CRS::DoFopen(char* oname, int popt) {
     myM->SetTitle(Fname);
     daqpar->AllEnabled(false);
   }
+
+  prnt("ssssds;",BGRN,"File: ",Fname,"  Module: ",module,RST);
 
   return 0;
 } //DoFopen
@@ -3175,7 +3181,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  prnt("sss d sd sd ds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,sz,RST);
+  //prnt("sss d sd sd ds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,sz,RST);
 
   //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
   if (fmt!=129 || mod>100 || sz>5e5){//возможно, это текстовый файл
@@ -3228,15 +3234,15 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   if (m1) {
     if (mod==2 || mod==22) {
       module=22;
-      cout << "CRS2 File: " << Fname << " " << module << endl;
+      //cout << "CRS2 File: " << Fname << " " << module << endl;
     }
     else if (mod>=32) {
       module=mod;
-      cout << "CRS32 or decoded File: " << Fname << " " << module << endl;
+      //cout << "CRS32 or decoded File: " << Fname << " " << module << endl;
     }
     else {
       Fmode=0;
-      cout << "Unknown file type: " << Fname << " " << mod << endl;
+      //cout << "Unknown file type: " << Fname << " " << mod << endl;
       res=1;
     }
   }

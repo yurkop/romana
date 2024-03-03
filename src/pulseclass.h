@@ -123,46 +123,18 @@ class EventClass { //event of pulses
   std::vector <PulseClass> pulses;
   //std::vector <Long64_t> *Counters;
   //Bool_t Analyzed;
-  //Bool_t ecut[MAXCUTS];
 
  private:
   void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w=1);
-  //void Fill01dw(HMap* map[], int ch, Double_t hcut_flag[], Float_t x, Double_t w=1);
   void Fill01dw(HMap* map[], int ch, Float_t x, Double_t w=1);
 
 public:
   EventClass();
   virtual ~EventClass() {};
-  //void Make_Mean_Event();
-  //void Pulse_Mean_Add(PulseClass *newpulse);
 
-  //void Pulse_Ana_Add(pulse_vect::iterator pls);
   void AddPulse(PulseClass *pls);
-
-
-
-
-  /*
-  void Fill_Time_Extend(HMap* map, void* hd);
-  void Fill1d(Bool_t first, HMap* map[], int ch, Float_t x);
-  //void Fill01d(HMap* map[], int ch, Double_t hcut_flag[], Float_t x);
-  void Fill01d(HMap* map[], int ch, Float_t x);
-  //void Fill10(HMap* map[], int ch, Float_t x, Double_t *hcut_flag);
-  //void Fill11(Mdef* md, EventClass* evt, pulse_vect::iterator ipls, Double_t *hcut_flag);
-  static void Fill1dwSt(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w);
-  void Fill_Mean_Pulse(Bool_t first, HMap* map,
-		       pulse_vect::iterator pls, int ideriv);
-  void Fill_Mean1(TH1F* hh,  Float_t* Data, Int_t nbins, int ideriv);
-  //void Fill_Mean1(TH1F* hh,  PulseClass* pls, UInt_t nbins, int ideriv);
-  void Fill2d(Bool_t first, HMap* map, Float_t x, Float_t y);
-  // void FillFirst();
-  // void FillSecond();
-  */
-
-  void FillHist();
-  //YK_OLD void FillHist_old(Bool_t first);
+  void FillHist(Double_t *hcut_flag);
   void PrintEvent(bool pls=1);
-  //void PeakAna();
   //ClassDef(EventClass, 0)
 };
 

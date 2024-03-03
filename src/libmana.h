@@ -161,7 +161,7 @@ class MainFrame : public TGMainFrame {
   void EnableBut(TGGroupFrame* fGr, bool enbl);
 
   void DoStartStop(int rst);
-  void DoOpen(Int_t id);
+  void DoOpen(Int_t popt);
   void DoClose();
   void DoAna();
   void DoRWinit(EFileDialogMode);
