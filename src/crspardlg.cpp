@@ -112,16 +112,16 @@ const char* ttip3[n_ppar]={
   "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing;\n7 - CFD;\n-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
   "Software trigger threshold",
-  "Baseline start, relative to peak Pos (negative)",
-  "Baseline end, relative to peak Pos (negative), included",
-  "Peak start, relative to peak Pos (usually negative)",
-  "Peak end, relative to peak Pos (usually positive), included",
-  "Timing window start, included (usually negative)/\n"
+  "Baseline start, relative to peak Pos (negative, included)",
+  "Baseline end, relative to peak Pos (negative, included)",
+  "Peak start, relative to peak Pos (usually negative, included)",
+  "Peak end, relative to peak Pos (usually positive, included)",
+  "Timing window start, included (usually negative, included)/\n"
   "CFD delay [delay=abs(T1)]",
-  "Timing window end, included (usually positive)/\n"
+  "Timing window end, included (usually positive, included)/\n"
   "Inverse CFD fraction",
-  "Width window start",
-  "Width window end, included",
+  "Width window start (included)",
+  "Width window end (included)",
 };
 
 char ttip_g[NGRP][100];
@@ -153,7 +153,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   LayCC0a  = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 0,0,1,1);
   LayCC1   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 4, 4, 0, 0);
   LayCC2   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 10, 0, 0, 0);
-  LayET3   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 2, 2, 0, 0);
+  LayET0   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 0, 0, 0, 0);
   LayLC1   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 1, 6, 1, 1);
   LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 1, 1, 1, 1);
   LayLT0   = new TGLayoutHints(kLHintsLeft|kLHintsTop);
@@ -1033,7 +1033,7 @@ void ParDlg::Check_opt(TGHorizontalFrame *hfr1, int width, void* x1,
   }  
 }
 
-void ParDlg::Num_opt(TGHorizontalFrame *hfr1, int width, void* x1,
+void ParDlg::Num_opt(TGHorizontalFrame *hfr1, int width, void* x1, void* x1a,
 			const char* tip1, TGNumberFormat::EStyle style1,
 			double min1, double max1, UInt_t cmd1,
 			TGLayoutHints* Lay) {
@@ -1078,7 +1078,7 @@ void ParDlg::Num_opt(TGHorizontalFrame *hfr1, int width, void* x1,
       hfr1->AddFrame(fNum2,Lay);
     }
 
-    DoMap(fNum2,x1,pdef1,0,cmd1);
+    DoMap(fNum2,x1,pdef1,0,cmd1,x1a);
     fNum2->SetToolTipText(tip1);
     fNum2->Connect("TextChanged(char*)", "ParParDlg", this, "DoDaqNum()");
   }
@@ -1110,17 +1110,17 @@ void ParDlg::AddLine_opt(TGCompositeFrame* frame, int width,
   if (style1==k_chk)
     Check_opt(hfr1,width,x1,tip1,cmd1,"Strig");
   else
-    Num_opt(hfr1,width,x1,tip1,style1,min1,max1,cmd1,Lay1);
+    Num_opt(hfr1,width,x1,0,tip1,style1,min1,max1,cmd1,Lay1);
 
-  Num_opt(hfr1,width,x2,tip2,style2,min2,max2,cmd2,Lay2);
+  Num_opt(hfr1,width,x2,0,tip2,style2,min2,max2,cmd2,Lay2);
 
   TGLabel* fLabel = new TGLabel(hfr1, label);
   hfr1->AddFrame(fLabel,LayLT4);
 
 }
 
-void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1, 
-			  const char* tip1, const char* label,
+void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1,
+			  void *x1a, const char* tip1, const char* label,
 			  TGNumberFormat::EStyle style1, 
 			  double min1, double max1,
 			  UInt_t cmd1, TGLayoutHints* Lay1) {
@@ -1133,7 +1133,7 @@ void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1,
   // if (style1==k_chk)
   //   Check_opt(hfr1,width,x1,tip1,cmd1,"Strig");
   // else
-  Num_opt(hfr1,width,x1,tip1,style1,min1,max1,cmd1,Lay1);
+  Num_opt(hfr1,width,x1,x1a,tip1,style1,min1,max1,cmd1,Lay1);
 
   TGLabel* fLabel = new TGLabel(hfr1, label);
   hfr1->AddFrame(fLabel,LayLT4);
@@ -1610,31 +1610,35 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
   tip1= "Decoded data format";
   label="Dec format";
-  AddLine_1opt(fF6,ww,&opt.dec_format,tip1,label,k_int,79,80);
+  AddLine_1opt(fF6,ww,&opt.dec_format,0,tip1,label,k_int,79,80);
 
   tip1= "";
   label="Bitmask for START";
-  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+  AddLine_1opt(fF6,ww,cpar.coinc_w,0,tip1,label,k_int,1,1023);
 
   tip1= "";
   label="Bitmask for discriminator";
-  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+  AddLine_1opt(fF6,ww,cpar.coinc_w,0,tip1,label,k_int,1,1023);
 
   tip1= "";
   label="Bitmask for coincidences/RD";
-  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+  AddLine_1opt(fF6,ww,cpar.coinc_w,0,tip1,label,k_int,1,1023);
 
   tip1= "";
   label="Repeated triggering type";
-  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+  AddLine_1opt(fF6,ww,cpar.coinc_w,0,tip1,label,k_int,1,1023);
 
   tip1= "";
   label="Type 3 discriminator length";
-  AddLine_1opt(fF6,ww,cpar.coinc_w,tip1,label,k_int,1,1023);
+  AddLine_1opt(fF6,ww,cpar.coinc_w,0,tip1,label,k_int,1,1023);
+
+  tip1= "";
+  label="Thr2: low threshold for trigger type 3,4";
+  AddLine_1opt(fF6,ww,&cpar.Thr2,&opt.sThr2,tip1,label,k_int,-1000,1000);
 
   tip1= "ADCM period in nsec: 10 for ADCM32; 16 for ADCM64";
   label="adcm period";
-  AddLine_1opt(fF6,ww,&opt.adcm_period,tip1,label,k_r0,1,1000);
+  AddLine_1opt(fF6,ww,&opt.adcm_period,0,tip1,label,k_r0,1,1000);
 
 
   fF6->Resize();
@@ -1665,42 +1669,42 @@ int ParParDlg::AddSimul(TGCompositeFrame* frame) {
 
 
   label= "opt.Period in ns";
-  AddLine_1opt(fF6,ww,&opt.SimSim[0],label,label,k_r0,1,99999);
+  AddLine_1opt(fF6,ww,&opt.SimSim[0],0,label,label,k_r0,1,99999);
 
   label="cpar.Pre in smp";
-  AddLine_1opt(fF6,ww,&opt.SimSim[1],label,label,k_r0,0,99);
+  AddLine_1opt(fF6,ww,&opt.SimSim[1],0,label,label,k_r0,0,99);
 
   label="cpar.Len in smp";
-  AddLine_1opt(fF6,ww,&opt.SimSim[2],label,label,k_r0,0,99);
+  AddLine_1opt(fF6,ww,&opt.SimSim[2],0,label,label,k_r0,0,99);
 
   label= "Pulse type: 0 - gauss; 1 - RC";
-  AddLine_1opt(fF6,ww,&opt.SimSim[3],label,label,k_r0,0,1);
+  AddLine_1opt(fF6,ww,&opt.SimSim[3],0,label,label,k_r0,0,1);
 
   label= "Pulse Amplitude";
-  AddLine_1opt(fF6,ww,&opt.SimSim[4],label,label,k_r0,1,99999);
+  AddLine_1opt(fF6,ww,&opt.SimSim[4],0,label,label,k_r0,1,99999);
 
   label="Pulse Sigma/(RC_Width) in ns";
-  AddLine_1opt(fF6,ww,&opt.SimSim[5],label,label,k_r1,0,99);
+  AddLine_1opt(fF6,ww,&opt.SimSim[5],0,label,label,k_r1,0,99);
 
   label="Pulse RC in ns (only for RC pulse type)";
-  AddLine_1opt(fF6,ww,&opt.SimSim[6],label,label,k_r1,0,99);
+  AddLine_1opt(fF6,ww,&opt.SimSim[6],0,label,label,k_r1,0,99);
 
 
   label= "Pos min in ns";
   tip1= "Pos: position of peak relative to discriminator (Pre)";
-  AddLine_1opt(fF6,ww,&opt.SimSim[7],tip1,label,k_r0,-99999,99999);
+  AddLine_1opt(fF6,ww,&opt.SimSim[7],0,tip1,label,k_r0,-99999,99999);
 
   label= "Pos spread in ns";
   tip1= "Pos: position of peak relative to discriminator (Pre)";
-  AddLine_1opt(fF6,ww,&opt.SimSim[8],tip1,label,k_r0,0,99999);
+  AddLine_1opt(fF6,ww,&opt.SimSim[8],0,tip1,label,k_r0,0,99999);
 
   label= "Coincidence window in ns";
   tip1= "Coincidence window in ns. Must be smaller than 'Coincidence' in samples (opt.tgate).";
-  AddLine_1opt(fF6,ww,&opt.SimSim[9],tip1,label,k_r0,0,99999);
+  AddLine_1opt(fF6,ww,&opt.SimSim[9],0,tip1,label,k_r0,0,99999);
 
   label="Time delta";
   tip1= "difference between Simul and Pos (in ns)";
-  AddLine_1opt(fF6,ww,&opt.SimSim[10],tip1,label,k_r1,-99,99);
+  AddLine_1opt(fF6,ww,&opt.SimSim[10],0,tip1,label,k_r1,-99,99);
 
   // label="Simul delta";
   // tip1= "difference between Simul and Pos (in ns)";
@@ -1778,34 +1782,50 @@ HistParDlg::HistParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   AddHist(fcont1);
   AddHist_2d();
 
-  fDock->Resize(HFRAME_WIDTH+50,0);
+  fDock->Resize(fcont1->GetDefaultWidth()+20,0);
 
 }
 
 void HistParDlg::AddHist(TGCompositeFrame* frame2) {
 
   //cout << "AddHist: " << endl;
-  frame1d = new TGGroupFrame(frame2, "1D Histograms", kVerticalFrame);
-  //frame1d->Associate(fMain);
-  frame1d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame2->AddFrame(frame1d, LayLT0);
+  TGGroupFrame* f1 = new TGGroupFrame(frame2,"1D Histograms",kHorizontalFrame);
+  f1->SetTitlePos(TGGroupFrame::kCenter);
+  frame2->AddFrame(f1, LayLT0);
 
-  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame1d);
-  TGHorizontalFrame *hfr2 = new TGHorizontalFrame(frame1d);
-  
+
+  frame1d[0] = new TGVerticalFrame(f1);
+  f1->AddFrame(frame1d[0], LayLT0);
+
+  TGVertical3DLine* separator1 = new TGVertical3DLine(f1);
+  f1->AddFrame(separator1,LayLE0);
+
+  frame1d[1] = new TGVerticalFrame(f1);
+  f1->AddFrame(frame1d[1], LayLT0);
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame1d[1]);
+  TGHorizontalFrame *hfr2 = new TGHorizontalFrame(frame1d[1]);
+
+  //cout << "Mlist.size: " << hcl->Mlist.size() << endl;
+  bool hleft=true;
+
   for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->hnum==22) hleft=false; //hwrate -> right
     if (it->hnum < 50) { // 1d hist
-      AddLine_hist(frame1d,&*it);
+      if (hleft)
+	AddLine_hist(frame1d[0],&*it);
+      else
+	AddLine_hist(frame1d[1],&*it);
     }
     else if (it->hnum == 51) { //mean pulses
-      frame1d->AddFrame(hfr1);
+      frame1d[1]->AddFrame(hfr1);
       AddLine_mean(hfr1,&*it);
     }
     else if (it->hnum == 52) { //mean deriv
       AddLine_mean(hfr1,&*it);
     }
     else if (it->hnum == 53) { //profilometer
-      frame1d->AddFrame(hfr2);
+      frame1d[1]->AddFrame(hfr2);
       AddLine_prof(hfr2,&*it);
     }
     else if (it->hnum == 54) //prof_int
@@ -1817,9 +1837,10 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   frame2->AddFrame(frame2d, LayLT0);
 
   TGHorizontalFrame* h2fr = new TGHorizontalFrame(frame2d);
-  h2fr->ChangeOptions(h2fr->GetOptions()|kFixedWidth);
-  h2fr->Resize(HFRAME_WIDTH,0);
-  frame2d->AddFrame(h2fr,LayLT0);
+  //h2fr->ChangeOptions(h2fr->GetOptions()|kFixedWidth);
+  //h2fr->Resize(HFRAME_WIDTH,0);
+  //frame2d->AddFrame(h2fr,LayLT0);
+  frame2d->AddFrame(h2fr,LayET0);
 
   cmb1=new TGComboBox(h2fr,0);
   h2fr->AddFrame(cmb1,LayLC2);
@@ -1875,8 +1896,6 @@ void HistParDlg::AddHist_2d() {
 
   list2d.Clear();
 
-
-
   //добавляем
   for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
     if (it->hnum > 100) { // 2d hist
@@ -1903,13 +1922,13 @@ void HistParDlg::RemHist_2d(TGCompositeFrame* frame2) {
 }
 */
 
-void HistParDlg::AddLine_hist(TGGroupFrame* frame, Mdef* md) {
+void HistParDlg::AddLine_hist(TGCompositeFrame* frame, Mdef* md) {
   double ww1=50;
   double ww=70;
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
-  hfr1->ChangeOptions(hfr1->GetOptions()|kFixedWidth);
-  hfr1->Resize(HFRAME_WIDTH,0);
+  //hfr1->ChangeOptions(hfr1->GetOptions()|kFixedWidth);
+  //hfr1->Resize(HFRAME_WIDTH,0);
   frame->AddFrame(hfr1);
 
   int id;

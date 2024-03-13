@@ -93,7 +93,7 @@ public:
   TGLayoutHints* LayCC0a;
   TGLayoutHints* LayCC1 ;
   TGLayoutHints* LayCC2 ;
-  TGLayoutHints* LayET3 ;
+  TGLayoutHints* LayET0 ;
   TGLayoutHints* LayLC1 ;
   TGLayoutHints* LayLC2 ;
   TGLayoutHints* LayLT0 ;
@@ -185,7 +185,7 @@ public:
   void Check_opt(TGHorizontalFrame *hfr1, int width, void* x1,
 		 const char* tip1, UInt_t cmd1, const char* cname="");
 
-  void Num_opt(TGHorizontalFrame *hfr1, int width, void* x1,
+  void Num_opt(TGHorizontalFrame *hfr1, int width, void* x1, void* x1a,
 	       const char* tip1, TGNumberFormat::EStyle style1,
 	       double min1, double max1, UInt_t cmd1, TGLayoutHints* Lay);
 
@@ -198,7 +198,7 @@ public:
 		   double min2=0, double max2=0, UInt_t cmd1=0, UInt_t cmd2=0,
 		   TGLayoutHints* Lay1=0, TGLayoutHints* Lay2=0);
 
-  void AddLine_1opt(TGCompositeFrame* frame, int width, void *x1, 
+  void AddLine_1opt(TGCompositeFrame* frame, int width, void *x1, void* x1a,
 		   const char* tip1, const char* label,
 		   TGNumberFormat::EStyle style1, 
 		   double min1=0, double max1=0,
@@ -263,7 +263,7 @@ public:
 
 protected:
 
-  TGGroupFrame* frame1d;
+  TGVerticalFrame* frame1d[2];
   TGGroupFrame* frame2d;
   //std::list<TGHorizontalFrame*> h2_frame;
 
@@ -278,7 +278,7 @@ public:
   void AddHist(TGCompositeFrame* frame2);
   void AddHist_2d();
   //void RemHist_2d(TGCompositeFrame* frame2);
-  void AddLine_hist(TGGroupFrame* frame, Mdef* md);
+  void AddLine_hist(TGCompositeFrame* frame, Mdef* md);
   void AddLine_mean(TGHorizontalFrame *hfr1, Mdef* md);
   void Add_prof_num(TGHorizontalFrame *hfr1, void *nnn, Int_t max,
 		    P_Def pp, UInt_t cmd, const char* tip);

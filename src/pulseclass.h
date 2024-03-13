@@ -74,6 +74,8 @@ class PulseClass {
   //Float_t Area0; // area+baseline
   Float_t Sl1; // slope of background
   Float_t Sl2; // slope of peak
+  Float_t RMS1; // noise of background
+  Float_t RMS2; // noise of peak
   Float_t Height; // maximum of pulse in the same region as Area
   Float_t Width; // peak width
   Float_t Time; // exact time relative to Pos (pulse start)
@@ -96,7 +98,8 @@ class PulseClass {
   //void PeakAna();
   void PeakAna33();
   void CheckDSP();
-  void Ecalibr();
+  void Ecalibr(Float_t& XX);
+  //void Bcalibr();
   void Smooth(int n);
   void PrintPulse(int pdata=0);
 

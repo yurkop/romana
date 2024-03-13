@@ -2949,7 +2949,6 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
     return 1;
   }
 
-  //cout << "rrr: " << f_read << " " << Fname << " " << tp << " " << popt << endl;
   if (b_noheader) { //не читаем заголовок
   }
   else { //иначе читаем
@@ -3015,7 +3014,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   int res=0;
 
   UShort_t fmt, mod;
-  Int_t sz;
+  Int_t sz=0;
 
   char buf[500000];
 
@@ -3032,7 +3031,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  //prnt("sss d sd sd ds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,sz,RST);
+  //prnt("sss d sd sd sds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
 
   //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
   if (fmt!=129 || mod>100 || sz>5e5){//возможно, это текстовый файл
@@ -3063,7 +3062,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   if (!ret) {
     memset(opt.gitver,0,sizeof(opt.gitver));
   }
-  //cout << "Ret2: " << ret << " " << opt.gitver << endl;
+
   ret=BufToClass(buf,buf+sz,op);
   if (!ret) {
     prnt("ssss;",BRED,"Warning: error reading parameters: ",pname,RST);
@@ -3987,7 +3986,15 @@ void CRS::PulseAna(PulseClass &ipls) {
       ipls.CheckDSP();
     }
   }
-  ipls.Ecalibr();
+  ipls.Ecalibr(ipls.Area);
+  if (hcl->b_base) {
+    ipls.Ecalibr(ipls.Base);
+    ipls.Ecalibr(ipls.Sl1);
+    ipls.Ecalibr(ipls.Sl2);
+    ipls.Ecalibr(ipls.RMS1);
+    ipls.Ecalibr(ipls.RMS2);
+    //ipls.Bcalibr();
+  }
   //prnt("ss d l ds;",BGRN,"Pls2:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
 }
 
@@ -4220,7 +4227,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 
 	  ipls->Height = ((UInt_t) buf1u[7])<<8;
 
-	  ipls->Ecalibr();
+	  ipls->Ecalibr(ipls->Area);
 	}
 	Event_Insert_Pulse(Blist,ipls);
       }
@@ -4271,7 +4278,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	    //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	    evt->T0=ipls->Time;
 	  }
-	  ipls->Ecalibr();
+	  ipls->Ecalibr(ipls->Area);
 	}
       }
 
@@ -4327,7 +4334,7 @@ void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
       if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
 	evt->T0=ipls->Time;
       }
-      ipls->Ecalibr();
+      ipls->Ecalibr(ipls->Area);
     }
 
     idx1+=8;
@@ -4377,7 +4384,7 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
       if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
 	evt->T0=ipls->Time;
       }
-      ipls->Ecalibr();
+      ipls->Ecalibr(ipls->Area);
     }
 
     idx1+=8;
@@ -4422,7 +4429,7 @@ void CRS::Decode76(UInt_t iread, UInt_t ibuf) {
       ipls->Area = buf2[0];
       ipls->Time = buf2[1]*0.1;
       ipls->Chan = buf2[3];
-      ipls->Ecalibr();
+      ipls->Ecalibr(ipls->Area);
     }
 
     idx1+=8;
@@ -4481,7 +4488,7 @@ void CRS::Decode75(UInt_t iread, UInt_t ibuf) {
       ipls->Area = buf2[0];
       ipls->Time = buf2[1]*0.1;
       ipls->Chan = buf2[3];
-      ipls->Ecalibr();
+      ipls->Ecalibr(ipls->Area);
     }
 
     idx1+=8;
@@ -5653,7 +5660,7 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
 	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	  evt->T0=ipls->Time;
 	}
-	ipls->Ecalibr();
+	ipls->Ecalibr(ipls->Area);
       }
       break;
     }
@@ -6645,6 +6652,7 @@ void P_buf8(int id,ULong64_t* buf8) {
 }
 
 void CRS::Fill_Raw(EventClass* evt) {
+
   const ULong64_t fmt1 = 1ull<<52;
 
   ULong64_t r8;

@@ -89,6 +89,7 @@ extern MyMainFrame *myM;
 extern CRS* crs;
 extern ParParDlg *parpar;
 extern EventFrame* EvtFrm;
+extern HClass* hcl;
 //extern Common* com;
 
 //extern ULong_t fGreen;
@@ -116,6 +117,12 @@ void doYline(Float_t yy, Float_t x1, Float_t x2, int col, int type) {
   ln.SetLineStyle(type);
   ln.DrawLine(x1,yy,x2,yy);
   //cout << "doyline: " << x1 << " " << x2 << " " << yy << " " << col << endl;
+}
+
+void doLine(Float_t x1, Float_t x2, Float_t y1, Float_t y2, int col, int type) {
+  ln.SetLineColor(col);
+  ln.SetLineStyle(type);
+  ln.DrawLine(x1,y1,x2,y2);
 }
 
 EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
@@ -1196,13 +1203,13 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
     }
 
     B1=pulse->Pos+opt.Base1[ch];
-    B2=pulse->Pos+opt.Base2[ch]+1;
+    B2=pulse->Pos+opt.Base2[ch];
     P1=pulse->Pos+opt.Peak1[ch];
-    P2=pulse->Pos+opt.Peak2[ch]+1;
+    P2=pulse->Pos+opt.Peak2[ch];
     T1=pulse->Pos+opt.T1[ch];
-    T2=pulse->Pos+opt.T2[ch]+1;
+    T2=pulse->Pos+opt.T2[ch];
     W1=pulse->Pos+opt.W1[ch];
-    W2=pulse->Pos+opt.W2[ch]+1;
+    W2=pulse->Pos+opt.W2[ch];
 
     if (opt.b_peak[1]) {// Pos
       //prnt("ss d d f f fs;",KRED,"Pos:",dr,pulse->Pos,pulse->Pos+dt,y1,y2-dy*0.4,RST);
@@ -1215,21 +1222,43 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
     }
     if (dr==0 && opt.b_peak[3]) { // WBase
       doXline(B1+dt,y1,y2-dy*0.2,6,3);
-      doXline(B2-1+dt,y1,y2-dy*0.1,6,3);
+      doXline(B2+dt,y1,y2-dy*0.1,6,3);
     }
     if (dr==0 && opt.b_peak[4]) { // Wpeak
       doXline(P1+dt,y1,y2-dy*0.2,1,2);
-      doXline(P2-1+dt,y1,y2-dy*0.1,1,2);
+      doXline(P2+dt,y1,y2-dy*0.1,1,2);
     }
     if (dr==1 && opt.b_peak[5]) { //WTime
       doXline(T1+dt,0,y2-dy*0.2,3,2);
-      doXline(T2-1+dt,0,y2-dy*0.1,3,2);
+      doXline(T2+dt,0,y2-dy*0.1,3,2);
     }
     if (dr==0 && opt.b_peak[6]) { //WWidth
       doXline(W1+dt,y1,y2-dy*0.2,4,4);
-      doXline(W2-1+dt,y1,y2-dy*0.1,4,4);
+      doXline(W2+dt,y1,y2-dy*0.1,4,4);
     }
     //}
+
+    if (hcl->b_base) {
+      float DY,Y1,Y2,A0;
+      DY = (B2-B1)*pulse->Sl1*0.5;
+      Y1 = pulse->Base - DY;
+      Y2 = pulse->Base + DY;
+      doLine(B1+dt,B2+dt,Y1,Y2,5,1);
+      //prnt("ss f f f f f fs;",BRED,"LBase: ",B1+dt,B2+dt,Y1,Y2,pulse->Base,pulse->Sl1,RST);
+
+      A0 = pulse->Area + pulse->Base;
+      DY = (P2-P1)*pulse->Sl2*0.5;
+      Y1 = A0 - DY;
+      Y2 = A0 + DY;
+      doLine(P1+dt,P2+dt,Y1,Y2,5,1);
+      //prnt("ss f f f f f fs;",BGRN,"LPeak: ",P1+dt,P2+dt,Y1,Y2,A0,pulse->Sl2,RST);
+    }
+
+    // for (int i=P1;i<=P2;i++) {
+    //   Y1 = A0+(i-(P1+P2)*0.5)*pulse->Sl2;
+    //   mk.DrawMarker(i+dt,Y1);
+    // }
+
   }
 
   int ithr=(opt.sTg[pulse->Chan]!=0);

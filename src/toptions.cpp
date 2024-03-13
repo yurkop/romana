@@ -60,6 +60,7 @@ void Coptions::InitPar(int zero) {
 
   F_start = gSystem->Now();
   F_stop = 0;
+  Thr2=0*zero;
 }
 
 void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &par, int &min, int &max) {
@@ -457,6 +458,7 @@ Toptions::Toptions() {
   // SimSim[11]=1; //CFD fraction
   memset(wrk_check,0,sizeof(wrk_check));
 
+  sThr2=cpar.Thr2;
 }
 
 Hdef::Hdef() {

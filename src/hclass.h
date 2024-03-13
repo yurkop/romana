@@ -213,6 +213,7 @@ class HClass {
   int cutcolor[MAXCUTS];
   TFormula* cform[MAXCUTS]; //starts from 1, not from 0
   bool b_formula; //at least one cut formula exists
+  bool b_base; // использовать Base,Sl1,Sl2,RMS1,RMS2
 
   //HMap *cutmap[MAXCUTS];
 

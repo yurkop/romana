@@ -1326,15 +1326,16 @@ int main(int argc, char **argv)
     } //for i
   }
 
-  //if (parfile2) cout << "parfile2: " << parfile2 << endl;
-  //if (datfname) cout << "datfname: " << datfname << endl;
-  //exit(1);
 
-  //prtime("Time zero",-1); //set time to zero
 
-  //parfile = (char*)"romana.par";
 
-  int rdpar=1;
+
+  //сначала читаем -p parfile2
+  //потом читаем параметры из datfname - если parfile2 был считан, то из datfname читаем только cpar
+  //в конце переписываем cpar.on из parfile2 если они были считаны
+
+  char* cparon=0;
+  int rdopt=1; //read opt from file
   if (parfile2) { //read -p par file
     ff = gzopen(parfile2,"rb");
     if (!ff) {
@@ -1344,7 +1345,9 @@ int main(int argc, char **argv)
     else {
       crs->ReadParGz(ff,parfile2,0,1,1);
       gzclose(ff);
-      rdpar=0; // if parfile2 is OK -> don't read par from file
+      rdopt=0; // if parfile2 is OK -> don't read opt from file
+      cparon=new char[sizeof(cpar.on)];
+      memcpy(cparon,cpar.on,sizeof(cpar.on));
     }
   }
   else { //read default romana.par file
@@ -1359,6 +1362,7 @@ int main(int argc, char **argv)
   }
 
   //cout << "rd_root0: " << rd_root << endl;
+  //cout << "cpar.on: " << sizeof(cpar.on) << endl;
 
   if (datfname) {
     string dir, name, ext;
@@ -1372,12 +1376,17 @@ int main(int argc, char **argv)
       rd_root=true;
     }
     else { //.raw or .dec file
-      if (crs->DoFopen(datfname,1,rdpar)) //read file and parameters from it
+      if (crs->DoFopen(datfname,1,rdopt)) //read file and parameters from it
 	exit(-1);
     }
   }
   else {
     datfname=(char*)"";
+  }
+
+  if (cparon) {
+    memcpy(cpar.on,cparon,sizeof(cpar.on));
+    delete[] cparon;
   }
 
   //exit(1);

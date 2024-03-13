@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 136
+#define CDEF 137
 
 /*
 #include <list>
@@ -111,6 +111,7 @@ public:
   Long64_t F_start; //start of the acquisition
   Long64_t F_stop; //stop of the acquisition (usually time of last modification of file)
 
+  Int_t Thr2; // lower threshold for trig 3,4 T = –2048 .. +2047
 public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
@@ -141,7 +142,7 @@ public:
   //UInt_t ch_flag[MAX_CHTP];
   Int_t sS[MAX_CHTP]; //[nsmoo] software smoothing 0..100
   Int_t sDrv[MAX_CHTP]; //[Drv] [kdrv] parameter of derivative
-  Int_t sThr[MAX_CHTP];//[Thr] [thresh]
+  Int_t sThr[MAX_CHTP]; //[Thr] [thresh]
   Float_t sD[MAX_CHTP]; //[Delay] [delay]
   Int_t Base1[MAX_CHTP]; //[bkg1]
   Int_t Base2[MAX_CHTP]; //[bkg2]
@@ -299,6 +300,8 @@ public:
   //
   //Float_t SimSig;
 
+  Int_t sThr2; // lower threshold for trig 3,4
+
   // hnum: 
   //    0 - не определено
   //    1..9 - простые переменные из PulseClass
@@ -307,21 +310,29 @@ public:
   // format:
   // Hdef var // hnum hname xtitle ytitle tip 
   Hdef h_rate; // 21 Rate T(sec) Counts Software count rates as a funtion of time in seconds
-  Hdef h_hwrate; // 22 HWRate T(sec) Counts Hardware counters as a funtion of time in seconds
   Hdef h_mult; // 49 Mult Multiplicity Counts Event multiplicity
 
   Hdef h_area; // 1 Area Channel Counts Area of the pulse or energy, calibrated (see Analysis->E0,E1,E2 for calibration)
   //Hdef h_area0; // 9 Area0 Channel Counts Area w/o background, not calibrated
   Hdef h_time; // 11 Time t(ns) Counts Time (relative to the starts - see Analysis->St), in ns
-  Hdef h_base; // 2 Base Channel Counts Base line, not calibrated
-  Hdef h_slope1; // 3 Sl1 Channel Counts Slope1 (baseline)
-  Hdef h_slope2; // 4 Sl2 Channel Counts Slope2 (peak)
-  Hdef h_hei; // 5 Height Channel Counts Maximal pulse height (in channels)
-  Hdef h_width; // 6 Width width(a.u.) Counts Pulse width
+  Hdef h_hei; // 2 Height Channel Counts Maximal pulse height (in channels)
+  Hdef h_width; // 3 Width width(a.u.) Counts Pulse width
   Hdef h_ntof; // 12 Ntof t(mks) Counts Neutron time of flight, in mks
   Hdef h_etof; // 13 Etof Energy(eV) Counts Neutron energy from NTOF, in eV
   Hdef h_ltof; // 14 Ltof Lambda(A) Counts Neutron wavelength from NTOF, in A
+
+
+
+
+  Hdef h_hwrate; // 22 HWRate T(sec) Counts Hardware counters as a funtion of time in seconds
   Hdef h_per; // 15 Period t(mks) Counts Pulse period (distance between two consecutive pulses), in mks
+
+  Hdef h_base; // 4 Base Channel Counts Base line, not calibrated
+
+  Hdef h_slope1; // 5 Sl1 Slope Counts Slope1 (baseline)
+  Hdef h_slope2; // 6 Sl2 Slope Counts Slope2 (peak)
+  Hdef h_RMS1; // 7 RMS1 RMS Counts Noise1 (baseline)
+  Hdef h_RMS2; // 8 RMS2 RMS Counts Noise2 (peak)
 
   Hdef h_pulse; // 51 Pulse samples Amplitude Average pulse shape
   Hdef h_deriv; // 52 Deriv samples Amplitude Average pulse shape derivative

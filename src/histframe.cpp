@@ -1780,7 +1780,7 @@ void HistFrame::DoPeaks()
   //fEc->GetCanvas()->SetEditable(true);
   fEc->GetCanvas()->Update();
   //fEc->GetCanvas()->SetEditable(false);
-*/
+  */
 }
 
 void HistFrame::PeakFit(HMap* map,TH1* hist1,TH1* hist2,int nn,d2vect &d2) {

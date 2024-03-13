@@ -750,6 +750,19 @@ Mdef* HClass::Add_h2(int id1, int id2) {
   return &Mlist.back();
 }
 
+bool check_Base(int num) {
+  bool res=false;
+  int nn[3];
+  nn[0]=num;
+  nn[1]=num/100;
+  nn[2]=num%100;
+  for (int i=0;i<3;i++) {
+    if (nn[i]>=4 && nn[i]<=8)
+      res=true;
+  }
+  return res;
+}
+
 void HClass::Make_hist() {
 
   if (allmap_list)
@@ -767,6 +780,7 @@ void HClass::Make_hist() {
   MFill_list.clear();
   Mdef* mprof=0;
 
+  b_base=false;
   Hdef* hd2=0;
   PulseClass pls;
   for (auto it = Mlist.begin();it!=Mlist.end();++it) {
@@ -789,27 +803,18 @@ void HClass::Make_hist() {
       Make_1d(it,opt.Nchan);
       it->GetX = &Mdef::VarNtof;
       it->MFill = &Mdef::Fill_1d;
-      //}
-      //else
-      //continue;
     }
     else if (it->hnum==13) { //etof
       //if (opt.b_ntof) {
       Make_1d(it,opt.Nchan);
       it->GetX = &Mdef::VarEtof;
       it->MFill = &Mdef::Fill_1d;
-      //}
-      //else
-      //continue;
     }
     else if (it->hnum==14) { //ltof
       //if (opt.b_ntof) {
       Make_1d(it,opt.Nchan);
       it->GetX = &Mdef::VarLtof;
       it->MFill = &Mdef::Fill_1d;
-      //}
-      //else
-      //continue;
     }
     else if (it->hnum==15) { // Period
       Make_1d(it,opt.Nchan);
@@ -869,6 +874,9 @@ void HClass::Make_hist() {
       else
 	MFill_list.push_back(&*it);
 
+      if (check_Base(it->hnum)) b_base=true; 
+
+      //cout << "Make_hist: " << it->hnum << " " << b_base << endl;
     }
 
   } //for (auto it = Mlist.begin()...

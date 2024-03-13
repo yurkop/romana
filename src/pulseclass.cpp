@@ -51,20 +51,26 @@ size_t PulseClass::GetPtr(Mdef* it) {
     ptr = (char*)&(this->Area) - (char*)this;
     //cout << "area_ptrnum: " << ptr << endl;
     break;
-  case 2: //Base
-    ptr = (char*)&(this->Base) - (char*)this;
-    break;
-  case 3: //Sl1
-    ptr = (char*)&(this->Sl1) - (char*)this;
-    break;
-  case 4: //Sl2
-    ptr = (char*)&(this->Sl2) - (char*)this;
-    break;
-  case 5: //Height
+  case 2: //Height
     ptr = (char*)&(this->Height) - (char*)this;
     break;
-  case 6: //Width
+  case 3: //Width
     ptr = (char*)&(this->Width) - (char*)this;
+    break;
+  case 4: //Base
+    ptr = (char*)&(this->Base) - (char*)this;
+    break;
+  case 5: //Sl1
+    ptr = (char*)&(this->Sl1) - (char*)this;
+    break;
+  case 6: //Sl2
+    ptr = (char*)&(this->Sl2) - (char*)this;
+    break;
+  case 7: //RMS1 - base
+    ptr = (char*)&(this->RMS1) - (char*)this;
+    break;
+  case 8: //RMS2 - peak
+    ptr = (char*)&(this->RMS2) - (char*)this;
     break;
   }
   if (ptr==0) {
@@ -151,7 +157,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     //int jj=0;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
-      if (D[j] > 0 && Dpr<=0) {
+      if (D[j] > opt.sThr2 && Dpr<=opt.sThr2) {
 	jj=j;
       }
       if (D[j] >= opt.sThr[Chan]) {
@@ -232,17 +238,18 @@ void PulseClass::FindZero(Int_t sTrig, Int_t kk, Int_t j0) {
 
 void PulseClass::PeakAna33() {
 
-  Short_t B1; //left background window
-  Short_t B2; //right background window
-  Short_t P1; //left peak window
-  Short_t P2; //right peak window
+  Short_t B1; //left background window (included)
+  Short_t B2; //right background window (included)
+  Short_t P1; //left peak window (included)
+  Short_t P2; //right peak window (included)
   //Short_t T1; //left zero crossing of deriv
   //Short_t T2; //right zero crossing of deriv
-  Short_t T1; //left timing window
-  Short_t T2; //right timing window
-  Short_t W1; //left width window
-  Short_t W2; //right width window
+  Short_t T1; //left timing window (included)
+  Short_t T2; //right timing window (included)
+  Short_t W1; //left width window (included)
+  Short_t W2; //right width window (included)
 
+  Float_t xm,S_xx;
   // if (Chan==7) {
   // }
 
@@ -286,34 +293,31 @@ void PulseClass::PeakAna33() {
   Float_t sum;
 
   B1=Pos+opt.Base1[Chan];
-  B2=Pos+opt.Base2[Chan]+1;
+  B2=Pos+opt.Base2[Chan];
   P1=Pos+opt.Peak1[Chan];
-  P2=Pos+opt.Peak2[Chan]+1;
+  P2=Pos+opt.Peak2[Chan];
   T1=Pos+opt.T1[Chan];
-  T2=Pos+opt.T2[Chan]+1;
+  T2=Pos+opt.T2[Chan];
   W1=Pos+opt.W1[Chan];
-  W2=Pos+opt.W2[Chan]+1;
+  W2=Pos+opt.W2[Chan];
 
   if (B1<0) B1=0;
-  //if (B2<=B1) B2=B1+1;
-  if (B2<=B1) B2=B1; //base can be zero if B2==B1
+  if (B2<=B1) B2=B1; //base can NOT be zero if B2==B1
   if (P1<0) P1=0;
-  if (P2<=P1) P2=P1+1;
+  if (P2<=P1) P2=P1;
+  if (T1<(int)kk) T1=kk;
+  if (T2<=T1) T2=T1;
+  if (W1<0) W1=0;
+  if (W2<=W1) W2=W1;
 
   if (B1>=sz) B1=sz-1;
-  if (B2>sz) B2=sz;
+  if (B2>=sz) B2=sz-1;
   if (P1>=sz) P1=sz-1;
-  if (P2>sz) P2=sz;
-
-  if (T1<(int)kk) T1=kk;
-  if (T2<=T1) T2=T1+1;
-  if (W1<(int)kk) W1=kk;
-  if (W2<=W1) W2=W1+1;
-
-  if (T1>sz) T1=sz-1;
-  if (T2>sz) T2=sz;
-  if (W1>sz) W1=sz-1;
-  if (W2>sz) W2=sz;
+  if (P2>=sz) P2=sz-1;
+  if (T1>=sz) T1=sz-1;
+  if (T2>=sz) T2=sz-1;
+  if (W1>=sz) W1=sz-1;
+  if (W2>=sz) W2=sz-1;
 
   if (opt.sTg[Chan]<6) { //not zero crossing
     Time=0;
@@ -321,7 +325,7 @@ void PulseClass::PeakAna33() {
 
     if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv
       // 05.10.2020
-      for (int j=T1;j<T2;j++) {
+      for (int j=T1;j<=T2;j++) {
 	if (j<kk+1)
 	  continue;
 	Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
@@ -332,7 +336,7 @@ void PulseClass::PeakAna33() {
       }
     }
     else { //use 1st deriv
-      for (int j=T1;j<T2;j++) {
+      for (int j=T1;j<=T2;j++) {
 	if (j<kk)
 	  continue;
 	Float_t dif=sData[j]-sData[j-kk];
@@ -367,7 +371,7 @@ void PulseClass::PeakAna33() {
   //baseline
   Base=0;
   int nbkg=0;
-  for (int j=B1;j<B2;j++) {
+  for (int j=B1;j<=B2;j++) {
     Base+=sData[j];
     nbkg++;
   }
@@ -383,7 +387,7 @@ void PulseClass::PeakAna33() {
   Float_t Area0=0;
   //Area0=0;
   Height=-99999;
-  for (int j=P1;j<P2;j++) {
+  for (int j=P1;j<=P2;j++) {
     Area0+=sData[j];
     if (sData[j]>Height) Height = sData[j];
     nn++;
@@ -396,57 +400,105 @@ void PulseClass::PeakAna33() {
     //cout << "zero Area: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
   }
 
-  //calibration
-  Area=Area0 - Base;
-  //pk->Area*=opt.emult[Chan];
-  //Area=opt.E0[Chan] + opt.E1[Chan]*Area;
+  if (hcl->b_base) {
+    //slope1 (baseline)
+    Sl1=0;
+    S_xx = 0;
+    xm = (B2+B1)*0.5; //mean x
+    //nbkg=0;
+    for (int j=B1;j<=B2;j++) {
+      Float_t xx = j-xm;
+      Sl1+=xx*(sData[j]-Base);
+      S_xx+=xx*xx;
+      //nbkg++;
+    }
+    if (S_xx) {
+      Sl1/=S_xx;
+    }
 
+    //prnt("ss fs;",BRED,"Sl1:",Sl1,RST);
+
+    //slope2 (peak)
+    Sl2=0;
+    S_xx = 0;
+    xm = (P2+P1)*0.5; //mean x
+    //nbkg=0;
+    for (int j=P1;j<=P2;j++) {
+      Float_t xx = j-xm;
+      Sl2+=xx*(sData[j]-Area0);
+      S_xx+=xx*xx;
+      //nbkg++;
+    }
+    if (S_xx) {
+      Sl2/=S_xx;
+    }
+
+    //prnt("ss fs;",BGRN,"Sl2:",Sl2,RST);
+
+    //RMS1 (baseline)
+    RMS1=0;
+    nbkg=0;
+    for (int j=B1;j<=B2;j++) {
+      Float_t Yj = Base+(j-(B1+B2)*0.5)*Sl1 - sData[j];
+      RMS1+=Yj*Yj;
+      nbkg++;
+      //cout << "jjjj: " << j << " " << Base << " " << sData[j] << " " << Yj << endl;
+    }
+    if (nbkg) {
+      RMS1 = sqrt(RMS1/nbkg);
+    }
+
+    //RMS2 (peak)
+    RMS2=0;
+    nbkg=0;
+    for (int j=P1;j<=P2;j++) {
+      Float_t Yj = Area0+(j-(P1+P2)*0.5)*Sl2 - sData[j];
+      RMS2+=Yj*Yj;
+      nbkg++;
+      //cout << "jjjj: " << j << " " << Base << " " << sData[j] << " " << Yj << endl;
+    }
+    if (nbkg) {
+      RMS2 = sqrt(RMS2/nbkg);
+    }
+  } //if b_base
+
+  Area=Area0 - Base;
+
+  /* YK
   if (opt.Bc[Chan]) {
     Area+=opt.Bc[Chan]*Base;
   }
+  YK */
 
   //width === area2
   Width=0;
-  if (Area) {
-    nn=0;
-    for (int j=W1;j<W2;j++) {
-      Width+=sData[j];
-      nn++;
-    }
-    if (nn) {
-      Width/=nn;
-    }
-    else {
-      ++crs->errors[ER_WIDTH];
-      //cout << "zero Width: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
-    }
-  	
-    Width-=Base;
-    //YK
-    //Width=opt.E0[Chan] + opt.E1[Chan]*Width;
-    Width/=Area;
+  nn=0;
+  for (int j=W1;j<=W2;j++) {
+    Width+=sData[j];
+    nn++;
+  }
+  if (nn) {
+    Width/=nn;
+  }
+  else {
+    ++crs->errors[ER_WIDTH];
   }
 
-  //slope1 (baseline)
-  Sl1=0;
-  nbkg=0;
-  for (int j=B1+1;j<B2;j++) {
-    Sl1+=sData[j]-sData[j-1];
-    nbkg++;
+  //cout << "W1: " << W1 << " " << W2 << " " << Pos << endl;
+  if (W1<=Pos && W2<=Pos) {
+    if (Base)
+      Width/=Base;
+    else
+      Width=0;
   }
-  if (nbkg)
-    Sl1/=nbkg;
-
-  //slope2 (peak)
-
-  Sl2=0;
-  nbkg=0;
-  for (int j=P1+1;j<P2;j++) {
-    Sl2+=sData[j]-sData[j-1];
-    nbkg++;
+  else {
+    if (Area) {
+      Width-=Base;
+      Width/=Area;
+    }
+    else
+      Width=0;
   }
-  if (nbkg)
-    Sl2/=nbkg;
 
   /*
   //Simul2
@@ -516,18 +568,33 @@ void PulseClass::CheckDSP() {
   */
 }
 
-void PulseClass::Ecalibr() {
+void PulseClass::Ecalibr(Float_t& XX) {
   switch (opt.calibr_t[Chan]) {
   case 2:
-    Area=opt.E0[Chan] + opt.E1[Chan]*Area + opt.E2[Chan]*Area*Area;
+    XX=opt.E0[Chan] + opt.E1[Chan]*XX + opt.E2[Chan]*XX*XX;
     break;
   case 1:
-    Area=opt.E0[Chan] + opt.E1[Chan]*Area;
+    XX=opt.E0[Chan] + opt.E1[Chan]*XX;
     break;
   default:
     break;
   }
 }
+
+// void PulseClass::Bcalibr() {
+//   switch (opt.calibr_t[Chan]) {
+//   case 2:
+//   case 1:
+//     Base*=opt.E1[Chan];
+//     Sl1*=opt.E1[Chan];
+//     Sl2*=opt.E1[Chan];
+//     RMS1*=opt.E1[Chan];
+//     RMS2*=opt.E1[Chan];
+//     break;
+//   default:
+//     break;
+//   }
+// }
 
 EventClass::EventClass() {
   Spin=0;
