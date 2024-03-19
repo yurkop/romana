@@ -19,5 +19,6 @@
 //  ClassDef(MyMainFrame, 0)
 //};
 
+typedef std::list<VarClass>::iterator v_iter;
 
 #endif

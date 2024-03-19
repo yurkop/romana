@@ -69,7 +69,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
   max=9999999;//-1;
 
   //cout << "GetPAr7: " << module << " " << name << endl;
-    if (!strcmp(name,"smooth")) {
+    if (!strcmp(name,"hS")) {
       par = hS[i];
       min = 0;
 
@@ -86,7 +86,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       }
 
     }
-    else if (!strcmp(name,"dt")) {
+    else if (!strcmp(name,"Dt")) {
       par = Dt[i];
       min = 1;
       if (module==22)
@@ -94,7 +94,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       else
         max=16383;
     }
-    else if (!strcmp(name,"pre")) {
+    else if (!strcmp(name,"Pre")) {
       par = Pre[i];
 
       if (module==22) {
@@ -124,7 +124,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
           min=-1023;
       }
     }
-    else if (!strcmp(name,"len")) {
+    else if (!strcmp(name,"Len")) {
       //prnt("ss d ds;",KRED,"len: ",i,Len[i],RST);
       par = Len[i];
       min = 1;
@@ -154,7 +154,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       //     max=1506;
       // }
     }
-    else if (!strcmp(name,"deriv")) {
+    else if (!strcmp(name,"Drv")) {
       par = Drv[i];
       min = 1;
       //if (type_ch==3)
@@ -167,7 +167,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       //   min = 0;
       // else
     }
-    else if (!strcmp(name,"thresh")) {
+    else if (!strcmp(name,"Thr")) {
       par = Thr[i];
       if (type_ch==0) {
         min=-2048;
@@ -178,7 +178,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         max= 65535;
       }
     }
-    else if (!strcmp(name,"gain")) {
+    else if (!strcmp(name,"G")) {
       par = G[i];
       if (type_ch==0) {
         min=5;
@@ -189,7 +189,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         max=3;
       }
     }
-    else if (!strcmp(name,"delay")) {
+    else if (!strcmp(name,"hD")) {
       par = hD[i];
       min=0;
       max=9999;
@@ -208,7 +208,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
           max=255;
       }
     }
-    else if (!strcmp(name,"trig")) {
+    else if (!strcmp(name,"Trg")) {
       par = Trg[i];
       min=0;
       max=9;
@@ -224,7 +224,8 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       //max=0;
       // cout << "trig: " << module << " " << min << " " << max << endl;
     }
-    else if (!strcmp(name,"ratediv")) {
+    else if (!strcmp(name,"RD")) {
+      //else if (!strcmp(name,"RD")) {
       par = ratediv[i];
       min=0;
       max=1024;

@@ -62,7 +62,7 @@ ProcInfo_t pinfo;
 // double rmem;
 
 std::list<VarClass> varlist;
-typedef std::list<VarClass>::iterator v_iter;
+//typedef std::list<VarClass>::iterator v_iter;
 
 extern TMutex cmut;
 
@@ -2634,13 +2634,16 @@ void MainFrame::MakeTabs(bool reb) {
   parpar->Update();
   ntab++;
 
-  /* YK!!
+  /*
+  //chanpar;
+  //YKWheel
   tb = fTab->AddTab("Channels");
   tabfr.push_back(tb);
   chanpar = new ChanParDlg(tb, 1, MAIN_HEIGHT);
   tb->AddFrame(chanpar, LayEE2);
   ntab++;
-  YK!! */
+  //YKWheel
+  */
 
   //cout << "tab2: " << ntab << endl;
   tb = fTab->AddTab("DAQ");

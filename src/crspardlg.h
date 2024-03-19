@@ -10,6 +10,7 @@
 #include <TGNumberEntry.h>
 #include <TGStatusBar.h>
 #include <TGSplitter.h>
+#include <TG3DLine.h>
 //#include <TGSplitFrame.h>
 //#include <TGListBox.h>
 #include <TGDockableFrame.h>
@@ -30,7 +31,8 @@ enum P_Def {
   p_chk,
   p_cmb,
   p_txt,
-  p_but
+  p_but,
+  p_chn
 };
 
 struct pmap {
@@ -46,7 +48,7 @@ struct pmap {
   //0xF0: (bit4-7) Action (1..15)
   //0x100 (bit8) disble during acq
   //0x200 (bit9) disble fields not existing in certain devices
-  //0x400 (bit1) enable/disble fields for ntof analysis
+  //0x400 (bit10) enable/disble fields for ntof analysis
 
   //Action: 
   // in DoDaqNum:
@@ -92,6 +94,7 @@ public:
   TGLayoutHints* LayCC0 ;
   TGLayoutHints* LayCC0a;
   TGLayoutHints* LayCC1 ;
+  //TGLayoutHints* LayCC1a ;
   TGLayoutHints* LayCC2 ;
   TGLayoutHints* LayET0 ;
   TGLayoutHints* LayLC1 ;
@@ -108,7 +111,10 @@ public:
   TGLayoutHints* LayLE0 ;
   TGLayoutHints* LayEE0 ;
   TGLayoutHints* LayEE1 ;
-  TGLayoutHints* LayRC1 ;
+  TGLayoutHints* LayRT0 ;
+  TGLayoutHints* LayLeft ;
+  TGLayoutHints* LayL1 ;
+  //TGLayoutHints* LayL2 ;
 
 
   //int jtrig;
@@ -123,8 +129,9 @@ protected:
   TGComboBox* fCombo[MAX_CH+1]; //MAX_CH, all
   //TGTextEntry* cname[MAX_TP];
   TGHorizontalFrame *cframe[MAX_CHTP];
-  TGTextEntry* clab[MAX_CHTP];
-  TGTextButton* cbut;
+  TGHorizontalFrame *hparl[3][MAX_CHTP]; // горизонтальные фреймы в chanpar; должно заменить cframe
+  TGTextEntry* clab[MAX_CHTP]; //содержит номер канала
+  TGTextButton* cbut; // кнопка ALL/all/*
   Int_t cbut_id;
 
   TGCanvas* fCanvas1;
@@ -166,6 +173,7 @@ public:
   void DoTypes();
   void DoOpen();
   void DoAll();
+  void ColorLine(int line, ULong_t col);
   void CopyParLine(int sel, int line);
   void CopyField(int from, int to);
   void DoColor(pmap* pp, Float_t val);
@@ -308,11 +316,10 @@ public:
   ChnParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ChnParDlg() {};
 
-  void HandleMouseWheel(Event_t *event);
   void AddChCombo(int i, int &id, int &kk, int &all);
-  void AddChkPar(int &kk, TGHorizontalFrame *cframe,
+  void AddChkPar(int &kk, TGHorizontalFrame *hfr,
 		 Bool_t* dat, int all, const char* ttip, UInt_t cmd=0);
-  void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hframe1,
+  void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hfr,
     void* apar, double min, double max, P_Def ptype, UInt_t cmd=0);
   // void ClearLines();
 
@@ -320,15 +327,23 @@ public:
 };
 
 //-----------------------------------------------
-class ChanParDlg: public ChnParDlg {
+class ChanParDlg: public ParDlg {
 
 public:
   TGTextEntry *fStat2[MAX_CH+1];
   TGTextEntry *fStat3[MAX_CH+1];
   TGTextEntry *fStatBad[MAX_CH+1];
 
+  TGHorizontal3DLine *hsep[3];
+  TGHorizontalFrame *head_frame[3];
+
   //TGCheckButton *fchkSoft;
   //TGCheckButton *fchkHard;
+
+  TGCanvas* fCanvas0;
+  TGCanvas* fCanvas2;
+  TGHSplitter *hsplitter;
+  TGCompositeFrame* fcont2;
 
   TGGroupFrame* cGrp;
   //TGLabel *cLabel;
@@ -339,13 +354,25 @@ public:
   virtual ~ChanParDlg() {};
 
   void Build();
-  void AddHeader();
+  void AddColumn(int kk, int ii, P_Def pdef, int wd, int daq,
+		 double min, double max, const char* pname,
+		 void* apar, void* apar2=0, UInt_t cmd=1, int d2=0);
+  //void AddHeader();
   void AddLine_daq(int i, TGCompositeFrame* fcont1);
-  void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
-    const char* name, void* apar, void* apar2=0, UInt_t cmd=1);
+  void AddChkPar(int kk, int wd, int all, int daq, TGHorizontalFrame *cframe,
+		 void* apar, void* apar2=0, UInt_t cmd=1);
+  void AddNumPar(int i, int kk, int wd, int all, int daq, P_Def pdef, double min, double max, TGHorizontalFrame *hframe1, const char* name, void* apar, void* apar2=0, UInt_t cmd=1);
+
+
+
+
   void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
 		   const char* ttip, int &kk);
+  void AddChan(int j, int kk, int wd, int all, TGHorizontalFrame *hfr);
+  void AddCombo(int j, int wd, int all, TGHorizontalFrame *hfr);
+  //void AddChCombo(int i, int &id, int &kk, int &all);
   void UpdateStatus(int rst=0);
+  void HandleMouseWheel(Event_t *event);
   void Update();
 
   ClassDef(ChanParDlg, 0)

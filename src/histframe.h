@@ -159,7 +159,7 @@ public:
   ClassDef(HistFrame, 0)
 };
 
-void *trd_handle(void* ptr);
+//void *trd_handle(void* ptr);
 
 
 #endif
