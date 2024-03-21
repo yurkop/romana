@@ -1730,9 +1730,14 @@ void HistFrame::EditCutG()
 
 void HistFrame::DoPeaks()
 {
-  /*
+  cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
+
   TSpectrum spec;
-  
+
+
+  //cout <<
+
+  /*
   int nn=1;
   TIter next(st_hlist);
   TObject* obj;

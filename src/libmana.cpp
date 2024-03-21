@@ -81,7 +81,7 @@ HClass* hcl=0;
 
 ParParDlg *parpar=0;
 HistParDlg *histpar=0;
-//ChanParDlg *chanpar=0;
+ChanParDlg *chanpar=0;
 DaqParDlg *daqpar=0;
 AnaParDlg *anapar=0;
 PikParDlg *pikpar=0;
@@ -2634,7 +2634,6 @@ void MainFrame::MakeTabs(bool reb) {
   parpar->Update();
   ntab++;
 
-  /*
   //chanpar;
   //YKWheel
   tb = fTab->AddTab("Channels");
@@ -2643,7 +2642,6 @@ void MainFrame::MakeTabs(bool reb) {
   tb->AddFrame(chanpar, LayEE2);
   ntab++;
   //YKWheel
-  */
 
   //cout << "tab2: " << ntab << endl;
   tb = fTab->AddTab("DAQ");
@@ -2710,10 +2708,10 @@ void MainFrame::MakeTabs(bool reb) {
   // tr3->Run();
 
 
-  //chanpar->Build();
+  chanpar->Build();
   daqpar->Build();
 
-  //chanpar->Update();
+  chanpar->Update();
   daqpar->Update();
 
   anapar->Build();
@@ -2891,6 +2889,7 @@ void MainFrame::DoOpen(Int_t popt) {
     }
 
     parpar->Update();
+    chanpar->Update();
     daqpar->Update();
     anapar->Update();
     pikpar->Update();
@@ -2921,6 +2920,7 @@ void MainFrame::DoClose() {
   daqpar->AllEnabled(true);
 
   parpar->Update();
+  chanpar->Update();
   daqpar->Update();
   anapar->Update();
   pikpar->Update();
@@ -3102,6 +3102,7 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
       }
 
       parpar->Update();
+      chanpar->Update();
       daqpar->Update();
       anapar->Update();
       pikpar->Update();
@@ -3163,6 +3164,7 @@ void MainFrame::DoReadRoot() {
     readroot(rname);
 
     parpar->Update();
+    chanpar->Update();
     daqpar->Update();
     anapar->Update();
     pikpar->Update();
@@ -3280,6 +3282,7 @@ void MainFrame::DoReset() {
   ErrFrm->Reset();
   //HiFrm->HiReset();
   parpar->Update();
+  chanpar->Update();
   daqpar->Update();
   anapar->Update();
   pikpar->Update();
@@ -3664,6 +3667,10 @@ void MainFrame::DoTab(Int_t num) {
   if (name.EqualTo("Parameters",TString::kIgnoreCase)) {
     //cout << "DoTab1: " << name << endl;
     parpar->Update();
+  }
+  else if (name.EqualTo("Channels",TString::kIgnoreCase)) {
+    //cout << "DoTab2: " << name << endl;
+    chanpar->Update();
   }
   else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
     //cout << "DoTab2: " << name << endl;

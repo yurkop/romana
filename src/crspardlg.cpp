@@ -43,7 +43,7 @@ namespace CP {
 extern HClass* hcl;
 extern ParParDlg *parpar;
 extern DaqParDlg *daqpar;
-//extern ChanParDlg *chanpar;
+extern ChanParDlg *chanpar;
 extern AnaParDlg *anapar;
 extern PikParDlg *pikpar;
 
@@ -72,6 +72,47 @@ vector<const char*> ptip = {
   "Trigger type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing\nNot all types are available for all devices",
   "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+  "X",
+
+
+
+
+
+
+
+
+
+
+
   "Pulse rate (software)",
   "Pulse rate (hardware)",
   "Number of bad pulses"
@@ -111,9 +152,9 @@ const char* ttip1[ndaqpar]={
   "Number of bad pulses"
 };
 
-const int n_apar=14;
-const int tlen2[n_apar]={24,24,26,70,24,24,35,35,35,20,40,40,40,38};
-const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sD","dTm","Pile","C","E0","E1","E2","Bc"};
+const int n_apar=15;
+const int tlen2[n_apar]={24,24,26,70,24,24,35,35,35,20,20,40,40,40,38};
+const char* tlab2[n_apar]={"on","*","Ch","Type","St","Ms","sD","dTm","Pile","Mt","C","E0","E1","E2","Bc"};
 const char* ttip2[n_apar]={
   "On/Off",
   "Select",
@@ -125,6 +166,7 @@ const char* ttip2[n_apar]={
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
+  "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction",
   "Energy calibration type: 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline",
   "Energy calibration 0: E0+E1*x",
   "Energy calibration 1: E0+E1*x",
@@ -214,7 +256,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //LayL2  = new TGLayoutHints(kLHintsLeft,2,2,2,2);
   //SetCleanup(kDeepCleanup);
   //jtrig=0;
-  notbuilt=true;
+  //notbuilt=true;
   pmax=0;
 
   fDock = new TGDockableFrame(this);
@@ -1283,7 +1325,7 @@ void TrigFrame::UpdateTrigger() {
   }
   this->ChangeBackground(col[cpar.Trigger]);
 
-  if (daqpar /*&& chanpar*/) {
+  if (daqpar && chanpar) {
     daqpar->cGrp->ChangeBackground(col[cpar.Trigger]);
     //YK chanpar->cGrp->ChangeBackground(col[cpar.Trigger]);
   }
@@ -2735,6 +2777,7 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
 
 void ChanParDlg::Build() {
 
+  char txt[64];
   MakeVarList(1,1);
 
   /*
@@ -2760,10 +2803,10 @@ void ChanParDlg::Build() {
   AddColumn(kk++,1,p_chk,25,1,0,0,"Inv",&cpar.Inv,0,1);
   AddColumn(kk++,1,p_chk,24,1,0,0,"AC",&cpar.AC,0,1|(5<<4));
   AddColumn(kk++,1,p_chk,24,1,0,0,"pls",&cpar.pls,0,1);
-  AddColumn(kk++,1,p_chk,24,0,0,0,"dsp",&opt.dsp);
+  AddColumn(kk++,1,p_chk,24,0,0,0,"dsp",&opt.dsp,0,1);
   AddColumn(kk++,1,p_inum,34,1,0,0,"RD",&cpar.ratediv,0,1);
-  AddColumn(kk++,1,p_chk,24,1,0,0,"C1",&cpar.group,0,1,1);
-  AddColumn(kk++,1,p_chk,24,1,0,0,"C2",&cpar.group,0,1,2);
+  AddColumn(kk++,1,p_chk,24,1,0,0,"C1",&cpar.group,0,1,21);
+  AddColumn(kk++,1,p_chk,24,1,0,0,"C2",&cpar.group,0,1,22);
   AddColumn(kk++,1,p_inum,30,1,0,0,"hS",&cpar.hS,0,1);
   AddColumn(kk++,1,p_inum,36,1,0,0,"hD",&cpar.hD,0,1);
   AddColumn(kk++,1,p_inum,40,1,0,0,"Dt",&cpar.Dt,0,1);
@@ -2774,21 +2817,49 @@ void ChanParDlg::Build() {
   AddColumn(kk++,1,p_inum,36,1,0,0,"Drv",&cpar.Drv,0,1);
   AddColumn(kk++,1,p_inum,40,1,0,0,"Thr",&cpar.Thr,0,1);
 
+  //Analysis
+  AddColumn(kk++,1,p_chk,24,0,0,0,"St",&opt.St);
+  AddColumn(kk++,1,p_chk,24,0,0,0,"Ms",&opt.Ms);
+  AddColumn(kk++,1,p_fnum,35,0,-9999,9999,"sD",&opt.sD);
+  AddColumn(kk++,1,p_inum,35,0,0,9999,"dTm",&opt.dTm);
+  AddColumn(kk++,1,p_inum,35,0,0,9999,"Pile",&opt.Pile);
+  AddColumn(kk++,1,p_inum,20,0,0,1,"C",&opt.Mt);
+  AddColumn(kk++,1,p_inum,20,0,0,2,"C",&opt.calibr_t);
+  AddColumn(kk++,1,p_fnum,40,0,-1e99,1e99,"E0",&opt.E0);
+  AddColumn(kk++,1,p_fnum,40,0,-1e99,1e99,"E1",&opt.E1);
+  AddColumn(kk++,1,p_fnum,40,0,-1e99,1e99,"E2",&opt.E2);
+  AddColumn(kk++,1,p_fnum,40,0,-1e99,1e99,"Bc",&opt.Bc);
+  for (int i=1;i<=4;i++) {
+    sprintf(txt,"g%d",i);
+    AddColumn(kk++,1,p_chk,24,0,0,0,txt,&opt.Grp,0,0,40+i);
+  }
+
+
+  double amax=-2e101;
+  //Peaks
+  AddColumn(kk++,1,p_chk,24,0,0,0,"dsp",&opt.dsp,0,0);
+  AddColumn(kk++,1,p_inum,25,0,-99,99,"sS",&opt.sS);
+  AddColumn(kk++,1,p_inum,26,0,-1,7,"sTg",&opt.sTg);
+  AddColumn(kk++,1,p_inum,32,0,1,1023,"sDrv",&opt.sDrv);
+  AddColumn(kk++,1,p_inum,40,0,0,65565,"sThr",&opt.sThr);
+  AddColumn(kk++,1,p_inum,40,0,-1024,amax,"Base1",&opt.Base1);
+  AddColumn(kk++,1,p_inum,40,0,-1024,9999,"Base2",&opt.Base2);
+  AddColumn(kk++,1,p_inum,40,0,-1024,amax,"Peak1",&opt.Peak1);
+  AddColumn(kk++,1,p_inum,40,0,-1024,9999,"Peak2",&opt.Peak2);
+  AddColumn(kk++,1,p_inum,40,0,-1024,amax,"T1",&opt.T1);
+  AddColumn(kk++,1,p_inum,40,0,-1024,9999,"T2",&opt.T2);
+  AddColumn(kk++,1,p_inum,40,0,-1024,amax,"W1",&opt.W1);
+  AddColumn(kk++,1,p_inum,40,0,-1024,9999,"W2",&opt.W2);
 
 
 
   nfld = kk;
+  AddColumn(kk++,2,p_stat,60,0,0,0,"P/sec (sw)",0,&fStat2,0);
+  AddColumn(kk++,2,p_stat,60,0,0,0,"P/sec (hw)",0,&fStat3,0);
+  AddColumn(kk++,2,p_stat,60,0,0,0,"BadPls",0,&fStatBad,0);
+
   //cout << "kk: " << kk << endl;
   
-  /*
-  for (int i=0;i<30;i++) {
-    AddColumn(p_num,kk++,1,36,"hS","Hardware smoothing. Set it to the power of 2 to avoid reduction of amplitude.",sizeof(cpar.hS[0]),&cpar.hS);
-  }
-
-  for (int i=0;i<3;i++) {
-    AddColumn(p_num,kk++,2,36,"hS","Hardware smoothing. Set it to the power of 2 to avoid reduction of amplitude.",sizeof(cpar.hS[0]),&cpar.hS);
-  }
-  */
 
   //cout << "sz: " << sizeof(cpar.hS[0]) << " " << ptip.size() << endl;
 
@@ -2801,12 +2872,12 @@ void ChanParDlg::Build() {
     hsep[i]->SetWidth(dw);
   }
 
-  return;
 
-  notbuilt=false;
+  //notbuilt=false;
   //pmax=opt.Nchan;
   pmax=NLines;
 
+  return;
   /*
   AddHeader();
 
@@ -2949,9 +3020,22 @@ void ChanParDlg::AddColumn(int kk, int ii, P_Def pdef, int wd, int daq,
     }
 
     int ad = j*sz;
-    if (d2==1) ad = j*2*sz;
-    else if (d2==2) ad = (j*2+1)*sz;
-    
+    if (d2) {
+      int aa = d2/10;
+      int bb = d2%10;
+      ad = (j*aa+bb-1)*sz;
+      // if (j==0)
+      // 	cout << "ad: " << d2 << " " << aa << " " << bb << " " << ad << endl;
+    }
+    //else if (d2==2) ad = (j*2+1)*sz;
+
+    double amax = max;
+    if (max<-1e101) {
+      amax = 1023;
+      if (cpar.crs_ch[j]==1 || cpar.crs_ch[j]==2)
+	amax=511;
+    }
+
     char* ap = (char*)apar+ad;
     char* ap2 = (char*)apar2;
     if (ap2) ap2 += ad;
@@ -2967,13 +3051,23 @@ void ChanParDlg::AddColumn(int kk, int ii, P_Def pdef, int wd, int daq,
       break;
     case p_inum:
     case p_fnum:
-      AddNumPar(j,kk,wd,all,daq,pdef,min,max,hparl[ii][j],pname,ap,ap2,cmd);
+      AddNumPar(j,kk,wd,all,daq,pdef,min,amax,hparl[ii][j],pname,ap,ap2,cmd);
+      break;
+    case p_stat:
+      {
+      TGTextEntry** fS = (TGTextEntry**) apar2;
+
+      //cout << "stat: " << j << " " << fS << " " << fStat2 << " " << fS+j << " " << &fStat2[j] << " " << fS+j -fS << endl;
+
+      if (j<=MAX_CH)
+	AddStatDaq(kk,wd,*(fS+j),hparl[ii][j]);
+      }
       break;
     default:
       ;
     }
   }
-
+  
 }
 
 /*
@@ -3187,23 +3281,30 @@ void ChanParDlg::AddNumPar(int j, int kk, int wd, int all, int daq, P_Def pdef, 
 
 }
 
-void ChanParDlg::AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
-			    const char* ttip, int &kk) {
+void ChanParDlg::AddStatDaq(int kk, int wd, TGTextEntry* &fStat,
+			     TGHorizontalFrame* hfr) {
   int col;
 
-  fStat = new TGTextEntry(cframe, "");
+  fStat = new TGTextEntry(hfr, "");
   fStat->ChangeOptions(fStat->GetOptions()|kFixedSize|kSunkenFrame);
 
   fStat->SetState(false);
-  fStat->SetToolTipText(ttip);
+  fStat->SetToolTipText(ptip.at(kk));
 
-  fStat->Resize(tlen1[kk],20);
+  fStat->Resize(wd,PHeight);
   col=gROOT->GetColor(19)->GetPixel();
   fStat->SetBackgroundColor(col);
   fStat->SetText(0);
-  //cframe->AddFrame(fStat,LayLT5);
-  cframe->AddFrame(fStat,LayCC0);
-  kk++;
+
+
+  // char txt[100];
+  // static int j;
+  // j++;
+  // sprintf(txt,"t %d",j);
+  // fStat->SetText(txt);
+
+
+  hfr->AddFrame(fStat,LayCC0a);
 }
 
 void ChanParDlg::Update() {
@@ -3367,7 +3468,7 @@ DaqParDlg::DaqParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
 
 void DaqParDlg::Build() {
 
-  notbuilt=false;
+  //notbuilt=false;
   pmax=opt.Nchan;
 
   AddHeader();
@@ -3663,7 +3764,7 @@ AnaParDlg::AnaParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
 
 void AnaParDlg::Build() {
 
-  notbuilt=false;
+  //notbuilt=false;
   pmax=opt.Nchan;
 
   AddHeader();
@@ -3733,6 +3834,7 @@ void AnaParDlg::AddLine_Ana(int i, TGCompositeFrame* fcont1) {
   AddNumChan(i,kk++,all,hparl[0][i],&opt.dTm[i],0,9999,p_inum);
   AddNumChan(i,kk++,all,hparl[0][i],&opt.Pile[i],0,9999,p_inum);
 
+  AddNumChan(i,kk++,all,hparl[0][i],&opt.Mt[i],0,1,p_inum);
   AddNumChan(i,kk++,all,hparl[0][i],&opt.calibr_t[i],0,2,p_inum);
   AddNumChan(i,kk++,all,hparl[0][i],&opt.E0[i],-1e99,1e99,p_fnum);
   AddNumChan(i,kk++,all,hparl[0][i],&opt.E1[i],-1e99,1e99,p_fnum);
@@ -3761,7 +3863,7 @@ PikParDlg::PikParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
 
 void PikParDlg::Build() {
 
-  notbuilt=false;
+  //notbuilt=false;
   pmax=opt.Nchan;
 
   AddHeader();

@@ -32,7 +32,8 @@ enum P_Def {
   p_cmb,
   p_txt,
   p_but,
-  p_chn
+  p_chn,
+  p_stat
 };
 
 struct pmap {
@@ -118,7 +119,7 @@ public:
 
 
   //int jtrig;
-  bool notbuilt;
+  //bool notbuilt;
   int pmax; //максимальный канал (вместо MAX_CH), который записан в параметрах
 
   TGDockableFrame        *fDock;
@@ -366,8 +367,8 @@ public:
 
 
 
-  void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
-		   const char* ttip, int &kk);
+  void AddStatDaq(int kk, int wd, TGTextEntry* &fStat,
+		   TGHorizontalFrame* hfr);
   void AddChan(int j, int kk, int wd, int all, TGHorizontalFrame *hfr);
   void AddCombo(int j, int wd, int all, TGHorizontalFrame *hfr);
   //void AddChCombo(int i, int &id, int &kk, int &all);

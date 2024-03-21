@@ -70,6 +70,7 @@ extern HistFrame* HiFrm;
 extern ErrFrame* ErrFrm;
 extern HClass* hcl;
 extern ParParDlg *parpar;
+extern ChanParDlg *chanpar;
 extern DaqParDlg *daqpar;
 extern HistParDlg *histpar;
 extern AnaParDlg *anapar;
@@ -2619,6 +2620,7 @@ int CRS::DoStartStop(int rst) {
     
     if (!batch) {
       parpar->Update();
+      chanpar->Update();
       daqpar->Update();
       anapar->Update();
       pikpar->Update();

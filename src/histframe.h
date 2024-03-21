@@ -60,7 +60,7 @@ public:
   //HMap *pad_map[MAX_PADS];       //maps plotted in pads
   std::vector <HMap*> pad_map;       //maps plotted in pads
   std::vector <TH1*> pad_hist;       //copies of histograms plotted in pads
-                                     //or in DrawStacj
+                                     //or in DrawStack
                                      //hists must be deleted before clear()
 
   vector<TString> dopt = {"","zcol"};

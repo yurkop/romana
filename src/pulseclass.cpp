@@ -238,6 +238,9 @@ void PulseClass::FindZero(Int_t sTrig, Int_t kk, Int_t j0) {
 
 void PulseClass::PeakAna33() {
 
+  Float_t Area0=0; //integral of pulse without Base subtraction
+  Float_t Area2=0; //integral of 1st deriv without Base subtraction
+
   Short_t B1; //left background window (included)
   Short_t B2; //right background window (included)
   Short_t P1; //left peak window (included)
@@ -290,7 +293,6 @@ void PulseClass::PeakAna33() {
 
 
   //pk=&Peaks.back();
-  Float_t sum;
 
   B1=Pos+opt.Base1[Chan];
   B2=Pos+opt.Base2[Chan];
@@ -321,7 +323,6 @@ void PulseClass::PeakAna33() {
 
   if (opt.sTg[Chan]<6) { //not zero crossing
     Time=0;
-    sum=0;
 
     if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv
       // 05.10.2020
@@ -331,7 +332,7 @@ void PulseClass::PeakAna33() {
 	Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
 	if (dif2>0) {
 	  Time+=dif2*j;
-	  sum+=dif2;
+	  Area2+=dif2;
 	}
       }
     }
@@ -342,13 +343,13 @@ void PulseClass::PeakAna33() {
 	Float_t dif=sData[j]-sData[j-kk];
 	if (dif>0) {
 	  Time+=dif*j;
-	  sum+=dif;
+	  Area2+=dif;
 	}
       }
     }
 
-    if (abs(sum)>1e-5) {
-      Time/=sum;
+    if (abs(Area2)>1e-5) {
+      Time/=Area2;
     }
     else {
       ++crs->errors[ER_TIME];
@@ -384,7 +385,6 @@ void PulseClass::PeakAna33() {
 
   int nn=0;
   //peak Area & Height
-  Float_t Area0=0;
   //Area0=0;
   Height=-99999;
   for (int j=P1;j<=P2;j++) {
@@ -498,6 +498,11 @@ void PulseClass::PeakAna33() {
     }
     else
       Width=0;
+  }
+
+
+  if (opt.Mt[Chan]==1) {
+    Area=Area2;
   }
 
   /*

@@ -306,6 +306,7 @@ Toptions::Toptions() {
     W1[i]=-5;
     W2[i]=5;
 
+    Mt[i]=0;
     calibr_t[i]=1;
     E0[i]=0;
     E1[i]=1;
@@ -338,8 +339,8 @@ Toptions::Toptions() {
   // memset(fname_dec,0,sizeof(fname_dec));
   // memset(fname_root,0,sizeof(fname_root));
 
-  ev_min=10;
-  ev_max=1000;
+  ev_min=100; //event lag
+  ev_max=1000; //Event_list size
 
   //hard_logic=0;
   tgate=500;
@@ -422,7 +423,7 @@ Toptions::Toptions() {
   Nchan=32;
   tsleep=500;
   //event_buf=1000;
-  event_lag=10;
+  //event_lag=100;
 
   //F_start = gSystem->Now();
   T_acq = 0;

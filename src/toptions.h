@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 138
+#define CDEF 139
 
 /*
 #include <list>
@@ -158,6 +158,7 @@ public:
   Int_t W1[MAX_CHTP]; // [wwin1]
   Int_t W2[MAX_CHTP]; // [wwin2]
 
+  Int_t Mt[MAX_CHTP]; //analysis method
   Int_t calibr_t[MAX_CHTP]; //type of calibration
   // 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline
   Float_t E0[MAX_CHTP]; // [emult0]
@@ -191,7 +192,7 @@ public:
   //Int_t event_buf; //length of event buffer
   //analysis starts only after filling first event_buf
 
-  Int_t event_lag; //maximal lag of event analysis in mks
+  //Int_t event_lag; //maximal lag of event analysis in mks
   // if current pulse has tstamp smaller than last event's T
   // by this value, the pulse is inserted into event_list
   // without  (if zero - calculate automatically)
@@ -231,8 +232,8 @@ public:
   //char ch_name2[3][4][5][MAX_TP][20]; //->
   char drawopt[30];
 
-  Int_t ev_min; //minimal length of events list
-  Int_t ev_max; //maximal length of events list
+  Int_t ev_min; //Event lag: minimal length of events list
+  Int_t ev_max; //Event_list size: maximal length of events list
 
   //software logic
   Int_t tgate; // coincidence window for events (in samples)
@@ -301,6 +302,10 @@ public:
   //Float_t SimSig;
 
   Int_t sThr2; // lower threshold for trig 3,4
+
+
+
+
 
   // hnum: 
   //    0 - не определено
