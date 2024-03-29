@@ -11,6 +11,9 @@
 #include <TGStatusBar.h>
 #include <TGSplitter.h>
 #include <TG3DLine.h>
+
+#include <TGSlider.h>
+
 //#include <TGSplitFrame.h>
 //#include <TGListBox.h>
 #include <TGDockableFrame.h>
@@ -25,15 +28,15 @@
 //typedef std::list<TGFrame*> wlist;
 
 enum P_Def {
-  p_null,
-  p_fnum,
-  p_inum,
-  p_chk,
-  p_cmb,
-  p_txt,
-  p_but,
-  p_chn,
-  p_stat
+	    p_null, // 0
+	    p_fnum,
+	    p_inum,
+	    p_chk,
+	    p_cmb,
+	    p_txt,
+	    p_but,
+	    p_chn,  // 7
+	    p_stat
 };
 
 struct pmap {
@@ -103,6 +106,7 @@ public:
   TGLayoutHints* LayLT0 ;
   TGLayoutHints* LayLT1 ;
   TGLayoutHints* LayLT1a ;
+  TGLayoutHints* LayLT1b ;
   TGLayoutHints* LayLT2 ;
   TGLayoutHints* LayLT3 ;
   TGLayoutHints* LayLT4 ;
@@ -113,9 +117,10 @@ public:
   TGLayoutHints* LayEE0 ;
   TGLayoutHints* LayEE1 ;
   TGLayoutHints* LayRT0 ;
-  TGLayoutHints* LayLeft ;
-  TGLayoutHints* LayL1 ;
-  //TGLayoutHints* LayL2 ;
+  //TGLayoutHints* LayL1 ;
+
+  //TGLayoutHints* LayLB ;
+  TGLayoutHints* LayTrig ;
 
 
   //int jtrig;
@@ -168,6 +173,7 @@ public:
   void DoDaqChk(Bool_t on);
   void DoCheckHist(Bool_t on);
   void DoCombo();
+  //void DoCombo2();
   // void DoCombo2(Event_t*);
   void DoTxt();
   void DoOneType(int i);
@@ -338,8 +344,13 @@ public:
   TGHorizontal3DLine *hsep[3];
   TGHorizontalFrame *head_frame[3];
 
+  TGHorizontalFrame *hforce[3];
+  TGCheckButton *fforce;
+
   //TGCheckButton *fchkSoft;
   //TGCheckButton *fchkHard;
+
+  TGCanvas* fCnv[3];
 
   TGCanvas* fCanvas0;
   TGCanvas* fCanvas2;
@@ -350,16 +361,21 @@ public:
   //TGLabel *cLabel;
   TrigFrame* tTrig;
 
+  TGVScrollBar* vscroll;
+
+  Int_t oldscroll;
+
+
 public:
   ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ChanParDlg() {};
 
   void Build();
-  void AddColumn(int kk, int ii, P_Def pdef, int wd, int daq,
-		 double min, double max, const char* pname,
-		 void* apar, void* apar2=0, UInt_t cmd=1, int d2=0);
+  void BuildColumns(int jj, int* wsize);
+  void AddColumn(int jj, int kk, int ii, int* wsize, P_Def pdef,
+		 int wd, int daq, double min, double max, const char* pname,
+		 void* apar=0, void* apar2=0, UInt_t cmd=1, int d2=0);
   //void AddHeader();
-  void AddLine_daq(int i, TGCompositeFrame* fcont1);
   void AddChkPar(int kk, int wd, int all, int daq, TGHorizontalFrame *cframe,
 		 void* apar, void* apar2=0, UInt_t cmd=1);
   void AddNumPar(int i, int kk, int wd, int all, int daq, P_Def pdef, double min, double max, TGHorizontalFrame *hframe1, const char* name, void* apar, void* apar2=0, UInt_t cmd=1);
@@ -373,6 +389,7 @@ public:
   void AddCombo(int j, int wd, int all, TGHorizontalFrame *hfr);
   //void AddChCombo(int i, int &id, int &kk, int &all);
   void UpdateStatus(int rst=0);
+  //void DoScroll();
   void HandleMouseWheel(Event_t *event);
   void Update();
 

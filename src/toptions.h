@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 139
+#define CDEF 140
 
 /*
 #include <list>
@@ -303,7 +303,8 @@ public:
 
   Int_t sThr2; // lower threshold for trig 3,4
 
-
+  Int_t Nrows;
+  Int_t ScrollPos;
 
 
 

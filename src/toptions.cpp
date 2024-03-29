@@ -461,6 +461,9 @@ Toptions::Toptions() {
   memset(wrk_check,0,sizeof(wrk_check));
 
   sThr2=cpar.Thr2;
+
+  Nrows = 4;
+  ScrollPos=0;
 }
 
 Hdef::Hdef() {
