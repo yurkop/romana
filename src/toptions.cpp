@@ -462,7 +462,7 @@ Toptions::Toptions() {
 
   sThr2=cpar.Thr2;
 
-  Nrows = 4;
+  Nrows = 8;
   ScrollPos=0;
 }
 

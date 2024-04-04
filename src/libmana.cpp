@@ -2365,7 +2365,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fNb->SetToolTipText("Analyze N buffers");
   fNb->SetFont(tfont,false);
   fNb->Resize(butx,buty);
-  //fNb->Resize(35,22);
+  //fNb->Resize(35,122);
   fNb->ChangeOptions(fNb->GetOptions() | kFixedSize);
   fNb->ChangeBackground(fGreen);
   fNb->Connect("Clicked()","MainFrame",this,"DoNbuf()");
@@ -2947,7 +2947,10 @@ void MainFrame::DoClose() {
 
 void MainFrame::DoAna() {
 
+  
   //cout << "DoAna: " << gROOT->FindObject("Start") << endl;
+  //cout << "Pmapsz: " << sizeof(Pmap) << " " << chanpar->Plist.size() << endl;
+
 
   if (crs->Fmode<2) {
     cout << "File not open" << endl;

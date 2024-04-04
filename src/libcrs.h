@@ -187,13 +187,14 @@ RQ_OBJECT("CRS")
   Long64_t nbuffers; //total number of buffers (zero at Reset (Start button))
   //double mb_rate;
   //double ev_rate;
-  Long64_t npulses2[MAX_CH]; //number of pulses per channel (softw)
-  Long64_t npulses3o[MAX_CH]; //old number of pulses per channel (hardw)
-  Long64_t Tst3o[MAX_CH]; //old TimeStamp per channel (hardw)
-  double rate3[MAX_CH]; //pulse rate per channel (hardw)
+  Long64_t npulses2[MAX_CH+1]; //number of pulses per channel (softw)
+  Long64_t npulses2o[MAX_CH+1]; //old number of pulses per channel (softw)
+  Long64_t npulses3o[MAX_CH+1]; //old number of pulses per channel (hardw)
+  Long64_t Tst3o[MAX_CH+1]; //old TimeStamp per channel (hardw)
+  double rate_soft[MAX_CH+1]; //pulse rate per channel (softw)
+  double rate_hard[MAX_CH+1]; //pulse rate per channel (hardw)
   //Long64_t npulses3o[MAX_CH]; //number of pulses per channel (hardw)
-
-  Int_t npulses_bad[MAX_CH]; //number of bad pulses per channel
+  double npulses_bad[MAX_CH+1]; //number of bad pulses per channel
 
   bool batch; //batch mode
   bool abatch; //1 - acquisition in batch; 0 - file in batch

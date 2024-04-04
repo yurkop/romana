@@ -36,17 +36,21 @@ enum P_Def {
 	    p_txt,
 	    p_but,
 	    p_chn,  // 7
-	    p_stat
+	    p_stat // -> double
 };
 
-struct pmap {
+struct Pmap {
   TGFrame* field; //address of the input widget
-  void* data; //address of the parameter
-  void* data2; //address of the second (parallel) parameter
-  P_Def type; //p_fnum p_inum p_chk p_cmb p_txt
-  char all; //1 - all/ALL/* parameters; >1 - channel type
-  //UChar_t cmd; //опции (биты)
+  void* data; //base address of the parameter
+  void* data2; //base address of the second (parallel) parameter
   UInt_t cmd; //опции (биты)
+  UShort_t off; //bits  0..11: offset to the base address in units of step
+                //bits 12..15: step in units of _type_
+  P_Def type; //p_fnum p_inum p_chk p_cmb p_txt p_but p_chn p_stat
+  UChar_t all; //1 - all/ALL/* parameters; >1 - channel type
+  UChar_t step;
+
+  //cmd bits:
   //0x1: (bit0) 1: start/stop DAQ
   //0xE: (bit1-3) change color
   //0xF0: (bit4-7) Action (1..15)
@@ -54,7 +58,7 @@ struct pmap {
   //0x200 (bit9) disble fields not existing in certain devices
   //0x400 (bit10) enable/disble fields for ntof analysis
 
-  //Action: 
+  //Action (bit4-7): 
   // in DoDaqNum:
   // 1 - DoReset
   // 2 - Hireset
@@ -77,7 +81,7 @@ struct pmap {
   //UChar_t chan; //for Command_crs :seems to be not needed (21.01.2020)
 };
 
-typedef std::vector<pmap>::iterator piter;
+typedef std::vector<Pmap>::iterator piter;
 //-----------------------------------------------
 class TrigFrame: public TGHorizontalFrame {
 public:
@@ -152,19 +156,20 @@ protected:
   TGNumberFormat::EStyle k_lab;
 
 public:
-  std::vector<pmap> Plist;
+  std::vector<Pmap> Plist;
   std::vector<UChar_t> Clist; //list of isanable states for daqdisable
 
 public:
   ParDlg(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~ParDlg();
 
-  void DoMap(TGFrame *f, void *d, P_Def t, int all, UInt_t cmd=0, void *d2=0);
+  void DoMap(TGFrame *f, void *d, P_Def t, int all, UInt_t cmd=0, void *d2=0,
+	     UShort_t off=0, UChar_t step=1);
 
-  void SetNum(pmap pp, Double_t num);
-  void SetChk(pmap pp, Bool_t num);
-  void SetCombo(pmap pp, Int_t num);
-  void SetTxt(pmap pp, const char* txt);
+  void SetNum(Pmap pp, Double_t num);
+  void SetChk(Pmap pp, Bool_t num);
+  void SetCombo(Pmap pp, Int_t num);
+  void SetTxt(Pmap pp, const char* txt);
   bool Chk_all(int all, int i);
   void DoNum();
   void DoAct(int id, int intbool, Double_t fnum);
@@ -183,7 +188,7 @@ public:
   void ColorLine(int line, ULong_t col);
   void CopyParLine(int sel, int line);
   void CopyField(int from, int to);
-  void DoColor(pmap* pp, Float_t val);
+  void DoColor(Pmap* pp, Float_t val);
   void UpdateField(int nn);
   void Update();
   void EnableField(int nn, bool state);
@@ -222,6 +227,68 @@ public:
   // void Rebuild();
 
   ClassDef(ParDlg, 0)
+};
+
+//-----------------------------------------------
+class ChanParDlg: public ParDlg {
+
+public:
+  // TGTextEntry *fStat2[MAX_CH+1];
+  // TGTextEntry *fStat3[MAX_CH+1];
+  // TGTextEntry *fStatBad[MAX_CH+1];
+
+  TGHorizontal3DLine *hsep[3];
+  TGHorizontalFrame *head_frame[3];
+
+  TGHorizontalFrame *hforce[3];
+  TGCheckButton *fforce;
+
+  //TGCheckButton *fchkSoft;
+  //TGCheckButton *fchkHard;
+
+  TGCanvas* fCnv[3];
+
+  TGCanvas* fCanvas0;
+  TGCanvas* fCanvas2;
+  TGHSplitter *hsplitter;
+  TGCompositeFrame* fcont2;
+
+  TGGroupFrame* cGrp;
+  //TGLabel *cLabel;
+  TrigFrame* tTrig;
+
+  TGVScrollBar* vscroll;
+
+  Int_t oldscroll;
+  Int_t nrows; //actual nrows calculated from opt.Nrows and opt.Nchan
+
+
+public:
+  ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
+  virtual ~ChanParDlg() {};
+
+  void Build();
+  void BuildColumns(int jj);
+  void AddColumn(int jj, int kk, int ii, P_Def pdef,
+		 int wd, int daq, double min, double max, const char* pname,
+		 void* apar=0, void* apar2=0, UInt_t cmd=1, int s2=0);
+  //void AddHeader();
+  void AddChan(int j, int kk, int wd, int all, TGHorizontalFrame *hfr,
+	       UShort_t off=0);
+  void AddCombo(int j, int wd, int all, TGHorizontalFrame *hfr);
+  void AddChkPar(int kk, int wd, int all, int daq, TGHorizontalFrame *hfr, void* apar, UShort_t off=0, UInt_t cmd=1, void* apar2=0, UChar_t step=1);
+  void AddNumPar(int i, int kk, int wd, int all, int daq, P_Def pdef, double min, double max, TGHorizontalFrame *hfr, const char* name, void* apar, UShort_t off=0, UInt_t cmd=1, void* apar2=0);
+  void AddStatDaq(int jj,int kk,int wd,
+		  void* apar,TGHorizontalFrame* hfr);
+  // void AddStatDaq(int kk, int wd, TGTextEntry* &fStat,
+  // 		   TGHorizontalFrame* hfr);
+  //void AddChCombo(int i, int &id, int &kk, int &all);
+  void UpdateStatus(int rst=0);
+  void DoScroll(int pos);
+  void HandleMouseWheel(Event_t *event);
+  void Update();
+
+  ClassDef(ChanParDlg, 0)
 };
 
 //-----------------------------------------------
@@ -331,69 +398,6 @@ public:
   // void ClearLines();
 
   ClassDef(ChnParDlg, 0)
-};
-
-//-----------------------------------------------
-class ChanParDlg: public ParDlg {
-
-public:
-  TGTextEntry *fStat2[MAX_CH+1];
-  TGTextEntry *fStat3[MAX_CH+1];
-  TGTextEntry *fStatBad[MAX_CH+1];
-
-  TGHorizontal3DLine *hsep[3];
-  TGHorizontalFrame *head_frame[3];
-
-  TGHorizontalFrame *hforce[3];
-  TGCheckButton *fforce;
-
-  //TGCheckButton *fchkSoft;
-  //TGCheckButton *fchkHard;
-
-  TGCanvas* fCnv[3];
-
-  TGCanvas* fCanvas0;
-  TGCanvas* fCanvas2;
-  TGHSplitter *hsplitter;
-  TGCompositeFrame* fcont2;
-
-  TGGroupFrame* cGrp;
-  //TGLabel *cLabel;
-  TrigFrame* tTrig;
-
-  TGVScrollBar* vscroll;
-
-  Int_t oldscroll;
-
-
-public:
-  ChanParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~ChanParDlg() {};
-
-  void Build();
-  void BuildColumns(int jj, int* wsize);
-  void AddColumn(int jj, int kk, int ii, int* wsize, P_Def pdef,
-		 int wd, int daq, double min, double max, const char* pname,
-		 void* apar=0, void* apar2=0, UInt_t cmd=1, int d2=0);
-  //void AddHeader();
-  void AddChkPar(int kk, int wd, int all, int daq, TGHorizontalFrame *cframe,
-		 void* apar, void* apar2=0, UInt_t cmd=1);
-  void AddNumPar(int i, int kk, int wd, int all, int daq, P_Def pdef, double min, double max, TGHorizontalFrame *hframe1, const char* name, void* apar, void* apar2=0, UInt_t cmd=1);
-
-
-
-
-  void AddStatDaq(int kk, int wd, TGTextEntry* &fStat,
-		   TGHorizontalFrame* hfr);
-  void AddChan(int j, int kk, int wd, int all, TGHorizontalFrame *hfr);
-  void AddCombo(int j, int wd, int all, TGHorizontalFrame *hfr);
-  //void AddChCombo(int i, int &id, int &kk, int &all);
-  void UpdateStatus(int rst=0);
-  //void DoScroll();
-  void HandleMouseWheel(Event_t *event);
-  void Update();
-
-  ClassDef(ChanParDlg, 0)
 };
 
 //-----------------------------------------------

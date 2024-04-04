@@ -2829,9 +2829,11 @@ void CRS::DoReset(int rst) {
     npulses=0;
     nbuffers=0;
     memset(npulses2,0,sizeof(npulses2));
+    memset(npulses2o,0,sizeof(npulses2));
     memset(npulses3o,0,sizeof(npulses3o));
     memset(Tst3o,0,sizeof(Tst3o));
-    memset(rate3,0,sizeof(rate3));
+    memset(rate_soft,0,sizeof(rate_soft));
+    memset(rate_hard,0,sizeof(rate_hard));
     memset(npulses_bad,0,sizeof(npulses_bad));
     memset(errors,0,sizeof(errors));
 
@@ -2842,6 +2844,7 @@ void CRS::DoReset(int rst) {
 
     if (daqpar) {
       daqpar->UpdateStatus(rst);
+      chanpar->UpdateStatus(rst);
       //daqpar->ResetStatus();
     }
   }
@@ -3727,6 +3730,7 @@ void CRS::Show(bool force) {
       // }
     }
     daqpar->UpdateStatus();
+    chanpar->UpdateStatus();
     //myM->UpdateStatus();
     ErrFrm->ErrUpdate();
 #ifdef TIMES
@@ -5058,7 +5062,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
       double dt = (ipls.Tstamp64 - Tst3o[ipls.Chan])*1e-9*opt.Period;
       if (dt) {
-	rate3[ipls.Chan] = (ipls.Counter - npulses3o[ipls.Chan])/dt;
+	rate_hard[ipls.Chan] = (ipls.Counter - npulses3o[ipls.Chan])/dt;
       }
       Tst3o[ipls.Chan] = ipls.Tstamp64;
       npulses3o[ipls.Chan] = ipls.Counter;
