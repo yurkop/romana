@@ -197,10 +197,6 @@ public:
   void DaqEnable();
   //void SelectEnabled(bool state, const char* text);
   TGFrame *FindWidget(void* p);
-  void AddClab(TGCompositeFrame* cfr, TGTextEntry* &clb,
-	       int i, const char* txt, int &kk, int t);
-  void AddChname(TGCompositeFrame* cfr, int i7, int &kk, int c);
-
 
   void Check_opt(TGHorizontalFrame *hfr1, int width, void* x1,
 		 const char* tip1, UInt_t cmd1, const char* cname="");
@@ -374,93 +370,6 @@ public:
   void Update();
 
   ClassDef(HistParDlg, 0)
-};
-
-//-----------------------------------------------
-class ChnParDlg: public ParDlg {
-
-public:
-  TGCanvas* fCanvas0;
-  TGCanvas* fCanvas2;
-  TGHSplitter *hsplitter;
-  TGCompositeFrame* fcont2;
-  TGHorizontalFrame *head_frame;
-
-public:
-  ChnParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~ChnParDlg() {};
-
-  void AddChCombo(int i, int &id, int &kk, int &all);
-  void AddChkPar(int &kk, TGHorizontalFrame *hfr,
-		 Bool_t* dat, int all, const char* ttip, UInt_t cmd=0);
-  void AddNumChan(int i, int kk, int all, TGHorizontalFrame *hfr,
-    void* apar, double min, double max, P_Def ptype, UInt_t cmd=0);
-  // void ClearLines();
-
-  ClassDef(ChnParDlg, 0)
-};
-
-//-----------------------------------------------
-class DaqParDlg: public ChnParDlg {
-
-public:
-  TGTextEntry *fStat2[MAX_CH+1];
-  TGTextEntry *fStat3[MAX_CH+1];
-  TGTextEntry *fStatBad[MAX_CH+1];
-
-  //TGCheckButton *fchkSoft;
-  //TGCheckButton *fchkHard;
-
-  TGGroupFrame* cGrp;
-  //TGLabel *cLabel;
-  TrigFrame* tTrig;
-
-public:
-  DaqParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~DaqParDlg() {};
-
-  void Build();
-  void AddHeader();
-  void AddLine_daq(int i, TGCompositeFrame* fcont1);
-  void AddNumDaq(int i, int kk, int all, TGHorizontalFrame *hframe1,
-    const char* name, void* apar, void* apar2=0, UInt_t cmd=1);
-  void AddStat_daq(TGTextEntry* &fStat, TGHorizontalFrame* &cframe,
-		   const char* ttip, int &kk);
-  void UpdateStatus(int rst=0);
-  void Update();
-
-  ClassDef(DaqParDlg, 0)
-};
-
-//-----------------------------------------------
-class AnaParDlg: public ChnParDlg {
-
-public:
-  AnaParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~AnaParDlg() {};
-
-  void Build();
-
-  void AddHeader();
-  void AddLine_Ana(int i, TGCompositeFrame* fcont1);
-  //void DoChanNum();
-
-  ClassDef(AnaParDlg, 0)
-};
-
-//-----------------------------------------------
-class PikParDlg: public ChnParDlg {
-
-public:
-  PikParDlg(const TGWindow *p,UInt_t w,UInt_t h);
-  virtual ~PikParDlg() {};
-
-  void Build();
-
-  void AddHeader();
-  void AddLine_Pik(int i, TGCompositeFrame* fcont1);
-
-  ClassDef(PikParDlg, 0)
 };
 
 //--------------------------------------

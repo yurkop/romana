@@ -82,9 +82,6 @@ HClass* hcl=0;
 ParParDlg *parpar=0;
 HistParDlg *histpar=0;
 ChanParDlg *chanpar=0;
-DaqParDlg *daqpar=0;
-AnaParDlg *anapar=0;
-PikParDlg *pikpar=0;
 
 Pixel_t fWhite;
 Pixel_t fGrey;
@@ -220,35 +217,7 @@ void debug_mess(bool cond, const char* mess, double par1, int par2) {
     cout << endl;
   }
 }
-/*
-void *run_build(void *ptr)
-{
-  long nr = (long) ptr;
-  //prnt("ssds;",BYEL,"nr=",nr,RST);
 
-  switch (nr) {
-  case 1:
-    prnt("ssds;",BMAG,"nr1=",nr,RST);
-    daqpar->Build();
-    prnt("ssds;",BMAG,"nr2=",nr,RST);
-    daqpar->Update();
-    prnt("ssds;",BMAG,"endnr=",nr,RST);
-    break;
-  case 2:
-    anapar->Build();
-    anapar->Update();
-    prnt("ssds;",BMAG,"endnr=",nr,RST);
-    break;
-  case 3:
-    pikpar->Build();
-    pikpar->Update();
-    prnt("ssds;",BMAG,"endnr=",nr,RST);
-    break;
-  }
-
-  return 0;
-}
-*/
 void print_var(int tp, TDataMember *dm, TString vname, TString memname, int len=0, int len2=0) {
   const char* dmname = "--";
   const char* col=BGRN;
@@ -2405,7 +2374,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   }
 
   if (crs->Fmode!=1) { //no CRS present
-    daqpar->AllEnabled(false);
+    //daqpar->AllEnabled(false);
     EnableBut(fGr1,0);
 
     //fStart->SetEnabled(false);
@@ -2536,47 +2505,7 @@ MainFrame::~MainFrame() {
   delete fTimer;
 }
 
-/*
-  void MainFrame::Rebuild() {
-
-  //cout << "main::Rebuild: " << endl;
-
-  EvtFrm->Rebuild();
-
-
-  //daqpar->Rebuild();
-  //anapar->Rebuild();
-  //pikpar->Rebuild();
-
-  tabfr[2]->RemoveAll();
-  delete anapar;
-  cout << "anapar2: " << anapar << " " << anapar->pmax << endl;
-  // delete tabfr[2];
-  // cout << "anapar1: " << anapar << " " << anapar->pmax << endl;
-  // delete anapar;
-  // anapar = new AnaParDlg(tabfr[2], 600, 500);
-  // anapar->Build();
-  //tabfr[2]->AddFrame(anapar, LayEE2);
-
-
-  Resize(GetDefaultSize());
-  MapSubwindows();
-  Layout();
-
-  //cout << "main::Rebuild2: " << endl;
-  }
-*/
-
 void MainFrame::Rebuild() {
-
-  // cout << "main::Rebuild1: " << endl;
-
-  //tabfr[2]->GetList()->ls();
-
-  // for (int i=0;i<7;i++) {
-  //   tabfr[i]->RemoveAll();
-  // }
-	
 
   std::vector<TGCompositeFrame*>::iterator it;
   for (it=tabfr.begin();it!=tabfr.end();++it) {
@@ -2586,32 +2515,6 @@ void MainFrame::Rebuild() {
   }
   tabfr.clear();
 
-  /*
-    delete parpar;
-    delete daqpar;
-    delete anapar;
-    delete pikpar;
-    delete EvtFrm;
-    delete HiFrm;
-    delete ErrFrm;
-  */
-	
-  //tabfr[2]->RemoveAll();
-  //delete anapar;
-  //anapar = new AnaParDlg(tabfr[2], 600, 500);
-  //anapar->Build();
-  //tabfr[2]->AddFrame(anapar, LayEE2);
-  //ntab++;
-
-
-  //anapar->ClearLines();
-  //anapar->Update();
-
-  // cout << "main::Rebuild2: " << anapar << endl;
-
-  //tabfr[2]->GetList()->ls();
-
-  //debug=99;
   MakeTabs(true);
 
   Resize(GetDefaultSize());
@@ -2643,26 +2546,6 @@ void MainFrame::MakeTabs(bool reb) {
   ntab++;
   //YKWheel
 
-  //cout << "tab2: " << ntab << endl;
-  tb = fTab->AddTab("DAQ");
-  tabfr.push_back(tb);
-  daqpar = new DaqParDlg(tb, 1, MAIN_HEIGHT);
-  tb->AddFrame(daqpar, LayEE2);
-  ntab++;
-  //cout << "tab3: " << ntab << endl;
-
-  tb = fTab->AddTab("Analysis");
-  tabfr.push_back(tb);
-  anapar = new AnaParDlg(tb, 1, MAIN_HEIGHT);
-  tb->AddFrame(anapar, LayEE2);
-  ntab++;
-  //cout << "tab3: " << ntab << endl;
-
-  tb = fTab->AddTab("Peaks");
-  tabfr.push_back(tb);
-  pikpar = new PikParDlg(tb, 1, MAIN_HEIGHT);
-  tb->AddFrame(pikpar, LayEE2);
-  ntab++;
   //cout << "tab3: " << ntab << endl;
 
   tb = fTab->AddTab("Events");
@@ -2670,7 +2553,7 @@ void MainFrame::MakeTabs(bool reb) {
   EvtFrm = new EventFrame(tb, MAIN_WIDTH, MAIN_HEIGHT,ntab);
   tb->AddFrame(EvtFrm, LayEE1);
   ntab++;
-  //cout << "tab3: " << ntab << endl;
+  //cout << "tab2: " << ntab << endl;
 
   tb = fTab->AddTab("Histograms");
   tabfr.push_back(tb);
@@ -2685,14 +2568,14 @@ void MainFrame::MakeTabs(bool reb) {
   HiFrm = new HistFrame(tb, 1, MAIN_HEIGHT,ntab);
   tb->AddFrame(HiFrm, LayEE1);
   ntab++;
-  //cout << "tab3: " << ntab << endl;
+  //cout << "tab4: " << ntab << endl;
 
   tb = fTab->AddTab("Errors");
   tabfr.push_back(tb);
   ErrFrm = new ErrFrame(tb, 250, MAIN_HEIGHT);
   tb->AddFrame(ErrFrm, LayEE1);
   ntab++;
-  //cout << "tab4: " << ntab << endl;
+  //cout << "tab5: " << ntab << endl;
 
 
   // prtime("tab01",1,BGRN);
@@ -2709,15 +2592,7 @@ void MainFrame::MakeTabs(bool reb) {
 
 
   chanpar->Build();
-  daqpar->Build();
-
   chanpar->Update();
-  daqpar->Update();
-
-  anapar->Build();
-  anapar->Update();
-  pikpar->Build();
-  pikpar->Update();
 
   //prtime("tab04",1,BGRN);
   histpar->Update();
@@ -2741,6 +2616,7 @@ void MainFrame::MakeTabs(bool reb) {
   // MapSubwindows();
   // Resize(GetDefaultSize());
   // MapWindow();
+  //cout << "tabs11: " << endl;
 }
 
 void MainFrame::SetTitle(char* fname) {
@@ -2890,9 +2766,6 @@ void MainFrame::DoOpen(Int_t popt) {
 
     parpar->Update();
     chanpar->Update();
-    daqpar->Update();
-    anapar->Update();
-    pikpar->Update();
 
   }
 
@@ -2917,18 +2790,14 @@ void MainFrame::DoClose() {
   // }
 
   myM->SetTitle((char*)"");
-  daqpar->AllEnabled(true);
+  //daqpar->AllEnabled(true);
 
   parpar->Update();
   chanpar->Update();
-  daqpar->Update();
-  anapar->Update();
-  pikpar->Update();
 
 #ifdef CYUSB
   crs->Detect_device();
   if (crs->Fmode==1) { //CRS is present
-    //daqpar->AllEnabled(true);
     fStart->SetEnabled(true);
     fContinue->SetEnabled(true);
     //fReset->SetEnabled(true);
@@ -3059,15 +2928,6 @@ void MainFrame::DoNbuf() {
 
 }
 
-// void MainFrame::ParLock() {
-//   cout << "ParLock: " << endl;
-//   daqpar->SelectEnabled(false,"pre");
-// }
-
-// void MainFrame::ParUnLock() {
-//   cout << "ParUnLock: " << endl;
-// }
-
 void MainFrame::DoRWinit(EFileDialogMode nn) {
 
   if (!crs->b_stop) return;
@@ -3106,9 +2966,6 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 
       parpar->Update();
       chanpar->Update();
-      daqpar->Update();
-      anapar->Update();
-      pikpar->Update();
 
     }
     else { //Save pars
@@ -3168,9 +3025,6 @@ void MainFrame::DoReadRoot() {
 
     parpar->Update();
     chanpar->Update();
-    daqpar->Update();
-    anapar->Update();
-    pikpar->Update();
     HiFrm->Update();
 
     //nevent=opt.Nevt;
@@ -3286,9 +3140,6 @@ void MainFrame::DoReset() {
   //HiFrm->HiReset();
   parpar->Update();
   chanpar->Update();
-  daqpar->Update();
-  anapar->Update();
-  pikpar->Update();
 
   UpdateTimer(1);
   //UpdateStatus(1);
@@ -3674,18 +3525,6 @@ void MainFrame::DoTab(Int_t num) {
   else if (name.EqualTo("Channels",TString::kIgnoreCase)) {
     //cout << "DoTab2: " << name << endl;
     chanpar->Update();
-  }
-  else if (name.EqualTo("DAQ",TString::kIgnoreCase)) {
-    //cout << "DoTab2: " << name << endl;
-    daqpar->Update();
-  }
-  else if (name.EqualTo("Analysis",TString::kIgnoreCase)) {
-    //cout << "DoTab3: " << name << endl;
-    anapar->Update();
-  }
-  else if (name.EqualTo("Peaks",TString::kIgnoreCase)) {
-    //cout << "DoTab3: Peaks: " << name << endl;
-    pikpar->Update();
   }
   else if (name.EqualTo("Events",TString::kIgnoreCase)) {
     parpar->Update();

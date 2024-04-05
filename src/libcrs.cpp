@@ -71,10 +71,7 @@ extern ErrFrame* ErrFrm;
 extern HClass* hcl;
 extern ParParDlg *parpar;
 extern ChanParDlg *chanpar;
-extern DaqParDlg *daqpar;
 extern HistParDlg *histpar;
-extern AnaParDlg *anapar;
-extern PikParDlg *pikpar;
 
 extern int debug; // for printing debug messages
 
@@ -2621,9 +2618,6 @@ int CRS::DoStartStop(int rst) {
     if (!batch) {
       parpar->Update();
       chanpar->Update();
-      daqpar->Update();
-      anapar->Update();
-      pikpar->Update();
 
       EvtFrm->Clear();
       EvtFrm->Pevents = &EvtFrm->Tevents;
@@ -2842,10 +2836,8 @@ void CRS::DoReset(int rst) {
       DoFopen(NULL,0,0); //reopen file; don't read cpar & opt
     juststarted=true;
 
-    if (daqpar) {
-      daqpar->UpdateStatus(rst);
+    if (chanpar) {
       chanpar->UpdateStatus(rst);
-      //daqpar->ResetStatus();
     }
   }
 
@@ -2892,7 +2884,7 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
     strcpy(mainname,Fname);
     if (myM) {
       myM->SetTitle(Fname);
-      daqpar->AllEnabled(false);
+      //daqpar->AllEnabled(false);
     }
 
     return 0;
@@ -2989,7 +2981,7 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
   strcpy(mainname,Fname);
   if (myM) {
     myM->SetTitle(Fname);
-    daqpar->AllEnabled(false);
+    //daqpar->AllEnabled(false);
   }
 
   prnt("ssssds;",BGRN,"File: ",Fname,"  Module: ",module,RST);
@@ -3729,7 +3721,6 @@ void CRS::Show(bool force) {
       // 	}
       // }
     }
-    daqpar->UpdateStatus();
     chanpar->UpdateStatus();
     //myM->UpdateStatus();
     ErrFrm->ErrUpdate();

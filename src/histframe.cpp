@@ -666,7 +666,6 @@ void HistFrame::Make_Ltree() {
   hcl->dir_list->SetName("dir_list");
   hcl->dir_list->SetOwner(true);
 
-
   iMAIN = Item_Ltree(iroot, "MAIN",0,0,0);
   for (int cc=1;cc<opt.ncuts;cc++) {
     if (opt.pcuts[cc]) {
@@ -2258,7 +2257,7 @@ void HistFrame::HiReset()
 void HistFrame::Update()
 {
   //cout << "in_gcut: " << in_gcut << " " << opt.b_logy << " " << chklog << endl;
-  //cout << "Hifrm::Update:" << endl;
+  //cout << "Hifrm::Update: " << opt.b_stack << endl;
 
   Hmut.Lock();
 
