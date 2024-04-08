@@ -2602,6 +2602,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   //prtime("tab06",1,BGRN);
   local_nch=opt.Nchan;
+  local_nrows=opt.Nrows;
 
   // tr1->Join();
   // tr2->Join();
@@ -3122,7 +3123,7 @@ void MainFrame::DoReset() {
   crs->DoReset();
   //cout << "Reset2: " << endl;
 
-  if (local_nch!=opt.Nchan) {
+  if (local_nch!=opt.Nchan || local_nrows!=opt.Nrows) {
     // cout << "Rebuild: " << endl;
     //for (int k=0;k<100000;k++) {
     //debug=99;
@@ -3134,15 +3135,19 @@ void MainFrame::DoReset() {
     //MapWindow();  
     //Layout();
     local_nch=opt.Nchan;
+    local_nrows=opt.Nrows;
   }
 
   ErrFrm->Reset();
-  //HiFrm->HiReset();
+  if (crs->nchan_on != crs->CountChan()) {
+    HiFrm->HiReset();
+  }
   parpar->Update();
   chanpar->Update();
 
   UpdateTimer(1);
   //UpdateStatus(1);
+
 }
 
 void MainFrame::UpdateTimer(int rst) {

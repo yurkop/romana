@@ -2349,11 +2349,26 @@ void HistFrame::DrawStack() {
   // for (int i=0;i<10;i++) {
   //   cout << "adj: " << adj[i][1] << endl;
   // }
+  TCanvas *cv=fEc->GetCanvas();
+  cv->Clear();
+  //cv->Divide(1,1);
+  //cv->SetLogy(opt.b_logy);
+
+
   std::vector<Hdef*> def_list;
   std::vector<Hdef*>::iterator it;
  
   Make_Hmap_ChkList();
 
+  if (hmap_chklist->GetSize() > 16) {
+    char ss[200];
+    sprintf(ss,"Number of histograms is too large for Stack: %d (max 16)",hmap_chklist->GetSize());
+    ttxt.DrawTextNDC(0.5,0.5,ss);
+    //prnt("sss;",BRED,ss, RST);
+    cv->Update();
+    return;
+  }
+  
   double x1=1e99,x2=-1e99,y1=1e99,y2=-1e99;
 
   int cc=0;
@@ -2402,8 +2417,6 @@ void HistFrame::DrawStack() {
   } //while ( (obj=(TObject*)next2()) )
 
   
-  TCanvas *cv=fEc->GetCanvas();
-  cv->Clear();
   cv->Divide(1,1);
   cv->SetLogy(opt.b_logy);
 

@@ -44,11 +44,10 @@ struct Pmap {
   void* data; //base address of the parameter
   void* data2; //base address of the second (parallel) parameter
   UInt_t cmd; //опции (биты)
-  UShort_t off; //bits  0..11: offset to the base address in units of step
-                //bits 12..15: step in units of _type_
+  UShort_t off; // offset to the base address in units of step
   P_Def type; //p_fnum p_inum p_chk p_cmb p_txt p_but p_chn p_stat
   UChar_t all; //1 - all/ALL/* parameters; >1 - channel type
-  UChar_t step;
+  UChar_t step; //step in units of _type_size
 
   //cmd bits:
   //0x1: (bit0) 1: start/stop DAQ
@@ -129,7 +128,7 @@ public:
 
   //int jtrig;
   //bool notbuilt;
-  int pmax; //максимальный канал (вместо MAX_CH), который записан в параметрах
+  //int pmax; //максимальный канал (вместо MAX_CH), который записан в параметрах
 
   TGDockableFrame        *fDock;
 
@@ -138,7 +137,7 @@ protected:
   ULong_t tcol[MAX_TP+3]; //MAX_TP, other, copy, swap
   TGComboBox* fCombo[MAX_CH+1]; //MAX_CH, all
   //TGTextEntry* cname[MAX_TP];
-  TGHorizontalFrame *cframe[MAX_CHTP];
+  //TGHorizontalFrame *cframe[MAX_CHTP];
   TGHorizontalFrame *hparl[3][MAX_CHTP]; // горизонтальные фреймы в chanpar; должно заменить cframe
   TGTextEntry* clab[MAX_CHTP]; //содержит номер канала
   TGTextButton* cbut; // кнопка ALL/all/*
@@ -166,13 +165,13 @@ public:
   void DoMap(TGFrame *f, void *d, P_Def t, int all, UInt_t cmd=0, void *d2=0,
 	     UShort_t off=0, UChar_t step=1);
 
-  void SetNum(Pmap pp, Double_t num);
-  void SetChk(Pmap pp, Bool_t num);
-  void SetCombo(Pmap pp, Int_t num);
+  void SetNum(Pmap pp, UShort_t off, Double_t num);
+  void SetChk(Pmap pp, UShort_t off, Bool_t num);
+  void SetCombo(Pmap pp, UShort_t off, Int_t num);
   void SetTxt(Pmap pp, const char* txt);
   bool Chk_all(int all, int i);
   void DoNum();
-  void DoAct(int id, int intbool, Double_t fnum);
+  void DoAct(int id, UShort_t off, Double_t fnum);
   void DoDaqNum();
   void DoChk(Bool_t on);
   void DoDaqChk(Bool_t on);
@@ -186,10 +185,11 @@ public:
   void DoOpen();
   void DoAll();
   void ColorLine(int line, ULong_t col);
-  void CopyParLine(int sel, int line);
-  void CopyField(int from, int to);
+  void CopyParLine(int sel, int index, int line);
+  void CopyField(Pmap* pp, int from, int to);
   void DoColor(Pmap* pp, Float_t val);
   void UpdateField(int nn);
+  void UpdateColumn(int id);
   void Update();
   void EnableField(int nn, bool state);
   void AllEnabled(bool state);

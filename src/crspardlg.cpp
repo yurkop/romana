@@ -109,10 +109,10 @@ const int NFLD = ptip.size();
 
 
 
-char ttip_g[NGRP][100];
+//char ttip_g[NGRP][100];
 
-int* tlen7;
-char** ttip7;
+//int* tlen7;
+//char** ttip7;
 
 
 //extern Common* com;
@@ -168,7 +168,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //SetCleanup(kDeepCleanup);
   //jtrig=0;
   //notbuilt=true;
-  pmax=0;
+  //pmax=0;
 
   fDock = new TGDockableFrame(this);
 
@@ -203,78 +203,31 @@ void ParDlg::DoMap(TGFrame* f, void* d, P_Def t, int all, UInt_t cmd, void* d2, 
 }
 
 bool ParDlg::Chk_all(int all, int i) {
-  if (i>=pmax) i=i-pmax+MAX_CH;
-  if (all==0) { //no action
-    return false;
-  }
-  else if (all==1) { //all
+  // проверяет состояние opt.chkall
+
+  if (all==1) { //all
     if (opt.chkall==0) { // * (star)
-      return (i<pmax) && opt.star[i];
+      return (i<opt.Nchan) && opt.star[i];
     }
     else if (opt.chkall==1) { //all
-      return i<pmax;
+      return i<opt.Nchan;
     }
     else { //ALL
       return true;
     }
   }
-  else { //chtype
-    return i<pmax && opt.chtype[i]==all-1;
+  else if (all>1) { //chtype
+    return i<opt.Nchan && opt.chtype[i]==all-1;
   }
+  else
+    return false;
 }
 
-void ParDlg::SetNum(Pmap pp, Double_t num) {
-  if (pp.type==p_fnum) {
-    *((Float_t*)pp.data+pp.off) = num;
-    if (pp.data2) *((Float_t*)pp.data2+pp.off) = num;
-  }
-  else if (pp.type==p_inum) {
-    *((Int_t*)pp.data+pp.off) = num;
-    if (pp.data2) *((Int_t*)pp.data2+pp.off) = num;
-  }
-  else {
-    cout << "(SetNum) Wrong type: " << pp.type << endl;
-  }
-
-  // cout << "SetNum: " << num << " "
-  //      << *(Int_t*)pp.data << " "
-  //      << *((Int_t*)pp.data+pp.off) << " "
-  //      << pp.off << endl;
-
-}
-
-void ParDlg::DoNum() {
-
-  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
-  Int_t id = te->WidgetId();
-
-  Pmap pp = Plist[id-1];
-
-  SetNum(pp,te->GetNumber());
-  //int pos = te->GetCursorPosition();
-  //UpdateField(id-1);
-
-  if (pp.all>0) {
-    if (nfld) {
-      int kk = (id-1)%nfld; //column number
-      int ll = (id-1)/nfld; //line number
-      for (int i=0;i<pmax+MAX_TP+1;i++) { //pmax+all+MAX_TP
-	if (i!=ll && Chk_all(pp.all,i)) {
-	  Pmap p2 = Plist[i*nfld+kk];
-	  SetNum(p2,te->GetNumber());
-	  UpdateField(i*nfld+kk);
-	}
-      }
-    }
-  }
-
-  //te->SetCursorPosition(pos);
-}
-
-void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
-
+void ParDlg::DoAct(int id, UShort_t off, Double_t fnum) {
   Pmap* pp = &Plist[id-1];
   int act = (pp->cmd>>4)&0xF;
+
+  //cout << "DoAct: " << act << " " << id << " " << pp->off << " " << off << endl;
 
   switch (act) {
   case 1:
@@ -297,7 +250,6 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
   case 4:
     if (nfld && (crs->module==22)) {
       int ll = (id-1)/nfld; //line number
-      cout << "DoAct: " << id << " " << nfld << " " << pmax << " " << ll << " " << &cpar.Trg[ll] << " " << pp->data << endl;
       if (ll<pmax) {
 	if (&cpar.Drv[ll]==pp->data) { //Drv
 	  if (cpar.Drv[ll])
@@ -317,31 +269,35 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
     }
     break;
     */
-  case 5:
-    if (nfld && (crs->module>=41 && crs->module<=70)) {
-      int kk = (id-1)%nfld; //column number
-      int ll = (id-1)/nfld; //line number
-      int l4 = ll/4*4; //group4
-      for (int i=0; i<4;i++) {
-	Pmap p2 = Plist[(l4+i)*nfld+kk];
-	if (intbool) {
-	  SetNum(p2,fnum);
+  case 5: //group4
+    // crs->module=41;
+    // cout << "act5: " << endl;
+
+    if (crs->module>=41 && crs->module<=70) {
+      int l4 = off/4*4; //group4
+
+      for (int i=l4;i<l4+4;i++) { //MAX_CH+MAX_TP+1
+	if (i<MAX_CH) {
+	  if (pp->type == p_chk)
+	    SetChk(*pp,i,fnum);
+	  else
+	    SetNum(*pp,i,fnum);
 	}
-	else {
-	  SetChk(p2,fnum);	
-	}
-	UpdateField((l4+i)*nfld+kk);
       }
+      UpdateColumn(id);
+      
     }
     break;
-  case 6: {
+  case 6: { //проверка Len кратно 3 или 4
+    //cout << "act6: " << endl;
+
     //int kk = (id-1)%nfld; //column number
     int ll = (id-1)/nfld; //line number
 
     int l2 = cpar.ChkLen(ll,crs->module);
     if (l2-cpar.Len[ll]==1)
       cpar.Len[ll]-=4;
-    //prnt("ss d ds;",BBLU,"DoAct:",cpar.Len[ll],l2,RST);
+    //prnt("ss d ds;",BBLU,"Act:",cpar.Len[ll],l2,RST);
 
     UpdateField(id-1);
 
@@ -372,6 +328,52 @@ void ParDlg::DoAct(int id, int intbool, Double_t fnum) {
 #endif
 }
 
+void ParDlg::SetNum(Pmap pp, UShort_t off, Double_t num) {
+  if (pp.type==p_fnum) {
+    *((Float_t*)pp.data+off) = num;
+    if (pp.data2) *((Float_t*)pp.data2+off) = num;
+  }
+  else if (pp.type==p_inum) {
+    *((Int_t*)pp.data+off) = num;
+    if (pp.data2) *((Int_t*)pp.data2+off) = num;
+  }
+  else {
+    cout << "(SetNum) Wrong type: " << pp.type << endl;
+  }
+
+  // cout << "SetNum: " << num << " "
+  //      << *(Int_t*)pp.data << " "
+  //      << *((Int_t*)pp.data+off) << " "
+  //      << off << endl;
+
+}
+
+void ParDlg::DoNum() {
+
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  Int_t id = te->WidgetId();
+
+  Pmap pp = Plist[id-1];
+
+  SetNum(pp,pp.off,te->GetNumber());
+  //int pos = te->GetCursorPosition();
+
+  if (pp.all>0) {
+    for (int i=0;i<MAX_CHTP;i++) { //MAX_CH+MAX_TP+1
+      if (Chk_all(pp.all,i)) {
+	SetNum(pp,i,te->GetNumber());
+	int act = (pp.cmd>>4)&0xF;
+	if (act)
+	  DoAct(id,i,te->GetNumber());
+      }
+    }
+
+    UpdateColumn(id);
+
+  }
+  //te->SetCursorPosition(pos);
+}
+
 void ParDlg::DoDaqNum() {
   //jtrig++;
   ParDlg::DoNum();
@@ -380,13 +382,14 @@ void ParDlg::DoDaqNum() {
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
   Int_t id = te->WidgetId();
 
-  DoAct(id,1,te->GetNumber());
+  DoAct(id,Plist[id-1].off,te->GetNumber());
 
 }
 
-void ParDlg::SetChk(Pmap pp, Bool_t num) {
+void ParDlg::SetChk(Pmap pp, UShort_t off, Bool_t num) {
+  //cout << "setchk: " << pp.off << " " << off << " " << (int) pp.step << endl;
   if (pp.type==p_chk) {
-    *((Bool_t*)pp.data+pp.off) = num;
+    *((Bool_t*)pp.data+off) = num;
   }
   else {
     cout << "(DoChk) Wrong type: " << (int) pp.type << endl;
@@ -398,20 +401,19 @@ void ParDlg::DoChk(Bool_t on) {
   Int_t id = ((TGCheckButton*) gTQSender)->WidgetId();
   Pmap pp = Plist[id-1];
 
-  SetChk(pp,on);
+  SetChk(pp,pp.off,on);
   UpdateField(id-1);
 
   if (pp.all>0) {
-    if (nfld) {
-      int kk = (id-1)%nfld;
-      for (int i=0;i<pmax+MAX_TP+1;i++) { //pmax+all+MAX_TP
-	if (Chk_all(pp.all,i)) {
-	  Pmap p2 = Plist[i*nfld+kk];
-	  SetChk(p2,on);
-	  UpdateField(i*nfld+kk);
-	}
+    for (int i=0;i<MAX_CHTP;i++) { //MAX_CH+MAX_TP+1
+      if (Chk_all(pp.all,i)) {
+	SetChk(pp,i*pp.step,on);
+	int act = (pp.cmd>>4)&0xF;
+	if (act)
+	  DoAct(id,i,on);
       }
     }
+    UpdateColumn(id);
   }
 
 }
@@ -424,7 +426,7 @@ void ParDlg::DoDaqChk(Bool_t on) {
   TGCheckButton *te = (TGCheckButton*) gTQSender;
   Int_t id = te->WidgetId();
 
-  DoAct(id,0,on);
+  DoAct(id,Plist[id-1].off,on);
 }
 
 void ParDlg::DoCheckHist(Bool_t on) {
@@ -472,15 +474,15 @@ void ParDlg::DoOpen() {
 
 }
 
-void ParDlg::SetCombo(Pmap pp, Int_t num) {
+void ParDlg::SetCombo(Pmap pp, UShort_t off, Int_t num) {
   if (pp.type==p_cmb) {
-    *((Int_t*)pp.data+pp.off) = num;
+    *((Int_t*)pp.data+off) = num;
   }
   else {
     cout << "(DoCombo) Wrong type: " << (int)pp.type << endl;
   }
-  // cout << "combo: " << num << " " << *((Int_t*)pp.data+pp.off)
-  //      << " " << pp.off << " " << opt.chtype[1]
+  // cout << "combo: " << num << " " << *((Int_t*)pp.data+off)
+  //      << " " << off << " " << opt.chtype[1]
   //      << endl;
 }
 
@@ -491,60 +493,49 @@ void ParDlg::DoCombo() {
 
   int sel = te->GetSelected(); //sel starts from 1
 
-  Pmap pp = Plist[id-1];
+  Pmap* pp = &Plist[id-1];
 
-  int nline = id/nfld;
+  int nline = id/nfld; // номер строки виджета
+  int index = pp->off; // index number of *data
 
-  // bool cp=false; //copy from group to channel
-  int old_type=opt.chtype[nline];
-	
-  if (nline < pmax) { //normal channels
+  // bool cp=false; //copy from chtype to channel
+  int old_type=opt.chtype[index];
 
-    if (sel==MAX_TP+2) { //sel==Copy+1
-      int old=*((Int_t*)pp.data+pp.off);
+  //prnt("ss d d d d ds;",BRED,"comb:",sel,index,nline,pp->off,pp->all,RST);
 
-      if (opt.chtype[nline]<=MAX_TP) { // normal groups
-	// inverse copy (channel to group)
-	CopyParLine(-old,nline);
+  if (pp->all==0) { //normal channels
+    if (sel!=MAX_TP+2) { // sel!=Copy -> normal sel
+      SetCombo(*pp,index,sel);
+      if (old_type!=MAX_TP+3) { //if old type is not swap, then copy one line
+	CopyParLine(sel,index,nline);
       }
-
-      te->Select(old,false);
-      return;
+      else { // swap -> just change background
+	ColorLine(nline,tcol[sel-1]);
+      }
     }
 
-    SetCombo(pp,sel);
-    if (old_type!=MAX_TP+3) { //if old type is not swap, then copy
-      CopyParLine(sel,nline);
+    else { //if (sel==MAX_TP+2) { // sel==Copy
+      if (old_type<=MAX_TP) { // normal chtype, exclude "other"
+	// inverse copy (channel to chtype)
+	CopyParLine(-old_type,index,nline);
+      }
+      te->Select(old_type,false);
     }
-    else { //if swap, just change background
-      //clab[nline]->ChangeBackground(tcol[sel-1]);
-      //cframe[nline]->ChangeBackground(tcol[sel-1]);
-      ColorLine(nline,tcol[sel-1]);
-    }
-
   }
-
   // "All" group
-  if (pp.all==1) {
-    if (nfld) { //nfld может быть нулем в самом начале, поэтому проверяем
-      int kk = (id-1)%nfld;
-      if (sel<=MAX_TP+1) { //normal group & other: select and copy line
-	for (int i=0;i<pmax+1;i++) { //каналы + строчка "all"
-	  if (Chk_all(pp.all,i)) {
-	    Pmap p2 = Plist[i*nfld+kk];
-	    SetCombo(p2,sel);
-	    TGComboBox *te2 = (TGComboBox*) p2.field;
-	    te2->Select(sel,false);
-
-	    //if (i!=pmax) {
-	    CopyParLine(sel,i);
-	    //}
-	  }
-	} //for
-      } // if sel<=MAX_TP
-    } //if nfld
+  else { //pp.all==1
+    SetCombo(*pp,index,sel);
+    if (sel<=MAX_TP+1) { //normal chtype & other: select and copy line
+      for (int i=0;i<MAX_CHTP;i++) { //MAX_CH+MAX_TP+1
+	if (Chk_all(pp->all,i)) {
+	  SetCombo(*pp,i,sel);
+	  CopyParLine(sel,i,nline);
+	}
+      } //for
+    } // if sel<=MAX_TP
   } //if pp.all
 
+  Update();
 }
 
 
@@ -566,7 +557,7 @@ void ParDlg::DoTxt() {
 
   SetTxt(pp,te->GetText());
   //UpdateField(id-1);
-  DoAct(id,1,0);
+  DoAct(id,Plist[id-1].off,0);
 }
 
 void ParDlg::DoOneType(int i) {
@@ -575,7 +566,7 @@ void ParDlg::DoOneType(int i) {
   if (i0==0) i0=-1;
 
   for (int j=0;j<=MAX_CH;j++) {
-    if (j<pmax || j==MAX_CH) {
+    if (j<chanpar->nrows || j==MAX_CH) {
       int sel = fCombo[j]->GetListBox()->GetSelected();
       fCombo[j]->RemoveEntry(i);
       fCombo[j]->InsertEntry(opt.ch_name[i-1],i,i0);
@@ -604,6 +595,7 @@ void ParDlg::DoAll() {
 }
 
 void ParDlg::ColorLine(int line, ULong_t col) {
+  // здесь line - номер строки виджета
   if (line==MAX_CH)
     cbut->ChangeBackground(col);
   else
@@ -614,80 +606,68 @@ void ParDlg::ColorLine(int line, ULong_t col) {
       hparl[i][line]->ChangeBackground(col);
 }
 
-void ParDlg::CopyParLine(int sel, int line) {
+void ParDlg::CopyParLine(int sel, int index, int line) {
+  //sel  -  индекс в комбо = chtype
+  //index - индекс переменной
+  //line - номер строки виджета
+
   if (sel<0) { //inverse copy - from current ch to group
-    for (int j=1;j<nfld;j++) {
-      int a = line*nfld+j;
-      int b = (pmax-sel)*nfld+j;
-      CopyField(a,b);
+    cout << "copyp: " << sel << " " << index << " " << line << endl;
+    for (int j=0;j<nfld;j++) {
+      Pmap* pp = &Plist[j];
+      int a = index*pp->step; //from
+      int b = (MAX_CH-sel)*pp->step; //to
+      CopyField(pp,a,b);
     }
-    //clab[line]->ChangeBackground(tcol[-sel-1]);
-    //cframe[line]->ChangeBackground(tcol[-sel-1]);
-    ColorLine(line,tcol[-sel-1]);
+    //ColorLine(line,tcol[-sel-1]);
   }
-  else if (sel<=MAX_TP) { //ZZ //normal copy from group to current ch
-    for (int j=1;j<nfld;j++) {
-      int b = line*nfld+j;
-      int a = (pmax+sel)*nfld+j;
-      CopyField(a,b);
+  else if (sel<=MAX_TP) { //normal copy from group to current ch
+    for (int j=0;j<nfld;j++) {
+      Pmap* pp = &Plist[j];
+      int b = index*pp->step; //to
+      int a = (MAX_CH+sel)*pp->step; //from
+      CopyField(pp,a,b);
     }
-    if (line<pmax) {
-      //clab[line]->ChangeBackground(tcol[sel-1]);
-      //cframe[line]->ChangeBackground(tcol[sel-1]);
+    if (line<chanpar->nrows) {
       ColorLine(line,tcol[sel-1]);
     }
   }
   else { //if (sel>MAX_TP) { //other,swap - just change color
-    if (line<pmax) {
-      //clab[line]->ChangeBackground(tcol[MAX_TP]);
-      //cframe[line]->ChangeBackground(tcol[MAX_TP]);
+    if (line<chanpar->nrows) {
       ColorLine(line,tcol[MAX_TP]);
     }
   }
 }
 
-void ParDlg::CopyField(int from, int to) {
+void ParDlg::CopyField(Pmap* pp, int from, int to) {
 
-  Pmap* p1 = &Plist[from];
-  Pmap* p2 = &Plist[to];
-
-  //skip combo chn txt
-  if (p1->type==p_cmb || p1->type==p_chn || p1->type==p_txt) {
+  //skip wrong types
+  if (pp->type!=p_inum && pp->type!=p_fnum && pp->type!=p_chk) {
     return;
   }
 
-  if (p1->type!=p2->type) {
-    cout << "CopyField bad type: " << from << " " << to << " "
-	 << (int) p1->type << " " << (int) p2->type << " " << endl;
-    return;
-  }
+  // if (pt1!=pt2) {
+  //   cout << "CopyField bad type: " << from << " " << to << " "
+  // 	 << (int) pt1 << " " << (int) pt2 << " " << endl;
+  //   return;
+  // }
 	
-  switch (p1->type) {
-  case p_inum: {
-    TGNumberEntryField *te = (TGNumberEntryField*) p2->field;
-    te->SetNumber(*((Int_t*)p1->data+p1->off));
-    *((Int_t*)p2->data+p2->off) = *((Int_t*)p1->data+p1->off);
-  }
+  switch (pp->type) {
+  case p_inum:
+    *((Int_t*)pp->data+to) = *((Int_t*)pp->data+from);
     break;
-  case p_fnum: {
-    TGNumberEntryField *te = (TGNumberEntryField*) p2->field;
-    te->SetNumber(*((Float_t*)p1->data+p1->off));
-    *((Float_t*)p2->data+p2->off) = *((Float_t*)p1->data+p1->off);
-  }
+  case p_fnum:
+    *((Float_t*)pp->data+to) = *((Float_t*)pp->data+from);
     break;
-  case p_chk: {
-    TGCheckButton *te = (TGCheckButton*) p2->field;
-    Bool_t bb = *((Bool_t*)p1->data+p1->off);
-    te->SetState((EButtonState) bb, true);
-    *((Bool_t*)p2->data+p2->off) = *((Bool_t*)p1->data+p1->off);
-  }
+  case p_chk:
+    *((Bool_t*)pp->data+to) = *((Bool_t*)pp->data+from);
     break;
-  case p_stat:
-    break;
+  // case p_stat:
+  //   break;
   default:
-    cout << "CopyField: unknown pp->type: " << p1->type << endl;
+    cout << "CopyField: unknown pp->type: " << pp->type << endl;
   } //switch  
-}
+} //CopyField
 
 void ParDlg::DoColor(Pmap* pp, Float_t val) {
   //change color, if needed
@@ -747,9 +727,9 @@ void ParDlg::UpdateField(int nn) {
     val=*dat;
     if (act==6) { //проверка Len кратно 3 или 4
       int ll = (nn)/nfld; //line number
-      if (ll<pmax) {
-	cpar.Len[ll]=cpar.ChkLen(ll,crs->module);
-      }
+      //if (ll<pmax) {
+      cpar.Len[ll]=cpar.ChkLen(ll,crs->module);
+      //}
     }
     if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {
       *dat = te->GetNumMax();
@@ -797,15 +777,8 @@ void ParDlg::UpdateField(int nn) {
     }
     te->Layout();
 
-    if (line<pmax) {
-      // if (line==1)
-      // 	cout << "clr1: " << endl;
-
-      //clab[line]->ChangeBackground(tcol[sel-1]);
-      //cframe[line]->ChangeBackground(tcol[sel-1]);
-
+    if (line<chanpar->nrows) {
       ColorLine(line,tcol[sel-1]);
-      //cout << "clr2: " << endl;
     }
     te->Select(sel,false);
   }
@@ -818,31 +791,22 @@ void ParDlg::UpdateField(int nn) {
   case p_but:
     if (pp->all) {
       TGTextButton *te = (TGTextButton*) pp->field;
-      //break; //YKYKYK
       if (opt.chkall==0) {
 	te->SetText("*");
-	//cbut->ChangeBackground(fMagenta);
-	//cframe[MAX_CH]->ChangeBackground(fMagenta);
 	ColorLine(MAX_CH,fMagenta);
       }
       else if (opt.chkall==1) {
 	te->SetText("all");
-	//cbut->ChangeBackground(fGreen);
-	//cframe[MAX_CH]->ChangeBackground(fGreen);
 	ColorLine(MAX_CH,fGreen);
       }
       else {
 	te->SetText("ALL");
-	//cbut->ChangeBackground(fBlue);
-	//cframe[MAX_CH]->ChangeBackground(fBlue);
 	ColorLine(MAX_CH,fBlue);
       }
     }
     break;
   case p_chn: {
     TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
-    //val=pp->off;
-    //cout << "p_chn: " << pp->off << endl;
     te->SetNumber(pp->off);
   }
     break;
@@ -861,7 +825,6 @@ void ParDlg::UpdateField(int nn) {
   default:
     cout << "UpdateField: unknown pp->type: " << pp->type << endl;
   } //switch
-
 
   DoColor(pp,val);
 
@@ -896,6 +859,15 @@ void ParDlg::UpdateField(int nn) {
 
   tq->BlockAllSignals(false);
 
+}
+
+void ParDlg::UpdateColumn(int id) {
+  int kk = (id-1)%nfld; //column number
+  int nn = chanpar->nrows+MAX_TP+1;
+  for (int i=0;i<nn;i++) {
+    // cout << "clmn: " << i*nfld+kk << endl;
+    UpdateField(i*nfld+kk);
+  }
 }
 
 void ParDlg::Update() {
@@ -988,7 +960,7 @@ void ParDlg::DaqEnable() {
 
 TGFrame *ParDlg::FindWidget(void* p) {
   //finds widget using address of asigned parameter
-  // !!!!!!! pp->off is not implemented
+  // !!!!!!! pp->off is not implemented here
   for (piter pp = Plist.begin(); pp != Plist.end(); pp++) {
     if (pp->data == p) {
       return pp->field;
@@ -2416,12 +2388,16 @@ void ChanParDlg::Build() {
     exit(-1);
   }
 
+  // for (int i=0;i<nfld;i++) {
+  //   cout << "Plist: " << i << " " << Plist[nfld+i].off << " " << (int) Plist[nfld+i].step << endl;
+  // }
+
   for (int i=0;i<3;i++) {
     int dw = hparl[i][0]->GetDefaultWidth();
     hsep[i]->SetWidth(dw);
   }
 
-  pmax=nrows;
+  //pmax=nrows;
 
   //устанавливаем размеры fCnv[]
   fCnv[0]->SetWidth(head_frame[0]->GetDefaultWidth()+2);
@@ -2564,22 +2540,8 @@ AddColumn(int jj, int kk, int ii, P_Def pdef,
   //jj - nr of line; kk - nr of column; ii - nr of frame
   //s2 = step*10 + first+1; - only for p_chk
 
-  // int sz;
-  // switch (pdef) {
-  // case p_fnum:
-  //   sz = sizeof(Float_t);
-  //   break;
-  // case p_inum:
-  //   sz = sizeof(Int_t);
-  //   break;
-  // case p_chk:
-  //   sz = sizeof(Bool_t);
-  //   break;
-  // default:
-  //   sz=0;
-  // }
-
   if (jj==-1) {
+
     //header
     TGTextEntry* tt=new TGTextEntry(head_frame[ii], pname);
     tt->SetWidth(wd);
@@ -2597,25 +2559,10 @@ AddColumn(int jj, int kk, int ii, P_Def pdef,
     return;
   if (jj>=MAX_CH) {
     all=jj-MAX_CH+1;
-    cmd = cmd & 1; //reset higher bits
+    //cmd = cmd & 1; //reset higher bits
   }
 
-  // int ad = jj*sz;
-  // if (d2) {
-  //   int aa = d2/10;
-  //   int bb = d2%10;
-  //   ad = (jj*aa+bb-1)*sz;
-  // }
-
-  // if (jj==0) {
-  //   cout << "column: " << pname << " " << pdef << " " << sz << endl;
-  //   if (sz!=sz2)
-  //     prnt("ss d ds;",BRED,"zz:",sz,sz2,RST);
-  // }
-
-  
   UShort_t off = jj;
-
   UChar_t step = 1;
   int first=0;
 
@@ -2626,23 +2573,12 @@ AddColumn(int jj, int kk, int ii, P_Def pdef,
   }
   char* ap = (char*)apar+first*sizeof(Bool_t);
 
-
-  // if (jj==0 && s2) {
-  //   cout << "step: " << jj << " " << pname << " " << apar << " "
-  // 	 << (void*) ap << " "
-  // 	 << (int) step << " " << first << " " << sizeof(Bool_t) << endl;
-  // }
-
   double amax = max;
   if (max<-1e101) {
     amax = 1023;
     if (cpar.crs_ch[jj]==1 || cpar.crs_ch[jj]==2)
       amax=511;
   }
-
-  //char* ap = (char*)apar+ad;
-  //char* ap2 = (char*)apar2;
-  //if (ap2) ap2 += ad;
 
   switch (pdef) {
   case p_chn:
@@ -2677,46 +2613,6 @@ AddColumn(int jj, int kk, int ii, P_Def pdef,
   }
 
 }
-/*
-void ChanParDlg::AddChan(int j, int kk, int wd, int all, TGHorizontalFrame *hfr, UShort_t off) {
-  char txt[255];
-
-  if (j<MAX_CH)
-    sprintf(txt,"%2d",j);
-  else {
-    sprintf(txt," ");
-  }
-
-  int id = Plist.size()+1;
-  if (j!=MAX_CH) { //clab: normal Nr or text
-    clab[j]=new TGTextEntry(hfr, txt, id);
-    clab[j]->SetHeight(PHeight);
-    clab[j]->SetWidth(wd);
-    clab[j]->SetState(false);
-    if (all) {
-      clab[j]->SetBackgroundColor(tcol[all-2]);
-    }
-    else {
-      clab[j]->SetToolTipText(ptip.at(kk));
-    }
-    DoMap(clab[j],0,p_txt,all,0);
-    hfr->AddFrame(clab[j],LayCC0a);//,LayCC0a);
-  }
-  else { //cbut
-    cbut_id = id;
-    cbut = new TGTextButton(hfr, "ZZ", cbut_id);
-    cbut->ChangeOptions(cbut->GetOptions()|kFixedWidth);
-    cbut->SetHeight(PHeight);
-    cbut->SetWidth(wd);
-    cbut->SetToolTipText("* - change selected channels;\nall - change all channels;\nALL - change all channels and groups.");
-    cbut->SetDown(false);
-    cbut->Connect("Clicked()", "ParDlg", this, "DoAll()");
-    DoMap(cbut,&opt.chkall,p_but,1,0);
-    hfr->AddFrame(cbut,LayCC0a);
-  }
-
-}
-*/
 
 void ChanParDlg::AddChan(int j, int kk, int wd, int all,
 			 TGHorizontalFrame *hfr, UShort_t off) {
@@ -2794,7 +2690,7 @@ void ChanParDlg::AddCombo(int j, int wd, int all, TGHorizontalFrame *hfr) {
     tgtxt->SetMaxLength(sizeof(opt.ch_name[0])-1);
     hfr->AddFrame(tgtxt,LayCC0);//,LayCC0a);
 
-    tgtxt->SetName(TString::Format("%02dtxt",all-2).Data());
+    tgtxt->SetName(TString::Format("%02dtxt",all-1).Data());
     tgtxt->SetText(opt.ch_name[all-2],false);
     tgtxt->Connect("TextChanged(char*)", "ParDlg", this, "DoTypes()");
     //tgtxt->SetBackgroundColor(tcol[all-2]);
@@ -2916,6 +2812,8 @@ void ChanParDlg::Update() {
   if (tTrig)
     tTrig->UpdateTrigger();
 
+  //prnt("ss d ds;",BGRN,"upd:",cpar.hS[0],cpar.hS[MAX_CH+1],RST);
+
   //MapSubwindows();
   //Layout();
 }
@@ -2939,9 +2837,7 @@ void ChanParDlg::DoScroll(int pos) {
 
 
       pp->off=row*pp->step;
-      //pp->off+=scrl*pp->step;
       UpdateField(rr);
-      //if (pp->off >= opt.Nchan) pp->off = opt.Nchan;
     }
   }
 

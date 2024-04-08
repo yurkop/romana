@@ -256,8 +256,10 @@ Int_t Coptions::ChkLen(Int_t i, Int_t module) {
     dd=3;
   }
 
-  //prnt("ss d d d ds;",BRED,"ChkLen: ",i,Len[i],crs_ch[i],module,RST);
-  return ((Len[i]+dd-1)/dd)*dd;
+  int res = ((Len[i]+dd-1)/dd)*dd;
+  if (res<dd) res=dd;
+  //prnt("ss d d d d ds;",BRED,"ChkLen: ",i,Len[i],crs_ch[i],module,res,RST);
+  return res;
 }
 
 Toptions::Toptions() {

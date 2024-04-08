@@ -765,6 +765,8 @@ bool check_Base(int num) {
 
 void HClass::Make_hist() {
 
+  crs->nchan_on = crs->CountChan();
+
   if (allmap_list)
     delete allmap_list;
   allmap_list = new TList();

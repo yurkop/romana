@@ -2839,6 +2839,7 @@ void CRS::DoReset(int rst) {
     if (chanpar) {
       chanpar->UpdateStatus(rst);
     }
+
   }
 
 #ifdef TIMES
@@ -3372,6 +3373,14 @@ int CRS::DoBuf() {
   }
 
   return nbuffers;
+}
+
+int CRS::CountChan() {
+  int res=0;
+  for (int i=0;i<opt.Nchan;i++) {
+    if (cpar.on[i]) res++;
+  }
+  return res;
 }
 
 void CRS::InitBuf() {

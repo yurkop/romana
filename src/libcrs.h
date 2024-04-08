@@ -196,6 +196,8 @@ RQ_OBJECT("CRS")
   //Long64_t npulses3o[MAX_CH]; //number of pulses per channel (hardw)
   double npulses_bad[MAX_CH+1]; //number of bad pulses per channel
 
+  int nchan_on;
+
   bool batch; //batch mode
   bool abatch; //1 - acquisition in batch; 0 - file in batch
   int scrn; //screen output in batch mode
@@ -314,6 +316,8 @@ RQ_OBJECT("CRS")
   void SaveParGz(gzFile &ff, Short_t mod);
   void DoProf(Int_t nn, Int_t *aa, Int_t off);
   void Make_prof_ch();
+
+  int CountChan();
 
   void InitBuf();
   void StopThreads(int all);

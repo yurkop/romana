@@ -146,6 +146,7 @@ class MainFrame : public TGMainFrame {
   std::vector<TGCompositeFrame*> tabfr;
 
   int local_nch;
+  int local_nrows;
   static const Int_t n_stat=13;
   static const Int_t n_stat2=11;
   TGTextEntry* fStat[n_stat];
