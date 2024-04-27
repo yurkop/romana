@@ -1238,12 +1238,16 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
     }
     //}
 
-    if (hcl->b_base) {
+    if (dr==0 && hcl->b_base) {
       float DY,Y1,Y2,A0;
       DY = (B2-B1)*pulse->Sl1*0.5;
       Y1 = pulse->Base - DY;
-      Y2 = pulse->Base + DY;
-      doLine(B1+dt,B2+dt,Y1,Y2,5,1);
+      //Y2 = pulse->Base + DY;
+      //doLine(B1+dt,B2+dt,Y1,Y2,5,1);
+      Y2 = pulse->Base + (P2-(B1+B2)*0.5)*pulse->Sl1;
+      doLine(B1+dt,P2+dt,Y1,Y2,5,1);
+
+
       //prnt("ss f f f f f fs;",BRED,"LBase: ",B1+dt,B2+dt,Y1,Y2,pulse->Base,pulse->Sl1,RST);
 
       A0 = pulse->Area + pulse->Base;

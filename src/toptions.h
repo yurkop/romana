@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 140
+#define CDEF 141
 
 /*
 #include <list>
@@ -134,7 +134,9 @@ public:
   Int_t chkall; //type of "all" action
   Bool_t star[MAX_CHTP]; //asterix
   Int_t chtype[MAX_CHTP]; //ch type, starts from 1 (see MAX_TP in common.h)
-  Bool_t dsp[MAX_CHTP]; //true - use dsp for data analysis
+  Bool_t dsp[MAX_CHTP]; //true - send dsp data
+  Bool_t Dsp[MAX_CHTP]; //true - use dsp for data analysis
+  Bool_t Pls[MAX_CHTP]; //true - write pulses in Dec
   Bool_t St[MAX_CHTP]; //[Start]
   Bool_t Ms[MAX_CHTP]; // [Master] Master/slave (see Spin)
   //Bool_t Nt[MAX_CHTP]; //[Mrk] flag to use channel for ntof
@@ -153,6 +155,7 @@ public:
   //Int_t pile2[MAX_CHTP];
   Int_t sTg[MAX_CHTP]; // [strg] Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
   //Int_t timing[MAX_CHTP];
+
   Int_t T1[MAX_CHTP]; // [twin1]
   Int_t T2[MAX_CHTP]; // [twin2]
   Int_t W1[MAX_CHTP]; // [wwin1]

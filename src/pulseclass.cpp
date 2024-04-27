@@ -400,7 +400,7 @@ void PulseClass::PeakAna33() {
     //cout << "zero Area: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
   }
 
-  if (hcl->b_base) {
+  if (hcl->b_base || opt.Mt[Chan]==2) {
     //slope1 (baseline)
     Sl1=0;
     S_xx = 0;
@@ -462,7 +462,12 @@ void PulseClass::PeakAna33() {
     }
   } //if b_base
 
-  Area=Area0 - Base;
+  if (opt.Mt[Chan]!=2) {
+    Area=Area0 - Base;
+  }
+  else {
+    Area=Area0 - Base - ((P2+P1)-(B1+B2))*0.5*Sl1;
+  }
 
   /* YK
   if (opt.Bc[Chan]) {

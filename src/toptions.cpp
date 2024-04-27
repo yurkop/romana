@@ -285,6 +285,8 @@ Toptions::Toptions() {
     star[i]=true;
     chtype[i]=1;
     dsp[i]=false;
+    Dsp[i]=false;
+    Pls[i]=false;
     St[i]=true;
     Ms[i]=true;
     //Mrk[i]=false;

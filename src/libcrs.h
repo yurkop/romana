@@ -379,8 +379,9 @@ RQ_OBJECT("CRS")
   void Fill_Dec78(EventClass* evt);
   void Fill_Dec79(EventClass* evt);
   void Fill_Dec80(EventClass* evt);
-
   void Fill_Dec81(EventClass* evt);
+
+  void Fill_Dec82(EventClass* evt);
 
   //void Fill_Txt(EventClass* evt);
 

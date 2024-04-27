@@ -3976,13 +3976,13 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
 
 void CRS::PulseAna(PulseClass &ipls) {
   //prnt("ss d l ds;",BRED,"Pls1:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
-  if (!opt.dsp[ipls.Chan]) {
+  if (!opt.Dsp[ipls.Chan]) {
     if (opt.sS[ipls.Chan]) {
       ipls.Smooth(opt.sS[ipls.Chan]);
     }
     ipls.PeakAna33();
   }
-  else { //dsp
+  else { //Dsp
     ipls.Pos=cpar.Pre[ipls.Chan];
     if (opt.checkdsp) {
       // if (ipls.Peaks.size()!=1) {
@@ -6389,7 +6389,130 @@ void CRS::Fill_Dec80(EventClass* evt) {
 // int sgn(int a) {
 // }
 
-void CRS::Fill_Dec81(EventClass* evt) {
+// int sgn(int a) {
+// }
+
+
+
+
+
+
+/*
+void CRS::Fill_Dec81a(EventClass* evt) {
+  //Fill_Dec81 - the same as 79 plus sData if 
+
+  // fill_dec is not thread safe!!!
+  //format of decoded data:
+  // 1) one 8byte header word:
+  //    bit63=1 - start of event
+  //    lowest 6 bytes - Tstamp
+  //    byte 7 - Spin
+  // 2a) if Spin7(bit7):
+  //  N 8-byte words, each containing one pulse counter
+  //    bytes 0-5 - Counter
+  //    byte 7 - channel
+  // 2b) else (!Spin7(bit7)):
+  //  N 8-byte words, each containing one peak
+  //    1st (lowest) 2 bytes - (unsigned) Area*5+1
+  //    2 bytes - Time*100
+  //    2 bytes - Width*1000
+  //    1 byte - channel
+  //    7 bits - amplitude
+  //
+  //      if opt.Pls -> Spin6(bit6) will be set:
+  //      N 8-byte words, each containing one sample
+  //      (low) 4 bytes - (Float_t) sData
+  //      (high) 4 bytes - (Int_t) channel
+
+
+
+  *DecBuf8 = 0x8000 | evt->Spin;
+  *DecBuf8<<=48;
+  *DecBuf8 |= evt->Tstmp & sixbytes;
+  // if (evt->Spin & 1) {
+  // *DecBuf8 |= 0x1000000000000;
+  // }
+
+  ++DecBuf8;
+
+  if (evt->Spin & 128) { //Counters
+    for (pulse_vect::iterator ipls=evt->pulses.begin();
+	 ipls!=evt->pulses.end();++ipls) {
+      *DecBuf8=ipls->Counter;
+      Short_t* Decbuf2 = (Short_t*) DecBuf8;
+      Decbuf2[3] = ipls->Chan;
+      ++DecBuf8;
+    }
+  }
+  else { //Peaks
+    for (pulse_vect::iterator ipls=evt->pulses.begin();
+	 ipls!=evt->pulses.end();++ipls) {
+      if (ipls->Pos>-32222) {
+	*DecBuf8=0;
+	Short_t* Decbuf2 = (Short_t*) DecBuf8;
+	UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
+	UChar_t* Decbuf1u = (UChar_t*) DecBuf8;
+	if (ipls->Area<0) {
+	  *Decbuf2u = 0;
+	}
+	else if (ipls->Area>13106){
+	  *Decbuf2u = 65535;
+	}
+	else {
+	  *Decbuf2u = ipls->Area*5+1;
+	}
+	if (ipls->Time>327.6)
+	  Decbuf2[1] = 32767;
+	else if (ipls->Time<-327)
+	  Decbuf2[1] = -32767;
+	else
+	  Decbuf2[1] = ipls->Time*100;
+
+	if (ipls->Width>32.76)
+	  Decbuf2[2] = 32767;
+	else if (ipls->Width<-32.76)
+	  Decbuf2[2] = -32767;
+	else
+	  Decbuf2[2] = ipls->Width*1000;
+
+	Decbuf2[3] = ipls->Chan;
+	if (ipls->Height<0)
+	  Decbuf1u[7] = 0;
+	else
+	  Decbuf1u[7] = ((int)ipls->Height)>>8;
+	//cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
+	++DecBuf8;
+
+	if (opt.Pls[ipls->Chan]) {
+	  
+	}
+      }
+    }
+  }
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    //levt=*evt;
+    //CRS::eventlist Blist;
+    //D79(DecBuf,idec,Blist);
+    //ULong64_t* buf8 = (ULong64_t*) (GLBuf);
+    //prnt("s l l l l x;", "Flush:", levt.Tstmp, Blist.size(),
+    // Blist.front().Tstmp, Blist.back().Tstmp, *buf8);
+    //cout << "Flush: " << levt.Tstmp << endl;
+    Flush_Dec();
+  }
+
+} //Fill_Dec81a
+*/
+
+
+
+
+
+
+
+
+void CRS::Fill_Dec82(EventClass* evt) {
   // эти параметры должны быть заданы в opt
   const bool bit_area=true;
   const bool bit_time=true;
@@ -6505,7 +6628,7 @@ void CRS::Fill_Dec81(EventClass* evt) {
     Flush_Dec();
   }
 
-} //Fill_Dec81
+} //Fill_Dec82
 
 int CRS::Wr_Dec(UChar_t* buf, int len) {
   //return >0 if error

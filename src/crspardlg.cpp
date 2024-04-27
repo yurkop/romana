@@ -54,7 +54,7 @@ vector<const char*> ptip = {
   "Inversion",
   "AC coupling\nFor CRS-128 grouped by 4 channels",
   "Send/don't send pulse data (waveforms)",
-  "Checked - use hardware pulse analysis (DSP), send DSP data\nUnchecked - use software pulse analysis, don't send DSP data",
+  "Checked - send DSP data\nUnchecked - don't send DSP data",
   "Only for coincidence scheme:\nRate divider (0 - don't write reduced data)",
   "Only for coincidence scheme:\nChannel belongs to coincidence group 1",
   "Only for coincidence scheme:\nChannel belongs to coincidence group 2",
@@ -69,11 +69,13 @@ vector<const char*> ptip = {
   "Trigger threshold",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Master/slave channel:\nEvents containing only slave channels are rejected\nEach event must contain at least one master channel",
+  "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
+  "Checked - write pulses in Dec",
   "Software delay in ns (can be negative or positive)",
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
-  "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction",
+  "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction\n2 - base slope subtraction (for HPGe)",
   "Energy calibration type: 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline",
   "Energy calibration 0: E0+E1*x",
   "Energy calibration 1: E0+E1*x",
@@ -83,7 +85,6 @@ vector<const char*> ptip = {
   "Use channel for group histograms *_g2",
   "Use channel for group histograms *_g3",
   "Use channel for group histograms *_g4",
-  "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
   "Software smoothing. If negative - data are truncated to integer (imitates hS)",
   "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing;\n7 - CFD;\n-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
@@ -1595,7 +1596,7 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
   tip1= "Max number of rows in Channels tab";
   label="Nrows";
-  AddLine_1opt(fF6,ww,&opt.Nrows,0,tip1,label,k_int,2,16);
+  AddLine_1opt(fF6,ww,&opt.Nrows,0,tip1,label,k_int,2,64);
 
 
   fF6->Resize();
@@ -2493,10 +2494,12 @@ void ChanParDlg::BuildColumns(int jj) {
   //Analysis
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"St",opt.St);
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"Ms",opt.Ms);
+  AddColumn(jj,kk++,1,p_chk,24,0,0,0,"Dsp",opt.Dsp,0,0);
+  AddColumn(jj,kk++,1,p_chk,24,0,0,0,"Pls",opt.Pls,0,0);
   AddColumn(jj,kk++,1,p_fnum,35,0,-9999,9999,"sD",opt.sD);
   AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"dTm",opt.dTm);
   AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"Pile",opt.Pile);
-  AddColumn(jj,kk++,1,p_inum,20,0,0,1,"Mt",opt.Mt);
+  AddColumn(jj,kk++,1,p_inum,20,0,0,2,"Mt",opt.Mt);
   AddColumn(jj,kk++,1,p_inum,20,0,0,2,"C",opt.calibr_t);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E0",opt.E0);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E1",opt.E1);
@@ -2510,7 +2513,6 @@ void ChanParDlg::BuildColumns(int jj) {
 
   double amax=-2e101;
   //Peaks
-  AddColumn(jj,kk++,1,p_chk,24,0,0,0,"dsp",opt.dsp,0,0);
   AddColumn(jj,kk++,1,p_inum,25,0,-99,99,"sS",opt.sS);
   AddColumn(jj,kk++,1,p_inum,26,0,-1,7,"sTg",opt.sTg);
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
@@ -2708,8 +2710,8 @@ void ChanParDlg::AddChkPar(int kk, int wd, int all, int daq, TGHorizontalFrame *
   TGCheckButton *f_chk = new TGCheckButton(hfr, "", id);
   DoMap(f_chk,apar,p_chk,all,cmd,apar2,off,step);
   f_chk->SetToolTipText(ptip.at(kk));
-  // f_chk->ChangeOptions(f_chk->GetOptions()|kFixedWidth);
-  // f_chk->SetWidth(wd);
+  //f_chk->ChangeOptions(f_chk->GetOptions()|kFixedWidth);
+  //f_chk->SetWidth(wd-10);
   // f_chk->SetHeight(PHeight);
   f_chk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
   hfr->AddFrame(f_chk,LayCC1);
