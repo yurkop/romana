@@ -715,7 +715,6 @@ void HClass::Make_Mlist() {
       md.v_map.resize(nn);
 
       Mlist.push_back(md);
-
     }
     d1 = (TDataMember*)l1->After(d1);
   }
@@ -786,6 +785,8 @@ void HClass::Make_hist() {
   Hdef* hd2=0;
   PulseClass pls;
   for (auto it = Mlist.begin();it!=Mlist.end();++it) {
+    //prnt("ss d ss;",BGRN,"mkhst:",it->hnum,it->h_name.Data(),RST);
+
     //YK!! //Здесь можно обнулять v_map...
     memset(it->v_map.data(),0,it->v_map.size()*sizeof(HMap*));
     if (it->hnum>0 && it->hnum<10) {// standard pulse variable

@@ -289,7 +289,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns);\n[7] - Height;\n[8] - Width";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns);\n[7] - Height;\n[8] - Width;\n[9] - Slope1 (Baseline);\n[10] - Slope2 (Peak)";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);
   tEnt->SetWidth(100);
@@ -651,7 +651,7 @@ void EventFrame::DoCheckPoint() {
   Int_t id = btn->WidgetId();
 
   Pixel_t color;
-  Double_t par[9];
+  Double_t par[11];
   formula->SetTitle(opt.formula);
   formula->Clear();
   int ires = formula->Compile();
@@ -703,6 +703,8 @@ void EventFrame::DoCheckPoint() {
 	//prnt("ss d fs;",BRED,"p6:",ipls->Chan,tt,RST);
 	par[7]=ipls->Height;
 	par[8]=ipls->Width;
+	par[9]=ipls->Sl1;
+	par[10]=ipls->Sl2;
 	res = formula->EvalPar(0,par);
 	if (res) {
 	  //prnt("ss f f f fs;",BYEL,"res:",res,par[6],ipls->Time,d_event->T0,RST);

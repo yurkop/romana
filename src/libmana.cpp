@@ -103,7 +103,7 @@ gzFile ff;
 
 //TString parfile,lastpar;
 char* parfile=(char*)"romana.par";;
-char* parfile2=0;
+char* parfile2=0; //for -p option
 char* datfname=0;
 char* batch_fname=0;
 
@@ -1343,6 +1343,7 @@ int main(int argc, char **argv)
 	  exit(-1);
       }
       rd_root=true;
+      prnt("ss d ds;",BBLU,"root:",rd_root,(bool)parfile2,RST);
     }
     else { //.raw or .dec file
       if (crs->DoFopen(datfname,1,rdopt)) //read file and parameters from it
