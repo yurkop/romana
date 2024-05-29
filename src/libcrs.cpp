@@ -743,7 +743,7 @@ void CRS::Ana2(int all) {
 #endif
 
       Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
-      m_event->FillHist(hcut_flag);
+      hcl->FillHist(&*m_event,hcut_flag);
 #ifdef TPROC
       pt2.Set();
       tproc+=pt2.AsDouble()-pt1.AsDouble();
@@ -3974,6 +3974,48 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
 
 }
 
+void CRS::CheckDSP(PulseClass &ipls) {
+  /*
+  if (Peaks.size()!=2) {
+    cout <<"CheckDSP: Peaks.size()!=2: " << Peaks.size()
+	 << " " << Counter << endl;
+    return;
+  }
+  const int nn=5;
+  const Float_t eps=0.1;
+
+  Float_t cc[nn];
+  cc[0] = Peaks[0].Base - Peaks[1].Base;
+  cc[1] = Peaks[0].Area0 - Peaks[1].Area0;
+  cc[2] = Peaks[0].Height - Peaks[1].Height;
+  cc[3] = Peaks[0].Time - Peaks[1].Time;
+  cc[4] = Peaks[0].Width - Peaks[1].Width;
+
+  Bool_t bad=false;
+  for (int i=0;i<nn;i++) {
+    if (abs(cc[i])>eps)
+      bad=true;
+  }
+
+  if (bad) {
+    printf(ANSI_COLOR_YELLOW"Error!\n");
+    printf(ANSI_COLOR_RED
+	   "Alp: %d E:%lld B:%8.1f A0:%8.1f H:%8.1f T:%8.1f W:%8.1f P:%4d\n" ANSI_COLOR_RESET,
+	   Chan,Counter,Peaks[0].Base,Peaks[0].Area0,Peaks[0].Height,
+	   Peaks[0].Time,Peaks[0].Width,Pos);
+    printf(ANSI_COLOR_GREEN
+	   "Kop: %d E:%lld B:%8.1f A0:%8.1f H:%8.1f T:%8.1f W:%8.1f P:%4d\n" ANSI_COLOR_RESET,
+	   Chan,Counter,Peaks[1].Base,Peaks[1].Area0,Peaks[1].Height,
+	   Peaks[1].Time,Peaks[1].Width,Pos);
+  }
+  else {
+    //printf("%10lld OK\n",Counter);
+  }
+
+  Peaks.pop_back();
+  */
+}
+
 void CRS::PulseAna(PulseClass &ipls) {
   //prnt("ss d l ds;",BRED,"Pls1:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
   if (!opt.Dsp[ipls.Chan]) {
@@ -3989,7 +4031,7 @@ void CRS::PulseAna(PulseClass &ipls) {
       // 	cout << "size!!!: " << ipls.Peaks.size() << endl;
       // }
       ipls.PeakAna33();
-      ipls.CheckDSP();
+      CheckDSP(ipls);
     }
   }
   ipls.Ecalibr(ipls.Area);
@@ -6946,6 +6988,26 @@ void CRS::SimulateInit() {
 
 void CRS::SimNameHist() {
 
+  //cout << "smodule=" << module << endl;
+
+  for (auto it = hcl->MFill_list.begin();it!=hcl->MFill_list.end();++it) {
+    if ((*it)->name.EqualTo("time",TString::kIgnoreCase)) {
+      for (auto map = (*it)->v_map.begin();map!=(*it)->v_map.end();++map) {
+	if (*map) {
+	  if ((*map)->nn==2)
+	    (*map)->hst->SetTitle("Exact time0 - pos0");
+	  else if ((*map)->nn==3)
+	    (*map)->hst->SetTitle("Exact time1 - time0");
+
+	  // cout << "mflist: " << (*it)->hnum << " " << (*map)->nn
+	  //      << " " << (*map)->hst->GetTitle() << endl;
+	}
+      }
+    }
+    
+  }
+
+  /*
   if (hcl->m_time[2]) {
     hcl->m_time[2]->hst->SetTitle("Exact time0 - pos0");
   }
@@ -6953,8 +7015,10 @@ void CRS::SimNameHist() {
   if (hcl->m_time[3]) {
     hcl->m_time[3]->hst->SetTitle("Exact time1 - time0");
   }
+  */
 
 }
+
 
 void CRS::SimulatePulse(int ch, Long64_t tst, double pos) {
   PulseClass ipls=PulseClass();

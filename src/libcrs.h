@@ -336,6 +336,7 @@ RQ_OBJECT("CRS")
   // что является одновременно началом следующего b_start[ibuf2]
   void FindLast(UInt_t ibuf, int loc_ibuf, int what);
 
+  void CheckDSP(PulseClass &ipls);
   void PulseAna(PulseClass &ipls);
   void Dec_Init(eventlist* &Blist, UChar_t frmt);
   void Dec_End(eventlist* &Blist, UInt_t iread, UChar_t sp);

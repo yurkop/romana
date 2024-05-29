@@ -3,13 +3,14 @@
 # make -j3 : compile using 3 CPUs
 # make clean : clear compilation
 # make cyusblib : compile and install cyusb library (need root password)
+# make r2a : compile r2a (root2ascii)
 
 # make TPROC=1 to compile with TPROC option
 #      TPROC -> cpu usage in FillHist, only in singlethread
 # make TIMES=1 to compile with TIMES option
 # make DEBUG=1 to compile with debug option
 # make PROF=1 to compile with profiling option
-# make simul to compile with SIMUL option
+# removed!!!   make simul to compile with SIMUL option 
 
 
 GIT_VERSION := $(shell git describe --abbrev=4 --always --tags --dirty)
@@ -54,9 +55,9 @@ ifeq (yumo,$(findstring $(MAKECMDGOALS),yumo))
   CPPFLAGS += -D YUMO=1
 endif
 
-ifeq (simul,$(findstring $(MAKECMDGOALS),simul))
-  CPPFLAGS += -D SIMUL=1
-endif
+#ifeq (simul,$(findstring $(MAKECMDGOALS),simul))
+#  CPPFLAGS += -D SIMUL=1
+#endif
 
 CPPFLAGS += $(LFS) -MD -MP -DLINUX=1 -I. #-I$(LIB_D)
 CXXFLAGS += -O3 -Wall -Wno-maybe-uninitialized #-Wextra
@@ -92,7 +93,7 @@ all: $(OBJ_D) $(PROG).x
 
 yumo: all
 
-simul: all
+#simul: all
 
 #$(PROG).x: $(OBJ) $(OBJL) $(OBJ_D)/romdict.o
 $(PROG).x: $(OBJ) $(OBJ_D)/romdict.o

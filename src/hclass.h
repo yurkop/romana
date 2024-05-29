@@ -162,6 +162,8 @@ class HClass {
 
   //static const int MAX_ING=256;
 
+
+  /*
   HMap* m_rate[MAX_CH+NGRP]; // software rate in real time
   HMap* m_hwrate[MAX_CH+NGRP]; // hardware counter in real time
   HMap* m_mult[MAX_CH+NGRP]; // event multiplicity
@@ -197,6 +199,7 @@ class HClass {
   HMap* m_prof[256];
   HMap* m_prof64[6];
 
+  */
 
   //std::vector<int> vcuts; //vector of
   Mdef *mdef_prof;
@@ -249,6 +252,8 @@ class HClass {
   void Make_prof(mdef_iter md);
   void Make_prof_int(mdef_iter md, Hdef* hd2);
   int Make_2d(mdef_iter md);
+
+  void FillHist(EventClass* evt, Double_t *hcut_flag);
 
   void Clone_Hist(HMap* map);
   void Remove_Clones(HMap* map);

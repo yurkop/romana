@@ -791,7 +791,7 @@ void HClass::Make_hist() {
     memset(it->v_map.data(),0,it->v_map.size()*sizeof(HMap*));
     if (it->hnum>0 && it->hnum<10) {// standard pulse variable
       Make_1d(it,opt.Nchan);
-      it->ptr = pls.GetPtr(&*it);
+      it->ptr = pls.GetPtr(it->hnum);
       it->GetX = &Mdef::VarPulse;
       it->MFill = &Mdef::Fill_1d;
     }
@@ -1148,6 +1148,57 @@ int HClass::Make_2d(mdef_iter md) {
   } //else
 
 }
+
+void HClass::FillHist(EventClass* evt, Double_t *hcut_flag) {
+  // общие переменные для события
+  //Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
+  //int mult[NGRP+1] = {0};
+  opt.T_acq=(evt->Tstmp/*- crs->Tstart64*/)*crs->sPeriod;
+  
+  // проверка opt.Tstop -> Нужно добавить это в fTimer (?)
+  if (opt.Tstop) {
+    if (opt.T_acq > opt.Tstop) {
+      if (crs->b_fana) {
+  	crs->b_stop=true;
+  	crs->b_fana=false;
+  	crs->b_run=0;
+      }
+      return;
+    }
+    else if (opt.T_acq < opt.Tstart) {
+      return;
+    }
+  }
+
+  //заполняем все гистограммы в Actlist
+  for (auto it = MFill_list.begin();it!=MFill_list.end();++it) {
+    ((*it)->*(*it)->MFill)(evt,hcut_flag,0);
+  }
+
+  // "formula cuts"
+  if (b_formula) {
+    for (int i=1;i<opt.ncuts;i++) {
+      if (opt.pcuts[i]==1) {//formula
+	hcut_flag[i]=cform[i]->EvalPar(0,hcut_flag);
+      }
+      //cout << "cut_flag: " << Nevt << " " << i << " " << cut_flag[i] << endl;
+    }
+  }
+
+
+
+
+  for (int i=1;i<opt.ncuts;i++) {
+    if (hcut_flag[i]) {
+      //заполняем все cut-гистограммы в Mainlist (YK???)
+      for (auto it = Mainlist.begin();it!=Mainlist.end();++it) {
+	//cout << "ML2: " << it->h_name << " " << endl;
+	(*(&*it)->*(*(&*it))->MFill)(evt,hcut_flag,i);
+      }
+    }
+  }
+
+} //FillHist
 
 void HClass::Clone_Hist(HMap* map) {
   char cutname[99];

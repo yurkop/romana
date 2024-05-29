@@ -1235,9 +1235,11 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fcont1->AddFrame(fV2,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY));
   AddExpert(fV2);
 
-#ifdef SIMUL
-  AddSimul(fV2);
-#endif
+  if (crs->module==17) {
+    //#ifdef SIMUL
+    AddSimul(fV2);
+    //#endif
+  }
 
   // for (UInt_t i=0;i<Plist.size();i++) {
   //   Pmap* pp = &Plist[i];

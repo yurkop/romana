@@ -2,25 +2,16 @@
 #define pulseclass_H 1
 
 #include <TROOT.h>
-#include <TH1.h>
+//#include <TH1.h>
 
-class HMap;
-class Mdef;
+//class HMap;
+//class Mdef;
 
-/*
-enum PeakDef {
-  p_undet,
-  p_gam,
-  p_neu,
-  p_tail,
-  p_unknown,
-  p_nim,
-  p_badl,
-  p_badr,
-  p_pileup,
-  p_f_pileup
+class BufClass {
+ public:
+  char* buffer;
+  int bufsize;
 };
-*/
 
 //peak Type:
 const UChar_t P_PILE1=1<<0; //fisrt puleup pulse
@@ -85,11 +76,12 @@ class PulseClass {
   //Float_t Noise2;
 
   //bool Analyzed; //true if pulse is already analyzed
+
  public:
   PulseClass();// {};
   virtual ~PulseClass() {};
 
-  size_t GetPtr(Mdef* it);
+  size_t GetPtr(Int_t hnum);
   Float_t CFD(int i, int kk, int delay, Float_t frac, Float_t &drv);
   //void Analyze();
   void FindPeaks(Int_t sTrig, Int_t kk);
@@ -97,7 +89,7 @@ class PulseClass {
   //void FindPeaks(Float_t thresh, int deadtime);
   //void PeakAna();
   void PeakAna33();
-  void CheckDSP();
+  //void CheckDSP();
   void Ecalibr(Float_t& XX);
   //void Bcalibr();
   void Smooth(int n);
@@ -127,17 +119,18 @@ class EventClass { //event of pulses
   //std::vector <Long64_t> *Counters;
   //Bool_t Analyzed;
 
- private:
-  void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w=1);
-  void Fill01dw(HMap* map[], int ch, Float_t x, Double_t w=1);
+ // private:
+ //  void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w=1);
+ //  void Fill01dw(HMap* map[], int ch, Float_t x, Double_t w=1);
 
 public:
   EventClass();
   virtual ~EventClass() {};
 
   void AddPulse(PulseClass *pls);
-  void FillHist(Double_t *hcut_flag);
+  //void FillHist(Double_t *hcut_flag);
   void PrintEvent(bool pls=1);
+  void Fill_Dec(char* buf);
   //ClassDef(EventClass, 0)
 };
 

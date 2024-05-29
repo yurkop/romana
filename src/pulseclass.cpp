@@ -44,9 +44,10 @@ PulseClass::PulseClass() {
   //Width=88888;
 }
 
-size_t PulseClass::GetPtr(Mdef* it) {
+//size_t PulseClass::GetPtr(Mdef* it) {
+size_t PulseClass::GetPtr(Int_t hnum) {
   size_t ptr=0;
-  switch (it->hnum) {
+  switch (hnum) {
   case 1: //Area
     ptr = (char*)&(this->Area) - (char*)this;
     //cout << "area_ptrnum: " << ptr << endl;
@@ -74,7 +75,7 @@ size_t PulseClass::GetPtr(Mdef* it) {
     break;
   }
   if (ptr==0) {
-    prnt("ss s ds;",BRED, "Wrong hnum number in GetPtr:", it->h_name.Data(),it->hnum, RST);
+    prnt("ss ds;",BRED, "Wrong hnum number in GetPtr:", hnum, RST);
     exit(-1);
   }
   return ptr;
@@ -536,48 +537,6 @@ void PulseClass::PeakAna33() {
 
 } //PeakAna33()
 
-void PulseClass::CheckDSP() {
-  /*
-  if (Peaks.size()!=2) {
-    cout <<"CheckDSP: Peaks.size()!=2: " << Peaks.size()
-	 << " " << Counter << endl;
-    return;
-  }
-  const int nn=5;
-  const Float_t eps=0.1;
-
-  Float_t cc[nn];
-  cc[0] = Peaks[0].Base - Peaks[1].Base;
-  cc[1] = Peaks[0].Area0 - Peaks[1].Area0;
-  cc[2] = Peaks[0].Height - Peaks[1].Height;
-  cc[3] = Peaks[0].Time - Peaks[1].Time;
-  cc[4] = Peaks[0].Width - Peaks[1].Width;
-
-  Bool_t bad=false;
-  for (int i=0;i<nn;i++) {
-    if (abs(cc[i])>eps)
-      bad=true;
-  }
-
-  if (bad) {
-    printf(ANSI_COLOR_YELLOW"Error!\n");
-    printf(ANSI_COLOR_RED
-	   "Alp: %d E:%lld B:%8.1f A0:%8.1f H:%8.1f T:%8.1f W:%8.1f P:%4d\n" ANSI_COLOR_RESET,
-	   Chan,Counter,Peaks[0].Base,Peaks[0].Area0,Peaks[0].Height,
-	   Peaks[0].Time,Peaks[0].Width,Pos);
-    printf(ANSI_COLOR_GREEN
-	   "Kop: %d E:%lld B:%8.1f A0:%8.1f H:%8.1f T:%8.1f W:%8.1f P:%4d\n" ANSI_COLOR_RESET,
-	   Chan,Counter,Peaks[1].Base,Peaks[1].Area0,Peaks[1].Height,
-	   Peaks[1].Time,Peaks[1].Width,Pos);
-  }
-  else {
-    //printf("%10lld OK\n",Counter);
-  }
-
-  Peaks.pop_back();
-  */
-}
-
 void PulseClass::Ecalibr(Float_t& XX) {
   switch (opt.calibr_t[Chan]) {
   case 2:
@@ -660,59 +619,6 @@ void EventClass::AddPulse(PulseClass *pls) {
   }
 
 }
-
-void EventClass::FillHist(Double_t *hcut_flag) {
-
-  // общие переменные для события
-  //Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
-  //int mult[NGRP+1] = {0};
-  opt.T_acq=(Tstmp/*- crs->Tstart64*/)*crs->sPeriod;
-  
-
-  // проверка opt.Tstop -> Нужно добавить это в fTimer (?)
-  if (opt.Tstop) {
-    if (opt.T_acq > opt.Tstop) {
-      if (crs->b_fana) {
-  	crs->b_stop=true;
-  	crs->b_fana=false;
-  	crs->b_run=0;
-      }
-      return;
-    }
-    else if (opt.T_acq < opt.Tstart) {
-      return;
-    }
-  }
-
-  //заполняем все гистограммы в Actlist
-  for (auto it = hcl->MFill_list.begin();it!=hcl->MFill_list.end();++it) {
-    ((*it)->*(*it)->MFill)(this,hcut_flag,0);
-  }
-
-  // "formula cuts"
-  if (hcl->b_formula) {
-    for (int i=1;i<opt.ncuts;i++) {
-      if (opt.pcuts[i]==1) {//formula
-	hcut_flag[i]=hcl->cform[i]->EvalPar(0,hcut_flag);
-      }
-      //cout << "cut_flag: " << Nevt << " " << i << " " << hcl->cut_flag[i] << endl;
-    }
-  }
-
-
-
-
-  for (int i=1;i<opt.ncuts;i++) {
-    if (hcut_flag[i]) {
-      //заполняем все cut-гистограммы в Mainlist (YK???)
-      for (auto it = hcl->Mainlist.begin();it!=hcl->Mainlist.end();++it) {
-	//cout << "ML2: " << it->h_name << " " << endl;
-	(*(&*it)->*(*(&*it))->MFill)(this,hcut_flag,i);
-      }
-    }
-  }
-
-} //FillHist
 
 void PulseClass::Smooth(int nn) {
 
