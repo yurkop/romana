@@ -64,6 +64,16 @@ public:
   UChar_t E;
 };
 
+class BufClass {
+public:
+  char* Buf;
+  size_t Size;
+public:
+  BufClass(size_t sz);
+  ~BufClass();
+};
+
+
 //---------------------------
 class CRS {
 
@@ -74,9 +84,9 @@ RQ_OBJECT("CRS")
   virtual ~CRS();
 
   //--------constants---------
-  static const int MAXTRANS=8;
+  static const int MAXTRANS=7; //было 8
   //static const int MAXTRANS=7;
-  static const int MAXTRANS7=7;
+  //static const int MAXTRANS7=7;
   static const int RAWSIZE=10485760; //10 MB
 
   static const int DECSIZE=1048576; //1 MB
@@ -84,7 +94,7 @@ RQ_OBJECT("CRS")
 
   //--------variables---------
 
-  int MAXTRANS2; //real maxtrans, depends on usb_size
+  //int MAXTRANS2; //real maxtrans, depends on usb_size
   
   gzFile f_raw;
   gzFile f_read;
@@ -172,7 +182,7 @@ RQ_OBJECT("CRS")
   UChar_t buf_out[64];
   UChar_t buf_in[64];
 
-  int ntrans; //number of "simultaneous" transfers
+  int ntrans; //actual number of "simultaneous" transfers
 
   unsigned char *buftr[MAXTRANS];
   struct libusb_transfer *transfer[MAXTRANS];

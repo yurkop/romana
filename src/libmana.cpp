@@ -2787,9 +2787,6 @@ void MainFrame::DoClose() {
     gzclose(crs->f_read);
     crs->f_read=0;
   }
-  // for (int i=0;i<crs->MAXTRANS;i++) {
-  //   crs->Fbuf[i]=0;
-  // }
 
   myM->SetTitle((char*)"");
   //daqpar->AllEnabled(true);

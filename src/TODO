@@ -197,3 +197,5 @@ daqpar->AllEnabled
 дробить записи на части (raw, dec)
 
 logbook
+
+ROOT::EnableThreadSafety() ? не работает на домашнем ноутбуке

@@ -13,6 +13,7 @@
 
 //#include <pthread.h>
 #include "romana.h"
+#include "decoder.h"
 
 //#include <malloc.h>
 #include <TClass.h>
@@ -60,6 +61,8 @@ extern MemInfo_t minfo;
 extern ProcInfo_t pinfo;
 // extern double rmem;
 
+BufClass *InBuf;
+DecoderClass* decoder;
 extern CRS* crs;
 extern Coptions cpar;
 extern Toptions opt;
@@ -113,7 +116,8 @@ const int MAXSHORT=32767;
 int tr_size; //=opt.usb_size*1024; - размер трансфера в байтах
 
 Long64_t gl_sz;
-const Long64_t gl_off = iMB; //1MB, was 1024*128 - офсет GLBuf относительно GLBuf2
+const Long64_t gl_off = iMB; //1MB, was 1024*128 - офсет GLBuf относительно GLBuf2 - нужен для копирования хвоста буфера в начало (см. AnaBuf) !! возможно, не нужен
+
 UChar_t* GLBuf;
 UChar_t* GLBuf2;
 
@@ -158,8 +162,6 @@ UInt_t dec_iread[CRS::MAXTRANS];
 // Если dec_iread[i]=1, i-й буфер еще не обработан
 
 int ana_all;
-
-
 
 //TCondition evt_cond;
 //int evt_check;
@@ -224,27 +226,21 @@ void *handle_events_func(void *ctx)
 }
 
 static void cback(libusb_transfer *trans) {
+  // сохраняем текущий буфер
+  //unsigned char* cbuf = trans->buffer;
 
   if (trans->actual_length) {
 
+    // проверяем slow decoding
     while (dec_iread[gl_ibuf]) {
       ++crs->errors[ER_DEC]; //slow decoding
       gSystem->Sleep(1);
     }
 
-    int itr = *(int*) trans->user_data;
-    int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
-    //int i_next = (itr+1)%crs->ntrans; //next itr
-
-    UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
-    if (next_buf+tr_size > GLBuf+gl_sz) {
-      next_buf=GLBuf;
-    }
-
+    // запускаем анализ буфера (переделать!)
     double rr =
       double(trans->buffer-GLBuf+trans->actual_length)/gl_sz;
     UInt_t nn = (rr+1e-6)*gl_Nbuf;
-
     //if (opt.decode) {
     if (!opt.directraw) {
       if (nn!=gl_ibuf) {
@@ -253,11 +249,11 @@ static void cback(libusb_transfer *trans) {
 	b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 	// prnt("ss2d2d2d3ds;",KYEL,"cback:",gl_iread, itr, gl_ibuf,CheckMem(),RST);
 	crs->AnaBuf(gl_ibuf);
-	//gl_ibuf=gl_iread%gl_Nbuf; //New YK
 
       }
-    } //if decode
+    } //if !opt.directraw
 
+    // запускаем запись буфера, если opt.raw_write (переделать!)
     if (opt.raw_write && !opt.fProc) {
 
       if (opt.nthreads>1) {
@@ -278,19 +274,34 @@ static void cback(libusb_transfer *trans) {
       
     }
 
-    trans->buffer=next_buf;
-    if (crs->b_acq) {
-      libusb_submit_transfer(trans);
+    //trans->buffer=next_buf;
+    // if (crs->b_acq) {
+    //   libusb_submit_transfer(trans);
+    // }
+
+
+  } // if (trans->actual_length)
+
+  //запускаем новый транс
+  if (crs->b_acq) {
+    int itr = *(int*) trans->user_data; //номер трансфера
+    int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
+    UChar_t* next_buf=crs->transfer[i_prev]->buffer + tr_size;
+    if (next_buf+tr_size > GLBuf+gl_sz) {
+      next_buf=GLBuf;
     }
 
-    crs->nbuffers++;
+    //prnt("ss d x x xs;",BGRN,"trf:",itr,gl_sz,trans->buffer-GLBuf,trans->actual_length,RST);
+    trans->buffer=next_buf;
+    libusb_submit_transfer(trans);
 
     stat_mut.Lock();
+    crs->nbuffers++;
     crs->inputbytes+=trans->actual_length;
-
     stat_mut.UnLock();
-  } // if (trans->actual_length)
-}
+  }
+
+} //cback
 
 #endif //CYUSB
 
@@ -352,7 +363,7 @@ void *handle_decode(void *ctx) {
 
 void *handle_mkev(void *ctx) {
   std::list<CRS::eventlist>::iterator BB;
-	
+
   while (mkev_thread_run) {
 
     // gSystem->GetMemInfo(&info);
@@ -817,451 +828,26 @@ void CRS::Ana2(int all) {
 //   cout << i << " " << *i << endl;
 // }
 
+BufClass::BufClass(size_t sz) {
+  Size=sz;
+  Buf = new char[Size];
+  cout << "size: " << Size << endl;
+}
+
+BufClass::~BufClass() {
+  delete[] Buf;
+}
+
 CRS::CRS() {
-
-  /*
-  int aa=0xFFFFFFFF;
-  setbit(aa,31,0);
-  cout << UInt_t(aa) << endl;
-  exit(1);
-
-  string str="q-w234f.df01d";
-  //str = "4212341";
-
-  cout << str << endl;
-  cout << numstr(str) << endl;
-
-  exit(0);
-
-  cout << LLONG_MAX << endl;
-
-  Mdef md;
-  Hdef hd;
-
-  cout << sizeof(md) << " " << sizeof(hd) << endl;
-
-  std::list<Mdef> list_mdef;
-  std::list<Hdef> list_hdef;
-  CheckMem(1);
-  for (int i=0;i<1000000; i++) {
-    //list_mdef.push_back(md);
-    //list_hdef.push_back(hd);
-  }
-  CheckMem(1);
-  list_mdef.clear();
-  list_hdef.clear();
-  CheckMem(1);
-
-  exit(-1);
-
-  int *i = new int;
-  *i = 10;
-  tt(i);
-  cout << "z: " << i << " " << *i << endl;
-  exit(-1);
-  
-  for (auto i=0;i<1000000000;i++) {
-    int aa = drand48()*100;
-    if (i<10)
-      cout << i << " " << aa << endl;
-    switch (aa) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-    case 9:
-      ++aa;
-      break;
-    case 10:
-      ++aa;
-      break;
-    case 11:
-      ++aa;
-      break;
-    case 12:
-      ++aa;
-      break;
-    case 13:
-      ++aa;
-      break;
-    case 14:
-      ++aa;
-      break;
-    case 15:
-      ++aa;
-      break;
-    case 16:
-      ++aa;
-      break;
-    case 17:
-      ++aa;
-      break;
-    case 18:
-      ++aa;
-      break;
-    case 19:
-      ++aa;
-      break;
-    case 20:
-      ++aa;
-      break;
-    case 21:
-      ++aa;
-      break;
-    case 22:
-      ++aa;
-      break;
-    case 23:
-      ++aa;
-      break;
-    case 24:
-      ++aa;
-      break;
-    case 25:
-      ++aa;
-      break;
-    case 26:
-      ++aa;
-      break;
-    case 27:
-      ++aa;
-      break;
-    case 28:
-      ++aa;
-      break;
-    case 29:
-      ++aa;
-      break;
-    case 30:
-      ++aa;
-      break;
-    case 31:
-      ++aa;
-      break;
-    case 32:
-      ++aa;
-      break;
-    case 33:
-      ++aa;
-      break;
-    case 34:
-      ++aa;
-      break;
-    case 35:
-      ++aa;
-      break;
-    case 36:
-      ++aa;
-      break;
-    case 37:
-      ++aa;
-      break;
-    case 38:
-      ++aa;
-      break;
-    case 39:
-      ++aa;
-      break;
-    case 40:
-      ++aa;
-      break;
-    case 41:
-      ++aa;
-      break;
-    case 42:
-      ++aa;
-      break;
-    case 43:
-      ++aa;
-      break;
-    case 44:
-      ++aa;
-      break;
-    case 45:
-      ++aa;
-      break;
-    case 46:
-      ++aa;
-      break;
-    case 47:
-      ++aa;
-      break;
-    case 48:
-      ++aa;
-      break;
-    case 49:
-      ++aa;
-      break;
-    case 50:
-      ++aa;
-      break;
-    }
-    //a++;
-  }
-
-  exit(1);
-
-  int chan=0;
-
-  for (int i=0;i<20;i++) {
-    cpar.hS[chan]=i;
-
-
-
-    Int_t sum=cpar.hS[chan];
-    if (sum<=0) sum=1;
-
-    Int_t kk=cpar.hS[chan]-1;
-    UInt_t div=0;
-    if (kk>0) {
-      while (kk >>= 1) {
-	div++;
-      }
-      div++;
-    }
-
-
-
-    cout << "div: " << i << " " << cpar.hS[chan] << " sum= " << sum << " " << div << " " << (1 << div) << endl;
-  }
-
-
-
-  cout << "-----------" << endl;
-
-
-
-
-  for (int i=1;i<20;i++) {
-    UInt_t sum=i-1;//cpar.hS[chan];
-    UInt_t div=0;
-    if (sum) {
-      while (sum >>= 1) {
-	div++;
-      }
-      div++;
-    }
-
-    cout << i << " " << i-1 << " " << div << " " << (1 << div) << endl;
-  }
-  exit(1);
-
-  int a=235;
-  //cout << a << " " << std::bit_width(a) << endl;
-
-  int n=1;
-  for (n=0;n<100;++n) {
-    int msb;
-    asm("bsrl %1,%0" : "=r"(msb) : "r"(n));
-    std::cout << n << " : " << msb << std::endl;
-  }
-  exit(1);
-
-  cout << sizeof(EventClass) << endl;
-  cout << sizeof(PulseClass) << endl;
-  exit(-1);
-
-  string command = ".x ";
-  command+=MACRO;
-  command+="/test.C+";
-  //command+="/";
-  cout << command << endl;
-  //cout << gSystem->pwd() << endl;
-  //gSystem->cd("..");
-  //cout << gSystem->pwd() << endl;
-  gROOT->ProcessLine(command.c_str());
-  exit(1);
-
-
-
-
-  Long64_t a=0,b=0,c=0,d=0;
-  for (Long64_t i=0;i<5e9;i++) {
-    a = i & 0x7FF;
-    c = (a<<21)>>21;
-    //if (a > 0x3FF)
-    //c = a;// | 0xFC00;
-   }
-
-  b = 2047 & 0x7FF;
-  d=b;
-  (d<<=52)>>=52;
-
-  cout << "a: " << a << " " << b << " " << c << " " << d << endl;
-  exit(1);
-  
-
-
-
-
-  prnt("ss",KWHT,"Dec79_1: ");
-  CheckMem(1);
-  prnt("s",RST);
-
-  for (int j=0;j<20;j++) {
-    //std::list<int> Blist2;
-    std::list<EventClass> Blist2;
-    for (int i=0;i<10000000;i++) {
-      Blist2.emplace_back();
-    }
-  
-    prnt("ss",KWHT,"Dec79_2: ");
-    CheckMem(1);
-    prnt("s",RST);
-
-    Blist2.clear();
-
-    prnt("ss",KWHT,"Dec79_3: ");
-    CheckMem(1);
-    prnt("s",RST);
-  }
-
-  exit(1);
-  */
-
-  /*
-
-    TList* lst = TClass::GetClass("Toptions")->GetListOfDataMembers();
-
-    TDataMember *dm;
-    TIter nextd(lst);
-    while ((dm = (TDataMember *) nextd())) {
-    cout << dm->GetName() << " " << dm->GetDataType() << endl;
-    }
-    exit(1);
-  
-    TString s1 = "123124";
-    cout << s1.First('3') << " " << s1.First('[') << " " << kNPOS << endl;
-    exit(1);
-
-    // begin test block
-    std::list<int> mylist;
-    std::list<int>::iterator it;
-    std::list<int>::reverse_iterator rit;
-
-    // set some initial values:
-    for (int i=1; i<=11; ++i) mylist.push_back(i*10); // 1 2 3 4 5
-
-    for (it=mylist.begin(); it!=mylist.end(); ++it)
-    std::cout << ' ' << *it;
-    std::cout << '\n';
-
-    for (rit=mylist.rbegin(); rit!=mylist.rend(); ++rit) {
-    if (*rit<75) {
-    it = mylist.insert(rit.base(),75);
-    cout << *it << endl;
-    break;
-    }
-    }
-
-    for (it=mylist.begin(); it!=mylist.end(); ++it)
-    std::cout << ' ' << *it;
-    std::cout << '\n';
-
-    // for (rit=mylist.rbegin(); rit!=mylist.rend(); ++rit)
-    //   std::cout << ' ' << *rit;
-    // std::cout << '\n';
-
-    // --rit;
-    // std::cout << *rit << endl;
-
-    it=mylist.begin();
-    std::advance(it,3);
-
-    cout << *it << endl;
-    cout << std::distance(mylist.begin(),it) << " " << std::distance(it,mylist.end()) << endl;
-	
-
-    exit(1);
-  */
-
-  /*
-    for (int x = 0, y = 0; (y <10 || x <10); x++, y++){
-    cout << x << " " << y << endl;
-    }
-    exit(1);
-
-    //cout << TClass::GetClass("Toptions")->GetClassVersion() << endl;
-    //exit(1);
-
-    mylist.insert(mylist.begin(),0);
-    //mylist.clear();
-    //mylist.insert(mylist.begin(),21);
-    std::cout << *rit << " " << mylist.back() << " " << *mylist.begin() << endl;
-
-    std::cout << "mylist contains:";
-    for (it=mylist.begin(); it!=mylist.end(); ++it)
-    std::cout << ' ' << *it;
-    std::cout << '\n';
-
-    rit=++mylist.rbegin();
-    mylist.insert(rit.base(),29);
-
-    std::cout << "mylist contains:";
-    for (it=mylist.begin(); it!=mylist.end(); ++it)
-    std::cout << ' ' << *it;
-    std::cout << '\n';
-
-    it=--mylist.end();
-
-    advance(it,-8);
-    cout << *mylist.rbegin() << " " << *(--mylist.rend()) << " "
-    << *rit << " " << *rit.base() << " " << *it << endl;
-		
-    for (it=--mylist.end(); it!=mylist.begin(); --it) {
-    std::cout << ' ' << *(it);
-    }
-    std::cout << '\n';
-
-    std::cout << "end: " << *(it) << endl;
-
-
-
-    std::list<int> Levents;
-    std::list<int>::iterator rl;
-    //std::list<int>::reverse_iterator rit;
-
-    // set some initial values:
-    for (int i=0; i<=10; i+=2) Levents.push_back(i); // 1 2 3 4 5
-
-    std::cout << "Levents contains:" << endl;
-
-    for (rl=Levents.begin(); rl!=Levents.end(); ++rl)
-    std::cout << ' ' << *rl;
-    std::cout << '\n';
-
-
-    int kk=7;
-
-    for (rl=--Levents.end();rl!=Levents.begin();--rl) {
-			
-    if (*rl < kk) {
-    //add new event at the current position of the eventlist
-    Levents.insert(++rl,kk);
-    cout << "i: " << *rl << endl;
-    break;
-    }
-    cout << " : " << *rl << endl;
-    }
-		
-
-    for (rl=Levents.begin(); rl!=Levents.end(); ++rl)
-    std::cout << ' ' << *rl;
-    std::cout << '\n';
-		
-
-    exit(1);
-    // end test block
-    */
 
   //ev_max=2*opt.ev_min;
 
   //mean_event.Make_Mean_Event();
+
+  InBuf = new BufClass(1024*iMB); //1GB
+  //memset(UsbBuf->Buf,0,UsbBuf->Size);
+  decoder = new DecoderClass();
+  decoder->zfile = &f_read;
 
   GLBuf2 = NULL;//new UChar_t[GLBSIZE];
   GLBuf = NULL;//new UChar_t[GLBSIZE];
@@ -1282,7 +868,7 @@ CRS::CRS() {
   //type_ch[i]=255;
   //}
 
-  MAXTRANS2=MAXTRANS7;
+  //MAXTRANS2=MAXTRANS;
   //memset(Pre,0,sizeof(Pre));
 
   Fmode=0;
@@ -1332,10 +918,10 @@ CRS::CRS() {
 
   chan_in_module=MAX_CH;
 
-  ntrans=MAXTRANS7;
+  ntrans=MAXTRANS;
   //opt.usb_size=1024*1024;
 
-  for (int i=0;i<MAXTRANS7;i++) {
+  for (int i=0;i<MAXTRANS;i++) {
     transfer[i] =NULL;
     buftr[i]=NULL;
     //Fbuf[i]=NULL;
@@ -1367,6 +953,7 @@ CRS::~CRS() {
 
   DoExit();
   cout << "~CRS()" << endl;
+  delete InBuf;
   delete[] DecBuf_ring;
   delete[] RawBuf;
   delete[] GLBuf2;
@@ -1679,13 +1266,13 @@ int CRS::SetPar() {
 
 void CRS::Free_Transfer() {
 
-  Cancel_all(MAXTRANS7);
+  Cancel_all(MAXTRANS);
   gSystem->Sleep(50);
 
   //cout << "---Free_Transfer---" << endl;
 
   //for (int i=0;i<ntrans;i++) {
-  for (int i=0;i<MAXTRANS7;i++) {
+  for (int i=0;i<MAXTRANS;i++) {
     //cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
     //int res = libusb_cancel_transfer(transfer[i]);
     libusb_free_transfer(transfer[i]);
@@ -1694,7 +1281,7 @@ void CRS::Free_Transfer() {
 
   }
 
-  for (int i=0;i<MAXTRANS7;i++) {
+  for (int i=0;i<MAXTRANS;i++) {
     if (buftr[i]) {
       buftr[i]=NULL;
     }
@@ -1740,8 +1327,7 @@ int CRS::Init_Transfer() {
 
   ///* YK 29.09.20
   //cout << "---Init_Transfer2---" << endl;
-  //int r=
-  cyusb_reset_device(cy_handle);
+  //int r= cyusb_reset_device(cy_handle);
   //prnt("ssds;",KRED,"cyusb_reset: ",r,RST);
   //gSystem->Sleep(100);
   //*/
@@ -1760,14 +1346,15 @@ int CRS::Init_Transfer() {
 
   //cout << "---Init_Transfer 3---" << endl;
   ntrans=0;
-  for (int i=0;i<MAXTRANS7;i++) {
+  for (int i=0;i<MAXTRANS;i++) {
     transfer[i] = libusb_alloc_transfer(0);
     //transfer[i]->flags|=LIBUSB_TRANSFER_FREE_BUFFER;
 		
     int* ntr = new int;
     (*ntr) = i;
 
-    libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], tr_size, cback, ntr, 0);
+    unsigned int timeout=0; //200
+    libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], tr_size, cback, ntr, timeout);
     //libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buftr[i], opt.usb_size*1024, cback, ntr, 0);
 
     /*
@@ -1786,21 +1373,8 @@ int CRS::Init_Transfer() {
 
   }
 
-  /*
-    if (opt.usb_size>1024) {
-    MAXTRANS2=MAXTRANS-1;
-    }
-    else {
-    MAXTRANS2=MAXTRANS;
-    }
-  */
-
-  //cout << "reset_usb: " << endl;
-  //Command32(7,0,0,0); //reset usb command
-  //gSystem->Sleep(250);
-
   //cout << "submit7:" << endl;
-  Submit_all(MAXTRANS2);
+  Submit_all(MAXTRANS);
 
   /*
     for (int i=0;i<ntrans;i++) {
@@ -1811,8 +1385,8 @@ int CRS::Init_Transfer() {
   */
   cout << "Number of transfers: " << ntrans << endl;
 
-  if (ntrans!=MAXTRANS2) {
-    for (int i=ntrans;i<MAXTRANS2;i++) {
+  if (ntrans!=MAXTRANS) {
+    for (int i=ntrans;i<MAXTRANS;i++) {
       //cout << "free: " << i << endl;
       //libusb_free_transfer(transfer[i]);
       cout << "delete: " << i << endl;
@@ -1824,7 +1398,7 @@ int CRS::Init_Transfer() {
   }
   gSystem->Sleep(250);
 
-  Cancel_all(MAXTRANS7);
+  Cancel_all(MAXTRANS);
   gSystem->Sleep(250);
 
   return 0;
@@ -3402,21 +2976,16 @@ void CRS::InitBuf() {
     gl_Nbuf=8;
 
   if (Fmode==1) { //module is connected
-    if (opt.usb_size<=1024) {
+    if (opt.usb_size<=2048) {
       tr_size=opt.usb_size*1024;
-      MAXTRANS2=MAXTRANS7;
-    }
-    else if (opt.usb_size<=2048) {
-      tr_size=opt.usb_size*1024;
-      MAXTRANS2=MAXTRANS7;
     }
     else {
       tr_size=2048*1024;
-      MAXTRANS2=MAXTRANS7;
     }
+    //MAXTRANS2=MAXTRANS;
 
     gl_sz = opt.usb_size;
-    gl_sz *= 1024*MAXTRANS2*gl_Nbuf;
+    gl_sz *= 1024*MAXTRANS*gl_Nbuf;
     cout << "gl_sz: " << opt.usb_size << " " << gl_sz/MB << " MB" << endl;
     GLBuf2 = new UChar_t[gl_sz+gl_off];
     memset(GLBuf2,0,gl_sz+gl_off);
@@ -3779,6 +3348,8 @@ void CRS::Decode_switch(UInt_t ibuf) {
     Decode80(dec_iread[ibuf]-1,ibuf);
     break;
   case 79:
+    //decoder->Decode79(dec_iread[ibuf]-1,ibuf);
+    //cout << "Decode79: " << f_read << " " << *decoder->zfile << endl;
     Decode79(dec_iread[ibuf]-1,ibuf);
     break;
   case 78:
@@ -6761,7 +6332,7 @@ void CRS::Flush_Dec() {
     }
 
     decw_mut.UnLock();
-    
+
     DecBuf+=idec;
     if (DecBuf_ring+DECSIZE*NDEC-DecBuf<2*DECSIZE) {
       prnt("ssds;",BYEL,"---end of DecBuf---: ",NDEC,RST);

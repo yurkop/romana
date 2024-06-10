@@ -7,11 +7,11 @@
 //class HMap;
 //class Mdef;
 
-class BufClass {
- public:
-  char* buffer;
-  int bufsize;
-};
+// class BufClass {
+//  public:
+//   char* buffer;
+//   int bufsize;
+// };
 
 //peak Type:
 const UChar_t P_PILE1=1<<0; //fisrt puleup pulse
