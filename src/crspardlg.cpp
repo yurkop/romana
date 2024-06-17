@@ -67,6 +67,7 @@ vector<const char*> ptip = {
   "Trigger type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing\nNot all types are available for all devices",
   "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
+  "Trigger lower threshold",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Master/slave channel:\nEvents containing only slave channels are rejected\nEach event must contain at least one master channel",
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
@@ -75,7 +76,6 @@ vector<const char*> ptip = {
   "Dead-time window \nsubsequent peaks within this window are ignored",
   "Pileup window \nmultiple peaks within this window are marked as pileup",
   //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
-  "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction\n2 - base slope subtraction (for HPGe)",
   "Energy calibration type: 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline",
   "Energy calibration 0: E0+E1*x",
   "Energy calibration 1: E0+E1*x",
@@ -86,16 +86,17 @@ vector<const char*> ptip = {
   "Use channel for group histograms *_g3",
   "Use channel for group histograms *_g4",
   "Software smoothing. If negative - data are truncated to integer (imitates hS)",
-  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing;\n7 - CFD;\n-1 - use hardware trigger",
+  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative, LT (lower threshold) crossing;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, LT (lower threshold) crossing;\n7 - CFD, zero crosing;\n-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
   "Software trigger threshold",
-  "Baseline start, relative to peak Pos (negative, included)",
-  "Baseline end, relative to peak Pos (negative, included)",
+  "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction\n2 - base slope subtraction (for HPGe)\n3 - base slope2 instead of slope1 (using W1 & W2) + slope2 subtraction (for HPGe)",
+  "Baseline start, relative to peak Pos (usually negative, included)",
+  "Baseline end, relative to peak Pos (usually negative, included)",
   "Peak start, relative to peak Pos (usually negative, included)",
   "Peak end, relative to peak Pos (usually positive, included)",
-  "Timing window start, included (usually negative, included)/\n"
+  "Timing window start (usually negative, included)/\n"
   "CFD delay [delay=abs(T1)]",
-  "Timing window end, included (usually positive, included)/\n"
+  "Timing window end (usually positive, included)/\n"
   "Inverse CFD fraction",
   "Width window start (included)",
   "Width window end (included)",
@@ -1398,7 +1399,7 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Number of used channels";
   tip2= "Number of threads (1 - no multithreading)";
   label="Number of channels/ threads";
-  AddLine_opt(fF6,ww,&opt.Nchan,&opt.nthreads,tip1,tip2,label,k_int,k_int,1,MAX_CH,1,8,0x100,0x100);
+  AddLine_opt(fF6,ww,&opt.Nchan,&opt.nthreads,tip1,tip2,label,k_int,k_int,1,MAX_CH,1,CRS::MAXTHREADS,0x100,0x100);
 
   tip1= "Analysis start (in sec) - only for analyzing files";
   tip2= "Analysis/acquisition stop (in sec)";
@@ -1588,9 +1589,9 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   label="Type 3 discriminator length";
   AddLine_1opt(fF6,ww,cpar.coinc_w,0,tip1,label,k_int,1,1023);
 
-  tip1= "";
-  label="Thr2: low threshold for trigger type 3,4";
-  AddLine_1opt(fF6,ww,&cpar.Thr2,&opt.sThr2,tip1,label,k_int,-1000,1000);
+  // tip1= "";
+  // label="Thr2: low threshold for trigger type 3,4";
+  // AddLine_1opt(fF6,ww,&cpar.Thr2,&opt.sThr2,tip1,label,k_int,-1000,1000);
 
   tip1= "ADCM period in nsec: 10 for ADCM32; 16 for ADCM64";
   label="adcm period";
@@ -2492,6 +2493,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,24,1,0,0,"Trg",cpar.Trg,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Drv",cpar.Drv,0,1);
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Thr",cpar.Thr,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,1,0,0,"LT",cpar.LT,0,1);
 
   //Analysis
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"St",opt.St);
@@ -2501,7 +2503,6 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_fnum,35,0,-9999,9999,"sD",opt.sD);
   AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"dTm",opt.dTm);
   AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"Pile",opt.Pile);
-  AddColumn(jj,kk++,1,p_inum,20,0,0,2,"Mt",opt.Mt);
   AddColumn(jj,kk++,1,p_inum,20,0,0,2,"C",opt.calibr_t);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E0",opt.E0);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E1",opt.E1);
@@ -2519,6 +2520,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,26,0,-1,7,"sTg",opt.sTg);
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);
+  AddColumn(jj,kk++,1,p_inum,20,0,0,3,"Mt",opt.Mt);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"Base1",opt.Base1);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"Base2",opt.Base2);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"Peak1",opt.Peak1);

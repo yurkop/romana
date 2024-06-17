@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 141
+#define CDEF 142
 
 /*
 #include <list>
@@ -83,6 +83,7 @@ public:
   Int_t Trg[MAX_CHTP]; // [trg] Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
   Int_t Drv[MAX_CHTP]; // [kderiv] K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t Thr[MAX_CHTP]; // [threshold] T = –2048 .. +2047
+  Int_t LT[MAX_CHTP]; // [lower threshold] T = –2048 .. +2047
   Int_t G[MAX_CHTP]; // [adcGain] G = 0..12
   Int_t fdiv[MAX_CHTP]; // frequency divider (=2 for 16-bit/100 MHz)
   Bool_t AC[MAX_CHTP]; // [acdc] AC-1; DC-0
@@ -111,7 +112,7 @@ public:
   Long64_t F_start; //start of the acquisition
   Long64_t F_stop; //stop of the acquisition (usually time of last modification of file)
 
-  Int_t Thr2; // lower threshold for trig 3,4 T = –2048 .. +2047
+  //Int_t Thr2; // lower threshold for trig 3,4 T = –2048 .. +2047
 public:
   void InitPar(int zero);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
@@ -174,6 +175,8 @@ public:
 
   Float_t elim1[MAX_CHTP];
   Float_t elim2[MAX_CHTP];
+
+  //Bool_t a_base[MAX_CHTP]; //анализировать base,slope,RMS
   //----------------------------------------------
   // Important common parameters
 
@@ -304,7 +307,7 @@ public:
   //
   //Float_t SimSig;
 
-  Int_t sThr2; // lower threshold for trig 3,4
+  //Int_t sThr2; // lower threshold for trig 3,4
 
   Int_t Nrows;
   Int_t ScrollPos;

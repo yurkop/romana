@@ -199,3 +199,10 @@ daqpar->AllEnabled
 logbook
 
 ROOT::EnableThreadSafety() ? не работает на домашнем ноутбуке
+
+ERROR:
+/hran2/ZFSRAID/Ing27-HPGe:
+romana test132_HPGe_2_LaBr_4_Ing27_78perc_Na22_top_Pb_1mm_box_0cm_toLaBr_30cm.raw -p test117.par
+Analyze; Reset
+
+case 7 для FindZero - сделать!

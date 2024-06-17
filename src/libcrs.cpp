@@ -121,9 +121,9 @@ const Long64_t gl_off = iMB; //1MB, was 1024*128 - офсет GLBuf относи
 UChar_t* GLBuf;
 UChar_t* GLBuf2;
 
-Long64_t b_start[CRS::MAXTRANS]; //start of local buffer(part of GLBuf), included
-Long64_t b_fill[CRS::MAXTRANS]; //start of local buffer for reading/filling
-Long64_t b_end[CRS::MAXTRANS]; //end of local buffer(part of GLBuf), excluded
+Long64_t b_start[CRS::MAXTHREADS]; //start of local buffer(part of GLBuf), included
+Long64_t b_fill[CRS::MAXTHREADS]; //start of local buffer for reading/filling
+Long64_t b_end[CRS::MAXTHREADS]; //end of local buffer(part of GLBuf), excluded
 
 UInt_t gl_iread; //current number of readbuf or cback [0.. infinity)
 UInt_t gl_ivect; //current number of pstruct in make_event [0.. infinity)
@@ -136,13 +136,13 @@ int decode_thread_run;
 int mkev_thread_run;
 int ana_thread_run;
 int wrt_thread_run;
-int dec_nr[CRS::MAXTRANS];
+int dec_nr[CRS::MAXTHREADS];
 
 
 
 
 TThread* trd_crs;
-TThread* trd_dec[CRS::MAXTRANS];
+TThread* trd_dec[CRS::MAXTHREADS];
 //TCondition dec_cond[CRS::MAXTRANS];
 TThread* trd_mkev;
 //TCondition mkev_cond[CRS::MAXTRANS];
@@ -154,7 +154,7 @@ TThread* trd_dec_write;
 TThread* trd_raw_write;
 
 
-UInt_t dec_iread[CRS::MAXTRANS];
+UInt_t dec_iread[CRS::MAXTHREADS];
 // dec_iread[i]=0 в начале
 // handle_decode крутится для n потоков
 // пока dec_iread==0 для данного потока, handle_decode ждет
@@ -175,7 +175,7 @@ int ana_all;
 
 //UInt_t list_min=100;
 
-volatile char astat[CRS::MAXTRANS];
+//volatile char astat[CRS::MAXTRANS];
 
 int chan_in_module;
 
@@ -933,7 +933,7 @@ CRS::CRS() {
   trd_dec_write=0;
   trd_raw_write=0;
 
-  for (int i=0;i<MAXTRANS;i++) {
+  for (int i=0;i<MAXTHREADS;i++) {
     trd_dec[i]=0;
   }
 
@@ -1942,7 +1942,7 @@ void CRS::AllParameters36() {
       if (pwin>4095) pwin=4095;
       Command32(2,chan,33,pwin); //окно повторных срабатываний
 
-      Command32(2,chan,35,0); //нижний порог дискр.(3,4) = 0
+      Command32(2,chan,35,(int)cpar.Thr[chan]); //нижний порог дискр.(3,4) = 0
 
       //сглаживание
       Int_t sum=cpar.hS[chan];
@@ -2354,8 +2354,7 @@ void CRS::DoExit()
 }
 
 void CRS::DoReset(int rst) {
-
-  //cout << "DoReset1: " << b_stop << " " << rst << " " << Fmode << endl;
+  //rst=0 - "Continue"; rst=1 - "Start"
 
   if (!b_stop) return;
 
@@ -2414,12 +2413,16 @@ void CRS::DoReset(int rst) {
       chanpar->UpdateStatus(rst);
     }
 
+    for (auto i=0;i<opt.Nchan;i++) {
+      if (opt.Mt[i]>=2) {
+	hcl->b_base[i]=1;
+      }
+    }
   }
 
 #ifdef TIMES
   memset(ttm,0,sizeof(ttm));
 #endif
-
 }
 
 int CRS::DoFopen(char* oname, int copt, int popt) {
@@ -2448,7 +2451,7 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
 
   //cout << "DoFopen: " << Fname << " " << name << endl;
 
-  if (!name.compare("17")) {
+  if (name.compare("17")==0) {
     module=17;
 
     SimulateInit();
@@ -3589,13 +3592,13 @@ void CRS::CheckDSP(PulseClass &ipls) {
 
 void CRS::PulseAna(PulseClass &ipls) {
   //prnt("ss d l ds;",BRED,"Pls1:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
-  if (!opt.Dsp[ipls.Chan]) {
+  if (!opt.Dsp[ipls.Chan]) { // не Dsp -> анализируем импульс
     if (opt.sS[ipls.Chan]) {
       ipls.Smooth(opt.sS[ipls.Chan]);
     }
     ipls.PeakAna33();
   }
-  else { //Dsp
+  else { //Dsp -> не анализируем
     ipls.Pos=cpar.Pre[ipls.Chan];
     if (opt.checkdsp) {
       // if (ipls.Peaks.size()!=1) {
@@ -3604,9 +3607,19 @@ void CRS::PulseAna(PulseClass &ipls) {
       ipls.PeakAna33();
       CheckDSP(ipls);
     }
+    // else {
+    //   // для sTg=3,6,7 ищем пересечение нижнего порога/нуля
+    //   switch (opt.sTg[ipls.Chan]) {
+    //   case 3:
+    //   case 6:
+    // 	break;
+    //   default:
+    // 	break;
+    //   }
+    // }
   }
   ipls.Ecalibr(ipls.Area);
-  if (hcl->b_base) {
+  if (hcl->b_base[ipls.Chan]) {
     ipls.Ecalibr(ipls.Base);
     ipls.Ecalibr(ipls.Sl1);
     ipls.Ecalibr(ipls.Sl2);
@@ -4465,21 +4478,27 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
 
   ipls.Height=pk.H;
 
-  if (cpar.Trg[ipls.Chan]==6) {
-    int kk = cpar.Drv[ipls.Chan];
-    //cout << "pos: " << ipls.Pos << " " << kk << endl;
-    if (ipls.Pos>=kk && (int)ipls.sData.size()>ipls.Pos+1) {
-      ipls.FindZero(cpar.Trg[ipls.Chan],kk,ipls.Pos);
+  switch (cpar.Trg[ipls.Chan]) {
+  case 3:
+  case 6:
+  case 7:
+    {
+      int kk = cpar.Drv[ipls.Chan];
+      //cout << "pos: " << ipls.Pos << " " << kk << endl;
+      //if (ipls.Pos>=kk && (int)ipls.sData.size()>ipls.Pos+1) {
+      ipls.FindZero(kk);
       ipls.Time-=ipls.Pos;
     }
-  }
-  else if (pk.RX!=0)
-    ipls.Time=Double_t(pk.QX)/pk.RX;
-  else {
-    ++errors[ER_TIME];
-    ipls.Time=-999;
-    //YK;
-  }
+    break;
+  default:
+    if (pk.RX!=0)
+      ipls.Time=Double_t(pk.QX)/pk.RX;
+    else {
+      ++errors[ER_TIME];
+      //ipls.Time=-999;
+      //YK;
+    }
+  } //switch
 
   //ipls.Time=pk.RX;
 
@@ -4497,7 +4516,7 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
     ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
   }
 
-}
+} //MakePk
 
 void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
   //ibuf - current sub-buffer

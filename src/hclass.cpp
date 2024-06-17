@@ -363,6 +363,10 @@ void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
   }
   if (nbins<=0) return;
 
+  // if (map->hst->GetNbinsX() < nbins) {
+  //   map->hst->SetBins(nbins,-cpar.Pre[ch],nbins-cpar.Pre[ch]);
+  // }
+
   double nent=map->hst->GetEntries()/nbins;
   double val;
 
@@ -390,12 +394,12 @@ void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
 void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
     int ch = ipls->Chan;
-    if (ch<opt.Nchan) {
+    if (ch<opt.Nchan && v_map[ch]) {
       int newsz = ipls->sData.size();
-      TH1* hh = v_map[ch]->hst;
 
+      TH1* hh = v_map[ch]->hst;
       if (hh->GetNbinsX() < newsz) {
-	hh->SetBins(newsz,-cpar.Pre[ch],newsz-cpar.Pre[ch]);
+      	hh->SetBins(newsz,-cpar.Pre[ch],newsz-cpar.Pre[ch]);
       }
 
       if (hnum==51) { //pulse
@@ -750,13 +754,14 @@ Mdef* HClass::Add_h2(int id1, int id2) {
 }
 
 bool check_Base(int num) {
+  // проверяем, есть ли хоть одна 1d или 2d гистограмма с base,slope,RMS
   bool res=false;
   int nn[3];
   nn[0]=num;
   nn[1]=num/100;
   nn[2]=num%100;
   for (int i=0;i<3;i++) {
-    if (nn[i]>=4 && nn[i]<=8)
+    if (nn[i]>=4 && nn[i]<=8) //4-base; 5,6-slope; 6,7-RMS
       res=true;
   }
   return res;
@@ -781,7 +786,9 @@ void HClass::Make_hist() {
   MFill_list.clear();
   Mdef* mprof=0;
 
-  b_base=false;
+  bool b_bbb=false; 
+  memset(b_base,0,sizeof(b_base));
+
   Hdef* hd2=0;
   PulseClass pls;
   for (auto it = Mlist.begin();it!=Mlist.end();++it) {
@@ -877,12 +884,14 @@ void HClass::Make_hist() {
       else
 	MFill_list.push_back(&*it);
 
-      if (check_Base(it->hnum)) b_base=true; 
+      if (check_Base(it->hnum)) b_bbb=true; 
 
       //cout << "Make_hist: " << it->hnum << " " << b_base << endl;
     }
 
   } //for (auto it = Mlist.begin()...
+
+  if (b_bbb) memset(b_base,1,sizeof(b_base));
 
   // оставляем только один член с профилометром в MFill_list
   // cout << "----------" << endl;

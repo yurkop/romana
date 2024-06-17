@@ -35,6 +35,7 @@ void Coptions::InitPar(int zero) {
     Trg[i]=1;
     Drv[i]=1*zero;
     Thr[i]=50*zero;
+    LT[i]=0;
     G[i]=12*zero;
     fdiv[i]=0;
     pls[i]=true;
@@ -60,7 +61,7 @@ void Coptions::InitPar(int zero) {
 
   F_start = gSystem->Now();
   F_stop = 0;
-  Thr2=0*zero;
+  //Thr2=0*zero;
 }
 
 void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &par, int &min, int &max) {
@@ -169,6 +170,17 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
     else if (!strcmp(name,"Thr")) {
       par = Thr[i];
+      if (type_ch==0) {
+        min=-2048;
+        max=2047;
+      }
+      else { //1,2,3
+        min= -65536;
+        max= 65535;
+      }
+    }
+    else if (!strcmp(name,"LT")) {
+      par = LT[i];
       if (type_ch==0) {
         min=-2048;
         max=2047;
@@ -464,7 +476,7 @@ Toptions::Toptions() {
   // SimSim[11]=1; //CFD fraction
   memset(wrk_check,0,sizeof(wrk_check));
 
-  sThr2=cpar.Thr2;
+  //sThr2=cpar.Thr2;
 
   Nrows = 8;
   ScrollPos=0;

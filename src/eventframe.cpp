@@ -1268,9 +1268,10 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
   }
 
   int ithr=(opt.sTg[pulse->Chan]!=0);
-  if (dr==ithr && opt.b_peak[8]) //threshold
-    doYline(opt.sThr[pulse->Chan],gx1[j],
-	    gx2[j],chcol[pulse->Chan],2);
+  if (dr==ithr && opt.b_peak[8]) {//threshold
+    doYline(opt.sThr[pulse->Chan],gx1[j], gx2[j],chcol[pulse->Chan],2);
+    doYline(cpar.LT[pulse->Chan],gx1[j], gx2[j],chcol[pulse->Chan],3);
+  }
 
 }
 

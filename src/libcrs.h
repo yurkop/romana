@@ -84,6 +84,7 @@ RQ_OBJECT("CRS")
   virtual ~CRS();
 
   //--------constants---------
+  static const int MAXTHREADS=8;
   static const int MAXTRANS=7; //было 8
   //static const int MAXTRANS=7;
   //static const int MAXTRANS7=7;
