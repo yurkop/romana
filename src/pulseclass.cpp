@@ -529,6 +529,7 @@ void PulseClass::PeakAna33() {
 
     if (opt.Mt[Chan]==3) { //альтернативный slope1 (W1-W2) вместо slope2
       Sl2 = 2*(Base - Width)/(B1+B2-W1-W2);
+      RMS2 = 0;
     }
     else { //slope2 (peak)
       Sl2=0;
@@ -544,6 +545,20 @@ void PulseClass::PeakAna33() {
       if (S_xx) {
 	Sl2/=S_xx;
       }
+
+      //RMS2 (peak)
+      RMS2=0;
+      nbkg=0;
+      for (int j=P1;j<=P2;j++) {
+	Float_t Yj = Area0+(j-(P1+P2)*0.5)*Sl2 - sData[j];
+	RMS2+=Yj*Yj;
+	nbkg++;
+	//cout << "jjjj: " << j << " " << Base << " " << sData[j] << " " << Yj << endl;
+      }
+      if (nbkg) {
+	RMS2 = sqrt(RMS2/nbkg);
+      }
+
     } //else (slope2)
     //prnt("ss fs;",BGRN,"Sl2:",Sl2,RST);
 
@@ -560,18 +575,6 @@ void PulseClass::PeakAna33() {
       RMS1 = sqrt(RMS1/nbkg);
     }
 
-    //RMS2 (peak)
-    RMS2=0;
-    nbkg=0;
-    for (int j=P1;j<=P2;j++) {
-      Float_t Yj = Area0+(j-(P1+P2)*0.5)*Sl2 - sData[j];
-      RMS2+=Yj*Yj;
-      nbkg++;
-      //cout << "jjjj: " << j << " " << Base << " " << sData[j] << " " << Yj << endl;
-    }
-    if (nbkg) {
-      RMS2 = sqrt(RMS2/nbkg);
-    }
   } //if b_base
 
   if (opt.Mt[Chan]==2) {
@@ -637,6 +640,8 @@ void PulseClass::PeakAna33() {
   //Time = Simul2;
 
   //prnt("ss l d f fs;",KGRN,"Simul2:",Tstamp64,Pos,Simul2,Time,RST);
+  if (Tstamp64 < 10000)
+    prnt("ss d l f f f f f f d ds;",BGRN,"pk:",Chan,Tstamp64,Area,Area0,Base,Sl1,Sl2,Width,opt.Mt[Chan],(int)hcl->b_base[Chan],RST);
   */
 
 } //PeakAna33()

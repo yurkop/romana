@@ -4502,13 +4502,21 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
 
   //ipls.Time=pk.RX;
 
-  ipls.Width=pk.AY/w_len[ipls.Chan]-ipls.Base;
-  //YK
-  if (ipls.Area)
-    ipls.Width/=ipls.Area;
+  ipls.Width=pk.AY/w_len[ipls.Chan];
+
+  if (opt.Mt[ipls.Chan]==3) {
+    ipls.Sl2 = 2*(ipls.Base - ipls.Width)/(b_len[ipls.Chan]-w_len[ipls.Chan]);
+    ipls.Area -= (p_len[ipls.Chan]-b_len[ipls.Chan])*0.5*ipls.Sl2;
+  }
   else {
-    ++errors[ER_WIDTH];
-    ipls.Width=0;
+    if (ipls.Area) {
+      ipls.Width-=ipls.Base;
+      ipls.Width/=ipls.Area;
+    }
+    else {
+      ++errors[ER_WIDTH];
+      ipls.Width=0;
+    }
   }
 
   //ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area;

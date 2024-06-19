@@ -195,7 +195,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //st_hlist=new TList();
   //st_hlist->SetOwner(true);
   st_plot = new TH1F("st_plot","",1000,0.,1000.);
-  //memset(pad_hist,0,sizeof(pad_hist));
 
   st_plot->SetBit(TH1::kNoStats);
   st_plot->SetBit(kCanDelete,0);
@@ -767,7 +766,7 @@ void HistFrame::Clear_Ltree()
   TGListTreeItem *idir;
 
   idir = fListTree->GetFirstItem();
-  int ii=0;
+  //int ii=0;
   while (idir) {
     // if (TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase)) {
     //   wrk_check[ii]=idir->IsChecked();
@@ -1729,30 +1728,17 @@ void HistFrame::EditCutG()
 
 void HistFrame::DoPeaks()
 {
-  cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
+  //cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
 
   TSpectrum spec;
 
-
-  //cout <<
-
-  /*
   int nn=1;
-  TIter next(st_hlist);
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    if (!fEc->GetCanvas()->GetPad(nn)) break;
-    fEc->GetCanvas()->cd(nn);
-    TH1 *hh = (TH1*) obj;
-    //cout << "hhh: " << hh->GetTitleSize() << endl;
-    //hh->Draw();
+  for (auto it=pad_hist.begin(); it!=pad_hist.end(); ++it) {
+    if (!(*it)->InheritsFrom(TH1::Class())) continue;
+    TH1* hh = (TH1*) *it;
     int npk = spec.Search(hh,2,"",0.5);
 
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,0,0)
     Double_t* peaks = spec.GetPositionX();
-#else
-    Float_t* peaks = spec.GetPositionX();
-#endif
 
     for (int j=0;j<npk;j++) {
       int bin = hh->FindFixBin(peaks[j]);
@@ -1777,14 +1763,16 @@ void HistFrame::DoPeaks()
 
       //TF1* fitf=new TF1("fitf","gaus",0,10);
       hh->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
+      //cout << "fithist: " << hh << " " << hh->GetName() << " " << fitopt << endl;
+      //hh->GetListOfFunctions()->ls();
       //f1->Draw("same");
     }
     nn++;
   }
   //fEc->GetCanvas()->SetEditable(true);
-  fEc->GetCanvas()->Update();
+  //fEc->GetCanvas()->Update();
   //fEc->GetCanvas()->SetEditable(false);
-  */
+  Update();
 }
 
 void HistFrame::PeakFit(HMap* map,TH1* hist1,TH1* hist2,int nn,d2vect &d2) {
@@ -2373,8 +2361,7 @@ void HistFrame::DrawStack() {
 
   int cc=0;
   //memset(pad_map,0,sizeof(pad_map));
-  std::vector <TH1*>::iterator ih;
-  for (ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
+  for (auto ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
     if (*ih)
       delete *ih;
   }
@@ -2436,9 +2423,9 @@ void HistFrame::DrawStack() {
   //cout << "x12: " << x1 << " " << x2 << " " << a1 << " " << a2 << endl;
   //determine y-axis ranges
 
-  for (ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
-    if (*ih)
-      GetHMinMax(*ih,a1,a2,y1,y2);
+  for (auto ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
+    if (*ih && (*ih)->InheritsFrom(TH1::Class()))
+      GetHMinMax((TH1*)*ih,a1,a2,y1,y2);
   }
 
   Y_Slider(st_plot,a1,a2,y1,y2);
@@ -2447,15 +2434,15 @@ void HistFrame::DrawStack() {
 
   st_plot->Draw("axis");
 
-  for (ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
-    if (*ih)
-      (*ih)->Draw("samehist");
+  for (auto ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
+    if (*ih && (*ih)->InheritsFrom(TH1::Class()))
+      ((TH1*)*ih)->Draw("samehist");
   }
 
   if (opt.b_stat) {
     TLegend* leg = new TLegend(0.65,0.75,0.95,0.95);
-    for (ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
-      if (*ih) {
+    for (auto ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
+      if (*ih && (*ih)->InheritsFrom(TH1::Class())) {
 	leg->AddEntry((*ih), (*ih)->GetName(), "lpf" );
 	leg->Draw();
       }
@@ -2495,7 +2482,51 @@ void HistFrame::Make_Hmap_ChkList() {
   }
 }
 
+bool HistFrame::CheckPads() {
+  // проверяем, изменились ли гистограммы в падах:
+  // нужно ли вновь создавать копии или рисовать старые
+  // возвращает true если пады изменились
+
+  int npad=0;
+  int ii=0;
+
+  // TCanvas *cv=fEc->GetCanvas();
+  // TObject *obj;
+  // if (!cv->GetListOfPrimitives()) return 0;
+  // TIter next(cv->GetListOfPrimitives());
+  // while ((obj = next())) {
+  //   if (obj->InheritsFrom(TVirtualPad::Class())) {
+  //     TVirtualPad *pad = (TVirtualPad*)obj;
+  //     cout << "pad: " << pad->GetNumber() << endl;
+  //   }
+  // }
+
+  HMap *map = (HMap*) hmap_chklist->First();
+  while (map) {
+    if (ii>=opt.icheck) {
+      if (npad>=(int)pad_map.size())
+	return true;
+      if (map != pad_map[npad])
+	return true;
+      //cout << "npad: " << npad << " " << pad_map.size()
+      //<< " " << map-pad_map[npad] << endl;
+      npad++;
+      if (npad>=ndiv)
+	break;
+    }
+    map = (HMap*) hmap_chklist->After(map);
+    ii++;
+  }
+  return false ;
+}
+
 void HistFrame::DrawHist() {
+
+  // for (int npad = 0;npad<ndiv;npad++) {
+  //   prnt("ssds;",BGRN,"pad: ",npad,RST);
+  //   TPad* pad = (TPad*) fEc->GetCanvas()->GetPad(npad);
+  //   pad->GetListOfPrimitives()->ls();
+  // }
 
   //create hmap_chklist
   Make_Hmap_ChkList();
@@ -2507,61 +2538,94 @@ void HistFrame::DrawHist() {
 
   TCanvas *cv=fEc->GetCanvas();
   cv->Clear();
-  //memset(pad_map,0,sizeof(pad_map));
-
-  std::vector <TH1*>::iterator ih;
-  for (ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
-    if (*ih)
-      delete *ih;
-  }
-  pad_hist.clear();
-  pad_map.clear();
-
   double mg=0.001;
   if (opt.xdiv+opt.ydiv>16)
     mg=0;
   cv->Divide(opt.xdiv,opt.ydiv,mg,mg);
 
-  int npad=0;
-  int ii=0;
 
-  //draw hists
-  HMap* map;
 
-  // create pad_hist from pad_map
-  TIter next(hmap_chklist);
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    if (ii>=opt.icheck) {
-      cv->cd(npad+1);
-      map=(HMap*) obj;
-      pad_map.push_back(map);
-      if (npad+1 != (int)pad_map.size()) {
-	cout << "pad_map size doesn't match: " << npad << " " << pad_map.size() << endl;
-	return;
-      }
-      //pad_map[npad]=map;
 
-      TH1* hh=0;
-      if (map->hst) { //histogram
-	TString name(map->hst->GetName());
-	name+=' ';
-	//if (pad_hist[npad]) delete pad_hist[npad];
-	//pad_hist[npad] = (TH1*) map->hst->Clone(name.Data());
-	hh = (TH1*) map->hst->Clone(name.Data());
-	hh->UseCurrentStyle();
-      }
-      else if (map->gr) { //graph
-	map->gr->Draw("AP");
-      }
-      pad_hist.push_back(hh);
+  bool cpads = CheckPads();
+  // cout << "cpads: " << cpads << " " << ndiv << " "
+  //      << cv->GetListOfPrimitives()->GetSize() << endl;
+  // prnt("ssds;",BGRN,"cpads: ",cpads,RST);
 
-      npad++;
-      if (npad>=ndiv)
-	break;
+  //cv->GetListOfPrimitives()->ls();
+
+  if (cpads) { //изменилось -> делаем новые копии гистограмм
+    for (auto ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
+      if (*ih)
+	delete *ih;
     }
-    ii++;
-  } //while ( (obj=(TObject*)next()) )
+    pad_hist.clear();
+    pad_map.clear();
+
+    int npad=0;
+    int ii=0;
+
+    //draw hists
+    HMap* map;
+
+    // create pad_hist from pad_map
+    TIter next(hmap_chklist);
+    TObject* obj;
+    while ( (obj=(TObject*)next()) ) {
+      if (ii>=opt.icheck) {
+	cv->cd(npad+1);
+	map=(HMap*) obj;
+	pad_map.push_back(map);
+	if (npad+1 != (int)pad_map.size()) {
+	  cout << "pad_map size doesn't match: " << npad << " " << pad_map.size() << endl;
+	  return;
+	}
+	//pad_map[npad]=map;
+
+	if (map->hst) { //histogram
+	  TString name(map->hst->GetName());
+	  name+=' ';
+	  //if (pad_hist[npad]) delete pad_hist[npad];
+	  //pad_hist[npad] = (TH1*) map->hst->Clone(name.Data());
+	  TH1 *hh = (TH1*) map->hst->Clone(name.Data());
+	  hh->UseCurrentStyle();
+	  pad_hist.push_back(hh);
+	}
+	else if (map->gr) { //graph
+	  TString name(map->gr->GetName());
+	  name+=' ';
+	  TGraphErrors *gg = (TGraphErrors*) map->gr->Clone(name.Data());
+	  //gg->UseCurrentStyle();
+	  pad_hist.push_back(gg);
+	  //map->gr->Draw("AP");
+	}
+
+	npad++;
+	if (npad>=ndiv)
+	  break;
+      }
+      ii++;
+    } //while ( (obj=(TObject*)next()) )
+  } //if cpads
+  else { //не изменилось -> заполняем старые копии гистограмм
+    /*
+    HMap *map = (HMap*) hmap_chklist->First();
+    while (map) {
+      if (ii>=opt.icheck) {
+	if (npad>=(int)pad_map.size())
+	  return true;
+	if (map != pad_map[npad])
+	  return true;
+	//cout << "npad: " << npad << " " << pad_map.size()
+	//<< " " << map-pad_map[npad] << endl;
+	npad++;
+	if (npad>=ndiv)
+	  break;
+      }
+      map = (HMap*) hmap_chklist->After(map);
+      ii++;
+    }
+    */
+  }
 
   // draw pad_hist
 
@@ -2714,54 +2778,58 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
 
 void HistFrame::AllRebinDraw() {
 
-  //cout << "AllRebin: " << endl;
-
   for (int npad = 0;npad<ndiv;npad++) {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
       continue;
 
-    OneRebinPreCalibr(pad_map[npad], pad_hist[npad], b_adj);
-    //TAxis* ya = pad_map[npad]->hst->GetYaxis();
-
-    double a1,a2,y1=1e99,y2=-1e99;
-    X_Slider(pad_hist[npad],a1,a2);
-    Y_Slider(pad_hist[npad],a1,a2,y1,y2);
-
     fEc->GetCanvas()->cd(npad+1);
-    if (pad_hist[npad]->GetDimension()==1) { //1D hist
-      gPad->SetLogy(opt.b_logy);
-      //cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
-      pad_hist[npad]->Draw(dopt[0].Data());
+    if (pad_hist[npad]->InheritsFrom(TH1::Class())) {
+      TH1* hh = (TH1*) pad_hist[npad];
+      OneRebinPreCalibr(pad_map[npad], hh, b_adj);
+      //TAxis* ya = pad_map[npad]->hst->GetYaxis();
 
-      // cout << "padhist: " << pad_hist[npad]->GetName()
-      // 	   << " " << pad_hist[npad]->GetOption()
-      // 	   << " " << pad_hist[npad]->GetSumw2N()
-      // 	   << endl;
+      double a1,a2,y1=1e99,y2=-1e99;
+      X_Slider(hh,a1,a2);
+      Y_Slider(hh,a1,a2,y1,y2);
 
-      // TSpectrum ts;
-      // TH1* bkg = ts.Background(pad_hist[npad],40);
-      // bkg->SetLineColor(2);
-      // bkg->Draw("samehist");
-    }
-    else { //2D hist or projection
-      //cout << "dopt: " << dopt[1].Data()+1 << endl;
-      gPad->SetLogz(opt.b_logy);
-      if (dopt[1].BeginsWith("x", TString::kIgnoreCase))
-      	((TH2*)pad_hist[npad])->ProjectionX("_px",0,-1,"o")->Draw(dopt[1].Data()+1);
-      else if (dopt[1].BeginsWith("y", TString::kIgnoreCase))
-      	((TH2*)pad_hist[npad])->ProjectionY("_py",0,-1,"o")->Draw(dopt[1].Data()+1);
-      else
-      pad_hist[npad]->Draw(dopt[1].Data());
-    }
+      if (hh->GetDimension()==1) { //1D hist
+	gPad->SetLogy(opt.b_logy);
+	//cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
+	hh->Draw(dopt[0].Data());
 
-    //draw cuts
-    if (opt.b_gcuts && opt.ncuts) {
-      DrawCuts(npad);
-    }
-    if (opt.b_roi) {
-      DrawRoi(pad_map[npad]->hd,fEc->GetCanvas()->GetPad(npad+1));
-    }
+	// cout << "padhist: " << pad_hist[npad]->GetName()
+	// 	   << " " << pad_hist[npad]->GetOption()
+	// 	   << " " << pad_hist[npad]->GetSumw2N()
+	// 	   << endl;
 
+	// TSpectrum ts;
+	// TH1* bkg = ts.Background(pad_hist[npad],40);
+	// bkg->SetLineColor(2);
+	// bkg->Draw("samehist");
+      }
+      else { //2D hist or projection
+	//cout << "dopt: " << dopt[1].Data()+1 << endl;
+	gPad->SetLogz(opt.b_logy);
+	if (dopt[1].BeginsWith("x", TString::kIgnoreCase))
+	  ((TH2*)hh)->ProjectionX("_px",0,-1,"o")->Draw(dopt[1].Data()+1);
+	else if (dopt[1].BeginsWith("y", TString::kIgnoreCase))
+	  ((TH2*)hh)->ProjectionY("_py",0,-1,"o")->Draw(dopt[1].Data()+1);
+	else
+	  hh->Draw(dopt[1].Data());
+      }
+
+      //draw cuts
+      if (opt.b_gcuts && opt.ncuts) {
+	DrawCuts(npad);
+      }
+      if (opt.b_roi) {
+	DrawRoi(pad_map[npad]->hd,fEc->GetCanvas()->GetPad(npad+1));
+      }
+    }
+    else { //Graph
+      TGraphErrors *gg = (TGraphErrors*) pad_hist[npad];
+      gg->Draw("AP");
+    }
   } //for npad
 }
 

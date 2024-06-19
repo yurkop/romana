@@ -466,7 +466,7 @@ void PopFrame::Do_Auto_Ecalibr()
     HiFrm->X_Slider(HiFrm->st_plot,a1,a2);
 
   for (size_t i = 0; i < HiFrm->pad_hist.size(); ++i) {
-    TH1* hh = HiFrm->pad_hist[i];
+    TH1* hh = (TH1*) HiFrm->pad_hist[i];
     if (hh && hh->Integral()>0) {
       TString str(hh->GetName());
       if (str.Contains("area",TString::kIgnoreCase)) {

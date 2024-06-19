@@ -893,6 +893,12 @@ void HClass::Make_hist() {
 
   if (b_bbb) memset(b_base,1,sizeof(b_base));
 
+  for (auto i=0;i<opt.Nchan;i++) {
+    if (opt.Mt[i]>=2) {
+      b_base[i]=1;
+    }
+  }
+
   // оставляем только один член с профилометром в MFill_list
   // cout << "----------" << endl;
   // for (auto it = MFill_list.begin();it!=MFill_list.end();++it) {
