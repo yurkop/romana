@@ -57,6 +57,9 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   else if (menu_id==M_TCALIBR) {
     AddTcalibr();
   }
+  else if (menu_id==M_PEAKS) {
+    AddPeaks();
+  }
 
   fMain->MapSubwindows();
   fMain->Resize();
@@ -338,6 +341,18 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
 
 }
 
+void PopFrame::AddNum(double val, int id, const char* label, const char* tip) {
+  TGHorizontalFrame *hframe = new TGHorizontalFrame(fMain);
+  fMain->AddFrame(hframe, LayLC2);
+  TGNumberEntry *fNum = new TGNumberEntry(hframe, val, 8, id, kr, ka, kn);
+  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
+				  "DoENum()");
+  fNum->GetNumberEntry()->SetToolTipText(tip);
+  hframe->AddFrame(fNum, LayLC2);
+  fLabel = new TGLabel(hframe, label);
+  hframe->AddFrame(fLabel, LayLC2);
+}
+
 void PopFrame::AddTcalibr() {
   fwhm=1;
   npol=1;
@@ -351,32 +366,9 @@ void PopFrame::AddTcalibr() {
   fMain->SetWindowName("Time Calibration");
   npeaks=1;
 
-  hframe = new TGHorizontalFrame(fMain,10,10);
-  fMain->AddFrame(hframe, LayLC2);
-  fNum = new TGNumberEntry(hframe, fwhm, 8, 11, kr, ka, kn);
-  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
-				  "DoENum()");
-  hframe->AddFrame(fNum, LayLC2);
-  fLabel = new TGLabel(hframe, "Peak width (fwhm)");
-  hframe->AddFrame(fLabel, LayLC2);
-
-  hframe = new TGHorizontalFrame(fMain,10,10);
-  fMain->AddFrame(hframe, LayLC2);
-  fNum = new TGNumberEntry(hframe, range, 8, 12, kr, ka, kn);
-  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
-				  "DoENum()");
-  hframe->AddFrame(fNum, LayLC2);
-  fLabel = new TGLabel(hframe, "+/- fit range");
-  hframe->AddFrame(fLabel, LayLC2);
-
-  hframe = new TGHorizontalFrame(fMain,10,10);
-  fMain->AddFrame(hframe, LayLC2);
-  fNum = new TGNumberEntry(hframe, npeaks, 8, 14, ki, ka, kl, 1, 10);
-  fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
-				  "DoENum()");
-  hframe->AddFrame(fNum, LayLC2);
-  fLabel = new TGLabel(hframe, "Number of peaks");
-  hframe->AddFrame(fLabel, LayLC2);
+  AddNum(fwhm,11,"Peak width (fwhm)");
+  AddNum(range,12,"+/- fit range");
+  AddNum(npeaks,14,"Number of peaks");
 
   hframe = new TGHorizontalFrame(fMain,10,10);
   fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
@@ -387,6 +379,26 @@ void PopFrame::AddTcalibr() {
   fTApply->Connect("Clicked()", "PopFrame", this, "Do_TApply()");
   hframe->AddFrame(fTApply, LayBut1);
 
+}
+
+void PopFrame::AddPeaks() {
+  fMain->SetWindowName("Peak Search");
+
+  AddNum(opt.Peak_thr,31,"Threshold","Peak threshold relative to the highest peak");
+  AddNum(opt.Peak_sig,32,"Sigma","Sigma for peak search");
+  AddNum(opt.Peak_bwidth,33,"Background","width of the background in units of peak sigma");
+  AddNum(opt.Peak_mpeaks,34,"MaxPeaks","Maximal number of peaks");
+
+  /*
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
+  TGTextButton* fCalibr = new TGTextButton(hframe, "  &Calibr  ");
+  fCalibr->Connect("Clicked()", "PopFrame", this, "Do_Tcalibr()");
+  hframe->AddFrame(fCalibr, LayBut1);
+  TGTextButton* fTApply = new TGTextButton(hframe, "  &Apply  ");
+  fTApply->Connect("Clicked()", "PopFrame", this, "Do_TApply()");
+  hframe->AddFrame(fTApply, LayBut1);
+  */
 }
 
 void PopFrame::Do_Save_Ecalibr() {
@@ -417,18 +429,38 @@ void PopFrame::DoAdj() {
 void PopFrame::DoENum() {
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
   Int_t id = te->WidgetId();
-  if (id>=0 && id<10) {
-    ee[id]=te->GetNumber();
-    //cout << "ee: " << id << " " << ee[id] << endl;
-  }
-  else if (id==11)
+  // if (id>=0 && id<100) {
+  //   ee[id]=te->GetNumber();
+  //   //cout << "ee: " << id << " " << ee[id] << endl;
+  // }
+  switch (id) {
+  case 11:
     fwhm=te->GetNumber();
-  else if (id==12)
+    break;
+  case 12:
     range=te->GetNumber();
-  else if (id==13)
+    break;
+  case 13:
     npol=te->GetNumber();
-  else if (id==21)
+    break;
+  case 21:
     opt.E_auto=te->GetNumber();
+    break;
+  case 31:
+    opt.Peak_thr=te->GetNumber();
+    break;
+  case 32:
+    opt.Peak_sig=te->GetNumber();
+    break;
+  case 33:
+    opt.Peak_bwidth=te->GetNumber();
+    break;
+  case 34:
+    opt.Peak_mpeaks=te->GetNumber();
+    break;
+  default:
+    ;
+  }
   // else if (id==14) {
   //   npeaks=te->GetNumber();
   //   AddPeaks();

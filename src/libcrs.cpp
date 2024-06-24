@@ -617,6 +617,9 @@ void CRS::Ana_start() {
     b_len[i] = opt.Base2[i]-opt.Base1[i]+1;
     p_len[i] = opt.Peak2[i]-opt.Peak1[i]+1;
     w_len[i] = opt.W2[i]-opt.W1[i]+1;
+    b_mean[i] = (opt.Base2[i]+opt.Base1[i])*0.5;
+    p_mean[i] = (opt.Peak2[i]+opt.Peak1[i])*0.5;
+    w_mean[i] = (opt.W2[i]+opt.W1[i])*0.5;
     use_2nd_deriv[i] = opt.sTg[i]==5 || (opt.sTg[i]==-1 && cpar.Trg[i]==5);
     //cout << "Use_2nd: " << i << " " << use_2nd_deriv[i] << endl;
   }
@@ -4505,8 +4508,8 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
   ipls.Width=pk.AY/w_len[ipls.Chan];
 
   if (opt.Mt[ipls.Chan]==3) {
-    ipls.Sl2 = 2*(ipls.Base - ipls.Width)/(b_len[ipls.Chan]-w_len[ipls.Chan]);
-    ipls.Area -= (p_len[ipls.Chan]-b_len[ipls.Chan])*0.5*ipls.Sl2;
+    ipls.Sl2 = (ipls.Base - ipls.Width)/(b_mean[ipls.Chan]-w_mean[ipls.Chan]);
+    ipls.Area -= (p_mean[ipls.Chan]-b_mean[ipls.Chan])*ipls.Sl2;
   }
   else {
     if (ipls.Area) {

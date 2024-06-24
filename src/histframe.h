@@ -139,6 +139,7 @@ public:
   void ClearCutG();
   string CutsToStr();
   void EditCutG();
+  void PeakSearch(TH1* hh, TH1* h2, double sig1, double sig2);
   void DoPeaks();
   void PeakFit(HMap* map, TH1* hist1, TH1* hist2, int i, d2vect &d2);
   void DelMaps(TGListTreeItem *idir);

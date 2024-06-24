@@ -1343,7 +1343,7 @@ int main(int argc, char **argv)
 	  exit(-1);
       }
       rd_root=true;
-      prnt("ss d ds;",BBLU,"root:",rd_root,(bool)parfile2,RST);
+      //prnt("ss d ds;",BBLU,"root:",rd_root,(bool)parfile2,RST);
     }
     else { //.raw or .dec file
       if (crs->DoFopen(datfname,1,rdopt)) //read file and parameters from it
@@ -2155,7 +2155,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGPopupMenu* fMenuCalibr = new TGPopupMenu(gClient->GetRoot());
 
-  fMenuBar->AddPopup("&Calibration", fMenuCalibr, 
+  fMenuBar->AddPopup("&Analysis", fMenuCalibr, 
 		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
   // fMenuCalibr->AddEntry("Energy Pre-calibration", M_PRECALIBR);
@@ -2165,6 +2165,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
   fMenuCalibr->AddEntry("Time calibration", M_TCALIBR);
+  fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
+		     "HandleMenu(Int_t)");
+  fMenuCalibr->AddEntry("Peak Search", M_PEAKS);
   fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
@@ -3735,6 +3738,14 @@ void MainFrame::HandleMenu(Int_t menu_id)
       //cout << "ecalibr: " << fTab->GetCurrent() << endl;
       fTab->SetTab("Plots");
       new PopFrame(this,100,600,M_TCALIBR);
+    }
+    break;
+
+  case M_PEAKS:
+    {
+      //cout << "ecalibr: " << fTab->GetCurrent() << endl;
+      fTab->SetTab("Plots");
+      new PopFrame(this,100,600,M_PEAKS);
     }
     break;
 

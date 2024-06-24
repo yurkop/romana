@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 142
+#define CDEF 143
 
 /*
 #include <list>
@@ -301,7 +301,13 @@ public:
   char formula[100];
   //char maintrig[22];
 
-  Float_t SimSim[20]; // see toptions.cpp
+  Float_t SimSim[20]; // used for Simul: see toptions.cpp
+
+  //parameters for PeakSearch
+  Float_t Peak_thr;
+  Float_t Peak_sig;
+  Float_t Peak_bwidth;
+  Float_t Peak_mpeaks;
 
   int wrk_check[64];
   //

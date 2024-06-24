@@ -474,6 +474,12 @@ Toptions::Toptions() {
 
   // SimSim[10]=1; //CFD delay
   // SimSim[11]=1; //CFD fraction
+
+  Peak_thr=0.2;
+  Peak_sig=10;
+  Peak_bwidth=10;
+  Peak_mpeaks=1;
+
   memset(wrk_check,0,sizeof(wrk_check));
 
   //sThr2=cpar.Thr2;

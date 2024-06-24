@@ -17,6 +17,7 @@
 #include <TRandom.h>
 #include <TMath.h>
 #include <TF1.h>
+#include <TPolyMarker.h>
 
 TLine gline[2];
 TLine cline;
@@ -1726,6 +1727,201 @@ void HistFrame::EditCutG()
   new PEditor(this, M_EDIT_CUTG, 400, 520);
 }
 
+
+void hsmooth(TH1 *h1, int nn) {
+  //valid only for 1-D hists
+
+  if (h1->GetDimension() !=1 || nn<=0) return;
+
+  //double sum;
+  int nsum;
+
+  int nbins = h1->GetNbinsX();
+
+  double *sum = new double[nbins];
+
+  for (int i=0;i<nbins;i++) {
+    sum[i]=0.0;
+    nsum=0;
+    for (int l=-nn;l<=nn;l++) {
+      if (i+l >= 0 && i+l <nbins) {
+	sum[i]+=h1->GetBinContent(i+l);
+	//cout << i+l << " " << sum << " " << h1->GetBinContent(i+l) << endl;
+	nsum++;
+      }
+    }
+    sum[i]/=nsum;
+  }
+
+  for (int i=0;i<nbins;i++) {
+    h1->SetBinContent(i,sum[i]);
+  }
+
+  delete[] sum;
+
+}
+
+void hderiv(TH1 *hh) {
+  //valid only for 1-D hists
+
+  if (hh->GetDimension()!=1) return;
+
+  for (auto i=hh->GetXaxis()->GetFirst()+1;i<hh->GetXaxis()->GetLast();i++) {
+    double dd = hh->GetBinContent(i) - hh->GetBinContent(i-1);
+    hh->SetBinContent(i-1,dd);
+  }
+  hh->SetBinContent(hh->GetXaxis()->GetLast(),0);
+
+  //hh->SetMinimum();
+}
+
+
+/*
+void HistFrame::PeakSearch(TH1* hh, double dist, double thresh) {
+  TH1* h2= (TH1*) hh->Clone("hcln");
+  if (thresh>1) thresh=1;
+  double max = hh->GetBinContent(hh->GetMaximumBin())*thresh;
+  cout << h2->GetXaxis()->GetFirst() << " " << hh->GetMaximumBin() << endl;
+  //int i1=
+  //for (
+}
+*/
+
+/*
+void HistFrame::PeakSearch(TH1* hh, TH1* h2, double dist, double thresh) {
+  std::vector<double> ipeaks;
+  std::vector<double> peaks;
+
+  // предыдущий пик
+  double p_prev;
+  int i_prev;
+  // текущий пик
+  double p_current;
+  int i_current;
+  
+  double cprev=-1e99;
+  int iprev=0;
+  bool in_peak=false;
+
+  double pk=-1e99;
+  int ipk=0;
+
+  if (thresh>1) thresh=1;
+  double max = hh->GetBinContent(hh->GetMaximumBin())*thresh;
+
+  hh->Copy(*h2);
+  hsmooth(h2,10);
+  hsmooth(h2,10);
+  hderiv(h2);
+  cout << "ipeaks: " << ipeaks.size() << endl;
+  return;
+  
+  for (auto i=hh->GetXaxis()->GetFirst();i<hh->GetXaxis()->GetLast();i++) {
+    double cc=hh->GetBinContent(i);
+
+    if (cc>=max) { // в пике
+      in_peak=true;
+      if (cc>pk) {
+	pk=cc;
+	ipk=i;
+      }
+    }
+    else { //cc<max
+      if (in_peak) { //только вышли из пика
+	int idif = ipk - ipeaks.back();
+	if (idif > dist) {
+	  
+	}
+
+
+	in_peak=false;
+      }
+    } // else //cc<max
+  } //for
+    
+
+
+  TPolyMarker * pm =
+    (TPolyMarker*)hh->GetListOfFunctions()->FindObject("TPolyMarker");
+  if (pm) {
+    hh->GetListOfFunctions()->Remove(pm);
+    delete pm;
+  }
+  pm = new TPolyMarker(ipeaks.size(), ipeaks.data(), peaks.data());
+  hh->GetListOfFunctions()->Add(pm);
+  pm->SetMarkerStyle(23);
+  pm->SetMarkerColor(kRed);
+  pm->SetMarkerSize(1.3);
+
+
+
+  prnt("ss ds;",BGRN,"pks:",peaks.size(),RST);
+}
+*/
+
+/*
+void HistFrame::PeakSearch(TH1* hh, double sig1, double sig2) {
+  //cout << "srch: " << hh->GetXaxis()->GetFirst() << " " << hh->GetXaxis()->GetLast() << endl;
+  std::vector<double> ipeaks;
+  std::vector<double> peaks;
+  double cprev=-1e99;
+  int iprev=0;
+  bool in_peak=false;
+  double pk=0;
+  int ipk=0;
+  for (auto i=hh->GetXaxis()->GetFirst();i<hh->GetXaxis()->GetLast();i++) {
+    double cc=hh->GetBinContent(i);
+    if (!in_peak) { // не в пике - ищем
+      if (cc<cprev) {
+	// если текущая точка ниже предыдущей -> предыдущая пик-кандидат
+	ipk=iprev;
+	pk=cprev;
+	in_peak=true;
+	//здесь тоже нужно проверить сигму?
+      }
+      // иначе ничего не делаем
+    }
+    else { // в пике
+      if (cc<pk) { // если ниже пика - проверяем сигму
+	if (cc*2<pk) { // достигли полувысоты
+	  if (i-ipk
+	}
+
+	
+	  ipeaks.push_back(ipk);
+	  peaks.push_back(pk);
+	  in_peak=false;
+      }
+      else { // если выше пика - выходим
+	in_peak=false;
+      }
+    }
+
+    iprev=i;
+    cprev=hh->GetBinContent(i);
+  } //for
+
+
+
+  TPolyMarker * pm =
+    (TPolyMarker*)hh->GetListOfFunctions()->FindObject("TPolyMarker");
+  if (pm) {
+    hh->GetListOfFunctions()->Remove(pm);
+    delete pm;
+  }
+  pm = new TPolyMarker(ipeaks.size(), ipeaks.data(), peaks.data());
+  hh->GetListOfFunctions()->Add(pm);
+  pm->SetMarkerStyle(23);
+  pm->SetMarkerColor(kRed);
+  pm->SetMarkerSize(1.3);
+
+
+
+  prnt("ss ds;",BGRN,"pks:",peaks.size(),RST);
+
+}
+*/
+
 void HistFrame::DoPeaks()
 {
   //cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
@@ -1736,10 +1932,27 @@ void HistFrame::DoPeaks()
   for (auto it=pad_hist.begin(); it!=pad_hist.end(); ++it) {
     if (!(*it)->InheritsFrom(TH1::Class())) continue;
     TH1* hh = (TH1*) *it;
-    int npk = spec.Search(hh,2,"",0.5);
+    if (hh->GetDimension()>1) continue;
+
+    /*
+    auto it2 = it;
+    ++it2;
+    if (it2!=pad_hist.end()) {
+      PeakSearch(hh,(TH1*) *it2,5,10);
+    }
+    else {
+      cout <<"last: " << endl;
+    }
+    return;
+    */
+
+    int npk = spec.Search(hh,opt.Peak_sig,"",opt.Peak_thr);
+
+    //prnt("ss d d fs;",BGRN,"pk:",hh->GetDimension(),npk,opt.Peak_thr,RST);
 
     Double_t* peaks = spec.GetPositionX();
 
+    //continue;
     for (int j=0;j<npk;j++) {
       int bin = hh->FindFixBin(peaks[j]);
       int k;
@@ -1747,22 +1960,28 @@ void HistFrame::DoPeaks()
 	if (hh->GetBinContent(k)<spec.GetPositionY()[j]*0.5)
 	  break;
       }
+      double sig = (hh->GetBinCenter(bin) - hh->GetBinCenter(k))*2.0/2.35;
+
+      double width = sig*opt.Peak_bwidth;
+
+      prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
+
       //cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
       //     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
-      double sig = (bin-k)*2.0/2.35;
-
-      int width=(bin-k)*5;
 
       TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
       //cout << f1->GetNpar() << endl;
       f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
 
       //f1->Print();
-      const char* fitopt="+";
-      if (j==0) fitopt="";
+      string fitopt = "Q";
+      if (j!=0) fitopt+="+";
+      //const char* fitopt="+";
+      //if (j==0) fitopt="";
 
+      //cout << "fitopt: " << fitopt << endl;
       //TF1* fitf=new TF1("fitf","gaus",0,10);
-      hh->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
+      hh->Fit(f1,fitopt.data(),"",peaks[j]-width,peaks[j]+width);
       //cout << "fithist: " << hh << " " << hh->GetName() << " " << fitopt << endl;
       //hh->GetListOfFunctions()->ls();
       //f1->Draw("same");
@@ -2487,9 +2706,6 @@ bool HistFrame::CheckPads() {
   // нужно ли вновь создавать копии или рисовать старые
   // возвращает true если пады изменились
 
-  int npad=0;
-  int ii=0;
-
   // TCanvas *cv=fEc->GetCanvas();
   // TObject *obj;
   // if (!cv->GetListOfPrimitives()) return 0;
@@ -2500,6 +2716,10 @@ bool HistFrame::CheckPads() {
   //     cout << "pad: " << pad->GetNumber() << endl;
   //   }
   // }
+
+  //bool res=false;
+  int npad=0; //количество падов
+  int ii=0;
 
   HMap *map = (HMap*) hmap_chklist->First();
   while (map) {
@@ -2517,7 +2737,19 @@ bool HistFrame::CheckPads() {
     map = (HMap*) hmap_chklist->After(map);
     ii++;
   }
-  return false ;
+
+  for (auto i=npad;i<(int)pad_hist.size();i++) {
+    auto ih = pad_hist.back();
+    delete ih;
+    //cout << i << " " << ih << endl;
+    pad_hist.pop_back();
+    pad_map.pop_back();
+  }
+
+  //prnt("ssd d ds;",BRED,"cchk: ",npad,pad_hist.size(),ndiv,RST);
+  //cout << "chk: " << npad << " " << pad_map.size() << " " << ndiv << endl;
+
+  return false;
 }
 
 void HistFrame::DrawHist() {
@@ -2544,12 +2776,10 @@ void HistFrame::DrawHist() {
   cv->Divide(opt.xdiv,opt.ydiv,mg,mg);
 
 
-
-
   bool cpads = CheckPads();
   // cout << "cpads: " << cpads << " " << ndiv << " "
   //      << cv->GetListOfPrimitives()->GetSize() << endl;
-  // prnt("ssds;",BGRN,"cpads: ",cpads,RST);
+  //prnt("ssd d ds;",BGRN,"cpads: ",cpads,pad_hist.size(),changed,RST);
 
   //cv->GetListOfPrimitives()->ls();
 
@@ -2782,9 +3012,11 @@ void HistFrame::AllRebinDraw() {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
       continue;
 
+    //cout << "npad: " << npad << endl;
     fEc->GetCanvas()->cd(npad+1);
     if (pad_hist[npad]->InheritsFrom(TH1::Class())) {
       TH1* hh = (TH1*) pad_hist[npad];
+
       OneRebinPreCalibr(pad_map[npad], hh, b_adj);
       //TAxis* ya = pad_map[npad]->hst->GetYaxis();
 

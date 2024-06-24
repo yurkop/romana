@@ -49,7 +49,7 @@ public:
   Int_t npol;
   Double_t fwhm;
   Double_t range;
-  Double_t ee[10];
+  //Double_t ee[10];
 
   Float_t E0[MAX_CHTP]; // [emult0]
   Float_t E1[MAX_CHTP]; // [emult]
@@ -64,8 +64,10 @@ public:
   virtual ~PopFrame();
   void AddProfTime(UInt_t w, UInt_t h);
   void AddAdj(TGCompositeFrame* fcont1, HMap* map, int i);
+  void AddNum(double val, int id, const char* label, const char* tip=0);
   void AddEcalibr(UInt_t w, UInt_t h);
   void AddTcalibr();
+  void AddPeaks();
   void DoAdj();
   void DoENum();
   void Do_Save_Ecalibr();

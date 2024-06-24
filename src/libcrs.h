@@ -244,6 +244,9 @@ RQ_OBJECT("CRS")
   Double_t b_len[MAX_CH],
     p_len[MAX_CH],
     w_len[MAX_CH]; //length of window for bkg, peak and width integration in DSP
+  Double_t b_mean[MAX_CH],
+    p_mean[MAX_CH],
+    w_mean[MAX_CH]; //length of window for bkg, peak and width integration in DSP
 
   Bool_t use_2nd_deriv[MAX_CH]; //use 2nd deriv in pulseana33
 
