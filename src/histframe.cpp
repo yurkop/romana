@@ -18,6 +18,7 @@
 #include <TMath.h>
 #include <TF1.h>
 #include <TPolyMarker.h>
+#include <TPaveText.h>
 
 TLine gline[2];
 TLine cline;
@@ -206,6 +207,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   changed=false;
   started=true;
+  stack_off=false;
 
   //memset(wrk_check,1,sizeof(wrk_check));
   //wrk_check_MT=1;
@@ -1210,14 +1212,15 @@ void HistFrame::DoRadio()
   TGButton *btn = (TGButton *) gTQSender;
   Int_t id = btn->WidgetId();
 
-  if (id==1) {
+  if (id==1) { // stack
     Rb[0]->SetState(kButtonDown);
     Rb[1]->SetState(kButtonUp);
     opt.b_stack=true;
   }
-  else {
+  else { // X/Y
     Rb[0]->SetState(kButtonUp);
     Rb[1]->SetState(kButtonDown);
+    if (opt.b_stack) stack_off=true;
     opt.b_stack=false;
   }
   
@@ -1926,9 +1929,12 @@ void HistFrame::DoPeaks()
 {
   //cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
 
-  TSpectrum spec;
+  if (opt.b_stack) return;
 
-  int nn=1;
+  TSpectrum spec;
+  vector<string> fitres;
+
+  //int npad=0;
   for (auto it=pad_hist.begin(); it!=pad_hist.end(); ++it) {
     if (!(*it)->InheritsFrom(TH1::Class())) continue;
     TH1* hh = (TH1*) *it;
@@ -1964,14 +1970,13 @@ void HistFrame::DoPeaks()
 
       double width = sig*opt.Peak_bwidth;
 
-      prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
-
       //cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
       //     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
 
-      TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
+      TF1* f1=new TF1("fitf","gausn(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
       //cout << f1->GetNpar() << endl;
-      f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
+      double A = spec.GetPositionY()[j] / (sqrt(2*TMath::Pi())*sig);
+      f1->SetParameters(A,peaks[j],sig,0,0);
 
       //f1->Print();
       string fitopt = "Q";
@@ -1982,15 +1987,67 @@ void HistFrame::DoPeaks()
       //cout << "fitopt: " << fitopt << endl;
       //TF1* fitf=new TF1("fitf","gaus",0,10);
       hh->Fit(f1,fitopt.data(),"",peaks[j]-width,peaks[j]+width);
+      double* par = f1->GetParameters();
+      double err[10];
+      for (auto i=0;i<f1->GetNpar();i++) {
+	err[i] = f1->GetParError(i);
+      }
+
+      err[0] /= hh->GetBinWidth(bin);
+      par[0] /= hh->GetBinWidth(bin);
+
+      prnt("ss d f f fs;",BGRN,"pk: ",j,par[0],par[1],par[2],RST);
+      prnt("ss d f f fs;",BBLU,"er: ",j,err[0],err[1],err[2],RST);
+
+      for (auto i=0;i<f1->GetNpar();i++) {
+	double pp = pow(10,round(log10(err[i]))-1);
+	par[i] = round(par[i]/pp);
+	par[i]*=pp;
+	err[i] = round(err[i]/pp);
+	err[i]*=pp;
+	//printf("%0.3g %0.1e %f %f\n",par[i],err[i],log10(err[i]),pp);
+	//sprintf("%0.1e",ss,err[i]);
+	//string str=ss;
+	//double a=str
+      }
+      //prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
+
+      std::ostringstream oss;
+      oss << j+1;
+      for (auto i=0;i<3;i++) {
+	oss << " " << par[i] << "(" << err[i] << ")";
+      }
+      cout << oss.str() << endl;
       //cout << "fithist: " << hh << " " << hh->GetName() << " " << fitopt << endl;
       //hh->GetListOfFunctions()->ls();
       //f1->Draw("same");
-    }
-    nn++;
-  }
+
+
+    } // for npk
+    //hh->SetStats(false);
+
+
+    /*
+    TPaveText *pt = new TPaveText(.75,-0.5,.95,.95,"NDC");
+    pt->SetFillStyle(0);
+    pt->AddText("A TPaveText can contain severals line of text.");
+    pt->AddText("They are added to the pave using the AddText method.");
+    //pt->AddLine(.0,.5,1.,.5);
+    //pt->AddText("Even complex TLatex formulas can be added:");
+    //pt->AddText("F(t) = #sum_{i=-#infty}^{#infty}A(i)cos#[]{#frac{i}{t+i}}");
+    hh->GetListOfFunctions()->Add(pt);
+    */
+
+
+    //npad++;
+    //cout << "npad!: " << npad << endl;
+    //fEc->GetCanvas()->cd(npad);
+    //gPad->Update();
+  } // for pad_hist
   //fEc->GetCanvas()->SetEditable(true);
   //fEc->GetCanvas()->Update();
   //fEc->GetCanvas()->SetEditable(false);
+  //opt.b_stat=false;
   Update();
 }
 
@@ -2495,7 +2552,10 @@ void HistFrame::Update()
   //chkstat->SetState((EButtonState) opt.b_stat);
   //chkgcuts->SetState((EButtonState) opt.b_gcuts);
 
-  hmap_chklist->Clear();
+
+  //hmap_chklist->Clear();
+
+
   //st_hlist->Clear();
 
   //Hmut.UnLock();
@@ -2776,7 +2836,7 @@ void HistFrame::DrawHist() {
   cv->Divide(opt.xdiv,opt.ydiv,mg,mg);
 
 
-  bool cpads = CheckPads();
+  bool cpads = stack_off || CheckPads();
   // cout << "cpads: " << cpads << " " << ndiv << " "
   //      << cv->GetListOfPrimitives()->GetSize() << endl;
   //prnt("ssd d ds;",BGRN,"cpads: ",cpads,pad_hist.size(),changed,RST);
@@ -2817,7 +2877,7 @@ void HistFrame::DrawHist() {
 	  //if (pad_hist[npad]) delete pad_hist[npad];
 	  //pad_hist[npad] = (TH1*) map->hst->Clone(name.Data());
 	  TH1 *hh = (TH1*) map->hst->Clone(name.Data());
-	  hh->UseCurrentStyle();
+	  //hh->UseCurrentStyle(); -> перенесено в AllRebinDraw
 	  pad_hist.push_back(hh);
 	}
 	else if (map->gr) { //graph
@@ -3016,6 +3076,7 @@ void HistFrame::AllRebinDraw() {
     fEc->GetCanvas()->cd(npad+1);
     if (pad_hist[npad]->InheritsFrom(TH1::Class())) {
       TH1* hh = (TH1*) pad_hist[npad];
+      hh->UseCurrentStyle();
 
       OneRebinPreCalibr(pad_map[npad], hh, b_adj);
       //TAxis* ya = pad_map[npad]->hst->GetYaxis();
@@ -3063,6 +3124,7 @@ void HistFrame::AllRebinDraw() {
       gg->Draw("AP");
     }
   } //for npad
+  stack_off=false;
 }
 
 void HistFrame::DrawCuts(int npad) {

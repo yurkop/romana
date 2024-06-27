@@ -254,7 +254,8 @@ public:
   TrigFrame* tTrig;
 
   TGVScrollBar* vscroll;
-
+  TGHScrollBar*	hscroll;
+  
   Int_t oldscroll;
   Int_t nrows; //actual nrows calculated from opt.Nrows and opt.Nchan
 

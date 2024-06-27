@@ -89,7 +89,7 @@ vector<const char*> ptip = {
   "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative, LT (lower threshold) crossing;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, LT (lower threshold) crossing;\n7 - CFD, zero crosing;\n-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
   "Software trigger threshold",
-  "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction\n2 - base slope subtraction (for HPGe)\n3 - base slope2 instead of slope1 (using W1 & W2) + slope2 subtraction (for HPGe)\n  RMS2 is not calculated for Mt=3",
+  "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction\n2 - base slope subtraction (for HPGe)\n3 - base slope2 instead of slope1 (using W1 & W2) + slope2 subtraction (for HPGe)\n  for Mt=3 RMS2 is not calculated; Width=Pos-Time",
   "Baseline start, relative to peak Pos (usually negative, included)",
   "Baseline end, relative to peak Pos (usually negative, included)",
   "Peak start, relative to peak Pos (usually negative, included)",
@@ -2323,6 +2323,8 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
   fCnv[1]->SetScrolling(TGCanvas::kCanvasScrollHorizontal);
   fCnv[2]->SetScrolling(TGCanvas::kCanvasNoScroll);
 
+  hscroll=fCnv[1]->GetHScrollbar();
+
   vscroll = new TGVScrollBar(fMain);
   fMain->AddFrame(vscroll,LayLE0);
 
@@ -2859,6 +2861,8 @@ void ChanParDlg::DoScroll(int pos) {
 
 void ChanParDlg::HandleMouseWheel(Event_t *event) {
    // Handle mouse wheel to scroll.
+
+  //prnt("ss d d d ds;",BGRN,"Scroll:",event->fType,event->fCode,event->fState,hscroll->GetPosition(),RST);
 
   int kk=0;
   if (event->fCode == 4) //up

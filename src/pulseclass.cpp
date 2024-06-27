@@ -82,11 +82,14 @@ size_t PulseClass::GetPtr(Int_t hnum) {
 }
 
 Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
+  // возвращает CFD и одновременно drv в точке j
+
   // if (j+delay >= sData.size()) {
   //   prnt("ssd ds;",BRED,"CFD: ",j,delay,RST);  
   //   return 0;
   // }
   //else {
+
   Float_t d0 = sData[j+delay] - sData[j-kk+delay];
   drv = sData[j] - sData[j-kk];
   return drv*frac-d0;
@@ -115,7 +118,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
   //memset (D,0,sizeof(Float_t)*sData.size());
   D[0]=0;
   UInt_t j;
-  UInt_t jj=0;
+  UInt_t pp=0; // временный Pos
 
   switch (sTrig) {
   case 0: // hreshold crossing of pulse
@@ -171,14 +174,14 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     break;
   case 3: // rise of derivative;
     Dpr=1;
-    //int jj=0;
+    //int pp=0;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (D[j] > cpar.LT[Chan] && Dpr<=cpar.LT[Chan]) {
-	jj=j;
+	pp=j;
       }
       if (D[j] >= opt.sThr[Chan]) {
-	Pos=jj;
+	Pos=pp;
 	//Peaks.push_back(pk);
 	break;
       }
@@ -189,6 +192,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     } //case 3
     break;
   case 7: {// CFD
+    Pos=cpar.Pre[Chan];
     int delay = abs(opt.T1[Chan]);
     Dpr=-1e6;
     Float_t drv;
@@ -206,17 +210,18 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
       }
       else if (D[j] <= 0) {
 	//else -> значит это условие не может быть выполнено на том же шаге,
-	//что и предыдущий if. Т.е. если jj задано, есть как минимум 2 точки
-	jj=j;
+	//что и предыдущий if. Т.е. если pp задано, есть как минимум 2 точки
+	pp=j;
       }
       Dpr=drv;
     }
-    if (delay==-1) { //если выполнено, то jj и jj+1 существуют
-      Pos=jj;
-      if (D[Pos+1]!=D[Pos])
-	Time = Pos - D[Pos]/(D[Pos+1] - D[Pos]);
+
+    if (delay==-1) { //если выполнено, то pp и pp+1 существуют
+      //Pos=pp;
+      if (D[pp+1]!=D[pp])
+	Time = pp - D[pp]/(D[pp+1] - D[pp]);
       else
-	Time = Pos;
+	Time = pp;
     }
     break;
   } //CFD
@@ -610,6 +615,9 @@ void PulseClass::PeakAna33() {
     }
     else
       Width=0;
+  }
+  else { // для Mt=3 W=P-T
+    Width = Pos-Time;
   }
 
 

@@ -84,6 +84,7 @@ public:
   //Bool_t wrk_check_MT; //is MAIN_MT checked before deleting ltree
   Bool_t changed;
   Bool_t started;
+  Bool_t stack_off; // для checkpads
   Int_t in_gcut; //0-cancel;1-cut;2-roi
   int np_gcut; //number of points in gcut
 
