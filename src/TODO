@@ -206,3 +206,5 @@ romana test132_HPGe_2_LaBr_4_Ing27_78perc_Na22_top_Pb_1mm_box_0cm_toLaBr_30cm.ra
 Analyze; Reset
 
 case 7 для FindZero - сделать!
+
+Убрать пик в 0 (Time) для 'Start period'!=0

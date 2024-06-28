@@ -108,6 +108,8 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
   //      6 - fall of derivative, zero crossing
   //      7 - CFD, zero crossing
 
+  if (sTrig==7) sTrig = cpar.Trg[Chan]; //для sTrig7 используется cpar.Trig
+
   //Pos=-32222;
 
   //Float_t* D = new Float_t[sData.size()]();
@@ -131,6 +133,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     }
     break;
   case 1: // threshold crossing of derivative;
+    //case 7: // для CFD триггер 1 используется для поиска Pos
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (D[j] >= opt.sThr[Chan]) {
@@ -191,6 +194,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
       Dpr=D[j];
     } //case 3
     break;
+    /*
   case 7: {// CFD
     Pos=cpar.Pre[Chan];
     int delay = abs(opt.T1[Chan]);
@@ -225,7 +229,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     }
     break;
   } //CFD
-
+    */
   default:
     break;
   }
@@ -238,6 +242,10 @@ void PulseClass::FindZero(Int_t kk) {
   // определяем точное пересечение нуля или LT (нижнего порога)
   // Pos - уже найден; kk - параметр производной
   // для Trig=4 Pos - точка ПЕРЕД пересечением нуля
+
+  Float_t D[20000]; //максимальная длина записи 16379
+  Float_t Dpr;
+  UInt_t pp=0; // временный Pos
 
   switch (opt.sTg[Chan]) {
   case 3: //rise of derivalive
@@ -268,7 +276,39 @@ void PulseClass::FindZero(Int_t kk) {
       //prnt("ss d ls;",BGRN,"ErrTime3:",Chan,Tstamp64,RST);
     }
     break;
-  case 7:
+  case 7: {
+    int delay = abs(opt.T1[Chan]);
+    Dpr=-1e6;
+    Float_t drv;
+
+    //kk+delay всегда >=1
+    //jj=kk+delay-1;
+    //D[jj]=0;
+
+    //for (j=kk+delay;j<sData.size();j++) {
+    for (UInt_t j=kk;j<sData.size()-delay;j++) {
+      D[j] = CFD(j,kk,delay,opt.T2[Chan],drv);
+      if (Dpr >= opt.sThr[Chan] && drv<Dpr) {
+	delay=-1;
+	break;
+      }
+      else if (D[j] <= 0) {
+	//else -> значит это условие не может быть выполнено на том же шаге,
+	//что и предыдущий if. Т.е. если pp задано, есть как минимум 2 точки
+	pp=j;
+      }
+      Dpr=drv;
+    }
+
+    if (delay==-1) { //если выполнено, то pp и pp+1 существуют
+      //Pos=pp;
+      if (D[pp+1]!=D[pp])
+	Time = pp - D[pp]/(D[pp+1] - D[pp]);
+      else
+	Time = pp;
+      //cout << "pp: " << Tstamp64 << " " << pp << " " << Time << " " << Pos << endl;
+    }
+  }
     break;
   default:
     break;
@@ -376,11 +416,11 @@ void PulseClass::PeakAna33() {
   switch (opt.sTg[Chan]) {
   case 3:
   case 6:
-    //case 7:
+  case 7:
     FindZero(kk);
     break;
-  case 7:
-    break;
+    //case 7:
+    //break;
   default: {
     Time=0;
 
@@ -617,7 +657,9 @@ void PulseClass::PeakAna33() {
       Width=0;
   }
   else { // для Mt=3 W=P-T
-    Width = Pos-Time;
+    Width = Pos-cpar.Pre[Chan]-Time;
+    if (Width<-400) Width=-400;
+    if (Width>400) Width=400;
   }
 
 
