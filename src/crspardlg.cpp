@@ -97,7 +97,7 @@ vector<const char*> ptip = {
   "Timing window start (usually negative, included)/\n"
   "CFD delay [delay=abs(T1)]",
   "Timing window end (usually positive, included)/\n"
-  "Inverse CFD fraction",
+  "CFD fraction x10",
   "Width window start (included)",
   "Width window end (included)",
   "Pulse rate (software)",
@@ -2465,6 +2465,7 @@ void ChanParDlg::Build() {
     hforce[0]->AddFrame(lforce,LayLT2);
   }
 
+  DoScroll(opt.ScrollPos);
 }
 
 void ChanParDlg::BuildColumns(int jj) {
@@ -2828,7 +2829,7 @@ void ChanParDlg::Update() {
 
 void ChanParDlg::DoScroll(int pos) {  
   //Update();
-  //cout << "wheel1: " << vscroll->GetPosition() << " " << scrl << endl;
+  //cout << "wheel1: " << vscroll->GetPosition() << " " << pos << endl;
 
   for (int i=0;i<nrows;i++) {
     int row = i+pos;

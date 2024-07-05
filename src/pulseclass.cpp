@@ -83,16 +83,18 @@ size_t PulseClass::GetPtr(Int_t hnum) {
 
 Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
   // возвращает CFD и одновременно drv в точке j
+  // kk>0; delay>=0.
+  // CFD определено в диапазоне:
+  // - начальная точка (>=): kk
+  // - конечная точка (<):   sData.size()-delay
+  // Пример: for (UInt_t j=kk;j<sData.size()-delay;j++)
 
-  // if (j+delay >= sData.size()) {
-  //   prnt("ssd ds;",BRED,"CFD: ",j,delay,RST);  
-  //   return 0;
-  // }
-  //else {
+  // CFD сдвинута вправо относительно drv
 
   Float_t d0 = sData[j+delay] - sData[j-kk+delay];
   drv = sData[j] - sData[j-kk];
-  return drv*frac-d0;
+  //return drv*frac-d0;
+  return drv-d0*frac*0.1;
   //}
 }
 
@@ -120,7 +122,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
   //memset (D,0,sizeof(Float_t)*sData.size());
   D[0]=0;
   UInt_t j;
-  UInt_t pp=0; // временный Pos
+  UInt_t pp=kk; // временный Pos
 
   switch (sTrig) {
   case 0: // hreshold crossing of pulse
@@ -191,8 +193,11 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
       // else {
       //    break;
       // }
+      //prnt("ss d f f d f fs;",BGRN,"D:",j,D[j],Dpr,pp,sData[j],sData[j-kk],RST);
       Dpr=D[j];
-    } //case 3
+    } //for
+    //case 3
+    //cout << "case3: " << Tstamp64 << " " << Pos << " " << j << " " << sTrig << endl;
     break;
     /*
   case 7: {// CFD
@@ -238,14 +243,10 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
 
 } //FindPeaks
 
-void PulseClass::FindZero(Int_t kk) {
+void PulseClass::FindZero(Int_t kk, Int_t thresh) {
   // определяем точное пересечение нуля или LT (нижнего порога)
   // Pos - уже найден; kk - параметр производной
   // для Trig=4 Pos - точка ПЕРЕД пересечением нуля
-
-  Float_t D[20000]; //максимальная длина записи 16379
-  Float_t Dpr;
-  UInt_t pp=0; // временный Pos
 
   switch (opt.sTg[Chan]) {
   case 3: //rise of derivalive
@@ -276,6 +277,7 @@ void PulseClass::FindZero(Int_t kk) {
       //prnt("ss d ls;",BGRN,"ErrTime3:",Chan,Tstamp64,RST);
     }
     break;
+    /*
   case 7: {
     int delay = abs(opt.T1[Chan]);
     Dpr=-1e6;
@@ -288,7 +290,11 @@ void PulseClass::FindZero(Int_t kk) {
     //for (j=kk+delay;j<sData.size();j++) {
     for (UInt_t j=kk;j<sData.size()-delay;j++) {
       D[j] = CFD(j,kk,delay,opt.T2[Chan],drv);
-      if (Dpr >= opt.sThr[Chan] && drv<Dpr) {
+      // if (Tstamp64==1435915) {
+      // 	prnt("ss d f f fs;",BRED,"D:",j,D[j],drv,Dpr,RST);
+      // }
+      //if (Dpr >= opt.sThr[Chan] && drv<Dpr) {
+      if (drv >= opt.sThr[Chan] && Dpr<drv) {
 	delay=-1;
 	break;
       }
@@ -300,6 +306,9 @@ void PulseClass::FindZero(Int_t kk) {
       Dpr=drv;
     }
 
+    // if (Tstamp64==1435915) {
+    //   prnt("ss l d ds;",BGRN,"T:",Tstamp64,delay,pp,RST);
+    // }
     if (delay==-1) { //если выполнено, то pp и pp+1 существуют
       //Pos=pp;
       if (D[pp+1]!=D[pp])
@@ -308,6 +317,93 @@ void PulseClass::FindZero(Int_t kk) {
 	Time = pp;
       //cout << "pp: " << Tstamp64 << " " << pp << " " << Time << " " << Pos << endl;
     }
+  }
+    break;
+    */
+  case 7: {
+    // error (bin in Width spectrum):
+    // 80 - не достигнут порог (thresh) - ошибка некритичная и допустимая
+    // 85 - не найдено пересечение с 0 - возможно, допустимо
+    // 89 - CFD всегда отрицательно - маловероятно и наверное недопустимо
+
+
+    Float_t D[20000]; //максимальная длина записи 16379
+    Int_t pp=0; // временный Pos
+
+    int delay = abs(opt.T1[Chan]);
+    float max=-1e9;
+    Float_t drv;
+    //Float_t Dpr = -1e6;
+
+    //sData.erase(sData.end()-10,sData.end());
+
+    // CFD сдвинута вправо относительно drv
+    // находим максимум - либо локальный после пересечения порога,
+    // либо глобальный: pp - позиция максимума
+    UInt_t j;
+    for (j=TMath::Max(kk,(int)Pos);j<sData.size()-delay;j++) {
+      D[j]=CFD(j,kk,delay,opt.T2[Chan],drv);
+      //drv=sData[j]-sData[j-kk];
+      if (D[j]>max) {
+	max=D[j];
+	pp=j;
+      }
+      // if (Dpr >= thresh && drv<Dpr) {
+      // 	break;
+      // }
+      // Dpr=drv;
+    }
+
+    // prnt("ss l d d ds;",BGRN, "Pos:", Tstamp64, pp, j, sData.size(), RST);
+    // Pos=pp;
+    // break;
+
+
+    // for (UInt_t j=kk+1;j<sData.size()-delay;j++) {
+    //   D[j] = CFD(j,kk,delay,opt.T2[Chan],drv);
+    //   if (D[j]>max) {
+    // 	max=D[j];
+    // 	pp=j;
+    //   }
+    // }
+
+    // если первая точка CFD<=0 -> error 89
+    D[pp]=CFD(pp,kk,delay,opt.T2[Chan],drv);
+    if (D[pp]<=0) {
+      //prnt("ss l d f fs;",BRED, "D<0:", Tstamp64, pp, D[pp], Pos-cpar.Pre[Chan]-Time, RST);
+      Time=pp;
+      Pos=Time+89;
+      break;
+    }
+
+    // ищем пересечение с нулем
+    pp--;
+    while (pp>kk) {
+      D[pp]=CFD(pp,kk,delay,opt.T2[Chan],drv);
+      if (D[pp]<=0) {
+	break;
+      }
+      pp--;
+    }
+
+    // если пересечение не найдено -> error 85
+    if (pp==kk) {
+      Time=pp-1;
+      Pos=Time+85;
+      //prnt("ss l d d d fs;",BBLU, "Pos:", Tstamp64, pp, kk, sData.size(), Pos-cpar.Pre[Chan]-Time, RST);
+      break;
+    }
+    //else
+    //prnt("ss l d d ds;",BGRN, "Pos:", Tstamp64, pp, kk, sData.size(), RST);
+
+    Time = pp - D[pp]/(D[pp+1] - D[pp]);
+    //cout << "pp: " << Tstamp64 << " " << pp << " " << Time << " " << Pos << endl;
+
+    // если не достигнут порог -> error +80
+    if (max<thresh) {
+      Pos=Time+80;
+    }
+
   }
     break;
   default:
@@ -417,7 +513,7 @@ void PulseClass::PeakAna33() {
   case 3:
   case 6:
   case 7:
-    FindZero(kk);
+    FindZero(kk,opt.sThr[Chan]);
     break;
     //case 7:
     //break;

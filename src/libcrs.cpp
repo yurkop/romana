@@ -4489,7 +4489,7 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
       int kk = cpar.Drv[ipls.Chan];
       //cout << "pos: " << ipls.Pos << " " << kk << endl;
       //if (ipls.Pos>=kk && (int)ipls.sData.size()>ipls.Pos+1) {
-      ipls.FindZero(kk);
+      ipls.FindZero(kk,cpar.Thr[ipls.Chan]);
       ipls.Time-=ipls.Pos;
     }
     break;
