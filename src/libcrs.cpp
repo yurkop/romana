@@ -1945,7 +1945,7 @@ void CRS::AllParameters36() {
       if (pwin>4095) pwin=4095;
       Command32(2,chan,33,pwin); //окно повторных срабатываний
 
-      Command32(2,chan,35,(int)cpar.Thr[chan]); //нижний порог дискр.(3,4) = 0
+      Command32(2,chan,35,(int)cpar.LT[chan]); //нижний порог дискр.(3,4) = 0
 
       //сглаживание
       Int_t sum=cpar.hS[chan];
@@ -3594,12 +3594,13 @@ void CRS::CheckDSP(PulseClass &ipls) {
 }
 
 void CRS::PulseAna(PulseClass &ipls) {
-  //prnt("ss d l ds;",BRED,"Pls1:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
+  //prnt("ss d l ds;",BMAG,"Pls1:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
   if (!opt.Dsp[ipls.Chan]) { // не Dsp -> анализируем импульс
     if (opt.sS[ipls.Chan]) {
       ipls.Smooth(opt.sS[ipls.Chan]);
     }
     ipls.PeakAna33();
+    //prnt("ss d l d f fs;",BBLU, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos, ipls.Time, ipls.Width, RST);
   }
   else { //Dsp -> не анализируем
     ipls.Pos=cpar.Pre[ipls.Chan];
@@ -3610,6 +3611,7 @@ void CRS::PulseAna(PulseClass &ipls) {
       ipls.PeakAna33();
       CheckDSP(ipls);
     }
+    //prnt("ss d l d f fs;",BRED, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos, ipls.Time, ipls.Width, RST);
     // else {
     //   // для sTg=3,6,7 ищем пересечение нижнего порога/нуля
     //   switch (opt.sTg[ipls.Chan]) {
@@ -4505,21 +4507,26 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
 
   //ipls.Time=pk.RX;
 
-  ipls.Width=pk.AY/w_len[ipls.Chan];
+  Float_t wdth = pk.AY/w_len[ipls.Chan];
 
-  if (opt.Mt[ipls.Chan]==3) {
-    ipls.Sl2 = (ipls.Base - ipls.Width)/(b_mean[ipls.Chan]-w_mean[ipls.Chan]);
-    ipls.Area -= (p_mean[ipls.Chan]-b_mean[ipls.Chan])*ipls.Sl2;
-  }
-  else {
+  if (opt.Mt[ipls.Chan]!=3) {
     if (ipls.Area) {
-      ipls.Width-=ipls.Base;
+      ipls.Width=wdth-ipls.Base;
       ipls.Width/=ipls.Area;
     }
     else {
       ++errors[ER_WIDTH];
       ipls.Width=0;
     }
+  }
+  else {
+    ipls.Sl2 = (ipls.Base - ipls.Width)/(b_mean[ipls.Chan]-w_mean[ipls.Chan]);
+    ipls.Area -= (p_mean[ipls.Chan]-b_mean[ipls.Chan])*ipls.Sl2;
+
+    ipls.Width = ipls.Pos-cpar.Pre[ipls.Chan]-ipls.Time;
+    //prnt("ss d l d f fs;",BGRN, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos, ipls.Time, ipls.Width, RST);
+    if (ipls.Width<-99) ipls.Width=-99;
+    if (ipls.Width>99) ipls.Width=99;
   }
 
   //ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area;
