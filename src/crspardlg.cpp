@@ -308,6 +308,9 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum) {
   case 7:
     myM->fTimer->SetTime(opt.tsleep);
     break;
+  case 8:
+    chanpar->Update();
+    break;
   } //switch
 
   DoColor(pp,(Float_t) fnum);
@@ -392,6 +395,7 @@ void ParDlg::SetChk(Pmap pp, UShort_t off, Bool_t num) {
   //cout << "setchk: " << pp.off << " " << off << " " << (int) pp.step << endl;
   if (pp.type==p_chk) {
     *((Bool_t*)pp.data+off) = num;
+    if (pp.data2) *((Bool_t*)pp.data2+off) = num;
   }
   else {
     cout << "(DoChk) Wrong type: " << (int) pp.type << endl;
@@ -2483,7 +2487,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_chk,25,1,0,0,"Inv",cpar.Inv,0,1);
   AddColumn(jj,kk++,1,p_chk,24,1,0,0,"AC",cpar.AC,0,1|(5<<4));
   AddColumn(jj,kk++,1,p_chk,24,1,0,0,"pls",cpar.pls,0,1);
-  AddColumn(jj,kk++,1,p_chk,24,0,0,0,"dsp",opt.dsp,0,1);
+  AddColumn(jj,kk++,1,p_chk,24,0,0,0,"dsp",opt.dsp,opt.Dsp,1|(8<<4));
   AddColumn(jj,kk++,1,p_inum,34,1,0,0,"RD",cpar.ratediv,0,1);
   AddColumn(jj,kk++,1,p_chk,24,1,0,0,"C1",cpar.group,0,1,21);
   AddColumn(jj,kk++,1,p_chk,24,1,0,0,"C2",cpar.group,0,1,22);
@@ -2494,8 +2498,8 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Len",cpar.Len,0,1|(6<<4));
   AddColumn(jj,kk++,1,p_inum,24,1,0,0,"G",cpar.G,0,1|(5<<4));
   AddColumn(jj,kk++,1,p_inum,24,1,0,0,"Trg",cpar.Trg,0,1);
-  AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Drv",cpar.Drv,0,1);
-  AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Thr",cpar.Thr,0,1);
+  AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Drv",cpar.Drv,opt.sDrv,1|(8<<4));
+  AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Thr",cpar.Thr,opt.sThr,1|(8<<4));
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"LT",cpar.LT,0,1);
 
   //Analysis

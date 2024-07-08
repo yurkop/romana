@@ -385,9 +385,10 @@ void PopFrame::AddPeaks() {
   fMain->SetWindowName("Peak Search");
 
   AddNum(opt.Peak_thr,31,"Threshold","Peak threshold relative to the highest peak");
-  AddNum(opt.Peak_sig,32,"Sigma","Sigma for peak search");
-  AddNum(opt.Peak_bwidth,33,"Background","width of the background in units of peak sigma");
-  AddNum(opt.Peak_mpeaks,34,"MaxPeaks","Maximal number of peaks");
+  AddNum(opt.Peak_smooth,32,"Smooth","Smooth before peak search");
+  AddNum(opt.Peak_wid,33,"Width","Minimal width for peak search");
+  AddNum(opt.Peak_bwidth,34,"Background","width of the background in units of peak sigma");
+  AddNum(opt.Peak_maxpeaks,35,"MaxPeaks","Maximal number of peaks");
 
   /*
   hframe = new TGHorizontalFrame(fMain,10,10);
@@ -450,13 +451,16 @@ void PopFrame::DoENum() {
     opt.Peak_thr=te->GetNumber();
     break;
   case 32:
-    opt.Peak_sig=te->GetNumber();
+    opt.Peak_smooth=te->GetNumber();
     break;
   case 33:
-    opt.Peak_bwidth=te->GetNumber();
+    opt.Peak_wid=te->GetNumber();
     break;
   case 34:
-    opt.Peak_mpeaks=te->GetNumber();
+    opt.Peak_bwidth=te->GetNumber();
+    break;
+  case 35:
+    opt.Peak_maxpeaks=te->GetNumber();
     break;
   default:
     ;

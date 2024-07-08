@@ -66,6 +66,7 @@ struct Pmap {
   // 5 - group4
   // 6 - проверка Len кратно 3 или 4
   // 7 - установка tsleep в Timer
+  // 8 - chanpar->Update() (для отображения второго параметра apar2)
 
   // in DoDaqChk:
   // 5 - group4 for module51

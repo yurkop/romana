@@ -333,7 +333,8 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
     int delay = abs(opt.T1[Chan]);
     float max=-1e9;
     Float_t drv;
-    //Float_t Dpr = -1e6;
+    Float_t Dpr = -1e6;
+    bool porog=false;
 
     //sData.erase(sData.end()-10,sData.end());
 
@@ -348,13 +349,15 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
 	max=D[j];
 	pp=j;
       }
-      // if (Dpr >= thresh && drv<Dpr) {
-      // 	break;
-      // }
-      // Dpr=drv;
+      if (drv>=thresh)
+	porog=true;
+      if (porog && D[j]>0 && D[j]<Dpr)
+       	break;
+      Dpr=D[j];
     }
 
-    // prnt("ss l d d ds;",BGRN, "Pos:", Tstamp64, pp, j, sData.size(), RST);
+    // if (Tstamp64==354589358)
+    //   prnt("ss l d d d ds;",BGRN, "Pos:", Tstamp64, pp, Pos, j, sData.size(), RST);
     // Pos=pp;
     // break;
 
@@ -400,7 +403,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
     //cout << "pp: " << Tstamp64 << " " << pp << " " << Time << " " << Pos << endl;
 
     // если не достигнут порог -> error +80
-    if (max<thresh) {
+    if (!porog) {
       Pos=Time+80;
     }
 

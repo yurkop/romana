@@ -1739,15 +1739,18 @@ void hsmooth(TH1 *h1, int nn) {
   //double sum;
   int nsum;
 
-  int nbins = h1->GetNbinsX();
+  int n1 = h1->GetXaxis()->GetFirst();
+  int n2 = h1->GetXaxis()->GetLast();
+  //int nbins = h1->GetNbinsX();
 
-  double *sum = new double[nbins];
+  double *sum = new double[h1->GetNbinsX()];
 
-  for (int i=0;i<nbins;i++) {
+  for (auto i=n1;i<=n2;i++) {
+    //for (int i=0;i<nbins;i++) {
     sum[i]=0.0;
     nsum=0;
     for (int l=-nn;l<=nn;l++) {
-      if (i+l >= 0 && i+l <nbins) {
+      if (i+l >= n1 && i+l <= n2) {
 	sum[i]+=h1->GetBinContent(i+l);
 	//cout << i+l << " " << sum << " " << h1->GetBinContent(i+l) << endl;
 	nsum++;
@@ -1756,13 +1759,14 @@ void hsmooth(TH1 *h1, int nn) {
     sum[i]/=nsum;
   }
 
-  for (int i=0;i<nbins;i++) {
+  for (int i=n1;i<=n2;i++) {
     h1->SetBinContent(i,sum[i]);
   }
 
   delete[] sum;
 
 }
+
 
 void hderiv(TH1 *hh) {
   //valid only for 1-D hists
@@ -1779,16 +1783,105 @@ void hderiv(TH1 *hh) {
 }
 
 
-/*
-void HistFrame::PeakSearch(TH1* hh, double dist, double thresh) {
-  TH1* h2= (TH1*) hh->Clone("hcln");
-  if (thresh>1) thresh=1;
-  double max = hh->GetBinContent(hh->GetMaximumBin())*thresh;
-  cout << h2->GetXaxis()->GetFirst() << " " << hh->GetMaximumBin() << endl;
+bool p_comp(vpeak a, vpeak b) {return (a.p<b.p);}
+bool h_comp(vpeak a, vpeak b) {return (a.h>b.h);}
+
+void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
+
+  //std::vector<vpeak> vv;
+  int inpeak=0; //0 - не в пике; 1 - в пике, сигма не найдена; 2 - сигма найдена
+
+  TH1* hh = h1;
+  if (opt.Peak_smooth) {
+    TH1* h2= (TH1*) h1->Clone("hcln");
+    hh = h2;
+    hsmooth(hh,opt.Peak_smooth);
+    //h2->SetDrawOption("same");
+    //h1->GetListOfFunctions()->Add(h2);
+    //hsmooth(hh,opt.Peak_smooth);
+  }
+
+  if (opt.Peak_thr>1) opt.Peak_thr=1;
+
+  int n1 = hh->GetXaxis()->GetFirst();
+  int n2 = hh->GetXaxis()->GetLast();
+
+  double bkg = (hh->GetBinContent(n1) + hh->GetBinContent(n2))/2;
+
+  double hmax = (hh->GetBinContent(hh->GetMaximumBin())-bkg)*opt.Peak_thr;
+
+  vpeak pp = {0,-1e9,1e9};
+  //cout << hh->GetXaxis()->GetFirst() << " " << hh->GetXaxis()->GetLast() << " " << bkg << " " << hmax << endl;
+  for (auto i=n1;i<=n2;i++) {
+    double bb = hh->GetBinContent(i) - bkg;
+    double cc = hh->GetBinCenter(i);
+    // если точка выше текущего пика -> новое положеие пика, "обнуляем" w
+    if (bb>=hmax && bb>pp.h) {
+      inpeak=1;
+      pp.h=bb;
+      pp.p=cc;
+      pp.w=1e9;
+      //prnt("ss d d f f fs;",BRED,"pk:",i,inpeak,pp.p,pp.h,pp.w,RST);
+      continue;
+    }
+    // если точка ниже половины высоты -> задаем w, но из пика еще не вышли
+    if (inpeak==1 && bb<=pp.h/2) {
+      pp.w=cc-pp.p;
+      inpeak=2;
+      //prnt("ss d d f f fs;",BBLU,"pk:",i,inpeak,pp.p,pp.h,pp.w,RST);
+      continue;
+    }
+    // если точка дальше, чем 3*w, пик найден
+    if (inpeak==2 && cc-pp.p>3*pp.w) {
+      //prnt("ss d d f f fs;",BGRN,"pk:",i,inpeak,pp.p,pp.h,pp.w,RST);
+      if (pp.w>=opt.Peak_wid)
+	vv.push_back(pp);
+      pp.h=-1e9;
+      inpeak=0;
+      continue;
+    }
+  }
+  //prnt("ss d d f f fs;",BMAG,"pk:",n2,inpeak,pp.p,pp.h,pp.w,RST);
+
+  // если в последнем пике была найдена w, записываем
+  if (pp.h>hmax && n2-pp.p>pp.w && pp.w>=opt.Peak_wid)
+    vv.push_back(pp);
+
+  //cout << vv.size() << endl;
+  std::sort(vv.begin(),vv.end(),h_comp);
+  size_t nn = opt.Peak_maxpeaks;
+  if (vv.size()>nn)
+    vv.erase(vv.begin()+nn,vv.end());
+  //cout << vv.size() << endl;
+
+
+  vector<double> xx,yy;
+  for (auto it=vv.begin(); it!=vv.end();++it) {
+    xx.push_back(it->p);
+    yy.push_back(it->h+bkg);
+    //prnt("ss f f f fs;",BGRN,"peak:",it->p,it->h,it->w,bkg,RST);
+  }
+
+  std::sort(vv.begin(),vv.end(),p_comp);
+
+  // TPolyMarker * pm =
+  //   (TPolyMarker*)h1->GetListOfFunctions()->FindObject("TPolyMarker");
+  // if (pm) {
+  //   h1->GetListOfFunctions()->Remove(pm);
+  //   delete pm;
+  // }
+
+  TPolyMarker *pm = new TPolyMarker(vv.size(), xx.data(), yy.data());
+  h1->GetListOfFunctions()->Add(pm);
+  pm->SetMarkerStyle(23);
+  pm->SetMarkerColor(kRed);
+  pm->SetMarkerSize(1.3);
+
+
   //int i1=
   //for (
 }
-*/
+
 
 /*
 void HistFrame::PeakSearch(TH1* hh, TH1* h2, double dist, double thresh) {
@@ -1934,27 +2027,132 @@ void HistFrame::DoPeaks()
   TSpectrum spec;
   vector<string> fitres;
 
-  //int npad=0;
-  for (auto it=pad_hist.begin(); it!=pad_hist.end(); ++it) {
-    if (!(*it)->InheritsFrom(TH1::Class())) continue;
-    TH1* hh = (TH1*) *it;
+  /*
+  for (auto it=pad_map.begin(); it!=pad_map.end(); ++it) {
+    if (!((*it)->hst)->InheritsFrom(TH1::Class())) continue;
+    TH1* hh = (TH1*) (*it)->hst;
     if (hh->GetDimension()>1) continue;
 
-    /*
+
     auto it2 = it;
     ++it2;
-    if (it2!=pad_hist.end()) {
-      PeakSearch(hh,(TH1*) *it2,5,10);
+    if (it2!=pad_map.end()) {
+      PeakSearch(hh,(TH1*) (*it2)->hst,5,opt.Peak_thr);
     }
     else {
       cout <<"last: " << endl;
     }
     return;
-    */
+  */
 
+  for (auto it=pad_hist.begin(); it!=pad_hist.end(); ++it) {
+    if (!(*it)->InheritsFrom(TH1::Class())) continue;
+    TH1* hh = (TH1*) *it;
+    if (hh->GetDimension()>1) continue;
+
+    TIter next(hh->GetListOfFunctions());
+    TObject* obj;
+    while ( (obj=(TObject*)next()) ) {
+      //cout << "item: " << obj << endl;
+      hh->GetListOfFunctions()->Remove(obj);
+      delete obj;
+    }
+
+
+    std::vector<string> vfit;
+    std::vector<vpeak> vv;
+    PeakSearch(hh,vv);
+    //continue;
+    //return;
+
+    for (auto pp=vv.begin(); pp!=vv.end();++pp) {
+      double width = pp->w*opt.Peak_bwidth;
+
+      //cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
+      //     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
+
+      TF1* f1=new TF1("fitf","gausn(0)+pol1(3)",pp->p-width,pp->p+width);
+      //cout << f1->GetNpar() << endl;
+      double A = pp->h / (sqrt(2*TMath::Pi())*pp->w);
+      f1->SetParameters(A,pp->p,pp->w,0,0);
+
+      //f1->Print();
+      string fitopt = "Q";
+      if (pp!=vv.begin()) fitopt+="+";
+      //const char* fitopt="+";
+      //if (j==0) fitopt="";
+
+      //cout << "fitopt: " << fitopt << endl;
+      //TF1* fitf=new TF1("fitf","gaus",0,10);
+      hh->Fit(f1,fitopt.data(),"",pp->p-width,pp->p+width);
+      double* par = f1->GetParameters();
+      double err[100];
+      for (auto i=0;i<f1->GetNpar();i++) {
+	err[i] = f1->GetParError(i);
+      }
+
+      err[0] /= hh->GetBinWidth(1);
+      par[0] /= hh->GetBinWidth(1);
+      par[2]*=2.35;
+      err[2]*=2.35;
+
+      //prnt("ss f f fs;",BGRN,"pk: ",par[0],par[1],par[2],RST);
+      //prnt("ss f f fs;",BBLU,"er: ",err[0],err[1],err[2],RST);
+
+      for (auto i=0;i<f1->GetNpar();i++) {
+	double rr = pow(10,round(log10(err[i]))-1);
+	par[i] = round(par[i]/rr);
+	par[i]*=rr;
+	err[i] = round(err[i]/rr);
+	err[i]*=rr;
+	//printf("%0.3g %0.1e %f %f\n",par[i],err[i],log10(err[i]),rr);
+	//sprintf("%0.1e",ss,err[i]);
+	//string str=ss;
+	//double a=str
+      }
+      //prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
+
+      std::ostringstream oss;
+      oss << par[1] << "(" << err[1] << ")";
+      oss << " " << par[0] << "(" << err[0] << ")";
+      oss << " " << par[2] << "(" << err[2] << ")";
+
+      vfit.push_back(oss.str());
+
+      // oss << pp->p;
+      // for (auto i=0;i<3;i++) {
+      // 	oss << " " << par[i] << "(" << err[i] << ")";
+      // }
+
+
+      //cout << hh->GetTitle() << " " << oss.str() << endl;
+
+
+    } // for vv
+
+
+    TPaveText *pt = new TPaveText(.5,0.5,.9,.9,"NDC");
+    pt->SetFillStyle(0);
+
+    for (UInt_t i=0;i<vfit.size();i++) {
+      //cout << vfit[i] << endl;
+      pt->AddText(vfit[i].c_str());
+    }
+
+    //pt->AddText("A TPaveText can contain severals line of text.");
+    //pt->AddText("They are added to the pave using the AddText method.");
+    //pt->AddLine(.0,.5,1.,.5);
+    //pt->AddText("Even complex TLatex formulas can be added:");
+    //pt->AddText("F(t) = #sum_{i=-#infty}^{#infty}A(i)cos#[]{#frac{i}{t+i}}");
+    hh->GetListOfFunctions()->Add(pt);
+
+
+
+    /*  
     int npk = spec.Search(hh,opt.Peak_sig,"",opt.Peak_thr);
-
+    npk = TMath::Max(npk,(int)opt.Peak_maxpeaks);
     //prnt("ss d d fs;",BGRN,"pk:",hh->GetDimension(),npk,opt.Peak_thr,RST);
+
 
     Double_t* peaks = spec.GetPositionX();
 
@@ -2024,19 +2222,13 @@ void HistFrame::DoPeaks()
 
 
     } // for npk
+    */
     //hh->SetStats(false);
 
 
-    /*
-    TPaveText *pt = new TPaveText(.75,-0.5,.95,.95,"NDC");
-    pt->SetFillStyle(0);
-    pt->AddText("A TPaveText can contain severals line of text.");
-    pt->AddText("They are added to the pave using the AddText method.");
-    //pt->AddLine(.0,.5,1.,.5);
-    //pt->AddText("Even complex TLatex formulas can be added:");
-    //pt->AddText("F(t) = #sum_{i=-#infty}^{#infty}A(i)cos#[]{#frac{i}{t+i}}");
-    hh->GetListOfFunctions()->Add(pt);
-    */
+
+
+
 
 
     //npad++;

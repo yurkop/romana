@@ -476,9 +476,10 @@ Toptions::Toptions() {
   // SimSim[11]=1; //CFD fraction
 
   Peak_thr=0.2;
-  Peak_sig=10;
+  Peak_wid=0;
   Peak_bwidth=10;
-  Peak_mpeaks=1;
+  Peak_maxpeaks=2;
+  Peak_smooth=0;
 
   memset(wrk_check,0,sizeof(wrk_check));
 

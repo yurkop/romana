@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 143
+#define CDEF 145
 
 /*
 #include <list>
@@ -305,9 +305,10 @@ public:
 
   //parameters for PeakSearch
   Float_t Peak_thr;
-  Float_t Peak_sig;
+  Float_t Peak_wid;
   Float_t Peak_bwidth;
-  Float_t Peak_mpeaks;
+  Float_t Peak_maxpeaks;
+  Float_t Peak_smooth;
 
   int wrk_check[64];
   //

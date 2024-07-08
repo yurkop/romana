@@ -4269,7 +4269,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
       //}
       break;
     case 4:
-      if (opt.dsp[ipls.Chan]) {
+      if (opt.Dsp[ipls.Chan]) {
 	ipls.Pos = cpar.Pre[ipls.Chan];
 	// if (ipls.Peaks.size()==0) {
 	//   ipls.Peaks.push_back(PeakClass());
@@ -4338,10 +4338,10 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  ;
 	} //switch
 	n_frm++;
-      } //if (opt.dsp[ipls.Chan])
+      } //if (opt.Dsp[ipls.Chan])
       break;
     case 5:
-      if (opt.dsp[ipls.Chan]) {
+      if (opt.Dsp[ipls.Chan]) {
 	ipls.Pos = cpar.Pre[ipls.Chan];
 	// if (ipls.Peaks.size()==0) {
 	//   ipls.Peaks.push_back(PeakClass());
@@ -4410,7 +4410,7 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  ;
 	} //switch
 	n_frm++;
-      } //if (opt.dsp[ipls.Chan])
+      } //if (opt.Dsp[ipls.Chan])
       break;
     case 6:
       {
@@ -4583,7 +4583,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       }
 
       if (ipls.ptype==0) { //analyze old pulse
-	if (opt.dsp[ipls.Chan]) {
+	if (opt.Dsp[ipls.Chan]) {
 	  MakePk(pk,ipls);
 	}
 	PulseAna(ipls);
@@ -4734,7 +4734,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
   //   ipls.PrintPulse(0);
   // }
   if (ipls.ptype==0) {
-    if (opt.dsp[ipls.Chan]) {
+    if (opt.Dsp[ipls.Chan]) {
       MakePk(pk,ipls);
     }
     PulseAna(ipls);

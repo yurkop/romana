@@ -27,6 +27,10 @@ void DynamicExec();
 typedef std::vector<double> dvect;
 typedef std::vector<dvect> d2vect;
 
+struct vpeak {
+  double p,h,w;
+};
+
 //-----------------------------------------------
 class HistFrame: public TGCompositeFrame {
 
@@ -140,7 +144,7 @@ public:
   void ClearCutG();
   string CutsToStr();
   void EditCutG();
-  void PeakSearch(TH1* hh, TH1* h2, double sig1, double sig2);
+  void PeakSearch(TH1* hh, std::vector<vpeak> &vv);
   void DoPeaks();
   void PeakFit(HMap* map, TH1* hist1, TH1* hist2, int i, d2vect &d2);
   void DelMaps(TGListTreeItem *idir);
