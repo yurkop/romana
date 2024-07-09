@@ -649,7 +649,6 @@ void PulseClass::PeakAna33() {
     ++crs->errors[ER_WIDTH];
   }
 
-  //if (hcl->b_base || opt.Mt[Chan]==2) {
   if (hcl->b_base[Chan]) {
     //slope1 (baseline)
     Sl1=0;
@@ -668,11 +667,12 @@ void PulseClass::PeakAna33() {
 
     //prnt("ss fs;",BRED,"Sl1:",Sl1,RST);
 
-    if (opt.Mt[Chan]==3) { //альтернативный slope1 (W1-W2) вместо slope2
-      Sl2 = 2*(Base - wdth)/(B1+B2-W1-W2);
-      RMS2 = 0;
-    }
-    else { //slope2 (peak)
+    // if (opt.Mt[Chan]==3) { //альтернативный slope1 (W1-W2) вместо slope2
+    //   Sl2 = 2*(Base - wdth)/(B1+B2-W1-W2);
+    //   RMS2 = 0;
+    // }
+    if (opt.Mt[Chan]!=3) { //если Mt=3, см. ниже
+      //slope2 (peak)
       Sl2=0;
       S_xx = 0;
       xm = (P2+P1)*0.5; //mean x
@@ -718,32 +718,28 @@ void PulseClass::PeakAna33() {
 
   } //if b_base
 
-  if (opt.Mt[Chan]==2) {
-    Area=Area0 - Base - ((P2+P1)-(B1+B2))*0.5*Sl1;
-  }
-  else if (opt.Mt[Chan]==3) {
-    Area=Area0 - Base - ((P2+P1)-(B1+B2))*0.5*Sl2;
-  }
-  else {
-    Area=Area0 - Base;
-  }
-
-  /* YK
-  if (opt.Bc[Chan]) {
-    Area+=opt.Bc[Chan]*Base;
-  }
-  YK */
-
-  /*
-  //cout << "W1: " << W1 << " " << W2 << " " << Pos << endl;
-  if (W1<=Pos && W2<=Pos) {
-    if (Base)
-      Width/=Base;
+  Area=Area0 - Base;
+  switch (opt.Mt[Chan]) {
+  case 1: //Deriv
+    Area=Area2;
+    break;
+  case 2: //Slope1 from linear regression
+    Area -= ((P1+P2)-(B1+B2))*0.5*Sl1;
+    break;
+  case 3: {//Slope2 from two areas
+    int nnn = (B1+B2)-(W1+W2);
+    if (nnn)
+      Sl2 = 2*(Base - wdth)/nnn;
     else
-      Width=0;
+      Sl2=0;
+    RMS2 = 0;
+    Area -= ((P1+P2)-(B1+B2))*0.5*Sl2;
+    break;
   }
-  else {
-  */
+  default:
+    ;
+  }
+
   if (opt.Mt[Chan]!=3) {
     if (Area) {
       Width=wdth-Base;
@@ -756,12 +752,6 @@ void PulseClass::PeakAna33() {
     Width = Pos-cpar.Pre[Chan]-Time;
     if (Width<-99) Width=-99;
     if (Width>99) Width=99;
-  }
-
-
-
-  if (opt.Mt[Chan]==1) {
-    Area=Area2;
   }
 
   /*

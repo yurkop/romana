@@ -3551,7 +3551,32 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
 
 }
 
-void CRS::CheckDSP(PulseClass &ipls) {
+void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
+  //cout << "checkdsp: " << ipls.sData.size() << " " << ipls2.sData.size() << endl;
+  bool bad=false;
+  Float_t a[10],b[10];
+  std::ostringstream oss_bad;
+  std::ostringstream oss_good;
+
+  //for (auto i=1;i<=8;i++) {
+  for (auto i: {1,2,3,4}) {
+    a[i] = *(Float_t*)((char*)&ipls + ipls.GetPtr(i));
+    b[i] = *(Float_t*)((char*)&ipls2 + ipls2.GetPtr(i));
+    if (a[i]!=b[i]) {
+      bad=true;
+      oss_bad << " " << i << ": " << a[i] << " " << b[i];
+    }
+    else {
+      oss_good << " " << i << ": " << a[i] << " " << b[i];
+    }
+  }
+
+  if (bad) {
+    prnt("ss l ss;",BGRN,"bad:",ipls.Tstamp64,oss_bad.str().c_str(),RST);
+    prnt("ss l ss;",BMAG,"good:",ipls.Tstamp64,oss_good.str().c_str(),RST);
+    cout << "-------" << endl;
+  }
+
   /*
   if (Peaks.size()!=2) {
     cout <<"CheckDSP: Peaks.size()!=2: " << Peaks.size()
@@ -3603,13 +3628,14 @@ void CRS::PulseAna(PulseClass &ipls) {
     //prnt("ss d l d f fs;",BBLU, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos, ipls.Time, ipls.Width, RST);
   }
   else { //Dsp -> не анализируем
+    PulseClass ipls2 = ipls;
     ipls.Pos=cpar.Pre[ipls.Chan];
     if (opt.checkdsp) {
       // if (ipls.Peaks.size()!=1) {
       // 	cout << "size!!!: " << ipls.Peaks.size() << endl;
       // }
-      ipls.PeakAna33();
-      CheckDSP(ipls);
+      ipls2.PeakAna33();
+      CheckDSP(ipls,ipls2);
     }
     //prnt("ss d l d f fs;",BRED, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos, ipls.Time, ipls.Width, RST);
     // else {
@@ -4520,7 +4546,7 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
     }
   }
   else {
-    ipls.Sl2 = (ipls.Base - ipls.Width)/(b_mean[ipls.Chan]-w_mean[ipls.Chan]);
+    ipls.Sl2 = (ipls.Base - wdth)/(b_mean[ipls.Chan]-w_mean[ipls.Chan]);
     ipls.Area -= (p_mean[ipls.Chan]-b_mean[ipls.Chan])*ipls.Sl2;
 
     ipls.Width = ipls.Pos-cpar.Pre[ipls.Chan]-ipls.Time;
