@@ -247,7 +247,10 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
   // Pos - уже найден; kk - параметр производной
   // для Trig=4 Pos - точка ПЕРЕД пересечением нуля
 
-  switch (opt.sTg[Chan]) {
+  //cout << "stg: " << opt.sTg[Chan] << endl;
+  int stg = opt.sTg[Chan];
+  if (stg<0) stg=cpar.Trg[Chan];
+  switch (stg) {
   case 3: //rise of derivalive
     if (Pos-kk>=1 && Pos<(int)sData.size()) {
       Float_t DD=sData[Pos]-sData[Pos-kk];
@@ -465,13 +468,16 @@ void PulseClass::PeakAna33() {
     return;
   }
 
-  if (opt.sTg[Chan]>=0) { //use software trigger
+  int stg = opt.sTg[Chan];
+
+  if (stg>=0) { //use software trigger
     if (sData.size()>1) { // нужно минимум 2 точки
       if (kk<1 || kk>=(int)sData.size()) kk=1;
-      FindPeaks(opt.sTg[Chan],kk);
+      FindPeaks(stg,kk);
     } //if
   }
   else {//use hardware trigger
+    stg=cpar.Trg[Chan];
     Pos=cpar.Pre[Chan];
   }
 
@@ -510,7 +516,7 @@ void PulseClass::PeakAna33() {
   if (W1>=sz) W1=sz-1;
   if (W2>=sz) W2=sz-1;
 
-  switch (opt.sTg[Chan]) {
+  switch (stg) {
   case 3:
   case 6:
   case 7:
