@@ -521,6 +521,13 @@ void PulseClass::PeakAna33() {
   case 6:
   case 7:
     FindZero(kk,opt.sThr[Chan]);
+    if (opt.Mt[Chan]==1) {
+      for (int j=T1;j<=T2;j++) {
+	if (j<kk)
+	  continue;
+	Area2+=sData[j]-sData[j-kk];
+      }
+    }
     break;
     //case 7:
     //break;
@@ -533,10 +540,10 @@ void PulseClass::PeakAna33() {
 	if (j<kk+1)
 	  continue;
 	Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
-	if (dif2>0) {
-	  Time+=dif2*j;
-	  Area2+=dif2;
-	}
+	//if (dif2>0) {
+	Time+=dif2*j;
+	Area2+=dif2;
+	//}
       }
     }
     else { //use 1st deriv
@@ -544,14 +551,14 @@ void PulseClass::PeakAna33() {
 	if (j<kk)
 	  continue;
 	Float_t dif=sData[j]-sData[j-kk];
-	if (dif>0) {
-	  Time+=dif*j;
-	  Area2+=dif;
-	}
+	//if (dif>0) {
+	Time+=dif*j;
+	Area2+=dif;
+	//}
       }
     }
 
-    if (abs(Area2)>1e-5) {
+    if (Area2) {
       Time/=Area2;
     }
     else {

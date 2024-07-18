@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 145
+#define CDEF 146
 
 /*
 #include <list>
@@ -284,6 +284,7 @@ public:
   Bool_t b_stat;
   Bool_t b_gcuts;
   Bool_t b_roi;
+  Bool_t b_fpeaks;
   Bool_t b_deriv[4];
   Bool_t b_peak[MXPK];
 

@@ -28,7 +28,7 @@ typedef std::vector<double> dvect;
 typedef std::vector<dvect> d2vect;
 
 struct vpeak {
-  double p,h,w;
+  double p,h,w; //pos,height,width
 };
 
 //-----------------------------------------------
@@ -88,7 +88,7 @@ public:
   //Bool_t wrk_check_MT; //is MAIN_MT checked before deleting ltree
   Bool_t changed;
   Bool_t started;
-  Bool_t stack_off; // для checkpads
+  Bool_t stack_off;// =1 когда только переключили со стэка на hist
   Int_t in_gcut; //0-cancel;1-cut;2-roi
   int np_gcut; //number of points in gcut
 
@@ -145,7 +145,8 @@ public:
   string CutsToStr();
   void EditCutG();
   void PeakSearch(TH1* hh, std::vector<vpeak> &vv);
-  void DoPeaks();
+  void DoPeaks_old();
+  void DoPeaks(TH1* hh);
   void PeakFit(HMap* map, TH1* hist1, TH1* hist2, int i, d2vect &d2);
   void DelMaps(TGListTreeItem *idir);
   void Do_Ecalibr(PopFrame* pop);

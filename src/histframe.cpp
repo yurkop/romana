@@ -587,10 +587,20 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fHor2->AddFrame(chkd, LayLC1);
   chkd->SetToolTipText("Draw ROI");
 
-  but = new TGTextButton(fHor2,"Peaks",4);
-  but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
-  fHor2->AddFrame(but, LayLC1);
-  but->SetToolTipText("Find peaks in all visible windows (works only in X/Y mode");
+  id = parpar->Plist.size()+1;
+  chkd = new TGCheckButton(fHor2,"Peaks",id);
+  parpar->DoMap(chkd,&opt.b_fpeaks,p_chk,0,3<<4);
+  chkd->Connect("Toggled(Bool_t)", "ParDlg", parpar, "DoDaqChk(Bool_t)");
+  fHor2->AddFrame(chkd, LayLC1);
+  chkd->SetToolTipText("Find peaks in all visible windows (works only in X/Y mode");
+
+  // but = new TGTextButton(fHor2,"Peaks",4);
+  // but->Connect("Clicked()", "HistFrame", this, "DoPeaks()");
+  // fHor2->AddFrame(but, LayLC1);
+  // but->SetToolTipText("Find peaks in all visible windows (works only in X/Y mode");
+
+
+
 
   fStatus = new TGStatusBar(fHor2, 130, 10, kRaisedFrame);
   fStatus->Draw3DCorner(kFALSE);
@@ -2018,7 +2028,7 @@ void HistFrame::PeakSearch(TH1* hh, double sig1, double sig2) {
 }
 */
 
-void HistFrame::DoPeaks()
+void HistFrame::DoPeaks_old()
 {
   //cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
 
@@ -2045,6 +2055,7 @@ void HistFrame::DoPeaks()
     return;
   */
 
+  int npad=0;
   for (auto it=pad_hist.begin(); it!=pad_hist.end(); ++it) {
     if (!(*it)->InheritsFrom(TH1::Class())) continue;
     TH1* hh = (TH1*) *it;
@@ -2131,6 +2142,9 @@ void HistFrame::DoPeaks()
     } // for vv
 
 
+
+
+
     TPaveText *pt = new TPaveText(.5,0.5,.9,.9,"NDC");
     pt->SetFillStyle(0);
 
@@ -2138,6 +2152,9 @@ void HistFrame::DoPeaks()
       //cout << vfit[i] << endl;
       pt->AddText(vfit[i].c_str());
     }
+    //pt->SetTextSize(0.03);
+    //pt->SetTextFont(32);
+    //cout << "pt: " << pt->GetTextSize() << " " << pt->GetTextFont() << endl;
 
     //pt->AddText("A TPaveText can contain severals line of text.");
     //pt->AddText("They are added to the pave using the AddText method.");
@@ -2145,7 +2162,8 @@ void HistFrame::DoPeaks()
     //pt->AddText("Even complex TLatex formulas can be added:");
     //pt->AddText("F(t) = #sum_{i=-#infty}^{#infty}A(i)cos#[]{#frac{i}{t+i}}");
     hh->GetListOfFunctions()->Add(pt);
-
+    //pt->Draw();
+    //gStyle->SetOptFit();
 
 
     /*  
@@ -2231,17 +2249,134 @@ void HistFrame::DoPeaks()
 
 
 
-    //npad++;
-    //cout << "npad!: " << npad << endl;
-    //fEc->GetCanvas()->cd(npad);
-    //gPad->Update();
+    npad++;
+    cout << "npad!: " << npad << endl;
+    fEc->GetCanvas()->cd(npad);
+    gPad->Update();
   } // for pad_hist
+
   //fEc->GetCanvas()->SetEditable(true);
   //fEc->GetCanvas()->Update();
   //fEc->GetCanvas()->SetEditable(false);
   //opt.b_stat=false;
-  Update();
+  //Update();
+  //fEc->GetCanvas()->Update();
 }
+
+void HistFrame::DoPeaks(TH1* hh) {
+  //cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
+
+  //if (opt.b_stack) return;
+
+  TSpectrum spec;
+  vector<string> fitres;
+
+  //if (hh->GetDimension()>1) continue;
+
+    // TIter next(hh->GetListOfFunctions());
+    // TObject* obj;
+    // while ( (obj=(TObject*)next()) ) {
+    //   //cout << "item: " << obj << endl;
+    //   hh->GetListOfFunctions()->Remove(obj);
+    //   delete obj;
+    // }
+
+
+  std::vector<string> vfit;
+  std::vector<vpeak> vv;
+  PeakSearch(hh,vv);
+    //continue;
+    //return;
+
+  vfit.push_back("area:");
+  vfit.push_back("pos :");
+  vfit.push_back("fwhm:");
+
+  for (auto pp=vv.begin(); pp!=vv.end();++pp) { //цикл по найденным пикам
+    double width = pp->w*opt.Peak_bwidth;
+
+    TF1* f1=new TF1("fitf","gausn(0)+pol1(3)",pp->p-width,pp->p+width);
+    double A = pp->h / (sqrt(2*TMath::Pi())*pp->w);
+    f1->SetParameters(A,pp->p,pp->w,0,0);
+
+    //f1->Print();
+    string fitopt = "Q";
+    if (pp!=vv.begin()) fitopt+="+";
+    hh->Fit(f1,fitopt.data(),"",pp->p-width,pp->p+width);
+    double* par = f1->GetParameters();
+    double err[100];
+    for (auto i=0;i<f1->GetNpar();i++) {
+      err[i] = f1->GetParError(i);
+    }
+
+    err[0] /= hh->GetBinWidth(1);
+    par[0] /= hh->GetBinWidth(1);
+    par[2]*=2.35;
+    err[2]*=2.35;
+
+    //prnt("ss f f fs;",BGRN,"pk: ",par[0],par[1],par[2],RST);
+    //prnt("ss f f fs;",BBLU,"er: ",err[0],err[1],err[2],RST);
+
+    /*
+    for (auto i=0;i<f1->GetNpar();i++) {
+      double rr = pow(10,round(log10(err[i]))-1);
+      par[i] = round(par[i]/rr);
+      par[i]*=rr;
+      err[i] = round(err[i]/rr);
+      err[i]*=rr;
+      printf("%0.3g %0.1e %f %f\n",par[i],err[i],log10(err[i]),rr);
+      //sprintf("%0.1e",ss,err[i]);
+      //string str=ss;
+      //double a=str
+    }
+    //prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
+    */
+
+    for (auto i=0;i<3;i++) {
+      char s1[50],s2[100];
+      sprintf(s1," %10.4g#pm%0.3g",par[i],err[i]);
+      snprintf(s2,50,"%20s",s1);
+      //cout << i << " " << ss << endl;
+      vfit[i]+=s2;
+    }
+
+    /*
+    std::ostringstream oss;
+    oss << par[1] << "(" << err[1] << ")";
+    oss << " " << par[0] << "(" << err[0] << ")";
+    oss << " " << par[2] << "(" << err[2] << ")";
+
+    vfit.push_back(oss.str());
+    */
+
+
+    // oss << pp->p;
+    // for (auto i=0;i<3;i++) {
+    // 	oss << " " << par[i] << "(" << err[i] << ")";
+    // }
+
+
+    //cout << hh->GetTitle() << " " << oss.str() << endl;
+
+
+  } // for vv
+
+  TPaveText *pt = new TPaveText(.5,0.5,.9,.9,"NDC");
+  pt->SetFillStyle(0);
+
+  for (UInt_t i=0;i<vfit.size();i++) {
+    //cout << vfit[i] << endl;
+    pt->AddText(vfit[i].c_str());
+  }
+  //pt->SetTextSize(0.03);
+  pt->SetTextFont(102);
+  //cout << "pt: " << pt->GetTextSize() << " " << pt->GetTextFont() << endl;
+
+  hh->GetListOfFunctions()->Add(pt);
+  //pt->Draw();
+  //gStyle->SetOptFit();
+
+} //DoPeaks
 
 void HistFrame::PeakFit(HMap* map,TH1* hist1,TH1* hist2,int nn,d2vect &d2) {
 			   // double &yy, double &er) {
@@ -3111,26 +3246,11 @@ void HistFrame::DrawHist() {
 
   // draw pad_hist
 
+  // cout << "stath: " << gStyle->GetStatH() << endl;
+  // gStyle->SetStatH(0.25);
+  // cout << "stath: " << gStyle->GetStatH() << endl;
   AllRebinDraw();
   cv->Update();
-
-  /*
-  // make cuts if selected
-  //TCanvas* cv=fEc->GetCanvas();
-  if (in_gcut) {
-    np_gcut=0;
-    cv->SetCrosshair(true);
-    for (int i=1;i<=ndiv;i++) {
-      TPad* pad = (TPad*) cv->GetPad(i);
-      if (pad)
-	pad->AddExec("dynamic","DynamicExec()");
-    }
-  }
-  else {
-    cv->SetCrosshair(false);
-    HiFrm->fStatus->SetText("");
-  }
-  */
   
 } //DrawHist
 
@@ -3279,8 +3399,31 @@ void HistFrame::AllRebinDraw() {
 
       if (hh->GetDimension()==1) { //1D hist
 	gPad->SetLogy(opt.b_logy);
-	//cout << "Vslider: " << v1 << " " << v2 << " " << y1 << " " << y2 << " " << b1 << " " << b2 << endl;
+
+	hh->GetListOfFunctions()->Clear();
+
+	/*
+	TPaveStats *st = (TPaveStats*)hh->FindObject("stats");
+	//cout << "stt: " << st << endl;
+	if (st) {
+	  hh->GetListOfFunctions()->Remove(st);
+	  delete st;
+	}
+	*/
+
+	if (opt.b_fpeaks) {
+	  DoPeaks(hh);
+	}
+
 	hh->Draw(dopt[0].Data());
+
+	// gPad->Update();
+	// TPaveStats *st = (TPaveStats*)hh->FindObject("stats");
+	// if (st)
+	//   cout << "stt: " << st->GetY1() << " " << st->GetY2() << " " << st->GetTextFont() << " " << gStyle->GetOptStat() << " " << gStyle->GetOptFit() << " " << gStyle->GetStatFontSize() << endl;
+
+
+
 
 	// cout << "padhist: " << pad_hist[npad]->GetName()
 	// 	   << " " << pad_hist[npad]->GetOption()

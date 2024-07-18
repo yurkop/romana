@@ -383,6 +383,7 @@ Toptions::Toptions() {
   b_stat=false;
   b_gcuts=false;
   b_roi=false;
+  b_fpeaks=false;
 
   b_ntof=0;
   start_ch=0;
