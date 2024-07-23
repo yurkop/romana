@@ -884,7 +884,7 @@ CRS::CRS() {
   //Tree=0;
 
   batch=false;
-  scrn=1;
+  scrn=0;
   b_noheader=false;
 
   b_acq=false;
@@ -2900,7 +2900,7 @@ int CRS::DoBuf() {
 #endif
   Long64_t length=0;
 
-  if (batch && scrn) {
+  if (scrn) {
     //++nn;
     if (nbuffers%scrn==0) {
       prnt("sls0.2fs0.1fs0.1fsd;",
@@ -3619,7 +3619,6 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
 }
 
 void CRS::PulseAna(PulseClass &ipls) {
-  //prnt("ss d l ds;",BMAG,"Pls1:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
   if (!opt.Dsp[ipls.Chan]) { // не Dsp -> анализируем импульс
     if (opt.sS[ipls.Chan]) {
       ipls.Smooth(opt.sS[ipls.Chan]);
@@ -3658,7 +3657,6 @@ void CRS::PulseAna(PulseClass &ipls) {
     ipls.Ecalibr(ipls.RMS2);
     //ipls.Bcalibr();
   }
-  //prnt("ss d l ds;",BGRN,"Pls2:",ipls.Chan,ipls.Tstamp64,ipls.Pos,RST);
 }
 
 void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
@@ -4563,8 +4561,10 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
 } //MakePk
 
 void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
-  //ibuf - current sub-buffer
+  //romana test140_HPGe_2_Labr_4_Ing27_87prc_Generator_100hz_Na_top_Pb_1mm_SiO2.raw -p test139.par
+  //error at Tstamp 38721814589
 
+  //ibuf - current sub-buffer
   ULong64_t* buf8 = (ULong64_t*) GLBuf;//Fbuf[ibuf];
 
   Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)

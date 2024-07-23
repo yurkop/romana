@@ -265,7 +265,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
       //prnt("ss d ls;",BGRN,"ErrTime2:",Chan,Tstamp64,RST);
     }
     break;
-  case 6:
+  case 6: //fall of derivalive
     if (Pos>=kk && Pos+1<(int)sData.size()) {
       Float_t Dpr=sData[Pos]-sData[Pos-kk];
       Float_t DD=sData[Pos+1]-sData[Pos-kk+1];
@@ -279,60 +279,21 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
       //prnt("ss d ls;",BGRN,"ErrTime3:",Chan,Tstamp64,RST);
     }
     break;
-    /*
-  case 7: {
-    int delay = abs(opt.T1[Chan]);
-    Dpr=-1e6;
-    Float_t drv;
-
-    //kk+delay всегда >=1
-    //jj=kk+delay-1;
-    //D[jj]=0;
-
-    //for (j=kk+delay;j<sData.size();j++) {
-    for (UInt_t j=kk;j<sData.size()-delay;j++) {
-      D[j] = CFD(j,kk,delay,opt.T2[Chan],drv);
-      // if (Tstamp64==1435915) {
-      // 	prnt("ss d f f fs;",BRED,"D:",j,D[j],drv,Dpr,RST);
-      // }
-      //if (Dpr >= opt.sThr[Chan] && drv<Dpr) {
-      if (drv >= opt.sThr[Chan] && Dpr<drv) {
-	delay=-1;
-	break;
-      }
-      else if (D[j] <= 0) {
-	//else -> значит это условие не может быть выполнено на том же шаге,
-	//что и предыдущий if. Т.е. если pp задано, есть как минимум 2 точки
-	pp=j;
-      }
-      Dpr=drv;
-    }
-
-    // if (Tstamp64==1435915) {
-    //   prnt("ss l d ds;",BGRN,"T:",Tstamp64,delay,pp,RST);
-    // }
-    if (delay==-1) { //если выполнено, то pp и pp+1 существуют
-      //Pos=pp;
-      if (D[pp+1]!=D[pp])
-	Time = pp - D[pp]/(D[pp+1] - D[pp]);
-      else
-	Time = pp;
-      //cout << "pp: " << Tstamp64 << " " << pp << " " << Time << " " << Pos << endl;
-    }
-  }
-    break;
-    */
   case 7: {
     // error (bin in Width spectrum):
     // 80 - не достигнут порог (thresh) - ошибка некритичная и допустимая
     // 85 - не найдено пересечение с 0 - возможно, допустимо
     // 89 - CFD всегда отрицательно - маловероятно и наверное недопустимо
 
+    int delay = abs(opt.T1[Chan]);
+    if (kk >= (int)sData.size()-delay) {
+      Pos=-32222;
+      ++crs->errors[ER_TIME];
+      break;
+    }
 
     Float_t D[20000]; //максимальная длина записи 16379
-    Int_t pp=0; // временный Pos
-
-    int delay = abs(opt.T1[Chan]);
+    Int_t pp=kk; // временный Pos
     float max=-1e9;
     Float_t drv;
     Float_t Dpr = -1e6;
@@ -343,8 +304,8 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
     // CFD сдвинута вправо относительно drv
     // находим максимум - либо локальный после пересечения порога,
     // либо глобальный: pp - позиция максимума
-    UInt_t j;
-    for (j=TMath::Max(kk,(int)Pos);j<sData.size()-delay;j++) {
+    Int_t j;
+    for (j=TMath::Max(kk,(int)Pos);j<(int)sData.size()-delay;j++) {
       D[j]=CFD(j,kk,delay,opt.T2[Chan],drv);
       //drv=sData[j]-sData[j-kk];
       if (D[j]>max) {
@@ -357,20 +318,6 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
        	break;
       Dpr=D[j];
     }
-
-    // if (Tstamp64==354589358)
-    //   prnt("ss l d d d ds;",BGRN, "Pos:", Tstamp64, pp, Pos, j, sData.size(), RST);
-    // Pos=pp;
-    // break;
-
-
-    // for (UInt_t j=kk+1;j<sData.size()-delay;j++) {
-    //   D[j] = CFD(j,kk,delay,opt.T2[Chan],drv);
-    //   if (D[j]>max) {
-    // 	max=D[j];
-    // 	pp=j;
-    //   }
-    // }
 
     // если первая точка CFD<=0 -> error 89
     D[pp]=CFD(pp,kk,delay,opt.T2[Chan],drv);
@@ -401,7 +348,12 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
     //else
     //prnt("ss l d d ds;",BGRN, "Pos:", Tstamp64, pp, kk, sData.size(), RST);
 
-    Time = pp - D[pp]/(D[pp+1] - D[pp]);
+    if (D[pp+1] == D[pp]) {
+      prnt("ss d fs;",BRED,"DD:",Chan,D[pp],RST);
+      Time = pp;
+    }
+    else
+      Time = pp - D[pp]/(D[pp+1] - D[pp]);
     //cout << "pp: " << Tstamp64 << " " << pp << " " << Time << " " << Pos << endl;
 
     // если не достигнут порог -> error +80
@@ -415,25 +367,6 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
     break;
   }
     
-  //prnt("ss d l d d fs;",BGRN,"Zero:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
-
-  /*
-  Float_t Dpr=-1e6;
-  for (UInt_t j=j0;j<sData.size();j++) {
-    Float_t DD=sData[j]-sData[j-kk];
-    if (DD <= 0 && Dpr > 0) {
-      Pos=j-1;
-      if (sTrig==6) { //zero crossing
-	if (DD!=Dpr)
-	  Time = Pos - Dpr/(DD-Dpr);
-	else
-	  Time = Pos;
-      }
-      break;
-    }
-    Dpr=DD;
-  }
-  */
   //prnt("ssfs;",BGRN,"Zero: ",Time,RST);  
 }
 

@@ -1203,7 +1203,7 @@ int main(int argc, char **argv)
 	  continue;
 	case 's': {
 	  ++i;
-	  crs->scrn=0;
+	  //crs->scrn=0;
 	  if (i<argc) {
 	    char* p;
 	    crs->scrn = strtol(argv[i], &p, 10);
