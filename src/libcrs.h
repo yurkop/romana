@@ -207,6 +207,9 @@ RQ_OBJECT("CRS")
   //Long64_t npulses3o[MAX_CH]; //number of pulses per channel (hardw)
   double npulses_bad[MAX_CH+1]; //number of bad pulses per channel
 
+  Long64_t fCounter[MAX_CH]; //old Counter
+  Long64_t fTime[MAX_CH]; //old Tstamp for Counter
+
   int nchan_on;
 
   bool batch; //batch mode

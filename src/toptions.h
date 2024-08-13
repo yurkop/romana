@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 146
+#define CDEF 147
 
 /*
 #include <list>
@@ -231,7 +231,7 @@ public:
   //char fname_dec[199];
   //char fname_root[199];
   //TString S_Filename;
-  char Filename[100]; //->
+  char Filename[255]; //->
 
   //TString S_ch_name[MAX_TP];
   char ch_name[MAX_TP][20];
@@ -330,6 +330,8 @@ public:
   // format:
   // Hdef var // hnum hname xtitle ytitle tip 
   Hdef h_rate; // 21 Rate T(sec) Counts Software count rates as a funtion of time in seconds
+  Hdef h_hwrate; // 22 HWRate T(sec) Counts Hardware counters as a funtion of time in seconds
+
   Hdef h_mult; // 49 Mult Multiplicity Counts Event multiplicity
 
   Hdef h_area; // 1 Area Channel Counts Area of the pulse or energy, calibrated (see Analysis->E0,E1,E2 for calibration)
@@ -337,22 +339,19 @@ public:
   Hdef h_time; // 11 Time t(ns) Counts Time (relative to the starts - see Analysis->St), in ns
   Hdef h_hei; // 2 Height Channel Counts Maximal pulse height (in channels)
   Hdef h_width; // 3 Width width(a.u.) Counts Pulse width
-  Hdef h_ntof; // 12 Ntof t(mks) Counts Neutron time of flight, in mks
-  Hdef h_etof; // 13 Etof Energy(eV) Counts Neutron energy from NTOF, in eV
-  Hdef h_ltof; // 14 Ltof Lambda(A) Counts Neutron wavelength from NTOF, in A
-
-
-
-
-  Hdef h_hwrate; // 22 HWRate T(sec) Counts Hardware counters as a funtion of time in seconds
   Hdef h_per; // 15 Period t(mks) Counts Pulse period (distance between two consecutive pulses), in mks
-
   Hdef h_base; // 4 Base Channel Counts Base line, not calibrated
+
+
 
   Hdef h_slope1; // 5 Sl1 Slope Counts Slope1 (baseline)
   Hdef h_slope2; // 6 Sl2 Slope Counts Slope2 (peak)
   Hdef h_RMS1; // 7 RMS1 RMS Counts Noise1 (baseline)
   Hdef h_RMS2; // 8 RMS2 RMS Counts Noise2 (peak)
+
+  Hdef h_ntof; // 12 Ntof t(mks) Counts Neutron time of flight, in mks
+  Hdef h_etof; // 13 Etof Energy(eV) Counts Neutron energy from NTOF, in eV
+  Hdef h_ltof; // 14 Ltof Lambda(A) Counts Neutron wavelength from NTOF, in A
 
   Hdef h_pulse; // 51 Pulse samples Amplitude Average pulse shape
   Hdef h_deriv; // 52 Deriv samples Amplitude Average pulse shape derivative

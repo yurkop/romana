@@ -782,7 +782,7 @@ void CRS::Ana2(int all) {
 	  if (opt.raw_write && opt.fProc) {
 	    crs->Fill_Raw(&(*m_event));
 	  }
-	  if (opt.fTxt && opt.nthreads>1) {
+	  if (opt.fTxt && opt.nthreads==1) {
 	    crs->Print_OneEvent(&(*m_event));
 	  }
 	} //maintrig
@@ -2405,6 +2405,10 @@ void CRS::DoReset(int rst) {
     memset(rate_soft,0,sizeof(rate_soft));
     memset(rate_hard,0,sizeof(rate_hard));
     memset(npulses_bad,0,sizeof(npulses_bad));
+
+    memset(fCounter,0,sizeof(fCounter));
+    memset(fTime,0,sizeof(fTime));
+
     memset(errors,0,sizeof(errors));
 
     //if (f_read)

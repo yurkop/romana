@@ -105,6 +105,7 @@ public:
   //TGLayoutHints* LayCC1a ;
   TGLayoutHints* LayCC2 ;
   TGLayoutHints* LayET0 ;
+  TGLayoutHints* LayET1 ;
   TGLayoutHints* LayLC1 ;
   TGLayoutHints* LayLC2 ;
   TGLayoutHints* LayLT0 ;
@@ -117,6 +118,7 @@ public:
   TGLayoutHints* LayLT4a ;
   TGLayoutHints* LayLT5 ;
   TGLayoutHints* LayLT6 ;
+  TGLayoutHints* LayLT7 ;
   TGLayoutHints* LayLE0 ;
   TGLayoutHints* LayEE0 ;
   TGLayoutHints* LayEE1 ;
@@ -316,6 +318,7 @@ public:
 
   void AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 	      Int_t* compr, Bool_t* rflag);
+  void AddFileName(TGCompositeFrame* frame);
   int AddFiles(TGCompositeFrame* frame);
   //void AddHist(TGCompositeFrame* frame);
   int AddOpt(TGCompositeFrame* frame);

@@ -143,10 +143,11 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //LayCC1a   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 4, 4, 4, 4);
   LayCC2   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 10, 0, 0, 0);
   LayET0   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 0, 0, 0, 0);
+  LayET1   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 5, 5, 5, 5);
   LayLC1   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 1, 6, 1, 1);
   LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 1, 1, 1, 1);
   LayLT0   = new TGLayoutHints(kLHintsLeft|kLHintsTop);
-  LayLT1   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 5, 5, 5);
+  LayLT1   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 0, 5, 0);
   LayLT1a  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 1, 1, 5, 0);
   LayLT1b  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 0, 0, 5, 5);
   LayLT2   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 0);
@@ -155,8 +156,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   LayLT4a  = new TGLayoutHints(kLHintsLeft|kLHintsTop, 6, 11, 1, 1);
   LayLT5   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 1);
   LayLT6   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 50, 1, 20, -10);
-
-  //LayLT7   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 1, 1, 1, 1);
+  LayLT7   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 0, 5, 0);
 
   LayLE0   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY);
   LayEE0   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
@@ -1207,27 +1207,30 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   fDock->SetWindowName("Parameters");  
 
   TGCompositeFrame *fMain=fDock->GetContainer();
-  fMain->SetLayoutManager(new TGHorizontalLayout(fMain));
+  fMain->SetLayoutManager(new TGVerticalLayout(fMain));
+
+  AddFileName(fMain);
 
   fCanvas1 = new TGCanvas(fMain,w,h);
   fMain->AddFrame(fCanvas1,LayEE0);
 
   fcont1 = new TGCompositeFrame(fCanvas1->GetViewPort(), 
-				1, 1, kHorizontalFrame);
+				1, 1, kVerticalFrame);
   fCanvas1->SetContainer(fcont1);
   fCanvas1->GetViewPort()->SetCleanup(kDeepCleanup);
 
+  TGHorizontalFrame *hF1 = new TGHorizontalFrame(fcont1);
+  fcont1->AddFrame(hF1,LayEE0);
+
+  TGVerticalFrame *fV1 = new TGVerticalFrame(hF1, 1, 1, kFixedWidth|kSunkenFrame);
+
+  hF1->AddFrame(fV1,new TGLayoutHints(kLHintsLeft |kLHintsExpandY));
 
 
-  TGVerticalFrame *fV1 = new TGVerticalFrame(fcont1, 1, 1, kFixedWidth|kSunkenFrame);
-
-  fcont1->AddFrame(fV1,new TGLayoutHints(kLHintsLeft |kLHintsExpandY));
-
-
-  TGVSplitter *vsplitter = new TGVSplitter(fcont1,2,h);
+  TGVSplitter *vsplitter = new TGVSplitter(hF1,2,h);
   vsplitter->ChangeOptions(vsplitter->GetOptions()|kFixedSize);
   vsplitter->SetFrame(fV1, kTRUE);
-  fcont1->AddFrame(vsplitter, new TGLayoutHints(kLHintsLeft | kLHintsTop));
+  hF1->AddFrame(vsplitter, new TGLayoutHints(kLHintsLeft | kLHintsTop));
 
   int ww = AddFiles(fV1);
   ww = TMath::Max(ww,AddOpt(fV1));
@@ -1236,8 +1239,8 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
   fV1->Resize(ww+10,1);
 
-  TGVerticalFrame *fV2 = new TGVerticalFrame(fcont1, 1, 1, kSunkenFrame);
-  fcont1->AddFrame(fV2,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY));
+  TGVerticalFrame *fV2 = new TGVerticalFrame(hF1, 1, 1, kSunkenFrame);
+  hF1->AddFrame(fV2,new TGLayoutHints(kLHintsExpandX|kLHintsExpandY));
   AddExpert(fV2);
 
   if (crs->module==17) {
@@ -1306,21 +1309,14 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 
 }
 
-int ParParDlg::AddFiles(TGCompositeFrame* frame) {
+void ParParDlg::AddFileName(TGCompositeFrame* frame) {
   int id;
-  char txt[99];
 
-  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Files", kVerticalFrame);
-  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  //frame->AddFrame(fF6, LayET3);
-  frame->AddFrame(fF6, LayLT1);
-
-  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(fF6,10,10);
-  fF6->AddFrame(hframe1,LayLT0);
+  TGHorizontalFrame *hframe1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hframe1,LayLT7);
 
   TGLabel* fLabel = new TGLabel(hframe1, "Filename:");
   hframe1->AddFrame(fLabel,LayCC1);
-
 
   id = Plist.size()+1;
   TGTextButton *fbut = new TGTextButton(hframe1,"Select...",id);
@@ -1328,19 +1324,23 @@ int ParParDlg::AddFiles(TGCompositeFrame* frame) {
   DoMap(fbut,opt.Filename,p_but,0,0x100);
   fbut->Connect("Clicked()", "ParDlg", this, "DoOpen()");
 
-  TGHorizontalFrame *hframe2 = new TGHorizontalFrame(fF6,1,1);
-  fF6->AddFrame(hframe2,LayLT0);
-
-  //strcpy(opt.fname_raw,"raw32.gz");
   id = Plist.size()+1;
-  TGTextEntry* tt = new TGTextEntry(hframe2,opt.Filename, id);
-  tt->SetDefaultSize(380,20);
+  TGTextEntry* tt = new TGTextEntry(frame,opt.Filename, id);
+  //tt->SetDefaultSize(380,20);
   tt->SetMaxLength(sizeof(opt.Filename)-1);
-  //tt->SetWidth(590);
-  //tt->SetState(false);
-  hframe2->AddFrame(tt,LayCC0);
+  frame->AddFrame(tt,LayET1);
   DoMap(tt,opt.Filename,p_txt,0,0x100);
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+
+}
+
+int ParParDlg::AddFiles(TGCompositeFrame* frame) {
+  int id;
+  char txt[99];
+
+  TGGroupFrame* fF6 = new TGGroupFrame(frame, "Files", kVerticalFrame);
+  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame->AddFrame(fF6, LayLT1);
 
   AddChk(fF6,"Write raw data [Filename].raw",&opt.raw_write,&opt.raw_compr,0);
   AddChk(fF6,"Write decoded data [Filename].dec",&opt.dec_write,&opt.dec_compr,0);
@@ -1387,7 +1387,7 @@ int ParParDlg::AddFiles(TGCompositeFrame* frame) {
 
   fF6->Resize();
   return fF6->GetDefaultWidth();
-}
+} //AddFiles
 
 int ParParDlg::AddOpt(TGCompositeFrame* frame) {
 
@@ -1771,16 +1771,23 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame1d[1]);
   TGHorizontalFrame *hfr2 = new TGHorizontalFrame(frame1d[1]);
 
-  //cout << "Mlist.size: " << hcl->Mlist.size() << endl;
-  bool hleft=true;
+  int n1=0;
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->hnum < 50) n1++;
+  }
+  n1=(n1+2)/2;
+
+  //cout << "Mlist.size: " << hcl->Mlist.size() << " " << n1 << endl;
+  //bool hleft=true;
 
   for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
-    if (it->hnum==22) hleft=false; //hwrate -> right
+    //if (it->hnum==22) hleft=false; //hwrate -> right
     if (it->hnum < 50) { // 1d hist
-      if (hleft)
+      if (n1>0)
 	AddLine_hist(frame1d[0],&*it);
       else
 	AddLine_hist(frame1d[1],&*it);
+      n1--;
     }
     else if (it->hnum == 51) { //mean pulses
       frame1d[1]->AddFrame(hfr1);
@@ -1817,6 +1824,7 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
     if (it->hnum<49) {
       if (it->hnum!=21 && it->hnum!=22) //Rate и HWRate не могут быть по X
 	cmb1->AddEntry(it->name.Data(), it->hnum);
+      if (it->hnum!=22) //HWRate не может быть и по Y
       cmb2->AddEntry(it->name.Data(), it->hnum);
     }
   }

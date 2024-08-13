@@ -2536,7 +2536,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   tb = fTab->AddTab("Parameters");
   tabfr.push_back(tb);
-  parpar = new ParParDlg(tb, 1, MAIN_HEIGHT);
+  parpar = new ParParDlg(tb, 1, MAIN_HEIGHT-5); //-5 ->иначе появляется слайдер
   tb->AddFrame(parpar, LayEE1);
   parpar->Update();
   ntab++;
