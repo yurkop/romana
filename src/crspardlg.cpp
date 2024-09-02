@@ -108,7 +108,31 @@ vector<const char*> ptip = {
 const int PHeight = 20;
 const int NFLD = ptip.size();
 
-
+//#define mask0 "TN AtWHBSsRrpD C"
+#define mask0 mask_e " " mask_p " " mask_c
+const char* tip_dec=
+  "Mask for decoder format (type 81 or higher)\n"
+  mask0" spaces are ignored\n"
+  "\n"
+  "T - TimeStamp + State/Polarization\n"
+  //"P - Polarization(state)\n"
+  "N - Number of pulses in event + "
+  "Event length (in 8-byte words) + "
+  "Event number\n"
+  "\n"
+  "A - Peak area\n"
+  "t - Peak time relative to Timestamp\n"
+  "W - Peak width\n"
+  "H - Peak height\n"
+  "B - Baseline\n"
+  "S - Slope (baseline)\n"
+  "s - Slope (peak)\n"
+  "R - RMS (baseline)\n"
+  "r - RMS (peak)\n"
+  "p - Pileup\n"
+  "D - Pulse data (oscillogram)\n"
+  "\n"
+  "C - Hardware counter";
 
 
 //char ttip_g[NGRP][100];
@@ -225,7 +249,7 @@ bool ParDlg::Chk_all(int all, int i) {
     return false;
 }
 
-void ParDlg::DoAct(int id, UShort_t off, Double_t fnum) {
+void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
   Pmap* pp = &Plist[id-1];
   int act = (pp->cmd>>4)&0xF;
 
@@ -317,7 +341,7 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum) {
 
 #ifdef CYUSB
   int cmd = pp->cmd & 1;
-  if (cmd && crs->b_acq) {// && !jtrig) {
+  if (dq && cmd && crs->b_acq) {// && !jtrig) {
     crs->Command2(4,0,0,0);
     crs->SetPar();
     gzFile ff = gzopen("last.par","wb");
@@ -369,7 +393,7 @@ void ParDlg::DoNum() {
 	SetNum(pp,i,te->GetNumber());
 	int act = (pp.cmd>>4)&0xF;
 	if (act)
-	  DoAct(id,i,te->GetNumber());
+	  DoAct(id,i,te->GetNumber(),0);
       }
     }
 
@@ -387,7 +411,7 @@ void ParDlg::DoDaqNum() {
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
   Int_t id = te->WidgetId();
 
-  DoAct(id,Plist[id-1].off,te->GetNumber());
+  DoAct(id,Plist[id-1].off,te->GetNumber(),1);
 
 }
 
@@ -416,7 +440,7 @@ void ParDlg::DoChk(Bool_t on) {
 	SetChk(pp,i*pp.step,on);
 	int act = (pp.cmd>>4)&0xF;
 	if (act)
-	  DoAct(id,i,on);
+	  DoAct(id,i,on,0);
       }
     }
     UpdateColumn(id);
@@ -432,7 +456,7 @@ void ParDlg::DoDaqChk(Bool_t on) {
   TGCheckButton *te = (TGCheckButton*) gTQSender;
   Int_t id = te->WidgetId();
 
-  DoAct(id,Plist[id-1].off,on);
+  DoAct(id,Plist[id-1].off,on,1);
 }
 
 void ParDlg::DoCheckHist(Bool_t on) {
@@ -563,7 +587,7 @@ void ParDlg::DoTxt() {
 
   SetTxt(pp,te->GetText());
   //UpdateField(id-1);
-  DoAct(id,Plist[id-1].off,0);
+  DoAct(id,Plist[id-1].off,0,0);
 }
 
 void ParDlg::DoOneType(int i) {
@@ -680,6 +704,17 @@ void ParDlg::DoColor(Pmap* pp, Float_t val) {
   int col=(pp->cmd & 0xF)>>1;
   if (col) {
     switch (pp->type) {
+    case p_txt: {
+      TGTextEntry *te = (TGTextEntry*) pp->field;
+
+      if (pp->data==&opt.dec_mask) { //проверяем маску для dec
+	if (crs->MakeDecMask())
+	  te->ChangeBackground(fWhite);
+	else
+	  te->ChangeBackground(fCol[col-1]);
+      }
+      break;
+    }
     case p_inum:
     case p_fnum: {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
@@ -1101,7 +1136,6 @@ void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1,
   if (!Lay1) Lay1 = LayLT4;
 
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
-
   frame->AddFrame(hfr1);
 
   // if (style1==k_chk)
@@ -1318,10 +1352,10 @@ void ParParDlg::AddFileName(TGCompositeFrame* frame) {
   TGLabel* fLabel = new TGLabel(hframe1, "Filename:");
   hframe1->AddFrame(fLabel,LayCC1);
 
-  id = Plist.size()+1;
-  TGTextButton *fbut = new TGTextButton(hframe1,"Select...",id);
+  //id = Plist.size()+1;
+  TGTextButton *fbut = new TGTextButton(hframe1,"Select...",0);
   hframe1->AddFrame(fbut, LayCC1);
-  DoMap(fbut,opt.Filename,p_but,0,0x100);
+  //DoMap(fbut,opt.Filename,p_but,0,0x100);
   fbut->Connect("Clicked()", "ParDlg", this, "DoOpen()");
 
   id = Plist.size()+1;
@@ -1445,9 +1479,9 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   // AddLine_opt(fF6,ww,&cpar.St_trig,&cpar.DTW,tip1,tip2,label,k_chk,k_int,
   // 	      0,0,1,2e9,0x200|(3<<1)|1,0x200|1);
 
-  tip1="24-bit data format (only for CRS-8/16, CRS-128)";
+  tip1="24-bit data format (only for CRS-8/16, CRS-128, AK-32)";
   tip2= "START input channel dead time (in samples). All channels are inhibited during START dead time";
-  label="START dead time";
+  label="F24/START dead time";
   AddLine_opt(fF6,ww,&cpar.F24,&cpar.DTW,tip1,tip2,label,k_int,k_int,
 	      0,1,1,2e9,0x200|(5<<1)|1,0x200|1);
 
@@ -1560,6 +1594,39 @@ int ParParDlg::AddLogic(TGCompositeFrame* frame) {
 
 }
 
+void ParParDlg::AddLine_dec_format(TGCompositeFrame* frame, int width) {
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+  TGTextEntry* tv = new TGTextEntry(hfr1,mask0);
+  //TGTextView* tv = new TGTextView(hfr1);
+  //tv->AddLine("test");
+  hfr1->AddFrame(tv,LayLT4);
+  tv->SetWidth(width);
+
+  //tv->SetState(false);
+  //tv->SetEditable(false);
+  //tv->SetEditDisabled(kEditDisable);
+  tv->SetEnabled(false);
+  tv->SetToolTipText(tip_dec);
+
+  hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
+  int id = Plist.size()+1;
+  TGTextEntry* tt = new TGTextEntry(hfr1,opt.dec_mask,id);
+  tt->SetWidth(width);
+  tt->SetToolTipText(tip_dec);
+  hfr1->AddFrame(tt,LayLT4);
+  DoMap(tt,opt.dec_mask,p_txt,0,0x100|(3<<1));
+  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+  //tt->Connect("TextChanged(char*)", "ParParDlg", this, "DoDecFormat()");
+  
+  TGLabel* fLabel = new TGLabel(hfr1, "Dec mask");
+  hfr1->AddFrame(fLabel,LayLT4);
+
+}
+
 int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
   int ww=70;
@@ -1572,6 +1639,8 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   tip1= "Decoded data format";
   label="Dec format";
   AddLine_1opt(fF6,ww,&opt.dec_format,0,tip1,label,k_int,79,80);
+
+  AddLine_dec_format(fF6,150);
 
   tip1= "";
   label="Bitmask for START";
@@ -2336,6 +2405,7 @@ ChanParDlg::ChanParDlg(const TGWindow *p,UInt_t wdth,UInt_t h)
   fCnv[2]->SetScrolling(TGCanvas::kCanvasNoScroll);
 
   hscroll=fCnv[1]->GetHScrollbar();
+  //hscroll->SetRange(20+1,1);
 
   vscroll = new TGVScrollBar(fMain);
   fMain->AddFrame(vscroll,LayLE0);
@@ -2504,7 +2574,8 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Dt",cpar.Dt,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Pre",cpar.Pre,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Len",cpar.Len,0,1|(6<<4));
-  AddColumn(jj,kk++,1,p_inum,24,1,0,0,"G",cpar.G,0,1|(5<<4));
+  //AddColumn(jj,kk++,1,p_inum,24,1,0,0,"G",cpar.G,0,1|(5<<4));
+  AddColumn(jj,kk++,1,p_inum,24,1,0,0,"G",cpar.G,0,1);
   AddColumn(jj,kk++,1,p_inum,24,1,0,0,"Trg",cpar.Trg,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Drv",cpar.Drv,opt.sDrv,1|(8<<4));
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Thr",cpar.Thr,opt.sThr,1|(8<<4));
@@ -2596,6 +2667,7 @@ AddColumn(int jj, int kk, int ii, P_Def pdef,
 
   double amax = max;
   if (max<-1e101) {
+    //cout << "max!!!: " << jj << " " << kk << " " << pname << endl;
     amax = 1023;
     if (cpar.crs_ch[jj]==1 || cpar.crs_ch[jj]==2)
       amax=511;
@@ -2875,7 +2947,19 @@ void ChanParDlg::DoScroll(int pos) {
 void ChanParDlg::HandleMouseWheel(Event_t *event) {
    // Handle mouse wheel to scroll.
 
-  //prnt("ss d d d ds;",BGRN,"Scroll:",event->fType,event->fCode,event->fState,hscroll->GetPosition(),RST);
+  //prnt("ss d d d d d d ds;",BGRN,"Scroll:",event->fType,event->fCode,event->fState,hscroll->GetPosition(),hscroll->GetRange(),hscroll->GetPageSize(), hscroll->GetRange()-hscroll->GetPageSize(),RST);
+
+  if (event->fState==1) { //shift
+    int pos = hscroll->GetPosition();
+    int sz = hscroll->GetPageSize()/20;
+    if (event->fCode == 4) //up
+      pos+=sz;
+    else if (event->fCode == 5) //down
+      pos-=sz;
+    pos = TMath::Max(pos, 0);
+    hscroll->SetPosition(pos);
+    return;
+  }
 
   int kk=0;
   if (event->fCode == 4) //up

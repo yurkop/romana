@@ -51,7 +51,7 @@ struct Pmap {
 
   //cmd bits:
   //0x1: (bit0) 1: start/stop DAQ
-  //0xE: (bit1-3) change color
+  //0xE: (bit1-3) change color (see fCol[7])
   //0xF0: (bit4-7) Action (1..15)
   //0x100 (bit8) disble during acq
   //0x200 (bit9) disble fields not existing in certain devices
@@ -174,7 +174,7 @@ public:
   void SetTxt(Pmap pp, const char* txt);
   bool Chk_all(int all, int i);
   void DoNum();
-  void DoAct(int id, UShort_t off, Double_t fnum);
+  void DoAct(int id, UShort_t off, Double_t fnum, bool dq);
   void DoDaqNum();
   void DoChk(Bool_t on);
   void DoDaqChk(Bool_t on);
@@ -325,6 +325,7 @@ public:
   int AddNtof(TGCompositeFrame* frame);
   int AddLogic(TGCompositeFrame* frame);
   //void AddTrigger(TGGroupFrame* frame);
+  void AddLine_dec_format(TGCompositeFrame* frame, int width);
   int AddExpert(TGCompositeFrame* frame);
   int AddSimul(TGCompositeFrame* frame);
   void DoCheckNtof(Bool_t on);

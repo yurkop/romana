@@ -52,8 +52,8 @@ class PulseClass {
                //Pos=-32222 -> default Pos - значит, пик не найден
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
-  //bit 1 (Spin|=2): event is writable in Dec (Ms - master channel)
   //bit 2 (Spin|=4): было переполнение канального буфера (ER_OVF)
+  //bit 6 (Spin|=64): event is writable in Dec (Ms - master channel)
   //bit 7 (=128): hardware counters
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
@@ -107,7 +107,8 @@ class EventClass { //event of pulses
   Long64_t Nevt;
   UChar_t Spin;
   //bit 0: channel state word (Control word - external input in crs32)
-  //bit 1 (Spin|=2): event is writable in Dec (Ms - master channel)
+  //bit 3 (=4): ER_OVF - присутствует только в каналах
+  //bit 6 (Spin|=64): event is writable in Dec (Ms - master channel)
   //bit 7 (=128): hardware counters
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events

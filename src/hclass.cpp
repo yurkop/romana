@@ -342,7 +342,6 @@ void Mdef::Fill_HWRate(EventClass* evt, Double_t *hcut_flag, int ncut) {
       if (ipls->Chan<opt.Nchan) { //отсекаем канал 255
 	double t1 = crs->fTime[ipls->Chan]*crs->sPeriod;
 	double t2 = evt->Tstmp*crs->sPeriod;
-	//double dt = t2-t1;
 	crs->fTime[ipls->Chan] = evt->Tstmp;
 
 	// вызываем Time_Extend
@@ -351,13 +350,11 @@ void Mdef::Fill_HWRate(EventClass* evt, Double_t *hcut_flag, int ncut) {
 	TH1* hh = v_map[ipls->Chan]->hst;
 	double ww = hh->GetBinWidth(1);
 	int bin1 = hh->FindFixBin(t1);
-	//bin2 = hh->FindFixBin(t2);
 
 	// определяем, в какие бины гистограмм записывать счетчики
 	std::vector<double> cnt;
 	double sum=0;
 	double low = hh->GetBinLowEdge(bin1);
-	//cout << "cnt: " << low;
 
 	double ff=0;
 	do {
@@ -374,42 +371,22 @@ void Mdef::Fill_HWRate(EventClass* evt, Double_t *hcut_flag, int ncut) {
 	  sum+=ff;
 	}
 
-	//cout << " " << cnt.size();
-	// for (auto it=cnt.begin();it!=cnt.end();++it) {
-	//   cout << " " << *it;
-	// }
-	// cout << " " << ff << " " << t2 << " " << low << " " << sum << endl;
-
-
 	// записываем счетчики
 	if (!cnt.empty()) {
 
 	  Long64_t count2 = ipls->Counter - crs->fCounter[ipls->Chan];
 	  crs->fCounter[ipls->Chan] = ipls->Counter;
 
-	  //double sum2=0;
-	  //prnt("s d l l",BBLU,ipls->Chan,ipls->Counter,count2);
 	  int bin=bin1;
 	  for (auto it=cnt.begin();it!=cnt.end();++it) {
 	    double cc = *it/sum*count2;
 	    v_map[ipls->Chan]->hst->AddBinContent(bin,cc);
 	    bin++;
-
-	    //sum2+=cc;
-	    //prnt(" f",cc);
 	  }
-	  //prnt(" fs;",sum2,RST);
 	}
-
 
       } //if (ipls->Chan<opt.Nchan)
     }
-
-    // prnt("ss d l f f f f d f fs;",BGRN,"Spin:",evt->Spin,evt->Tstmp,opt.T_acq,t1,t2,dt,bin1,hh->GetBinLowEdge(bin1),hh->GetBinWidth(bin1),RST);
-    // for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    //   prnt("s d ls;",BYEL,ipls->Chan,ipls->Counter,RST);
-    // }
-
   }
 }
 

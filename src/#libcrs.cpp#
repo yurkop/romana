@@ -1217,7 +1217,7 @@ int CRS::Detect_device() {
     for (int i=0;i<nplates;i++) {
       cout << "Channels(" << i << "):";
       for (int j=0;j<4;j++) {
-	cpar.crs_ch[i*4+j]=20+buf_in[sz];
+	cpar.crs_ch[i*4+j]=buf_in[sz];
 	//type_ch[i*4+j]=buf_in[sz];
 	cout << " " << cpar.crs_ch[i*4+j];
 	nch2++;
@@ -1297,9 +1297,6 @@ int CRS::SetPar() {
   case 44:
   case 54:
     AllParameters44();
-    break;
-  case 45:
-    AllParameters45();
     break;
   default:
     cout << "SetPar Error! No module found" << endl;
@@ -1665,15 +1662,14 @@ void CRS::Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max) {
 
 void CRS::AllParameters45() {
   AllParameters44();
-  //Индивидуальные параметры каналов:
+  //Индивидуальные параметры каналов
   for (auto chan = 0; chan < chan_in_module; chan++) {
     if (cpar.on[chan]) {
       Command32(2,chan,37,0); //входной импеданс - всегда 50 Ом
     }
   }
   //Общие параметры:
-  //Command32(11,10,0,0); // режим работы прибора Multi/Single (игнорируется)
-  Command32(11,11,0,8); // число обслуживаемых рабочих плат MAIN-ом USB3
+  Command32(11,10,0,(int) cpar.mult_w2[1]); // максимальная множественность 1
 }
 
 void CRS::AllParameters44() {
@@ -3409,7 +3405,6 @@ void CRS::Decode_switch(UInt_t ibuf) {
   case 36:
   case 44:
   case 54:
-  case 45:
     Decode35(dec_iread[ibuf]-1,ibuf);
     //Decode42(dec_iread[ibuf]-1,ibuf);
     break;
@@ -3576,7 +3571,6 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
   case 52:
   case 53:
   case 54:
-  case 45:
     for (Long64_t i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);

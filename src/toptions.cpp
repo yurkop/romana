@@ -64,7 +64,7 @@ void Coptions::InitPar(int zero) {
   //Thr2=0*zero;
 }
 
-void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &par, int &min, int &max) {
+void Coptions::GetPar(const char* name, int module, int i, Int_t crs_ch, int &par, int &min, int &max) {
 
   min=-9999999;//0;
   max=9999999;//-1;
@@ -80,6 +80,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
 	max=512;
 	break;
       case 54:
+      case 45:
 	max=128;
 	break;
       default:
@@ -111,14 +112,14 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         // здесь отрицательный знак означает начало записи
         // "после" срабатывания дискриминатора
         max = 1024;
-        if (module==43 && type_ch==1)
+        if (module==43 && crs_ch==1)
           min=-511;
-	else if (module==53) { //CRS-128
+	else if (module==53 || module==45) { //CRS-128, AK-32
 	  min=-511;
 	}
-        // if (type_ch==1)
+        // if (crs_ch==1)
         //   min=-511;
-	// else if (type_ch==3) { //CRS-128
+	// else if (crs_ch==3) { //CRS-128
 	//   min=-511;
 	// }
         else //0,2
@@ -135,21 +136,27 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       else if (module==32)
         max=32763;
       else { //33,34,35,41,51,52
-        if (module>=33 && module<=35 && type_ch==0)
+        if (module>=33 && module<=35 && crs_ch==0)
           max=4068;
-        else if (module>=33 && module<=35 && type_ch==1)
+        else if (module>=33 && module<=35 && crs_ch==1)
           max=3048;
         else if (module==43)
           max=6114;
         else if (module==53)
           max=1506;
+        else if (module==45) {
+	  if (cpar.F24)
+	    max=8000;
+	  else
+	    max=12000;
+	}
       }
       // else { //33,34,35,41,51,52
-      //   if (type_ch==0)
+      //   if (crs_ch==0)
       //     max=4068;
-      //   else if (type_ch==1)
+      //   else if (crs_ch==1)
       //     max=3048;
-      //   else if (type_ch==2)
+      //   else if (crs_ch==2)
       //     max=6114;
       //   else //3
       //     max=1506;
@@ -158,8 +165,8 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     else if (!strcmp(name,"Drv")) {
       par = Drv[i];
       min = 1;
-      //if (type_ch==3)
-      if (module==53)
+      //if (crs_ch==3)
+      if (module==53 || module==45)
 	max=255;
       else
 	max=1023;
@@ -170,7 +177,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
     else if (!strcmp(name,"Thr")) {
       par = Thr[i];
-      if (type_ch==0) {
+      if (crs_ch==0) {
         min=-2048;
         max=2047;
       }
@@ -181,7 +188,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
     else if (!strcmp(name,"LT")) {
       par = LT[i];
-      if (type_ch==0) {
+      if (crs_ch==0) {
         min=-2048;
         max=2047;
       }
@@ -192,9 +199,13 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
     }
     else if (!strcmp(name,"G")) {
       par = G[i];
-      if (type_ch==0) {
+      if (crs_ch==0) {
         min=5;
         max=12;
+      }
+      else if (module==45) {
+        min=0;
+        max=4;
       }
       else { //1,2,3
         min=0;
@@ -209,13 +220,15 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
         max=0;
       }
       else {
-        if (type_ch==0)
+        if (crs_ch==0)
           max=4075;
-        else if (type_ch==1)
+        else if (crs_ch==1)
           max=4092;
-        //else if (type_ch==2)
-        else if (type_ch==2 && module!=53)
+        //else if (crs_ch==2)
+        else if (crs_ch==2 && module!=53)
           max=1023;
+        else if (module==45)
+          max=250;
         else //3
           max=255;
       }
@@ -240,7 +253,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       //else if (!strcmp(name,"RD")) {
       par = ratediv[i];
       min=0;
-      max=1024;
+      max=1023;
       // cout << "trig: " << module << " " << min << " " << max << endl;
     }
     else {
@@ -248,7 +261,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
       exit(-1);
     }
 
-  if (type_ch==255) {
+  if (crs_ch==255) {
     min = -65536;
     max= 65535;
   }
@@ -256,6 +269,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t type_ch, int &p
 }
 
 Int_t Coptions::ChkLen(Int_t i, Int_t module) {
+  //выравнивает длину записи кратно 3 или 4 
   if (module==2 || module==22) return Len[i];
 
   int dd=1;
@@ -341,6 +355,7 @@ Toptions::Toptions() {
   root_compr=1;
 
   dec_format=79;
+  strcpy(dec_mask,"T AtW C");
 
   memset(Filename,0,sizeof(Filename));
   memset(ch_name,0,sizeof(ch_name));

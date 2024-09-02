@@ -1,1 +1,1 @@
-src/Makefile
+/home/kopatch/Y/romana/src/Makefile

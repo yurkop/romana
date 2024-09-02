@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 147
+#define CDEF 148
 
 /*
 #include <list>
@@ -115,7 +115,7 @@ public:
   //Int_t Thr2; // lower threshold for trig 3,4 T = –2048 .. +2047
 public:
   void InitPar(int zero);
-  void GetPar(const char* name, Int_t module, Int_t i, Int_t type_ch, Int_t &par, Int_t &min, Int_t &max);
+  void GetPar(const char* name, Int_t module, Int_t i, Int_t crs_ch, Int_t &par, Int_t &min, Int_t &max);
   Int_t ChkLen(Int_t i, Int_t module);
 
   ClassDef(Coptions, CDEF)
@@ -227,6 +227,7 @@ public:
   Int_t dec_compr; //decoded data compr level
   Int_t root_compr; //root compr level
   Int_t dec_format;
+  char dec_mask[20];
   //char fname_raw[199];
   //char fname_dec[199];
   //char fname_root[199];

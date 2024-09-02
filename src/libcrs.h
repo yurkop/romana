@@ -41,6 +41,10 @@ enum ERR_NUM {
   ER_OVF,
 };
 
+#define mask_e "TN"
+#define mask_p "AtWHBSsRrpD"
+#define mask_c "C"
+
 //typedef unsigned char byte;
 
 typedef std::list<EventClass>::iterator event_iter;
@@ -127,6 +131,11 @@ RQ_OBJECT("CRS")
   bool b_decwrite[NDEC];
   Int_t dec_len[NDEC];
 
+  //std::string smask_e,smask_p; //полные маски для e и p
+  std::string sdec_e,sdec_p; //реальные маски для e и p
+  bool sdec_c;
+  //std::vector<int> vdec;
+
   std::list<Pair> rw_list;
   UChar_t* RawBuf;
   //ULong64_t* RawBuf8;
@@ -171,6 +180,7 @@ RQ_OBJECT("CRS")
   // 41,42,43,44 - crs-8/16
   // 51,52,53,54 - crs-128
   // 43,53,44,54 - new format (decode35)
+  // 45 - AK-32
   // 72..80 - decoded file
   // 17 - simulated data
 
@@ -312,6 +322,7 @@ RQ_OBJECT("CRS")
   //void AllParameters41(); // load all parameters
   //void AllParameters42(); // load all parameters
   //void AllParameters43(); // load all parameters
+  void AllParameters45(); // load all parameters
   void AllParameters44(); // load all parameters
   void AllParameters36(); // load all parameters
   void AllParameters35(); // load all parameters
@@ -353,6 +364,7 @@ RQ_OBJECT("CRS")
   // что является одновременно началом следующего b_start[ibuf2]
   void FindLast(UInt_t ibuf, int loc_ibuf, int what);
 
+  bool MakeDecMask();
   void CheckDSP(PulseClass &ipls, PulseClass &ipls2);
   void PulseAna(PulseClass &ipls);
   void Dec_Init(eventlist* &Blist, UChar_t frmt);

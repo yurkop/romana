@@ -778,7 +778,7 @@ void EventClass::AddPulse(PulseClass *pls) {
   }
 
   if (opt.Ms[pls->Chan]) {
-    Spin|=2;
+    Spin|=64;
   }
 
   //if (pls->Spin & 1) {
