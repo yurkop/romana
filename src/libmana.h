@@ -4,6 +4,7 @@
 #include "common.h"
 #include "toptions.h"
 
+
 #include <sys/times.h>
 
 //#include "libcrs.h"
@@ -104,6 +105,8 @@ class GlbClass : public TNamed {
   HistFrame* g_HiFrm;
   ErrFrame* g_ErrFrm;
   HClass* g_hcl;
+
+  //std::vector<Pmap> PopVarlist;
 
   GlbClass();
   virtual ~GlbClass() {};

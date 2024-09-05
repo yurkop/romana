@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 148
+#define CDEF 150
 
 /*
 #include <list>
@@ -234,6 +234,9 @@ public:
   //TString S_Filename;
   char Filename[255]; //->
 
+  bool addrandom; //true: add random number while filling histograms
+  // (see Fill_01; Fill_02) 
+
   //TString S_ch_name[MAX_TP];
   char ch_name[MAX_TP][20];
   //char ch_name2[3][4][5][MAX_TP][20]; //->
@@ -311,6 +314,8 @@ public:
   Float_t Peak_bwidth;
   Float_t Peak_maxpeaks;
   Float_t Peak_smooth;
+  Bool_t Peak_use_mean;
+  Bool_t Peak_print;
 
   int wrk_check[64];
   //

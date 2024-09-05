@@ -1797,6 +1797,8 @@ bool p_comp(vpeak a, vpeak b) {return (a.p<b.p);}
 bool h_comp(vpeak a, vpeak b) {return (a.h>b.h);}
 
 void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
+  // находит пики <p,h,w> (pos,hight,width) и сохраняет их в вектор vv,
+  // отсортированный по height?
 
   //std::vector<vpeak> vv;
   int inpeak=0; //0 - не в пике; 1 - в пике, сигма не найдена; 2 - сигма найдена
@@ -1836,7 +1838,7 @@ void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
     }
     // если точка ниже половины высоты -> задаем w, но из пика еще не вышли
     if (inpeak==1 && bb<=pp.h/2) {
-      pp.w=cc-pp.p;
+      pp.w=(cc-pp.p)*0.5;
       inpeak=2;
       //prnt("ss d d f f fs;",BBLU,"pk:",i,inpeak,pp.p,pp.h,pp.w,RST);
       continue;
@@ -1867,6 +1869,9 @@ void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
 
   vector<double> xx,yy;
   for (auto it=vv.begin(); it!=vv.end();++it) {
+    double ww = it->w*opt.Peak_bwidth;
+    it->b1 = it->p-ww;
+    it->b2 = it->p+ww;
     xx.push_back(it->p);
     yy.push_back(it->h+bkg);
     //prnt("ss f f f fs;",BGRN,"peak:",it->p,it->h,it->w,bkg,RST);
@@ -2263,6 +2268,127 @@ void HistFrame::DoPeaks_old()
   //fEc->GetCanvas()->Update();
 }
 
+void HistFrame::MeanPeaks(TH1* hh, std::vector<vpeak> &vv,
+			 double* par, double* err, size_t i) {
+
+  int x1 = hh->FindFixBin(vv[i].b1);
+  int x2 = hh->FindFixBin(vv[i].b2);
+  double w = hh->GetBinWidth(1);
+  double b1 = hh->GetBinLowEdge(x1);
+  double b2 = hh->GetBinLowEdge(x2)+w;
+
+  double y1 = hh->GetBinContent(x1);
+  double y2 = hh->GetBinContent(x2);
+  double a=0;
+  if (x2!=x1)
+    a = (y2-y1)/(x2-x1);
+  double b = y1-a*x1;
+
+  TH1F* h2 = new TH1F("h2","h2",x2-x1+1,b1,b2);
+  h2->SetLineColor(2);
+  for (int j=x1;j<=x2;j++) {
+    double yy = a*j+b;
+    h2->SetBinContent(j-x1,hh->GetBinContent(j)-yy);
+    //hh->SetBinContent(j,h2->GetBinContent(j-x1));
+    //hh->SetBinContent(j,yy);
+  }
+
+  par[0] = h2->Integral();
+  par[1] = h2->GetBinContent(h2->GetMaximumBin());
+  par[2] = h2->GetMean();
+  par[3] = h2->GetRMS()*2.35;
+
+  err[0] = 0;
+  err[1] = 0;
+  err[2] = h2->GetMeanError();
+  err[3] = h2->GetRMSError()*2.35;
+
+  //hh->GetListOfFunctions()->Add(h2);
+  delete h2;
+
+}
+
+void HistFrame::FitPeaks(TH1* hh, std::vector<vpeak> &vv,
+			 double* par, double* err, size_t i) {
+
+  TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",vv[i].b1,vv[i].b2);
+  f1->SetParameters(vv[i].h,vv[i].p,vv[i].w,0,0);
+
+  // for (int i=0;i<5;i++) {
+  //   f1->FixParameter(i, f1->GetParameter(i));
+  // }
+
+  string fitopt = "Q"; //"Q"
+  if (i!=0) fitopt+="+";
+  hh->Fit(f1,fitopt.data(),"",vv[i].b1,vv[i].b2);
+  //double* par = f1->GetParameters();
+  //double err[100];
+  memcpy(par+1,f1->GetParameters(),f1->GetNpar()*sizeof(double));
+  memcpy(err+1,f1->GetParErrors(),f1->GetNpar()*sizeof(double));
+  // for (auto i=0;i<f1->GetNpar();i++) {
+  //   par[i] = 
+  //   err[i] = f1->GetParError(i);
+  // }
+
+  
+  par[0] = par[1]*sqrt(2*TMath::Pi())*par[3]/hh->GetBinWidth(1);
+  err[0] = 0; //   /= hh->GetBinWidth(1);
+
+  par[3]*=2.35;
+  err[3]*=2.35;
+
+  //prnt("ss f f fs;",BGRN,"pk: ",par[0],par[1],par[2],RST);
+  //prnt("ss f f fs;",BBLU,"er: ",err[0],err[1],err[2],RST);
+
+
+    // for (auto i=0;i<f1->GetNpar();i++) {
+    // double rr = pow(10,round(log10(err[i]))-1);
+    // par[i] = round(par[i]/rr);
+    // par[i]*=rr;
+    // err[i] = round(err[i]/rr);
+    // err[i]*=rr;
+    // printf("%0.3g %0.1e %f %f\n",par[i],err[i],log10(err[i]),rr);
+    // //sprintf("%0.1e",ss,err[i]);
+    // //string str=ss;
+    // //double a=str
+    // }
+    // //prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
+
+
+  /*
+  char s1[50],s2[100];
+  double A = par[0] / (sqrt(2*TMath::Pi())*par[2]);
+  sprintf(s1," %10.4g",A);
+  snprintf(s2,50,"%20s",s1);
+  vfit[0]+=s2;
+
+  for (auto i=0;i<3;i++) {
+    sprintf(s1," %10.4g#pm%0.3g",par[i],err[i]);
+    snprintf(s2,50,"%20s",s1);
+    //cout << i << " " << ss << endl;
+    vfit[i+1]+=s2;
+  }
+  */
+
+    // std::ostringstream oss;
+    // oss << par[1] << "(" << err[1] << ")";
+    // oss << " " << par[0] << "(" << err[0] << ")";
+    // oss << " " << par[2] << "(" << err[2] << ")";
+
+    // vfit.push_back(oss.str());
+
+
+
+  // oss << pp->p;
+  // for (auto i=0;i<3;i++) {
+  // 	oss << " " << par[i] << "(" << err[i] << ")";
+  // }
+
+
+  //cout << hh->GetTitle() << " " << oss.str() << endl;
+
+}
+
 void HistFrame::DoPeaks(TH1* hh) {
   //cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
 
@@ -2289,85 +2415,74 @@ void HistFrame::DoPeaks(TH1* hh) {
     //return;
 
   vfit.push_back("area:");
+  vfit.push_back("height:");
   vfit.push_back("pos :");
   vfit.push_back("fwhm:");
 
-  for (auto pp=vv.begin(); pp!=vv.end();++pp) { //цикл по найденным пикам
-    double width = pp->w*opt.Peak_bwidth;
-
-    TF1* f1=new TF1("fitf","gausn(0)+pol1(3)",pp->p-width,pp->p+width);
-    double A = pp->h / (sqrt(2*TMath::Pi())*pp->w);
-    f1->SetParameters(A,pp->p,pp->w,0,0);
-
-    //f1->Print();
-    string fitopt = "Q";
-    if (pp!=vv.begin()) fitopt+="+";
-    hh->Fit(f1,fitopt.data(),"",pp->p-width,pp->p+width);
-    double* par = f1->GetParameters();
-    double err[100];
-    for (auto i=0;i<f1->GetNpar();i++) {
-      err[i] = f1->GetParError(i);
+  //for (auto pp=vv.begin(); pp!=vv.end();++pp) { //цикл по найденным пикам
+  for (size_t i=0;i<vv.size();i++) { //цикл по найденным пикам
+    double par[100],err[100];
+    if (opt.Peak_use_mean) {
+      MeanPeaks(hh,vv,par,err,i);
+    }
+    else {
+      FitPeaks(hh,vv,par,err,i);
     }
 
-    err[0] /= hh->GetBinWidth(1);
-    par[0] /= hh->GetBinWidth(1);
-    par[2]*=2.35;
-    err[2]*=2.35;
 
-    //prnt("ss f f fs;",BGRN,"pk: ",par[0],par[1],par[2],RST);
-    //prnt("ss f f fs;",BBLU,"er: ",err[0],err[1],err[2],RST);
+    char s1[50],s2[100];
+    //double A = par[0] / (sqrt(2*TMath::Pi())*par[2]);
 
-    /*
-    for (auto i=0;i<f1->GetNpar();i++) {
-      double rr = pow(10,round(log10(err[i]))-1);
-      par[i] = round(par[i]/rr);
-      par[i]*=rr;
-      err[i] = round(err[i]/rr);
-      err[i]*=rr;
-      printf("%0.3g %0.1e %f %f\n",par[i],err[i],log10(err[i]),rr);
-      //sprintf("%0.1e",ss,err[i]);
-      //string str=ss;
-      //double a=str
-    }
-    //prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
-    */
+    // sprintf(s1," %10.4g",par[0]);
+    // snprintf(s2,50,"%20s",s1);
+    // vfit[0]+=s2;
 
-    for (auto i=0;i<3;i++) {
-      char s1[50],s2[100];
-      sprintf(s1," %10.4g#pm%0.3g",par[i],err[i]);
+    for (auto i=0;i<4;i++) {
+      //sprintf(s1," %10.4g #pm %0.3g",par[i],err[i]);
+      sprintf(s1," %10.4g +/- %0.3g",par[i],err[i]);
       snprintf(s2,50,"%20s",s1);
       //cout << i << " " << ss << endl;
       vfit[i]+=s2;
     }
 
-    /*
-    std::ostringstream oss;
-    oss << par[1] << "(" << err[1] << ")";
-    oss << " " << par[0] << "(" << err[0] << ")";
-    oss << " " << par[2] << "(" << err[2] << ")";
 
-    vfit.push_back(oss.str());
-    */
+    double y1 = hh->GetMinimum();
+    double y2 = hh->GetMaximum();
+    y2 = y1+(y2-y1)*0.4;
+    
+    hh->GetListOfFunctions()->Add(new TLine(vv[i].b1,y1,vv[i].b1,y2));
+    hh->GetListOfFunctions()->Add(new TLine(vv[i].b2,y1,vv[i].b2,y2));
+    //prnt("ss f f f fs;",BGRN,"vv:",vv[i].b1,y1,vv[i].b2,y2,RST);
 
+    // char s1[50],s2[100];
+    // double A = par[0] / (sqrt(2*TMath::Pi())*par[2]);
+    // sprintf(s1," %10.4g",A);
+    // snprintf(s2,50,"%20s",s1);
+    // vfit[0]+=s2;
 
-    // oss << pp->p;
     // for (auto i=0;i<3;i++) {
-    // 	oss << " " << par[i] << "(" << err[i] << ")";
+    //   sprintf(s1," %10.4g#pm%0.3g",par[i],err[i]);
+    //   snprintf(s2,50,"%20s",s1);
+    //   //cout << i << " " << ss << endl;
+    //   vfit[i+1]+=s2;
     // }
 
+  } // for i (vv)
 
-    //cout << hh->GetTitle() << " " << oss.str() << endl;
-
-
-  } // for vv
-
-  TPaveText *pt = new TPaveText(.5,0.5,.9,.9,"NDC");
+  TPaveText *pt = new TPaveText(.6,0.6,.9,.9,"NDC");
   pt->SetFillStyle(0);
 
+  if (opt.Peak_print) {
+    cout << "--- " << hh->GetTitle() << " ---" << endl;
+    for (UInt_t i=0;i<vfit.size();i++) {
+      cout << vfit[i] << endl;
+    }
+  }
+
   for (UInt_t i=0;i<vfit.size();i++) {
-    //cout << vfit[i] << endl;
     pt->AddText(vfit[i].c_str());
   }
+
   //pt->SetTextSize(0.03);
   pt->SetTextFont(102);
   //cout << "pt: " << pt->GetTextSize() << " " << pt->GetTextFont() << endl;

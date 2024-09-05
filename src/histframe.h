@@ -28,7 +28,7 @@ typedef std::vector<double> dvect;
 typedef std::vector<dvect> d2vect;
 
 struct vpeak {
-  double p,h,w; //pos,height,width
+  double p,h,w,b1,b2; //pos,height,width,border1,border2
 };
 
 //-----------------------------------------------
@@ -146,6 +146,11 @@ public:
   void EditCutG();
   void PeakSearch(TH1* hh, std::vector<vpeak> &vv);
   void DoPeaks_old();
+  void MeanPeaks(TH1* hh, std::vector<vpeak> &vv,
+		double* par, double* err, size_t i);
+  void FitPeaks(TH1* hh, std::vector<vpeak> &vv,
+		double* par, double* err, size_t i);
+    //std::vector<string> &vfit, size_t i);
   void DoPeaks(TH1* hh);
   void PeakFit(HMap* map, TH1* hist1, TH1* hist2, int i, d2vect &d2);
   void DelMaps(TGListTreeItem *idir);

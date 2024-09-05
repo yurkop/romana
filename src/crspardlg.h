@@ -27,60 +27,6 @@
 //typedef unsigned char byte;
 //typedef std::list<TGFrame*> wlist;
 
-enum P_Def {
-	    p_null, // 0
-	    p_fnum,
-	    p_inum,
-	    p_chk,
-	    p_cmb,
-	    p_txt,
-	    p_but,
-	    p_chn,  // 7
-	    p_stat // -> double
-};
-
-struct Pmap {
-  TGFrame* field; //address of the input widget
-  void* data; //base address of the parameter
-  void* data2; //base address of the second (parallel) parameter
-  UInt_t cmd; //опции (биты)
-  UShort_t off; // offset to the base address in units of step
-  P_Def type; //p_fnum p_inum p_chk p_cmb p_txt p_but p_chn p_stat
-  UChar_t all; //1 - all/ALL/* parameters; >1 - channel type
-  UChar_t step; //step in units of _type_size
-
-  //cmd bits:
-  //0x1: (bit0) 1: start/stop DAQ
-  //0xE: (bit1-3) change color (see fCol[7])
-  //0xF0: (bit4-7) Action (1..15)
-  //0x100 (bit8) disble during acq
-  //0x200 (bit9) disble fields not existing in certain devices
-  //0x400 (bit10) enable/disble fields for ntof analysis
-
-  //Action (bit4-7): 
-  // in DoDaqNum:
-  // 1 - DoReset
-  // 2 - Hireset
-  // 3 - Hi->Update()
-  // // 4 - match Trg & Drv for CRS2 (not realized)
-  // 5 - group4
-  // 6 - проверка Len кратно 3 или 4
-  // 7 - установка tsleep в Timer
-  // 8 - chanpar->Update() (для отображения второго параметра apar2)
-
-  // in DoDaqChk:
-  // 5 - group4 for module51
-
-  /*
-  // in UpdateField (chk):
-  // 2 - 2d hist (2 fields)
-  // 3 - 1d hist (4 fields)
-  // 4 - profilometer hist
-  */
-
-  //UChar_t chan; //for Command_crs :seems to be not needed (21.01.2020)
-};
-
 typedef std::vector<Pmap>::iterator piter;
 //-----------------------------------------------
 class TrigFrame: public TGHorizontalFrame {

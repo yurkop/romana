@@ -1138,10 +1138,10 @@ void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1,
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1);
 
-  // if (style1==k_chk)
-  //   Check_opt(hfr1,width,x1,tip1,cmd1,"Strig");
-  // else
-  Num_opt(hfr1,width,x1,x1a,tip1,style1,min1,max1,cmd1,Lay1);
+  if (style1==k_chk)
+    Check_opt(hfr1,width,x1,tip1,cmd1,"");
+  else
+    Num_opt(hfr1,width,x1,x1a,tip1,style1,min1,max1,cmd1,Lay1);
 
   TGLabel* fLabel = new TGLabel(hfr1, label);
   hfr1->AddFrame(fLabel,LayLT4);
@@ -1669,6 +1669,10 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   tip1= "ADCM period in nsec: 10 for ADCM32; 16 for ADCM64";
   label="adcm period";
   AddLine_1opt(fF6,ww,&opt.adcm_period,0,tip1,label,k_r0,1,1000);
+
+  tip1= "Add random number when filling all histograms";
+  label="Add random";
+  AddLine_1opt(fF6,ww,&opt.addrandom,0,tip1,label,k_chk,1,1000);
 
   tip1= "Max number of rows in Channels tab";
   label="Nrows";

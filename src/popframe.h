@@ -65,6 +65,7 @@ public:
   void AddProfTime(UInt_t w, UInt_t h);
   void AddAdj(TGCompositeFrame* fcont1, HMap* map, int i);
   void AddNum(double val, int id, const char* label, const char* tip=0);
+  void AddChk(bool val, int id, const char* label, const char* tip=0);
   void AddEcalibr(UInt_t w, UInt_t h);
   void AddTcalibr();
   void AddPeaks();

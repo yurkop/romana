@@ -2,6 +2,7 @@
 #include <climits>
 #include "romana.h"
 #include <TStyle.h>
+#include "TRandom.h"
 #include <sstream>
 
 extern Toptions opt;
@@ -10,6 +11,7 @@ extern CRS* crs;
 extern ParParDlg *parpar;
 extern Coptions cpar;
 extern HClass* hcl;
+extern TRandom rnd;
 
 //------------------------------
 
@@ -195,6 +197,9 @@ void Mdef::Fill_01(HMap* map, Float_t x, Double_t *hcut_flag, int ncut) {
     if (!map) return;
   }
 
+  if (opt.addrandom) {
+    x += map->hst->GetXaxis()->GetBinWidth(1)*(rnd.Rndm(x)-0.5);
+  }
   map->hst->Fill(x);
 
   if (opt.ncuts && !ncut) {
@@ -218,6 +223,10 @@ void Mdef::Fill_02(HMap* map, Float_t x, Float_t y, Double_t *hcut_flag,
     if (!map) return;
   }
 
+  if (opt.addrandom) {
+    x += map->hst->GetXaxis()->GetBinWidth(1)*(rnd.Rndm(x)-0.5);
+    y += map->hst->GetYaxis()->GetBinWidth(1)*(rnd.Rndm(y)-0.5);
+  }
   map->hst->Fill(x,y);
 
   if (opt.ncuts && !ncut) {

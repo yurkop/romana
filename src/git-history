@@ -1,4 +1,19 @@
-git tag -a v0.888 -m ''
+git tag -a v0.889 -m 'addrandom'
+- Makefile перенесен в корень (линк не работает в ЯДиске)
+- P_Def, Pmap пенересены из crspardlg.h в common.h
+- добавлен addrandom - для заполнения гистограмм
+- исправлен баг в PeakSearch
+- добавлена высота пика в DoPeaks
+- добавлены опции Peak_use_mean и Peak_print в DoPeaks
+- удален 
+
+! нужно исправить PopFrame::Do_EApply - чтобы работало
+  при множественных нажаниях
+
+
+
+
+git tag -a v0.888 -m 'AK-32'
 - добавлен файл decoder_format.docx
 - почищен Mdef::Fill_HWRate
 - в Spin бит1 (2) заменен на бит6 (64): Ms

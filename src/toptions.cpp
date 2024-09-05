@@ -354,6 +354,8 @@ Toptions::Toptions() {
   dec_compr=1;
   root_compr=1;
 
+  addrandom=false;
+
   dec_format=79;
   strcpy(dec_mask,"T AtW C");
 
@@ -496,6 +498,8 @@ Toptions::Toptions() {
   Peak_bwidth=10;
   Peak_maxpeaks=2;
   Peak_smooth=0;
+  Peak_use_mean=false;
+  Peak_print=false;
 
   memset(wrk_check,0,sizeof(wrk_check));
 

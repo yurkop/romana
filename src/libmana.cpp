@@ -3640,7 +3640,19 @@ void MainFrame::HandleMenu(Int_t menu_id)
   char command[128];
   int status;
 
-  if (!crs->b_stop && menu_id!=M_HELP) return;
+  if (!crs->b_stop && menu_id!=M_HELP) {
+    switch (menu_id) {
+    case M_READINIT:
+    case M_SAVEINIT:
+    case M_SAVEROOT:
+    case M_READROOT:
+    case M_RESET_USB:
+    case M_FILE_EXIT:
+      return;
+    default:
+      break;
+    }
+  }
 
   //cout << menu_id << endl;
 

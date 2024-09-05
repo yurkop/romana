@@ -16,6 +16,7 @@ extern MyMainFrame *myM;
 extern HistFrame* HiFrm;
 extern HClass* hcl;
 extern EventFrame* EvtFrm;
+extern ChanParDlg* chanpar;
 extern Toptions opt;
 
 const int ww[]={15,60,60,60,60};
@@ -353,6 +354,22 @@ void PopFrame::AddNum(double val, int id, const char* label, const char* tip) {
   hframe->AddFrame(fLabel, LayLC2);
 }
 
+void PopFrame::AddChk(bool val, int id, const char* label, const char* tip) {
+  TGHorizontalFrame *hframe = new TGHorizontalFrame(fMain);
+  fMain->AddFrame(hframe, LayLC2);
+
+
+  TGCheckButton *fchk = new TGCheckButton(hframe, label, id);
+  fchk->SetState((EButtonState)val);
+  fchk->Connect("Toggled(Bool_t)", "PopFrame", this, "DoENum()");
+  fchk->SetToolTipText(tip);
+
+  hframe->AddFrame(fchk, LayLC2);
+
+  //fLabel = new TGLabel(hframe, label);
+  //hframe->AddFrame(fLabel, LayLC2);
+}
+
 void PopFrame::AddTcalibr() {
   fwhm=1;
   npol=1;
@@ -386,9 +403,11 @@ void PopFrame::AddPeaks() {
 
   AddNum(opt.Peak_thr,31,"Threshold","Peak threshold relative to the highest peak");
   AddNum(opt.Peak_smooth,32,"Smooth","Smooth before peak search");
-  AddNum(opt.Peak_wid,33,"Width","Minimal width for peak search");
+  AddNum(opt.Peak_wid,33,"Width","Minimal width for peak search\npeaks with width below this number are rejected");
   AddNum(opt.Peak_bwidth,34,"Background","width of the background in units of peak sigma");
   AddNum(opt.Peak_maxpeaks,35,"MaxPeaks","Maximal number of peaks");
+  AddChk(opt.Peak_use_mean,36,"Use Mean/RMS","Use Mean/RMS insted of fit");
+  AddChk(opt.Peak_print,37,"Print","Print peak parameters");
 
   /*
   hframe = new TGHorizontalFrame(fMain,10,10);
@@ -429,11 +448,12 @@ void PopFrame::DoAdj() {
 
 void PopFrame::DoENum() {
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  TGCheckButton *chk = (TGCheckButton*) gTQSender;
+
   Int_t id = te->WidgetId();
-  // if (id>=0 && id<100) {
-  //   ee[id]=te->GetNumber();
-  //   //cout << "ee: " << id << " " << ee[id] << endl;
-  // }
+
+  //cout << "id: " << id << " " << id2 << " " << id3 << endl;
+
   switch (id) {
   case 11:
     fwhm=te->GetNumber();
@@ -461,6 +481,12 @@ void PopFrame::DoENum() {
     break;
   case 35:
     opt.Peak_maxpeaks=te->GetNumber();
+    break;
+  case 36:
+    opt.Peak_use_mean = chk->GetState();
+    break;
+  case 37:
+    opt.Peak_print = chk->GetState();
     break;
   default:
     ;
@@ -667,6 +693,7 @@ void PopFrame::Do_EApply() {
 	opt.calibr_t[i]=1;
     }
   }
+  chanpar->Update();
   //E_Update();
 }
 
