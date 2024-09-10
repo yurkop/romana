@@ -67,6 +67,7 @@ public:
   void FillMult(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_Mean1(HMap* map, Float_t* Data, int nbins, int ideriv, int ncut);
   void FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut);
+  void Fill_Ampl(EventClass* evt, Double_t *hcut_flag, int ncut);
   void FillProf(EventClass* evt, Double_t *hcut_flag, int ncut);
 
   //void Fill_1d_cut(EventClass* evt, int i);

@@ -42,8 +42,7 @@ enum ERR_NUM {
 };
 
 #define mask_e "TN"
-#define mask_p "AtWHBSsRrpD"
-#define mask_c "C"
+#define mask_p "AtWHBSsRrp"
 
 //typedef unsigned char byte;
 
@@ -131,9 +130,9 @@ RQ_OBJECT("CRS")
   bool b_decwrite[NDEC];
   Int_t dec_len[NDEC];
 
-  //std::string smask_e,smask_p; //полные маски для e и p
-  std::string sdec_e,sdec_p; //реальные маски для e и p
-  bool sdec_c;
+  //std::string smask_e,smask_p; //полные маски для e(event) и p(pulse)
+  std::string sdec_e,sdec_p; //реальные маски для e(event) и p(pulse)
+  bool sdec_d,sdec_c; // маски для d (Data) и c (Counter)
   //std::vector<int> vdec;
 
   std::list<Pair> rw_list;
@@ -174,9 +173,9 @@ RQ_OBJECT("CRS")
   // 3 - ADCM dec
   // 7? - ortec lis,
   // 22 - crs2;
-  // 32 - old crs32, 33 - crs32 with dsp/po3, 34 - crs32/po4
-  // 35 - crs32/po5-6
-  // 36 - crs32/po7
+  // 32 - old crs32, 33 - crs32 with dsp/ПО3, 34 - crs32/ПО4
+  // 35 - crs32/ПО5-6
+  // 36 - crs32/ПО7
   // 41,42,43,44 - crs-8/16
   // 51,52,53,54 - crs-128
   // 43,53,44,54 - new format (decode35)
@@ -220,7 +219,7 @@ RQ_OBJECT("CRS")
   Long64_t fCounter[MAX_CH]; //old Counter
   Long64_t fTime[MAX_CH]; //old Tstamp for Counter
 
-  int nchan_on;
+  //int nchan_on;
 
   bool batch; //batch mode
   bool abatch; //1 - acquisition in batch; 0 - file in batch
@@ -300,6 +299,7 @@ RQ_OBJECT("CRS")
   //const Int_t ING_9=10000;  
   const Int_t PROF_64=1000000;
 
+  bool chan_changed = false;
   //--------functions---------
 
   //void Dummy_trd();
@@ -345,7 +345,7 @@ RQ_OBJECT("CRS")
   void DoProf(Int_t nn, Int_t *aa, Int_t off);
   void Make_prof_ch();
 
-  int CountChan();
+  //int CountChan();
 
   void InitBuf();
   void StopThreads(int all);
@@ -369,6 +369,7 @@ RQ_OBJECT("CRS")
   void PulseAna(PulseClass &ipls);
   void Dec_Init(eventlist* &Blist, UChar_t frmt);
   void Dec_End(eventlist* &Blist, UInt_t iread, UChar_t sp);
+  void Decode81(UInt_t iread, UInt_t ibuf);
   void Decode80(UInt_t iread, UInt_t ibuf);
   void Decode79(UInt_t iread, UInt_t ibuf);
   //void Decode79a(UInt_t iread, UInt_t ibuf);

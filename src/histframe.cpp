@@ -255,14 +255,16 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   fHslider = new TGDoubleHSlider(fVer0, 10, kDoubleScaleBoth,0);
   fHslider->SetRange(0,1);
-  fHslider->SetPosition(0,1);
+  fHslider->SetPosition(opt.hx_slider[0],opt.hx_slider[1]);
+  //fHslider->SetPosition(0,1);
   fVer0->AddFrame(fHslider, LayET0);
   fHslider->Connect("PositionChanged()", "HistFrame", 
    		    this, "DoSlider()");
 
   fVslider = new TGDoubleVSlider(fHor1, 10, kDoubleScaleBoth,1);
   fVslider->SetRange(0,1);
-  fVslider->SetPosition(0,1);
+  fVslider->SetPosition(opt.hy_slider[1],opt.hy_slider[0]);
+  //fVslider->SetPosition(0,1);
   //fVslider->SetWidth(10);
   fHor1->AddFrame(fVslider, LayLE0);
   fVslider->Connect("PositionChanged()", "HistFrame", 
@@ -1323,14 +1325,14 @@ void HistFrame::GetHMinMax(TH1* hh, double x1, double x2,
 }
 
 void HistFrame::X_Slider(TH1* hh, double &a1, double &a2) {
-  Float_t h1,h2;
-  fHslider->GetPosition(h1,h2);
-  if (h2-h1<1) {
+  fHslider->GetPosition(opt.hx_slider[0],opt.hx_slider[1]);
+  //cout << "hslider: " << opt.hx_slider[0] << " " << opt.hx_slider[1] << endl;
+  if (opt.hx_slider[1]-opt.hx_slider[0]<1) {
     double x1=hh->GetXaxis()->GetXmin();
     double x2=hh->GetXaxis()->GetXmax();
     double rr = x2-x1;
-    a1 = x1+rr*h1;
-    a2 = x1+rr*h2;
+    a1 = x1+rr*opt.hx_slider[0];
+    a2 = x1+rr*opt.hx_slider[1];
     hh->GetXaxis()->SetRangeUser(a1,a2);
     //cout << "x_slider: " << hh->GetName() << " " << a1 << " " << a2 << endl;
   }
@@ -1343,10 +1345,14 @@ void HistFrame::X_Slider(TH1* hh, double &a1, double &a2) {
 
 void HistFrame::Y_Slider(TH1* hh, double a1, double a2, double y1, double y2) {
   Float_t h1,h2;
-  fVslider->GetPosition(h2,h1);
-  h1=1-h1;
-  h2=1-h2;
-  //double y1,y2;
+  fVslider->GetPosition(opt.hy_slider[1],opt.hy_slider[0]);
+  //opt.hy_slider[0]=1-opt.hy_slider[0];
+  //opt.hy_slider[1]=1-opt.hy_slider[1];
+  //cout << "sld: " << opt.hy_slider[0] << " " << opt.hy_slider[1] << endl;
+  h1=1-opt.hy_slider[0];
+  h2=1-opt.hy_slider[1];
+  //fVslider->GetPosition(h2,h1);
+  //if (opt.hy_slider[1]-opt.hy_slider[0]<1 || hh==st_plot) {
   if (h2-h1<1 || hh==st_plot) {
     if (hh->GetDimension()==2) {
       y1=hh->GetYaxis()->GetXmin();
@@ -1380,6 +1386,8 @@ void HistFrame::Y_Slider(TH1* hh, double a1, double a2, double y1, double y2) {
     double rr = y2-y1;
     double a1 = y1+rr*h1;
     double a2 = y1+rr*h2;
+    //double a1 = y1+rr*opt.hy_slider[0];
+    //double a2 = y1+rr*opt.hy_slider[1];
     hh->GetYaxis()->SetRangeUser(a1,a2);
     //cout << "Y_sl: " << hh->GetName() << " " << y1 << " " << y2 << " " << a1 << " " << a2 << endl;
   }

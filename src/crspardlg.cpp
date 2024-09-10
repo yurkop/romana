@@ -109,7 +109,7 @@ const int PHeight = 20;
 const int NFLD = ptip.size();
 
 //#define mask0 "TN AtWHBSsRrpD C"
-#define mask0 mask_e " " mask_p " " mask_c
+#define mask0 mask_e " " mask_p " DC"
 const char* tip_dec=
   "Mask for decoder format (type 81 or higher)\n"
   mask0" spaces are ignored\n"
@@ -130,8 +130,8 @@ const char* tip_dec=
   "R - RMS (baseline)\n"
   "r - RMS (peak)\n"
   "p - Pileup\n"
-  "D - Pulse data (oscillogram)\n"
   "\n"
+  "D - Pulse data (oscillogram)\n"
   "C - Hardware counter";
 
 
@@ -295,11 +295,14 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
     }
     break;
     */
-  case 5: //group4
+  case 5: {//group4
+    bool ff=false;
     // crs->module=41;
-    // cout << "act5: " << endl;
-
-    if (crs->module>=41 && crs->module<=70) {
+    if (pp->data==&cpar.AC && crs->module==45) {
+      //cout << "act5: " << pp->data << " " << &cpar.AC << endl;
+      ff=true;
+    }
+    if (ff || crs->module==44 || crs->module==54) { //CRS-8 or CRS-128
       int l4 = off/4*4; //group4
 
       for (int i=l4;i<l4+4;i++) { //MAX_CH+MAX_TP+1
@@ -314,6 +317,7 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
       
     }
     break;
+  }
   case 6: { //проверка Len кратно 3 или 4
     //cout << "act6: " << endl;
 
@@ -430,6 +434,10 @@ void ParDlg::DoChk(Bool_t on) {
 
   Int_t id = ((TGCheckButton*) gTQSender)->WidgetId();
   Pmap pp = Plist[id-1];
+
+  if (pp.data==&cpar.on) {
+    crs->chan_changed=true;
+  }
 
   SetChk(pp,pp.off,on);
   UpdateField(id-1);
@@ -1831,13 +1839,14 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
   f1->SetTitlePos(TGGroupFrame::kCenter);
   frame2->AddFrame(f1, LayLT0);
 
-
+  //left frame
   frame1d[0] = new TGVerticalFrame(f1);
   f1->AddFrame(frame1d[0], LayLT0);
 
   TGVertical3DLine* separator1 = new TGVertical3DLine(f1);
   f1->AddFrame(separator1,LayLE0);
 
+  //right frame
   frame1d[1] = new TGVerticalFrame(f1);
   f1->AddFrame(frame1d[1], LayLT0);
 
@@ -2498,7 +2507,7 @@ void ChanParDlg::Build() {
 
 
   // --- Coincidence scheme
-  const char *tip1, *tip2, *label;
+  const char *tip1="", *tip2="", *label;
   int ww=40;
 
   TGCompositeFrame *vfr = (TGCompositeFrame*) fCnv[2]->GetViewPort()->GetContainer();
@@ -2578,8 +2587,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Dt",cpar.Dt,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Pre",cpar.Pre,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Len",cpar.Len,0,1|(6<<4));
-  //AddColumn(jj,kk++,1,p_inum,24,1,0,0,"G",cpar.G,0,1|(5<<4));
-  AddColumn(jj,kk++,1,p_inum,24,1,0,0,"G",cpar.G,0,1);
+  AddColumn(jj,kk++,1,p_inum,24,1,0,0,"G",cpar.G,0,1|(5<<4));
   AddColumn(jj,kk++,1,p_inum,24,1,0,0,"Trg",cpar.Trg,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Drv",cpar.Drv,opt.sDrv,1|(8<<4));
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Thr",cpar.Thr,opt.sThr,1|(8<<4));

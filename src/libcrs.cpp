@@ -2248,7 +2248,7 @@ int CRS::DoStartStop(int rst) {
     }
     //juststarted=true; already set in doreset
 
-    TCanvas *cv;
+    TCanvas *cv=0;
     
     if (!batch) {
       parpar->Update();
@@ -3017,13 +3017,13 @@ int CRS::DoBuf() {
   return nbuffers;
 }
 
-int CRS::CountChan() {
-  int res=0;
-  for (int i=0;i<opt.Nchan;i++) {
-    if (cpar.on[i]) res++;
-  }
-  return res;
-}
+// int CRS::CountChan() {
+//   int res=0;
+//   for (int i=0;i<opt.Nchan;i++) {
+//     if (cpar.on[i]) res++;
+//   }
+//   return res;
+// }
 
 void CRS::InitBuf() {
   gl_iread=0;
@@ -3683,31 +3683,33 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
 }
 
 bool CRS::MakeDecMask() {
-  //проверяет dec mask и создает управляющие переменные для dec81/82
+  // проверяет opt.dec_mask и создает управляющие переменные для dec81/82:
+  // sdec_e,sdec_p,sdec_d,sdec_c
 
   bool res=true;
 
   string mask = string(opt.dec_mask);
+  string smask;
+  size_t p;
+
   sdec_e.clear();
   sdec_p.clear();
+  sdec_d=false;
   sdec_c=false;
 
-  //size_t len = 0;
-
-  string smask = string(mask_e);
+  // записываем маску для события, заменяем найденные символы пробелом
+  smask = string(mask_e);
   for (size_t i=0;i<mask.size();i++) {
     for (size_t j=0;j<smask.size();j++) {
       if (mask[i]==smask[j]) {
 	sdec_e+=mask[i];
 	smask[j]=' ';
 	mask[i]=' ';
-	//smask.erase(j,1);
-	//mask.erase(i,1);
       }
     }
   }
-  //len+=smask.size();
 
+  // записываем маску для импульсов, заменяем найденные символы пробелом
   smask = string(mask_p);
   for (size_t i=0;i<mask.size();i++) {
     for (size_t j=0;j<smask.size();j++) {
@@ -3715,38 +3717,23 @@ bool CRS::MakeDecMask() {
 	sdec_p+=mask[i];
 	smask[j]=' ';
 	mask[i]=' ';
-	//smask.erase(j,1);
-	//mask.erase(i,1);
       }
     }
   }
-  //len+=smask.size();
 
-  /*
-  std::size_t found = mask.find_first_of(mask_e);
-  while (found!=std::string::npos)
-  {
-    sdec_e+=mask[found];
-    found=mask.find_first_of(mask_e,found+1);
+  p=mask.find_first_of("D");
+  if (p!=std::string::npos) {
+    sdec_d=true;
+    mask[p]=' ';
   }
 
-  found = mask.find_first_of(mask_p);
-  while (found!=std::string::npos)
-  {
-    sdec_p+=mask[found];
-    found=mask.find_first_of(mask_p,found+1);
-  }
-  */
-
-  size_t p=mask.find_first_of(mask_c);
+  p=mask.find_first_of("C");
   if (p!=std::string::npos) {
     sdec_c=true;
     mask[p]=' ';
   }
-  else
-    sdec_c=false;
 
-
+  //удаляем все пробелы
   p = mask.find_first_of(' ');
   while (p!=std::string::npos)
   {
@@ -3754,10 +3741,11 @@ bool CRS::MakeDecMask() {
     p=mask.find_first_of(' ');
   }
 
-  //cout << "maske: " << sdec_e << " " << mask.size() << endl;
-  //cout << "maskp: " << sdec_p << endl;
-  //cout << "maskc: " << sdec_c << " " << mask << endl;
+  //cout << "mask_e: " << sdec_e << endl;
+  //cout << "mask_p: " << sdec_p << endl;
+  //cout << "mask_dc: " << sdec_d << " " << sdec_c << " " << mask.size() << endl;
 
+  // если после удаления пробелов что-то осталось -> что-то не то
   if (mask.size())
     res=false;
   return res;
@@ -3912,6 +3900,145 @@ void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
 
 } //decode79a
 */
+
+void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
+  //ibuf - current sub-buffer
+  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
+
+  EventClass* evt=&dummy_event;
+
+  eventlist *Blist;
+  UChar_t frmt = GLBuf[idx1+7] & 0x80;
+  Dec_Init(Blist,!frmt);
+  PulseClass pls=good_pulse;
+  PulseClass* ipls=&pls;
+  static Long64_t Tst;
+  static UChar_t Spn;
+  ULong64_t* Buf8;
+
+  //prnt("sl;","d79: ",nevents);
+
+
+  //if (!opt.fProc) { //fill event
+  while (idx1<b_end[ibuf]) {
+    frmt = GLBuf[idx1+7] & 0x80; //event start bit
+    Buf8 = (ULong64_t*) (GLBuf+idx1);
+
+    if (frmt) { //event start	
+      evt = &*Blist->insert(Blist->end(),good_event);
+      evt->Nevt=nevents;
+      nevents++;
+      evt->Tstmp = (*Buf8) & sixbytes;
+      (*Buf8)>>=48;
+      //evt->Spin |= UChar_t((*buf8) & 1);
+      evt->Spin |= UChar_t(*Buf8);
+      //prnt("ss l ds;",BGRN,"d79:",evt->Tstmp,evt->Spin,RST);
+
+      /*
+      for (auto it=sdec_e.begin(); it!=sdec_e.end(); ++it) {
+	switch (*it) {
+	case 'T':
+	  *Buf8 |= ((ULong64_t) (evt->Spin & 3)) << 48;
+	  *Buf8 |= evt->Tstmp & sixbytes;
+	  *(++Buf8)=0;
+	  break;
+	case 'N':
+	  UDecBuf2 = (UShort_t*) Buf8;
+	  UDecBuf2[0] = evt->pulses.size();
+	  UDecBuf2[1] = evt->Nevt;
+	  DecN = Buf8; //запоминаем, куда писать длину события
+	  *(++Buf8)=0;
+	  break;
+	}
+      } //for
+      */
+
+
+    }
+    else {
+      Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+      UShort_t* buf2u = (UShort_t*) buf2;
+      UChar_t* buf1u = (UChar_t*) buf2;
+      pulse_vect::iterator itpls =
+	evt->pulses.insert(evt->pulses.end(),pls);
+      ipls = &(*itpls);
+      ipls->Chan = buf2[3];
+
+      if (evt->Spin & 128) { //Counters
+	ipls->Counter = (*Buf8) & sixbytes;
+      }
+      else { //Peaks
+	ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+	ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01
+	  + opt.sD[ipls->Chan]/opt.Period; //in samples
+	ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+
+	ipls->Height = ((UInt_t) buf1u[7])<<8;
+
+	if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
+	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
+	  evt->T0=ipls->Time;
+	}
+	ipls->Ecalibr(ipls->Area);
+      }
+    }
+
+    //prnt("ss l d ls;",BCYN,"d79:",evt->Tstmp,evt->Spin,evt->pulses.size(),RST);
+
+    idx1+=8;
+  } //while (idx1<buf_len)
+
+  Dec_End(Blist,iread,254);
+
+  //} //if (fill event)
+
+  /*
+  else { //fill pulses for reanalysis
+    while (idx1<b_end[ibuf]) {
+      frmt = GLBuf[idx1+7] & 0x80; //event start bit
+      buf8 = (ULong64_t*) (GLBuf+idx1);
+
+      if (frmt) { //event start
+	Tst = (*buf8) & sixbytes;
+	(*buf8)>>=48;
+	//Spn = UChar_t((*buf8) & 1);
+	Spn = UChar_t(*buf8);
+      }
+      else {
+	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+	UShort_t* buf2u = (UShort_t*) buf2;
+	UChar_t* buf1u = (UChar_t*) buf2;
+	ipls->Chan = buf2[3];
+
+	if (Spn & 128) { //Counters
+	  ipls->Counter = (*buf8) & sixbytes;
+	}
+	else { //Peaks
+	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
+
+	  //new2
+	  ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	  ipls->Tstamp64=Tst;// *opt.Period;
+
+	  ipls->Spin=Spn;
+	  ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
+
+	  ipls->Height = ((UInt_t) buf1u[7])<<8;
+
+	  ipls->Ecalibr(ipls->Area);
+	}
+	Event_Insert_Pulse(Blist,ipls);
+      }
+
+      idx1+=8;
+    } //while (idx1<buf_len)
+
+    Dec_End(Blist,iread,255);
+
+  } // else (if (opt.fProc))
+  */
+
+} //decode81
 
 void CRS::Decode80(UInt_t iread, UInt_t ibuf) {
   //trigger on START channel
@@ -6288,24 +6415,6 @@ void CRS::Fill_Dec81(EventClass* evt) {
 	case 'p':
 	  DecBuf2[pos] = ipls->ptype;
 	  break;
-	case 'D':
-	  if (pos!=0) { // переходим на новое слово
-	    DecBuf2[3]|=ipls->Chan;
-	    *(++DecBuf8)=0;
-	    DecBuf2 = (Short_t*) DecBuf8;
-	    pos=0;
-	  }
-	  for (auto j=ipls->sData.begin(); j!=ipls->sData.end(); ++j) {
-	    DecBuf2[pos] = *j;
-	    pos++;
-	    if (pos>=3) {
-	      DecBuf2[3]|=ipls->Chan;
-	      *(++DecBuf8)=0;
-	      DecBuf2 = (Short_t*) DecBuf8;
-	      pos=0;
-	    }
-	  }
-	  break;
 	} //switch
 	pos++;
 	if (pos>=3) {
@@ -6321,6 +6430,18 @@ void CRS::Fill_Dec81(EventClass* evt) {
 	DecBuf2 = (Short_t*) DecBuf8;
 	pos=0;
       }
+      if (sdec_d) { //записываем sData (здесь pos всегда 0)
+	for (auto j=ipls->sData.begin(); j!=ipls->sData.end(); ++j) {
+	  DecBuf2[pos] = *j;
+	  pos++;
+	  if (pos>=3) {
+	    DecBuf2[3]|=ipls->Chan;
+	    *(++DecBuf8)=0;
+	    DecBuf2 = (Short_t*) DecBuf8;
+	    pos=0;
+	  }
+	}
+      } //if (sdec_d)
     } //for ipls
   }
 

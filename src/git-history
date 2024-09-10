@@ -1,3 +1,15 @@
+git tag -a v0.890 -m 'Ampl+Fourier'
+- добавлена гистограмма Ampl
+- добавлено Фурье-разложение в eventframe
+- Gain для ЦРС8/128 работает
+- исправлен group4 для AK-32
+- x_slider, y_slider для гистограмм сохраняется в параметрах
+- в Makefile убрано -Wno-maybe-uninitialized
+- переделан Fill_dec81 (недоделано)
+- список гистограмм обновляется при нажатии Reset после любого измерения
+  в активных каналах
+
+
 git tag -a v0.889 -m 'addrandom'
 - Makefile перенесен в корень (линк не работает в ЯДиске)
 - P_Def, Pmap пенересены из crspardlg.h в common.h

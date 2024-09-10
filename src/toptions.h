@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 150
+#define CDEF 152
 
 /*
 #include <list>
@@ -289,7 +289,7 @@ public:
   Bool_t b_gcuts;
   Bool_t b_roi;
   Bool_t b_fpeaks;
-  Bool_t b_deriv[4];
+  Bool_t b_deriv[NGR];
   Bool_t b_peak[MXPK];
 
   Float_t adcm_period;
@@ -326,7 +326,8 @@ public:
   Int_t Nrows;
   Int_t ScrollPos;
 
-
+  Float_t hx_slider[2];
+  Float_t hy_slider[2];
 
   // hnum: 
   //    0 - не определено
@@ -354,6 +355,8 @@ public:
   Hdef h_slope2; // 6 Sl2 Slope Counts Slope2 (peak)
   Hdef h_RMS1; // 7 RMS1 RMS Counts Noise1 (baseline)
   Hdef h_RMS2; // 8 RMS2 RMS Counts Noise2 (peak)
+
+  Hdef h_ampl; // 48 Ampl Channel Counts Distribution of amplitudes from oscillogram
 
   Hdef h_ntof; // 12 Ntof t(mks) Counts Neutron time of flight, in mks
   Hdef h_etof; // 13 Etof Energy(eV) Counts Neutron energy from NTOF, in eV

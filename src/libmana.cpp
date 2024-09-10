@@ -1679,6 +1679,8 @@ int readroot(const char *name) {
     //daqpar->AllEnabled(false);
   }
 
+  crs->chan_changed = true;
+
   //strcpy(maintitle,pr_name);
   //strcat(maintitle," ");
   //strcat(maintitle,name);
@@ -2076,11 +2078,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gStyle->SetPalette(1,0);
   gStyle->SetTitleFontSize(0.07);
   gStyle->SetTitleSize(0.05,"xyz");
-  gStyle->SetTitleOffset(0.95,"xy"); 
+  //gStyle->SetTitleOffset(0.95,"xy"); 
+  gStyle->SetTitleOffset(0.95,"x"); 
+  gStyle->SetTitleOffset(1.2,"yz"); 
+
   gStyle->SetLabelSize(0.05,"xyz");
   gStyle->SetNdivisions(606,"xyz");
-  gStyle->SetPadLeftMargin(0.15);
-  gStyle->SetPadRightMargin(0.1);
+  gStyle->SetPadLeftMargin(0.13);
+  gStyle->SetPadRightMargin(0.05);
   //gStyle->SetPadBottomMargin(0.15);
   //gStyle->SetPadTopMargin(0.05);
 
@@ -2427,7 +2432,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   };
 
   TGTextEntry* fLab[n_stat];
-  TGHorizontalFrame *hfr1;
+  TGHorizontalFrame *hfr1=0;
 
   //TGTextEntry* fStat[10];
   for (int i=0;i<n_stat;i++) {
@@ -3140,8 +3145,10 @@ void MainFrame::DoReset() {
   }
 
   ErrFrm->Reset();
-  if (crs->nchan_on != crs->CountChan()) {
+  //if (crs->nchan_on != crs->CountChan()) {
+  if (crs->chan_changed) {
     HiFrm->HiReset();
+    crs->chan_changed = false;
   }
   parpar->Update();
   chanpar->Update();

@@ -197,6 +197,9 @@ void Mdef::Fill_01(HMap* map, Float_t x, Double_t *hcut_flag, int ncut) {
     if (!map) return;
   }
 
+  //double ww = map->hst->GetXaxis()->GetBinWidth(1);
+  //double rr = ww*(rnd.Rndm(x)-0.5);
+  //cout << "addrnd: " << x << " " << ww << " " << rr << endl;
   if (opt.addrandom) {
     x += map->hst->GetXaxis()->GetBinWidth(1)*(rnd.Rndm(x)-0.5);
   }
@@ -478,8 +481,19 @@ void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
   }
 }
 
+void Mdef::Fill_Ampl(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    int ch = ipls->Chan;
+    if (ch<opt.Nchan) { // && v_map[ch] - не нужен, т.к. проверяется в Fill_01
+      for (auto j=ipls->sData.begin();j!=ipls->sData.end();++j) {
+	Fill_01(v_map[ch],*j,hcut_flag,ncut);
+      }
+    }
+  }
+}
+
 void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
-  int ch_alpha;
+  int ch_alpha=-1;
   Float_t h_sum[2][64] = {}; //[xy][pos], initialized to zero
   double tt;
   if (opt.Prof_type==64) { //new profilometer
@@ -834,7 +848,7 @@ bool check_Base(int num) {
 
 void HClass::Make_hist() {
 
-  crs->nchan_on = crs->CountChan();
+  //crs->nchan_on = crs->CountChan();
 
   if (allmap_list)
     delete allmap_list;
@@ -902,6 +916,10 @@ void HClass::Make_hist() {
     else if (it->hnum==22) {//HWRate
       Make_1d(it,opt.Nchan);
       it->MFill = &Mdef::Fill_HWRate;
+    }
+    else if (it->hnum==48) {//Ampl
+      Make_1d(it,opt.Nchan);
+      it->MFill = &Mdef::Fill_Ampl;
     }
     else if (it->hnum==49) {//Mult
       Make_1d(it,0);

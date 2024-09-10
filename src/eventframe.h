@@ -69,8 +69,10 @@ public:
   Int_t chcol[MAX_CH+NGRP];
   ULong_t gcol[MAX_CH+NGRP];
 
-  static const int NDIV=4; //количество делений окна Events (3 или 4)
-  static const int NGR=6; //количество графов (всегда 6!!!)
+  static const int NDIV=5; //количество делений окна Events (3 или 4)
+  //static const int NGR=5; //количество графов -> перенесено в common.h
+  //static const int NGR=6; //количество графов (всегда 6!!!) <- почему?
+  //Gr[4] Gr[5] - 
 
 protected:
 

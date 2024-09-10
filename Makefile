@@ -60,7 +60,7 @@ endif
 #endif
 
 CPPFLAGS += $(LFS) -MD -MP -DLINUX=1 -I. #-I$(LIB_D)
-CXXFLAGS += -O3 -Wall -Wno-maybe-uninitialized #-Wextra
+CXXFLAGS += -O3 -Wall #-Wno-maybe-uninitialized #-Wextra
 LDFLAGS += -lz
 #SVNVER=\"$(shell svnversion)\"
 

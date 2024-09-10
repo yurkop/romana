@@ -14,6 +14,8 @@
 #include <TGTableLayout.h>
 
 #include <TRandom.h>
+#include <TVirtualFFT.h>
+#include <TMath.h>
 
 //Long64_t markt[10];
 
@@ -29,16 +31,18 @@ TBox bx;
 //    259,491,635,819,785,513
 //};
 
-const char* mgr_name[4] = {"pulse","1deriv","2deriv","CFD"};
-const char* mgr_title[4] = {"pulse;samples","1 deriv;samples",
-			    "2 deriv;samples","CFD;samples"};
+const char* mgr_name[NGR] = {"pulse","1deriv","2deriv","CFD","FFT"};
+const char* mgr_title[NGR] = {"pulse;samples","1 deriv;samples",
+					  "2 deriv;samples","CFD;samples",
+					  "FFT;FFT"};
 
-const char* drv_name[4] = {"Pulse"," ' "," ' ' ","CFD"};
-const char* drv_tip[4] = {
+const char* drv_name[NGR] = {"Pulse"," ' "," ' ' ","CFD","FFT"};
+const char* drv_tip[NGR] = {
 			  "Show pulse",
 			  "Show 1st derivative",
 			  "Show 2nd derivative",
 			  "Show CFD",
+			  "Show FFT",
 };
 
 const int PKSTAT=10;
@@ -129,7 +133,6 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   :TGCompositeFrame(p,w,h,kHorizontalFrame)
    //:TGCompositeFrame(p,w,h,kVerticalFrame)
 {
-
   TGLayoutHints* LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
   TGLayoutHints* LayEy0 = new TGLayoutHints(kLHintsExpandY,2,2,2,2);
 
@@ -453,8 +456,8 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
       Gr[j][i]->SetMarkerStyle(20);
       Gr[j][i]->SetMarkerSize(0.5);
     }
-    Gr[4][i]->SetLineStyle(2);
-    Gr[5][i]->SetLineStyle(3);
+    //Gr[4][i]->SetLineStyle(2);
+    //Gr[5][i]->SetLineStyle(3);
   }  
 
   //cout << "Compile1: " << opt.formula << endl;
@@ -475,7 +478,6 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //}
 
   //StartThread();
-  
 }
 
 EventFrame::~EventFrame()
@@ -934,13 +936,16 @@ void EventFrame::FillGraph(int dr) {
     }
 
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch[i]];
+    if (opt.b_deriv[4])
+      dt=1;
 
     gx1[i]=(dt-1);
     gx2[i]=(pulse->sData.size()+dt);
     gy1[dr][i]=1e99;
     gy2[dr][i]=-1e99;
 
-    if (dr==0) { //main pulse
+    switch (dr) {
+    case 0: { //main pulse
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
 	double dd = pulse->sData[j];
@@ -956,11 +961,11 @@ void EventFrame::FillGraph(int dr) {
 	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
       }
     }
-    else if (dr==1) { //1st derivaive
+      break;
+    case 1: //1st derivaive
       FillDeriv1(dr, i, pulse, dt);
-    }
-    else if (dr==2) { //2nd derivative
-
+      break;
+    case 2: {//2nd derivaive
       Int_t kk=opt.sDrv[ch[i]];
       if (kk<1 || kk>=(Int_t)pulse->sData.size()) kk=1;
 
@@ -996,8 +1001,8 @@ void EventFrame::FillGraph(int dr) {
 
       }
     } //dr==2
-    else if (dr==3) { //CFD
-
+      break;
+    case 3: { //CFD
       int delay = abs(opt.T1[pulse->Chan]);
 
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
@@ -1023,7 +1028,49 @@ void EventFrame::FillGraph(int dr) {
       }
 
     } //dr==3
-  } 
+      break;
+    case 4: { //FFT
+
+      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+	Gr[dr][i]->GetX()[j]=(j+dt);
+	Gr[dr][i]->GetY()[j]=pulse->sData[j];
+
+	// if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
+	//   gy1[dr][i]=Gr[dr][i]->GetY()[j];
+	// if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
+	//   gy2[dr][i]=Gr[dr][i]->GetY()[j];
+      }
+
+
+      Int_t N = pulse->sData.size();
+      Double_t *in = new Double_t[N+1];
+      for (int j=0;j<N;j++) {
+      	in[j]=pulse->sData[j];
+      }
+
+      TVirtualFFT *fftr2c = TVirtualFFT::FFT(1, &N, "R2C");
+      fftr2c->SetPoints(in);
+      fftr2c->Transform();
+      //fftr2c->GetPoints(in);
+
+      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+	Double_t re, im;
+	fftr2c->GetPointComplex(j, re, im);
+
+	Gr[dr][i]->GetX()[j]=j+dt;
+	Gr[dr][i]->GetY()[j]=TMath::Sqrt(re*re + im*im);
+
+	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
+	  gy1[dr][i]=Gr[dr][i]->GetY()[j];
+	if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
+	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
+      }
+      delete[] in;
+      
+    } //dr==4
+      break;
+    } //switch
+  }
 }
 
 void EventFrame::SetRanges(int dr) {

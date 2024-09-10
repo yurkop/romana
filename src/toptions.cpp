@@ -507,6 +507,12 @@ Toptions::Toptions() {
 
   Nrows = 8;
   ScrollPos=0;
+
+  hx_slider[0]=0;
+  hx_slider[1]=1;
+  hy_slider[0]=1;
+  hy_slider[1]=0;
+
 }
 
 Hdef::Hdef() {
