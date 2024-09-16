@@ -180,7 +180,8 @@ public:
   void DoReset();
   void FillDeriv1(int dr, int i, PulseClass* pulse, double dt);
   void FillGraph(int dr);
-  void SetRanges(int dr);
+  void SetXRanges();
+  void SetYRanges(int dr, double x1, double x2);
   void DrawEvent2();
   void DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2);
   void DrawShapeTxt(PulseClass* pulse);

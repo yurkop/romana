@@ -2768,7 +2768,7 @@ void MainFrame::DoOpen(Int_t popt) {
       DoReset();
 
       readroot(fi.fFilename);
-      HiFrm->Update();
+      HiFrm->HiUpdate();
     }
     else {
       crs->DoFopen(fi.fFilename,1,popt); //1 - read cpar; popt - read toptions
@@ -3032,7 +3032,7 @@ void MainFrame::DoReadRoot() {
 
     parpar->Update();
     chanpar->Update();
-    HiFrm->Update();
+    HiFrm->HiUpdate();
 
     //nevent=opt.Nevt;
     //tof=opt.Tof;
@@ -3553,7 +3553,7 @@ void MainFrame::DoTab(Int_t num) {
     parpar->Update();
     //cout << "DoTab5: " << name << endl;
     if (!crs->b_acq)
-      HiFrm->Update();
+      HiFrm->HiUpdate();
     //HiFrm->ReDraw();
   }
   else if (name.Contains("Errors",TString::kIgnoreCase)) {

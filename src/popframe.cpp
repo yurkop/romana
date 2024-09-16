@@ -78,7 +78,7 @@ void PopFrame::CloseWindow()
   //cout << "fVar1: " << fVar << " " << this << endl;
   //fVar=NULL;
   HiFrm->b_adj=false;
-  HiFrm->Update();
+  HiFrm->HiUpdate();
 
   delete this;
   //myM->p_pop=0;
@@ -230,7 +230,7 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
   memcpy(&calibr_t,&opt.calibr_t,sizeof(calibr_t));
 
   HiFrm->b_adj=true;
-  HiFrm->Update();
+  HiFrm->HiUpdate();
 
   memset(fAdj,0,sizeof(fAdj));
 
@@ -443,7 +443,7 @@ void PopFrame::DoAdj() {
       }
     }
   }
-  HiFrm->Update();
+  HiFrm->HiUpdate();
 }
 
 void PopFrame::DoENum() {
@@ -545,7 +545,7 @@ void PopFrame::Do_Auto_Ecalibr()
   }
 
   E_Update();
-  HiFrm->Update();
+  HiFrm->HiUpdate();
 
 }
 

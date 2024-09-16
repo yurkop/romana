@@ -1,3 +1,23 @@
+git tag -a v0.891 -m 'флаги в Makefile (BITS etc), исправлен баг в DoStartStop'
+- добавлены флаги в Makefile:
+   P_LIBUSB=1 to compile with printing libusb messages
+   P_CMD=1 to compile with printing cmd32 & cmd2 messages
+   BITS=N to compile with cutting lower bits in sData by N
+- в EventFrame шкала по вертикали автоматически подстраивается при
+  движении слайдера
+- в DoStartStop исправлен "баг": b_acq=false выполняется после подачи
+  команды Стоп в USB, с задержкой
+- исправлен баг в ChkLen
+- FitPeak выводит в терминал результаты только после окончания накопления
+  или изменения состояния параметра
+- в HiFrm Update заменено на HiUpdate
+- остались "неочищенные хвосты" вывода информации USB (cout, prnt)
+
+
+
+
+
+
 git tag -a v0.890 -m 'Ampl+Fourier'
 - добавлена гистограмма Ampl
 - добавлено Фурье-разложение в eventframe

@@ -1004,11 +1004,15 @@ void CRS::DoResetUSB() {
       Fmode=0;
     }
 		
-    prnt("sss",BGRN,"Reset USB... ",RST);
+    gSystem->Sleep(100);
+    prnt("sss;",BGRN,"Reset USB... ",RST);
     if (cy_handle) {
+      prnt("sss;",BGRN,"Command 7",RST);
       Command32(7,0,0,0); //reset usb command
+      prnt("sss;",BGRN,"cyusb_close",RST);
       cyusb_close();
       cy_handle=0;
+      prnt("sss;",BGRN,"Sleep2000",RST);
       gSystem->Sleep(2000);
     }
     prnt("sss;",BGRN,"Done.",RST);
@@ -1084,6 +1088,7 @@ int CRS::Detect_device() {
   trd_crs = new TThread("trd_crs", handle_events_func, (void*) 0);
   trd_crs->Run();
 
+  gSystem->Sleep(100);
   //Command32(7,0,0,0); //reset usb command
   //YK
   //Command2(4,0,0,0);
@@ -1091,7 +1096,7 @@ int CRS::Detect_device() {
   int sz;
   memset(buf_in,0,sizeof(buf_in));
   sz = Command32(1,0,0,0);
-  sz = Command32(1,0,0,0);
+  sz = Command32(1,0,0,0); //не помню, зачем вызывать 2 раза (?)
 
   Short_t device_code=buf_in[1];
   Short_t Serial_n=buf_in[2];
@@ -1324,6 +1329,9 @@ void CRS::Free_Transfer() {
     //cout << "free: " << i << " " << (int) transfer[i]->flags << endl;
     //int res = libusb_cancel_transfer(transfer[i]);
     libusb_free_transfer(transfer[i]);
+#ifdef P_LIBUSB
+    prnt("ssds;",BBLU,"libusb_free_transfer: ", i, RST);
+#endif
 
     //transfer[i]=NULL;
 
@@ -1340,28 +1348,46 @@ void CRS::Free_Transfer() {
 
 void CRS::Submit_all(int ntr) {
   ntrans=0;
+  int res=0;
   for (int i=0;i<ntr;i++) {
-    int res;
     res = libusb_submit_transfer(transfer[i]);
     //cout << i << " Submit: " << res << endl;
     if (res) {
-      cout << "Submit_Transfer error: " << res << " " << *(int*) transfer[i]->user_data << endl;
-      cout << libusb_error_name(res) << endl;
+      //cout << "Submit_Transfer error: " << res << " " << *(int*) transfer[i]->user_data << endl;
+      //cout << libusb_error_name(res) << endl;
       break;
     }
     else {
       //cout << "Submit_Transfer: " << res << " " << *(int*) transfer[i]->user_data << endl;
       ntrans++;
     }
+
+#ifdef P_LIBUSB
+    prnt("ssd d ds;",BBLU,"libusb_submit_transfer: ", i, ntrans, *(int*) transfer[i]->user_data, RST);
+#endif
+    
   }
+
+  if (res) {
+    prnt("ssd ds;",BRED,"Submit_Transfer error: ", res, ntrans, RST);
+    //cout << "Submit_Transfer error: " << res << " " << *(int*) transfer[i]->user_data << endl;
+    cout << libusb_error_name(res) << endl;
+  }
+
 }
 
 void CRS::Cancel_all(int ntr) {
+  //gSystem->Sleep(2300);
   for (int i=0;i<ntr;i++) {
     //int res;
     if (transfer[i]) {
-      //res = 
-      libusb_cancel_transfer(transfer[i]);
+      int res = 
+	libusb_cancel_transfer(transfer[i]);
+#ifdef P_LIBUSB
+      prnt("ssd ds;",BBLU,"libusb_cancel_transfer: ", i, res, RST);
+      if (res)
+	cout << libusb_error_name(res) << ": " << i << endl;
+#endif
       //cout << i << " Cancel: " << res << endl;
     }
   }
@@ -1445,7 +1471,6 @@ int CRS::Init_Transfer() {
     return 2;
   }
   gSystem->Sleep(250);
-
   Cancel_all(MAXTRANS);
   gSystem->Sleep(250);
 
@@ -1519,7 +1544,9 @@ int CRS::Command32_old(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
 
 int CRS::Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
   // if (cmd !=2 || cpar.on[ch]) {
-  //    prnt("ssd d d ds;",KGRN,"Cmd: ",(int) cmd, (int) ch, (int) type, par, RST);
+#ifdef P_CMD
+  prnt("ssd d d d xs",BGRN,"Cmd32: ",(int) cmd, (int) ch, (int) type, par, par, RST);
+#endif
   // }
 
   //для версии ПО 2
@@ -1572,28 +1599,45 @@ int CRS::Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
     cout << "Wrong CRS32 command: " << (int) cmd << endl;
     return 0;
   }
-	
+
+  std::ostringstream oss;
   r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, 0);
   if (r) {
-    printf("Error6! %d: \n",buf_out[1]);
+    oss << " Error_out";
+    //printf("Error6! %d: \n",buf_out[1]);
     cyusb_error(r);
     //cyusb_close();
   }
 
-  if (cmd!=7) {
+  if (cmd!=7 && cmd!=12) { //сброс USB и Тест
     r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, 0);
     if (r) {
-      printf("Error7! %d: \n",buf_out[1]);
+      oss << " Error_in";
+	//sprintf(ss,"Error_in");
+      //printf("Error7! %d: \n",buf_out[1]);
       cyusb_error(r);
       //cyusb_close();
     }
+#ifdef P_CMD
+    else
+      oss << " " << len_in << " " << (int) buf_in[0];
+	//sprintf(ss,"%d %d",len_in,buf_in[0]);
+#endif
   }
+#ifdef P_CMD
+  else {
+    oss << " none";
+  }
+  prnt("ssss;",BGRN," :",oss.str().data(),RST);
+#endif
 
   return len_in;
 }
 
 int CRS::Command2(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
-  //prnt("ssds;",KRED,"Command2: ",(int) cmd, RST);
+#ifdef P_CMD
+  prnt("ssds;",BRED,"Cmd2: ",(int) cmd, RST);
+#endif
   //cout << "Command2: " << (int) cmd << endl;
   int transferred = 0;
   int r;
@@ -1630,19 +1674,38 @@ int CRS::Command2(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
   // 	printf(" %d",buf_out[i]);
   // }
   // printf("\n");
+
+  //std::ostringstream oss;
   r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, 0);
   if (r) {
-    printf("Error6! %d: \n",buf_out[1]);
+    //oss << " Error_out";
     cyusb_error(r);
     //cyusb_close();
   }
 
+#ifdef P_CMD
+  prnt("ssds;",BRED,"out: ", r, RST);
+#endif
+
+  //cout << "Sleep(10000) start" << endl;
+  //gSystem->Sleep(10000); //300
+  //cout << "Sleep(10000) end" << endl;
   r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, 0);
   if (r) {
-    printf("Error7! %d: \n",buf_out[1]);
+    //oss << " Error_in";
     cyusb_error(r);
     //cyusb_close();
   }
+// #ifdef P_CMD
+//   else
+//     oss << " " << len_in << " " << (int) buf_in[0];
+//   prnt("s s ss;",KRED,"<<",oss.str().data(),RST);
+// #endif
+//   cout << "Command2: " << (int) cmd << " " << r << " after in" << endl;
+
+#ifdef P_CMD
+  prnt("ssds;",BRED,"in: ", r, RST);
+#endif
 
   return len_in;
 }
@@ -2235,12 +2298,15 @@ int CRS::DoStartStop(int rst) {
 	
   if (!b_acq) { //start
 
-    //cout << "start: " << rst << endl;
+    cout << "start: " << rst << endl;
     crs->Free_Transfer();
     gSystem->Sleep(50);
+    cout << "Free_Transfer() finished" << endl;
 
     InitBuf();
+    cout << "InitBuf() finished" << endl;
     crs->Init_Transfer();
+    cout << "Init_Transfer() finished" << endl;
 
     DoReset(rst);
     if (rst) {
@@ -2268,9 +2334,11 @@ int CRS::DoStartStop(int rst) {
     //}
 		
     // YK 29.09.20
-    //int r=
+    int r=
     cyusb_reset_device(cy_handle);
-    //prnt("ssds;",KRED,"cyusb_reset: ",r,RST);
+#ifdef P_LIBUSB
+    prnt("ssds;",BBLU,"cyusb_reset: ",r,RST);
+#endif
     //gSystem->Sleep(100);
 
     Submit_all(ntrans);
@@ -2330,13 +2398,14 @@ int CRS::DoStartStop(int rst) {
     }
   } //start
   else { //stop
-    buf_out[0]=4;
-    b_acq=false;
+    //buf_out[0]=4;
     cout << "Acquisition stopped" << endl;
 
     Command2(4,0,0,0);
+    gSystem->Sleep(300); //300
+    b_acq=false;
 
-    gSystem->Sleep(300);
+    //cout << "Sleep(13000)" << endl;
 
     // cout << "Acquisition stopped2" << endl;
     Cancel_all(ntrans);
@@ -3156,7 +3225,11 @@ void CRS::EndAna(int all) {
       Ana2(1);
     }
   }
-  //cout << "EndAna: " << endl;
+
+  if (HiFrm && opt.b_fpeaks && opt.Peak_print)
+    HiFrm->pkprint=true;
+
+  // cout << "EndAna: " << endl;
   // for (int i=0;i<opt.Nchan;i++) {
   //   cout << "Counts: " << npulses2[i] << " " << npulses3[i] << endl;
   // }
@@ -4930,8 +5003,10 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 	continue;
       }
       for (int i=0;i<4;i++) {
-	d32 = data & 0x7FF; //11bit
-	//cout << "ddd: " << (int) ch << " " << ipls.Tstamp64 << " " << i << " " << ddd << " " << ((ddd<<5)>>5) << endl;
+#ifdef BITS
+	  (data>>=BITS)<<=BITS;
+#endif
+	d32 = data & 0x7FF; //11 bit
 	ipls.sData.push_back((d32<<21)>>21);
 	data>>=12;
       }
@@ -4945,7 +5020,10 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       }
       if (cpar.F24) {
 	for (int i=0;i<2;i++) {
-	  d32 = data & 0xFFFFFF;
+#ifdef BITS
+	  (data>>=BITS)<<=BITS;
+#endif
+	  d32 = data & 0xFFFFFF; //24 bit
 	  Float_t f32 = (d32<<8)>>8;
 	  //Float_t f33 = f32+1;
 	  //Float_t f34 = f32-1;
@@ -4961,7 +5039,10 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       }
       else { 
 	for (int i=0;i<3;i++) {
-	  d16 = data & 0xFFFF;
+#ifdef BITS
+	  (data>>=BITS)<<=BITS;
+#endif
+	  d16 = data & 0xFFFF; //16 bit
 	  ipls.sData.push_back(d16);
 	  data>>=16;
 	}

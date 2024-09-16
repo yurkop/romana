@@ -267,10 +267,15 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
     break;
 
   case 3:
+    if (pp->data==&opt.b_fpeaks && opt.b_fpeaks) {
+      HiFrm->pkprint=true;
+    }
+
     if (crs->b_stop)
-      HiFrm->Update();
+      HiFrm->HiUpdate();
     else
       HiFrm->changed=true;
+
     break;
     /*
   case 4:
@@ -2586,9 +2591,9 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"hD",cpar.hD,0,1);
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Dt",cpar.Dt,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Pre",cpar.Pre,0,1);
-  AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Len",cpar.Len,0,1|(6<<4));
-  AddColumn(jj,kk++,1,p_inum,24,1,0,0,"G",cpar.G,0,1|(5<<4));
-  AddColumn(jj,kk++,1,p_inum,24,1,0,0,"Trg",cpar.Trg,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Len",cpar.Len,0,1|(6<<4));
+  AddColumn(jj,kk++,1,p_inum,21,1,0,0,"G",cpar.G,0,1|(5<<4));
+  AddColumn(jj,kk++,1,p_inum,21,1,0,0,"Trg",cpar.Trg,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Drv",cpar.Drv,opt.sDrv,1|(8<<4));
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Thr",cpar.Thr,opt.sThr,1|(8<<4));
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"LT",cpar.LT,0,1);

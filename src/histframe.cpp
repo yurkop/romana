@@ -116,7 +116,7 @@ void DynamicExec()
       if (!map || np >= (int)HiFrm->pad_map.size()) {
 	cout << "hist not found for pad " << np << endl;
 	HiFrm->in_gcut=0;
-	HiFrm->Update();
+	HiFrm->HiUpdate();
 	return;
       }
       hdim=map->hst->GetDimension();
@@ -173,6 +173,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   ttxt.SetTextAlign(22);
   ttxt.SetTextSize(0.04);
   b_adj=false;
+  pkprint=false;
 
   //TGLayoutHints* LayCB0   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom,0,0,0,0);
   TGLayoutHints* LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
@@ -947,7 +948,7 @@ void HistFrame::DoClick(TGListTreeItem* item,Int_t but)
 
   //cout << "Upd1: " << endl;
   if (crs->b_stop)
-    Update();
+    HiUpdate();
   else
     changed=true;
   //cout << "Upd2: " << endl;
@@ -1172,7 +1173,7 @@ void HistFrame::OptToCheck() {
   }
 
   if (crs->b_stop)
-    Update();
+    HiUpdate();
   else
     changed=true;
 
@@ -1209,7 +1210,7 @@ void HistFrame::CheckToOpt(TObject* obj, Bool_t check) {
   }
 
   if (crs->b_stop)
-    Update();
+    HiUpdate();
   else
     changed=true;
 
@@ -1237,7 +1238,7 @@ void HistFrame::DoRadio()
   }
   
   if (crs->b_stop)
-    Update();
+    HiUpdate();
   else
     changed=true;
 }
@@ -1269,7 +1270,7 @@ void HistFrame::DoButton()
 
   //cout << "doradio2: " << id << endl;
   if (crs->b_stop)
-    Update();
+    HiUpdate();
   else
     changed=true;
   //cout << "doradio3: " << id << endl;
@@ -1295,7 +1296,7 @@ void HistFrame::DoDrawopt() {
   //   cout << "dopt: " << i << " " << dopt[i] << endl; 
   // }
 
-  Update();
+  HiUpdate();
 
 }
 
@@ -1303,7 +1304,7 @@ void HistFrame::DoSlider() {
 
   //printf("DosLider: %d\n",nEvents);
   if (crs->b_stop)
-    Update();
+    HiUpdate();
   else
     changed=true;
 
@@ -1423,7 +1424,7 @@ void HistFrame::AddCutG(TPolyLine *pl, HMap* map) {
     MakeROI(pl,map);
   }
   in_gcut=0;
-  Update();
+  HiUpdate();
 
 }
 
@@ -1580,7 +1581,7 @@ void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
     Clear_Ltree();
     hcl->Make_cuts();
     Make_Ltree();
-    Update();
+    HiUpdate();
   
   } // if gcut
 }
@@ -1629,7 +1630,7 @@ void HistFrame::StartMouse() {
     in_gcut=0;
   }
 
-  Update();
+  HiUpdate();
   
 }
 
@@ -2041,241 +2042,6 @@ void HistFrame::PeakSearch(TH1* hh, double sig1, double sig2) {
 }
 */
 
-void HistFrame::DoPeaks_old()
-{
-  //cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
-
-  if (opt.b_stack) return;
-
-  TSpectrum spec;
-  vector<string> fitres;
-
-  /*
-  for (auto it=pad_map.begin(); it!=pad_map.end(); ++it) {
-    if (!((*it)->hst)->InheritsFrom(TH1::Class())) continue;
-    TH1* hh = (TH1*) (*it)->hst;
-    if (hh->GetDimension()>1) continue;
-
-
-    auto it2 = it;
-    ++it2;
-    if (it2!=pad_map.end()) {
-      PeakSearch(hh,(TH1*) (*it2)->hst,5,opt.Peak_thr);
-    }
-    else {
-      cout <<"last: " << endl;
-    }
-    return;
-  */
-
-  int npad=0;
-  for (auto it=pad_hist.begin(); it!=pad_hist.end(); ++it) {
-    if (!(*it)->InheritsFrom(TH1::Class())) continue;
-    TH1* hh = (TH1*) *it;
-    if (hh->GetDimension()>1) continue;
-
-    TIter next(hh->GetListOfFunctions());
-    TObject* obj;
-    while ( (obj=(TObject*)next()) ) {
-      //cout << "item: " << obj << endl;
-      hh->GetListOfFunctions()->Remove(obj);
-      delete obj;
-    }
-
-
-    std::vector<string> vfit;
-    std::vector<vpeak> vv;
-    PeakSearch(hh,vv);
-    //continue;
-    //return;
-
-    for (auto pp=vv.begin(); pp!=vv.end();++pp) {
-      double width = pp->w*opt.Peak_bwidth;
-
-      //cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
-      //     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
-
-      TF1* f1=new TF1("fitf","gausn(0)+pol1(3)",pp->p-width,pp->p+width);
-      //cout << f1->GetNpar() << endl;
-      double A = pp->h / (sqrt(2*TMath::Pi())*pp->w);
-      f1->SetParameters(A,pp->p,pp->w,0,0);
-
-      //f1->Print();
-      string fitopt = "Q";
-      if (pp!=vv.begin()) fitopt+="+";
-      //const char* fitopt="+";
-      //if (j==0) fitopt="";
-
-      //cout << "fitopt: " << fitopt << endl;
-      //TF1* fitf=new TF1("fitf","gaus",0,10);
-      hh->Fit(f1,fitopt.data(),"",pp->p-width,pp->p+width);
-      double* par = f1->GetParameters();
-      double err[100];
-      for (auto i=0;i<f1->GetNpar();i++) {
-	err[i] = f1->GetParError(i);
-      }
-
-      err[0] /= hh->GetBinWidth(1);
-      par[0] /= hh->GetBinWidth(1);
-      par[2]*=2.35;
-      err[2]*=2.35;
-
-      //prnt("ss f f fs;",BGRN,"pk: ",par[0],par[1],par[2],RST);
-      //prnt("ss f f fs;",BBLU,"er: ",err[0],err[1],err[2],RST);
-
-      for (auto i=0;i<f1->GetNpar();i++) {
-	double rr = pow(10,round(log10(err[i]))-1);
-	par[i] = round(par[i]/rr);
-	par[i]*=rr;
-	err[i] = round(err[i]/rr);
-	err[i]*=rr;
-	//printf("%0.3g %0.1e %f %f\n",par[i],err[i],log10(err[i]),rr);
-	//sprintf("%0.1e",ss,err[i]);
-	//string str=ss;
-	//double a=str
-      }
-      //prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
-
-      std::ostringstream oss;
-      oss << par[1] << "(" << err[1] << ")";
-      oss << " " << par[0] << "(" << err[0] << ")";
-      oss << " " << par[2] << "(" << err[2] << ")";
-
-      vfit.push_back(oss.str());
-
-      // oss << pp->p;
-      // for (auto i=0;i<3;i++) {
-      // 	oss << " " << par[i] << "(" << err[i] << ")";
-      // }
-
-
-      //cout << hh->GetTitle() << " " << oss.str() << endl;
-
-
-    } // for vv
-
-
-
-
-
-    TPaveText *pt = new TPaveText(.5,0.5,.9,.9,"NDC");
-    pt->SetFillStyle(0);
-
-    for (UInt_t i=0;i<vfit.size();i++) {
-      //cout << vfit[i] << endl;
-      pt->AddText(vfit[i].c_str());
-    }
-    //pt->SetTextSize(0.03);
-    //pt->SetTextFont(32);
-    //cout << "pt: " << pt->GetTextSize() << " " << pt->GetTextFont() << endl;
-
-    //pt->AddText("A TPaveText can contain severals line of text.");
-    //pt->AddText("They are added to the pave using the AddText method.");
-    //pt->AddLine(.0,.5,1.,.5);
-    //pt->AddText("Even complex TLatex formulas can be added:");
-    //pt->AddText("F(t) = #sum_{i=-#infty}^{#infty}A(i)cos#[]{#frac{i}{t+i}}");
-    hh->GetListOfFunctions()->Add(pt);
-    //pt->Draw();
-    //gStyle->SetOptFit();
-
-
-    /*  
-    int npk = spec.Search(hh,opt.Peak_sig,"",opt.Peak_thr);
-    npk = TMath::Max(npk,(int)opt.Peak_maxpeaks);
-    //prnt("ss d d fs;",BGRN,"pk:",hh->GetDimension(),npk,opt.Peak_thr,RST);
-
-
-    Double_t* peaks = spec.GetPositionX();
-
-    //continue;
-    for (int j=0;j<npk;j++) {
-      int bin = hh->FindFixBin(peaks[j]);
-      int k;
-      for (k=bin;k>0;k--) {
-	if (hh->GetBinContent(k)<spec.GetPositionY()[j]*0.5)
-	  break;
-      }
-      double sig = (hh->GetBinCenter(bin) - hh->GetBinCenter(k))*2.0/2.35;
-
-      double width = sig*opt.Peak_bwidth;
-
-      //cout << hh->GetName() << " " << j << " " << peaks[j] << " " << bin
-      //     << " " << spec.GetPositionY()[j] << " " << bin-k << endl;
-
-      TF1* f1=new TF1("fitf","gausn(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
-      //cout << f1->GetNpar() << endl;
-      double A = spec.GetPositionY()[j] / (sqrt(2*TMath::Pi())*sig);
-      f1->SetParameters(A,peaks[j],sig,0,0);
-
-      //f1->Print();
-      string fitopt = "Q";
-      if (j!=0) fitopt+="+";
-      //const char* fitopt="+";
-      //if (j==0) fitopt="";
-
-      //cout << "fitopt: " << fitopt << endl;
-      //TF1* fitf=new TF1("fitf","gaus",0,10);
-      hh->Fit(f1,fitopt.data(),"",peaks[j]-width,peaks[j]+width);
-      double* par = f1->GetParameters();
-      double err[10];
-      for (auto i=0;i<f1->GetNpar();i++) {
-	err[i] = f1->GetParError(i);
-      }
-
-      err[0] /= hh->GetBinWidth(bin);
-      par[0] /= hh->GetBinWidth(bin);
-
-      prnt("ss d f f fs;",BGRN,"pk: ",j,par[0],par[1],par[2],RST);
-      prnt("ss d f f fs;",BBLU,"er: ",j,err[0],err[1],err[2],RST);
-
-      for (auto i=0;i<f1->GetNpar();i++) {
-	double pp = pow(10,round(log10(err[i]))-1);
-	par[i] = round(par[i]/pp);
-	par[i]*=pp;
-	err[i] = round(err[i]/pp);
-	err[i]*=pp;
-	//printf("%0.3g %0.1e %f %f\n",par[i],err[i],log10(err[i]),pp);
-	//sprintf("%0.1e",ss,err[i]);
-	//string str=ss;
-	//double a=str
-      }
-      //prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
-
-      std::ostringstream oss;
-      oss << j+1;
-      for (auto i=0;i<3;i++) {
-	oss << " " << par[i] << "(" << err[i] << ")";
-      }
-      cout << oss.str() << endl;
-      //cout << "fithist: " << hh << " " << hh->GetName() << " " << fitopt << endl;
-      //hh->GetListOfFunctions()->ls();
-      //f1->Draw("same");
-
-
-    } // for npk
-    */
-    //hh->SetStats(false);
-
-
-
-
-
-
-
-    npad++;
-    cout << "npad!: " << npad << endl;
-    fEc->GetCanvas()->cd(npad);
-    gPad->Update();
-  } // for pad_hist
-
-  //fEc->GetCanvas()->SetEditable(true);
-  //fEc->GetCanvas()->Update();
-  //fEc->GetCanvas()->SetEditable(false);
-  //opt.b_stat=false;
-  //Update();
-  //fEc->GetCanvas()->Update();
-}
-
 void HistFrame::MeanPeaks(TH1* hh, std::vector<vpeak> &vv,
 			 double* par, double* err, size_t i) {
 
@@ -2477,10 +2243,10 @@ void HistFrame::DoPeaks(TH1* hh) {
 
   } // for i (vv)
 
-  TPaveText *pt = new TPaveText(.6,0.6,.9,.9,"NDC");
+  TPaveText *pt = new TPaveText(.6,0.6,.95,.9,"NDC");
   pt->SetFillStyle(0);
 
-  if (opt.Peak_print) {
+  if (opt.Peak_print && pkprint) {
     cout << "--- " << hh->GetTitle() << " ---" << endl;
     for (UInt_t i=0;i<vfit.size();i++) {
       cout << vfit[i] << endl;
@@ -2856,7 +2622,7 @@ void HistFrame::Do_Tcalibr(PopFrame* pop) {
     }
   } //next
 
-  Update();
+  HiUpdate();
 } //Do_Tcalibr
 
 /*
@@ -2964,11 +2730,11 @@ void HistFrame::HiReset()
   crs->SimNameHist();
 #endif
 
-  Update();
+  HiUpdate();
   //cout << "HiReset2: " << endl;
 }
 
-void HistFrame::Update()
+void HistFrame::HiUpdate()
 {
   //cout << "in_gcut: " << in_gcut << " " << opt.b_logy << " " << chklog << endl;
   //cout << "Hifrm::Update: " << opt.b_stack << endl;
@@ -3583,6 +3349,7 @@ void HistFrame::AllRebinDraw() {
     }
   } //for npad
   stack_off=false;
+  pkprint=false;
 }
 
 void HistFrame::DrawCuts(int npad) {
@@ -3712,7 +3479,7 @@ void HistFrame::ReDraw()
     //fEc->GetCanvas()->Draw();
     //fEc->GetCanvas()->Update();
     //cout << "changed" << endl;
-    Update();
+    HiUpdate();
     changed=false;
     started=false;
   }

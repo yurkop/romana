@@ -92,6 +92,7 @@ public:
   Int_t in_gcut; //0-cancel;1-cut;2-roi
   int np_gcut; //number of points in gcut
 
+  Bool_t pkprint;
   //TLine line;
   int ndiv;
 
@@ -145,7 +146,6 @@ public:
   string CutsToStr();
   void EditCutG();
   void PeakSearch(TH1* hh, std::vector<vpeak> &vv);
-  void DoPeaks_old();
   void MeanPeaks(TH1* hh, std::vector<vpeak> &vv,
 		double* par, double* err, size_t i);
   void FitPeaks(TH1* hh, std::vector<vpeak> &vv,
@@ -159,7 +159,7 @@ public:
   //void Do_Ecalibr();
   void DoRst();
   void HiReset();
-  void Update();
+  void HiUpdate();
   void DrawStack();
   void Make_Hmap_ChkList();
   bool CheckPads();

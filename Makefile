@@ -10,6 +10,9 @@
 # make TIMES=1 to compile with TIMES option
 # make DEBUG=1 to compile with debug option
 # make PROF=1 to compile with profiling option
+# make P_LIBUSB=1 to compile with printing libusb messages
+# make P_CMD=1 to compile with printing cmd32 & cmd2 messages
+# make BITS=N to compile with cutting lower bits in sData by N
 # removed!!!   make simul to compile with SIMUL option 
 
 
@@ -49,6 +52,18 @@ endif
 
 ifdef TIMES
   CPPFLAGS += -D TIMES=1
+endif
+
+ifdef P_LIBUSB
+  CPPFLAGS += -D P_LIBUSB=1
+endif
+
+ifdef P_CMD
+  CPPFLAGS += -D P_CMD=1
+endif
+
+ifdef BITS
+  CPPFLAGS += -D BITS=$(BITS)
 endif
 
 ifeq (yumo,$(findstring $(MAKECMDGOALS),yumo))

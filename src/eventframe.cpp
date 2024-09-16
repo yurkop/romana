@@ -1073,42 +1073,43 @@ void EventFrame::FillGraph(int dr) {
   }
 }
 
-void EventFrame::SetRanges(int dr) {
-
-  //if (mgr[dr]->GetListOfGraphs())
-  //  mgr[dr]->GetListOfGraphs()->Clear();
-
-  //delete mgr[dr];
-  //mgr[dr]=new TMultiGraph(mgr_name[dr],mgr_title[dr]);
+void EventFrame::SetXRanges() {
 
   mx1=1e99;
   mx2=-1e99;
-  my1[dr]=1e99;
-  my2[dr]=-1e99;
 
-  //cout << "psize: " << d_event->pulses.size() << endl;
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     UInt_t ch= d_event->pulses.at(i).Chan;
-    //cout << "ch: " << i << " " << ch << endl;
-    //if (fChn[ch]->IsOn()) {
     if (fChn_on(ch)) {
       if (gx1[i]<mx1) mx1=gx1[i];
       if (gx2[i]>mx2) mx2=gx2[i];
-      if (gy1[dr][i]<my1[dr]) my1[dr]=gy1[dr][i];
-      if (gy2[dr][i]>my2[dr]) my2[dr]=gy2[dr][i];
-
-      // cout << "Graph1: " << dr << " " << mx1 << " " << mx2 << " " 
-      // 	   << gx1[i] << " " << gx2[i] << " "
-      // 	   << my1[dr] << " " << my2[dr] << endl;
-
-      //mgr[dr]->Add(Gr[dr][ch]);
     }
   } 
 
-  double dy=my2[dr]-my1[dr];
-  my1[dr]-=dy*0.05;
-  my2[dr]+=dy*0.05;
+}
 
+void EventFrame::SetYRanges(int dr, double x1, double x2) {
+
+  my1[dr]=1e99;
+  my2[dr]=-1e99;
+
+  for (UInt_t i=0;i<d_event->pulses.size();i++) {
+    UInt_t ch= d_event->pulses.at(i).Chan;
+    if (fChn_on(ch)) {
+      for (auto j=0;j<Gr[dr][i]->GetN();j++) {
+	if (Gr[dr][i]->GetX()[j] >= x1 && Gr[dr][i]->GetX()[j] <= x2) {
+	  if (Gr[dr][i]->GetY()[j] < my1[dr]) my1[dr]=Gr[dr][i]->GetY()[j];
+	  if (Gr[dr][i]->GetY()[j] > my2[dr]) my2[dr]=Gr[dr][i]->GetY()[j];
+	}
+      }
+      //if (gy1[dr][i]<my1[dr]) my1[dr]=gy1[dr][i];
+      //if (gy2[dr][i]>my2[dr]) my2[dr]=gy2[dr][i];
+    }
+  } 
+
+  //double dy=my2[dr]-my1[dr];
+  //my1[dr]-=dy*0.05;
+  //my2[dr]+=dy*0.05;
 }
 
 void EventFrame::DrawEvent2() {
@@ -1421,6 +1422,14 @@ void EventFrame::ReDraw() {
     return;
   }
 
+  SetXRanges();
+
+  Float_t h1,h2;
+  double dx=mx2-mx1;
+  fHslider->GetPosition(h1,h2);
+  double x1=mx1+dx*h1;
+  double x2=mx2-dx*(1-h2);
+
   int nn=1;
   for (int i=0;i<NDIV;i++) {
     if (opt.b_deriv[i]) {
@@ -1429,11 +1438,10 @@ void EventFrame::ReDraw() {
       //int ny=d_event->pulses.size();
       //double dd = 0.74*2.0/ny;
 
-
       cv->cd(nn++);
 
       //prnt("ss ds;",BGRN,"ccc02:",i,RST);
-      SetRanges(i);
+      SetYRanges(i,x1,x2);
 
       //prnt("ss ds;",BGRN,"ccc04:",i,RST);
       if (mx1>1e98) {
@@ -1441,14 +1449,10 @@ void EventFrame::ReDraw() {
 	continue;
       }
 
-      double dx=mx2-mx1;
       double dy=my2[i]-my1[i];
+      my1[i]-=dy*0.05;
+      my2[i]+=dy*0.05;
 
-      Float_t h1,h2;
-
-      fHslider->GetPosition(h1,h2);
-      double x1=mx1+dx*h1;
-      double x2=mx2-dx*(1-h2);
       fVslider->GetPosition(h1,h2);
       double y1=my1[i]+dy*(1-h2);
       double y2=my2[i]-dy*h1;

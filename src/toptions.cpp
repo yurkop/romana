@@ -279,6 +279,8 @@ Int_t Coptions::ChkLen(Int_t i, Int_t module) {
     break;
   case 1:
   case 2:
+  case 24:
+  case 25:
     dd=3;
   }
 
