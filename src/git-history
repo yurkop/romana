@@ -1,3 +1,8 @@
+git tag -a v0.892 -m 'копирование dsp в Dsp'
+- для файлов, созданных раньше, чем v0.870
+  содержимое opt.dsp копируетя в opt.Dsp
+- исправлен Makefile (chmod 755 для cyusblib)
+
 git tag -a v0.891 -m 'флаги в Makefile (BITS etc), исправлен баг в DoStartStop'
 - добавлены флаги в Makefile:
    P_LIBUSB=1 to compile with printing libusb messages

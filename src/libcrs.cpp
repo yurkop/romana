@@ -2787,6 +2787,15 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     }
   }
 
+  //strcpy(opt.gitver,"v0.870");
+  //int cm = string(opt.gitver).compare("v0.870");
+  //cout << opt.gitver << " " << cm << endl;
+
+  //update Dsp/dsp if file version is earlier than v0.870
+  if (string(opt.gitver).compare("v0.870")<0) {
+    memcpy(opt.Dsp,opt.dsp,sizeof(opt.dsp));
+  }
+  
   Make_prof_ch();
   Text_time("S:",cpar.F_start);
 
