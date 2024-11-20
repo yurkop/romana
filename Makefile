@@ -5,14 +5,14 @@
 # make cyusblib : compile and install cyusb library (need root password)
 # make r2a : compile r2a (root2ascii)
 
-# make TPROC=1 to compile with TPROC option
+# make TPROC=1 compile with TPROC option
 #      TPROC -> cpu usage in FillHist, only in singlethread
-# make TIMES=1 to compile with TIMES option
-# make DEBUG=1 to compile with debug option
-# make PROF=1 to compile with profiling option
-# make P_LIBUSB=1 to compile with printing libusb messages
-# make P_CMD=1 to compile with printing cmd32 & cmd2 messages
-# make BITS=N to compile with cutting lower bits in sData by N
+# make TIMES=1 compile with TIMES option
+# make DEBUG=1 compile with debug option
+# make PROF=1 compile with profiling option
+# make P_LIBUSB=1 compile with printing libusb messages
+# make P_CMD=1 compile with printing cmd32 & cmd2 messages
+# make BITS=N compile with cutting lower bits in sData by N
 # removed!!!   make simul to compile with SIMUL option 
 
 

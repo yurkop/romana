@@ -2158,22 +2158,25 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // 		     "HandleMenu(Int_t)");
 
 
-  TGPopupMenu* fMenuCalibr = new TGPopupMenu(gClient->GetRoot());
+  TGPopupMenu* fMenuAnalysis = new TGPopupMenu(gClient->GetRoot());
 
-  fMenuBar->AddPopup("&Analysis", fMenuCalibr, 
+  fMenuBar->AddPopup("&Analysis", fMenuAnalysis, 
 		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
 
-  // fMenuCalibr->AddEntry("Energy Pre-calibration", M_PRECALIBR);
-  // fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
+  // fMenuAnalysis->AddEntry("Energy Pre-calibration", M_PRECALIBR);
+  // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
   // 		     "HandleMenu(Int_t)");
-  fMenuCalibr->AddEntry("Energy calibration", M_ECALIBR);
-  fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
-		     "HandleMenu(Int_t)");
-  fMenuCalibr->AddEntry("Time calibration", M_TCALIBR);
-  fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
-		     "HandleMenu(Int_t)");
-  fMenuCalibr->AddEntry("Peak Search", M_PEAKS);
-  fMenuCalibr->Connect("Activated(Int_t)", "MainFrame", this,
+  fMenuAnalysis->AddEntry("Energy calibration", M_ECALIBR);
+  // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
+  // 		     "HandleMenu(Int_t)");
+  fMenuAnalysis->AddEntry("Time calibration", M_TCALIBR);
+  // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
+  // 		     "HandleMenu(Int_t)");
+  fMenuAnalysis->AddEntry("Peak Search", M_PEAKS);
+  fMenuAnalysis->AddEntry("Test", M_TEST);
+
+
+  fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
 
 
@@ -3719,15 +3722,11 @@ void MainFrame::HandleMenu(Int_t menu_id)
     //break;
 
   case M_EDIT_PROF8:
-    {
-      new PEditor(this, M_EDIT_PROF8, 400, 600);
-    }
+    new PEditor(this, M_EDIT_PROF8, 400, 600);
     break;
 
   case M_EDIT_PROF64:
-    {
-      new PEditor(this, M_EDIT_PROF64, 400, 600);
-    }
+    new PEditor(this, M_EDIT_PROF64, 400, 600);
     break;
 
   // case M_PROF_TIME:
@@ -3747,25 +3746,21 @@ void MainFrame::HandleMenu(Int_t menu_id)
   //   break;
 
   case M_ECALIBR:
-    {
-      new PopFrame(this,800,600,M_ECALIBR);
-    }
+    new PopFrame(this,800,600,M_ECALIBR);
     break;
 
   case M_TCALIBR:
-    {
-      //cout << "ecalibr: " << fTab->GetCurrent() << endl;
-      fTab->SetTab("Plots");
-      new PopFrame(this,100,600,M_TCALIBR);
-    }
+    //cout << "ecalibr: " << fTab->GetCurrent() << endl;
+    fTab->SetTab("Plots");
+    new PopFrame(this,100,600,M_TCALIBR);
     break;
 
   case M_PEAKS:
-    {
-      //cout << "ecalibr: " << fTab->GetCurrent() << endl;
-      fTab->SetTab("Plots");
-      new PopFrame(this,100,600,M_PEAKS);
-    }
+    fTab->SetTab("Plots");
+    new PopFrame(this,100,600,M_PEAKS);
+    break;
+  case M_TEST:
+    new PopFrame(this,100,600,M_TEST);
     break;
 
   case M_HELP:

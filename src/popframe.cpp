@@ -8,6 +8,7 @@
 #include <TSpectrum.h>
 #include <TColor.h>
 #include <TGlobal.h>
+#include <TSystem.h>
 #include <sstream>
 
 //extern Common* com;
@@ -18,6 +19,7 @@ extern HClass* hcl;
 extern EventFrame* EvtFrm;
 extern ChanParDlg* chanpar;
 extern Toptions opt;
+extern CRS* crs;
 
 const int ww[]={15,60,60,60,60};
 
@@ -36,6 +38,7 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   LayEE2   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 0,0,2,2);
   LayBut1 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 5, 5, 5, 5);
   LayBut2 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 15, 5, 1, 1);
+  LayBut3 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 55, 55, 5, 5);
 
   txt.SetTextSize(0.07);
   txt.SetTextAlign(22);
@@ -60,6 +63,9 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   }
   else if (menu_id==M_PEAKS) {
     AddPeaks();
+  }
+  else if (menu_id==M_TEST) {
+    AddTest();
   }
 
   fMain->MapSubwindows();
@@ -421,6 +427,62 @@ void PopFrame::AddPeaks() {
   */
 }
 
+void PopFrame::AddTest() {
+  fMain->SetWindowName("Test");
+
+  delay = 0;
+  n_iter = 1;
+  AddNum(delay,901,"Delay (ms)");
+  AddNum(n_iter,902,"N_iter");
+
+  TGTextButton* fTest = new TGTextButton(fMain, "      &Test1      ",1);
+  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
+  fTest->SetToolTipText("Stop-Start N times");
+  fMain->AddFrame(fTest, LayBut3);
+
+  fTest = new TGTextButton(fMain, "      &Test2      ",2);
+  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
+  fTest->SetToolTipText("Information N times");
+  fMain->AddFrame(fTest, LayBut3);
+
+  fTest = new TGTextButton(fMain, "      &Test3      ",3);
+  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
+  fTest->SetToolTipText("Command32(8) N times");
+  fMain->AddFrame(fTest, LayBut3);
+
+}
+
+void PopFrame::Do_Test() {
+  TGButton *btn = (TGButton *) gTQSender;
+  int id = btn->WidgetId();
+  cout << "test: " << crs->Fmode << " " << id << endl;
+
+  int sz=0;
+  if (crs->Fmode == 1) {
+    for (int i=0;i<n_iter;i++) {
+      switch (id) {
+      case 1:
+	crs->Command2(4,0,0,0); //stop
+	gSystem->Sleep(delay); //300
+	crs->Command2(3,0,0,0); //start
+	gSystem->Sleep(delay); //300
+	break;
+      case 2:
+	sz = crs->Command32(1,0,0,0); //info
+	gSystem->Sleep(delay); //300
+	break;
+      case 3:
+	sz = crs->Command32(8,0,0,0); //сброс сч./буф.
+	gSystem->Sleep(delay); //300
+	break;
+      default:
+	break;
+      }
+    }
+  }
+  cout << "test finished: " << endl;
+}
+
 void PopFrame::Do_Save_Ecalibr() {
   cout << "Calibration parameters are saved to 'ecalibr.dat'" << endl;
   fEdit->SaveFile("ecalibr.dat");
@@ -487,6 +549,12 @@ void PopFrame::DoENum() {
     break;
   case 37:
     opt.Peak_print = chk->GetState();
+    break;
+  case 901:
+    delay = te->GetNumber();
+    break;
+  case 902:
+    n_iter = te->GetNumber();
     break;
   default:
     ;

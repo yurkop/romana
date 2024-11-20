@@ -36,6 +36,7 @@ enum MENU_COM {
   M_ECALIBR,
   M_TCALIBR,
   M_PEAKS,
+  M_TEST,
   M_HELP,
 };
 

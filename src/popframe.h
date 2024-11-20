@@ -23,7 +23,7 @@ class PopFrame {
 
 public:
 
-  TGLayoutHints *LayLC0,*LayLC2,*LayEE2,*LayBut1,*LayBut2;
+  TGLayoutHints *LayLC0,*LayLC2,*LayEE2,*LayBut1,*LayBut2,*LayBut3;
 
   void* ptr;
 
@@ -50,6 +50,8 @@ public:
   Double_t fwhm;
   Double_t range;
   //Double_t ee[10];
+  Int_t delay;
+  Int_t n_iter;
 
   Float_t E0[MAX_CHTP]; // [emult0]
   Float_t E1[MAX_CHTP]; // [emult]
@@ -69,6 +71,7 @@ public:
   void AddEcalibr(UInt_t w, UInt_t h);
   void AddTcalibr();
   void AddPeaks();
+  void AddTest();
   void DoAdj();
   void DoENum();
   void Do_Save_Ecalibr();
@@ -80,6 +83,7 @@ public:
   void Do_Revert();
   void Do_Tcalibr();
   void Do_TApply();
+  void Do_Test();
 
   void CloseWindow();
   //ClassDef(PopFrame, 0)
