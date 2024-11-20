@@ -64,9 +64,11 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   else if (menu_id==M_PEAKS) {
     AddPeaks();
   }
+#ifdef P_LIBUSB
   else if (menu_id==M_TEST) {
     AddTest();
   }
+#endif
 
   fMain->MapSubwindows();
   fMain->Resize();
@@ -427,6 +429,7 @@ void PopFrame::AddPeaks() {
   */
 }
 
+#ifdef P_LIBUSB
 void PopFrame::AddTest() {
   fMain->SetWindowName("Test");
 
@@ -482,6 +485,7 @@ void PopFrame::Do_Test() {
   }
   cout << "test finished: " << endl;
 }
+#endif
 
 void PopFrame::Do_Save_Ecalibr() {
   cout << "Calibration parameters are saved to 'ecalibr.dat'" << endl;

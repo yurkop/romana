@@ -2173,8 +2173,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
   // 		     "HandleMenu(Int_t)");
   fMenuAnalysis->AddEntry("Peak Search", M_PEAKS);
+#ifdef P_LIBUSB
   fMenuAnalysis->AddEntry("Test", M_TEST);
-
+#endif
 
   fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
 		     "HandleMenu(Int_t)");
@@ -3759,9 +3760,12 @@ void MainFrame::HandleMenu(Int_t menu_id)
     fTab->SetTab("Plots");
     new PopFrame(this,100,600,M_PEAKS);
     break;
+
+#ifdef P_LIBUSB
   case M_TEST:
     new PopFrame(this,100,600,M_TEST);
     break;
+#endif
 
   case M_HELP:
 

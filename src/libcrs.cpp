@@ -294,9 +294,7 @@ static void cback(libusb_transfer *trans) {
 
     //prnt("ss d x x xs;",BGRN,"trf:",itr,gl_sz,trans->buffer-GLBuf,trans->actual_length,RST);
     trans->buffer=next_buf;
-    cout << itr << " trans1: " << trans->actual_length << endl;
     libusb_submit_transfer(trans);
-    cout << itr << " trans2: " << endl;
 
     stat_mut.Lock();
     crs->nbuffers++;
@@ -1323,11 +1321,7 @@ int CRS::SetPar() {
     AllParameters44();
     break;
   case 45:
-  prnt("sss;",BYEL,"Sleep 300",RST);
-  gSystem->Sleep(300); //YK777   
     AllParameters45();
-  prnt("sss;",BYEL,"Sleep 300",RST);
-  gSystem->Sleep(300); //YK777   
     break;
   default:
     cout << "SetPar Error! No module found" << endl;
@@ -1647,9 +1641,6 @@ int CRS::Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
     //cyusb_close();
   }
 
-  //prnt("sss;",BYEL,"Sleep 101",RST);
-  //gSystem->Sleep(101); //YK777   
-
   if (cmd!=7 && cmd!=12) { //сброс USB и Тест
     r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, 0);
     if (r) {
@@ -1671,9 +1662,6 @@ int CRS::Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
   }
   prnt("ssss;",BGRN," :",oss.str().data(),RST);
 #endif
-
-  //prnt("sss;",BYEL,"Sleep 101",RST);
-  //gSystem->Sleep(101); //YK777   
 
   return len_in;
 }
@@ -1712,7 +1700,6 @@ int CRS::Command2(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
   }
 
   len_in=2;
-  len_in=1;
 
   // printf("buf_out:");
   // for (int i=0;i<6;i++) {
@@ -1727,9 +1714,6 @@ int CRS::Command2(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
     cyusb_error(r);
     //cyusb_close();
   }
-
-  //prnt("sss;",BYEL,"Sleep 102",RST);
-  //gSystem->Sleep(102); //YK777   
 
 #ifdef P_CMD
   prnt("ssds;",BRED,"out: ", r, RST);
@@ -1751,9 +1735,6 @@ int CRS::Command2(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
 //   prnt("s s ss;",KRED,"<<",oss.str().data(),RST);
 // #endif
 //   cout << "Command2: " << (int) cmd << " " << r << " after in" << endl;
-
-  //prnt("sss;",BYEL,"Sleep 102",RST);
-  //gSystem->Sleep(102); //YK777   
 
 #ifdef P_CMD
   prnt("ssds;",BRED,"in: ", r, RST);
@@ -2350,21 +2331,23 @@ int CRS::DoStartStop(int rst) {
 	
   if (!b_acq) { //start
 
-    cout << "start: " << rst << endl;
+    //cout << "start: " << rst << endl;
     crs->Free_Transfer();
 #ifdef P_LIBUSB
       prnt("sss;",BYEL,"Sleep 50",RST);
 #endif
     gSystem->Sleep(50);
-    cout << "Free_Transfer() finished" << endl;
+    //cout << "Free_Transfer() finished" << endl;
 
     InitBuf();
-    cout << "InitBuf() finished" << endl;
+    //cout << "InitBuf() finished" << endl;
     crs->Init_Transfer();
-    cout << "Init_Transfer() finished" << endl;
+    //cout << "Init_Transfer() finished" << endl;
 
     DoReset(rst);
+#ifdef P_LIBUSB
     cout << "DoReset() finished" << endl;
+#endif
     if (rst) {
       HiFrm->DoRst();
     }
@@ -2396,15 +2379,16 @@ int CRS::DoStartStop(int rst) {
     prnt("ssds;",BBLU,"cyusb_reset: ",r,RST);
 #endif
 
+#ifdef P_LIBUSB
     auto t1 = std::chrono::system_clock::now();
-    //gSystem->Sleep(2000);
-
-    Submit_all(ntrans);
     auto t2 = std::chrono::system_clock::now();
     std::time_t t_t1 = std::chrono::system_clock::to_time_t(t1);
     std::time_t t_t2 = std::chrono::system_clock::to_time_t(t2);
-
     cout << "Submit_all() finished: " << std::ctime(&t_t1) << " " << std::ctime(&t_t2) << endl;
+#else
+    Submit_all(ntrans);
+#endif
+
     //cout << "Period: " << opt.Period << endl;
     //opt.Period=5; //5ns for CRS module
 
@@ -2442,9 +2426,6 @@ int CRS::DoStartStop(int rst) {
 
     //InitBuf();
 
-  prnt("sss;",BYEL,"Sleep 300",RST);
-  gSystem->Sleep(300); //YK777   
-
     ProcessCrs(rst);
     //ProcessCrs_old();
 
@@ -2468,8 +2449,9 @@ int CRS::DoStartStop(int rst) {
 
     Command2(4,0,0,0);
 #ifdef P_LIBUSB
-      prnt("sss;",BYEL,"Sleep 300",RST);
+    prnt("sss;",BYEL,"Sleep 300",RST);
 #endif
+    prnt("sss;",BYEL,"TODO: Sleep 300",RST);
     gSystem->Sleep(300); //1300 - проблема 3 в АК-32 устраняется
     b_acq=false;
 
@@ -2492,8 +2474,6 @@ void CRS::ProcessCrs(int rst) {
   b_run=1;
   Ana_start();
 
-  prnt("sss;",BYEL,"Sleep 300",RST);
-  gSystem->Sleep(300); //YK777   
   //prnt("ssf d ls;",BBLU,"T_acq: ",opt.T_acq,crs->module,crs->Tstart64,RST);;
   //decode_thread_run=1;
   //tt1[3].Set();
