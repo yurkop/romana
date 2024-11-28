@@ -169,6 +169,7 @@ public:
   Float_t E1[MAX_CHTP]; // [emult]
   Float_t E2[MAX_CHTP]; // [emult2]
   Float_t Bc[MAX_CHTP]; // [bcor]
+  Int_t Pz[MAX_CHTP];
 
   Float_t E_auto; //value for auto energy pre-calibration
   Float_t adj[MAX_CH+NGRP+1][3];

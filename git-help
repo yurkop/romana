@@ -6,6 +6,10 @@ git clone git@github.com:yurkop/romana.git .
 # проверить псевдонимы удаленных репозиториев:
 # git remote -v
 
+добавить новый компьютер для работы с github через ssh:
+https://docs.github.com/ru/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
+или google: "github Создание нового ключа SSH и его добавление в ssh-agent"
+
 Теперь с любого из этих компьютеров можно работать с проектом.
 В начале работы делаем:
 git pull gitromana
@@ -15,9 +19,9 @@ git pull gitromana
 git add -A   (add all new files)
 git commit -a -m '[коментарий к коммиту]'   (commit changes)
 
-git push gitromana master
+git push origin master
 
-gitromana - псевдоним удаленного репозитория
+origin - псевдоним удаленного репозитория
 
 посмотреть историю коммитов:
 git log

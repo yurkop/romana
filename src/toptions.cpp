@@ -344,6 +344,7 @@ Toptions::Toptions() {
     E1[i]=1;
     E2[i]=0;
     Bc[i]=0;
+    Pz[i]=0;
   }
 
   raw_write=false;

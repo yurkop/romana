@@ -80,6 +80,7 @@ vector<const char*> ptip = {
   "Energy calibration 0: E0+E1*x",
   "Energy calibration 1: E0+E1*x",
   "Energy calibration 2: E0+E1*x+E2*x*x",
+  "Pole-Zero correction",
   "Baseline correction",
   "Use channel for group histograms *_g1",
   "Use channel for group histograms *_g2",
@@ -2610,6 +2611,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E0",opt.E0);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E1",opt.E1);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E2",opt.E2);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,99999,"Pz",opt.Pz);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"Bc",opt.Bc);
   for (int i=1;i<=4;i++) {
     sprintf(txt,"g%d",i);

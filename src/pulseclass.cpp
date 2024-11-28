@@ -566,6 +566,10 @@ void PulseClass::PeakAna33() {
     ++crs->errors[ER_BASE];
   }
 
+  if (opt.Pz[Chan]) {
+    PoleZero(opt.Pz[Chan]);
+  }
+
   int nn=0;
   //peak Area & Height
   //Area0=0;
@@ -850,6 +854,27 @@ void PulseClass::Smooth(int nn) {
 
 }
 
+
+void PulseClass::PoleZero(int Pz) {
+  if (sData.size()<2) return;
+
+  Float_t cor = 1. - 1./Pz;
+  //cout << "t64: " << Tstamp64 << " " << Pz << " " << cor << endl;
+
+  Float_t x0,x1 = sData[0]-Base;
+  for (UInt_t i=1;i<sData.size();i++) {
+    x0 = sData[i];
+    //if (i>2000) {
+    Float_t dd = sData[i-1]-x1*cor;
+      // if (Tstamp64==2778120) {
+      // 	cout << "pz: " << i << " " << sData[i] << " " << sData[i-1] << " " << x0
+      // 	     << " " << x1 << " " << dd << endl;
+      // }
+    sData[i]+=dd-Base;
+      //}
+    x1=x0-Base;
+  }
+}
 
 void PulseClass::PrintPulse(int pdata) {
   printf("Pulse: %2d %2d %6ld %10lld %10lld\n",Chan,ptype,sData.size(),Counter,Tstamp64/*-crs->Tstart64*/);

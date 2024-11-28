@@ -1621,6 +1621,7 @@ void saveroot(const char *name) {
   tf->Close();
 }
 
+/*
 int readroot(const char *name) {
   //return 0 - OK; 1 - error
 
@@ -1688,6 +1689,59 @@ int readroot(const char *name) {
   //cout << opt.channels[0] << endl;
   return 0;
 }
+*/
+
+int readroot(const char *name) {
+  //return 0 - OK; 1 - error
+
+  gROOT->cd();
+  TList *list = hcl->allmap_list;
+
+  TFile *tf = new TFile(name,"READ");
+  if (!tf->IsOpen())
+    return 1;
+
+  TIter next(tf->GetListOfKeys());
+
+  TKey *key;
+  TObject *obj;
+  TH1* obj2;
+  while ((key = (TKey*)next())) {
+    obj=key->ReadObj();
+    if (obj->InheritsFrom(TH1::Class())) {
+      //obj->Print();
+      //cout << "obj: " << obj->GetName() << endl;
+      HMap* map = (HMap*) list->FindObject(obj->GetName());
+      if (map) {
+	//cout << "map: " << map->GetName() << endl;
+	//continue;
+	obj2 = map->hst;
+	//printf("%d\n",obj2);
+	// cout << "readroot1: " << obj2 << " " << obj2->GetName() << " "
+	//      << ((TH1*) obj2)->Integral() << endl;
+	TDirectory* dir = obj2->GetDirectory();
+	obj->Copy(*obj2);
+	obj->Delete();
+	obj2->SetDirectory(dir);
+	// cout << "readroot2: " << obj2 << " " << obj2->GetName() << " "
+	//      << ((TH1*) obj2)->Integral() << endl;
+      }
+    }
+      //}
+
+  }
+
+  tf->Close();
+
+  strcpy(mainname,name);
+  if (myM) {
+    myM->SetTitle((char*)name);
+  }
+
+  crs->chan_changed = true;
+
+  return 0;
+}
 
 void clear_hist() {
 
@@ -1713,7 +1767,9 @@ int readpar_root(const char* pname, int ropt)
   if (!f2->IsOpen())
     return 1;
 
-  cpar.Read("Coptions");
+  //f2->GetKey("Coptions");
+  int r1 = cpar.Read("Coptions");
+  cout << "Coptions: " << r1 << " " << f2->GetKey("Coptions") << endl;
   if (ropt)
     opt.Read("Toptions");
 

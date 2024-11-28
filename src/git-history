@@ -1,3 +1,8 @@
+git tag -a v0.896 -m 'Pole-Zero'
+- добавлена поправка Pole-Zero
+- поправлен файл git-help
+- readroot: недоделано
+
 git tag -a v0.895 -m '=v0.893 + Test'
 - откат к предыдущей версии
 - добавлен пункт меню Analysis->Test, работает только с опцией make P_LIBUSB=1

@@ -682,6 +682,7 @@ void HistFrame::Make_Ltree() {
   hcl->dir_list->SetOwner(true);
 
   iMAIN = Item_Ltree(iroot, "MAIN",0,0,0);
+  iMAIN->SetTipText("Main folder");
   for (int cc=1;cc<opt.ncuts;cc++) {
     if (opt.pcuts[cc]) {
       sprintf(cutname,"MAIN_cut%d",cc);
