@@ -1680,7 +1680,7 @@ int readroot(const char *name) {
     //daqpar->AllEnabled(false);
   }
 
-  crs->chan_changed = true;
+  //crs->chan_changed = true;
 
   //strcpy(maintitle,pr_name);
   //strcat(maintitle," ");
@@ -1738,7 +1738,7 @@ int readroot(const char *name) {
     myM->SetTitle((char*)name);
   }
 
-  crs->chan_changed = true;
+  //crs->chan_changed = true;
 
   return 0;
 }
@@ -2306,7 +2306,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   vframe1->AddFrame(fGr1, LayCT1);
 
   fStart = new TGTextButton(fGr1,"Start");
-  fStart->SetToolTipText("Start/Stop acquisition");
+  fStart->SetToolTipText("Start/Stop acquisition;\nreset all histograms");
   fStart->SetFont(tfont,false);
   fStart->Resize(butx,buty);
   fStart->ChangeOptions(fStart->GetOptions() | kFixedSize);
@@ -2315,7 +2315,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fGr1->AddFrame(fStart, LayET1);
 
   fContinue = new TGTextButton(fGr1,"Continue");
-  fContinue->SetToolTipText("Continue/Pause acquisition");
+  fContinue->SetToolTipText("Continue/Pause acquisition\nwithout resetting histograms");
   fContinue->SetFont(tfont14,false);
   fContinue->Resize(butx,buty);
   fContinue->ChangeOptions(fContinue->GetOptions() | kFixedSize);
@@ -3206,10 +3206,12 @@ void MainFrame::DoReset() {
 
   ErrFrm->Reset();
   //if (crs->nchan_on != crs->CountChan()) {
-  if (crs->chan_changed) {
-    HiFrm->HiReset();
-    crs->chan_changed = false;
-  }
+
+  HiFrm->HiReset();
+  // if (crs->chan_changed) {
+  //   HiFrm->HiReset();
+  //   crs->chan_changed = false;
+  // }
   parpar->Update();
   chanpar->Update();
 

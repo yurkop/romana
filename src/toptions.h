@@ -113,8 +113,12 @@ public:
   Long64_t F_stop; //stop of the acquisition (usually time of last modification of file)
 
   //Int_t Thr2; // lower threshold for trig 3,4 T = –2048 .. +2047
+
+  UChar_t device[4] = {}; // device_code, Serial_n, nplates, ver_po
+
 public:
   void InitPar(int zero);
+  std::string GetDevice(int module);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t crs_ch, Int_t &par, Int_t &min, Int_t &max);
   Int_t ChkLen(Int_t i, Int_t module);
 

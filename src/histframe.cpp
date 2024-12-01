@@ -2694,7 +2694,7 @@ void HistFrame::DoRst() {
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     HMap* map = (HMap*) obj;
-    if (map->hst->GetEntries() > 0) {
+    if (map->hst->GetEntries() || map->hst->Integral()) {
       map->hst->Reset();
       //map->Nent=0;
     }

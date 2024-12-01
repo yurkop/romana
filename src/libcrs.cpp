@@ -1115,10 +1115,18 @@ int CRS::Detect_device() {
   sz = Command32(1,0,0,0);
   sz = Command32(1,0,0,0); //не помню, зачем вызывать 2 раза (?)
 
+  memcpy(cpar.device,buf_in+1,4);
+
+  Short_t nplates=buf_in[3];
+  Short_t ver_po=buf_in[4];
+
+  /*
   Short_t device_code=buf_in[1];
   Short_t Serial_n=buf_in[2];
   Short_t nplates=buf_in[3];
   Short_t ver_po=buf_in[4];
+
+  cout << "!!!! module: " << module << " " << cpar.GetDevice(module) << endl;
 
   //cout << "Info: " << sz << endl;
   cout << "Device code: " << device_code << endl;
@@ -1126,6 +1134,7 @@ int CRS::Detect_device() {
   cout << "Number of working plates: " << nplates << endl;
   cout << "Firmware version: " << ver_po << endl;
   //cout << "PO version: " << int(buf_in[4]) << endl;
+  */
 
   //for (int i=0;i<sz;i++) {
   //cout << int(buf_in[i]) << " ";
@@ -1133,7 +1142,7 @@ int CRS::Detect_device() {
   //cout << endl;
   int nch2=0;
 
-  switch (device_code) {
+  switch (cpar.device[0]) {
   case 1: //crs-32
   case 2: //crs-6/16
   case 3: //crs-16 or crs-2
@@ -1156,15 +1165,13 @@ int CRS::Detect_device() {
     chan_in_module=nplates*4;
     if (ver_po==1) {//версия ПО=1
       for (int i=0;i<nplates;i++) {
-	cout << "Channels(" << i << "):";
+	//cout << "Channels(" << i << "):";
 	for (int j=0;j<4;j++) {
 	  cpar.crs_ch[i*4+j]=0;
-	  //type_ch[i*4+j]=0;
-	  cout << " " << cpar.crs_ch[i*4+j];
+	  //cout << " " << cpar.crs_ch[i*4+j];
 	  nch2++;
 	}
-	cout << endl;
-	//cout << i << " " << sz << endl;
+	//cout << endl;
       }
     }
     else {//версия ПО=2 или выше
@@ -1172,16 +1179,14 @@ int CRS::Detect_device() {
       sz = Command32(10,0,0,0);
       sz--;
       for (int i=0;i<nplates;i++) {
-	cout << "Channels(" << i << "):";
+	//cout << "Channels(" << i << "):";
 	for (int j=0;j<4;j++) {
 	  cpar.crs_ch[i*4+j]=buf_in[sz];
-	  //type_ch[i*4+j]=buf_in[sz];
-	  cout << " " << cpar.crs_ch[i*4+j];
+	  //cout << " " << cpar.crs_ch[i*4+j];
 	  nch2++;
 	}
-	cout << endl;
+	//cout << endl;
 	sz--;
-	//cout << i << " " << sz << endl;
       }
       if (ver_po==3) {//версия ПО=3
 	module=33;
@@ -1237,16 +1242,14 @@ int CRS::Detect_device() {
     sz--;
 
     for (int i=0;i<nplates;i++) {
-      cout << "Channels(" << i << "):";
+      //cout << "Channels(" << i << "):";
       for (int j=0;j<4;j++) {
 	cpar.crs_ch[i*4+j]=20+buf_in[sz];
-	//type_ch[i*4+j]=buf_in[sz];
-	cout << " " << cpar.crs_ch[i*4+j];
+	//cout << " " << cpar.crs_ch[i*4+j];
 	nch2++;
       }
-      cout << endl;
+      //cout << endl;
       sz--;
-      //cout << i << " " << sz << endl;
     }
     
     //exit(-1);
@@ -1265,7 +1268,8 @@ int CRS::Detect_device() {
     cpar.Len[i]=cpar.ChkLen(i,module);
   }
   
-  cout << "module: " << module << " chan_in_module: " << chan_in_module << endl;
+  //cout << "module: " << module << " chan_in_module: " << chan_in_module << endl;
+  prnt("ssd ss;",BGRN,"Module: ",module, cpar.GetDevice(module).c_str(), RST);
 
   if (module>=22)
     Fmode=1;
@@ -1402,14 +1406,14 @@ void CRS::Submit_all(int ntr) {
 void CRS::Cancel_all(int ntr) {
   //gSystem->Sleep(2300);
   for (int i=0;i<ntr;i++) {
-    //int res;
     if (transfer[i]) {
-      int res = 
-	libusb_cancel_transfer(transfer[i]);
 #ifdef P_LIBUSB
+      int res = libusb_cancel_transfer(transfer[i]);
       prnt("ssd ds;",BBLU,"libusb_cancel_transfer: ", i, res, RST);
       if (res)
 	cout << libusb_error_name(res) << ": " << i << endl;
+#else
+      libusb_cancel_transfer(transfer[i]);
 #endif
       //cout << i << " Cancel: " << res << endl;
     }
@@ -1483,7 +1487,7 @@ int CRS::Init_Transfer() {
     cout << i << " Cancel: " << res << endl;
     }
   */
-  cout << "Number of transfers: " << ntrans << endl;
+  //cout << "Number of transfers: " << ntrans << endl;
 
   if (ntrans!=MAXTRANS) {
     for (int i=ntrans;i<MAXTRANS;i++) {
@@ -2373,17 +2377,25 @@ int CRS::DoStartStop(int rst) {
     //}
 		
     // YK 29.09.20
-    int r=
-    cyusb_reset_device(cy_handle);
 #ifdef P_LIBUSB
+    int r=cyusb_reset_device(cy_handle);
     prnt("ssds;",BBLU,"cyusb_reset: ",r,RST);
+#else
+    // YK 29.09.20
+    cyusb_reset_device(cy_handle);
 #endif
+
+    if (rst && crs->module>=32 && crs->module<=70) {
+      Command32(8,0,0,0); //сброс сч./буф.
+      //Command32(9,0,0,0); //сброс времени
+    }
 
 #ifdef P_LIBUSB
     auto t1 = std::chrono::system_clock::now();
     auto t2 = std::chrono::system_clock::now();
     std::time_t t_t1 = std::chrono::system_clock::to_time_t(t1);
     std::time_t t_t2 = std::chrono::system_clock::to_time_t(t2);
+    Submit_all(ntrans);
     cout << "Submit_all() finished: " << std::ctime(&t_t1) << " " << std::ctime(&t_t2) << endl;
 #else
     Submit_all(ntrans);
@@ -2477,11 +2489,14 @@ void CRS::ProcessCrs(int rst) {
   //prnt("ssf d ls;",BBLU,"T_acq: ",opt.T_acq,crs->module,crs->Tstart64,RST);;
   //decode_thread_run=1;
   //tt1[3].Set();
+
+
   if (rst && crs->module>=32 && crs->module<=70) {
-    Command32(8,0,0,0); //сброс сч./буф.
+    //Command32(8,0,0,0); //сброс сч./буф.
     Command32(9,0,0,0); //сброс времени
   }
   Command2(3,0,0,0);
+
   while (!crs->b_stop) {
     if (!batch) {
       Show();
@@ -2719,6 +2734,13 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
       }
       cout << "opt.Period from file: " << opt.Period << endl;
       cout << "Git version from file: " << opt.gitver << endl;
+
+      // update Dsp/dsp if file version is earlier than v0.870
+      // только если файл открывается впервые (oname!=0)
+      if (oname && string(opt.gitver).compare("v0.892")<0) {
+	memcpy(opt.Dsp,opt.dsp,sizeof(opt.dsp));
+      }
+  
     }
     else if (tp==2) { //Ortec Lis
       //cout << "Ortec Lis File: " << Fname << endl;
@@ -2746,7 +2768,8 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
     //daqpar->AllEnabled(false);
   }
 
-  prnt("ssssds;",BGRN,"File: ",Fname,"  Module: ",module,RST);
+  prnt("ssssd ss;",BGRN,"File: ",Fname," Module: ",module,
+       cpar.GetDevice(module).c_str(), RST);
 
   return 0;
 } //DoFopen
@@ -2841,11 +2864,6 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   //int cm = string(opt.gitver).compare("v0.870");
   //cout << opt.gitver << " " << cm << endl;
 
-  //update Dsp/dsp if file version is earlier than v0.870
-  if (string(opt.gitver).compare("v0.892")<0) {
-    memcpy(opt.Dsp,opt.dsp,sizeof(opt.dsp));
-  }
-  
   Make_prof_ch();
   Text_time("S:",cpar.F_start);
 
@@ -3182,7 +3200,7 @@ void CRS::InitBuf() {
 
     gl_sz = opt.usb_size;
     gl_sz *= 1024*MAXTRANS*gl_Nbuf;
-    cout << "gl_sz: " << opt.usb_size << " " << gl_sz/MB << " MB" << endl;
+    //cout << "gl_sz: " << opt.usb_size << " " << gl_sz/MB << " MB" << endl;
     GLBuf2 = new UChar_t[gl_sz+gl_off];
     memset(GLBuf2,0,gl_sz+gl_off);
     GLBuf=GLBuf2+gl_off;
@@ -3207,7 +3225,7 @@ void CRS::InitBuf() {
     }
   }
 
-  cout << "GLBuf size: " << (gl_sz+gl_off)/1024 << " kB" << endl;
+  //cout << "GLBuf size: " << (gl_sz+gl_off)/1024 << " kB" << endl;
   //cout << "GLBuf size2: " << gl_sz << " " << gl_off << endl;
 
 }
@@ -3713,7 +3731,7 @@ void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
       //find frmt==0 -> this is the start of a pulse
       frmt = (GLBuf[i+6] & 0xF0);
       if (frmt==0) {
-	Long64_t len = b_end[ibuf]-i;
+	//Long64_t len = b_end[ibuf]-i;
 	b_end[ibuf]=i;
 	b_start[ibuf2]=i;
         // prnt("ss2d2d2d 9d 9d 4d2ds;",KGRN,"FindL:",gl_iread, loc_ibuf, ibuf,
@@ -4044,8 +4062,8 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
   Dec_Init(Blist,!frmt);
   PulseClass pls=good_pulse;
   PulseClass* ipls=&pls;
-  static Long64_t Tst;
-  static UChar_t Spn;
+  //static Long64_t Tst;
+  //static UChar_t Spn;
   ULong64_t* Buf8;
 
   //prnt("sl;","d79: ",nevents);
@@ -5699,7 +5717,7 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
       nev++;
       // вставляем новое пустое событие
       evt = &*Blist->insert(Blist->end(),EventClass());
-      UInt_t* t32 = (UInt_t*) &evt->Tstmp;
+      //UInt_t* t32 = (UInt_t*) &evt->Tstmp;
 
       //evt->Tstmp = 11111111111;
       // cout << "ttxx: " << hex << evt->Tstmp << " " << t32[0] << " "

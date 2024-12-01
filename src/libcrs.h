@@ -299,7 +299,7 @@ RQ_OBJECT("CRS")
   //const Int_t ING_9=10000;  
   const Int_t PROF_64=1000000;
 
-  bool chan_changed = false;
+  //bool chan_changed = false;
   //--------functions---------
 
   //void Dummy_trd();

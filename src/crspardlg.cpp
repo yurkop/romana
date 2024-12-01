@@ -441,9 +441,9 @@ void ParDlg::DoChk(Bool_t on) {
   Int_t id = ((TGCheckButton*) gTQSender)->WidgetId();
   Pmap pp = Plist[id-1];
 
-  if (pp.data==&cpar.on) {
-    crs->chan_changed=true;
-  }
+  // if (pp.data==&cpar.on) {
+  //   crs->chan_changed=true;
+  // }
 
   SetChk(pp,pp.off,on);
   UpdateField(id-1);
