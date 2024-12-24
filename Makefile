@@ -5,6 +5,7 @@
 # make cyusblib : compile and install cyusb library (need root password)
 # make r2a : compile r2a (root2ascii)
 
+# make NOUSB=1 compile without cyusb library
 # make TPROC=1 compile with TPROC option
 #      TPROC -> cpu usage in FillHist, only in singlethread
 # make TIMES=1 compile with TIMES option
@@ -80,12 +81,15 @@ LDFLAGS += -lz
 #SVNVER=\"$(shell svnversion)\"
 
 ifneq ("$(wildcard /usr/local/lib/libcyusb.so)","")
+ifndef NOUSB
 CYUSB_LIB = 1
+endif
 endif
 
 ifdef CYUSB_LIB
+RFLAGS = -DCYUSB=1
 CPPFLAGS += -DCYUSB=1
-LDFLAGS += -l cyusb -l usb-1.0
+LDFLAGS += -DCYUSB=1 -l cyusb -l usb-1.0
 endif
 
 PROG=romana
@@ -126,10 +130,10 @@ $(OBJ_D)/%.o: $(SRC_D)/%.cpp
 
 ifeq ($(VER2),5.) # root 5
 $(OBJ_D)/romdict.cpp: $(SRC_D)/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
-	rootcint -f $(OBJ_D)/romdict.cpp -c -p $(SRC_D)/$(PROG).h $(SRC_D)/popframe.h $(SRC_D)/LinkDef.h
+	rootcint $(RFLAGS) -f $(OBJ_D)/romdict.cpp -c -p $(SRC_D)/$(PROG).h $(SRC_D)/popframe.h $(SRC_D)/LinkDef.h
 else # root 6+
 $(OBJ_D)/romdict.cpp: $(SRC_D)/LinkDef.h $(SRC_D)/*.h Makefile #$(LIB_D)/*.h
-	rootcling -f $(OBJ_D)/romdict.cpp -s romana.pcm $(SRC_D)/$(PROG).h $(SRC_D)/popframe.h $(SRC_D)/LinkDef.h
+	rootcling $(RFLAGS) -f $(OBJ_D)/romdict.cpp -s romana.pcm $(SRC_D)/$(PROG).h $(SRC_D)/popframe.h $(SRC_D)/LinkDef.h
 endif
 
 $(OBJ_D)/romdict.o: $(OBJ_D)/romdict.cpp
@@ -155,10 +159,10 @@ gz_header: utils/gz_header.cpp $(OBJ_D)/headerdict.cpp
 
 ifeq ($(VER2),5.) # root 5
 $(OBJ_D)/paramdict.cpp: utils/param.h utils/LinkDef.h
-	rootcint -f $(OBJ_D)/paramdict.cpp -c -p utils/param.h utils/LinkDef.h
+	rootcint $(RFLAGS) -f $(OBJ_D)/paramdict.cpp -c -p utils/param.h utils/LinkDef.h
 else # root 6+
 $(OBJ_D)/paramdict.cpp: utils/param.h utils/LinkDef.h
-	rootcling -f $(OBJ_D)/paramdict.cpp -s param.pcm -p utils/param.h utils/LinkDef.h
+	rootcling $(RFLAGS) -f $(OBJ_D)/paramdict.cpp -s param.pcm -p utils/param.h utils/LinkDef.h
 endif
 
 param: $(OBJ_D)/paramdict.cpp utils/param.cpp $(SRC_D)/toptions.cpp

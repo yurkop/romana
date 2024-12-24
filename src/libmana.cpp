@@ -92,6 +92,7 @@ Pixel_t fRed;
 Pixel_t fCyan;
 Pixel_t fMagenta;
 Pixel_t fOrng;
+Pixel_t fOrng2;
 Pixel_t fBlue;
 Pixel_t fRed10;
 
@@ -237,8 +238,8 @@ void print_var(int tp, TDataMember *dm, TString vname, TString memname, int len=
       prnt("ssd d dss",BMAG,"[",len2,len,dm->GetMaxIndex(0),"]",col);      
     }
     int tt=dm->GetDataType()->GetType();
-    const char* nn = dm->GetDataType()->GetTypeName();
-    prnt(" d ss;",tt,nn,RST);
+    TString nn = TString(dm->GetDataType()->GetTypeName());
+    prnt(" d ss;",tt,nn.Data(),RST);
   }
   else { //не найдено
     col=BRED;
@@ -1086,10 +1087,6 @@ int main(int argc, char **argv)
   hcl = new HClass();
   crs = new CRS();
 
-  // #ifdef CYUSB
-  //   crs->Detect_device();
-  // #endif
-
 #ifdef LINUX
   if (getcwd(startdir,150)) {
     strcat(startdir,"/");
@@ -1108,7 +1105,8 @@ int main(int argc, char **argv)
     "-u: reset USB after detecting device\n"
     "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
-    "-m module: set module type (see Expert -> module); assume input file without header\n"
+    "-n module: skip header when opening file (assuming file is without header); set module number\n"
+    "-m name: select module/device name (if several devices are connected)\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
     "-b [filename]: analyze file in batch mode (without gui) and exit\n"
     "   Data are saved in filename[.raw/.dec/.root] depending on batch parameters\n"
@@ -1136,7 +1134,7 @@ int main(int argc, char **argv)
   strcpy(pr_name,argv[0]);
   //strcpy(maintitle,pr_name);
 
-  crs->abatch=true; //default: acquisition (for detect_device)
+  crs->abatch=true; //default: acquisition (for detect_device) - obsolete?
 
   listpar.clear();
   //listshow.clear();
@@ -1157,7 +1155,7 @@ int main(int argc, char **argv)
 	case 'u': //reset usb
 	  b_resetusb=true;
 	  continue;
-	case 'm': //module
+	case 'n': //module, noheader
 	  crs->b_noheader=true;
 
 	  ++i;
@@ -1170,6 +1168,15 @@ int main(int argc, char **argv)
 	    }
 	  }
 	  cout << "modl: " << crs->module << endl;
+
+	  continue;
+	case 'm': //module (device name)
+	  ++i;
+
+	  if (i<argc) {
+	    crs->devname = new TString(argv[i]);
+	  }
+	  //cout << "dev: " << crs->devname << endl;
 
 	  continue;
 	case 'a': //acquisition in batch
@@ -1296,9 +1303,6 @@ int main(int argc, char **argv)
   }
 
 
-
-
-
   //сначала читаем -p parfile2
   //потом читаем параметры из datfname - если parfile2 был считан, то из datfname читаем только cpar
   //в конце переписываем cpar.on из parfile2 если они были считаны
@@ -1380,7 +1384,6 @@ int main(int argc, char **argv)
 
   //cout << "detect: " << crs->abatch << " " << endl;
 
-  int ret=1;
 #ifdef CYUSB
   if (crs->abatch) {
     if (crs->Fmode!=2 && !rd_root) {
@@ -1389,7 +1392,7 @@ int main(int argc, char **argv)
       bool w = opt.raw_write;
       opt.directraw=1;
       opt.raw_write=0;
-      ret=crs->Detect_device();
+      crs->Open_USB();
       if (b_resetusb)
 	crs->DoResetUSB();
       opt.directraw=d;
@@ -1397,6 +1400,12 @@ int main(int argc, char **argv)
     }
   }
 #endif
+
+  //int ret=1;
+
+// #ifdef CYUSB
+//   crs->Open_USB();
+// #endif
 
   //batch loop
   EvtFrm = 0;
@@ -1406,10 +1415,10 @@ int main(int argc, char **argv)
       exit(0);
     }
 
-    if (crs->abatch && ret) {
-      cout << "Device is not connected. Exiting..." << endl;
-      exit(0);
-    }
+    // if (crs->abatch && ret) {
+    //   cout << "Device is not connected. Exiting..." << endl;
+    //   exit(0);
+    // }
 
     if (batch_fname) {
       strcpy(opt.Filename,batch_fname);
@@ -1434,6 +1443,12 @@ int main(int argc, char **argv)
     }
 
     if (crs->abatch) {
+      if (crs->ndev!=1) {
+	prnt("ss ds;",BRED,"Number of connected devices:",crs->cy_list.size(),RST);
+	exit(-1);
+      }
+      crs->Init_device();
+
       prnt("sss;",BGRN,"Starting in batch mode.",RST);
       //prnt("ssss;",BGRN,"File = ",opt.Filename,RST);
       prnt("ssss;",BGRN,"Output file: ",opt.Filename,RST);
@@ -1499,7 +1514,7 @@ int main(int argc, char **argv)
 
   //memcpy(buf2,buf[0],BSIZE);
 
-}
+} //main
 
 void SplitFilename (string str, string &folder, string &name)
 {
@@ -1741,7 +1756,7 @@ int readroot(const char *name) {
   //crs->chan_changed = true;
 
   return 0;
-}
+} //readroot
 
 void clear_hist() {
 
@@ -1768,8 +1783,9 @@ int readpar_root(const char* pname, int ropt)
     return 1;
 
   //f2->GetKey("Coptions");
-  int r1 = cpar.Read("Coptions");
-  cout << "Coptions: " << r1 << " " << f2->GetKey("Coptions") << endl;
+  //int r1 =
+  cpar.Read("Coptions");
+  //cout << "Coptions: " << r1 << " " << f2->GetKey("Coptions") << endl;
   if (ropt)
     opt.Read("Toptions");
 
@@ -2096,7 +2112,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fBlue = TColor::RGB2Pixel(135,92,231);
   fRed10=gROOT->GetColor(kPink-9)->GetPixel();
 
-  Pixel_t fOrng2 = TColor::RGB2Pixel(230,139,70);
+  fOrng2 = TColor::RGB2Pixel(230,139,70);
 
   fCol[0] = fYellow; // 1
   fCol[1] = fGreen;  // 2
@@ -2116,16 +2132,16 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //   gcol[i]=gROOT->GetColor(chcol[i])->GetPixel();
   // }
 
-  TGLayoutHints* LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,5,2);
-  TGLayoutHints* LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
-  TGLayoutHints* LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
-  TGLayoutHints* LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
-  TGLayoutHints* LayET1a = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,0);
-  TGLayoutHints* LayET1b = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,5);
-  TGLayoutHints* LayET2=new TGLayoutHints(kLHintsExpandX|kLHintsTop,15,15,2,2);
-  TGLayoutHints* LayET3 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,15);
-  //TGLayoutHints* LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
-  TGLayoutHints* LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
+  LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,5,2);
+  LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
+  LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
+  LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
+  LayET1a = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,0);
+  LayET1b = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,5);
+  LayET2=new TGLayoutHints(kLHintsExpandX|kLHintsTop,15,15,2,2);
+  LayET3 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,15);
+  //LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
+  LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
   LayEE1 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
   LayEE2 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,3,3);
 
@@ -2182,15 +2198,16 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Export...", M_EXPORT);
   fMenuFile->AddSeparator();
-  fMenuFile->AddEntry("Browser\tCtrl+B", M_FILE_BROWSE);
+  fMenuFile->AddEntry("Root Browser\tCtrl+B", M_FILE_BROWSE);
   fMenuFile->AddEntry("Reset USB", M_RESET_USB);
+  fMenuFile->AddEntry("Detect device", M_DETECT_DEV);
   //fMenuFile->AddEntry("New Canvas\tCtrl+N", M_FILE_NEWCANVAS);
 
   //fMenuFile->AddEntry("&Open...", M_FILE_OPEN);
   //fMenuFile->AddEntry("&Save", M_FILE_SAVE);
 
   fMenuFile->AddSeparator();
-  fMenuFile->AddEntry("E&xit", M_FILE_EXIT);
+  fMenuFile->AddEntry("E&xit", M_EXIT);
 
   //fMenuFile->AddPopup("&Cascaded menus", fCascadeMenu);
   fMenuFile->Connect("Activated(Int_t)", "MainFrame", this,
@@ -2228,7 +2245,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuAnalysis->AddEntry("Time calibration", M_TCALIBR);
   // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
   // 		     "HandleMenu(Int_t)");
-  fMenuAnalysis->AddEntry("Peak Search", M_PEAKS);
+  fMenuAnalysis->AddEntry("Peak Search Parameters", M_PEAKS);
 #ifdef P_LIBUSB
   fMenuAnalysis->AddEntry("Test", M_TEST);
 #endif
@@ -2258,6 +2275,48 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   //fMain = new TGMainFrame(p,w,h);
 
+  // build->
+  fTab=0;
+
+  // cout << "idev: " << crs->idev << " " << crs->cy_list.size() << endl;
+  // for (auto i=crs->cy_list.begin();i!=crs->cy_list.end();++i) {
+  //   cout << "list: " << *i << endl;
+  // }
+
+  //Open_USB уже вызван в main
+  switch (crs->ndev) {
+  case 1:
+#ifdef CYUSB
+    crs->Init_device();
+#endif
+    //no break;
+  case 0:
+    Build();
+    break;
+  default:
+    new PopFrame(this,1,1,M_DEVICE);
+  }
+
+  
+
+  //new PopFrame(this,1,1,M_DEVICE);
+
+
+}
+
+MainFrame::~MainFrame() {
+  delete fTimer;
+}
+
+void MainFrame::Build() {
+
+  if (fTab) { // mainframe already exists
+    EnableBut(fGr1,crs->Fmode==1);
+    SetTitle(mainname);
+    DoReset();
+    return;
+  }
+
   // Create a vertical frame for everything
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this);
   AddFrame(hframe1, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
@@ -2281,7 +2340,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //cout << "Font: " << font << endl;
   //font->Print();
 
-
   if (!font)
     font = gClient->GetResourcePool()->GetDefaultFont();
   if (!font14)
@@ -2290,7 +2348,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   FontStruct_t tfont = font->GetFontStruct();
   FontStruct_t tfont14 = font14->GetFontStruct();
 
-
   fTab = new TGTab(hframe1, 300, 300);
   hframe1->AddFrame(fTab, new TGLayoutHints(kLHintsExpandX |
 					    kLHintsExpandY,3,3,2,2));
@@ -2298,6 +2355,13 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fTab->Connect("Selected(Int_t)", "MainFrame", this, "DoTab(Int_t)");
 
   MakeTabs();
+
+  if (rd_root) {
+    if (readroot(datfname))
+      exit(-1);
+    crs->Fmode=0;
+    //SetTitle(datfname);
+  }
 
   const int butx=70,buty=30;
 
@@ -2435,13 +2499,16 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 	
   vframe1->AddFrame(ver,new TGLayoutHints(kLHintsBottom|kLHintsCenterX,0,0,0,4));
 
+  /*
   if (rd_root) {
     if (readroot(datfname))
       exit(-1);
     crs->Fmode=0;
     //SetTitle(datfname);
   }
+  */
 
+  /*
   if (crs->Fmode!=1) { //no CRS present
     //daqpar->AllEnabled(false);
     EnableBut(fGr1,0);
@@ -2449,6 +2516,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     //fStart->SetEnabled(false);
     //fContinue->SetEnabled(false);
   }
+  */
 
   //EnableBut(fGr1,1);
   //EnableBut(fGr2,1);
@@ -2541,7 +2609,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     }
 
   }
-	
+
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
 
   UpdateTimer(1);
@@ -2553,10 +2621,17 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   //Rebuild();
   // Map all subwindows of main frame
 
+
   MapSubwindows();
   // Initialize the layout algorithm
   //Rebuild();
-  Resize(GetDefaultSize());
+
+  //TGDimension dd = GetDefaultSize();
+  //cout << "dd: " << dd.fWidth << " " << dd.fHeight << endl;
+  //Resize(GetDefaultSize());
+
+  //Resize(954,694);
+  Resize(956,694);
   // Map main frame
   MapWindow();
 
@@ -2565,14 +2640,12 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   Move(-100,-100);
 
-  fTimer->TurnOn();
-  //p_ed=0;
-  //p_pop=0;
-}
 
-MainFrame::~MainFrame() {
-  delete fTimer;
-}
+  fTimer->TurnOn();
+
+  EnableBut(fGr1,crs->Fmode==1);
+
+} //Build
 
 void MainFrame::Rebuild() {
 
@@ -2583,6 +2656,13 @@ void MainFrame::Rebuild() {
     fTab->RemoveTab();
   }
   tabfr.clear();
+
+  //delete parpar; parpar=0;
+  //delete chanpar; chanpar=0;
+  //delete EvtFrm;
+  //delete histpar;
+  //delete HiFrm;
+  //delete ErrFrm;
 
   MakeTabs(true);
 
@@ -2658,7 +2738,6 @@ void MainFrame::MakeTabs(bool reb) {
   // prtime("tab03",1,BGRN);
   // TThread *tr3 = new TThread("tr3", run_build, (void*) 3);
   // tr3->Run();
-
 
   chanpar->Build();
   chanpar->Update();
@@ -2849,7 +2928,7 @@ void MainFrame::DoOpen(Int_t popt) {
 
 void MainFrame::DoClose() {
 
-  if (!crs->b_stop) return;
+  if (!crs->b_stop || crs->Fmode!=2) return;
 
   if (crs->f_read) {
     gzclose(crs->f_read);
@@ -2863,20 +2942,33 @@ void MainFrame::DoClose() {
   chanpar->Update();
 
 #ifdef CYUSB
-  crs->Detect_device();
+  crs->Open_USB();
+  switch (crs->ndev) {
+  case 1:
+    crs->Init_device();
+  case 0:
+      Build();
+    break;
+  default:
+    new PopFrame(this,1,1,M_DEVICE);
+  }
+
+  /*  
   if (crs->Fmode==1) { //CRS is present
-    fStart->SetEnabled(true);
-    fContinue->SetEnabled(true);
+    EnableBut(fGr1,1);
+    //fStart->SetEnabled(true);
+    //fContinue->SetEnabled(true);
     //fReset->SetEnabled(true);
 
     //opt.raw_write=false;
     //parpar->Update();
-    /*
-      TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
-      if (te) 
-      te->SetEnabled(true);
-    */
+
+      // TGCheckButton *te = (TGCheckButton*) parpar->FindWidget(&opt.raw_write);
+      // if (te) 
+      // te->SetEnabled(true);
+
   }
+  */
 #endif
 
 }
@@ -3709,14 +3801,15 @@ void MainFrame::HandleMenu(Int_t menu_id)
   char command[128];
   int status;
 
-  if (!crs->b_stop && menu_id!=M_HELP) {
+  if (!crs->b_stop) {
     switch (menu_id) {
     case M_READINIT:
     case M_SAVEINIT:
     case M_SAVEROOT:
     case M_READROOT:
     case M_RESET_USB:
-    case M_FILE_EXIT:
+    case M_DETECT_DEV:
+    case M_EXIT:
       return;
     default:
       break;
@@ -3755,6 +3848,9 @@ void MainFrame::HandleMenu(Int_t menu_id)
     break;
   case M_RESET_USB:
     crs->DoResetUSB();
+    break;
+  case M_DETECT_DEV:
+    crs->DoDetectDev();
     break;
   case M_EXPORT:
     Export();
@@ -3836,7 +3932,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
     break;
 
-  case M_FILE_EXIT:
+  case M_EXIT:
     DoExit();   // terminate theApp no need to use SendCloseMessage()
     break;
   }

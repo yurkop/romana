@@ -118,7 +118,7 @@ public:
 
 public:
   void InitPar(int zero);
-  std::string GetDevice(int module);
+  std::string GetDevice(int module, int opt=1);
   void GetPar(const char* name, Int_t module, Int_t i, Int_t crs_ch, Int_t &par, Int_t &min, Int_t &max);
   Int_t ChkLen(Int_t i, Int_t module);
 

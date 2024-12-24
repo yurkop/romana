@@ -8,6 +8,7 @@
 #include <TGNumberEntry.h>
 #include <TGTextEdit.h>
 #include <TPolyLine.h>
+#include <TGListBox.h>
 
 // class Calibr_Lines {
 // };
@@ -23,12 +24,15 @@ class PopFrame {
 
 public:
 
-  TGLayoutHints *LayLC0,*LayLC2,*LayEE2,*LayBut1,*LayBut2,*LayBut3;
+  TGLayoutHints *LayLC0,*LayLC2,*LayCC3,*LayCC4,*LayEE2,*LayCB1,
+    *LayBut1,*LayBut2,*LayBut3;
 
   void* ptr;
 
   TGTransientFrame *fMain;   // main frame of this widget
   TGTextEdit       *fEdit;   // text edit widget
+
+  TGListBox *fListBox;
 
   TList chklist;
 
@@ -71,6 +75,9 @@ public:
   void AddEcalibr(UInt_t w, UInt_t h);
   void AddTcalibr();
   void AddPeaks();
+#ifdef CYUSB
+  void AddDevice();
+#endif
   void AddTest();
   void DoAdj();
   void DoENum();

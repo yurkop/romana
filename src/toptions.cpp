@@ -65,27 +65,27 @@ void Coptions::InitPar(int zero) {
 
 }
 
-std::string Coptions::GetDevice(int module) {
+std::string Coptions::GetDevice(int module, int opt) {
   string res;
   if (device[0]) {
     switch (device[0]) {
     case 1: //crs-32
-      res="crs-32";
+      res="CRS-32";
       break;
     case 2: //crs-6/16
-      res="crs-6/16";
+      res="CRS-6/16";
       break;
     case 3: //crs-16 or crs-2
       if (device[3]==0) // -> crs2
-	res="crs-2";
+	res="CRS-2";
       else
-	res="crs-16";
+	res="CRS-16";
       break;
     case 4: //crs-8/16
-      res="crs-8";
+      res="CRS-8";
       break;
     case 5: //crs-128
-      res="crs-128";
+      res="CRS-128";
       break;
     case 6: //AK-32
       res="AK-32";
@@ -94,9 +94,14 @@ std::string Coptions::GetDevice(int module) {
       res="unknown";
       break;
     }
-    res+=" S/N:"+std::to_string(device[1]);
-    res+=" Npl:"+std::to_string(device[2]);
-    res+=" Ver:"+std::to_string(device[2]);
+
+    if (device[1]>0)
+      res+="_N"+std::to_string(device[1]);
+
+    if (opt) {
+      res+=" Npl:"+std::to_string(device[2]);
+      res+=" Ver:"+std::to_string(device[2]);
+    }
   } //device[0]
   else {
     switch (module) {
@@ -108,26 +113,26 @@ std::string Coptions::GetDevice(int module) {
       break;
     case 2:
     case 22:
-      res="crs-2";
+      res="CRS-2";
       break;
     case 32:
     case 33:
     case 34:
     case 35:
     case 36:
-      res="crs-32";
+      res="CRS-32";
       break;
     case 41:
     case 42:
     case 43:
     case 44:
-      res="crs-8";
+      res="CRS-8";
       break;
     case 51:
     case 52:
     case 53:
     case 54:
-      res="crs-128";
+      res="CRS-128";
       break;
     case 45:
       res="AK-32";
@@ -137,8 +142,10 @@ std::string Coptions::GetDevice(int module) {
       break;
     }
   }
-  
-  res ="Device: "+res;
+
+  if (opt)
+    res ="Device: "+res;
+
   return res;
 }
 		      

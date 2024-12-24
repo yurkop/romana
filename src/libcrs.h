@@ -1,6 +1,10 @@
 #ifndef crs_H
 #define crs_H 1
 
+#ifdef CYUSB
+#include "cyusb.h"
+#endif
+
 //#include <pthread.h>
 //#include <libusb-1.0/libusb.h>
 #include <stdlib.h>
@@ -304,11 +308,22 @@ RQ_OBJECT("CRS")
 
   //void Dummy_trd();
 
+  void DoDetectDev();
   void DoResetUSB();
 
   //---CRS
+  short idev; // номер девайса в cyusb [0,1,2...].
+              //Если =-1 -> номер девайса еще не выбран
+  short ndev;
+  vector<string> cy_list; // список имен ВСЕХ подключенных девайсов
+  TString *devname; // имя, заданное в '-m'. Если =0 -> не задано
 #ifdef CYUSB
-  int Detect_device();
+  cyusb_handle *cy_handle;
+
+  int Open_USB();
+  void Set_USB(int i);
+  void Device_info();
+  int Init_device();
   int SetPar();
   void Free_Transfer();
   void Submit_all(int ntr);

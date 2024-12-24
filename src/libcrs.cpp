@@ -8,9 +8,9 @@
 #include<sys/mman.h>
 #include <chrono>
 
-#ifdef CYUSB
-#include "cyusb.h"
-#endif
+//#ifdef CYUSB
+//#include "cyusb.h"
+//#endif
 
 //#include <pthread.h>
 #include "romana.h"
@@ -214,7 +214,7 @@ template <typename T> int sgn(T val) {
 }
 
 #ifdef CYUSB
-cyusb_handle *cy_handle;
+//cyusb_handle *cy_handle;
 
 void *handle_events_func(void *ctx)
 {
@@ -893,6 +893,8 @@ CRS::CRS() {
   //MAXTRANS2=MAXTRANS;
   //memset(Pre,0,sizeof(Pre));
 
+  idev=0;
+  devname=0;
   Fmode=0;
   opt.Period=5;
 
@@ -989,12 +991,12 @@ CRS::~CRS() {
   }
 */
 
-void CRS::DoResetUSB() {
+void CRS::DoDetectDev() {
 #ifdef CYUSB
   if (!b_stop)
     return;
-  if (Fmode==1 && module>=32) {
-
+  //if (Fmode==1 && module>=32) {
+  if (Fmode==1) { //если модуль уже подключен, удаляем trd_crs
     event_thread_run=0;
     if (Fmode==1) {
       //cyusb_close();
@@ -1004,72 +1006,166 @@ void CRS::DoResetUSB() {
       }
       Fmode=0;
     }
+  }
 		
 #ifdef P_LIBUSB
-    prnt("sss;",BYEL,"Sleep 100",RST);
+  prnt("sss;",BYEL,"Sleep 100",RST);
 #endif
-    gSystem->Sleep(100);
+  gSystem->Sleep(100);
 #ifdef P_LIBUSB
-    prnt("sss;",BGRN,"Reset USB... ",RST);
+  prnt("sss;",BGRN,"Reset USB... ",RST);
 #endif
-    if (cy_handle) {
+
+  if (cy_handle) { //close USB
 #ifdef P_LIBUSB
-      prnt("sss;",BGRN,"Command 7",RST);
+    prnt("sss;",BGRN,"cyusb_close",RST);
 #endif
-      Command32(7,0,0,0); //reset usb command
-#ifdef P_LIBUSB
-      prnt("sss;",BGRN,"cyusb_close",RST);
-#endif
+    if (!cy_list.empty()) {
       cyusb_close();
       cy_handle=0;
-#ifdef P_LIBUSB
-      prnt("sss;",BYEL,"Sleep 2000",RST);
-#endif
-      gSystem->Sleep(2000);
+      cy_list.clear();
     }
-#ifdef P_LIBUSB
-    prnt("sss;",BGRN,"Done.",RST);
-#endif
-    Detect_device();
   }
-  else {
-    prnt("sss;",BRED,"Module not found or reset not possible",RST);
-  }  
+
+  Open_USB();
+
+  switch (ndev) {
+  case 1:
+    crs->Init_device();
+  case 0:
+    if (myM)
+      myM->Build();
+    break;
+  default:
+    new PopFrame(myM,1,1,M_DEVICE);
+  }
+#endif //CYUSB
+}
+
+void CRS::DoResetUSB() {
+#ifdef CYUSB
+  if (!b_stop)
+    return;
+  //if (Fmode==1 && module>=32) {
+  if (Fmode==1) { //если модуль уже подключен, удаляем trd_crs
+    event_thread_run=0;
+    //if (Fmode==1) {
+    //cyusb_close();
+    if (trd_crs) {
+      trd_crs->Delete();
+      trd_crs=0;
+    }
+    Fmode=0;
+    //}
+  }
+		
+#ifdef P_LIBUSB
+  prnt("sss;",BYEL,"Sleep 100",RST);
 #endif
+  gSystem->Sleep(100);
+#ifdef P_LIBUSB
+  prnt("sss;",BGRN,"Reset USB... ",RST);
+#endif
+
+  if (cy_handle && module>=32) { //reset USB
+#ifdef P_LIBUSB
+    prnt("sss;",BGRN,"Command 7",RST);
+#endif
+    Command32(7,0,0,0); //reset usb command
+
+#ifdef P_LIBUSB
+    prnt("sss;",BGRN,"cyusb_close",RST);
+#endif
+    if (!cy_list.empty()) {
+      cyusb_close();
+      cy_handle=0;
+      cy_list.clear();
+    }
+
+#ifdef P_LIBUSB
+    prnt("sss;",BYEL,"Sleep 2000",RST);
+#endif
+    gSystem->Sleep(2000);
+  }
+#ifdef P_LIBUSB
+  prnt("sss;",BGRN,"Done.",RST);
+#endif
+
+  Open_USB();
+  //Set_USB(idev);
+  if (myM) {
+    Init_device();
+    myM->EnableBut(myM->fGr1,Fmode==1);
+  }
+  //}
+  //else {
+  //prnt("sss;",BRED,"Module not found or reset not possible",RST);
+  //}  
+#endif //CYUSB
 }
 
 #ifdef CYUSB
 
-int CRS::Detect_device() {
+int CRS::Open_USB() {
+  // открывает USB
+  // создает и заполняет cy_list
+
+  //cout << "Open_USB" << endl;
+
+  if (!cy_list.empty())
+    cyusb_close();
+
+  cy_list.clear();
+
+  ndev = cyusb_open();
+
+  if ( ndev < 0 ) {
+    printf("Error opening library\n");
+    return -1;
+  }
+  else if ( ndev == 0 ) {
+    printf("No device found\n");
+    return -2;
+  }
+
+  // if ( ndev > 1 ) {
+  //   printf("More than 1 devices of interest found. Disconnect unwanted devices\n");
+  //   return -3;
+  // }
+
+  int nn=ndev; //копия
+  for (int i=0;i<nn;i++) {
+    //if (idev<0 || i==idev)
+    Set_USB(i);
+    cy_list.push_back(cpar.GetDevice(0,0));
+
+    TString sdev = cpar.GetDevice(0,0);
+    if (devname && sdev.Contains(*devname,TString::kIgnoreCase)) {
+      idev = i;
+      ndev=1;
+    }
+  }
+
+  return ndev;
+}
+
+void CRS::Set_USB(int i) {
+  // задает cy_handle в сответствии с i
+  // добавляет девайс с данным cy_handle в cy_list
 
   int r;
-  Fmode=0;
-  //Short_t firmw=0;
 
-  r = cyusb_open();
-
-  if ( r < 0 ) {
-    printf("Error opening library\n");
-    return 1;
-  }
-  else if ( r == 0 ) {
-    printf("No device found\n");
-    return 2;
-  }
-  if ( r > 1 ) {
-    printf("More than 1 devices of interest found. Disconnect unwanted devices\n");
-    return 3;
-  }
-
-  cy_handle = cyusb_gethandle(0);
-  if ( cyusb_getvendor(cy_handle) != 0x04b4 ) {
+  cy_handle = cyusb_gethandle(i);
+  //cout << "set: " << i << " " << cy_handle << endl;
+  if (cyusb_getvendor(cy_handle) != 0x04b4 ) {
     printf("Cypress chipset not detected\n");
     cyusb_close();
     cy_handle=0;
-    return 4;
+    exit(-1);
+    //return -4;
   }
 
-  ///* YK 29.09.20
+  // YK 29.09.20
   r=cyusb_reset_device(cy_handle);
   //prnt("ssds;",KRED,"cyusb_reset: ",r,RST);
   //gSystem->Sleep(100);
@@ -1078,32 +1174,103 @@ int CRS::Detect_device() {
     printf("Can't reset device. Exitting: %d\n",r);
     cyusb_close();
     cy_handle=0;
-    return 5;
+    exit(-1);
+    //return -5;
   }
-  //*/
+  // YK 29.09.20
 
   r = cyusb_kernel_driver_active(cy_handle, 0);
   if ( r != 0 ) {
     printf("kernel driver active. Exitting\n");
     cyusb_close();
     cy_handle=0;
-    return 6;
+    exit(-1);
+    //return -6;
   }
-  r = cyusb_claim_interface(cy_handle, 0);
-  if ( r != 0 ) {
-    printf("Error in claiming interface: %d\n",r);
-    cyusb_close();
-    cy_handle=0;
-    return 7;
-  }
-  else printf("Successfully claimed interface\n");
+
+  // r = cyusb_claim_interface(cy_handle, 0);
+  // if ( r != 0 ) {
+  //   printf("Error in claiming interface: %d %d\n",i,r);
+  //   cyusb_close();
+  //   cy_handle=0;
+  //   return -7;
+  // }
+  // else
+  //   prnt("ss ds;",BGRN,"Successfully claimed interface",i,RST);
+
+  // r = cyusb_release_interface(cy_handle, 0);
+  // if ( r != 0 ) {
+  //   printf("Error in releasing interface: %d %d\n",i,r);
+  //   cyusb_close();
+  //   cy_handle=0;
+  //   return -7;
+  // }
+  // else
+  //   prnt("ss ds;",BBLU,"Successfully released interface",i,RST);
+
+  Device_info();
+
+  /*
+    bool bcc=false;
+
+    TString sdev = cpar.GetDevice(0,0);
+    //cout << "sdev: " << sdev << endl;
+    if (devname) {
+    if (sdev.Contains(*devname,TString::kIgnoreCase))
+    bcc=true;
+    }
+    else
+    bcc=true;
+
+    if (bcc) {
+    cy_list.push_back(cpar.GetDevice(0,0));
+    idev = cy_list.size()-1;
+    }
+  */
+
+  //idev=i;
+} //Set_USB
+
+void CRS::Device_info() {
+
+  //module=0;
+
+// #ifdef P_LIBUSB
+//       prnt("sss;",BYEL,"Sleep 100",RST);
+// #endif
+//   gSystem->Sleep(100);
+
+  //Command32(7,0,0,0); //reset usb command
+  //YK
+  //Command2(4,0,0,0);
+
+  //int sz;
+  memset(buf_in,0,sizeof(buf_in));
+  //sz =
+  Command32(1,0,0,0);
+  //sz =
+  Command32(1,0,0,0); //не помню, зачем вызывать 2 раза (?)
+
+  memcpy(cpar.device,buf_in+1,4);
+
+  //prnt("ss s ds;",BGRN,cpar.GetDevice(module,0).c_str(),"Module:",module,RST);
+
+} //Device_info
+
+int CRS::Init_device() {
+
+  Set_USB(idev);
+
+  Fmode=0;
+  module=0;
+  //Short_t firmw=0;
 
   event_thread_run=1;
   trd_crs = new TThread("trd_crs", handle_events_func, (void*) 0);
   trd_crs->Run();
 
 #ifdef P_LIBUSB
-      prnt("sss;",BYEL,"Sleep 100",RST);
+  prnt("sss;",BYEL,"Sleep 100",RST);
 #endif
   gSystem->Sleep(100);
   //Command32(7,0,0,0); //reset usb command
@@ -1119,22 +1286,6 @@ int CRS::Detect_device() {
 
   Short_t nplates=buf_in[3];
   Short_t ver_po=buf_in[4];
-
-  /*
-  Short_t device_code=buf_in[1];
-  Short_t Serial_n=buf_in[2];
-  Short_t nplates=buf_in[3];
-  Short_t ver_po=buf_in[4];
-
-  cout << "!!!! module: " << module << " " << cpar.GetDevice(module) << endl;
-
-  //cout << "Info: " << sz << endl;
-  cout << "Device code: " << device_code << endl;
-  cout << "Serial Nr: " << Serial_n << endl;
-  cout << "Number of working plates: " << nplates << endl;
-  cout << "Firmware version: " << ver_po << endl;
-  //cout << "PO version: " << int(buf_in[4]) << endl;
-  */
 
   //for (int i=0;i<sz;i++) {
   //cout << int(buf_in[i]) << " ";
@@ -1268,16 +1419,27 @@ int CRS::Detect_device() {
     cpar.Len[i]=cpar.ChkLen(i,module);
   }
   
-  //cout << "module: " << module << " chan_in_module: " << chan_in_module << endl;
-  prnt("ssd ss;",BGRN,"Module: ",module, cpar.GetDevice(module).c_str(), RST);
+  //prnt("ssd ss;",BGRN,"Module: ",module, cpar.GetDevice(module).c_str(), RST);
+  prnt("ss s ds;",BGRN,cpar.GetDevice(module).c_str(),"Module:",module,RST);
 
-  if (module>=22)
+  if (module>=22) {
     Fmode=1;
+    strcpy(mainname,cpar.GetDevice(module,0).c_str());
+  }
+  else
+    Fmode=0;
+
+  //cout << "title: " << mainname << " " << module << endl;
+  // if (myM) {
+  //   myM->EnableBut(myM->fGr1,Fmode==1);
+  //   myM->DoReset();
+  //   myM->SetTitle(mainname);
+  // }
 
   InitBuf();
 
   if (Init_Transfer()) {
-    return 8;
+    return -8;
   };
 
   //Submit_all(MAXTRANS);
@@ -1286,7 +1448,7 @@ int CRS::Detect_device() {
 
   return 0;
 
-} //Detect_device
+} //Init_device
 
 int CRS::SetPar() {
   switch (module) {
@@ -2375,7 +2537,7 @@ int CRS::DoStartStop(int rst) {
     //if (module==32) {
     //Command32(7,0,0,0); //reset usb command
     //}
-		
+
     // YK 29.09.20
 #ifdef P_LIBUSB
     int r=cyusb_reset_device(cy_handle);
@@ -2751,7 +2913,7 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
       char header[256];
       gzread(f_read,header,256);
     }
-  }
+  } //читаем заголовок
 
   Fmode=2;
   InitBuf();
@@ -2764,12 +2926,19 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
 
   strcpy(mainname,Fname);
   if (myM) {
+    myM->EnableBut(myM->fGr1,0);
+    if (myM->local_nch!=opt.Nchan || myM->local_nrows!=opt.Nrows) {
+      myM->Rebuild();
+      myM->local_nch=opt.Nchan;
+      myM->local_nrows=opt.Nrows;
+    }
+
     myM->SetTitle(Fname);
     //daqpar->AllEnabled(false);
   }
 
-  prnt("ssssd ss;",BGRN,"File: ",Fname," Module: ",module,
-       cpar.GetDevice(module).c_str(), RST);
+  prnt("ss s s s ds;",BGRN,"File:",Fname,
+       cpar.GetDevice(module).c_str(),"Module:",module,RST);
 
   return 0;
 } //DoFopen
@@ -4114,7 +4283,7 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
       ipls = &(*itpls);
       ipls->Chan = buf2[3];
 
-      if (evt->Spin & 128) { //Counters
+      if (evt->Spin & 128) {//Counters
 	ipls->Counter = (*Buf8) & sixbytes;
       }
       else { //Peaks
@@ -6022,9 +6191,12 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
     return;
   }
 
-  ++npulses2[pls->Chan];
+  if (!(pls->Spin&128)) {
+    ++npulses2[pls->Chan];
+  }
 
-  //prnt("ss d ls;",BMAG,"ev_ins_pls:",pls->Chan,pls->Tstamp64,RST);
+  // if (pls->Chan==4)
+  //   prnt("ss d l ds;",BMAG,"ev_ins_pls:",pls->Chan,pls->Tstamp64,pls->Spin,RST);
 
   //YK1 prnt("ssl fs;",BRED,"Ts1: ",pls->Tstamp64,pls->Time,RST);
 

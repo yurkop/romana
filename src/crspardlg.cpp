@@ -254,7 +254,7 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
   Pmap* pp = &Plist[id-1];
   int act = (pp->cmd>>4)&0xF;
 
-  //cout << "DoAct: " << act << " " << id << " " << pp->off << " " << off << endl;
+  //cout << "DoAct: " << pp->cmd << " " << act << " " << id << " " << pp->off << " " << off << endl;
 
   switch (act) {
   case 1:
@@ -353,6 +353,24 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
   int cmd = pp->cmd & 1;
   if (dq && cmd && crs->b_acq) {// && !jtrig) {
     crs->Command2(4,0,0,0);
+    /*
+    prnt("sss;",BYEL,"Sleep 1300",RST);
+    gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
+    crs->Cancel_all(7);
+    prnt("sss;",BYEL,"Sleep 1300",RST);
+    gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
+
+    crs->Init_Transfer();
+    prnt("sss;",BYEL,"Sleep 3300",RST);
+    gSystem->Sleep(3300); //1300 - проблема 3 в АК-32 устраняется
+
+    crs->Submit_all(crs->ntrans);
+    prnt("sss;",BYEL,"Sleep 3300",RST);
+    gSystem->Sleep(3300); //1300 - проблема 3 в АК-32 устраняется
+
+    //crs->Command32(8,0,0,0); //сброс сч./буф.
+    //crs->Command32(9,0,0,0); //сброс времени
+    */
     crs->SetPar();
     gzFile ff = gzopen("last.par","wb");
     crs->SaveParGz(ff,crs->module);
@@ -362,6 +380,11 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
       //myM->UpdateStatus(1);
       chanpar->UpdateStatus(1);
     }
+    /*
+    gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
+    //crs->Submit_all(crs->ntrans);
+    gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
+    */
     crs->Command2(3,0,0,0);
   }
 #endif
@@ -3042,6 +3065,8 @@ void ChanParDlg::UpdateStatus(int rst) {
     for (int i=0;i<opt.Nchan;i++) {
       if (cpar.on[i]) { //only for active channels
 	crs->rate_soft[i] = (crs->npulses2[i]-crs->npulses2o[i])/dt;
+	// prnt("ss d f l ls;",BBLU,"rate:",i,crs->rate_soft[i],crs->npulses2[i],
+	//      crs->npulses2o[i],RST);
 	crs->npulses2o[i]=crs->npulses2[i];
 
 	crs->rate_soft[MAX_CH]+=crs->rate_soft[i];

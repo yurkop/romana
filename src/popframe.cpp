@@ -32,10 +32,14 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   chklist.Clear();
   //ee_calib=0;
   ptr=p;
+  fListBox=0;
 
   LayLC0   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY);
   LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 2,2,2,2);
+  LayCC3   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 150,150,50,5);
+  LayCC4   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 150,150,20,150);
   LayEE2   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 0,0,2,2);
+  LayCB1   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5);
   LayBut1 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 5, 5, 5, 5);
   LayBut2 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 15, 5, 1, 1);
   LayBut3 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 55, 55, 5, 5);
@@ -64,6 +68,11 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   else if (menu_id==M_PEAKS) {
     AddPeaks();
   }
+#ifdef CYUSB
+  else if (menu_id==M_DEVICE) {
+    AddDevice();
+  }
+#endif
 #ifdef P_LIBUSB
   else if (menu_id==M_TEST) {
     AddTest();
@@ -73,7 +82,7 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   fMain->MapSubwindows();
   fMain->Resize();
   // editor covers right half of parent window
-  fMain->CenterOnParent(kTRUE, TGTransientFrame::kCenter);
+  //fMain->CenterOnParent(kTRUE, TGTransientFrame::kCenter);
   fMain->MapWindow();
 }
 PopFrame::~PopFrame()
@@ -83,8 +92,19 @@ PopFrame::~PopFrame()
 void PopFrame::CloseWindow()
 {
   // Called when closed via window manager action.
-  //cout << "fVar1: " << fVar << " " << this << endl;
-  //fVar=NULL;
+  if (fListBox) {
+    //cout << "CloseW: " << fListBox->GetSelected() << endl;
+#ifdef CYUSB
+    crs->idev = fListBox->GetSelected();
+    //cout << "idev: " << crs->idev << endl;
+    crs->Init_device();
+#endif
+    myM->Build();
+    //myM->EnableBut(myM->fGr1,Fmode==1);
+    //myM->DoReset();
+    //myM->SetTitle(mainname);
+  }
+
   HiFrm->b_adj=false;
   HiFrm->HiUpdate();
 
@@ -179,7 +199,7 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
 
   TGTextButton* fClose = new TGTextButton(fMain, "  &Close  ");
   fClose->Connect("Clicked()", "PopFrame", this, "CloseWindow()");
-  fMain->AddFrame(fClose, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+  fMain->AddFrame(fClose, LayCB1);
 
   // TGTextButton* fOK = new TGTextButton(fMain, "  &OK  ");
   // fOK->Connect("Clicked()", "PopFrame", this, "DoProfTime()");
@@ -429,6 +449,47 @@ void PopFrame::AddPeaks() {
   */
 }
 
+#ifdef CYUSB
+void PopFrame::AddDevice() {
+  fMain->SetWindowName("Select Device");
+
+  //ULong_t colr = EvtFrm->gcol[2];
+  //cout << "colr: " << colr << endl;
+  
+  fLabel = new TGLabel(fMain,"More than one device found. Select Device:");
+  //fLabel->SetTextJustify(kTextCenterX);
+
+  //fLabel->ChangeOptions(fLabel->GetOptions()|kFixedWidth);
+  //fLabel->SetWidth(ww[0]);
+  fMain->AddFrame(fLabel, LayCC3);
+  //fLabel->SetBackgroundColor(colr);
+
+  fListBox = new TGListBox(fMain, 2);
+
+
+  //char tmp[20];
+  for (UInt_t i = 0; i < crs->cy_list.size(); ++i) {
+    //sprintf(tmp, "Entry %i", i);
+    fListBox->AddEntry(crs->cy_list[i].c_str(), i);
+  }
+
+  fListBox->Connect("DoubleClicked(Int_t)", "PopFrame", this, "CloseWindow()");
+
+  //crs->idev=0;
+  fListBox->Select(crs->idev);
+
+  fListBox->Resize(150, 60);
+  fMain->AddFrame(fListBox, LayCC4);
+
+  TGTextButton* fClose = new TGTextButton(fMain, "  &Close  ");
+  fClose->Connect("Clicked()", "PopFrame", this, "CloseWindow()");
+  fMain->AddFrame(fClose, LayCB1);
+
+  fMain->SetWMPosition(0,0);
+}
+
+#endif
+
 #ifdef P_LIBUSB
 void PopFrame::AddTest() {
   fMain->SetWindowName("Test");
@@ -518,7 +579,7 @@ void PopFrame::DoENum() {
 
   Int_t id = te->WidgetId();
 
-  //cout << "id: " << id << " " << id2 << " " << id3 << endl;
+  //cout << "id: " << id << endl;
 
   switch (id) {
   case 11:

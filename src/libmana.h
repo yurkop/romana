@@ -26,8 +26,9 @@ enum MENU_COM {
   //M_SAVEASCII,
   M_FILE_BROWSE,
   M_RESET_USB,
+  M_DETECT_DEV,
   M_EXPORT,
-  M_FILE_EXIT,
+  M_EXIT,
   M_EDIT_PROF8,
   M_EDIT_PROF64,
   M_EDIT_CUTG,
@@ -36,6 +37,7 @@ enum MENU_COM {
   M_ECALIBR,
   M_TCALIBR,
   M_PEAKS,
+  M_DEVICE,
   M_TEST,
   M_HELP,
 };
@@ -129,6 +131,17 @@ class MainFrame : public TGMainFrame {
 
   TTimer* fTimer;
 
+  TGLayoutHints* LayCT1;
+  TGLayoutHints* LayE1;
+  TGLayoutHints* LayET0;
+  TGLayoutHints* LayET1;
+  TGLayoutHints* LayET1a;
+  TGLayoutHints* LayET1b;
+  TGLayoutHints* LayET2;
+  TGLayoutHints* LayET3;
+  //TGLayoutHints* LayLT3;
+  TGLayoutHints* LayL1;
+
   TGLayoutHints* LayEE1;
   TGLayoutHints* LayEE2;
 
@@ -160,6 +173,7 @@ class MainFrame : public TGMainFrame {
   MainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MainFrame();
 
+  void Build();
   void MakeTabs(bool reb=false);
   void Rebuild();
   void SetTitle(char* fname);

@@ -1,0 +1,73 @@
+crspardlg.cpp:    myM->fTimer->SetTime(opt.tsleep);
+crspardlg.cpp:      myM->UpdateTimer(1);
+crspardlg.cpp:      //myM->UpdateStatus(1);
+crspardlg.cpp:  //myM->Resize(GetDefaultSize());
+crspardlg.cpp:  myM->MapSubwindows();
+crspardlg.cpp:  //myM->Resize(GetDefaultSize());
+crspardlg.cpp:  myM->Layout();
+crspardlg.cpp:  myM->MapWindow();
+crspardlg.cpp:  //myM->Resize(GetDefaultSize());
+crspardlg.cpp:    myM->MapSubwindows();
+crspardlg.cpp:    myM->Layout();
+crspardlg.cpp:    myM->MapWindow();
+crspardlg.cpp:  TGTabElement* tab6 = myM->fTab->GetTabTab("Errors");
+crspardlg.cpp:      TGTabElement* tab6 = myM->fTab->GetTabTab("Errors");
+git-history:- Detect_device() в конце вызывает myM->EnableBut и myM->DoReset
+git-history:- DoFopen в конце вызывает myM->EnableBut и myM->Rebuild()
+histframe.cpp:  double sig = myM->p_pop->fwhm/2.35;
+histframe.cpp:  double width = myM->p_pop->range;
+histframe.cpp:  double* ee = myM->p_pop->ee;
+#libcrs.cpp#:  myM->EnableBut(myM->fGr1,Fmode==1);
+#libcrs.cpp#:  myM->EnableBut(myM->fGr1,Fmode==1);
+#libcrs.cpp#:  //   myM->EnableBut(myM->fGr1,Fmode==1);
+#libcrs.cpp#:  //   myM->DoReset();
+#libcrs.cpp#:  //   myM->SetTitle(mainname);
+#libcrs.cpp#:      myM->UpdateTimer(rst);
+#libcrs.cpp#:      //myM->UpdateStatus(rst);
+#libcrs.cpp#:      myM->SetTitle(Fname);
+#libcrs.cpp#:    myM->EnableBut(myM->fGr1,0);
+#libcrs.cpp#:    if (myM->local_nch!=opt.Nchan || myM->local_nrows!=opt.Nrows) {
+#libcrs.cpp#:      myM->Rebuild();
+#libcrs.cpp#:      myM->local_nch=opt.Nchan;
+#libcrs.cpp#:      myM->local_nrows=opt.Nrows;
+#libcrs.cpp#:    myM->SetTitle(Fname);
+#libcrs.cpp#:      if (myM->fTab->GetCurrent()==EvtFrm->ntab ||
+#libcrs.cpp#:      if (myM->fTab->GetCurrent()==HiFrm->ntab || HiFrm->fDock->GetUndocked()) {
+#libcrs.cpp#:      // 	TString name = TString(myM->fTab->GetCurrentTab()->GetString());
+#libcrs.cpp#:    //myM->UpdateStatus();
+#libcrs.cpp#:      //myM->DoStartStop();
+#libcrs.cpp#:      //myM->fStart->Emit("Clicked()");
+#libcrs.cpp#:      //myM->fStart->Clicked();
+libcrs.cpp:  myM->EnableBut(myM->fGr1,Fmode==1);
+libcrs.cpp:  myM->EnableBut(myM->fGr1,Fmode==1);
+libcrs.cpp:  //   myM->EnableBut(myM->fGr1,Fmode==1);
+libcrs.cpp:  //   myM->DoReset();
+libcrs.cpp:  //   myM->SetTitle(mainname);
+libcrs.cpp:      myM->UpdateTimer(rst);
+libcrs.cpp:      //myM->UpdateStatus(rst);
+libcrs.cpp:      myM->SetTitle(Fname);
+libcrs.cpp:    myM->EnableBut(myM->fGr1,0);
+libcrs.cpp:    if (myM->local_nch!=opt.Nchan || myM->local_nrows!=opt.Nrows) {
+libcrs.cpp:      myM->Rebuild();
+libcrs.cpp:      myM->local_nch=opt.Nchan;
+libcrs.cpp:      myM->local_nrows=opt.Nrows;
+libcrs.cpp:    myM->SetTitle(Fname);
+libcrs.cpp:      if (myM->fTab->GetCurrent()==EvtFrm->ntab ||
+libcrs.cpp:      if (myM->fTab->GetCurrent()==HiFrm->ntab || HiFrm->fDock->GetUndocked()) {
+libcrs.cpp:      // 	TString name = TString(myM->fTab->GetCurrentTab()->GetString());
+libcrs.cpp:    //myM->UpdateStatus();
+libcrs.cpp:      //myM->DoStartStop();
+libcrs.cpp:      //myM->fStart->Emit("Clicked()");
+libcrs.cpp:      //myM->fStart->Clicked();
+libmana.cpp:    myM->DoStartStop(0);
+libmana.cpp:    myM->DoAna();
+libmana.cpp:    myM->SetTitle((char*)name);
+libmana.cpp:    myM->SetTitle((char*)name);
+libmana.cpp:  myM->SetTitle((char*)"");
+libmana.cpp:  //myM->Move(-100,-100);
+peditor.cpp:  //myM->p_ed=0;
+popframe.cpp:    myM->Build();
+popframe.cpp:    //myM->EnableBut(myM->fGr1,Fmode==1);
+popframe.cpp:    //myM->DoReset();
+popframe.cpp:    //myM->SetTitle(mainname);
+popframe.cpp:  //myM->p_pop=0;

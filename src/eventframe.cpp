@@ -1288,7 +1288,7 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
     }
     //}
 
-    if (dr==0 && hcl->b_base) {
+    if (dr==0 && hcl->b_base[ch]) {
       float DY,Y1,Y2,A0;
       DY = (B2-B1)*pulse->Sl1*0.5;
       Y1 = pulse->Base - DY;
