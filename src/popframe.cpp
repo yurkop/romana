@@ -73,11 +73,11 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
     AddDevice();
   }
 #endif
-#ifdef P_LIBUSB
+#ifdef P_TEST
   else if (menu_id==M_TEST) {
     AddTest();
   }
-#endif
+#endif //P_TEST
 
   fMain->MapSubwindows();
   fMain->Resize();
@@ -490,7 +490,7 @@ void PopFrame::AddDevice() {
 
 #endif
 
-#ifdef P_LIBUSB
+#ifdef P_TEST
 void PopFrame::AddTest() {
   fMain->SetWindowName("Test");
 
@@ -501,7 +501,7 @@ void PopFrame::AddTest() {
 
   TGTextButton* fTest = new TGTextButton(fMain, "      &Test1      ",1);
   fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
-  fTest->SetToolTipText("Stop-Start N times");
+  fTest->SetToolTipText("Stop-Pusk (cmd4-cmd3) N times");
   fMain->AddFrame(fTest, LayBut3);
 
   fTest = new TGTextButton(fMain, "      &Test2      ",2);
@@ -514,30 +514,46 @@ void PopFrame::AddTest() {
   fTest->SetToolTipText("Command32(8) N times");
   fMain->AddFrame(fTest, LayBut3);
 
+  fTest = new TGTextButton(fMain, "      &Test4      ",4);
+  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
+  fTest->SetToolTipText("myM->DoStartStop(1) N[x2] times");
+  fMain->AddFrame(fTest, LayBut3);
+
 }
 
 void PopFrame::Do_Test() {
   TGButton *btn = (TGButton *) gTQSender;
   int id = btn->WidgetId();
-  cout << "test: " << crs->Fmode << " " << id << endl;
 
-  int sz=0;
+  //int sz=0;
   if (crs->Fmode == 1) {
     for (int i=0;i<n_iter;i++) {
+      cout << "test: " << i << " " << crs->Fmode << " " << id << endl;
       switch (id) {
       case 1:
 	crs->Command2(4,0,0,0); //stop
 	gSystem->Sleep(delay); //300
-	crs->Command2(3,0,0,0); //start
+	crs->Command2(3,0,0,0); //pusk
 	gSystem->Sleep(delay); //300
 	break;
       case 2:
-	sz = crs->Command32(1,0,0,0); //info
+	//sz =
+	crs->Command32(1,0,0,0); //info
 	gSystem->Sleep(delay); //300
 	break;
       case 3:
-	sz = crs->Command32(8,0,0,0); //сброс сч./буф.
+	//sz =
+	crs->Command32(8,0,0,0); //сброс сч./буф.
 	gSystem->Sleep(delay); //300
+	break;
+      case 4:
+	//prnt("ssd d ds;",BMAG,"Press1: ",i,crs->b_acq,delay,RST);
+	myM->test=true;
+	myM->fStart->Clicked();
+	gSystem->Sleep(delay); //300
+	myM->fStart->Clicked();
+	gSystem->Sleep(delay); //300
+	myM->test=false;
 	break;
       default:
 	break;
@@ -546,7 +562,7 @@ void PopFrame::Do_Test() {
   }
   cout << "test finished: " << endl;
 }
-#endif
+#endif //P_TEST
 
 void PopFrame::Do_Save_Ecalibr() {
   cout << "Calibration parameters are saved to 'ecalibr.dat'" << endl;

@@ -1188,15 +1188,16 @@ void CRS::Set_USB(int i) {
     //return -6;
   }
 
-  // r = cyusb_claim_interface(cy_handle, 0);
-  // if ( r != 0 ) {
-  //   printf("Error in claiming interface: %d %d\n",i,r);
-  //   cyusb_close();
-  //   cy_handle=0;
-  //   return -7;
-  // }
-  // else
-  //   prnt("ss ds;",BGRN,"Successfully claimed interface",i,RST);
+  r = cyusb_claim_interface(cy_handle, 0);
+  if ( r != 0 ) {
+    printf("Error in claiming interface: %d %d\n",i,r);
+    cyusb_close();
+    cy_handle=0;
+    exit(-1);
+    //return -7;
+  }
+  else
+    prnt("ss ds;",BGRN,"Successfully claimed interface",i,RST);
 
   // r = cyusb_release_interface(cy_handle, 0);
   // if ( r != 0 ) {
@@ -1805,6 +1806,10 @@ int CRS::Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
     //printf("Error6! %d: \n",buf_out[1]);
     cyusb_error(r);
     //cyusb_close();
+  }
+
+  if (cmd==8) { // если сброс сч./буф. -> задержка
+    gSystem->Sleep(20);    
   }
 
   if (cmd!=7 && cmd!=12) { //сброс USB и Тест
@@ -2538,6 +2543,7 @@ int CRS::DoStartStop(int rst) {
     //Command32(7,0,0,0); //reset usb command
     //}
 
+    /* YK 25.12.24
     // YK 29.09.20
 #ifdef P_LIBUSB
     int r=cyusb_reset_device(cy_handle);
@@ -2546,6 +2552,7 @@ int CRS::DoStartStop(int rst) {
     // YK 29.09.20
     cyusb_reset_device(cy_handle);
 #endif
+    */
 
     if (rst && crs->module>=32 && crs->module<=70) {
       Command32(8,0,0,0); //сброс сч./буф.
@@ -2658,6 +2665,13 @@ void CRS::ProcessCrs(int rst) {
     Command32(9,0,0,0); //сброс времени
   }
   Command2(3,0,0,0);
+
+#ifdef P_TEST
+  if (myM->test) {
+    EndAna(1);
+    return;
+  }
+#endif //P_TEST
 
   while (!crs->b_stop) {
     if (!batch) {
@@ -3064,7 +3078,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     opt.root_write=false;
   }
 
-  if (HiFrm) {
+  if (HiFrm && op) {
     //cout << "HiFrm0:" << endl;
     histpar->AddHist_2d();
     HiFrm->HiReset();

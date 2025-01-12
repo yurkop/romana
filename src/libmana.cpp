@@ -1107,6 +1107,7 @@ int main(int argc, char **argv)
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
     "-n module: skip header when opening file (assuming file is without header); set module number\n"
     "-m name: select module/device name (if several devices are connected)\n"
+    "-l: print list of connected devices and exit\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
     "-b [filename]: analyze file in batch mode (without gui) and exit\n"
     "   Data are saved in filename[.raw/.dec/.root] depending on batch parameters\n"
@@ -1271,9 +1272,18 @@ int main(int argc, char **argv)
 	    }
 	  }
 	  exit(0);
-	  continue;
+	case 'l':
+#ifdef CYUSB
+	  crs->Open_USB();
+#endif
+	  prnt("sss;",BGRN,"List of devices:",RST);
+	  for (auto i=crs->cy_list.begin();i!=crs->cy_list.end();++i) {
+	    prnt("sss;",BBLU,i->c_str(),RST);
+	  }
+	  exit(0);
 	default:
-	  continue;
+	  prnt("ss ss;",BRED,"Unknown parameter:",argv[i],RST);
+	  exit(-1);
 	}
       } //if (sarg[0]=='-')
       //else if (sarg.find("=")!=string::npos) {
@@ -1447,7 +1457,9 @@ int main(int argc, char **argv)
 	prnt("ss ds;",BRED,"Number of connected devices:",crs->cy_list.size(),RST);
 	exit(-1);
       }
+#ifdef CYUSB
       crs->Init_device();
+#endif
 
       prnt("sss;",BGRN,"Starting in batch mode.",RST);
       //prnt("ssss;",BGRN,"File = ",opt.Filename,RST);
@@ -2246,7 +2258,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
   // 		     "HandleMenu(Int_t)");
   fMenuAnalysis->AddEntry("Peak Search Parameters", M_PEAKS);
-#ifdef P_LIBUSB
+#ifdef P_TEST
   fMenuAnalysis->AddEntry("Test", M_TEST);
 #endif
 
@@ -2803,7 +2815,7 @@ void MainFrame::DoStartStop(int rst) {
   //rst=1 - start/stop is pressed
   //rst=0 - continue/pause is pressed
 
-  //cout << "Dostartstop1: " << gROOT->FindObject("Start") << endl;
+  //prnt("ssds;",BMAG,"DoStartStop1: ",crs->b_acq,RST);
 
 #ifdef CYUSB
   if (crs->b_acq) { //STOP or PAUSE is pressed here
@@ -2869,7 +2881,7 @@ void MainFrame::DoStartStop(int rst) {
   }
 #endif
 
-  //cout << "Dostartstop2: " << endl;
+  //prnt("ssds;",BMAG,"DoStartStop2: ",crs->b_acq,RST);
 }
 
 void MainFrame::DoOpen(Int_t popt) {
@@ -3915,7 +3927,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
     new PopFrame(this,100,600,M_PEAKS);
     break;
 
-#ifdef P_LIBUSB
+#ifdef P_TEST
   case M_TEST:
     new PopFrame(this,100,600,M_TEST);
     break;

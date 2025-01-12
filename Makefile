@@ -11,6 +11,7 @@
 # make TIMES=1 compile with TIMES option
 # make DEBUG=1 compile with debug option
 # make PROF=1 compile with profiling option
+# make P_TEST=1 compile with Test menu entry
 # make P_LIBUSB=1 compile with printing libusb messages
 # make P_CMD=1 compile with printing cmd32 & cmd2 messages
 # make BITS=N compile with cutting lower bits in sData by N
@@ -53,6 +54,10 @@ endif
 
 ifdef TIMES
   CPPFLAGS += -D TIMES=1
+endif
+
+ifdef P_TEST
+  CPPFLAGS += -D P_TEST=1
 endif
 
 ifdef P_LIBUSB
