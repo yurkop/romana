@@ -44,6 +44,7 @@ public:
   Float_t VarPulse(EventClass* e, PulseClass* p){return *(Float_t*)((char*)p + ptr);}
   Float_t  VarTime(EventClass* e, PulseClass* p);
   Float_t  VarRate(EventClass* e, PulseClass* p);
+  Float_t  VarPeriod(EventClass* e, PulseClass* p);
   Float_t  VarNtof(EventClass* e, PulseClass* p);
   Float_t  VarEtof(EventClass* e, PulseClass* p);
   Float_t  VarLtof(EventClass* e, PulseClass* p);

@@ -1675,7 +1675,7 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
   tip1= "Decoded data format";
   label="Dec format";
-  AddLine_1opt(fF6,ww,&opt.dec_format,0,tip1,label,k_int,79,80);
+  AddLine_1opt(fF6,ww,&opt.dec_format,0,tip1,label,k_int,79,81);
 
   AddLine_dec_format(fF6,150);
 
@@ -2608,7 +2608,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_chk,24,1,0,0,"AC",cpar.AC,0,1|(5<<4));
   AddColumn(jj,kk++,1,p_chk,24,1,0,0,"pls",cpar.pls,0,1);
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"dsp",opt.dsp,opt.Dsp,1|(8<<4));
-  AddColumn(jj,kk++,1,p_inum,34,1,0,0,"RD",cpar.ratediv,0,1);
+  AddColumn(jj,kk++,1,p_inum,34,1,0,0,"RD",cpar.RD,0,1);
   AddColumn(jj,kk++,1,p_chk,24,1,0,0,"C1",cpar.group,0,1,21);
   AddColumn(jj,kk++,1,p_chk,24,1,0,0,"C2",cpar.group,0,1,22);
   AddColumn(jj,kk++,1,p_inum,30,1,0,0,"hS",cpar.hS,0,1);
@@ -2708,10 +2708,10 @@ AddColumn(int jj, int kk, int ii, P_Def pdef,
   char* ap = (char*)apar+first*sizeof(Bool_t);
 
   double amax = max;
-  if (max<-1e101) {
+  if (max<-1e101) { //Base1, Peak1, T1, W1
     //cout << "max!!!: " << jj << " " << kk << " " << pname << endl;
     amax = 1023;
-    if (cpar.crs_ch[jj]==1 || cpar.crs_ch[jj]==2)
+    if (crs->crs_ch[jj]==1 || crs->crs_ch[jj]==2)
       amax=511;
   }
 
@@ -2852,10 +2852,11 @@ void ChanParDlg::AddChkPar(int kk, int wd, int all, int daq, TGHorizontalFrame *
 
 void ChanParDlg::AddNumPar(int j, int kk, int wd, int all, int daq, P_Def pdef, double min, double max, TGHorizontalFrame *hfr, const char* name, void* apar, UShort_t off, UInt_t cmd, void* apar2) {
 
-  int par, imin, imax;
+  int /*par, */imin, imax;
 
   if (daq) {
-    cpar.GetPar(name,crs->module,j,cpar.crs_ch[j],par,imin,imax);
+    //cpar.GetPar(name,crs->module,j,cpar.crs_ch[j],par,imin,imax);
+    cpar.GetParm(name,j,apar,imin,imax);
     min=imin;
     max=imax;
   }

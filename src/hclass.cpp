@@ -26,6 +26,20 @@ Float_t Mdef::VarRate(EventClass* e, PulseClass* p){
   return x;
 }
 
+Float_t Mdef::VarPeriod(EventClass* e, PulseClass* p){
+  static Long64_t LPrev[MAX_CH];
+  static Float_t TPrev[MAX_CH];
+
+  Float_t tt = e->Tstmp - LPrev[p->Chan];
+  tt+= p->Time - TPrev[p->Chan];
+  tt*= mks*opt.Period;
+
+  LPrev[p->Chan] = e->Tstmp;
+  TPrev[p->Chan] = p->Time;
+
+  return tt;
+}
+
 Float_t Mdef::VarNtof(EventClass* e, PulseClass* p){
   static Long64_t Tstart0=LLONG_MAX; //Tstamp of the ntof start pulses
   static Float_t Time0=0; //Exact time of the ntof start pulses
@@ -907,6 +921,8 @@ void HClass::Make_hist() {
     }
     else if (it->hnum==15) { // Period
       Make_1d(it,opt.Nchan);
+      it->GetX = &Mdef::VarPeriod;
+      it->MFill = &Mdef::Fill_1d;
     }
     else if (it->hnum==21) {//Rate
       Make_1d(it,opt.Nchan);

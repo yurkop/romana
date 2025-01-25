@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include "romana.h"
 
+extern CRS* crs;
 extern Coptions cpar;
 using namespace std;
 
@@ -15,13 +16,14 @@ using namespace std;
 Coptions::Coptions() {
 
   InitPar(1);
+  InitMinMax();
 
 }
 
 void Coptions::InitPar(int zero) {
 
   for (int i=0;i<MAX_CHTP;i++) {
-    crs_ch[i]=255; //undefined
+    //crs_ch[i]=0; //255; //undefined
     on[i]=true;
     AC[i]=true;
     Inv[i]=false;
@@ -43,7 +45,7 @@ void Coptions::InitPar(int zero) {
 
     group[i][0]=0;
     group[i][1]=0;
-    ratediv[i]=0;
+    RD[i]=0;
   }
 
   for (int i=0;i<2;i++) {
@@ -149,6 +151,99 @@ std::string Coptions::GetDevice(int module, int opt) {
   return res;
 }
 		      
+void Coptions::InitMinMax() {
+  //см. parameters.xlsx
+  const int MM = 8; //количество типов модулей
+  // первая строчка - мин; вторая - макс.
+  typedef std::array<int,2*MM> arr;
+  arr mhS,mDt,mPre,mLen,mDrv,mThr,mLT,mG,mhD,mTrg,mRD;
+
+  // см. sum: сглаживание (суммирование)
+  mhS = {0,0,0,0,0,0,0,0,
+	 0,0,512,512,512,128,128,128};
+  // мертвое время дискриминатора
+  mDt = {0,0,1,1,1,1,1,1,
+	 0,0};
+  fill_n(&mDt[MM+2],6,16383);
+  // предзапись M
+  mPre = {0,0,-1023,-511,-1023,-511,-511,-511,
+          0,8184};
+  fill_n(&mPre[MM+2],6,1024);
+  // общая длина записи
+  mLen = {0,0,1,1,1,1,1,1,
+	  0,16379,4068,3048,6114,1506,12000,12000};
+  // параметр производной
+  mDrv = {0,0,1,1,1,1,1,1,
+	  0,1023,1023,1023,1023,255,255,255};
+  // порог срабатывания
+  mThr = {0,0,-2048};
+  fill_n(&mPre[3],5,-65536);
+  mThr[MM]=0; mThr[MM+1]=2047; mThr[MM+2]=2047;
+  fill_n(&mPre[MM+3],5,65535);
+  // нижний порог дискриминатора типов 3, 4
+  mLT = mThr;
+  mLT[3]=0; mLT[MM+3]=0;
+  // дополнительное усиление
+  mG = {0,5,5,0,0,0,0,0,
+	0,12,12,3,3,3,4,4};
+  // задержка
+  mhD = {0,0,0,0,0,0,0,0,
+	 0,0,4075,4092,1023,255,250,250};
+  // тип срабатывания дискриминатора
+  mTrg = {0,0,0,0,0,0,0,0,
+	  0,1,6,6,6,6,6,6};
+  // величина пересчета P ("незаписанных" срабатываний дискриминатора)
+  mRD = {0,0,0,0,0,0,0,0,
+	 0,0,0,0,1023,1023,1023,1023};
+
+  //arr mhS,mDt,mPre,mLen,mDrv,mThr,mLT,mG,mhD,mTrg,mRD;
+
+  mcpar[hS] = mhS;
+  mcpar[Dt] = mDt;
+  mcpar[Pre] = mPre;
+  mcpar[Len] = mLen;
+  mcpar[Drv] = mDrv;
+  mcpar[Thr] = mThr;
+  mcpar[LT] = mLT;
+  mcpar[G] = mG;
+  mcpar[hD] = mhD;
+  mcpar[Trg] = mTrg;
+  mcpar[RD] = mRD;
+
+  // cout << "mhS: " << mhS[7] << " " << mhS[MM+7] << " "
+  //      << mcpar[hS][7] << " " << mcpar[hS][MM+7] << endl;
+}
+
+void Coptions::GetParm(const char* name, int i, void *par, int &min, int &max) {
+  // std::vector<int> myvector(10);
+  // try {
+  //   myvector.at(20)=100;      // vector::at throws an out-of-range
+  // }
+  // catch (const std::out_of_range& oor) {
+  //   std::cerr << "Out of Range error: " << oor.what() << '\n';
+  // }
+
+  min=-9999999;//0;
+  max=9999999;//-1;
+  if (crs->crs_ch[i]==0) return;
+
+  arr xx;
+
+  try {
+    xx = mcpar.at(par);
+    min = xx.at(crs->crs_ch[i]);
+    max = xx.at(MM+crs->crs_ch[i]);
+  }
+  catch (const std::out_of_range& oor) {
+    prnt("ss s d d ss;",BRED,"ErrGetParm:",name,i,crs->crs_ch[i],oor.what(),RST);
+    return;
+  }
+
+  //prnt("ss s d d d ds;",BGRN,"GetParm:",name,i,crs->crs_ch[i],min,max,RST);
+
+} //GetParm
+
+/*
 void Coptions::GetPar(const char* name, int module, int i, Int_t crs_ch, int &par, int &min, int &max) {
 
   min=-9999999;//0;
@@ -336,7 +431,7 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t crs_ch, int &pa
     }
     else if (!strcmp(name,"RD")) {
       //else if (!strcmp(name,"RD")) {
-      par = ratediv[i];
+      par = RD[i];
       min=0;
       max=1023;
       // cout << "trig: " << module << " " << min << " " << max << endl;
@@ -351,27 +446,32 @@ void Coptions::GetPar(const char* name, int module, int i, Int_t crs_ch, int &pa
     max= 65535;
   }
 
-}
+} //GetPar
+*/
 
 Int_t Coptions::ChkLen(Int_t i, Int_t module) {
   //выравнивает длину записи кратно 3 или 4 
   if (module==2 || module==22) return Len[i];
 
   int dd=1;
-  switch (crs_ch[i]) {
-  case 0:
+  switch (crs->crs_ch[i]) {
+  case 2:
     dd=4;
     break;
-  case 1:
-  case 2:
-  case 24:
-  case 25:
+  case 3:
+  case 4:
+  case 5:
+  case 6:
+  case 7:
     dd=3;
+    break;
+  default:
+    return Len[i];
   }
 
   int res = ((Len[i]+dd-1)/dd)*dd;
   if (res<dd) res=dd;
-  //prnt("ss d d d d ds;",BRED,"ChkLen: ",i,Len[i],crs_ch[i],module,res,RST);
+  //prnt("ss d d d d ds;",BRED,"ChkLen: ",i,Len[i],crs->crs_ch[i],module,res,RST);
   return res;
 }
 

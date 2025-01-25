@@ -769,19 +769,29 @@ void CRS::Ana2(int all) {
 	if (!opt.maintrig || hcut_flag[opt.maintrig]) {
 	  ++crs->mtrig;
 	  if (opt.dec_write) {
-	    if (cpar.Trigger==1) { //trigger on START channel
-	      crs->Fill_Dec80(&(*m_event));
-	    }
-	    else {
-	      //crs->Fill_Dec73(&(*m_event));
-	      //crs->Fill_Dec74(&(*m_event));
-	      //crs->Fill_Dec75(&(*m_event));
-	      //crs->Fill_Dec76(&(*m_event));
-	      //crs->Fill_Dec77(&(*m_event));
-	      //crs->Fill_Dec78(&(*m_event));
-	      crs->Fill_Dec79(&(*m_event));
-	    }
-	  }
+	    switch (opt.dec_format) {
+	    case 79:
+	    case 80:
+	      if (cpar.Trigger==1) { //trigger on START channel
+		crs->Fill_Dec80(&(*m_event));
+	      }
+	      else {
+		//crs->Fill_Dec73(&(*m_event));
+		//crs->Fill_Dec74(&(*m_event));
+		//crs->Fill_Dec75(&(*m_event));
+		//crs->Fill_Dec76(&(*m_event));
+		//crs->Fill_Dec77(&(*m_event));
+		//crs->Fill_Dec78(&(*m_event));
+		crs->Fill_Dec79(&(*m_event));
+	      }
+	      break;
+	    case 81:
+	      crs->Fill_Dec81(&(*m_event));
+	      break;
+	    default:
+	      ;
+	    } //switch
+	  } // if dec_write
 	  if (opt.raw_write && opt.fProc) {
 	    crs->Fill_Raw(&(*m_event));
 	  }
@@ -837,7 +847,7 @@ void CRS::Ana2(int all) {
 BufClass::BufClass(size_t sz) {
   Size=sz;
   Buf = new char[Size];
-  cout << "size: " << Size << endl;
+  //cout << "size: " << Size << endl;
 }
 
 BufClass::~BufClass() {
@@ -847,6 +857,11 @@ BufClass::~BufClass() {
 CRS::CRS() {
 
   /*
+  int imin,imax;
+  cpar.GetParm("hS",0,cpar.hS,imin,imax);
+  cpar.GetParm("fdiv",0,cpar.fdiv,imin,imax);
+  exit(1);
+
   DecBuf8 = new ULong64_t[1024];
   ULong64_t *DD = DecBuf8;
 
@@ -865,6 +880,7 @@ CRS::CRS() {
   //ev_max=2*opt.ev_min;
 
   //mean_event.Make_Mean_Event();
+  memset(crs_ch,0,sizeof(crs_ch));
 
   InBuf = new BufClass(1024*iMB); //1GB
   //memset(UsbBuf->Buf,0,UsbBuf->Size);
@@ -1306,7 +1322,7 @@ int CRS::Init_device() {
       nch2=2;
       opt.Nchan=2;
       for (int j=0;j<chan_in_module;j++) {
-	cpar.crs_ch[j]=0;
+	crs_ch[j]=1; //было 0
 	//type_ch[j]=0;
       }
       break;
@@ -1319,8 +1335,8 @@ int CRS::Init_device() {
       for (int i=0;i<nplates;i++) {
 	//cout << "Channels(" << i << "):";
 	for (int j=0;j<4;j++) {
-	  cpar.crs_ch[i*4+j]=0;
-	  //cout << " " << cpar.crs_ch[i*4+j];
+	  crs_ch[i*4+j]=2; //было 0
+	  //cout << " " << crs_ch[i*4+j];
 	  nch2++;
 	}
 	//cout << endl;
@@ -1333,8 +1349,15 @@ int CRS::Init_device() {
       for (int i=0;i<nplates;i++) {
 	//cout << "Channels(" << i << "):";
 	for (int j=0;j<4;j++) {
-	  cpar.crs_ch[i*4+j]=buf_in[sz];
-	  //cout << " " << cpar.crs_ch[i*4+j];
+	  //crs_ch[i*4+j]=buf_in[sz];
+	  if (buf_in[sz]==0)
+	    crs_ch[i*4+j]=2;
+	  else if (buf_in[sz]==1)
+	    crs_ch[i*4+j]=3;
+	  else
+	    crs_ch[i*4+j]=0;
+
+	  //cout << " " << crs_ch[i*4+j];
 	  nch2++;
 	}
 	//cout << endl;
@@ -1364,8 +1387,8 @@ int CRS::Init_device() {
     opt.Period=10;
     chan_in_module=nplates*8;
     for (int j=0;j<chan_in_module;j++) {
-      cpar.crs_ch[j]=2;
-      cout << " " << cpar.crs_ch[j];
+      crs_ch[j]=4; //было 2
+      cout << " " << crs_ch[j];
       nch2++;
     }
     cout << endl;
@@ -1378,8 +1401,8 @@ int CRS::Init_device() {
     opt.Period=10;
     chan_in_module=nplates*16;
     for (int j=0;j<chan_in_module;j++) {
-      cpar.crs_ch[j]=2;
-      cout << " " << cpar.crs_ch[j];
+      crs_ch[j]=5; //было 2
+      cout << " " << crs_ch[j];
       nch2++;
     }
     cout << endl;
@@ -1396,8 +1419,15 @@ int CRS::Init_device() {
     for (int i=0;i<nplates;i++) {
       //cout << "Channels(" << i << "):";
       for (int j=0;j<4;j++) {
-	cpar.crs_ch[i*4+j]=20+buf_in[sz];
-	//cout << " " << cpar.crs_ch[i*4+j];
+	crs_ch[i*4+j]=20+buf_in[sz];
+	if (buf_in[sz]==5)
+	  crs_ch[i*4+j]=6;
+	else if (buf_in[sz]==4)
+	  crs_ch[i*4+j]=7;
+	else
+	  crs_ch[i*4+j]=0;
+
+	//cout << " " << crs_ch[i*4+j];
 	nch2++;
       }
       //cout << endl;
@@ -1992,7 +2022,7 @@ void CRS::AllParameters44() {
       }
       else { //coinc
 	wmask|=4; // запись по СС
-	if (cpar.ratediv[chan]) {
+	if (cpar.RD[chan]) {
 	  wmask|=8; // запись по пересчету
 	  //wmask|=4; // запись по СС
 	}
@@ -2006,7 +2036,7 @@ void CRS::AllParameters44() {
 
       Command32(2,chan,27,(int) w); // длительность окна совпадений
       Command32(2,chan,28,(int) 0); // тип обработки повторных
-      int red = cpar.ratediv[chan]-1;
+      int red = cpar.RD[chan]-1;
       if (red<0) red=0;
       Command32(2,chan,29,(int) red); // величина пересчета P
       Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
@@ -2476,9 +2506,10 @@ void CRS::AllParameters2()
       Command2(2,chan,3,(int)cpar.Drv[chan]);
       Command2(2,chan,4,(int)cpar.Thr[chan]);
     }
-    else {
+    else { // запрет срабатывания высоким порогом
       int tmp,max;
-      cpar.GetPar("thresh",module,chan,cpar.crs_ch[chan],tmp,tmp,max);
+      cpar.GetParm("thresh",chan,cpar.Thr,tmp,max);
+      //cpar.GetPar("thresh",module,chan,crs_ch[chan],tmp,tmp,max);
       //cout << "Off: " << (int) chan << " " << max << endl;
       Command2(2,chan,3,0);
       Command2(2,chan,4,max);
@@ -4236,6 +4267,9 @@ void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
 
 void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
   //ibuf - current sub-buffer
+  // предполагается, что:
+  //b_start[ibuf] - начинается на начале события (не может быть в середине)
+  //b_end[ibuf] - заканчивается на конце события (не может быть в середине)
   Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
   EventClass* evt=&dummy_event;
@@ -4248,48 +4282,49 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
   //static Long64_t Tst;
   //static UChar_t Spn;
   ULong64_t* Buf8;
+  Short_t* DecBuf2;
+  UShort_t* UDecBuf2;
 
-  //prnt("sl;","d79: ",nevents);
-
-
+  bool b_T = sdec_e.find('T')!=string::npos;
+  bool b_N = sdec_e.find('N')!=string::npos;
   //if (!opt.fProc) { //fill event
   while (idx1<b_end[ibuf]) {
     frmt = GLBuf[idx1+7] & 0x80; //event start bit
     Buf8 = (ULong64_t*) (GLBuf+idx1);
 
-    if (frmt) { //event start	
+    if (frmt) { //event start -> записываем старое событие, создаем новое
       evt = &*Blist->insert(Blist->end(),good_event);
-      evt->Nevt=nevents;
-      nevents++;
+    }
+
+    if (b_T) {
       evt->Tstmp = (*Buf8) & sixbytes;
       (*Buf8)>>=48;
       //evt->Spin |= UChar_t((*buf8) & 1);
       evt->Spin |= UChar_t(*Buf8);
-      //prnt("ss l ds;",BGRN,"d79:",evt->Tstmp,evt->Spin,RST);
-
-      /*
-      for (auto it=sdec_e.begin(); it!=sdec_e.end(); ++it) {
-	switch (*it) {
-	case 'T':
-	  *Buf8 |= ((ULong64_t) (evt->Spin & 3)) << 48;
-	  *Buf8 |= evt->Tstmp & sixbytes;
-	  *(++Buf8)=0;
-	  break;
-	case 'N':
-	  UDecBuf2 = (UShort_t*) Buf8;
-	  UDecBuf2[0] = evt->pulses.size();
-	  UDecBuf2[1] = evt->Nevt;
-	  DecN = Buf8; //запоминаем, куда писать длину события
-	  *(++Buf8)=0;
-	  break;
-	}
-      } //for
-      */
-
-
+      ++Buf8;
+    }
+    if (b_N) {
+      UDecBuf2 = (UShort_t*) Buf8;
+      evt->Nevt=UDecBuf2[1];
+      ++Buf8;
     }
     else {
-      Short_t* buf2 = (Short_t*) (GLBuf+idx1);
+      evt->Nevt=nevents;
+      nevents++;
+    }
+
+    // в событии либо счетчики, либо пики
+    if (/*(evt->Spin & 128) &&*/ sdec_c) { //Counters
+    } //Counters
+    else { //Peaks
+      for (auto ipls=evt->pulses.begin(); ipls!=evt->pulses.end(); ++ipls) {
+      }
+    } //Peaks
+
+    //here
+    int YY  = 1;
+
+    Short_t* buf2 = (Short_t*) (GLBuf+idx1);
       UShort_t* buf2u = (UShort_t*) buf2;
       UChar_t* buf1u = (UChar_t*) buf2;
       pulse_vect::iterator itpls =
@@ -4314,7 +4349,7 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
 	}
 	ipls->Ecalibr(ipls->Area);
       }
-    }
+
 
     //prnt("ss l d ls;",BCYN,"d79:",evt->Tstmp,evt->Spin,evt->pulses.size(),RST);
 
@@ -4499,7 +4534,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
       }
 
       idx1+=8;
-    } //while (idx1<buf_len)
+    } //while (idx1<b_end)
 
     Dec_End(Blist,iread,255);
 
@@ -6690,17 +6725,19 @@ void CRS::Fill_Dec80(EventClass* evt) {
 
 void CRS::Fill_Dec81(EventClass* evt) {
 
-  ULong64_t* Dec0 = DecBuf8; //запоминаем начальное значение буфера
-  ULong64_t* DecN = 0; //значение буфера для записи длины
+  cout << "Fill_dec81" << endl;
+  ULong64_t* Dec0 = DecBuf8; //запоминаем начальный адрес буфера
+  ULong64_t* DecN = 0; //адрес буфера для записи длины
   Short_t* DecBuf2;
   UShort_t* UDecBuf2;
 
   *DecBuf8 = 0x8000000000000000; //признак начала события
 
+  // общие параметры события
   for (auto it=sdec_e.begin(); it!=sdec_e.end(); ++it) {
     switch (*it) {
     case 'T':
-      *DecBuf8 |= ((ULong64_t) (evt->Spin & 3)) << 48;
+      *DecBuf8 |= ((ULong64_t) (evt->Spin & 7)) << 48; //нижние 3 бита
       *DecBuf8 |= evt->Tstmp & sixbytes;
       *(++DecBuf8)=0;
       break;
@@ -6714,12 +6751,14 @@ void CRS::Fill_Dec81(EventClass* evt) {
     }
   }
 
-  if (evt->Spin & 128) { //Counters
+  // в событии либо счетчики, либо пики
+  if ((evt->Spin & 128) && sdec_c) { //Counters
     for (auto ipls=evt->pulses.begin(); ipls!=evt->pulses.end(); ++ipls) {
       *DecBuf8=ipls->Counter & sixbytes;
       DecBuf2 = (Short_t*) DecBuf8;
-      DecBuf2[3]=0x4000; //признак счетчиков
-      DecBuf2[3]|=ipls->Chan;
+      DecBuf2[3]=0x4000|ipls->Chan; //0x4000: признак счетчиков
+      //DecBuf2[3]=0x4000; //признак счетчиков
+      //DecBuf2[3]|=ipls->Chan;
       *(++DecBuf8)=0;
     }
   }
@@ -6761,20 +6800,20 @@ void CRS::Fill_Dec81(EventClass* evt) {
 	  break;
 	} //switch
 	pos++;
-	if (pos>=3) {
+	if (pos>=3) {//слово заполнено, записываем Chan
 	  DecBuf2[3]|=ipls->Chan;
 	  *(++DecBuf8)=0;
 	  DecBuf2 = (Short_t*) DecBuf8;
 	  pos=0;
 	}
       } // for sdec
-      if (pos) { // заканчиваем запись импульса
+      if (pos) {//значит, слово неполное, заканчиваем запись импульса
 	DecBuf2[3]|=ipls->Chan;
 	*(++DecBuf8)=0;
 	DecBuf2 = (Short_t*) DecBuf8;
 	pos=0;
       }
-      if (sdec_d) { //записываем sData (здесь pos всегда 0)
+      if (sdec_d) { //записываем sData (в этой точке pos всегда 0)
 	for (auto j=ipls->sData.begin(); j!=ipls->sData.end(); ++j) {
 	  DecBuf2[pos] = *j;
 	  pos++;
@@ -6784,6 +6823,12 @@ void CRS::Fill_Dec81(EventClass* evt) {
 	    DecBuf2 = (Short_t*) DecBuf8;
 	    pos=0;
 	  }
+	}
+	if (pos) {//значит, слово неполное
+	  DecBuf2[3]|=ipls->Chan;
+	  *(++DecBuf8)=0;
+	  //DecBuf2 = (Short_t*) DecBuf8;
+	  //pos=0;
 	}
       } //if (sdec_d)
     } //for ipls

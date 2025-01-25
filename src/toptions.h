@@ -11,6 +11,9 @@
 
 #define CDEF 152
 
+const int MM = 8; //количество типов модулей
+typedef std::array<int,2*MM> arr;
+
 /*
 #include <list>
 //------------------------------------
@@ -68,7 +71,10 @@ public:
   //Version_t ver;
   // parameters of the crs32 or crs2 module
 
-  Int_t crs_ch[MAX_CHTP]; //CRS channel type:
+  std::map<void*,arr> mcpar;
+
+  // crs_ch перенесено в libcrs
+  //Int_t crs_ch[MAX_CHTP]; //CRS channel type:
   //0 - CRS2/CRS32 (11 bit)
   //1 - CRS-6/16 (16 bit)
   //2 - CRS-8/16 or CRS-128 (16 bit)
@@ -95,7 +101,7 @@ public:
   Int_t mult_w1[2]; //минимальная множественность для групп 0,1
   Int_t mult_w2[2]; //максимальная множественность для групп 0,1
   Bool_t group[MAX_CHTP][2];
-  Int_t ratediv[MAX_CHTP];
+  Int_t RD[MAX_CHTP]; // [ratediv] - rate divider
 
 
   //UInt_t Mask[MAX_CHTP];
@@ -119,7 +125,9 @@ public:
 public:
   void InitPar(int zero);
   std::string GetDevice(int module, int opt=1);
-  void GetPar(const char* name, Int_t module, Int_t i, Int_t crs_ch, Int_t &par, Int_t &min, Int_t &max);
+  void InitMinMax();
+  void GetParm(const char* name, Int_t i, void *par, Int_t &min, Int_t &max);
+  //void GetPar(const char* name, Int_t module, Int_t i, Int_t crs_ch, Int_t &par, Int_t &min, Int_t &max);
   Int_t ChkLen(Int_t i, Int_t module);
 
   ClassDef(Coptions, CDEF)

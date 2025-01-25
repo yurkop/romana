@@ -1,3 +1,12 @@
+git tag -a v0.900 -m 'новый GetParm; гистограммы Period'
+- добавлен файл parameters.xlsx
+- возможность записи FillDec81 (чтение недоделано)
+- crs_ch перенесен из coptions в crs
+- переделан GetPar в GetParm -> использует новые crs_ch
+- переделан Init_device под новые crs_ch
+- ratediv переименован в RD
+- гистограмма Period работает: добавлена Mdef::VarPeriod
+
 git tag -a v0.899 -m '20 мс для АК-32; исправлено Open-'
 - добавлен параметр P_TEST в Makefile
 - возвращен вызов cyusb_claim_interface (был удален в предыдущей версии)

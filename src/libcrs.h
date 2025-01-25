@@ -192,6 +192,16 @@ RQ_OBJECT("CRS")
   //1: crs-6/16 2-16bit;
   //2: crs-8/16 (16bit)
 
+  Int_t crs_ch[MAX_CHTP]; //CRS channel type:
+  //0 - undefined
+  //1 - CRS-2
+  //2 - CRS-32 11 bit
+  //3 - CRS-16 16 bit
+  //4 - CRS-8
+  //5 - CRS-128
+  //6 - AK32 14 bit
+  //7 - AK32 12 bit
+
   //buffers for sending parameters...
   UChar_t buf_out[64];
   UChar_t buf_in[64];
