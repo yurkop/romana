@@ -14,7 +14,6 @@
 #include <TGTableLayout.h>
 
 #include <TRandom.h>
-#include <TVirtualFFT.h>
 #include <TMath.h>
 
 //Long64_t markt[10];
@@ -165,6 +164,9 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   }
   
   ntab=nt;
+  fftr2c=0;
+  txt.SetTextAlign(22);
+
   // build widgets
 
   //bprint=false;
@@ -1031,7 +1033,13 @@ void EventFrame::FillGraph(int dr) {
       break;
     case 4: { //FFT
 
-      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+      Int_t N = pulse->sData.size();
+      if (fftr2c) delete fftr2c;
+      fftr2c = TVirtualFFT::FFT(1, &N, "R2C");
+      if (!fftr2c)
+	break;
+
+      for (Int_t j=0;j<N;j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
 	Gr[dr][i]->GetY()[j]=pulse->sData[j];
 
@@ -1042,18 +1050,16 @@ void EventFrame::FillGraph(int dr) {
       }
 
 
-      Int_t N = pulse->sData.size();
       Double_t *in = new Double_t[N+1];
       for (int j=0;j<N;j++) {
       	in[j]=pulse->sData[j];
       }
 
-      TVirtualFFT *fftr2c = TVirtualFFT::FFT(1, &N, "R2C");
       fftr2c->SetPoints(in);
       fftr2c->Transform();
       //fftr2c->GetPoints(in);
 
-      for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
+      for (Int_t j=0;j<N;j++) {
 	Double_t re, im;
 	fftr2c->GetPointComplex(j, re, im);
 
@@ -1065,12 +1071,14 @@ void EventFrame::FillGraph(int dr) {
 	if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
 	  gy2[dr][i]=Gr[dr][i]->GetY()[j];
       }
+      // обнуляем нулевой бин
+      Gr[dr][i]->GetY()[0] = 0;
       delete[] in;
       
     } //dr==4
       break;
     } //switch
-  }
+  } //for
 }
 
 void EventFrame::SetXRanges() {
@@ -1160,7 +1168,7 @@ void EventFrame::DrawEvent2() {
 
   if (d_event->pulses.empty()) {
     //TText tt;
-    txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
+    txt.DrawTextNDC(0.5,0.5,"No pulses in this event");
     cv->Update();
     //Emut2.UnLock();
     return;
@@ -1416,7 +1424,7 @@ void EventFrame::ReDraw() {
   TCanvas *cv=fCanvas->GetCanvas();
 
   if (d_event->pulses.empty()) {
-    txt.DrawTextNDC(0.2,0.7,"No pulses in this event");
+    txt.DrawTextNDC(0.5,0.5,"No pulses in this event");
     cv->Update();
     //Emut2.UnLock();
     return;
@@ -1476,6 +1484,11 @@ void EventFrame::ReDraw() {
 	PulseClass *pulse = &d_event->pulses.at(j);
 	//if (fChn[pulse->Chan]->IsOn()) {
 	if (fChn_on(pulse->Chan)) {
+	  if (i==4 && fftr2c==0) { //FFT
+	    txt.DrawTextNDC(0.5,0.5,"ROOT is compiled without FFT");
+	    continue;
+	  }
+	  //cout << "Gr: " << i << " " << j << " " << Gr[i][j]->GetN() << " " << fftr2c << endl;
 	  if (Gr[i][j]->GetN()) { //draw graph
 	    Gr[i][j]->Draw("lp");
 	    if (opt.b_peak[0]) //draw peaks

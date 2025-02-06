@@ -17,6 +17,7 @@
 #include <TGTextEntry.h>
 #include <TGDockableFrame.h>
 #include <TFormula.h>
+#include <TVirtualFFT.h>
 
 //#include "TThread.h"
 #include <list>
@@ -125,6 +126,8 @@ protected:
   //TGStatusBar            *fStat2[4];
 
   TFormula               *formula;
+
+  TVirtualFFT *fftr2c;
 
   TGLayoutHints          *fLay3;
   TGLayoutHints          *fLay4;

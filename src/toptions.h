@@ -9,10 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 152
-
-const int MM = 8; //количество типов модулей
-typedef std::array<int,2*MM> arr;
+#define CDEF 153
 
 /*
 #include <list>
@@ -30,7 +27,15 @@ public:
 */
 
 
+const int MM = 8; //количество типов модулей для mcpar
+typedef std::array<int,2*MM> arr;
+
 //------------------------------------
+class GG {
+public:
+  std::map<void*,arr> mcpar;
+};
+
 class Hdef {
   // класс содержит параметры гистограмм в простых переменных,
   // которые можно легко сохранить в файл 
@@ -70,8 +75,6 @@ public:
 
   //Version_t ver;
   // parameters of the crs32 or crs2 module
-
-  std::map<void*,arr> mcpar;
 
   // crs_ch перенесено в libcrs
   //Int_t crs_ch[MAX_CHTP]; //CRS channel type:

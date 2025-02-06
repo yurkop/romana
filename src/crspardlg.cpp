@@ -254,7 +254,7 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
   Pmap* pp = &Plist[id-1];
   int act = (pp->cmd>>4)&0xF;
 
-  //cout << "DoAct: " << pp->cmd << " " << act << " " << id << " " << pp->off << " " << off << endl;
+  //prnt("ss d d f d ds;",BBLU,"act:",id,off,fnum,dq,act,RST);
 
   switch (act) {
   case 1:
@@ -328,12 +328,13 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
     //cout << "act6: " << endl;
 
     //int kk = (id-1)%nfld; //column number
-    int ll = (id-1)/nfld; //line number
+    //здесь должно быть off вместо id?
+    //int ll = (id-1)/nfld; //line number
 
-    int l2 = cpar.ChkLen(ll,crs->module);
-    if (l2-cpar.Len[ll]==1)
-      cpar.Len[ll]-=4;
-    //prnt("ss d ds;",BBLU,"Act:",cpar.Len[ll],l2,RST);
+    int l2 = cpar.ChkLen(off,crs->module);
+    if (l2-cpar.Len[off]==1)
+      cpar.Len[off]-=4;
+    //prnt("ss d d ds;",BBLU,"Act:",off,cpar.Len[off],l2,RST);
 
     UpdateField(id-1);
 
@@ -568,7 +569,7 @@ void ParDlg::DoCombo() {
   // bool cp=false; //copy from chtype to channel
   int old_type=opt.chtype[index];
 
-  //prnt("ss d d d d ds;",BRED,"comb:",sel,index,nline,pp->off,pp->all,RST);
+  //prnt("ss d d d d d ds;",BRED,"comb:",id,sel,index,nline,pp->off,pp->all,RST);
 
   if (pp->all==0) { //normal channels
     if (sel!=MAX_TP+2) { // sel!=Copy -> normal sel
@@ -679,7 +680,7 @@ void ParDlg::CopyParLine(int sel, int index, int line) {
   //line - номер строки виджета
 
   if (sel<0) { //inverse copy - from current ch to group
-    cout << "copyp: " << sel << " " << index << " " << line << endl;
+    //cout << "copyp: " << sel << " " << index << " " << line << endl;
     for (int j=0;j<nfld;j++) {
       Pmap* pp = &Plist[j];
       int a = index*pp->step; //from
@@ -690,6 +691,7 @@ void ParDlg::CopyParLine(int sel, int index, int line) {
   }
   else if (sel<=MAX_TP) { //normal copy from group to current ch
     for (int j=0;j<nfld;j++) {
+      //prnt("ss d d d ds;",BYEL,"CPL:",j,sel,index,line,RST);
       Pmap* pp = &Plist[j];
       int b = index*pp->step; //to
       int a = (MAX_CH+sel)*pp->step; //from
@@ -712,6 +714,8 @@ void ParDlg::CopyField(Pmap* pp, int from, int to) {
   if (pp->type!=p_inum && pp->type!=p_fnum && pp->type!=p_chk) {
     return;
   }
+
+  //prnt("ss d d f d ds;",BMAG,"cpf:",id,off,fnum,dq,act,RST);
 
   // if (pt1!=pt2) {
   //   cout << "CopyField bad type: " << from << " " << to << " "
@@ -804,9 +808,9 @@ void ParDlg::UpdateField(int nn) {
     Int_t *dat = ((Int_t*)pp->data) + pp->off;
     val=*dat;
     if (act==6) { //проверка Len кратно 3 или 4
-      int ll = (nn)/nfld; //line number
+      //int ll = (nn)/nfld; //line number
       //if (ll<pmax) {
-      cpar.Len[ll]=cpar.ChkLen(ll,crs->module);
+      cpar.Len[pp->off]=cpar.ChkLen(pp->off,crs->module);
       //}
     }
     if (te->GetNumLimits()==lim && *dat > te->GetNumMax()) {

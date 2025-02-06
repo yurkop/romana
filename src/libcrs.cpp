@@ -1989,6 +1989,7 @@ void CRS::AllParameters44() {
   }
 
   for (UChar_t chan = 0; chan < chan_in_module; chan++) {
+    
     if (cpar.on[chan]) {
 
       mask_discr=0b0000000000011; //bits 0,1 (было еще 11,12)
@@ -2060,183 +2061,6 @@ void CRS::AllParameters44() {
 
 } //AllParameters44()
 
-/*
-void CRS::AllParameters43() {
-  //cout << "Allparameters43: " << endl;
-  UInt_t mask_discr, //маска для дискр,СС и пересчета 
-    mask_start, //маска для СТАРТ
-    wmask; //маска разрешений записи
-
-  UInt_t mask_group;
-
-  AllParameters35();
-
-  int hard_logic=0;
-  if (cpar.Trigger==2) { //Coinc
-    hard_logic=1;
-  }
-
-  for (UChar_t chan = 0; chan < chan_in_module; chan++) {
-    if (cpar.on[chan]) {
-
-      mask_discr=0b0000000000011; //bits 0,1 (было еще 11,12)
-      if (opt.dsp[chan]) {
-	mask_discr|=0b11101110000; // write DSP data
-      }
-
-      if (cpar.pls[chan]) { //add 1100
-	mask_discr|=0b1100; // write pulse
-      }
-
-      mask_start=0b1100000000001; //bits 0,11,12 - bitmask for START: tst,count48,overflow
-
-      int w = 1;
-      mask_group=0;
-      for (int j=0;j<2;j++) {
-	if (cpar.group[chan][j]) {
-	  if (cpar.coinc_w[j]>w)
-	    w=cpar.coinc_w[j];
-	  mask_group+=j+1;
-	}
-      }
-
-      wmask=2; // 0010 - запись по сигналу СТАРТ - всегда
-
-      if (cpar.Trigger==0) { //discr
-	wmask|=1;
-      }
-      else if (cpar.Trigger==1) { //START
-	mask_start|=mask_discr; //добавляем запись импульса по старту
-      }
-      else { //coinc
-	wmask|=4; // запись по СС
-	if (cpar.ratediv[chan]) {
-	  wmask|=8; // запись по пересчету
-	  //wmask|=4; // запись по СС
-	}
-      }
-
-      Command32(2,chan,23,mask_discr); //bitmask для дискр overwr AllPrms35
-      Command32(2,chan,24,mask_start); //bitmask для START
-      Command32(2,chan,25,wmask); // битовая маска разрешений записи
-      Command32(2,chan,26,mask_discr); //bitmask для СС и пересчета
-
-
-      Command32(2,chan,27,(int) w); // длительность окна совпадений
-      Command32(2,chan,28,(int) 0); // тип обработки повторных
-      int red = cpar.ratediv[chan]-1;
-      if (red<0) red=0;
-      Command32(2,chan,29,(int) red); // величина пересчета P
-      Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
-      Command32(2,chan,31,(int) mask_group); //битовая маска принадлежности к группам
-      Command32(2,chan,34,cpar.F24); // разрядность форматирования отсчетов сигнала
-    } // if (cpar.on[chan])
-    else {
-      Command32(2,chan,25,0); // битовая маска разрешений записи = 0
-    }
-  } //for
-
-  //Общие параметры:
-
-  Command32(11,1,0,cpar.Smpl);            // Sampling rate
-  Command32(11,4,0,(int) hard_logic); // Использование схемы совпадений
-  Command32(11,5,0,(int) cpar.mult_w1[0]); // минимальная множественность 0
-  Command32(11,6,0,(int) cpar.mult_w2[0]); // максимальная множественность 0
-  Command32(11,7,0,(int) cpar.mult_w1[1]); // минимальная множественность 1
-  Command32(11,8,0,(int) cpar.mult_w2[1]); // максимальная множественность 1
-
-} //AllParameters43()
-
-void CRS::AllParameters42() {
-  //cout << "Allparameters42: " << opt.hard_logic << endl;
-  UInt_t mask, //маска для дискр,СС и пересчета 
-    mask2, //маска для СТАРТ
-    wmask; //маска разрешений записи
-
-  AllParameters33();
-
-  for (UChar_t chan = 0; chan < chan_in_module; chan++) {
-    if (cpar.on[chan]) {
-
-      mask=0x3; //00000011 - for coinc: tst,count40
-      if (opt.dsp[chan]) { //add 110000
-	mask|=0x30; // write DSP data
-      }
-
-      if (cpar.pls[chan]) { //add 1100
-	mask|=0xC; // write pulse
-      }
-
-      wmask=2; // 0010 - запись по сигналу СТАРТ - всегда
-      mask2=0xC1; //11000001 - bitmask for START: tst,count48,overflow
-
-      if (cpar.Trigger==0) { //discr
-	wmask|=1;
-      }
-      else if (cpar.Trigger==1) { //START
-	mask2|=mask; //добавляем запись импульса по старту
-      }
-      else { //coinc
-	wmask|=4; // запись по СС
-	if (cpar.ratediv[chan])
-	  wmask|=8; // запись по пересчету	
-      }
-
-      Command32(2,chan,23,mask); //bitmask для дискриминатора
-      Command32(2,chan,24,mask2); //bitmask для START
-      Command32(2,chan,26,mask); //bitmask для СС и пересчета
-
-      Command32(2,chan,25,wmask); // битовая маска разрешений записи
-
-      int w = 1;
-      mask=0;
-      for (int j=0;j<2;j++) {
-	if (cpar.group[chan][j]) {
-	  if (cpar.coinc_w[j]>w)
-	    w=cpar.coinc_w[j];
-	  mask+=j+1;
-	}
-      }
-      Command32(2,chan,27,(int) w); // длительность окна совпадений
-      Command32(2,chan,28,(int) 0); // тип обработки повторных
-      int red = cpar.ratediv[chan]-1;
-      if (red<0) red=0;
-      Command32(2,chan,29,(int) red); // величина пересчета P
-      Command32(2,chan,31,(int) mask); //битовая маска принадлежности к группам
-      Command32(2,chan,30,200); // максимальное расстояние для дискриминатора типа 3: L (=200)
-
-    } // if (cpar.on[chan])
-    else {
-      Command32(2,chan,25,0); // битовая маска разрешений записи = 0
-    }
-  } //for
-
-  //Общие параметры:
-
-  // Start dead time DT
-  if (cpar.DTW<=0) cpar.DTW=1;
-  UChar_t type = cpar.DTW>>24;
-
-  //Start source
-  int st_src=cpar.St_Per ? 1 : 0;
-
-  //Start imitator period
-  int sprd=cpar.St_Per;
-  if (sprd) sprd--;
-
-  Command32(11,0,type,(UInt_t) cpar.DTW); // Start dead time DTW
-  Command32(11,1,0,cpar.Smpl);            // Sampling rate
-  Command32(11,2,0,st_src);               // Start source
-  Command32(11,3,0,sprd);                 // Start imitator period
-  Command32(11,4,0,(int) opt.hard_logic); // Использование схемы совпадений
-  Command32(11,5,0,(int) cpar.mult_w1[0]); // минимальная множественность 0
-  Command32(11,6,0,(int) cpar.mult_w2[0]); // максимальная множественность 0
-  Command32(11,7,0,(int) cpar.mult_w1[1]); // минимальная множественность 1
-  Command32(11,8,0,(int) cpar.mult_w2[1]); // максимальная множественность 1
-
-} //AllParameters42
-*/
-
 void CRS::AllParameters36() {
   //cout << "AllParameters36(): " << endl;
 
@@ -2248,6 +2072,7 @@ void CRS::AllParameters36() {
   for (UChar_t chan = 0; chan < chan_in_module; chan++) {
     if (chan>=opt.Nchan)
       cpar.on[chan]=false;
+
     Command32(2,chan,11,(int) cpar.on[chan]); //enabled
 
     if (cpar.on[chan]) {

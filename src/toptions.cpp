@@ -5,9 +5,12 @@
 #include <TDataMember.h>
 #include <cstdlib>
 #include "romana.h"
+#include <map>
 
 extern CRS* crs;
 extern Coptions cpar;
+GG *gg;
+
 using namespace std;
 
 //extern TList listmap;
@@ -15,6 +18,7 @@ using namespace std;
 
 Coptions::Coptions() {
 
+  gg = new(GG);
   InitPar(1);
   InitMinMax();
 
@@ -153,9 +157,7 @@ std::string Coptions::GetDevice(int module, int opt) {
 		      
 void Coptions::InitMinMax() {
   //см. parameters.xlsx
-  const int MM = 8; //количество типов модулей
   // первая строчка - мин; вторая - макс.
-  typedef std::array<int,2*MM> arr;
   arr mhS,mDt,mPre,mLen,mDrv,mThr,mLT,mG,mhD,mTrg,mRD;
 
   // см. sum: сглаживание (суммирование)
@@ -177,9 +179,9 @@ void Coptions::InitMinMax() {
 	  0,1023,1023,1023,1023,255,255,255};
   // порог срабатывания
   mThr = {0,0,-2048};
-  fill_n(&mPre[3],5,-65536);
+  fill_n(&mThr[3],5,-65536);
   mThr[MM]=0; mThr[MM+1]=2047; mThr[MM+2]=2047;
-  fill_n(&mPre[MM+3],5,65535);
+  fill_n(&mThr[MM+3],5,65535);
   // нижний порог дискриминатора типов 3, 4
   mLT = mThr;
   mLT[3]=0; mLT[MM+3]=0;
@@ -198,17 +200,17 @@ void Coptions::InitMinMax() {
 
   //arr mhS,mDt,mPre,mLen,mDrv,mThr,mLT,mG,mhD,mTrg,mRD;
 
-  mcpar[hS] = mhS;
-  mcpar[Dt] = mDt;
-  mcpar[Pre] = mPre;
-  mcpar[Len] = mLen;
-  mcpar[Drv] = mDrv;
-  mcpar[Thr] = mThr;
-  mcpar[LT] = mLT;
-  mcpar[G] = mG;
-  mcpar[hD] = mhD;
-  mcpar[Trg] = mTrg;
-  mcpar[RD] = mRD;
+  gg->mcpar[hS] = mhS;
+  gg->mcpar[Dt] = mDt;
+  gg->mcpar[Pre] = mPre;
+  gg->mcpar[Len] = mLen;
+  gg->mcpar[Drv] = mDrv;
+  gg->mcpar[Thr] = mThr;
+  gg->mcpar[LT] = mLT;
+  gg->mcpar[G] = mG;
+  gg->mcpar[hD] = mhD;
+  gg->mcpar[Trg] = mTrg;
+  gg->mcpar[RD] = mRD;
 
   // cout << "mhS: " << mhS[7] << " " << mhS[MM+7] << " "
   //      << mcpar[hS][7] << " " << mcpar[hS][MM+7] << endl;
@@ -230,7 +232,7 @@ void Coptions::GetParm(const char* name, int i, void *par, int &min, int &max) {
   arr xx;
 
   try {
-    xx = mcpar.at(par);
+    xx = gg->mcpar.at(par);
     min = xx.at(crs->crs_ch[i]);
     max = xx.at(MM+crs->crs_ch[i]);
   }
@@ -239,7 +241,7 @@ void Coptions::GetParm(const char* name, int i, void *par, int &min, int &max) {
     return;
   }
 
-  //prnt("ss s d d d ds;",BGRN,"GetParm:",name,i,crs->crs_ch[i],min,max,RST);
+  prnt("ss s d d d ds;",BGRN,"GetParm:",name,i,crs->crs_ch[i],min,max,RST);
 
 } //GetParm
 
