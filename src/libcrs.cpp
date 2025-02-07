@@ -857,6 +857,7 @@ BufClass::~BufClass() {
 CRS::CRS() {
 
   /*
+  int test;
   int imin,imax;
   cpar.GetParm("hS",0,cpar.hS,imin,imax);
   cpar.GetParm("fdiv",0,cpar.fdiv,imin,imax);
