@@ -898,6 +898,8 @@ CRS::CRS() {
   good_pulse.Pos=0;
   good_event.Spin=64; //Ms is set
 
+  ndev=0;
+
   // dummy_peak.Area=0;
   // dummy_peak.Height=0;
   // dummy_peak.Width=0;
@@ -5798,6 +5800,9 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
       // else {
       //   prnt("ss l d l ls;",BGRN,"ts:",nevents,eh->ts,evt->Tstmp,T_prev,RST);
       // }
+
+      //prnt("ss l d d l ls;",BGRN,"ts:",nevents,eh->np,eh->ts,evt->Tstmp,Pstamp64,RST);
+
       Pstamp64 = evt->Tstmp;
 
       for (int n = 0; n < eh->np; n++) {

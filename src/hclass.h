@@ -26,8 +26,8 @@ public:
   // =1..49 - standard 1d hist
   // =51 - mean pulses
   // =52 - mean deriv
-  // =53 - prof
-  // =54 - prof_int
+  // =61 - prof
+  // =62 - prof_int
   // >100 - 2d hist
 
   size_t ptr=0; //offset of PulseClass member for VarPulse

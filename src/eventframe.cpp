@@ -15,6 +15,7 @@
 
 #include <TRandom.h>
 #include <TMath.h>
+#include <TVirtualFFT.h>
 
 //Long64_t markt[10];
 
@@ -93,6 +94,8 @@ extern CRS* crs;
 extern ParParDlg *parpar;
 extern EventFrame* EvtFrm;
 extern HClass* hcl;
+
+extern TVirtualFFT *fftr2c;
 //extern Common* com;
 
 //extern ULong_t fGreen;

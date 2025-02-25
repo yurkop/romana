@@ -83,6 +83,8 @@ ParParDlg *parpar=0;
 HistParDlg *histpar=0;
 ChanParDlg *chanpar=0;
 
+TVirtualFFT *fftr2c;
+
 Pixel_t fWhite;
 Pixel_t fGrey;
 Pixel_t fYellow;
@@ -2306,6 +2308,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     Build();
     break;
   default:
+    //cout << "crs->ndev= " << crs->ndev << endl;
     new PopFrame(this,1,1,M_DEVICE);
   }
 

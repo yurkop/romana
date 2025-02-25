@@ -380,9 +380,10 @@ public:
 
   Hdef h_pulse; // 51 Pulse samples Amplitude Average pulse shape
   Hdef h_deriv; // 52 Deriv samples Amplitude Average pulse shape derivative
+  Hdef h_fft; // 53 FFT samples Amplitude Average FFT
 
-  Hdef h_prof; // 53 Profilometer X(mm) Y(mm) 2d histograms for Profilometer
-  Hdef h_prof_int; // 54 Prof_int - - Integral histograms for profilometer
+  Hdef h_prof; // 61 Profilometer X(mm) Y(mm) 2d histograms for Profilometer
+  Hdef h_prof_int; // 62 Prof_int - - Integral histograms for profilometer
 
   //Hdef h_width2;
   //Hdef h_width3;

@@ -109,6 +109,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
   //      5 - threshold crossing of derivative, use 2nd deriv for timing.
   //      6 - fall of derivative, zero crossing
   //      7 - CFD, zero crossing
+  //      8 - CFD, fraction
 
   if (sTrig==7) sTrig = cpar.Trg[Chan]; //для sTrig7 используется cpar.Trig
 
@@ -125,7 +126,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
   UInt_t pp=kk; // временный Pos
 
   switch (sTrig) {
-  case 0: // hreshold crossing of pulse
+  case 0: // threshold crossing of pulse
     for (j=0;j<sData.size();j++) {
       if (sData[j] > opt.sThr[Chan]) {
 	Pos=j;
@@ -163,7 +164,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
       }
     }
     break;
-  case 2: // maximum of derivative;
+  case 2: // maximum of derivative; (первый локальный максимум после порога)
   case 5: // or fall of 2nd derivative (it's the same)
     Dpr=-1e6;
     //int jpr;
@@ -197,6 +198,42 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
       Dpr=D[j];
     } //for
     //case 3
+    break;
+  case 8: {// CFD fraction - POS: точка пересечения Max*frac находится
+           // между Pos и Pos+1
+    Float_t max_frac= -99999;//opt.T2[Chan]*0.1;
+    //сначала находим первый локальный максимум после порога
+    Dpr=-1e6;
+    //int jpr;
+    for (j=kk;j<sData.size();j++) {
+      D[j]=sData[j]-sData[j-kk];
+      if (Dpr > opt.sThr[Chan] && D[j]<Dpr) {
+	Pos=j-1;
+	max_frac=Dpr*opt.T2[Chan]*0.1; //Max*frac
+	//Peaks.push_back(pk);
+	break;
+      }
+      Dpr=D[j];
+    }
+
+    if (Pos!=-32222) { //пик найден
+      //находим CFD
+      do {
+	Pos--;
+	if (D[Pos]<=max_frac) {
+	  break;
+	}
+      } while (Pos>kk);
+
+      // for (int j=Pos-1;j>=kk;j--) {
+      // 	if (D[j]<=max_frac) {
+      // 	  Pos=j+1;
+      // 	  break;
+      // 	}
+      // }
+      
+    }
+  } //case 8
     break;
     /*
   case 7: {// CFD
@@ -246,6 +283,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
   // определяем точное пересечение нуля или LT (нижнего порога)
   // Pos - уже найден; kk - параметр производной
   // для Trig=4 Pos - точка ПЕРЕД пересечением нуля
+  // результат записывается в PulseClass::Time
 
   //cout << "stg: " << opt.sTg[Chan] << endl;
   int stg = opt.sTg[Chan];
@@ -363,6 +401,9 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
 
   } //case 7
     break;
+  case 8: {
+  }
+    break;
   default:
     break;
   }
@@ -449,10 +490,133 @@ void PulseClass::PeakAna33() {
   if (W1>=sz) W1=sz-1;
   if (W2>=sz) W2=sz-1;
 
+
+  // 1. находим baseline
+  Base=0;
+  int nbkg=0;
+  for (int j=B1;j<=B2;j++) {
+    Base+=sData[j];
+    nbkg++;
+  }
+
+  if (nbkg)
+    Base/=nbkg;
+  else {
+    ++crs->errors[ER_BASE];
+  }
+
+  // 2. поправляем весь импульс на PoleZero
+  if (opt.Pz[Chan]) {
+    PoleZero(opt.Pz[Chan]);
+  }
+
+  // 3. находим Area0 & Height
+  int nn=0;
+  Height=-99999;
+  for (int j=P1;j<=P2;j++) {
+    Area0+=sData[j];
+    if (sData[j]>Height) Height = sData[j];
+    nn++;
+  }
+  if (nn) {
+    Area0/=nn;
+  }
+  else {
+    ++crs->errors[ER_AREA];
+    //cout << "zero Area: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
+  }
+
+  // 4. находим wdth (интеграл от W1 до W2)
+  nn=0;
+  for (int j=W1;j<=W2;j++) {
+    wdth+=sData[j];
+    nn++;
+  }
+  if (nn) {
+    wdth/=nn;
+  }
+  else {
+    ++crs->errors[ER_WIDTH];
+  }
+
+  if (hcl->b_base[Chan]) {
+    // 5. определяем slope1 (baseline)
+    Sl1=0;
+    S_xx = 0;
+    xm = (B2+B1)*0.5; //mean x
+    //nbkg=0;
+    for (int j=B1;j<=B2;j++) {
+      Float_t xx = j-xm;
+      Sl1+=xx*(sData[j]-Base);
+      S_xx+=xx*xx;
+      //nbkg++;
+    }
+    if (S_xx) {
+      Sl1/=S_xx;
+    }
+
+    //prnt("ss fs;",BRED,"Sl1:",Sl1,RST);
+
+    // if (opt.Mt[Chan]==3) { //альтернативный slope1 (W1-W2) вместо slope2
+    //   Sl2 = 2*(Base - wdth)/(B1+B2-W1-W2);
+    //   RMS2 = 0;
+    // }
+    if (opt.Mt[Chan]!=3) { //если Mt=3, см. ниже
+      // 6. определяем slope2 (peak)
+      Sl2=0;
+      S_xx = 0;
+      xm = (P2+P1)*0.5; //mean x
+      //nbkg=0;
+      for (int j=P1;j<=P2;j++) {
+	Float_t xx = j-xm;
+	Sl2+=xx*(sData[j]-Area0);
+	S_xx+=xx*xx;
+	//nbkg++;
+      }
+      if (S_xx) {
+	Sl2/=S_xx;
+      }
+
+      // 7. определяем RMS2 (peak)
+      RMS2=0;
+      nbkg=0;
+      for (int j=P1;j<=P2;j++) {
+	Float_t Yj = Area0+(j-(P1+P2)*0.5)*Sl2 - sData[j];
+	RMS2+=Yj*Yj;
+	nbkg++;
+	//cout << "jjjj: " << j << " " << Base << " " << sData[j] << " " << Yj << endl;
+      }
+      if (nbkg) {
+	RMS2 = sqrt(RMS2/nbkg);
+      }
+
+    } //else (slope2)
+    //prnt("ss fs;",BGRN,"Sl2:",Sl2,RST);
+
+    // 8. определяем RMS1 (baseline)
+    RMS1=0;
+    nbkg=0;
+    for (int j=B1;j<=B2;j++) {
+      Float_t Yj = Base+(j-(B1+B2)*0.5)*Sl1 - sData[j];
+      RMS1+=Yj*Yj;
+      nbkg++;
+      //cout << "jjjj: " << j << " " << Base << " " << sData[j] << " " << Yj << endl;
+    }
+    if (nbkg) {
+      RMS1 = sqrt(RMS1/nbkg);
+    }
+
+  } //if b_base
+
+
+
+  // 9. определяем Time и Area2
   switch (stg) {
   case 3:
   case 6:
   case 7:
+  case 8:
+    // FindZero определяет Time
     FindZero(kk,opt.sThr[Chan]);
     if (opt.Mt[Chan]==1) {
       for (int j=T1;j<=T2;j++) {
@@ -502,173 +666,17 @@ void PulseClass::PeakAna33() {
   } //default
   } //switch
 
-  /*
-  if (opt.sTg[Chan]<6) { //not zero crossing
-    Time=0;
-
-    if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv
-      // 05.10.2020
-      for (int j=T1;j<=T2;j++) {
-	if (j<kk+1)
-	  continue;
-	Float_t dif2=sData[j]-sData[j-kk]-sData[j-1]+sData[j-kk-1];
-	if (dif2>0) {
-	  Time+=dif2*j;
-	  Area2+=dif2;
-	}
-      }
-    }
-    else { //use 1st deriv
-      for (int j=T1;j<=T2;j++) {
-	if (j<kk)
-	  continue;
-	Float_t dif=sData[j]-sData[j-kk];
-	if (dif>0) {
-	  Time+=dif*j;
-	  Area2+=dif;
-	}
-      }
-    }
-
-    if (abs(Area2)>1e-5) {
-      Time/=Area2;
-    }
-    else {
-      ++crs->errors[ER_TIME];
-      //prnt("ssfs;",BGRN,"ErrTime1: ",sum,RST);
-      Time=(T1+T2)*0.5;
-    }
-  } // if not zero crossing
-  */
-
   //prnt("ss d l d d fs;",BYEL,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
   Time-=cpar.Pre[Chan];
-  //Time-=Pos;
+
+
 
   //prnt("ss d l d d fs;",BGRN,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
 
-  //pk->Time=sum;
 
-  //cout << "Width2: " << (int) Chan << " " << Tstamp64 << " " << pk->Width2 << endl;
-  //pk->Width+=0.1;
 
-  //baseline
-  Base=0;
-  int nbkg=0;
-  for (int j=B1;j<=B2;j++) {
-    Base+=sData[j];
-    nbkg++;
-  }
 
-  if (nbkg)
-    Base/=nbkg;
-  else {
-    ++crs->errors[ER_BASE];
-  }
 
-  if (opt.Pz[Chan]) {
-    PoleZero(opt.Pz[Chan]);
-  }
-
-  int nn=0;
-  //peak Area & Height
-  //Area0=0;
-  Height=-99999;
-  for (int j=P1;j<=P2;j++) {
-    Area0+=sData[j];
-    if (sData[j]>Height) Height = sData[j];
-    nn++;
-  }
-  if (nn) {
-    Area0/=nn;
-  }
-  else {
-    ++crs->errors[ER_AREA];
-    //cout << "zero Area: " << this->Tstamp64 << " " << Pos << " " << P1 << " " << P2 << endl;
-  }
-
-  nn=0;
-  for (int j=W1;j<=W2;j++) {
-    wdth+=sData[j];
-    nn++;
-  }
-  if (nn) {
-    wdth/=nn;
-  }
-  else {
-    ++crs->errors[ER_WIDTH];
-  }
-
-  if (hcl->b_base[Chan]) {
-    //slope1 (baseline)
-    Sl1=0;
-    S_xx = 0;
-    xm = (B2+B1)*0.5; //mean x
-    //nbkg=0;
-    for (int j=B1;j<=B2;j++) {
-      Float_t xx = j-xm;
-      Sl1+=xx*(sData[j]-Base);
-      S_xx+=xx*xx;
-      //nbkg++;
-    }
-    if (S_xx) {
-      Sl1/=S_xx;
-    }
-
-    //prnt("ss fs;",BRED,"Sl1:",Sl1,RST);
-
-    // if (opt.Mt[Chan]==3) { //альтернативный slope1 (W1-W2) вместо slope2
-    //   Sl2 = 2*(Base - wdth)/(B1+B2-W1-W2);
-    //   RMS2 = 0;
-    // }
-    if (opt.Mt[Chan]!=3) { //если Mt=3, см. ниже
-      //slope2 (peak)
-      Sl2=0;
-      S_xx = 0;
-      xm = (P2+P1)*0.5; //mean x
-      //nbkg=0;
-      for (int j=P1;j<=P2;j++) {
-	Float_t xx = j-xm;
-	Sl2+=xx*(sData[j]-Area0);
-	S_xx+=xx*xx;
-	//nbkg++;
-      }
-      if (S_xx) {
-	Sl2/=S_xx;
-      }
-
-      //RMS2 (peak)
-      RMS2=0;
-      nbkg=0;
-      for (int j=P1;j<=P2;j++) {
-	Float_t Yj = Area0+(j-(P1+P2)*0.5)*Sl2 - sData[j];
-	RMS2+=Yj*Yj;
-	nbkg++;
-	//cout << "jjjj: " << j << " " << Base << " " << sData[j] << " " << Yj << endl;
-      }
-      if (nbkg) {
-	RMS2 = sqrt(RMS2/nbkg);
-      }
-
-    } //else (slope2)
-    //prnt("ss fs;",BGRN,"Sl2:",Sl2,RST);
-
-    //RMS1 (baseline)
-    RMS1=0;
-    nbkg=0;
-    for (int j=B1;j<=B2;j++) {
-      Float_t Yj = Base+(j-(B1+B2)*0.5)*Sl1 - sData[j];
-      RMS1+=Yj*Yj;
-      nbkg++;
-      //cout << "jjjj: " << j << " " << Base << " " << sData[j] << " " << Yj << endl;
-    }
-    if (nbkg) {
-      RMS1 = sqrt(RMS1/nbkg);
-    }
-
-  } //if b_base
-
-  Area=Area0 - Base;
   switch (opt.Mt[Chan]) {
   case 1: //Deriv
     Area=Area2;
@@ -686,8 +694,8 @@ void PulseClass::PeakAna33() {
     Area -= ((P1+P2)-(B1+B2))*0.5*Sl2;
     break;
   }
-  default:
-    ;
+  default: //case 0
+    Area=Area0 - Base;
   }
 
   if (opt.Mt[Chan]!=3) {

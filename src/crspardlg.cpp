@@ -1911,11 +1911,14 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
     else if (it->hnum == 52) { //mean deriv
       AddLine_mean(hfr1,&*it);
     }
-    else if (it->hnum == 53) { //profilometer
+    else if (it->hnum == 53) { //mean FFT
+      AddLine_mean(hfr1,&*it);
+    }
+    else if (it->hnum == 61) { //profilometer
       frame1d[1]->AddFrame(hfr2);
       AddLine_prof(hfr2,&*it);
     }
-    else if (it->hnum == 54) //prof_int
+    else if (it->hnum == 62) //prof_int
       AddLine_prof_int(hfr2,&*it);
   }
 
@@ -2649,7 +2652,7 @@ void ChanParDlg::BuildColumns(int jj) {
   double amax=-2e101;
   //Peaks
   AddColumn(jj,kk++,1,p_inum,25,0,-99,99,"sS",opt.sS);
-  AddColumn(jj,kk++,1,p_inum,26,0,-1,7,"sTg",opt.sTg);
+  AddColumn(jj,kk++,1,p_inum,26,0,-1,8,"sTg",opt.sTg);
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);
   AddColumn(jj,kk++,1,p_inum,20,0,0,3,"Mt",opt.Mt);

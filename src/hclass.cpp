@@ -4,6 +4,7 @@
 #include <TStyle.h>
 #include "TRandom.h"
 #include <sstream>
+#include <TVirtualFFT.h>
 
 extern Toptions opt;
 
@@ -438,6 +439,7 @@ void Mdef::FillMult(EventClass* evt, Double_t *hcut_flag, int ncut) {
 }
 
 void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
+  //ideriv==999999 -> FFT
   if (!map) return;
   if (ncut) {
     map=map->h_cuts[ncut];
@@ -452,14 +454,52 @@ void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
   double nent=map->hst->GetEntries()/nbins;
   double val;
 
-  if (ideriv==0) { //pulse
+  switch (ideriv) {
+  case 0: { //pulse
     for (auto j=0;j<nbins;j++) {
       val = map->hst->GetBinContent(j+1)*nent + Data[j];
       map->hst->SetBinContent(j+1,val/(nent+1));
     }
     //map->Nent++;
+    break;
   }
-  else { //deriv
+  case 999999: { //FFT
+    TVirtualFFT* fft = TVirtualFFT::FFT(1, &nbins, "R2C");
+
+    if (!fft)
+      break;
+
+    // for (Int_t j=0;j<N;j++) {
+    //   Gr[dr][i]->GetX()[j]=(j+dt);
+    //   Gr[dr][i]->GetY()[j]=pulse->sData[j];
+    // }
+
+
+    Double_t *in = new Double_t[nbins+1];
+    for (int j=0;j<nbins;j++) {
+      in[j]=Data[j];
+    }
+
+    fft->SetPoints(in);
+    fft->Transform();
+    //fftr2c->GetPoints(in);
+
+    for (int j=0;j<nbins;j++) {
+      Double_t re, im;
+      fft->GetPointComplex(j, re, im);
+
+      val = TMath::Sqrt(re*re + im*im);
+      map->hst->SetBinContent(j+1,val/(nent+1));
+    }
+    // обнуляем нулевой бин
+    map->hst->SetBinContent(1,0);
+    delete[] in;
+
+
+
+    break;
+  }
+  default: { //deriv
     for (auto j=0;j<nbins;j++) {
       auto jk = j-ideriv;
       if (jk>=0 && jk<nbins)
@@ -471,6 +511,7 @@ void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
     }
     //map->Nent++;
   }
+  } //switch
 }
 
 void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
@@ -484,11 +525,18 @@ void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
       	hh->SetBins(newsz,-cpar.Pre[ch],newsz-cpar.Pre[ch]);
       }
 
-      if (hnum==51) { //pulse
+      switch (hnum) {
+      case 51: //pulse
 	Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, 0, ncut);
-      }
-      else { //deriv
+	break;
+      case 52: //deriv
 	Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, opt.sDrv[ch], ncut);
+	break;
+      case 53: //FFT
+	Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, 999999, ncut);
+	break;
+      default:
+	;
       }
 
     }
@@ -804,9 +852,9 @@ void HClass::Make_Mlist() {
 
       //YK!!!
       int nn = MAX_CH+NGRP;
-      if (md.hnum==53) //prof
+      if (md.hnum==61) //prof
 	nn = 256;
-      else if (md.hnum==54) //prof_int
+      else if (md.hnum==62) //prof_int
 	nn=6;
 
       md.v_map.resize(nn);
@@ -941,17 +989,17 @@ void HClass::Make_hist() {
       Make_1d(it,0);
       it->MFill = &Mdef::FillMult;
     }
-    else if (it->hnum==51 || it->hnum==52) {//pulse
+    else if (it->hnum==51 || it->hnum==52 || it->hnum==53) {//pulse
       Make_1d_pulse(it);
       it->MFill = &Mdef::FillMeanPulse;
     }
-    else if (it->hnum==53) { //prof
+    else if (it->hnum==61) { //prof
       mdef_prof = &*it;
       hd2 = it->hd;
       Make_prof(it);
       it->MFill = &Mdef::FillProf;
     }
-    else if (it->hnum==54) { //prof_int
+    else if (it->hnum==62) { //prof_int
       mdef_prof_int = &*it;
       Make_prof_int(it,hd2);
       it->MFill = &Mdef::FillProf;
@@ -975,7 +1023,7 @@ void HClass::Make_hist() {
 
     if (it->hd->b) {
       //добавляем все активные. Для профилометров - добавляем только одного
-      if (it->hnum==53 || it->hnum==54) {
+      if (it->hnum==61 || it->hnum==62) {
 	if (mprof==0) {
 	  mprof = &*it;
 	  MFill_list.push_back(&*it);
