@@ -26,6 +26,7 @@ public:
   // =1..49 - standard 1d hist
   // =51 - mean pulses
   // =52 - mean deriv
+  // =53 - mean FFT
   // =61 - prof
   // =62 - prof_int
   // >100 - 2d hist
@@ -67,6 +68,7 @@ public:
   void Fill_HWRate(EventClass* evt, Double_t *hcut_flag, int ncut);
   void FillMult(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_Mean1(HMap* map, Float_t* Data, int nbins, int ideriv, int ncut);
+  void Fill_FFT(HMap* map, Float_t* Data, int nbins, int ch, int ncut);
   void FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_Ampl(EventClass* evt, Double_t *hcut_flag, int ncut);
   void FillProf(EventClass* evt, Double_t *hcut_flag, int ncut);
@@ -239,6 +241,8 @@ class HClass {
 
   std::list<Mdef*> Mainlist; // содержит указатели! Mdef* всех гистограмм в Main
   //заполняется в ??? (Ana_Start???)
+
+  TVirtualFFT* fft[MAX_CH];
 
  public:
 

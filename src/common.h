@@ -38,7 +38,8 @@ const int MAX_ERR=16; //maximal number of error types;
 
 // const int A0A1_MAX=2; // maximal number of input channels used in A0A1 2d hists
 
-const int NGR=5; // количество графов в eventframe
+const int NDIV=5; // количество графов в eventframe
+                  // ==максимальное количество делений окна Events
 
 #define MAX_R 4 //number of channel types (gam,ng,nim,off)
 #define MAX_L 6 //line types (gam,neu,tail,unkn,pileup,frame)

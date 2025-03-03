@@ -5,6 +5,7 @@
 #include "TRandom.h"
 #include <sstream>
 #include <TVirtualFFT.h>
+#include <TSystem.h>
 
 extern Toptions opt;
 
@@ -439,7 +440,6 @@ void Mdef::FillMult(EventClass* evt, Double_t *hcut_flag, int ncut) {
 }
 
 void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
-  //ideriv==999999 -> FFT
   if (!map) return;
   if (ncut) {
     map=map->h_cuts[ncut];
@@ -463,42 +463,6 @@ void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
     //map->Nent++;
     break;
   }
-  case 999999: { //FFT
-    TVirtualFFT* fft = TVirtualFFT::FFT(1, &nbins, "R2C");
-
-    if (!fft)
-      break;
-
-    // for (Int_t j=0;j<N;j++) {
-    //   Gr[dr][i]->GetX()[j]=(j+dt);
-    //   Gr[dr][i]->GetY()[j]=pulse->sData[j];
-    // }
-
-
-    Double_t *in = new Double_t[nbins+1];
-    for (int j=0;j<nbins;j++) {
-      in[j]=Data[j];
-    }
-
-    fft->SetPoints(in);
-    fft->Transform();
-    //fftr2c->GetPoints(in);
-
-    for (int j=0;j<nbins;j++) {
-      Double_t re, im;
-      fft->GetPointComplex(j, re, im);
-
-      val = TMath::Sqrt(re*re + im*im);
-      map->hst->SetBinContent(j+1,val/(nent+1));
-    }
-    // обнуляем нулевой бин
-    map->hst->SetBinContent(1,0);
-    delete[] in;
-
-
-
-    break;
-  }
   default: { //deriv
     for (auto j=0;j<nbins;j++) {
       auto jk = j-ideriv;
@@ -512,6 +476,39 @@ void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
     //map->Nent++;
   }
   } //switch
+}
+
+void Mdef::Fill_FFT(HMap* map,Float_t* Data,int nbins,int ch,int ncut) {
+  if (!map) return;
+  if (ncut) {
+    map=map->h_cuts[ncut];
+    if (!map) return;
+  }
+  if (nbins<=0) return;
+  if (!hcl->fft[ch])
+    return;
+
+  double nent=map->hst->GetEntries()/nbins;
+  double val;
+
+  Double_t *in = new Double_t[nbins+1];
+  for (int j=0;j<nbins;j++) {
+    in[j]=Data[j];
+  }
+
+  hcl->fft[ch]->SetPoints(in);
+  hcl->fft[ch]->Transform();
+  //fftr2c->GetPoints(in);
+
+  for (int j=0;j<nbins;j++) {
+    Double_t re, im;
+    hcl->fft[ch]->GetPointComplex(j, re, im);
+    val = map->hst->GetBinContent(j+1)*nent + TMath::Sqrt(re*re + im*im);
+    map->hst->SetBinContent(j+1,val/(nent+1));
+  }
+  // обнуляем нулевой бин
+  map->hst->SetBinContent(1,0);
+  delete[] in;
 }
 
 void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
@@ -533,7 +530,9 @@ void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
 	Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, opt.sDrv[ch], ncut);
 	break;
       case 53: //FFT
-	Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, 999999, ncut);
+	//prnt("ss d ls;",BRED,"fft:",ch,ipls->Tstamp64,RST);
+	Fill_FFT(v_map[ch], ipls->sData.data(), newsz, ch, ncut);
+	//prnt("ss d ls;",BGRN,"fft:",ch,ipls->Tstamp64,RST);
 	break;
       default:
 	;
@@ -812,7 +811,9 @@ HClass::HClass()
     cform[i]=new TFormula(ss,"0");
     strcpy(cuttitle[i],"");
   }
-
+  for (int i=0;i<MAX_CH;i++) {
+    fft[i]=0;
+  }
   //wfalse=false;
   map_list=NULL;
   allmap_list=NULL;
@@ -1146,6 +1147,10 @@ void HClass::Make_1d_pulse(mdef_iter md) {
       md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
       map_list->Add(md->v_map[i]);
       allmap_list->Add(md->v_map[i]);
+      if (md->hnum==53) { //FFT
+	if (fft[i]) delete fft[i];
+	fft[i] = TVirtualFFT::FFT(1, &nn, "R2C K");
+      }
     }
   }
 }

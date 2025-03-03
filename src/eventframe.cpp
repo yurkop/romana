@@ -31,13 +31,13 @@ TBox bx;
 //    259,491,635,819,785,513
 //};
 
-const char* mgr_name[NGR] = {"pulse","1deriv","2deriv","CFD","FFT"};
-const char* mgr_title[NGR] = {"pulse;samples","1 deriv;samples",
+const char* mgr_name[NDIV] = {"pulse","1deriv","2deriv","CFD","FFT"};
+const char* mgr_title[NDIV] = {"pulse;samples","1 deriv;samples",
 					  "2 deriv;samples","CFD;samples",
 					  "FFT;FFT"};
 
-const char* drv_name[NGR] = {"Pulse"," ' "," ' ' ","CFD","FFT"};
-const char* drv_tip[NGR] = {
+const char* drv_name[NDIV] = {"Pulse"," ' "," ' ' ","CFD","FFT"};
+const char* drv_tip[NDIV] = {
 			  "Show pulse",
 			  "Show 1st derivative",
 			  "Show 2nd derivative",
@@ -451,7 +451,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //cout << "fCanvas: " << fCanvas << endl;
 
   for (int i=0;i<MAX_CH;i++) {
-    for (int j=0;j<NGR;j++) {
+    for (int j=0;j<NDIV;j++) {
       //sprintf(ss,"gr_%d_%d",i,j);
       Gr[j][i]=new TGraph(1);
       //Gr[j][i]->SetNameTitle(ss,";Time(ns);");
@@ -933,21 +933,23 @@ void EventFrame::FillGraph(int dr) {
     Gr[dr][i]->SetMarkerColor(chcol[ch[i]]);
 
     if (Gr[dr][i]->GetN()==0) {
-      gx1[i]=0;
-      gx2[i]=1;
+      gx1[dr][i]=0;
+      gx2[dr][i]=1;
       gy1[dr][i]=0;
       gy2[dr][i]=1;
       continue;
     }
 
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch[i]];
-    if (opt.b_deriv[4])
-      dt=1;
 
-    gx1[i]=(dt-1);
-    gx2[i]=(pulse->sData.size()+dt);
+    gx1[dr][i]=(dt-1);
+    gx2[dr][i]=(pulse->sData.size()+dt);
     gy1[dr][i]=1e99;
     gy2[dr][i]=-1e99;
+    // if (dr==4) {
+    //   gx1[i]=0;
+    //   gx2[i]=pulse->sData.size();
+    // }
 
     switch (dr) {
     case 0: { //main pulse
@@ -1031,27 +1033,14 @@ void EventFrame::FillGraph(int dr) {
 	  gy2[dr][i]=dd;
 
       }
-
-    } //dr==3
       break;
+    } //dr==3
     case 4: { //FFT
-
       Int_t N = pulse->sData.size();
       if (fftr2c) delete fftr2c;
       fftr2c = TVirtualFFT::FFT(1, &N, "R2C");
       if (!fftr2c)
 	break;
-
-      for (Int_t j=0;j<N;j++) {
-	Gr[dr][i]->GetX()[j]=(j+dt);
-	Gr[dr][i]->GetY()[j]=pulse->sData[j];
-
-	// if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
-	//   gy1[dr][i]=Gr[dr][i]->GetY()[j];
-	// if (Gr[dr][i]->GetY()[j]>gy2[dr][i])
-	//   gy2[dr][i]=Gr[dr][i]->GetY()[j];
-      }
-
 
       Double_t *in = new Double_t[N+1];
       for (int j=0;j<N;j++) {
@@ -1066,7 +1055,7 @@ void EventFrame::FillGraph(int dr) {
 	Double_t re, im;
 	fftr2c->GetPointComplex(j, re, im);
 
-	Gr[dr][i]->GetX()[j]=j+dt;
+	Gr[dr][i]->GetX()[j]=j+1;
 	Gr[dr][i]->GetY()[j]=TMath::Sqrt(re*re + im*im);
 
 	if (Gr[dr][i]->GetY()[j]<gy1[dr][i])
@@ -1077,23 +1066,26 @@ void EventFrame::FillGraph(int dr) {
       // обнуляем нулевой бин
       Gr[dr][i]->GetY()[0] = 0;
       delete[] in;
-      
-    } //dr==4
+
+      gx1[dr][i]=0;
+      gx2[dr][i]=pulse->sData.size()+1;
+
       break;
+    } //dr==4
     } //switch
   } //for
 }
 
-void EventFrame::SetXRanges() {
+void EventFrame::SetXRanges(int dr) {
 
-  mx1=1e99;
-  mx2=-1e99;
+  mx1[dr]=1e99;
+  mx2[dr]=-1e99;
 
   for (UInt_t i=0;i<d_event->pulses.size();i++) {
     UInt_t ch= d_event->pulses.at(i).Chan;
     if (fChn_on(ch)) {
-      if (gx1[i]<mx1) mx1=gx1[i];
-      if (gx2[i]>mx2) mx2=gx2[i];
+      if (gx1[dr][i]<mx1[dr]) mx1[dr]=gx1[dr][i];
+      if (gx2[dr][i]>mx2[dr]) mx2[dr]=gx2[dr][i];
     }
   } 
 
@@ -1328,8 +1320,8 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
 
   int ithr=(opt.sTg[pulse->Chan]!=0);
   if (dr==ithr && opt.b_peak[8]) {//threshold
-    doYline(opt.sThr[pulse->Chan],gx1[j], gx2[j],chcol[pulse->Chan],2);
-    doYline(cpar.LT[pulse->Chan],gx1[j], gx2[j],chcol[pulse->Chan],3);
+    doYline(opt.sThr[pulse->Chan],gx1[dr][j], gx2[dr][j],chcol[pulse->Chan],2);
+    doYline(cpar.LT[pulse->Chan],gx1[dr][j], gx2[dr][j],chcol[pulse->Chan],3);
   }
 
 }
@@ -1433,17 +1425,17 @@ void EventFrame::ReDraw() {
     return;
   }
 
-  SetXRanges();
-
-  Float_t h1,h2;
-  double dx=mx2-mx1;
-  fHslider->GetPosition(h1,h2);
-  double x1=mx1+dx*h1;
-  double x2=mx2-dx*(1-h2);
 
   int nn=1;
   for (int i=0;i<NDIV;i++) {
     if (opt.b_deriv[i]) {
+
+      SetXRanges(i);
+      Float_t h1,h2;
+      double dx=mx2[i]-mx1[i];
+      fHslider->GetPosition(h1,h2);
+      double x1=mx1[i]+dx*h1;
+      double x2=mx2[i]-dx*(1-h2);
 
       tx=0;ty=0;
       //int ny=d_event->pulses.size();
@@ -1455,7 +1447,7 @@ void EventFrame::ReDraw() {
       SetYRanges(i,x1,x2);
 
       //prnt("ss ds;",BGRN,"ccc04:",i,RST);
-      if (mx1>1e98) {
+      if (mx1[i]>1e98) {
 	gPad->Clear();
 	continue;
       }
@@ -1491,10 +1483,10 @@ void EventFrame::ReDraw() {
 	    txt.DrawTextNDC(0.5,0.5,"ROOT is compiled without FFT");
 	    continue;
 	  }
-	  //cout << "Gr: " << i << " " << j << " " << Gr[i][j]->GetN() << " " << fftr2c << endl;
 	  if (Gr[i][j]->GetN()) { //draw graph
+	    //cout << "gr: " << i << " " << Gr[i][j]->GetX()[0] << " " << mx1 << endl;
 	    Gr[i][j]->Draw("lp");
-	    if (opt.b_peak[0]) //draw peaks
+	    if (opt.b_peak[0] && i!=4) //draw peaks (not for FFT)
 	      DrawPeaks(i,j,pulse,y1,y2);
 	  }
 	  /*

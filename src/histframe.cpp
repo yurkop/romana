@@ -648,7 +648,6 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
 
 void HistFrame::Make_Ltree() {
 
-  //cout << "Make_Ltree():" << endl;
   // for (int i=0;i<opt.Nchan;i++) {
   //   cout << "chtype: " << i << " " << opt.chtype[i] << endl;
   // }
@@ -2738,7 +2737,6 @@ void HistFrame::HiReset()
 void HistFrame::HiUpdate()
 {
   //cout << "in_gcut: " << in_gcut << " " << opt.b_logy << " " << chklog << endl;
-  //cout << "Hifrm::Update: " << opt.b_stack << endl;
 
   Hmut.Lock();
 
@@ -2805,8 +2803,6 @@ void HistFrame::HiUpdate()
     cv->SetCrosshair(false);
     HiFrm->fStatus->SetText("");
   }
-
-
 
   //hmap_chklist->Print();
 
@@ -2980,21 +2976,9 @@ void HistFrame::Make_Hmap_ChkList() {
 
 bool HistFrame::CheckPads() {
   // проверяем, изменились ли гистограммы в падах:
-  // нужно ли вновь создавать копии или рисовать старые
+  // нужно ли вновь создавать копии или можно рисовать старые
   // возвращает true если пады изменились
 
-  // TCanvas *cv=fEc->GetCanvas();
-  // TObject *obj;
-  // if (!cv->GetListOfPrimitives()) return 0;
-  // TIter next(cv->GetListOfPrimitives());
-  // while ((obj = next())) {
-  //   if (obj->InheritsFrom(TVirtualPad::Class())) {
-  //     TVirtualPad *pad = (TVirtualPad*)obj;
-  //     cout << "pad: " << pad->GetNumber() << endl;
-  //   }
-  // }
-
-  //bool res=false;
   int npad=0; //количество падов
   int ii=0;
 
@@ -3005,8 +2989,7 @@ bool HistFrame::CheckPads() {
 	return true;
       if (map != pad_map[npad])
 	return true;
-      //cout << "npad: " << npad << " " << pad_map.size()
-      //<< " " << map-pad_map[npad] << endl;
+      //cout << "cnp: " << npad << " " << pad_map.size() << " " << map-pad_map[npad] << endl;
       npad++;
       if (npad>=ndiv)
 	break;
@@ -3015,7 +2998,8 @@ bool HistFrame::CheckPads() {
     ii++;
   }
 
-  for (auto i=npad;i<(int)pad_hist.size();i++) {
+  int sz = pad_hist.size();
+  for (auto i=npad;i<sz;i++) {
     auto ih = pad_hist.back();
     delete ih;
     //cout << i << " " << ih << endl;
@@ -3024,8 +3008,6 @@ bool HistFrame::CheckPads() {
   }
 
   //prnt("ssd d ds;",BRED,"cchk: ",npad,pad_hist.size(),ndiv,RST);
-  //cout << "chk: " << npad << " " << pad_map.size() << " " << ndiv << endl;
-
   return false;
 }
 
@@ -3141,7 +3123,7 @@ void HistFrame::DrawHist() {
   // cout << "stath: " << gStyle->GetStatH() << endl;
   AllRebinDraw();
   cv->Update();
-  
+
 } //DrawHist
 
 void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
@@ -3274,7 +3256,6 @@ void HistFrame::AllRebinDraw() {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
       continue;
 
-    //cout << "npad: " << npad << endl;
     fEc->GetCanvas()->cd(npad+1);
     if (pad_hist[npad]->InheritsFrom(TH1::Class())) {
       TH1* hh = (TH1*) pad_hist[npad];

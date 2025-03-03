@@ -69,7 +69,7 @@ public:
   Int_t chcol[MAX_CH+NGRP];
   ULong_t gcol[MAX_CH+NGRP];
 
-  static const int NDIV=5; //количество делений окна Events (3 или 4)
+  //static const int NDIV=5; //максимальное количество делений окна Events
   //static const int NGR=5; //количество графов -> перенесено в common.h
   //static const int NGR=6; //количество графов (всегда 6!!!) <- почему?
   //Gr[4] Gr[5] - 
@@ -152,9 +152,10 @@ public:
   //int divtype[3];//0: pulse; 1: deriv; 2: 2nd deriv
   //int NGr;
   TH1F* fHist[NDIV];
-  TGraph *Gr[NGR][MAX_CH];
-  double gx1[MAX_CH],gx2[MAX_CH],gy1[NGR][MAX_CH],gy2[NGR][MAX_CH];
-  double mx1,mx2,my1[NDIV],my2[NDIV];
+  TGraph *Gr[NDIV][MAX_CH];
+  double gx1[NDIV][MAX_CH],gx2[NDIV][MAX_CH],
+    gy1[NDIV][MAX_CH],gy2[NDIV][MAX_CH];
+  double mx1[NDIV],mx2[NDIV],my1[NDIV],my2[NDIV];
   //TH1F *histo[3][MAX_CH];
   //double gx1,gx2,gy1[3],gy2[3];
   //TH2F fPaint[3];
@@ -180,7 +181,7 @@ public:
   void DoReset();
   void FillDeriv1(int dr, int i, PulseClass* pulse, double dt);
   void FillGraph(int dr);
-  void SetXRanges();
+  void SetXRanges(int dr);
   void SetYRanges(int dr, double x1, double x2);
   void DrawEvent2();
   void DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2);

@@ -305,7 +305,7 @@ public:
   Bool_t b_gcuts;
   Bool_t b_roi;
   Bool_t b_fpeaks;
-  Bool_t b_deriv[NGR];
+  Bool_t b_deriv[NDIV];
   Bool_t b_peak[MXPK];
 
   Float_t adcm_period;

@@ -241,7 +241,7 @@ void Coptions::GetParm(const char* name, int i, void *par, int &min, int &max) {
     return;
   }
 
-  prnt("ss s d d d ds;",BGRN,"GetParm:",name,i,crs->crs_ch[i],min,max,RST);
+  //prnt("ss s d d d ds;",BGRN,"GetParm:",name,i,crs->crs_ch[i],min,max,RST);
 
 } //GetParm
 
