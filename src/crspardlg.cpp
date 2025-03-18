@@ -67,7 +67,7 @@ vector<const char*> ptip = {
   "Trigger type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing\nNot all types are available for all devices",
   "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
-  "Trigger lower threshold",
+  "Trigger lower threshold (for Trg 3-6)",
   "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
   "Master/slave channel:\nEvents containing only slave channels are rejected\nEach event must contain at least one master channel",
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",

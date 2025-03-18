@@ -83,6 +83,10 @@ size_t PulseClass::GetPtr(Int_t hnum) {
 
 Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
   // возвращает CFD и одновременно drv в точке j
+  // CFD = drv[j] - dev[j+delay]*frac
+  // CFD = производная минус производная, сдвинутая влево на delay
+  //       и умноженная на frac
+
   // kk>0; delay>=0.
   // CFD определено в диапазоне:
   // - начальная точка (>=): kk
@@ -91,25 +95,26 @@ Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
 
   // CFD сдвинута вправо относительно drv
 
-  Float_t d0 = sData[j+delay] - sData[j-kk+delay];
+  Float_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
   drv = sData[j] - sData[j-kk];
   //return drv*frac-d0;
   return drv-d0*frac*0.1;
   //}
 }
 
-void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
+void PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
   //Находим только первый пик
 
-  //sTg: 0 - hreshold crossing of pulse;
+  //sTg:  0 - hreshold crossing of pulse;
   //      1 - threshold crossing of derivative;
   //      2 - максимум производной (первый локальный максимум)
   //      3 - rise of derivative;
   //      4 - fall of derivative;
   //      5 - threshold crossing of derivative, use 2nd deriv for timing.
   //      6 - fall of derivative, zero crossing
-  //      7 - CFD, zero crossing
-  //      8 - CFD, fraction
+  //      7 - CFD from deriv, zero crossing;
+  //      8 - CFD from pulse, zero crossing; Pos==3 - rise of deriv
+  //      9 - CFD, fraction; Pos==3 - rise of deriv
 
   if (sTrig==7) sTrig = cpar.Trg[Chan]; //для sTrig7 используется cpar.Trig
 
@@ -136,7 +141,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     }
     break;
   case 1: // threshold crossing of derivative;
-    //case 7: // для CFD триггер 1 используется для поиска Pos
+    //case 7: // для sTrig7 используется cpar.Trig
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (D[j] > opt.sThr[Chan]) {
@@ -179,8 +184,9 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     }
     break;
   case 3: // rise of derivative;
+    //case 7: // CFD from deriv
+  case 8: // CFD from pulse
     Dpr=1;
-    //int pp=0;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
       if (D[j] > cpar.LT[Chan] && Dpr<=cpar.LT[Chan]) {
@@ -191,17 +197,13 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
 	//Peaks.push_back(pk);
 	break;
       }
-      // else {
-      //    break;
-      // }
-      //prnt("ss d f f d f fs;",BGRN,"D:",j,D[j],Dpr,pp,sData[j],sData[j-kk],RST);
       Dpr=D[j];
     } //for
-    //case 3
-    break;
-  case 8: {// CFD fraction - POS: точка пересечения Max*frac находится
+    break; //case 3,7,8
+  case 9: {// CFD fraction - POS: точка пересечения Max*frac находится
            // между Pos и Pos+1
-    Float_t max_frac= -99999;//opt.T2[Chan]*0.1;
+    //Float_t max_frac= -99999;//opt.T2[Chan]*0.1;
+    cfd_frac= -99999;
     //сначала находим первый локальный максимум после порога
     Dpr=-1e6;
     //int jpr;
@@ -209,7 +211,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
       D[j]=sData[j]-sData[j-kk];
       if (Dpr > opt.sThr[Chan] && D[j]<Dpr) {
 	Pos=j-1;
-	max_frac=Dpr*opt.T2[Chan]*0.1; //Max*frac
+	cfd_frac=Dpr*opt.T2[Chan]*0.1; //Max*frac
 	//Peaks.push_back(pk);
 	break;
       }
@@ -217,10 +219,10 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
     }
 
     if (Pos!=-32222) { //пик найден
-      //находим CFD
+      //находим Pos
       do {
 	Pos--;
-	if (D[Pos]<=max_frac) {
+	if (D[Pos]<=cfd_frac) {
 	  break;
 	}
       } while (Pos>kk);
@@ -233,8 +235,8 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
       // }
       
     }
-  } //case 8
     break;
+  } //case 9
     /*
   case 7: {// CFD
     Pos=cpar.Pre[Chan];
@@ -279,7 +281,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk) {
 
 } //FindPeaks
 
-void PulseClass::FindZero(Int_t kk, Int_t thresh) {
+void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
   // определяем точное пересечение нуля или LT (нижнего порога)
   // Pos - уже найден; kk - параметр производной
   // для Trig=4 Pos - точка ПЕРЕД пересечением нуля
@@ -294,7 +296,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
       Float_t DD=sData[Pos]-sData[Pos-kk];
       Float_t Dpr=sData[Pos-1]-sData[Pos-kk-1];
       if (DD!=Dpr)
-	Time = Pos-1 + (cpar.LT[Chan] - Dpr)/(DD-Dpr);
+	Time = Pos-1 + (LT - Dpr)/(DD-Dpr);
       else
 	Time = Pos;
     }
@@ -304,11 +306,12 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
     }
     break;
   case 6: //fall of derivalive
+  case 9: //CFD fraction
     if (Pos>=kk && Pos+1<(int)sData.size()) {
       Float_t Dpr=sData[Pos]-sData[Pos-kk];
       Float_t DD=sData[Pos+1]-sData[Pos-kk+1];
       if (DD!=Dpr)
-	Time = Pos + (cpar.LT[Chan] - Dpr)/(DD-Dpr);
+	Time = Pos + (LT - Dpr)/(DD-Dpr);
       else
 	Time = Pos;
     }
@@ -401,9 +404,9 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
 
   } //case 7
     break;
-  case 8: {
-  }
-    break;
+  // case 8: {
+  // }
+  //   break;
   default:
     break;
   }
@@ -414,6 +417,8 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh) {
 //-----------------------------
 
 void PulseClass::PeakAna33() {
+
+  //Base,Height,Area,Width определяются относительно Pos
 
   Float_t Area0=0; //integral of pulse without Base subtraction
   Float_t Area2=0; //integral of 1st deriv without Base subtraction
@@ -431,12 +436,14 @@ void PulseClass::PeakAna33() {
 
   Float_t xm,S_xx;
   Float_t wdth=0; //temporary Width
+  Float_t cfd_frac=0;
 
   //prnt("sl d l d;","P33: ",Tstamp64,Pos,sData.size(),opt.sTg[Chan]);
 
   int sz=sData.size();
   Int_t kk=opt.sDrv[Chan];
-  if (kk<1 || kk>=sz-1) kk=1;
+  if (kk<1) kk=1;
+  if (kk>=sz-1) kk=sz-1;
 
   if (sData.size()<=2) {
     return;
@@ -447,7 +454,7 @@ void PulseClass::PeakAna33() {
   if (stg>=0) { //use software trigger
     if (sData.size()>1) { // нужно минимум 2 точки
       if (kk<1 || kk>=(int)sData.size()) kk=1;
-      FindPeaks(stg,kk);
+      FindPeaks(stg,kk,cfd_frac);
     } //if
   }
   else {//use hardware trigger
@@ -473,13 +480,9 @@ void PulseClass::PeakAna33() {
   W2=Pos+opt.W2[Chan];
 
   if (B1<0) B1=0;
-  if (B2<=B1) B2=B1; //base can NOT be zero if B2==B1
   if (P1<0) P1=0;
-  if (P2<=P1) P2=P1;
-  if (T1<(int)kk) T1=kk;
-  if (T2<=T1) T2=T1;
+  if (T1<kk) T1=kk;
   if (W1<0) W1=0;
-  if (W2<=W1) W2=W1;
 
   if (B1>=sz) B1=sz-1;
   if (B2>=sz) B2=sz-1;
@@ -489,6 +492,11 @@ void PulseClass::PeakAna33() {
   if (T2>=sz) T2=sz-1;
   if (W1>=sz) W1=sz-1;
   if (W2>=sz) W2=sz-1;
+
+  if (B2<=B1) B2=B1; //base can NOT be zero if B2==B1
+  if (P2<=P1) P2=P1;
+  if (T2<=T1) T2=T1;
+  if (W2<=W1) W2=W1;
 
 
   // 1. находим baseline
@@ -611,13 +619,15 @@ void PulseClass::PeakAna33() {
 
 
   // 9. определяем Time и Area2
+  Float_t LT=cpar.LT[Chan];
   switch (stg) {
+  case 9:
+    LT = cfd_frac;
   case 3:
   case 6:
   case 7:
-  case 8:
     // FindZero определяет Time
-    FindZero(kk,opt.sThr[Chan]);
+    FindZero(kk,opt.sThr[Chan],LT);
     if (opt.Mt[Chan]==1) {
       for (int j=T1;j<=T2;j++) {
 	if (j<kk)

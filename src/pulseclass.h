@@ -84,8 +84,8 @@ class PulseClass {
   size_t GetPtr(Int_t hnum);
   Float_t CFD(int i, int kk, int delay, Float_t frac, Float_t &drv);
   //void Analyze();
-  void FindPeaks(Int_t sTrig, Int_t kk);
-  void FindZero(Int_t kk, Int_t thresh);
+  void FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac);
+  void FindZero(Int_t kk, Int_t thresh, Float_t LT);
   //void FindPeaks(Float_t thresh, int deadtime);
   //void PeakAna();
   void PeakAna33();

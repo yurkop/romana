@@ -31,15 +31,23 @@ Float_t Mdef::VarRate(EventClass* e, PulseClass* p){
 Float_t Mdef::VarPeriod(EventClass* e, PulseClass* p){
   static Long64_t LPrev[MAX_CH];
   static Float_t TPrev[MAX_CH];
+  static Float_t tt[MAX_CH];
 
-  Float_t tt = e->Tstmp - LPrev[p->Chan];
-  tt+= p->Time - TPrev[p->Chan];
-  tt*= mks*opt.Period;
+  if (LPrev[p->Chan] < e->Tstmp) {  
+    tt[p->Chan] = e->Tstmp - LPrev[p->Chan];
+    tt[p->Chan]+= p->Time - TPrev[p->Chan];
+    tt[p->Chan]*= mks*opt.Period;
+  }
+
+  //prnt("ss d l l fs;",BRED,"varperiod:",p->Chan,e->Tstmp,LPrev[p->Chan],tt[p->Chan],RST);
 
   LPrev[p->Chan] = e->Tstmp;
   TPrev[p->Chan] = p->Time;
+  //prnt("ss d l ls;",BGRN,"varperiod:",p->Chan,e->Tstmp,LPrev[p->Chan],RST);
 
-  return tt;
+  //prnt("ss d l fs;",BRED,"varperiod:",p->Chan,e->Tstmp,tt,RST);
+  
+  return tt[p->Chan];
 }
 
 Float_t Mdef::VarNtof(EventClass* e, PulseClass* p){

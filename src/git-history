@@ -1,3 +1,8 @@
+git tag -a v0.904 -m 'Period corrected'
+- исправлен "баг" в гистограммах Period
+- немного переделаны (недоделаны!!!) PeakAna33, FindPeaks, FindZero
+- (добавлены sTg=8,9 - недоделаны!!!)
+
 git tag -a v0.903 -m 'FFT corrected'
 - исправлен баг с неправильным рисованием событий в Events с FFT
 - исправлен баг с гистограммами Mean_FFT
