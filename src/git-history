@@ -1,3 +1,12 @@
+git tag -a v0.905 -m 'Mean_FFT шкала с 0; dialogs'
+- убрана раздражающая надпись "ErrPos:" в Events.
+  Добавлена надпись на экран "No Peak"
+- исправлены гистограммы Mean_FFT - шкала всегда начинается с 0.
+- добавлены файлы dialogs.*
+- saveascii - недоделано
+
+
+
 git tag -a v0.904 -m 'Period corrected'
 - исправлен "баг" в гистограммах Period
 - немного переделаны (недоделаны!!!) PeakAna33, FindPeaks, FindZero

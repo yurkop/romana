@@ -54,6 +54,7 @@
 //#include <TGColorDialog.h>
 
 #include "libcrs.h"
+#include "dialogs.h"
 
 const double MB = 1024*1024;
 
@@ -1650,6 +1651,16 @@ void saveroot(const char *name) {
   tf->Close();
 }
 
+void saveascii(const char *fname) {
+
+  string dir, name, ext;
+  SplitFilename(string(fname),dir,name,ext);
+  dir+=name;
+  cout << "dir: " << dir << endl;
+  gSystem->MakeDirectory(dir.c_str());
+
+}
+
 /*
 int readroot(const char *name) {
   //return 0 - OK; 1 - error
@@ -1891,7 +1902,6 @@ cout << "finside: " << p << " " << main << " " << dlg_type << " " << file_info <
 bool TestFile() {
 
   string dir, name, ext;
-
   SplitFilename(string(opt.Filename),dir,name,ext);
 
   if (crs->batch) {
@@ -2207,9 +2217,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Read ROOT file", M_READROOT);
   fMenuFile->AddEntry("Save ROOT file", M_SAVEROOT);
+  fMenuFile->AddEntry("Save ASCII files", M_SAVEASCII);
   fMenuFile->AddSeparator();
-  //fMenuFile->AddEntry("Save ASCII file", M_SAVEASCII);
-  //fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Export...", M_EXPORT);
   fMenuFile->AddSeparator();
   fMenuFile->AddEntry("Root Browser\tCtrl+B", M_FILE_BROWSE);
@@ -3670,22 +3679,37 @@ void MainFrame::DoSaveRoot() {
 
 }
 
-/*
-  void MainFrame::DoSaveAscii() {
+
+void MainFrame::DoSaveAscii() {
 
   if (!crs->b_stop) return;
 
+  string s_name, dir, name, ext;
+  TGFileInfo fi;
 
+  s_name = string();
+  //s_name.append(name);
+  //s_name.append(".root");
 
+  //fi.fFileTypes = dnd_types;
+  fi.fIniDir    = StrDup(dir.c_str());
+  fi.fFilename  = StrDup(s_name.c_str());
 
-  #ifdef LINUX
-  if (chdir(startdir)) {}
-  #else
-  _chdir(startdir);
-  #endif
+  //new TGFileDialog(gClient->GetRoot(), this, kFDSave, &fi);
+  new TGFileDialog2(gClient->GetRoot(), this, kFDSave, &fi);
 
+  if (fi.fFilename) {
+    saveascii(fi.fFilename);
   }
-*/
+
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
+
+}
+
 
 void MainFrame::DoTab(Int_t num) {
   //cout << "DoTab: " << num << endl;
@@ -3852,9 +3876,9 @@ void MainFrame::HandleMenu(Int_t menu_id)
   case M_SAVEROOT:
     DoSaveRoot();
     break;
-    // case M_SAVEASCII:
-    //   DoSaveAscii();
-    //   break;
+  case M_SAVEASCII:
+    DoSaveAscii();
+    break;
   case M_READROOT:
     DoReadRoot();
     break;
@@ -4036,6 +4060,23 @@ void MainFrame::HandleMenu(Int_t menu_id)
 // }
 // TGMsgBox2::TGMsgBox2(const TGWindow* p, const TGWindow* main, const char* title, const char* msg, EMsgBoxIcon icon, Int_t buttons = kMBDismiss, Int_t* ret_code = 0, UInt_t options = kVerticalFrame, Int_t text_align = kTextCenterX|kTextCenterY)
 // {}
+
+
+
+
+//-------------------------
+// TGFileDialog2::TGFileDialog2(const TGWindow* p, const TGWindow* main, EFileDialogMode dlg_type, TGFileInfo* file_info)
+//   : TGFileDialog(p,main,dlg_type,file_info) {
+//     //cout << "TG1: " << endl;
+//     //TGFileDialog(p,main,dlg_type,file_info);
+//   cout << "TG2: " << endl;
+// }
+
+
+// void TGFileDialog2::SetWindowName(const char* name) {
+//   cout << "TG3: " << name << endl;
+// }
+
 //-------------------------
 ColorMsgBox::ColorMsgBox(const TGWindow *p, const TGWindow *main,
 			 const char *title, const char *msg, EMsgBoxIcon icon,

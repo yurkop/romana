@@ -499,8 +499,15 @@ void Mdef::Fill_FFT(HMap* map,Float_t* Data,int nbins,int ch,int ncut) {
   double nent=map->hst->GetEntries()/nbins;
   double val;
 
+  // double mean=0;
+  // for (int j=0;j<nbins;j++) {
+  //   mean+=Data[j];
+  // }
+  // mean/=nbins;
+
   Double_t *in = new Double_t[nbins+1];
   for (int j=0;j<nbins;j++) {
+    //Data[j]-=mean;
     in[j]=Data[j];
   }
 
@@ -1144,9 +1151,14 @@ void HClass::Make_1d_pulse(mdef_iter md) {
     if (cpar.on[i]) {
       NameTitle(name2,title2,i,opt.Nchan,name.Data(),title.Data());
 
-      Float_t min = -cpar.Pre[i];
-      Float_t max = cpar.Len[i]-cpar.Pre[i];
+      Float_t min = 0;
+      Float_t max = cpar.Len[i];
       Float_t bins = 1;
+
+      if (md->hnum!=53) { // not FFT
+	min -= cpar.Pre[i];
+	max -= cpar.Pre[i];
+      }
 
       int nn=bins*(max-min);
       TH1F* hh=new TH1F(name2,title2,nn,min,max);

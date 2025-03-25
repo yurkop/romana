@@ -1249,10 +1249,17 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
   UInt_t ch= pulse->Chan;
   //if (fChn[ch]->IsOn()) {
   if (fChn_on(ch)) {
+    int ithr=(opt.sTg[pulse->Chan]!=0);
+    if (dr==ithr && opt.b_peak[8]) {//threshold
+      doYline(opt.sThr[pulse->Chan],gx1[dr][j], gx2[dr][j],chcol[pulse->Chan],2);
+      doYline(cpar.LT[pulse->Chan],gx1[dr][j], gx2[dr][j],chcol[pulse->Chan],3);
+    }
+
     double dt=(pulse->Tstamp64 - d_event->Tstmp) - cpar.Pre[ch];
 
     if (pulse->Pos<=-32222) {
-      prnt("ssd d ls;",BRED,"ErrPos: ",pulse->Pos,pulse->Chan,pulse->Tstamp64,RST);
+      //prnt("ssd d ls;",BRED,"ErrPos: ",pulse->Pos,pulse->Chan,pulse->Tstamp64,RST);
+      return;
     }
 
     B1=pulse->Pos+opt.Base1[ch];
@@ -1317,19 +1324,21 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
     // }
 
   }
-
-  int ithr=(opt.sTg[pulse->Chan]!=0);
-  if (dr==ithr && opt.b_peak[8]) {//threshold
-    doYline(opt.sThr[pulse->Chan],gx1[dr][j], gx2[dr][j],chcol[pulse->Chan],2);
-    doYline(cpar.LT[pulse->Chan],gx1[dr][j], gx2[dr][j],chcol[pulse->Chan],3);
-  }
-
 }
 
 void EventFrame::DrawShapeTxt(PulseClass* pulse) {
+  char ss[256];
+
+  if (pulse->Pos<=-32222) {
+    ttxt.SetTextAlign(0);
+    double sz=0.025*ndiv;
+    ttxt.SetTextSize(sz);
+    ttxt.SetTextColor(2);
+    ttxt.DrawTextNDC(0.5,0.85,"No Peak");
+    return;
+  }
 
   if (opt.b_peak[9]) { //draw text
-    char ss[256];
     sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
 	    pulse->Chan,pulse->Area,pulse->Base,
 	    pulse->Time,pulse->Width);

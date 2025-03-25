@@ -23,7 +23,7 @@ enum MENU_COM {
   M_SAVEINIT,
   M_READROOT,
   M_SAVEROOT,
-  //M_SAVEASCII,
+  M_SAVEASCII,
   M_FILE_BROWSE,
   M_RESET_USB,
   M_DETECT_DEV,
@@ -77,6 +77,7 @@ int FindVar(char* buf, int sz, const char* name, char* var);
 
 void example();
 void saveroot(const char *name);
+void saveascii(const char *fname);
 int readpar_root(const char* pname, int ropt=1);
 int readroot(const char *name);
 short int bits(int n, int i1, int i2);
@@ -190,7 +191,7 @@ class MainFrame : public TGMainFrame {
   //void Export();
   void DoReset();
   void DoSaveRoot();
-  //void DoSaveAscii();
+  void DoSaveAscii();
   void CloseWindow();
   void DoExit();
   //void DoResetUSB();
@@ -221,6 +222,10 @@ class MyMainFrame: public MainFrame {
   virtual ~MyMainFrame();
   ClassDef(MyMainFrame, 0)
     };
+
+
+
+
 
 //--------------------------------------
 class ColorMsgBox: public TGTransientFrame {
