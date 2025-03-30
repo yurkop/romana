@@ -1,3 +1,9 @@
+git tag -a v0.906 -m 'Фурье в Simul; исправлен баг в PeakAna33'
+- добавлены Фурье в Simul.
+- симуляции перенесены в simul.cpp, убраны из libcrs.cpp.
+- исправлен баг в PeakAna33: Area считалась неправильно для Mt= 2 и 3.
+
+
 git tag -a v0.905 -m 'Mean_FFT шкала с 0; dialogs'
 - убрана раздражающая надпись "ErrPos:" в Events.
   Добавлена надпись на экран "No Peak"

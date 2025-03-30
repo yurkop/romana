@@ -9,6 +9,7 @@
 #include "histframe.h"
 #include "hclass.h"
 #include "peditor.h"
+#include "simul.h"
 //#include "popframe.h"
 
 //--------------------------------------

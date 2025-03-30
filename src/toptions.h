@@ -372,7 +372,7 @@ public:
   Hdef h_RMS1; // 7 RMS1 RMS Counts Noise1 (baseline)
   Hdef h_RMS2; // 8 RMS2 RMS Counts Noise2 (peak)
 
-  Hdef h_ampl; // 48 Ampl Channel Counts Distribution of amplitudes from oscillogram
+  Hdef h_ampl; // 48 Ampl Channel Counts Distribution of amplitudes from (inside) oscillogram
 
   Hdef h_ntof; // 12 Ntof t(mks) Counts Neutron time of flight, in mks
   Hdef h_etof; // 13 Etof Energy(eV) Counts Neutron energy from NTOF, in eV

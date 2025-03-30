@@ -1754,19 +1754,22 @@ int ParParDlg::AddSimul(TGCompositeFrame* frame) {
   AddLine_1opt(fF6,ww,&opt.SimSim[1],0,label,label,k_r0,0,99);
 
   label="cpar.Len in smp";
-  AddLine_1opt(fF6,ww,&opt.SimSim[2],0,label,label,k_r0,0,99);
+  AddLine_1opt(fF6,ww,&opt.SimSim[2],0,label,label,k_r0,0,9999);
 
-  label= "Pulse type: 0 - gauss; 1 - RC";
-  AddLine_1opt(fF6,ww,&opt.SimSim[3],0,label,label,k_r0,0,1);
+  label= "Pulse type: 0 - gauss; 1 - RC; 2 - Fourier";
+  AddLine_1opt(fF6,ww,&opt.SimSim[3],0,label,label,k_r0,0,2);
 
-  label= "Pulse Amplitude";
-  AddLine_1opt(fF6,ww,&opt.SimSim[4],0,label,label,k_r0,1,99999);
+  label= "Par0";
+  tip1= "Pulse type0: Pulse Amplitude\nPulse type1: Pulse Amplitude\nPulse type2: Fourier 1st period in samples";
+  AddLine_1opt(fF6,ww,&opt.SimSim[4],0,tip1,label,k_r1,0,99999);
 
-  label="Pulse Sigma/(RC_Width) in ns";
-  AddLine_1opt(fF6,ww,&opt.SimSim[5],0,label,label,k_r1,0,99);
+  label= "Par1";
+  tip1="Pulse type0: Sigma in ns\nPulse type1: RC_Width in ns\nPulse type2: Fourier 2nd period in samples (0 - skip)";
+  AddLine_1opt(fF6,ww,&opt.SimSim[5],0,tip1,label,k_r1,0,99);
 
-  label="Pulse RC in ns (only for RC pulse type)";
-  AddLine_1opt(fF6,ww,&opt.SimSim[6],0,label,label,k_r1,0,99);
+  label= "Par2";
+  tip1="Pulse type0: --\nPulse type1: Pulse RC in ns\nPulse type2: Fourier 3rd period in samples (0 - skip)";
+  AddLine_1opt(fF6,ww,&opt.SimSim[6],0,tip1,label,k_r1,0,99);
 
 
   label= "Pos min in ns";

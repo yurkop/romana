@@ -64,6 +64,8 @@ extern ProcInfo_t pinfo;
 
 BufClass *InBuf;
 DecoderClass* decoder;
+Simul* sim2;
+
 extern CRS* crs;
 extern Coptions cpar;
 extern Toptions opt;
@@ -2688,7 +2690,8 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
   if (name.compare("17")==0) {
     module=17;
 
-    SimulateInit();
+    //SimulateInit();
+    sim2 = new Simul();
 
     Fmode=2;
     InitBuf();
@@ -3162,7 +3165,7 @@ int CRS::DoBuf() {
 
   if (module==17) {
 
-    SimulateEvents(opt.ev_max,nbuffers);
+    sim2->SimulateEvents(opt.ev_max,nbuffers);
     //prnt("ss l ls;",BRED,"17:",nbuffers,nevents,RST);
     //gSystem->Sleep(100);
     
@@ -7194,7 +7197,7 @@ void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
 
 }
 
-
+/*
 double Pshape_Gaus(int j, double pos) {
   // return opt.SimSim[4]*(-TMath::Gaus(j,pos-10,opt.SimSim[5]/opt.Period,1) +
   //  			TMath::Gaus(j,pos,opt.SimSim[5]/opt.Period,1));
@@ -7254,15 +7257,13 @@ void CRS::SimNameHist() {
     
   }
 
-  /*
-  if (hcl->m_time[2]) {
-    hcl->m_time[2]->hst->SetTitle("Exact time0 - pos0");
-  }
+  // if (hcl->m_time[2]) {
+  //   hcl->m_time[2]->hst->SetTitle("Exact time0 - pos0");
+  // }
 
-  if (hcl->m_time[3]) {
-    hcl->m_time[3]->hst->SetTitle("Exact time1 - time0");
-  }
-  */
+  // if (hcl->m_time[3]) {
+  //   hcl->m_time[3]->hst->SetTitle("Exact time1 - time0");
+  // }
 
 }
 
@@ -7352,3 +7353,4 @@ void CRS::SimulateEvents(Long64_t n_evts, Long64_t Tst0) {
   }
   //prnt("ss ls;",BGRN,"Sim:",(Tst0*n_evts),RST);
 }
+*/

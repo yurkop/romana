@@ -684,15 +684,12 @@ void PulseClass::PeakAna33() {
   //prnt("ss d l d d fs;",BGRN,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
 
 
-
-
-
   switch (opt.Mt[Chan]) {
   case 1: //Deriv
     Area=Area2;
     break;
   case 2: //Slope1 from linear regression
-    Area -= ((P1+P2)-(B1+B2))*0.5*Sl1;
+    Area = Area0 - Base - ((P1+P2)-(B1+B2))*0.5*Sl1;
     break;
   case 3: {//Slope2 from two areas
     int nnn = (B1+B2)-(W1+W2);
@@ -701,11 +698,11 @@ void PulseClass::PeakAna33() {
     else
       Sl2=0;
     RMS2 = 0;
-    Area -= ((P1+P2)-(B1+B2))*0.5*Sl2;
+    Area = Area0 - Base - ((P1+P2)-(B1+B2))*0.5*Sl2;
     break;
   }
   default: //case 0
-    Area=Area0 - Base;
+    Area = Area0 - Base;
   }
 
   if (opt.Mt[Chan]!=3) {
@@ -721,6 +718,10 @@ void PulseClass::PeakAna33() {
     if (Width<-99) Width=-99;
     if (Width>99) Width=99;
   }
+
+  // if (Chan==16) {
+  //   prnt("ss d l f f f f f f d ds;",BGRN,"pk:",Chan,Tstamp64,Area,Area0,Base,Sl1,Sl2,Width,opt.Mt[Chan],(int)hcl->b_base[Chan],RST);
+  // }
 
   /*
   //Simul2
