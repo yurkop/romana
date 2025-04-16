@@ -73,11 +73,18 @@ size_t PulseClass::GetPtr(Int_t hnum) {
   case 8: //RMS2 - peak
     ptr = (char*)&(this->RMS2) - (char*)this;
     break;
-  }
-  if (ptr==0) {
+  case 9: //RiseTime
+    ptr = (char*)&(this->Rtime) - (char*)this;
+    break;
+  default:
     prnt("ss ds;",BRED, "Wrong hnum number in GetPtr:", hnum, RST);
     exit(-1);
   }
+  // if (ptr==0) {
+  //   prnt("ss ds;",BRED, "Wrong hnum number in GetPtr:", hnum, RST);
+  //   exit(-1);
+  // }
+  //prnt("ss ds;",BGRN, "GetPtr:", hnum, RST);
   return ptr;
 }
 
@@ -88,7 +95,7 @@ Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
   //       и умноженная на frac
 
   // kk>0; delay>=0.
-  // CFD определено в диапазоне:
+  // CFD существует в диапазоне:
   // - начальная точка (>=): kk
   // - конечная точка (<):   sData.size()-delay
   // Пример: for (UInt_t j=kk;j<sData.size()-delay;j++)
@@ -97,8 +104,18 @@ Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
 
   Float_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
   drv = sData[j] - sData[j-kk];
+  //old -> return drv*frac-d0;
+
+
+  return drv-d0*frac*0.1; // -> original
+
+
   //return drv*frac-d0;
-  return drv-d0*frac*0.1;
+  //d0 = sData[j-delay] - sData[j-kk-delay];
+  //return d0*frac - drv;
+
+
+
   //}
 }
 
@@ -113,10 +130,11 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
   //      5 - threshold crossing of derivative, use 2nd deriv for timing.
   //      6 - fall of derivative, zero crossing
   //      7 - CFD from deriv, zero crossing;
-  //      8 - CFD from pulse, zero crossing; Pos==3 - rise of deriv
-  //      9 - CFD, fraction; Pos==3 - rise of deriv
 
-  if (sTrig==7) sTrig = cpar.Trg[Chan]; //для sTrig7 используется cpar.Trig
+  //      8 - не работает: CFD from pulse, zero crossing; Pos==3 - rise of deriv
+  //      9 - не работает: CFD, fraction; Pos==3 - rise of deriv
+
+  //if (sTrig==7) sTrig = cpar.Trg[Chan]; //для sTrig7 используется cpar.Trig
 
   //Pos=-32222;
 
@@ -185,7 +203,7 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
     break;
   case 3: // rise of derivative;
     //case 7: // CFD from deriv
-  case 8: // CFD from pulse
+    //case 8: // CFD from pulse
     Dpr=1;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
@@ -199,7 +217,30 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
       }
       Dpr=D[j];
     } //for
-    break; //case 3,7,8
+    break; //case 3 //,7,8
+
+  case 7: {// CFD from deriv;
+    Dpr=1;
+    Float_t drv;
+    for (j=kk;j<sData.size()-opt.DD[Chan];j++) {
+      D[j]=CFD(j,kk,opt.DD[Chan],opt.FF[Chan],drv);
+      //D[j]=sData[j]-sData[j-kk];
+      if (D[j] > 0 && Dpr<=0) {
+	pp=j;
+      }
+      if (D[j] > opt.sThr[Chan]) {
+	Pos=pp;
+	//Peaks.push_back(pk);
+	break;
+      }
+      Dpr=D[j];
+    } //for
+    //cout << "Pos: " << Chan << " " << Pos << endl;
+  } break; //case 7
+
+
+
+    /*
   case 9: {// CFD fraction - POS: точка пересечения Max*frac находится
            // между Pos и Pos+1
     //Float_t max_frac= -99999;//opt.T2[Chan]*0.1;
@@ -237,6 +278,12 @@ void PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
     }
     break;
   } //case 9
+*/
+
+
+
+
+
     /*
   case 7: {// CFD
     Pos=cpar.Pre[Chan];
@@ -287,12 +334,12 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
   // для Trig=4 Pos - точка ПЕРЕД пересечением нуля
   // результат записывается в PulseClass::Time
 
-  //cout << "stg: " << opt.sTg[Chan] << endl;
+  //cout << "stg: " << Tstamp64 << " " << opt.sTg[Chan] << endl;
   int stg = opt.sTg[Chan];
   if (stg<0) stg=cpar.Trg[Chan];
   switch (stg) {
   case 3: //rise of derivalive
-    if (Pos-kk>=1 && Pos<(int)sData.size()) {
+    if (Pos > kk && Pos < (int)sData.size()) {
       Float_t DD=sData[Pos]-sData[Pos-kk];
       Float_t Dpr=sData[Pos-1]-sData[Pos-kk-1];
       if (DD!=Dpr)
@@ -306,7 +353,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
     }
     break;
   case 6: //fall of derivalive
-  case 9: //CFD fraction
+    // case 9: //CFD fraction
     if (Pos>=kk && Pos+1<(int)sData.size()) {
       Float_t Dpr=sData[Pos]-sData[Pos-kk];
       Float_t DD=sData[Pos+1]-sData[Pos-kk+1];
@@ -318,16 +365,28 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
     else {
       ++crs->errors[ER_TIME];
       //prnt("ss d ls;",BGRN,"ErrTime3:",Chan,Tstamp64,RST);
-    }
-    break;
+    } break;
   case 7: {
+    if (Pos > kk && Pos < (int)sData.size() - opt.DD[Chan]) {
+      Float_t drv;
+      Float_t DD=CFD(Pos,kk,opt.DD[Chan],opt.FF[Chan],drv);
+      Float_t Dpr=CFD(Pos-1,kk,opt.DD[Chan],opt.FF[Chan],drv);
+      if (DD!=Dpr)
+	Time = Pos-1 - Dpr/(DD-Dpr);
+      else
+	Time = Pos;
+    }
+    else
+      ++crs->errors[ER_TIME];
+  } break;
+  case 77: { //old case 7
     // error (bin in Width spectrum):
     // 80 - не достигнут порог (thresh) - ошибка некритичная и допустимая
     // 85 - не найдено пересечение с 0 - возможно, допустимо
     // 89 - CFD всегда отрицательно - маловероятно и наверное недопустимо
 
-    int delay = abs(opt.T1[Chan]);
-    if (kk >= (int)sData.size()-delay) {
+    //int delay = abs(opt.T1[Chan]);
+    if (kk >= (int)sData.size()-opt.DD[Chan]) {
       Pos=-32222;
       ++crs->errors[ER_TIME];
       break;
@@ -346,8 +405,8 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
     // находим максимум - либо локальный после пересечения порога,
     // либо глобальный: pp - позиция максимума
     Int_t j;
-    for (j=TMath::Max(kk,(int)Pos);j<(int)sData.size()-delay;j++) {
-      D[j]=CFD(j,kk,delay,opt.T2[Chan],drv);
+    for (j=TMath::Max(kk,(int)Pos);j<(int)sData.size()-opt.DD[Chan];j++) {
+      D[j]=CFD(j,kk,opt.DD[Chan],opt.FF[Chan],drv);
       //drv=sData[j]-sData[j-kk];
       if (D[j]>max) {
 	max=D[j];
@@ -361,7 +420,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
     }
 
     // если первая точка CFD<=0 -> error 89
-    D[pp]=CFD(pp,kk,delay,opt.T2[Chan],drv);
+    D[pp]=CFD(pp,kk,opt.DD[Chan],opt.FF[Chan],drv);
     if (D[pp]<=0) {
       //prnt("ss l d f fs;",BRED, "D<0:", Tstamp64, pp, D[pp], Pos-cpar.Pre[Chan]-Time, RST);
       Time=pp;
@@ -372,7 +431,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
     // ищем пересечение с нулем
     pp--;
     while (pp>kk) {
-      D[pp]=CFD(pp,kk,delay,opt.T2[Chan],drv);
+      D[pp]=CFD(pp,kk,opt.DD[Chan],opt.FF[Chan],drv);
       if (D[pp]<=0) {
 	break;
       }
@@ -411,7 +470,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
     break;
   }
     
-  //prnt("ssfs;",BGRN,"Zero: ",Time,RST);  
+  //prnt("ssfs;",BYEL,"Zero: ",Time,RST);
 }
 
 //-----------------------------
@@ -514,7 +573,7 @@ void PulseClass::PeakAna33() {
   }
 
   // 2. поправляем весь импульс на PoleZero
-  if (opt.Pz[Chan]) {
+  if (opt.Pz[Chan]>0) {
     PoleZero(opt.Pz[Chan]);
   }
 
@@ -621,8 +680,8 @@ void PulseClass::PeakAna33() {
   // 9. определяем Time и Area2
   Float_t LT=cpar.LT[Chan];
   switch (stg) {
-  case 9:
-    LT = cfd_frac;
+    //case 9:
+    //LT = cfd_frac;
   case 3:
   case 6:
   case 7:
@@ -638,7 +697,7 @@ void PulseClass::PeakAna33() {
     break;
     //case 7:
     //break;
-  default: {
+  default: { //0,1,2,4,5
     Time=0;
 
     if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv
@@ -658,10 +717,10 @@ void PulseClass::PeakAna33() {
 	if (j<kk)
 	  continue;
 	Float_t dif=sData[j]-sData[j-kk];
-	//if (dif>0) {
-	Time+=dif*j;
-	Area2+=dif;
-	//}
+	if (dif>0) {
+	  Time+=dif*j;
+	  Area2+=dif;
+	}
       }
     }
 
@@ -718,6 +777,59 @@ void PulseClass::PeakAna33() {
     if (Width<-99) Width=-99;
     if (Width>99) Width=99;
   }
+
+
+  // 9. определяем RTime
+
+  {
+    //int j=Pos+Time-opt.DD[Chan];
+    int j=Pos-opt.DD[Chan];
+    if (j<kk) j=kk;
+    Rtime=0;
+    Float_t ss=0;
+    Float_t dif;
+    // от Pos-delay до порога
+    do {
+      dif=sData[j]-sData[j-kk];
+      if (dif>0) {
+	Rtime+=dif*j;
+	ss+=dif;
+      }
+      j++;
+    } while(dif<=opt.sThr[Chan] && j<(int)sData.size());
+
+    // от порога до нижнего порога
+    do {
+      dif=sData[j]-sData[j-kk];
+      Rtime+=dif*j;
+      ss+=dif;
+      j++;
+    } while(dif>cpar.LT[Chan] && j<(int)sData.size());
+
+    if (ss)
+      Rtime/=ss;
+    Rtime-=Pos;
+
+    Float_t zz=0;
+    if (opt.Pz[Chan]<0) {
+      zz = 1 + 1.0/opt.Pz[Chan]*Rtime;
+      Area*=zz;
+    }
+    //prnt("ss l d f f fs;",BRED,"RT:",Tstamp64,Pos,Time,Rtime,zz,RST);
+
+  }
+  
+  /*
+    for (int j=T1;j<=T2;j++) {
+    if (j<kk)
+    continue;
+    Float_t dif=sData[j]-sData[j-kk];
+    //if (dif>0) {
+    Time+=dif*j;
+    Area2+=dif;
+    //}
+    }
+  */
 
   // if (Chan==16) {
   //   prnt("ss d l f f f f f f d ds;",BGRN,"pk:",Chan,Tstamp64,Area,Area0,Base,Sl1,Sl2,Width,opt.Mt[Chan],(int)hcl->b_base[Chan],RST);
@@ -823,9 +935,9 @@ void EventClass::AddPulse(PulseClass *pls) {
   pulses.push_back(*pls);
 
   if (opt.St[pls->Chan] && pls->Pos>-32222) {
-    Float_t T1 = pls->Time+opt.sD[pls->Chan]/opt.Period;
-    if (T1<T0) {
-      T0=T1;
+    Float_t T7 = pls->Time+opt.sD[pls->Chan]/opt.Period;
+    if (T7<T0) {
+      T0=T7;
     }
     // if (pls->Time<T0) {
     //   T0=pls->Time;
@@ -881,10 +993,11 @@ void PulseClass::PoleZero(int Pz) {
   //cout << "t64: " << Tstamp64 << " " << Pz << " " << cor << endl;
 
   Float_t x0,x1 = sData[0]-Base;
+  //x1=x[k-1] - предыдущая точка без поправки, но с вычтенным фоном
   for (UInt_t i=1;i<sData.size();i++) {
     x0 = sData[i];
     //if (i>2000) {
-    Float_t dd = sData[i-1]-x1*cor;
+    Float_t dd = sData[i-1]-x1*cor; //dd=x'[k-1]-x[k-1]*cor
       // if (Tstamp64==2778120) {
       // 	cout << "pz: " << i << " " << sData[i] << " " << sData[i-1] << " " << x0
       // 	     << " " << x1 << " " << dd << endl;

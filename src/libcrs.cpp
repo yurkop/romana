@@ -2907,7 +2907,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
 
   //strcpy(opt.gitver,"v0.870");
   //int cm = string(opt.gitver).compare("v0.870");
-  //cout << opt.gitver << " " << cm << endl;
+  //cout << "GGG: " << opt.gitver << " " << cm << endl;
 
   Make_prof_ch();
   Text_time("S:",cpar.F_start);
@@ -3952,7 +3952,6 @@ void CRS::PulseAna(PulseClass &ipls) {
       ipls.Smooth(opt.sS[ipls.Chan]);
     }
     ipls.PeakAna33();
-    //prnt("ss d l d f fs;",BBLU, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos, ipls.Time, ipls.Width, RST);
   }
   else { //Dsp -> не анализируем
     PulseClass ipls2 = ipls;
@@ -3964,7 +3963,6 @@ void CRS::PulseAna(PulseClass &ipls) {
       ipls2.PeakAna33();
       CheckDSP(ipls,ipls2);
     }
-    //prnt("ss d l d f fs;",BRED, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos, ipls.Time, ipls.Width, RST);
     // else {
     //   // для sTg=3,6,7 ищем пересечение нижнего порога/нуля
     //   switch (opt.sTg[ipls.Chan]) {
@@ -3976,6 +3974,9 @@ void CRS::PulseAna(PulseClass &ipls) {
     //   }
     // }
   }
+
+  //prnt("ss d l d f fs;",BRED, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos, ipls.Time, ipls.Width, RST);
+  
   ipls.Ecalibr(ipls.Area);
   if (hcl->b_base[ipls.Chan]) {
     ipls.Ecalibr(ipls.Base);

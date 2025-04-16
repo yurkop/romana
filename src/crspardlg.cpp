@@ -95,10 +95,12 @@ vector<const char*> ptip = {
   "Baseline end, relative to peak Pos (usually negative, included)",
   "Peak start, relative to peak Pos (usually negative, included)",
   "Peak end, relative to peak Pos (usually positive, included)",
-  "Timing window start (usually negative, included)/\n"
-  "CFD delay [delay=abs(T1)]",
-  "Timing window end (usually positive, included)/\n"
+  "CFD delay in samples",
   "CFD fraction x10",
+  "Timing window start (usually negative, included)",
+  //"CFD delay [delay=abs(T1)]",
+  "Timing window end (usually positive, included)",
+  //"CFD fraction x10",
   "Width window start (included)",
   "Width window end (included)",
   "Pulse rate (software)",
@@ -2644,7 +2646,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E0",opt.E0);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E1",opt.E1);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E2",opt.E2);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,99999,"Pz",opt.Pz);
+  AddColumn(jj,kk++,1,p_inum,40,0,-99999,99999,"Pz",opt.Pz);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"Bc",opt.Bc);
   for (int i=1;i<=4;i++) {
     sprintf(txt,"g%d",i);
@@ -2655,7 +2657,7 @@ void ChanParDlg::BuildColumns(int jj) {
   double amax=-2e101;
   //Peaks
   AddColumn(jj,kk++,1,p_inum,25,0,-99,99,"sS",opt.sS);
-  AddColumn(jj,kk++,1,p_inum,26,0,-1,8,"sTg",opt.sTg);
+  AddColumn(jj,kk++,1,p_inum,26,0,-1,7,"sTg",opt.sTg);
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);
   AddColumn(jj,kk++,1,p_inum,20,0,0,3,"Mt",opt.Mt);
@@ -2663,6 +2665,8 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"Base2",opt.Base2);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"Peak1",opt.Peak1);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"Peak2",opt.Peak2);
+  AddColumn(jj,kk++,1,p_inum,30,0,1,999,"DD",opt.DD);
+  AddColumn(jj,kk++,1,p_inum,30,0,1,9,"FF",opt.FF);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"T1",opt.T1);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"T2",opt.T2);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"W1",opt.W1);

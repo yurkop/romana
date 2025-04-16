@@ -1010,7 +1010,8 @@ void EventFrame::FillGraph(int dr) {
     } //dr==2
       break;
     case 3: { //CFD
-      int delay = abs(opt.T1[pulse->Chan]);
+      //int delay = abs(opt.T1[pulse->Chan]);
+      int delay = opt.DD[pulse->Chan];
 
       for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
 	Gr[dr][i]->GetX()[j]=(j+dt);
@@ -1019,7 +1020,7 @@ void EventFrame::FillGraph(int dr) {
 	// if (j-opt.sDrv[pulse->Chan]-delay>=0)
 	//   dd=pulse->CFD(j,opt.sDrv[pulse->Chan],delay,opt.T2[pulse->Chan]);
 	if (j-opt.sDrv[pulse->Chan]>=0 && j+delay < (int) pulse->sData.size())
-	  dd=pulse->CFD(j,opt.sDrv[pulse->Chan],delay,opt.T2[pulse->Chan],drv);
+	  dd=pulse->CFD(j,opt.sDrv[pulse->Chan],delay,opt.FF[pulse->Chan],drv);
 
 	if (opt.b_peak[11] && pulse->Area) { //normalize
 	  dd*=1000/pulse->Area;
@@ -1446,6 +1447,11 @@ void EventFrame::ReDraw() {
       double x1=mx1[i]+dx*h1;
       double x2=mx2[i]-dx*(1-h2);
 
+      if (h1>=h2) {
+	x2=x1+dx*0.001;
+      }
+
+      //prnt("ss f f f f fs;",BRED,"slid:",h1,h2,x1,x2,dx,RST);
       tx=0;ty=0;
       //int ny=d_event->pulses.size();
       //double dd = 0.74*2.0/ny;

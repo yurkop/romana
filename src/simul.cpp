@@ -106,19 +106,17 @@ void Simul::SimulatePulse(int ch, Long64_t tst, double pos) {
   case 0: //Gauss
     for (int j=0;j<cpar.Len[ch];j++) {
       ipls.sData[j]=Pshape_Gaus(j,pos+cpar.Pre[ch]);
-      //cout << i << " " << j << " " << evt->pulses[i].sData[j] << endl;
+      //prnt("ss ds;",BGRN,"SSim3:",j,RST);
     }
     break;
   case 1: //RC
     for (int j=0;j<cpar.Len[ch];j++) {
       ipls.sData[j]=Pshape_RC(j,pos+cpar.Pre[ch]);
-      //cout << i << " " << j << " " << evt->pulses[i].sData[j] << endl;
     }
     break;
   case 2: //Fourier
     for (int j=0;j<cpar.Len[ch];j++) {
       ipls.sData[j]=Pshape_Fourier(j,pos+cpar.Pre[ch]);
-      //cout << i << " " << j << " " << evt->pulses[i].sData[j] << endl;
     }
     break;
   default:
@@ -126,6 +124,7 @@ void Simul::SimulatePulse(int ch, Long64_t tst, double pos) {
   }
 
   crs->PulseAna(ipls);
+
   // if (ipls.Chan==0)
   //   prnt("ss fs;",BRED,"Time1:",ipls.Time,RST);
   crs->Event_Insert_Pulse(&crs->Levents,&ipls);
@@ -162,7 +161,7 @@ void Simul::SimulateOneEvent(Long64_t Tst) {
 
   EventClass* evt = &crs->Levents.back();
   ipls=&evt->pulses[0];
-  //prnt("ss 9l 8.5f 8.5f 8.5f 8.5fs;",BWHT,"Pos0:",evt->Tstmp,evt->T0,pos0,ipls->Time-pos0,ipls->Simul2-pos0,RST);
+  //prnt("ss 9l 8.5f 8.5f 8.5fs;",BWHT,"Pos0:",evt->Tstmp,evt->T0,pos0,ipls->Time-pos0,RST);
 
   SimulatePulse(1, Tst+idelta, pos1);
 

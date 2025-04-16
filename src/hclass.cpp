@@ -866,6 +866,10 @@ void HClass::Make_Mlist() {
       if (pos>0)
 	md.tip = iss.str().substr(pos+1);
 
+      if (md.hnum==21 || md.hnum==22) { //Rate or HWRate
+	md.hd->max=10;
+      }
+
       //YK!!!
       int nn = MAX_CH+NGRP;
       if (md.hnum==61) //prof

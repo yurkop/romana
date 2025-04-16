@@ -520,6 +520,8 @@ Toptions::Toptions() {
     Pile[i]=100;
     sTg[i]=-1;
     //timing[i]=3;
+    DD[i]=1;
+    FF[i]=2;
     T1[i]=-5;
     T2[i]=5;
     W1[i]=-5;

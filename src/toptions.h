@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 153
+#define CDEF 154
 
 /*
 #include <list>
@@ -172,6 +172,8 @@ public:
   Int_t sTg[MAX_CHTP]; // [strg] Soft Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative; -1 - use hardware trigger
   //Int_t timing[MAX_CHTP];
 
+  Int_t DD[MAX_CHTP]; // CFD delay
+  Int_t FF[MAX_CHTP]; // CFD fraction*10
   Int_t T1[MAX_CHTP]; // [twin1]
   Int_t T2[MAX_CHTP]; // [twin2]
   Int_t W1[MAX_CHTP]; // [wwin1]
@@ -371,6 +373,7 @@ public:
   Hdef h_slope2; // 6 Sl2 Slope Counts Slope2 (peak)
   Hdef h_RMS1; // 7 RMS1 RMS Counts Noise1 (baseline)
   Hdef h_RMS2; // 8 RMS2 RMS Counts Noise2 (peak)
+  Hdef h_RTime; // 9 RTime RiseTime Counts RiseTime of the pulse
 
   Hdef h_ampl; // 48 Ampl Channel Counts Distribution of amplitudes from (inside) oscillogram
 
