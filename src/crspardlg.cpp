@@ -86,7 +86,7 @@ vector<const char*> ptip = {
   "Use channel for group histograms *_g2",
   "Use channel for group histograms *_g3",
   "Use channel for group histograms *_g4",
-  "Software smoothing. If negative - data are truncated to integer (imitates hS)",
+  "Software smoothing. If negative - imitates hS (data are truncated to integer etc)",
   "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative, LT (lower threshold) crossing;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, LT (lower threshold) crossing;\n7 - CFD, zero crosing;\n-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
   "Software trigger threshold",
@@ -161,6 +161,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   k_int=TGNumberFormat::kNESInteger;
   k_r0=TGNumberFormat::kNESReal;
   k_r1=TGNumberFormat::kNESRealOne;
+  k_r2=TGNumberFormat::kNESRealTwo;
   k_chk=TGNumberFormat::kNESMDayYear;
   k_lab=TGNumberFormat::kNESDayMYear;
   
@@ -847,6 +848,7 @@ void ParDlg::UpdateField(int nn) {
     if (st==kButtonDisabled) {
       te->SetEnabled(false);
     }
+    //cout << "p_chk: " << bb << endl;
   }
     break;
   case p_cmb: {
@@ -1783,12 +1785,17 @@ int ParParDlg::AddSimul(TGCompositeFrame* frame) {
   AddLine_1opt(fF6,ww,&opt.SimSim[8],0,tip1,label,k_r0,0,99999);
 
   label= "Coincidence window in ns";
-  tip1= "Coincidence window in ns. Must be smaller than 'Coincidence' in samples (opt.tgate).";
+  tip1= "Coincidence window in ns = Max time spread between two pulses.\n"
+    "Must be smaller than 'Coincidence' in samples (opt.tgate).";
   AddLine_1opt(fF6,ww,&opt.SimSim[9],0,tip1,label,k_r0,0,99999);
 
   label="Time delta";
   tip1= "difference between Simul and Pos (in ns)";
   AddLine_1opt(fF6,ww,&opt.SimSim[10],0,tip1,label,k_r1,-99,99);
+
+  label="Noise";
+  tip1= "amplitude of gaussian noise added to the signal";
+  AddLine_1opt(fF6,ww,&opt.SimSim[11],0,tip1,label,k_r1,0,999);
 
   // label="Simul delta";
   // tip1= "difference between Simul and Pos (in ns)";
@@ -1872,6 +1879,8 @@ HistParDlg::HistParDlg(const TGWindow *p,UInt_t w,UInt_t h)
 
 void HistParDlg::AddHist(TGCompositeFrame* frame2) {
 
+  hcl->md_pulse=0;
+
   //cout << "AddHist: " << endl;
   TGGroupFrame* f1 = new TGGroupFrame(frame2,"1D Histograms",kHorizontalFrame);
   f1->SetTitlePos(TGGroupFrame::kCenter);
@@ -1912,12 +1921,26 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
     else if (it->hnum == 51) { //mean pulses
       frame1d[1]->AddFrame(hfr1);
       AddLine_mean(hfr1,&*it);
+      hcl->md_pulse=&*it;
     }
     else if (it->hnum == 52) { //mean deriv
       AddLine_mean(hfr1,&*it);
     }
     else if (it->hnum == 53) { //mean FFT
       AddLine_mean(hfr1,&*it);
+
+
+      //checkbutton Double/Float
+      if (hcl->md_pulse) {
+	int id = Plist.size()+1;
+	TGCheckButton *chk_hist2 = new TGCheckButton(hfr1, "", id);
+	DoMap(chk_hist2,&hcl->md_pulse->hd->htp,p_chk,0,0x100|(2<<1)|(2<<4));
+	chk_hist2->SetToolTipText("Double/Float");
+	chk_hist2->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
+	hfr1->AddFrame(chk_hist2,LayLT2);
+      }
+
+
     }
     else if (it->hnum == 61) { //profilometer
       frame1d[1]->AddFrame(hfr2);
@@ -2037,8 +2060,16 @@ void HistParDlg::AddLine_hist(TGCompositeFrame* frame, Mdef* md) {
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
   DoMap(chk_hist,&md->hd->b,p_chk,0,0x100);
+  chk_hist->SetToolTipText("on/off");
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_hist,LayLT2);
+
+
+
+
+
+
+
 
   id = Plist.size()+1;
   TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
@@ -2086,6 +2117,19 @@ void HistParDlg::AddLine_hist(TGCompositeFrame* frame, Mdef* md) {
   fNum4->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
 				   "DoDaqNum()");
   hfr1->AddFrame(fNum4,LayLT2);
+
+
+
+
+  //checkbutton Double/Float
+  id = Plist.size()+1;
+  TGCheckButton *chk_hist2 = new TGCheckButton(hfr1, "", id);
+  DoMap(chk_hist2,&md->hd->htp,p_chk,0,0x100|(2<<1)|(2<<4));
+  chk_hist2->SetToolTipText("Double/Float");
+  chk_hist2->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
+  hfr1->AddFrame(chk_hist2,LayLT2);
+
+
 
 
   TGTextEntry *fLabel=new TGTextEntry(hfr1, md->name.Data());
@@ -2232,6 +2276,7 @@ void HistParDlg::AddLine_2d(TGGroupFrame* frame, Mdef* md) {
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
   DoMap(chk_hist,&md->hd->b,p_chk,0,0x100|(2<<4));
+  chk_hist->SetToolTipText("on/off");
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_hist,LayLT2);
   //id0=id;
@@ -2656,7 +2701,7 @@ void ChanParDlg::BuildColumns(int jj) {
 
   double amax=-2e101;
   //Peaks
-  AddColumn(jj,kk++,1,p_inum,25,0,-99,99,"sS",opt.sS);
+  AddColumn(jj,kk++,1,p_inum,25,0,-999,999,"sS",opt.sS);
   AddColumn(jj,kk++,1,p_inum,26,0,-1,7,"sTg",opt.sTg);
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);

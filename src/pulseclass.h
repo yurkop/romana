@@ -94,6 +94,8 @@ class PulseClass {
   void Ecalibr(Float_t& XX);
   //void Bcalibr();
   void Smooth(int n);
+  void Smooth_hw(int n);
+  //void Smooth_old(int n);
   void PoleZero(int tau);
   void PrintPulse(int pdata=0);
 

@@ -948,6 +948,80 @@ void EventClass::AddPulse(PulseClass *pls) {
 
 void PulseClass::Smooth(int nn) {
 
+  //int n2=abs(nn)-1;
+  //sData = new double[nsamp];
+  //memset(sData,0,nsamp*sizeof(double));
+
+  Float_t D[20000];
+  Float_t sum=0;
+  int len=0;
+
+  for (int i=0;i<(int)sData.size();i++) {
+    sum+=sData[i];
+    len++;
+
+    if (len>nn) {
+      len--;
+      sum-=sData[i-len];
+    }
+
+    // if (Tstamp64==0) {
+    //   prnt("s d d d f f f;","Sm:",i,nn,len,sData[i],sum,sum/len);
+    // }
+    D[i]=sum/len;
+  }
+  //printf("Smooth: %d %d %d %d %f\n",i,nsamp-i, opt.sS, ndiv, sData[i]);
+
+  memcpy(&sData[0],D,sizeof(int)*sData.size());
+}
+
+void PulseClass::Smooth_hw(int nn) {
+
+  //Int_t sum=nn;
+  //if (sum<=0) sum=1;
+
+  Int_t kk=nn-1;
+  //UInt_t div=0;
+  Float_t pp=2;
+  while (kk >>= 1) {
+    //div++;
+    pp*=2;
+  }
+  //div++;
+  //pp*=2;
+
+
+  Float_t rr = nn/pp;
+  //cout << "sum: " << nn << " " << pp << " " << rr << endl;
+
+
+  Float_t D[20000];
+  Float_t sum=0;
+  int len=0;
+
+  for (int i=0;i<(int)sData.size();i++) {
+    sum+=sData[i];
+    len++;
+
+    if (len>nn) {
+      len--;
+      sum-=sData[i-len];
+    }
+
+    D[i]=int(sum/len*rr); 
+
+    // if (Tstamp64==0) {
+    //   prnt("s d d d f f f f;","Sm:",i,nn,len,sData[i],sum,sum/len*rr,D[i]);
+    // }
+ }
+  //printf("Smooth: %d %d %d %d %f\n",i,nsamp-i, opt.sS, ndiv, sData[i]);
+
+  memcpy(&sData[0],D,sizeof(int)*sData.size());
+}
+
+/*
+void PulseClass::Smooth_old(int nn) {
+
   int n2=abs(nn)-1;
   //sData = new double[nsamp];
   //memset(sData,0,nsamp*sizeof(double));
@@ -984,7 +1058,7 @@ void PulseClass::Smooth(int nn) {
   }
 
 }
-
+*/
 
 void PulseClass::PoleZero(int Pz) {
   if (sData.size()<2) return;

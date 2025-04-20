@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 154
+#define CDEF 155
 
 /*
 #include <list>
@@ -62,7 +62,7 @@ public:
   Bool_t b; //book histogram or not
   Bool_t c[MAX_CH+NGRP]; //check histogram
   Bool_t w[MAX_CH+NGRP]; //MAIN - гистограмма присутствует в MAIN*
-  Bool_t tp; // type: false - Float; true - Double
+  Bool_t htp; // type: false - Float; true - Double
 
   ClassDef(Hdef, CDEF)
 };

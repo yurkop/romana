@@ -123,6 +123,13 @@ void Simul::SimulatePulse(int ch, Long64_t tst, double pos) {
     ;
   }
 
+  // add noise
+  if (opt.SimSim[11]) {
+    for (int j=0;j<cpar.Len[ch];j++) {
+      ipls.sData[j]+=opt.SimSim[11]*gRandom->Gaus(0,1);
+    }
+  }
+
   crs->PulseAna(ipls);
 
   // if (ipls.Chan==0)
@@ -161,7 +168,7 @@ void Simul::SimulateOneEvent(Long64_t Tst) {
 
   EventClass* evt = &crs->Levents.back();
   ipls=&evt->pulses[0];
-  //prnt("ss 9l 8.5f 8.5f 8.5fs;",BWHT,"Pos0:",evt->Tstmp,evt->T0,pos0,ipls->Time-pos0,RST);
+  //prnt("ss 9l 8.5f 8.5f 8.5f ls;",BWHT,"Pos0:",evt->Tstmp,evt->T0,pos0,pos1,idelta,RST);
 
   SimulatePulse(1, Tst+idelta, pos1);
 

@@ -18,8 +18,8 @@ extern TRandom rnd;
 //------------------------------
 
 Float_t Mdef::VarTime(EventClass* e, PulseClass* p){
-  //PulseClass* pls = (PulseClass*) p;
-  //cout << "vartime: " << pls->Chan << " " << (pls->Time - e->T0)*opt.Period+opt.sD[pls->Chan] << endl;
+  // if (e->Spin & 128) //Counters
+  //   cout << "vartime: " << (int)p->Chan << " " << (p->Time - e->T0)*opt.Period+opt.sD[p->Chan] << endl;
   return (p->Time - e->T0)*opt.Period+opt.sD[p->Chan];
 }
 
@@ -130,7 +130,7 @@ Float_t Mdef::VarLtof(EventClass* e, PulseClass* p){
 void Mdef::Time_Extend(UChar_t ch, Double_t T) {
   if (!v_map[ch]) return;
 
-  TH1F* hh = (TH1F*) v_map[ch]->hst;
+  TH1* hh = (TH1*) v_map[ch]->hst;
   Double_t max = hh->GetXaxis()->GetXmax();
 
   if (T > max) {
@@ -1100,6 +1100,7 @@ void NameTitle(char* name, char* title, int i, int maxi,
 
 void HClass::Make_1d(mdef_iter md, int maxi) {
   if (!md->hd->b) return;
+  TH1* hh;
 
   char name2[100];
   char title2[100];
@@ -1116,7 +1117,10 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
       NameTitle(name2,title2,i,maxi,name.Data(),title.Data());
       int nn=md->hd->bins*(md->hd->max - md->hd->min);
       if (nn<1) nn=1;
-      TH1F* hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
+      if (md->hd->htp)
+	hh=new TH1D(name2,title2,nn,md->hd->min,md->hd->max);
+      else
+	hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
       md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
       map_list->Add(md->v_map[i]);
       allmap_list->Add(md->v_map[i]);
@@ -1130,7 +1134,10 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
         sprintf(title2,"%s_g%d%s",name.Data(),j+1,title.Data());
         int nn=md->hd->bins*(md->hd->max - md->hd->min);
         if (nn<1) nn=1;
-        TH1F* hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
+	if (md->hd->htp)
+	  hh=new TH1D(name2,title2,nn,md->hd->min,md->hd->max);
+	else
+	  hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
 	md->v_map[MAX_CH+j] = new HMap(md->name.Data(),hh,md->hd,MAX_CH+j);
         map_list->Add(md->v_map[MAX_CH+j]);
         allmap_list->Add(md->v_map[MAX_CH+j]);
@@ -1143,6 +1150,7 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
 
 void HClass::Make_1d_pulse(mdef_iter md) {
   if (!md->hd->b) return;
+  TH1* hh;
 
   char name2[100];
   char title2[100];
@@ -1165,7 +1173,10 @@ void HClass::Make_1d_pulse(mdef_iter md) {
       }
 
       int nn=bins*(max-min);
-      TH1F* hh=new TH1F(name2,title2,nn,min,max);
+      if (md_pulse->hd->htp)
+	hh=new TH1D(name2,title2,nn,min,max);
+      else
+	hh=new TH1F(name2,title2,nn,min,max);
       hh->Sumw2();
 
       md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
@@ -1399,13 +1410,13 @@ void HClass::Clone_Hist(HMap* map) {
   //do the same with MT
 
   //if (*map->wrk) {
-  TH1F* h0 = (TH1F*) map->hst;
+  TH1* h0 = (TH1*) map->hst;
   for (int i=1;i<opt.ncuts;i++) {
     if (opt.pcuts[i]) {
       sprintf(cutname,"MAIN_cut%d",i);
       sprintf(name,"%s_cut%d",h0->GetName(),i);
       sprintf(htitle,"%s_cut%d",h0->GetTitle(),i);
-      TH1F* hcut = (TH1F*) h0->Clone();
+      TH1* hcut = (TH1*) h0->Clone();
       hcut->Reset();
       hcut->SetNameTitle(name,htitle);
 

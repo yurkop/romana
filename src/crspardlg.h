@@ -100,6 +100,7 @@ protected:
   TGNumberFormat::EStyle k_int;
   TGNumberFormat::EStyle k_r0;
   TGNumberFormat::EStyle k_r1;
+  TGNumberFormat::EStyle k_r2;
   TGNumberFormat::EStyle k_chk;
   TGNumberFormat::EStyle k_lab;
 

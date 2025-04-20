@@ -3948,8 +3948,11 @@ bool CRS::MakeDecMask() {
 
 void CRS::PulseAna(PulseClass &ipls) {
   if (!opt.Dsp[ipls.Chan]) { // не Dsp -> анализируем импульс
-    if (opt.sS[ipls.Chan]) {
+    if (opt.sS[ipls.Chan]>1) {
       ipls.Smooth(opt.sS[ipls.Chan]);
+    }
+    else if (opt.sS[ipls.Chan]<-1) {
+      ipls.Smooth_hw(-opt.sS[ipls.Chan]);
     }
     ipls.PeakAna33();
   }
@@ -4166,6 +4169,7 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
 
       if (evt->Spin & 128) {//Counters
 	ipls->Counter = (*Buf8) & sixbytes;
+	ipls->Pos = -32222;
       }
       else { //Peaks
 	ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
@@ -4212,6 +4216,7 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
 
 	if (Spn & 128) { //Counters
 	  ipls->Counter = (*buf8) & sixbytes;
+	  ipls->Pos = -32222;
 	}
 	else { //Peaks
 	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
@@ -4347,6 +4352,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 
 	if (Spn & 128) { //Counters
 	  ipls->Counter = (*buf8) & sixbytes;
+	  ipls->Pos = -32222;
 	}
 	else { //Peaks
 	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
@@ -4385,6 +4391,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	(*buf8)>>=48;
 	//evt->Spin |= UChar_t((*buf8) & 1);
 	evt->Spin |= UChar_t(*buf8);
+	//if (evt->Spin & 128) //Counters
 	//prnt("ss l ds;",BGRN,"d79:",evt->Tstmp,evt->Spin,RST);
       }
       else {
@@ -4398,6 +4405,8 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 
 	if (evt->Spin & 128) { //Counters
 	  ipls->Counter = (*buf8) & sixbytes;
+	  ipls->Pos = -32222;
+	  //prnt("ss l ds;",BRED,"d79:",evt->Tstmp,evt->Spin,RST);
 	}
 	else { //Peaks
 	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;

@@ -241,6 +241,7 @@ class HClass {
 
   std::list<Mdef*> Mainlist; // содержит указатели! Mdef* всех гистограмм в Main
   //заполняется в ??? (Ana_Start???)
+  Mdef* md_pulse;
 
   TVirtualFFT* fft[MAX_CH];
 

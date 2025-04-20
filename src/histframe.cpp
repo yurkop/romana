@@ -3127,7 +3127,8 @@ void HistFrame::DrawHist() {
 } //DrawHist
 
 void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
-  Float_t *hold, *hnew;
+  //Float_t *hold, *hnew;
+  //cout << "Class: " << hist->Class() << " " << hist->ClassName() << " " << map->hd->htp << endl;
 
   int nn = map->nn;
 
@@ -3163,6 +3164,8 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
       hist->SetBins(newx,xmin,xmax);
     }
 
+
+    /*
     hold = ((TH1F*)map->hst)->GetArray();
     hnew = ((TH1F*)hist)->GetArray();
     memset(hnew,0,((TH1F*)hist)->GetSize()*sizeof(*hnew));
@@ -3172,6 +3175,14 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
       int j=i/rb;
       hnew[j+1]+=hold[i+1];
     }
+    */
+
+    hist->Reset();
+    for (int i=0;i<nx;i++) {
+      int j=i/rb;
+      hist->AddBinContent(j+1,map->hst->GetBinContent(i+1));
+    }
+
   }
   else { //2d hist
     // if (dopt[1].BeginsWith("QQ", TString::kIgnoreCase)) { //X projection
@@ -3203,9 +3214,10 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
 
       ((TH2F*) hist)->SetBins(newx,xmin,xmax,newy,ymin,ymax);
 
-      hnew = ((TH2F*) hist)->GetArray();
-      memset(hnew,0,((TH2F*)hist)->GetSize()*sizeof(*hnew));
+      //hnew = ((TH2F*) hist)->GetArray();
+      //memset(hnew,0,((TH2F*)hist)->GetSize()*sizeof(*hnew));
 
+      hist->Reset();
       for (int i=0;i<nx;i++) {
 	int i2=i/rb;
 	for (int j=0;j<ny;j++) {

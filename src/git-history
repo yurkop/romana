@@ -1,3 +1,13 @@
+git tag -a v0.908 -m 'TH1F/TH1D'
+- переделан Smooth (sS)
+- диапазон sS: -999..999
+- исправлен баг в decode79, приводящий к появлению нулей в спектрах Time
+- добавлены шумы в simul
+- добавлена опция double/float для гистограмм (только для 1D)
+- немного переделана HistFrame::OneRebinPreCalibr
+  (для совместимости с double/float)
+
+
 git tag -a v0.907 -m 'RiseTime'
 - исправлен "баг" в eventframe Slider
 - начальные размеры для Rate и HWRate: 10 сек

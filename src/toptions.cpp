@@ -679,6 +679,7 @@ Toptions::Toptions() {
   SimSim[8]=20; //Pos spread
   SimSim[9]=15; //Window
   SimSim[10]=0; //Time delta (time-pos)
+  SimSim[11]=0; //Noise
 
   //SimSim[9]=0; //Simul2-pos
 
@@ -713,6 +714,7 @@ Hdef::Hdef() {
   min=0;
   max=1000;
   b=false;
+  htp=false;
   rb=1;
   rb2=1;
   for (int i=0;i<MAX_CH+NGRP;i++) {
