@@ -1,3 +1,15 @@
+git tag -a v0.909 -m 'double/float для 2D'
+- добавлена опция double/float для 2D гистограмм
+  для профилометра - только float!
+- добавлено описание в Analysis->Energy Calibration
+- недоделано:
+  - правильный учет sD;
+  - учет Time при конструировании совпадений
+    (нужно добавлять целую часть Time+sD к Timestamp)
+    само Time должно быть в диапазоне 0..1
+    см. //KK в libcrs
+
+
 git tag -a v0.908 -m 'TH1F/TH1D'
 - переделан Smooth (sS)
 - диапазон sS: -999..999

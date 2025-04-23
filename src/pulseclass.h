@@ -69,7 +69,7 @@ class PulseClass {
   Float_t RMS2; // noise of peak
   Float_t Height; // maximum of pulse in the same region as Area
   Float_t Width; // peak width
-  Float_t Time; // exact time relative to Pos (pulse start)
+  Float_t Time; // exact time relative to Pos (pulse start) in samples
   Float_t Rtime; // RiseTime
 
   //Float_t Simul2; //another version of Time (for simulions)

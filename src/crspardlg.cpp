@@ -2335,6 +2335,14 @@ void HistParDlg::AddLine_2d(TGGroupFrame* frame, Mdef* md) {
   // tt->SetWidth(ww);
   // hfr1->AddFrame(tt,LayLT2);
 
+  //checkbutton Double/Float
+  id = Plist.size()+1;
+  TGCheckButton *chk_hist2 = new TGCheckButton(hfr1, "", id);
+  DoMap(chk_hist2,&md->hd->htp,p_chk,0,0x100|(2<<1)|(2<<4));
+  chk_hist2->SetToolTipText("Double/Float");
+  chk_hist2->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
+  hfr1->AddFrame(chk_hist2,LayLT2);
+
   TGTextEntry *fLabel=new TGTextEntry(hfr1, md->name.Data());
   //fLabel->SetWidth();
   fLabel->SetState(false);

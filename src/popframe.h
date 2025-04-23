@@ -24,7 +24,7 @@ class PopFrame {
 
 public:
 
-  TGLayoutHints *LayLC0,*LayLC2,*LayCC3,*LayCC4,*LayEE2,*LayCB1,
+  TGLayoutHints *LayLC0,*LayLC2,*LayCC3,*LayCC4,*LayEE2,*LayCB1,*LayCT1,
     *LayBut1,*LayBut2,*LayBut3;
 
   void* ptr;

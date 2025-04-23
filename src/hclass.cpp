@@ -1257,6 +1257,7 @@ void HClass::Make_prof_int(mdef_iter md, Hdef* hd2) {
 
 int HClass::Make_2d(mdef_iter md) {
   if (!(md->hd->b)) return 0;
+  TH2* hh;
 
   int id1 = md->hnum/100;
   int id2 = md->hnum%100;
@@ -1296,8 +1297,12 @@ int HClass::Make_2d(mdef_iter md) {
       if (cpar.on[i]) {
 	NameTitle(name2,title2,i,opt.Nchan,name.Data(),title.Data());
 	  
-	TH2F* hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
-			  n2,m2->hd->min,m2->hd->max);
+	if (md->hd->htp)
+	  hh=new TH2D(name2,title2,n1,m1->hd->min,m1->hd->max,
+		      n2,m2->hd->min,m2->hd->max);
+	else
+	  hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
+		      n2,m2->hd->min,m2->hd->max);
 
 	md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
 	map_list->Add(md->v_map[i]);
@@ -1310,8 +1315,12 @@ int HClass::Make_2d(mdef_iter md) {
 	  sprintf(name2,"%s_g%d",name.Data(),j+1);
 	  sprintf(title2,"%s_g%d%s",name.Data(),j+1,title.Data());
 
-	  TH2F* hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
-			    n2,m2->hd->min,m2->hd->max);
+	  if (md->hd->htp)
+	    hh=new TH2D(name2,title2,n1,m1->hd->min,m1->hd->max,
+			n2,m2->hd->min,m2->hd->max);
+	  else
+	    hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
+			n2,m2->hd->min,m2->hd->max);
 
 	  md->v_map[MAX_CH+j] = new HMap(md->name.Data(),hh,md->hd,MAX_CH+j);
 	  map_list->Add(md->v_map[MAX_CH+j]);
@@ -1339,8 +1348,12 @@ int HClass::Make_2d(mdef_iter md) {
 	  int n1=md->hd->bins*(m1->hd->max - m1->hd->min);
 	  if (n1<1) n1=1;
 
-	  TH2F* hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
-			    n1,m1->hd->min,m1->hd->max);
+	  if (md->hd->htp)
+	    hh=new TH2D(name2,title2,n1,m1->hd->min,m1->hd->max,
+			n1,m1->hd->min,m1->hd->max);
+	  else
+	    hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
+			n1,m1->hd->min,m1->hd->max);
 	  md->v_map[ii] = new HMap(md->name.Data(),hh,md->hd,ii);
 	  map_list->Add(md->v_map[ii]);
 	  allmap_list->Add(md->v_map[ii]);

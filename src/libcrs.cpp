@@ -4359,6 +4359,10 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 
 	  //new2
 	  ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
+	  // Замененить на:
+	  // ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01
+	  //  + opt.sD[ipls->Chan]/opt.Period; //in samples
+
 	  ipls->Tstamp64=Tst;//*opt.Period;
 
 	  ipls->Spin=Spn;
@@ -6101,7 +6105,7 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
   pls->Tstamp64+=i_dt;
   */
 
-  
+  // KK - удалить эту строчку:
   Long64_t T64 = pls->Tstamp64+Long64_t(opt.sD[pls->Chan]/opt.Period);
 
   // ищем совпадение от конца списка до начала, но не больше, чем opt.ev_min
@@ -6131,6 +6135,7 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass* pls) {
       return;
     }
     dt = (T64 - rit->Tstmp);
+    //KK dt = (pls->Tstamp64 - rit->Tstmp);
 
     if (dt > opt.tgate) {
       //pls пришел позже, чем tgate -> добавляем новое событие в конец

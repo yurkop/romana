@@ -3212,7 +3212,7 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
       Double_t ymin  = ya->GetXmin();
       Double_t ymax  = ya->GetXmax();
 
-      ((TH2F*) hist)->SetBins(newx,xmin,xmax,newy,ymin,ymax);
+      ((TH2*) hist)->SetBins(newx,xmin,xmax,newy,ymin,ymax);
 
       //hnew = ((TH2F*) hist)->GetArray();
       //memset(hnew,0,((TH2F*)hist)->GetSize()*sizeof(*hnew));

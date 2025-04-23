@@ -21,7 +21,7 @@ extern ChanParDlg* chanpar;
 extern Toptions opt;
 extern CRS* crs;
 
-const int ww[]={15,60,60,60,60};
+const int ww[]={15,90,60,60,60};
 
 //const double Co60[] = {1173,1332};
 
@@ -40,6 +40,7 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   LayCC4   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 150,150,20,150);
   LayEE2   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY, 0,0,2,2);
   LayCB1   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5);
+  LayCT1   = new TGLayoutHints(kLHintsCenterX|kLHintsTop, 0, 0, 2, 2);
   LayBut1 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 5, 5, 5, 5);
   LayBut2 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 15, 5, 1, 1);
   LayBut3 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 55, 55, 5, 5);
@@ -208,7 +209,7 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
 
 void PopFrame::AddAdj(TGCompositeFrame* fcont1, HMap* map, int i) {
   ULong_t colr = EvtFrm->gcol[i];
-  
+
   if (i==MAX_CH+NGRP) {
     colr = TColor::RGB2Pixel(245,230,210);
   }
@@ -246,6 +247,24 @@ void PopFrame::AddAdj(TGCompositeFrame* fcont1, HMap* map, int i) {
 }
 
 void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
+
+  ULong_t colr = TColor::RGB2Pixel(200,240,230);
+  const char* txt =
+    "Calibrate all marked 1D histograms that have \"area\" in their name.\n"
+    "If there are several marked histograms with the same number,\n"
+    "only the first histogram will be included.\n\n"
+    "For 1-point pre-calibration:\n"
+    "- edit reference value for the pre-calibration;\n"
+    "- use scrollbar in the Plots tab to select window in such a way that the peak which\n"
+    "corresponds to the reference value is maximal in the window;\n"
+    "- press Auto. The position of the peak will be auto-calibrated;\n"
+    "- press Save to copy the calibration coefficients to channels' parameters;\n"
+    "- close calibration window;\n"
+    "- reanalyze the data with new calibration.";
+  fLabel = new TGLabel(fMain,txt);
+  fMain->AddFrame(fLabel, LayCT1);
+  fLabel->SetBackgroundColor(colr);
+
 
   for (int i=0;i<MAX_CH+NGRP+1;i++) {
     if (opt.adj[i][1]<=0) opt.adj[i][1]=1e-4;
@@ -294,7 +313,7 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
   hframe->AddFrame(fN, LayBut2);
 
 
-  TGCanvas* fCanvas1 = new TGCanvas(fMain,360,h*2/3.0);
+  TGCanvas* fCanvas1 = new TGCanvas(fMain,360,h*1/2.0);
   fMain->AddFrame(fCanvas1, LayEE2);
 
   TGCompositeFrame* fcont1 = new TGCompositeFrame(fCanvas1->GetViewPort(), 
@@ -328,7 +347,7 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
     AddAdj(fcont1, map, i);
   }
 
-  fEdit = new TGTextEdit(fMain, 360, h/3, kSunkenFrame|kDoubleBorder);
+  fEdit = new TGTextEdit(fMain, 360, h/4, kSunkenFrame|kDoubleBorder);
   fMain->AddFrame(fEdit,  LayEE2);
 
   if (!fEdit->LoadFile("ecalibr.dat")) {
