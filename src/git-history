@@ -1,3 +1,9 @@
+git tag -a v0.910 -m 'cpar.RMask'
+- FakeTxt
+- добавлен параметр cpar.RMask
+- YUMO (недоделано)
+
+
 git tag -a v0.909 -m 'double/float для 2D'
 - добавлена опция double/float для 2D гистограмм
   для профилометра - только float!

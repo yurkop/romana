@@ -103,6 +103,7 @@ protected:
   TGNumberFormat::EStyle k_r2;
   TGNumberFormat::EStyle k_chk;
   TGNumberFormat::EStyle k_lab;
+  TGNumberFormat::EStyle k_hex;
 
 public:
   std::vector<Pmap> Plist;
@@ -272,6 +273,7 @@ public:
   int AddNtof(TGCompositeFrame* frame);
   int AddLogic(TGCompositeFrame* frame);
   //void AddTrigger(TGGroupFrame* frame);
+  void FakeTxt();
   void AddLine_dec_format(TGCompositeFrame* frame, int width);
   int AddExpert(TGCompositeFrame* frame);
   int AddSimul(TGCompositeFrame* frame);
@@ -316,6 +318,9 @@ public:
   void AddLine_prof(TGHorizontalFrame *hfr1, Mdef* md);
   void AddLine_prof_int(TGHorizontalFrame *hfr1, Mdef* md);
   void AddLine_2d(TGGroupFrame* frame, Mdef* md);
+#ifdef YUMO
+  void AddLine_yumo(TGGroupFrame* frame, Mdef* md);
+#endif
   //, Hdef* hd,
   //const char* tip, const char* label, int type);
   void Add2d();

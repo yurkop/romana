@@ -2034,10 +2034,10 @@ void CRS::AllParameters44() {
 	}
       }
 
-      Command32(2,chan,23,mask_discr); //bitmask для дискр overwr AllPrms36
-      Command32(2,chan,24,mask_start); //bitmask для START
+      Command32(2,chan,23,mask_discr & cpar.RMask); //bitmask для дискр overwr AllPrms36
+      Command32(2,chan,24,mask_start & cpar.RMask); //bitmask для START
       Command32(2,chan,25,wmask); // битовая маска разрешений записи
-      Command32(2,chan,26,mask_discr); //bitmask для СС и пересчета
+      Command32(2,chan,26,mask_discr & cpar.RMask); //bitmask для СС и пересчета
 
 
       Command32(2,chan,27,(int) w); // длительность окна совпадений
@@ -2122,7 +2122,7 @@ void CRS::AllParameters36() {
 	mask|=0b1100; // write pulse
       }
 
-      Command32(2,chan,23,mask); //bitmask for discriminator
+      Command32(2,chan,23,mask & cpar.RMask); //bitmask for discriminator
       Command32(2,chan,32,cntr); //type of centroid
 
       int pwin = opt.Peak2[chan]; //окно повторных срабатываний
@@ -2200,7 +2200,7 @@ void CRS::AllParameters35() {
 	mask|=0b1100; // write pulse
       }
 
-      Command32(2,chan,23,mask); //bitmask for discriminator
+      Command32(2,chan,23,mask & cpar.RMask); //bitmask for discriminator
       Command32(2,chan,32,drv[chan]); //type of centroid
 
       int pwin = opt.Peak2[chan]; //окно повторных срабатываний
@@ -2247,7 +2247,7 @@ void CRS::AllParameters34()
       if (cpar.pls[chan]) {//add 1100
 	mask|=0xC; // write pulse
       }
-      Command32(2,chan,23,mask); //bitmask
+      Command32(2,chan,23,mask & cpar.RMask); //bitmask
       //UInt_t mask = 0xFF;
       //Command32(2,chan,23,(UInt_t) mask); //bitmask
     }
@@ -2256,7 +2256,7 @@ void CRS::AllParameters34()
   // Start dead time DT
   if (cpar.DTW==0) cpar.DTW=1;
   UChar_t type = cpar.DTW>>24;
-  Command32(11,0,type,(UInt_t) cpar.DTW); //bitmask
+  Command32(11,0,type,(UInt_t) cpar.DTW);
 
 }
 

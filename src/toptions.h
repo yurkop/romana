@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 155
+#define CDEF 156
 
 /*
 #include <list>
@@ -106,7 +106,7 @@ public:
   Bool_t group[MAX_CHTP][2];
   Int_t RD[MAX_CHTP]; // [ratediv] - rate divider
 
-
+  UInt_t RMask; //raw data mask - common mask for raw data transfer
   //UInt_t Mask[MAX_CHTP];
   Bool_t forcewr; //only for crs2
   // 0 - only triggered channel is written; 
@@ -387,6 +387,10 @@ public:
 
   Hdef h_prof; // 61 Profilometer X(mm) Y(mm) 2d histograms for Profilometer
   Hdef h_prof_int; // 62 Prof_int - - Integral histograms for profilometer
+
+#ifdef YUMO
+  Hdef h_yumo; // 71 Yumo X(ns) Y(ns) 2d histogram for yumo
+#endif
 
   //Hdef h_width2;
   //Hdef h_width3;

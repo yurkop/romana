@@ -15,7 +15,9 @@
 # make P_LIBUSB=1 compile with printing libusb messages
 # make P_CMD=1 compile with printing cmd32 & cmd2 messages
 # make BITS=N compile with cutting lower bits in sData by N
-# removed!!!   make simul to compile with SIMUL option 
+# removed!!!   make simul to compile with SIMUL option
+
+# make yumo compile with YUMO option
 
 
 GIT_VERSION := $(shell git describe --abbrev=4 --always --tags --dirty)
@@ -73,6 +75,7 @@ ifdef BITS
 endif
 
 ifeq (yumo,$(findstring $(MAKECMDGOALS),yumo))
+  RFLAGS += -DYUMO=1
   CPPFLAGS += -D YUMO=1
 endif
 
@@ -92,7 +95,7 @@ endif
 endif
 
 ifdef CYUSB_LIB
-RFLAGS = -DCYUSB=1
+RFLAGS += -DCYUSB=1
 CPPFLAGS += -DCYUSB=1
 LDFLAGS += -DCYUSB=1 -l cyusb -l usb-1.0
 endif

@@ -661,13 +661,13 @@ void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
   //else { //old profilometer
   //}
 
-  if (hcl->mdef_prof->hd->b) {
-    if (ch_alpha>=0 && ch_alpha<(int)hcl->mdef_prof->v_map.size()) {
+  if (hcl->md_prof->hd->b) {
+    if (ch_alpha>=0 && ch_alpha<(int)hcl->md_prof->v_map.size()) {
       for (int i=0;i<64;i++) {
 	if (h_sum[0][i]>opt.Prof64_THR) { //X
 	  for (int j=0;j<64;j++) {
 	    if (h_sum[1][j]>opt.Prof64_THR) { //Y
-	      Fill_02(hcl->mdef_prof->v_map[ch_alpha],
+	      Fill_02(hcl->md_prof->v_map[ch_alpha],
 		       (i+0.5)*1.875,(j+0.5)*1.875,hcut_flag,ncut);
 	    } //if Y
 	  }
@@ -676,17 +676,17 @@ void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
     }
   }
 
-  if (hcl->mdef_prof_int->hd->b) {
-    Fill_Mean1(hcl->mdef_prof_int->v_map[2], h_sum[0], 64, 0, ncut); //X
-    Fill_Mean1(hcl->mdef_prof_int->v_map[3], h_sum[1], 64, 0, ncut ); //X
+  if (hcl->md_prof_int->hd->b) {
+    Fill_Mean1(hcl->md_prof_int->v_map[2], h_sum[0], 64, 0, ncut); //X
+    Fill_Mean1(hcl->md_prof_int->v_map[3], h_sum[1], 64, 0, ncut ); //X
 
     for (int i=0;i<64;i++) {
       if (h_sum[0][i]>opt.Prof64_THR) {
-	Fill_01(hcl->mdef_prof_int->v_map[0],i+0.5,hcut_flag,ncut);
+	Fill_01(hcl->md_prof_int->v_map[0],i+0.5,hcut_flag,ncut);
 	for (int j=0;j<64;j++) {
 	  if (h_sum[1][j]>opt.Prof64_THR) {
-	    Fill_02(hcl->mdef_prof_int->v_map[4],i+0.5,j+0.5,hcut_flag,ncut);
-	    Fill_02(hcl->mdef_prof_int->v_map[5],(i+0.5)*1.875,(j+0.5)*1.875,hcut_flag,ncut);
+	    Fill_02(hcl->md_prof_int->v_map[4],i+0.5,j+0.5,hcut_flag,ncut);
+	    Fill_02(hcl->md_prof_int->v_map[5],(i+0.5)*1.875,(j+0.5)*1.875,hcut_flag,ncut);
 	  } //if Y
 	}
       } //if X
@@ -694,7 +694,7 @@ void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
 
     for (int i=0;i<64;i++) {
       if (h_sum[1][i]>opt.Prof64_THR) {
-	Fill_01(hcl->mdef_prof_int->v_map[1],i+0.5,hcut_flag,ncut);
+	Fill_01(hcl->md_prof_int->v_map[1],i+0.5,hcut_flag,ncut);
       } //if Y
     }
   }
@@ -876,6 +876,10 @@ void HClass::Make_Mlist() {
 	nn = 256;
       else if (md.hnum==62) //prof_int
 	nn=6;
+#ifdef YUMO
+      else if (md.hnum==71) //yumo
+	nn=3;
+#endif
 
       md.v_map.resize(nn);
 
@@ -1014,16 +1018,23 @@ void HClass::Make_hist() {
       it->MFill = &Mdef::FillMeanPulse;
     }
     else if (it->hnum==61) { //prof
-      mdef_prof = &*it;
+      md_prof = &*it;
       hd2 = it->hd;
       Make_prof(it);
       it->MFill = &Mdef::FillProf;
     }
     else if (it->hnum==62) { //prof_int
-      mdef_prof_int = &*it;
+      md_prof_int = &*it;
       Make_prof_int(it,hd2);
       it->MFill = &Mdef::FillProf;
     }
+#ifdef YUMO
+    else if (it->hnum==71) { //yumo
+      md_yumo = &*it;
+      Make_Yumo(it);
+      it->MFill = &Mdef::FillYumo;
+    }
+#endif
     else if (it->hnum>100) { //2d
       int res = Make_2d(it);
       if (res==1) { //normal 2d
@@ -1254,6 +1265,60 @@ void HClass::Make_prof_int(mdef_iter md, Hdef* hd2) {
   allmap_list->Add(md->v_map[5]);
 
 }
+
+#ifdef YUMO
+void Mdef::FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    int ch = ipls->Chan;
+    if (ch<opt.Nchan) { // && v_map[ch] - не нужен, т.к. проверяется в Fill_01
+      for (auto j=ipls->sData.begin();j!=ipls->sData.end();++j) {
+	Fill_01(v_map[ch],*j,hcut_flag,ncut);
+      }
+    }
+  }
+} //FillYumo
+
+void HClass::Make_Yumo(mdef_iter md) {
+  if (!md->hd->b) return;
+  TH1* hh;
+  TH2* h2;
+
+  char name2[100];
+  char title2[100];
+
+  TString name = md->name;
+  TString title = name+';'+md->x_title+';'+md->y_title;
+  name.ToLower();
+
+  int nn=md->hd->bins*(md->hd->max - md->hd->min);
+  if (nn<1) nn=1;
+
+  //1d
+  sprintf(name2,"X1+X2");
+  sprintf(title2,"X1+X2;x1+x2(ns);Counts");
+  hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
+  md->v_map[0] = new HMap(md->name.Data(),hh,md->hd,0);
+  map_list->Add(md->v_map[0]);
+  allmap_list->Add(md->v_map[0]);
+
+  sprintf(name2,"Y1+Y2");
+  sprintf(title2,"Y1+Y2;y1+y2(ns);Counts");
+  hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
+  md->v_map[1] = new HMap(md->name.Data(),hh,md->hd,1);
+  map_list->Add(md->v_map[1]);
+  allmap_list->Add(md->v_map[1]);
+
+
+  //2d
+  h2=new TH2F(name,title,
+	      nn,md->hd->min,md->hd->max,
+	      nn,md->hd->min,md->hd->max);
+  md->v_map[2] = new HMap(md->name.Data(),h2,md->hd,2);
+  map_list->Add(md->v_map[2]);
+  allmap_list->Add(md->v_map[2]);
+
+}
+#endif
 
 int HClass::Make_2d(mdef_iter md) {
   if (!(md->hd->b)) return 0;

@@ -72,6 +72,9 @@ public:
   void FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_Ampl(EventClass* evt, Double_t *hcut_flag, int ncut);
   void FillProf(EventClass* evt, Double_t *hcut_flag, int ncut);
+#ifdef YUMO
+  void FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut);
+#endif
 
   //void Fill_1d_cut(EventClass* evt, int i);
   //void Fill_1d_Extend_cut(EventClass* evt, Double_t *hcut_flag);
@@ -207,9 +210,9 @@ class HClass {
   */
 
   //std::vector<int> vcuts; //vector of
-  Mdef *mdef_prof;
-  Mdef *mdef_prof_int;
-
+  Mdef *md_prof;
+  Mdef *md_prof_int;
+  Mdef* md_pulse;
 
 
   TCutG* cutG[MAXCUTS];
@@ -241,7 +244,6 @@ class HClass {
 
   std::list<Mdef*> Mainlist; // содержит указатели! Mdef* всех гистограмм в Main
   //заполняется в ??? (Ana_Start???)
-  Mdef* md_pulse;
 
   TVirtualFFT* fft[MAX_CH];
 
@@ -260,6 +262,12 @@ class HClass {
   void Make_prof(mdef_iter md);
   void Make_prof_int(mdef_iter md, Hdef* hd2);
   int Make_2d(mdef_iter md);
+
+#ifdef YUMO
+  Mdef* md_yumo=0;
+  int yumo_x1,yumo_x1,yumo_y1,yumo_y2; //channels for x1,x2,y1,y2;
+  void Make_Yumo(mdef_iter md);
+#endif
 
   void FillHist(EventClass* evt, Double_t *hcut_flag);
 

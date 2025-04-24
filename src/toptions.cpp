@@ -58,6 +58,7 @@ void Coptions::InitPar(int zero) {
     mult_w2[i]=255;
   }
   
+  RMask=0xFFFF;
   forcewr=false;
   Trigger=0;
   Smpl=0;
