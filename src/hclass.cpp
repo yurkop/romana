@@ -1268,14 +1268,136 @@ void HClass::Make_prof_int(mdef_iter md, Hdef* hd2) {
 
 #ifdef YUMO
 void Mdef::FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  Float_t tt[5] = {}; //initialize to zero
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    int ch = ipls->Chan;
-    if (ch<opt.Nchan) { // && v_map[ch] - не нужен, т.к. проверяется в Fill_01
-      for (auto j=ipls->sData.begin();j!=ipls->sData.end();++j) {
-	Fill_01(v_map[ch],*j,hcut_flag,ncut);
-      }
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      tt[hcl->yumo_xy[ipls->Chan]]=ipls->Time+1e4;
+      // prnt("ss l d d fs;",BGRN,"tt:",evt->Tstmp,ipls->Chan,
+      //  	   hcl->yumo_xy[ipls->Chan],ipls->Time,RST);
     }
   }
+
+  Float_t tx=0,ty=0;
+  Float_t sx=0,sy=0;
+  if (tt[0] && tt[1]) {
+    tx = ((tt[0] - tt[1])*opt.Period + 339)/2;
+    sx = (tt[0]+tt[1]-2e4)*opt.Period;
+    Fill_01(v_map[0],sx,hcut_flag,ncut);
+    //Fill_01(v_map[1],(tx),hcut_flag,ncut);
+  }
+  if (tt[2] && tt[3]) {
+    ty = ((tt[2] - tt[3])*opt.Period + 339)/2;
+    sy = (tt[2]+tt[3]-2e4)*opt.Period;
+    Fill_01(v_map[1],sy,hcut_flag,ncut);
+  }
+
+  /*
+  if (abs(sx-339)>20) {
+    // Float_t t1 = (tt[0]-1e4)*opt.Period;
+    // Float_t t2 = 339-(tt[1]-1e4)*opt.Period;
+    // prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
+    // 	 tx,t1,t2,RST);
+    tx=0;
+  }
+
+  if (abs(sy-339)>20) {
+    ty=0;
+  }
+  */
+
+
+
+  if (!tx) {
+    // if (tt[0] && tt[1]) {
+    //   prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
+    // 	   tx,tt[0],tt[1],RST);
+    // }
+    if (tt[0]) {
+      tx=(tt[0]-1e4)*opt.Period;
+    }
+    else if (tt[1]) {
+      tx=339-(tt[1]-1e4)*opt.Period;
+    }
+  }
+
+  if (!ty) {
+    // if (tt[0] && tt[1]) {
+    //   prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
+    // 	   tx,tt[0],tt[1],RST);
+    // }
+    if (tt[2]) {
+      ty=(tt[2]-1e4)*opt.Period;
+    }
+    else if (tt[3]) {
+      ty=339-(tt[3]-1e4)*opt.Period;
+    }
+  }
+
+
+  /*
+  if (!tx) {
+    // if (tt[0] && tt[1]) {
+    //   prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
+    // 	   tx,tt[0],tt[1],RST);
+    // }
+    if (tt[0]) {
+      tx=(tt[0]-1e4)*opt.Period;
+    }
+    else if (tt[1]) {
+      tx=339-(tt[1]-1e4)*opt.Period;
+    }
+  }
+
+  if (!ty) {
+    // if (tt[0] && tt[1]) {
+    //   prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
+    // 	   tx,tt[0],tt[1],RST);
+    // }
+    if (tt[2]) {
+      ty=(tt[2]-1e4)*opt.Period;
+    }
+    else if (tt[3]) {
+      ty=339-(tt[3]-1e4)*opt.Period;
+    }
+  }
+  */
+
+  if (tx && ty)
+    Fill_02(v_map[2],tx,ty,hcut_flag,ncut);
+
+  /*
+  Float_t xx=0;
+  Float_t yy=0;
+  int nx=0;
+  int ny=0;
+
+  if (tt[0]) {
+    xx+=(tt[0]-1e4)*opt.Period;
+    nx++;
+  }
+  if (tt[1]) {
+    xx+=339-(tt[1]-1e4)*opt.Period;
+    nx++;
+  }
+  if (nx)
+    xx/=nx;
+
+  if (tt[2]) {
+    yy+=(tt[2]-1e4)*opt.Period;
+    ny++;
+  }
+  if (tt[3]) {
+    yy+=339-(tt[3]-1e4)*opt.Period;
+    ny++;
+  }
+  if (ny)
+    yy/=ny;
+  
+  if (nx && ny)
+    Fill_02(v_map[2],xx,yy,hcut_flag,ncut);
+  */
+
 } //FillYumo
 
 void HClass::Make_Yumo(mdef_iter md) {
@@ -1294,15 +1416,15 @@ void HClass::Make_Yumo(mdef_iter md) {
   if (nn<1) nn=1;
 
   //1d
-  sprintf(name2,"X1+X2");
-  sprintf(title2,"X1+X2;x1+x2(ns);Counts");
+  sprintf(name2,"x1_x2");
+  sprintf(title2,"x1_x2;x1+x2(ns);Counts");
   hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
   md->v_map[0] = new HMap(md->name.Data(),hh,md->hd,0);
   map_list->Add(md->v_map[0]);
   allmap_list->Add(md->v_map[0]);
 
-  sprintf(name2,"Y1+Y2");
-  sprintf(title2,"Y1+Y2;y1+y2(ns);Counts");
+  sprintf(name2,"y1_y2");
+  sprintf(title2,"y1_y2;y1+y2(ns);Counts");
   hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
   md->v_map[1] = new HMap(md->name.Data(),hh,md->hd,1);
   map_list->Add(md->v_map[1]);
@@ -1317,6 +1439,23 @@ void HClass::Make_Yumo(mdef_iter md) {
   map_list->Add(md->v_map[2]);
   allmap_list->Add(md->v_map[2]);
 
+  yumo_x1=12;
+  yumo_x2=13;
+  yumo_y1=15;
+  yumo_y2=14;
+  yumo_xy.clear();
+  for (int i=0;i<MAX_CH;i++) {
+    if (i==yumo_x1)
+      yumo_xy.push_back(0);
+    else if (i==yumo_x2)
+      yumo_xy.push_back(1);
+    else if (i==yumo_y1)
+      yumo_xy.push_back(2);
+    else if (i==yumo_y2)
+      yumo_xy.push_back(3);
+    else
+      yumo_xy.push_back(4);
+  }
 }
 #endif
 

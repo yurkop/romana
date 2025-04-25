@@ -265,7 +265,8 @@ class HClass {
 
 #ifdef YUMO
   Mdef* md_yumo=0;
-  int yumo_x1,yumo_x1,yumo_y1,yumo_y2; //channels for x1,x2,y1,y2;
+  int yumo_x1,yumo_x2,yumo_y1,yumo_y2; //channels for x1,x2,y1,y2;
+  std::vector<int> yumo_xy;
   void Make_Yumo(mdef_iter md);
 #endif
 

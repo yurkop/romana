@@ -1,3 +1,8 @@
+git tag -a v0.911 -m 'Yumo'
+- FillYumo + MakeYumo...
+- исправлен баг: v0.910 не компилировалось с yumo
+- TODO: использовать cpar.on в Fill...
+
 git tag -a v0.910 -m 'cpar.RMask'
 - FakeTxt
 - добавлен параметр cpar.RMask
