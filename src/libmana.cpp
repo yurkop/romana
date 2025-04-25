@@ -2269,6 +2269,9 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
   // 		     "HandleMenu(Int_t)");
   fMenuAnalysis->AddEntry("Peak Search Parameters", M_PEAKS);
+// #ifdef YUMO
+//   fMenuAnalysis->AddEntry("YUMO", M_YUMO);
+// #endif
 #ifdef P_TEST
   fMenuAnalysis->AddEntry("Test", M_TEST);
 #endif
@@ -3953,6 +3956,12 @@ void MainFrame::HandleMenu(Int_t menu_id)
     fTab->SetTab("Plots");
     new PopFrame(this,100,600,M_PEAKS);
     break;
+
+// #ifdef YUMO
+//   case M_YUMO:
+//     new PopFrame(this,100,600,M_YUMO);
+//     break;
+// #endif
 
 #ifdef P_TEST
   case M_TEST:

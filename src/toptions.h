@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 156
+#define CDEF 157
 
 /*
 #include <list>
@@ -389,6 +389,10 @@ public:
   Hdef h_prof_int; // 62 Prof_int - - Integral histograms for profilometer
 
 #ifdef YUMO
+  int yumo_x1;
+  int yumo_x2;
+  int yumo_y1;
+  int yumo_y2;
   Hdef h_yumo; // 71 Yumo X(ns) Y(ns) 2d histogram for yumo
 #endif
 

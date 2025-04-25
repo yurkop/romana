@@ -78,6 +78,9 @@ public:
 #ifdef CYUSB
   void AddDevice();
 #endif
+// #ifdef YUMO
+//   void AddYumo();
+// #endif
   void AddTest();
   void DoAdj();
   void DoENum();

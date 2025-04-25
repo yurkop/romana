@@ -1439,19 +1439,19 @@ void HClass::Make_Yumo(mdef_iter md) {
   map_list->Add(md->v_map[2]);
   allmap_list->Add(md->v_map[2]);
 
-  yumo_x1=12;
-  yumo_x2=13;
-  yumo_y1=15;
-  yumo_y2=14;
+  // yumo_x1=12;
+  // yumo_x2=13;
+  // yumo_y1=15;
+  // yumo_y2=14;
   yumo_xy.clear();
   for (int i=0;i<MAX_CH;i++) {
-    if (i==yumo_x1)
+    if (i==opt.yumo_x1)
       yumo_xy.push_back(0);
-    else if (i==yumo_x2)
+    else if (i==opt.yumo_x2)
       yumo_xy.push_back(1);
-    else if (i==yumo_y1)
+    else if (i==opt.yumo_y1)
       yumo_xy.push_back(2);
-    else if (i==yumo_y2)
+    else if (i==opt.yumo_y2)
       yumo_xy.push_back(3);
     else
       yumo_xy.push_back(4);

@@ -1,3 +1,6 @@
+git tag -a v0.912 -m 'Yumo...'
+- переделаны параметры...
+
 git tag -a v0.911 -m 'Yumo'
 - FillYumo + MakeYumo...
 - исправлен баг: v0.910 не компилировалось с yumo

@@ -74,6 +74,11 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
     AddDevice();
   }
 #endif
+// #ifdef YUMO
+//   else if (menu_id==M_YUMO) {
+//     AddYumo();
+//   }
+// #endif //YUMO
 #ifdef P_TEST
   else if (menu_id==M_TEST) {
     AddTest();
@@ -508,6 +513,40 @@ void PopFrame::AddDevice() {
 }
 
 #endif
+
+/*
+#ifdef YUMO
+void PopFrame::AddYumo() {
+  fMain->SetWindowName("YUMO");
+
+  AddNum(hcl->yumo_x1,801,"x1 channel");
+  AddNum(hcl->yumo_x2,802,"x2 channel");
+  AddNum(hcl->yumo_y1,803,"y1 channel");
+  AddNum(hcl->yumo_y2,804,"y2 channel");
+
+  TGTextButton* fTest = new TGTextButton(fMain, "      &Test1      ",1);
+  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
+  fTest->SetToolTipText("Stop-Pusk (cmd4-cmd3) N times");
+  fMain->AddFrame(fTest, LayBut3);
+
+  fTest = new TGTextButton(fMain, "      &Test2      ",2);
+  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
+  fTest->SetToolTipText("Information N times");
+  fMain->AddFrame(fTest, LayBut3);
+
+  fTest = new TGTextButton(fMain, "      &Test3      ",3);
+  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
+  fTest->SetToolTipText("Command32(8) N times");
+  fMain->AddFrame(fTest, LayBut3);
+
+  fTest = new TGTextButton(fMain, "      &Test4      ",4);
+  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
+  fTest->SetToolTipText("myM->DoStartStop(1) N[x2] times");
+  fMain->AddFrame(fTest, LayBut3);
+
+}
+#endif
+*/
 
 #ifdef P_TEST
 void PopFrame::AddTest() {

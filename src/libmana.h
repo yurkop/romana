@@ -38,6 +38,9 @@ enum MENU_COM {
   M_TCALIBR,
   M_PEAKS,
   M_DEVICE,
+// #ifdef YUMO
+//   M_YUMO,
+// #endif
   M_TEST,
   M_HELP,
 };

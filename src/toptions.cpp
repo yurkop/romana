@@ -707,6 +707,13 @@ Toptions::Toptions() {
   hy_slider[0]=1;
   hy_slider[1]=0;
 
+#ifdef YUMO
+  yumo_x1=0;
+  yumo_x2=1;
+  yumo_y1=2;
+  yumo_y2=3;
+#endif
+
 }
 
 Hdef::Hdef() {

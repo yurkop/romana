@@ -1749,6 +1749,17 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   label="Add random";
   AddLine_1opt(fF6,ww,&opt.addrandom,0,tip1,label,k_chk,1,1000);
 
+  int w2=40;
+  tip1= "";
+  label="YUMO X1";
+  AddLine_1opt(fF6,w2,&opt.yumo_x1,0,tip1,label,k_int,0,31);
+  label="YUMO X2";
+  AddLine_1opt(fF6,w2,&opt.yumo_x2,0,tip1,label,k_int,0,31);
+  label="YUMO Y1";
+  AddLine_1opt(fF6,w2,&opt.yumo_y1,0,tip1,label,k_int,0,31);
+  label="YUMO Y2";
+  AddLine_1opt(fF6,w2,&opt.yumo_y2,0,tip1,label,k_int,0,31);
+
   tip1= "Max number of rows in Channels tab";
   label="Nrows";
   AddLine_1opt(fF6,ww,&opt.Nrows,0,tip1,label,k_int,2,64);
