@@ -157,6 +157,7 @@ public:
   void Do_Ecalibr(PopFrame* pop);
   void Do_Tcalibr(PopFrame* pop);
   //void Do_Ecalibr();
+  void DoUnZoom();
   void DoRst();
   void HiReset();
   void HiUpdate();

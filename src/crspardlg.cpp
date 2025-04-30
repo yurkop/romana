@@ -1066,17 +1066,27 @@ void ParDlg::Check_opt(TGHorizontalFrame *hfr1, int width, void* x1,
     TGCheckButton *fchk = new TGCheckButton(hfr1, cname, id);
     DoMap(fchk,x1,p_chk,0,cmd1);
     fchk->SetToolTipText(tip1);
-    fchk->ChangeOptions(fchk->GetOptions()|kFixedWidth);
 
-    int wd = fchk->GetWidth();
-    int x1 = (width-wd)/2+10;
-    int x2 = 7+width-x1-wd; //7 - from laylt4
+    if (width) {
+      fchk->ChangeOptions(fchk->GetOptions()|kFixedWidth);
+      fchk->SetWidth(width);
+    }
+
+    // int wd = fchk->GetWidth();
+    // int x1 = (width-wd)/2+10;
+    // int x2 = 7+width-x1-wd; //7 - from laylt4
 
     //cout << "wd: " << width << " " << wd << " " << x1 << " " << x2 << endl;
-    hfr1->AddFrame(fchk,
-		   new TGLayoutHints(kLHintsLeft|kLHintsCenterY,x1,x2,1,1));
+
+
+
+    // hfr1->AddFrame(fchk,
+    // 		   new TGLayoutHints(kLHintsLeft|kLHintsCenterY,x1,x2,1,1));
+
+
+
     //fchk->SetWidth(52);
-    //hfr1->AddFrame(fchk,LayLT4);
+    hfr1->AddFrame(fchk,LayLT2);
     //fchk->SetWidth(width);
     fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
   }
@@ -1697,7 +1707,10 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   AddLine_dec_format(fF6,150);
 
   tip1=
-    "Hex bitwise raw mask:\n"
+    "Hex bitwise raw data transfer mask:\n"
+    "default value: FFFF\n\n"
+
+    "Meaning of the bits:\n"
     "0 - timestamp\n"
     "1 - spin/counter\n"
     "2 - pulse data 11 bit\n"
@@ -1748,17 +1761,6 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   tip1= "Add random number when filling all histograms";
   label="Add random";
   AddLine_1opt(fF6,ww,&opt.addrandom,0,tip1,label,k_chk,1,1000);
-
-  int w2=40;
-  tip1= "";
-  label="YUMO X1";
-  AddLine_1opt(fF6,w2,&opt.yumo_x1,0,tip1,label,k_int,0,31);
-  label="YUMO X2";
-  AddLine_1opt(fF6,w2,&opt.yumo_x2,0,tip1,label,k_int,0,31);
-  label="YUMO Y1";
-  AddLine_1opt(fF6,w2,&opt.yumo_y1,0,tip1,label,k_int,0,31);
-  label="YUMO Y2";
-  AddLine_1opt(fF6,w2,&opt.yumo_y2,0,tip1,label,k_int,0,31);
 
   tip1= "Max number of rows in Channels tab";
   label="Nrows";
@@ -1991,23 +1993,33 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
       AddLine_prof_int(hfr2,&*it);
   }
 
-  frame2d = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
-  frame2d->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame2->AddFrame(frame2d, LayLT0);
-
 #ifdef YUMO
-  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
-    if (it->hnum == 71) { //yumo
-      AddLine_yumo(frame2d,&*it);
-    }
+  TGHorizontalFrame* hh = new TGHorizontalFrame(frame2);
+  frame2->AddFrame(hh, LayLT0);
+
+  frame2d = new TGGroupFrame(hh, "2D Histograms", kVerticalFrame);
+  hh->AddFrame(frame2d, LayLT0);
+
+  mdef_iter it1 = hcl->Find_Mdef(71);
+  mdef_iter it2 = hcl->Find_Mdef(72);
+  if (it1!=hcl->Mlist.end() && it2!=hcl->Mlist.end()) {
+    TGGroupFrame* frameYumo = new TGGroupFrame(hh, "YUMO", kVerticalFrame);
+    frameYumo->SetTitlePos(TGGroupFrame::kCenter);
+    hh->AddFrame(frameYumo, LayLT0);
+
+    Add_yumo(frameYumo,&*it1,&*it2);
   }
+#else
+  frame2d = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
+  frame2->AddFrame(frame2d, LayLT0);
 #endif
 
+  frame2d->SetTitlePos(TGGroupFrame::kCenter);
+
   TGHorizontalFrame* h2fr = new TGHorizontalFrame(frame2d);
-  //h2fr->ChangeOptions(h2fr->GetOptions()|kFixedWidth);
-  //h2fr->Resize(HFRAME_WIDTH,0);
-  //frame2d->AddFrame(h2fr,LayLT0);
-  frame2d->AddFrame(h2fr,LayET0);
+  h2fr->ChangeOptions(h2fr->GetOptions()|kFixedWidth);
+  h2fr->Resize(HFRAME_WIDTH,0);
+  frame2d->AddFrame(h2fr,LayLT0);
 
   cmb1=new TGComboBox(h2fr,0);
   h2fr->AddFrame(cmb1,LayLC2);
@@ -2287,138 +2299,88 @@ void HistParDlg::AddLine_prof_int(TGHorizontalFrame *hfr1, Mdef* md) {
 }
 
 #ifdef YUMO
-void HistParDlg::AddLine_yumo(TGGroupFrame* frame, Mdef* md) {
+void HistParDlg::Add_yumo(TGGroupFrame* frame, Mdef* md, Mdef* md2) {
 
-  /*
-  int id1 = md->hnum/100;
-  int id2 = md->hnum%100;
+  TGHorizontalFrame *hfr1;
+  TGTextEntry *fLabel;
 
-  int col=0;
-  double ww1=50,ww2=40;
-  int min2=0.0001;
-  int max2=10000;
-  char *tip11, *tip22;
+  // 2d hist
+  hfr1 = new TGHorizontalFrame(frame);
+  //hfr1->ChangeOptions(hfr1->GetOptions()|kFixedWidth);
+  //hfr1->Resize(HFRAME_WIDTH,0);
+  frame->AddFrame(hfr1,LayLT1b);
 
-  // if (id1==id2) { //AXAY
-  //   col=2<<1; //зеленый
-  //   min2=0;
-  //   max2=MAX_AXAY-1;
-  //   tip11= (char*) "Number of bins per channel on X and Y axis";
-  //   tip22= (char*) "Maximal channel number";
-  // }
-  // else { //normal 2d
-  //   tip11= (char*) "Number of bins per channel on X-axis";
-  //   tip22= (char*) "Number of bins per channel on Y-axis";
-  // }
-  */
+  Check_opt(hfr1,0,&md->hd->b,"on/off",0x100|(2<<4),"");
+  Num_opt(hfr1,40,&md->hd->bins,0,"Number of bins per channel on X and Y axis",
+	  k_r0,0.01,10,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,50,&md->hd->min,0,"Low edge",
+	  k_r0,0,0,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,50,&md->hd->max,0,"Upper edge",
+	  k_r0,0,0,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,40,&md->hd->rb,&md->hd->rb2,"Rebin X/Y (only for drawing)",
+	  k_int,1,1000,4<<1|3<<4,LayLT2);
+  Check_opt(hfr1,0,&md->hd->htp,"Double/Float",0x100|(2<<1)|(2<<4),"");
 
-  TGNumberFormat::ELimit nolim = TGNumberFormat::kNELNoLimits;
-
-  double ww1=50;
-  double ww=70;
-  char *tip11 = (char*) "Number of bins per channel on X and Y axis";
-
-
-
-
-  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
-  hfr1->ChangeOptions(hfr1->GetOptions()|kFixedWidth);
-  hfr1->Resize(HFRAME_WIDTH,0);
-  frame->AddFrame(hfr1);
-
-  hfr1->SetCleanup(kDeepCleanup);
-  
-  int id;
-
-  //TGNumberFormat::ELimit nolim = TGNumberFormat::kNELNoLimits;
-  TGNumberFormat::ELimit lim = TGNumberFormat::kNELLimitMinMax;
-
-  //checkbutton
-  id = Plist.size()+1;
-  TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
-  DoMap(chk_hist,&md->hd->b,p_chk,0,0x100|(2<<4));
-  chk_hist->SetToolTipText("on/off");
-  chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
-  hfr1->AddFrame(chk_hist,LayLT2);
-
-  //nbins (x/y-axis)
-  id = Plist.size()+1;
-  TGNumberEntry* fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
-					   TGNumberFormat::kNEAAnyNumber,
-					   lim,0.0001,10000);
-  DoMap(fNum1->GetNumberEntry(),&md->hd->bins,p_fnum,0,0x100|(2<<4));
-  fNum1->GetNumberEntry()->SetToolTipText(tip11);
-  fNum1->SetWidth(ww1);
-  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoDaqNum()");
-  hfr1->AddFrame(fNum1,LayLT2);
-
-
-
-
-  //xlow
-  id = Plist.size()+1;
-  TGNumberEntry* fNum2 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
-					   TGNumberFormat::kNEAAnyNumber,
-					   nolim);
-  DoMap(fNum2->GetNumberEntry(),&md->hd->min,p_fnum,0,0x100|(2<<4));
-  fNum2->GetNumberEntry()->SetToolTipText("Low edge");
-  fNum2->SetWidth(ww);
-  fNum2->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoDaqNum()");
-  hfr1->AddFrame(fNum2,LayLT2);
-
-  //xup
-  id = Plist.size()+1;
-  TGNumberEntry* fNum3 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
-					   TGNumberFormat::kNEAAnyNumber,
-					   nolim);
-  DoMap(fNum3->GetNumberEntry(),&md->hd->max,p_fnum,0,0x100|(2<<4));
-  fNum3->GetNumberEntry()->SetToolTipText("Upper edge");
-  fNum3->SetWidth(ww);
-  fNum3->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoDaqNum()");
-  hfr1->AddFrame(fNum3,LayLT2);
-
-  //rebin x
-  id = Plist.size()+1;
-  TGNumberEntry* fNum4 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
-					   TGNumberFormat::kNEAPositive,
-					   lim,1,1000);
-  DoMap(fNum4->GetNumberEntry(),&md->hd->rb,p_inum,0,4<<1|3<<4); //cyan+Update
-  fNum4->GetNumberEntry()->SetToolTipText("Rebin X (only for drawing)");
-  fNum4->SetWidth(ww1);
-  fNum4->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoDaqNum()");
-  hfr1->AddFrame(fNum4,LayLT2);
-
-  //rebin y
-  id = Plist.size()+1;
-  TGNumberEntry* fNum5 = new TGNumberEntry(hfr1, 0, 0, id, k_r0, 
-					   TGNumberFormat::kNEAPositive,
-					   lim,1,1000);
-  DoMap(fNum5->GetNumberEntry(),&md->hd->rb2,p_inum,0,4<<1|3<<4); //cyan+Update
-  fNum5->GetNumberEntry()->SetToolTipText("Rebin Y (only for drawing)");
-  fNum5->SetWidth(ww1);
-  fNum5->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
-				   "DoDaqNum()");
-  hfr1->AddFrame(fNum5,LayLT2);
-
-  TGTextEntry *fLabel=new TGTextEntry(hfr1, "YUMO");
+  fLabel=new TGTextEntry(hfr1, "YUMO 2d");
   //fLabel->SetWidth();
   fLabel->SetState(false);
   fLabel->ChangeOptions(0);
-  fLabel->SetToolTipText("YUMO");
-  fLabel->SetAlignment(kTextCenterY);
-
-  //TGLabel* fLabel = new TGLabel(hfr1, label);
-  //fLabel->SetToolTipText(tip);
+  fLabel->SetToolTipText("2d YUMO histograms");
+  //fLabel->SetAlignment(kTextCenterY);
   hfr1->AddFrame(fLabel,LayLT2);
 
 
-  //list2d.Add(hfr1);
+  // 1d hist
+  hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1,LayLT1b);
+  Check_opt(hfr1,0,&md2->hd->b,"on/off",0x100|(2<<4),"");
+  Num_opt(hfr1,40,&md2->hd->bins,0,"Number of bins per channel",
+	  k_r0,0.01,10,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,50,&md2->hd->min,0,"Low edge",
+	  k_r0,0,0,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,50,&md2->hd->max,0,"Upper edge",
+	  k_r0,0,0,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,40,&md2->hd->rb,&md->hd->rb2,"Rebin (only for drawing)",
+	  k_int,1,1000,4<<1|3<<4,LayLT2);
+  Check_opt(hfr1,0,&md2->hd->htp,"Double/Float",0x100|(2<<1)|(2<<4),"");
 
-} //Addline_yumo
+  fLabel=new TGTextEntry(hfr1, "YUMO 1d");
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText("1d YUMO histograms");
+  hfr1->AddFrame(fLabel,LayLT2);
+
+
+  // x1x2y1y2
+  hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1,LayLT1b);
+  Num_opt(hfr1,40,&opt.yumo_x1,0,"X1 channel",k_int,0,31,0x100,LayLT0);
+  Num_opt(hfr1,40,&opt.yumo_x2,0,"X2 channel",k_int,0,31,0x100,LayLT0);
+  Num_opt(hfr1,40,&opt.yumo_y1,0,"Y1 channel",k_int,0,31,0x100,LayLT0);
+  Num_opt(hfr1,40,&opt.yumo_y2,0,"Y2 channel",k_int,0,31,0x100,LayLT0);
+
+  fLabel=new TGTextEntry(hfr1, "X1 X2 Y1 Y2 channels");
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText("cathode channels");
+  hfr1->AddFrame(fLabel,LayLT2);
+
+
+  // peak window
+  hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1,LayLT1b);
+  Num_opt(hfr1,50,&opt.yumo_peak1,0,"left border of the peak",
+	  k_r0,0,0,0x100,LayLT0);
+  Num_opt(hfr1,50,&opt.yumo_peak2,0,"right border of the peak",
+	  k_r0,0,0,0x100,LayLT0);
+
+  fLabel=new TGTextEntry(hfr1, "Peak Window");
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText("Peak window in x1+x2 & y1+y2 spectra");
+  hfr1->AddFrame(fLabel,LayLT2);
+
+} //Add_yumo
 #endif
 
 void HistParDlg::AddLine_2d(TGGroupFrame* frame, Mdef* md) {

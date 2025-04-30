@@ -1,3 +1,14 @@
+git tag -a v0.913 -m 'Y_Slider, UZ'
+- TODO: использовать cpar.on в Fill...
+- hclass переделано -> всюду MapHist...
+- hclass: добавлены HHist1, HHist2
+- yumo переделано...
+- переделан Y_Slider
+- переделано рисование 2d проекций
+- добавлена кнопка UZ (unzoom) в Plots
+- переделано ParDlg::Check_opt
+- переделано меню Expert (убрано лишнее)
+
 git tag -a v0.912 -m 'Yumo...'
 - переделаны параметры...
 

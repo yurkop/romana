@@ -48,6 +48,7 @@ extern HClass* hcl;
 extern ULong_t fGreen;
 extern ULong_t fRed;
 extern ULong_t fCyan;
+extern ULong_t fGreen2;
 
 //extern TH1F *hrms;
 //extern TH1F *htdc_a[MAX_CH]; //absolute tof (start=0)
@@ -311,7 +312,13 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->SetToolTipText("Remove all histograms from MAIN*");
   fHor4->AddFrame(but, LayLC1);
 
-  but = new TGTextButton(fHor4,"Rst",2);
+  but = new TGTextButton(fHor4,"UZ",3);
+  but->Connect("Clicked()", "HistFrame", this, "DoUnZoom()");
+  but->SetToolTipText("UnZoom");
+  but->ChangeBackground(fGreen2);
+  fHor4->AddFrame(but, LayLC1);
+
+  but = new TGTextButton(fHor4,"Rst",4);
   but->Connect("Clicked()", "HistFrame", this, "DoRst()");
   but->SetToolTipText("Reset all histograms (works during acquisition/analysis)");
   but->ChangeBackground(fCyan);
@@ -1317,6 +1324,7 @@ void HistFrame::GetHMinMax(TH1* hh, double x1, double x2,
     if (opt.b_logy) {
       if (cc>0)
 	y1 = TMath::Min(y1,cc);
+      if (y1==1) y1=0.5; // для логарифма минимум - половина от единицы
     }
     else {
       y1 = TMath::Min(y1,cc);
@@ -1345,56 +1353,52 @@ void HistFrame::X_Slider(TH1* hh, double &a1, double &a2) {
 }
 
 void HistFrame::Y_Slider(TH1* hh, double a1, double a2, double y1, double y2) {
+  //a1,a2 = X range after X_Slider; 
   Float_t h1,h2;
   fVslider->GetPosition(opt.hy_slider[1],opt.hy_slider[0]);
-  //opt.hy_slider[0]=1-opt.hy_slider[0];
-  //opt.hy_slider[1]=1-opt.hy_slider[1];
-  //cout << "sld: " << opt.hy_slider[0] << " " << opt.hy_slider[1] << endl;
   h1=1-opt.hy_slider[0];
   h2=1-opt.hy_slider[1];
-  //fVslider->GetPosition(h2,h1);
-  //if (opt.hy_slider[1]-opt.hy_slider[0]<1 || hh==st_plot) {
-  if (h2-h1<1 || hh==st_plot) {
-    if (hh->GetDimension()==2) {
-      y1=hh->GetYaxis()->GetXmin();
-      y2=hh->GetYaxis()->GetXmax();
-    }
-    else if (hh!=st_plot) {
-      y1=1e99;
-      y2=-1e99;
-      GetHMinMax(hh,a1,a2,y1,y2);
-      //x1=hh->GetBinContent(hh->GetMinimumBin())*1.05;
-      //x2=hh->GetBinContent(hh->GetMaximumBin())*1.05;
-    }
+  //prnt("ss f f f f f fs;",BGRN,"Sl:",opt.hy_slider[0],opt.hy_slider[1],h1,h2,y1,y2,RST);
 
-    if (opt.b_logy) {
-      if (y2>0) {
-	y1/=2;
-	y2*=2;
-      }
-      else {
-	y1=0.01;
-	y2=1;
-      }
-    }
-    else {
-      //y1*=1.1;
-      y2*=1.1;
-      if (y1>0) y1=0;
-      else y1*=1.1;
-    }
-
-    double rr = y2-y1;
-    double a1 = y1+rr*h1;
-    double a2 = y1+rr*h2;
-    //double a1 = y1+rr*opt.hy_slider[0];
-    //double a2 = y1+rr*opt.hy_slider[1];
-    hh->GetYaxis()->SetRangeUser(a1,a2);
-    //cout << "Y_sl: " << hh->GetName() << " " << y1 << " " << y2 << " " << a1 << " " << a2 << endl;
-  }
-  else {
+  if (h2-h1==1 && hh!=st_plot) {
     hh->GetYaxis()->UnZoom();
+    return;
   }
+
+  if (hh->GetDimension()==2) {
+    y1=hh->GetYaxis()->GetXmin();
+    y2=hh->GetYaxis()->GetXmax();
+  }
+  else if (hh!=st_plot) {
+    y1=1e99;
+    y2=-1e99;
+    GetHMinMax(hh,a1,a2,y1,y2);
+  }
+
+  y2*=1.05;
+
+  //prnt("ss s f f f fs;",BBLU,"Y1:",hh->GetName(),y1,y2,log10(y1),log10(y2),RST);
+
+  bool blog = opt.b_logy && hh->GetDimension()==1;
+  double rr,b1,b2;
+  if (blog) {
+    y1 = log10(y1);
+    y2 = log10(y2*1.1);
+  }
+  rr = y2-y1;
+  b1 = y1+rr*h1;
+  b2 = y1+rr*h2;
+  if (blog) {
+    b1 = pow(10,b1);
+    b2 = pow(10,b2);
+  }
+
+  hh->GetYaxis()->SetRangeUser(b1,b2);
+
+  y1=hh->GetYaxis()->GetXmin();
+  y2=hh->GetYaxis()->GetXmax();
+  //prnt("ss s f f f fs;",BYEL,"Y2:",hh->GetName(),y1,y2,b1,b2,RST);
+
 }
 
 void HistFrame::AddCutG(TPolyLine *pl, HMap* map) {
@@ -2684,6 +2688,11 @@ void HistFrame::Do_Ecalibr()
 }
 */
 
+void HistFrame::DoUnZoom() {
+  fHslider->SetPosition(0,1);
+  fVslider->SetPosition(0,1);
+  DoSlider();
+}
 void HistFrame::DoRst() {
 
   //cout << "DoRst: " << endl;
@@ -3271,19 +3280,28 @@ void HistFrame::AllRebinDraw() {
     fEc->GetCanvas()->cd(npad+1);
     if (pad_hist[npad]->InheritsFrom(TH1::Class())) {
       TH1* hh = (TH1*) pad_hist[npad];
-      hh->UseCurrentStyle();
+      //hh->UseCurrentStyle();
 
       OneRebinPreCalibr(pad_map[npad], hh, b_adj);
       //TAxis* ya = pad_map[npad]->hst->GetYaxis();
+
+
+      if (dopt[1].BeginsWith("x", TString::kIgnoreCase)) {
+	hh = ((TH2*)hh)->ProjectionX("_px",0,-1,"o");
+      }
+      else if (dopt[1].BeginsWith("y", TString::kIgnoreCase)) {
+	hh = ((TH2*)hh)->ProjectionY("_py",0,-1,"o");
+      }
 
       double a1,a2,y1=1e99,y2=-1e99;
       X_Slider(hh,a1,a2);
       Y_Slider(hh,a1,a2,y1,y2);
 
+      hh->UseCurrentStyle();
+      hh->GetListOfFunctions()->Clear();
+
       if (hh->GetDimension()==1) { //1D hist
 	gPad->SetLogy(opt.b_logy);
-
-	hh->GetListOfFunctions()->Clear();
 
 	/*
 	TPaveStats *st = (TPaveStats*)hh->FindObject("stats");
@@ -3321,12 +3339,7 @@ void HistFrame::AllRebinDraw() {
       else { //2D hist or projection
 	//cout << "dopt: " << dopt[1].Data()+1 << endl;
 	gPad->SetLogz(opt.b_logy);
-	if (dopt[1].BeginsWith("x", TString::kIgnoreCase))
-	  ((TH2*)hh)->ProjectionX("_px",0,-1,"o")->Draw(dopt[1].Data()+1);
-	else if (dopt[1].BeginsWith("y", TString::kIgnoreCase))
-	  ((TH2*)hh)->ProjectionY("_py",0,-1,"o")->Draw(dopt[1].Data()+1);
-	else
-	  hh->Draw(dopt[1].Data());
+	hh->Draw(dopt[1].Data());
       }
 
       //draw cuts

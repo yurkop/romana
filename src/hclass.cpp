@@ -870,6 +870,7 @@ void HClass::Make_Mlist() {
 	md.hd->max=10;
       }
 
+      /*
       //YK!!!
       int nn = MAX_CH+NGRP;
       if (md.hnum==61) //prof
@@ -877,11 +878,14 @@ void HClass::Make_Mlist() {
       else if (md.hnum==62) //prof_int
 	nn=6;
 #ifdef YUMO
-      else if (md.hnum==71) //yumo
-	nn=3;
+      else if (md.hnum==71) //yumo_XY
+	nn=0;
+      else if (md.hnum==72) //yumo_2d
+	nn=4;
 #endif
 
       md.v_map.resize(nn);
+      */
 
       Mlist.push_back(md);
     }
@@ -949,7 +953,13 @@ void HClass::Make_hist() {
   map_list->SetOwner(true);
 
   MFill_list.clear();
-  Mdef* mprof=0;
+  Mdef *mprof=0;
+
+#ifdef YUMO
+  Mdef *myumo=0;
+  md_yumo2=0;
+  md_yumo1=0;
+#endif
 
   bool b_bbb=false; 
   memset(b_base,0,sizeof(b_base));
@@ -1029,9 +1039,12 @@ void HClass::Make_hist() {
       it->MFill = &Mdef::FillProf;
     }
 #ifdef YUMO
-    else if (it->hnum==71) { //yumo
-      md_yumo = &*it;
-      Make_Yumo(it);
+    else if (it->hnum==71) { //yumo_2d
+      Make_Yumo_2d(it);
+      it->MFill = &Mdef::FillYumo;
+    }
+    else if (it->hnum==72) { //yumo_1d
+      Make_Yumo_1d(it);
       it->MFill = &Mdef::FillYumo;
     }
 #endif
@@ -1060,6 +1073,15 @@ void HClass::Make_hist() {
 	  MFill_list.push_back(&*it);
 	}
       }
+#ifdef YUMO
+      //для Yumo - тоже только один
+      else if (it->hnum==71 || it->hnum==72) {
+	if (myumo==0) {
+	  myumo = &*it;
+	  MFill_list.push_back(&*it);
+	}
+      }
+#endif
       else
 	MFill_list.push_back(&*it);
 
@@ -1109,6 +1131,35 @@ void NameTitle(char* name, char* title, int i, int maxi,
   }
 }
 
+void HClass::MapHist(mdef_iter md, TH1* hh, int i) {
+  if (i>=(int)md->v_map.size())
+    md->v_map.resize(i+1);
+
+  md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
+  map_list->Add(md->v_map[i]);
+  allmap_list->Add(md->v_map[i]);
+}
+
+void HClass::HHist1(mdef_iter md, TH1* &hh, char* name, char* title, int i) {
+  int nn=md->hd->bins*(md->hd->max - md->hd->min);
+  if (nn<1) nn=1;
+  if (md->hd->htp)
+    hh=new TH1D(name,title,nn,md->hd->min,md->hd->max);
+  else
+    hh=new TH1F(name,title,nn,md->hd->min,md->hd->max);
+  MapHist(md,hh,i);
+}
+
+void HClass::HHist2(mdef_iter md, TH1* &hh, char* name, char* title, int i,
+		    int n1, float min1, float max1,
+		    int n2, float min2, float max2) {
+  if (md->hd->htp)
+    hh=new TH2D(name,title,n1,min1,max1,n2,min2,max2);
+  else
+    hh=new TH2F(name,title,n1,min1,max1,n2,min2,max2);
+  MapHist(md,hh,i);
+}
+
 void HClass::Make_1d(mdef_iter md, int maxi) {
   if (!md->hd->b) return;
   TH1* hh;
@@ -1132,9 +1183,8 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
 	hh=new TH1D(name2,title2,nn,md->hd->min,md->hd->max);
       else
 	hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
-      md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
-      map_list->Add(md->v_map[i]);
-      allmap_list->Add(md->v_map[i]);
+
+      MapHist(md,hh,i);
     }
   }
 
@@ -1149,9 +1199,8 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
 	  hh=new TH1D(name2,title2,nn,md->hd->min,md->hd->max);
 	else
 	  hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
-	md->v_map[MAX_CH+j] = new HMap(md->name.Data(),hh,md->hd,MAX_CH+j);
-        map_list->Add(md->v_map[MAX_CH+j]);
-        allmap_list->Add(md->v_map[MAX_CH+j]);
+
+	MapHist(md,hh,MAX_CH+j);
         break;
       }
     }
@@ -1190,9 +1239,8 @@ void HClass::Make_1d_pulse(mdef_iter md) {
 	hh=new TH1F(name2,title2,nn,min,max);
       hh->Sumw2();
 
-      md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
-      map_list->Add(md->v_map[i]);
-      allmap_list->Add(md->v_map[i]);
+      MapHist(md,hh,i);
+
       if (md->hnum==53) { //FFT
 	if (fft[i]) delete fft[i];
 	fft[i] = TVirtualFFT::FFT(1, &nn, "R2C K");
@@ -1220,9 +1268,7 @@ void HClass::Make_prof(mdef_iter md) {
       int i=k+(opt.prof_ny-j-1)*opt.prof_ny;
       TH2F* hh=new TH2F(name2,title2,md->hd->bins,0,120,md->hd->bins2,0,120);
 
-      md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
-      map_list->Add(md->v_map[i]);
-      allmap_list->Add(md->v_map[i]);
+      MapHist(md,hh,i);
     }
   }
 
@@ -1245,219 +1291,20 @@ void HClass::Make_prof_int(mdef_iter md, Hdef* hd2) {
     hh->Sumw2();
     hh->SetOption("E");
 
-    md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
-    map_list->Add(md->v_map[i]);
-    allmap_list->Add(md->v_map[i]);
+    MapHist(md,hh,i);
   }
 
   sprintf(name2,"%s",name3[4]);
   sprintf(title2,"%s%s",name3[4],";X(strip);Y(strip)");
   TH2F* hh=new TH2F(name2,title2,hd2->bins,0,64,hd2->bins2,0,64);
-  md->v_map[4] = new HMap(md->name.Data(),hh,md->hd,4);
-  map_list->Add(md->v_map[4]);
-  allmap_list->Add(md->v_map[4]);
+  MapHist(md,hh,4);
 
   sprintf(name2,"%s",name3[5]);
   sprintf(title2,"%s%s",name3[5],";X(mm);Y(mm)");
   hh=new TH2F(name2,title2,hd2->bins,0,120,hd2->bins2,0,120);
-  md->v_map[5] = new HMap(md->name.Data(),hh,md->hd,5);
-  map_list->Add(md->v_map[5]);
-  allmap_list->Add(md->v_map[5]);
+  MapHist(md,hh,5);
 
 }
-
-#ifdef YUMO
-void Mdef::FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut) {
-  Float_t tt[5] = {}; //initialize to zero
-  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    // пропускаем импульсы с "плохим" Chan и где не найден пик
-    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
-      tt[hcl->yumo_xy[ipls->Chan]]=ipls->Time+1e4;
-      // prnt("ss l d d fs;",BGRN,"tt:",evt->Tstmp,ipls->Chan,
-      //  	   hcl->yumo_xy[ipls->Chan],ipls->Time,RST);
-    }
-  }
-
-  Float_t tx=0,ty=0;
-  Float_t sx=0,sy=0;
-  if (tt[0] && tt[1]) {
-    tx = ((tt[0] - tt[1])*opt.Period + 339)/2;
-    sx = (tt[0]+tt[1]-2e4)*opt.Period;
-    Fill_01(v_map[0],sx,hcut_flag,ncut);
-    //Fill_01(v_map[1],(tx),hcut_flag,ncut);
-  }
-  if (tt[2] && tt[3]) {
-    ty = ((tt[2] - tt[3])*opt.Period + 339)/2;
-    sy = (tt[2]+tt[3]-2e4)*opt.Period;
-    Fill_01(v_map[1],sy,hcut_flag,ncut);
-  }
-
-  /*
-  if (abs(sx-339)>20) {
-    // Float_t t1 = (tt[0]-1e4)*opt.Period;
-    // Float_t t2 = 339-(tt[1]-1e4)*opt.Period;
-    // prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
-    // 	 tx,t1,t2,RST);
-    tx=0;
-  }
-
-  if (abs(sy-339)>20) {
-    ty=0;
-  }
-  */
-
-
-
-  if (!tx) {
-    // if (tt[0] && tt[1]) {
-    //   prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
-    // 	   tx,tt[0],tt[1],RST);
-    // }
-    if (tt[0]) {
-      tx=(tt[0]-1e4)*opt.Period;
-    }
-    else if (tt[1]) {
-      tx=339-(tt[1]-1e4)*opt.Period;
-    }
-  }
-
-  if (!ty) {
-    // if (tt[0] && tt[1]) {
-    //   prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
-    // 	   tx,tt[0],tt[1],RST);
-    // }
-    if (tt[2]) {
-      ty=(tt[2]-1e4)*opt.Period;
-    }
-    else if (tt[3]) {
-      ty=339-(tt[3]-1e4)*opt.Period;
-    }
-  }
-
-
-  /*
-  if (!tx) {
-    // if (tt[0] && tt[1]) {
-    //   prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
-    // 	   tx,tt[0],tt[1],RST);
-    // }
-    if (tt[0]) {
-      tx=(tt[0]-1e4)*opt.Period;
-    }
-    else if (tt[1]) {
-      tx=339-(tt[1]-1e4)*opt.Period;
-    }
-  }
-
-  if (!ty) {
-    // if (tt[0] && tt[1]) {
-    //   prnt("ss l f f f fs;",BGRN,"tt:",evt->Tstmp,sx,
-    // 	   tx,tt[0],tt[1],RST);
-    // }
-    if (tt[2]) {
-      ty=(tt[2]-1e4)*opt.Period;
-    }
-    else if (tt[3]) {
-      ty=339-(tt[3]-1e4)*opt.Period;
-    }
-  }
-  */
-
-  if (tx && ty)
-    Fill_02(v_map[2],tx,ty,hcut_flag,ncut);
-
-  /*
-  Float_t xx=0;
-  Float_t yy=0;
-  int nx=0;
-  int ny=0;
-
-  if (tt[0]) {
-    xx+=(tt[0]-1e4)*opt.Period;
-    nx++;
-  }
-  if (tt[1]) {
-    xx+=339-(tt[1]-1e4)*opt.Period;
-    nx++;
-  }
-  if (nx)
-    xx/=nx;
-
-  if (tt[2]) {
-    yy+=(tt[2]-1e4)*opt.Period;
-    ny++;
-  }
-  if (tt[3]) {
-    yy+=339-(tt[3]-1e4)*opt.Period;
-    ny++;
-  }
-  if (ny)
-    yy/=ny;
-  
-  if (nx && ny)
-    Fill_02(v_map[2],xx,yy,hcut_flag,ncut);
-  */
-
-} //FillYumo
-
-void HClass::Make_Yumo(mdef_iter md) {
-  if (!md->hd->b) return;
-  TH1* hh;
-  TH2* h2;
-
-  char name2[100];
-  char title2[100];
-
-  TString name = md->name;
-  TString title = name+';'+md->x_title+';'+md->y_title;
-  name.ToLower();
-
-  int nn=md->hd->bins*(md->hd->max - md->hd->min);
-  if (nn<1) nn=1;
-
-  //1d
-  sprintf(name2,"x1_x2");
-  sprintf(title2,"x1_x2;x1+x2(ns);Counts");
-  hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
-  md->v_map[0] = new HMap(md->name.Data(),hh,md->hd,0);
-  map_list->Add(md->v_map[0]);
-  allmap_list->Add(md->v_map[0]);
-
-  sprintf(name2,"y1_y2");
-  sprintf(title2,"y1_y2;y1+y2(ns);Counts");
-  hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
-  md->v_map[1] = new HMap(md->name.Data(),hh,md->hd,1);
-  map_list->Add(md->v_map[1]);
-  allmap_list->Add(md->v_map[1]);
-
-
-  //2d
-  h2=new TH2F(name,title,
-	      nn,md->hd->min,md->hd->max,
-	      nn,md->hd->min,md->hd->max);
-  md->v_map[2] = new HMap(md->name.Data(),h2,md->hd,2);
-  map_list->Add(md->v_map[2]);
-  allmap_list->Add(md->v_map[2]);
-
-  // yumo_x1=12;
-  // yumo_x2=13;
-  // yumo_y1=15;
-  // yumo_y2=14;
-  yumo_xy.clear();
-  for (int i=0;i<MAX_CH;i++) {
-    if (i==opt.yumo_x1)
-      yumo_xy.push_back(0);
-    else if (i==opt.yumo_x2)
-      yumo_xy.push_back(1);
-    else if (i==opt.yumo_y1)
-      yumo_xy.push_back(2);
-    else if (i==opt.yumo_y2)
-      yumo_xy.push_back(3);
-    else
-      yumo_xy.push_back(4);
-  }
-}
-#endif
 
 int HClass::Make_2d(mdef_iter md) {
   if (!(md->hd->b)) return 0;
@@ -1508,9 +1355,7 @@ int HClass::Make_2d(mdef_iter md) {
 	  hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
 		      n2,m2->hd->min,m2->hd->max);
 
-	md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
-	map_list->Add(md->v_map[i]);
-	allmap_list->Add(md->v_map[i]);
+	MapHist(md,hh,i);
       }
     }
     for (int j=0;j<NGRP;j++) {
@@ -1526,9 +1371,7 @@ int HClass::Make_2d(mdef_iter md) {
 	    hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
 			n2,m2->hd->min,m2->hd->max);
 
-	  md->v_map[MAX_CH+j] = new HMap(md->name.Data(),hh,md->hd,MAX_CH+j);
-	  map_list->Add(md->v_map[MAX_CH+j]);
-	  allmap_list->Add(md->v_map[MAX_CH+j]);
+	  MapHist(md,hh,MAX_CH+j);
 
 	  break;
 	}
@@ -1558,9 +1401,7 @@ int HClass::Make_2d(mdef_iter md) {
 	  else
 	    hh=new TH2F(name2,title2,n1,m1->hd->min,m1->hd->max,
 			n1,m1->hd->min,m1->hd->max);
-	  md->v_map[ii] = new HMap(md->name.Data(),hh,md->hd,ii);
-	  map_list->Add(md->v_map[ii]);
-	  allmap_list->Add(md->v_map[ii]);
+	  MapHist(md,hh,ii);
 	} //if cpar.on
       } //for x
     } //for y
@@ -1568,6 +1409,127 @@ int HClass::Make_2d(mdef_iter md) {
   } //else
 
 }
+
+
+#ifdef YUMO
+void Mdef::FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut) {
+  Float_t tt[5] = {}; //initialize to zero
+  for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+    // пропускаем импульсы с "плохим" Chan и где не найден пик
+    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+      tt[hcl->yumo_xy[ipls->Chan]]=ipls->Time + 1e4;
+      // prnt("ss l d d fs;",BGRN,"tt:",evt->Tstmp,ipls->Chan,
+      //  	   hcl->yumo_xy[ipls->Chan],ipls->Time,RST);
+    }
+  }
+
+  Float_t sx=-1e5,sy=-1e5,tx=0,ty=0;
+
+  bool t01=tt[0] && tt[1];
+  bool t23=tt[2] && tt[3];
+
+  if (t01) {
+    sx = (tt[0]+tt[1] - 2e4)*opt.Period;
+    tx = (tt[0]-tt[1])*opt.Period/2;
+    if (hcl->md_yumo1) {
+      Fill_01(hcl->md_yumo1->v_map[0],sx,hcut_flag,ncut);
+      Fill_01(hcl->md_yumo1->v_map[2],tx,hcut_flag,ncut);
+    }
+  }
+  if (t23) {
+    sy = (tt[2]+tt[3] - 2e4)*opt.Period;
+    ty = (tt[2]-tt[3])*opt.Period/2;
+    if (hcl->md_yumo1) {
+      Fill_01(hcl->md_yumo1->v_map[1],sy,hcut_flag,ncut);
+      Fill_01(hcl->md_yumo1->v_map[3],ty,hcut_flag,ncut);
+    }
+  }
+  if (t01 && t23) {
+    if (hcl->md_yumo2) {
+      Fill_02(hcl->md_yumo2->v_map[0],tx,ty,hcut_flag,ncut);
+    }
+    if (sx>=opt.yumo_peak1 && sx<=opt.yumo_peak2 && 
+	sy>=opt.yumo_peak1 && sy<=opt.yumo_peak2) { 
+      if (hcl->md_yumo1) {
+	Fill_01(hcl->md_yumo1->v_map[4],sx,hcut_flag,ncut);
+	Fill_01(hcl->md_yumo1->v_map[5],sy,hcut_flag,ncut);
+	Fill_01(hcl->md_yumo1->v_map[6],tx,hcut_flag,ncut);
+	Fill_01(hcl->md_yumo1->v_map[7],ty,hcut_flag,ncut);
+      }
+      if (hcl->md_yumo2) {
+	Fill_02(hcl->md_yumo2->v_map[1],tx,ty,hcut_flag,ncut);
+      }
+    }
+  }
+
+} //FillYumo
+
+void HClass::Yumo_xy() {
+  //prnt("sss;",BBLU,"yumo_xy.clear()",RST);
+  yumo_xy.clear();
+  for (int i=0;i<MAX_CH;i++) {
+    if (i==opt.yumo_x1)
+      yumo_xy.push_back(0);
+    else if (i==opt.yumo_x2)
+      yumo_xy.push_back(1);
+    else if (i==opt.yumo_y1)
+      yumo_xy.push_back(2);
+    else if (i==opt.yumo_y2)
+      yumo_xy.push_back(3);
+    else
+      yumo_xy.push_back(4);
+  }
+}
+
+void HClass::Make_Yumo_2d(mdef_iter md) {
+  if (!md->hd->b) return;
+  TH1* hh;
+  md_yumo2 = &*md;
+
+  int nn=md->hd->bins*(md->hd->max - md->hd->min);
+  if (nn<1) nn=1;
+
+  char name[100],title[100];
+  strcpy(name,md->name.Data());
+  strcpy(title,name);
+  strcat(title,";X(ns);Y(ns)");
+
+  //2d
+  HHist2(md,hh,name,title,0,
+	 nn,md->hd->min,md->hd->max,nn,md->hd->min,md->hd->max);
+
+  strcat(name,"_w");
+  strcpy(title,name);
+  strcat(title,";X(ns);Y(ns)");
+  HHist2(md,hh,name,title,1,
+	 nn,md->hd->min,md->hd->max,nn,md->hd->min,md->hd->max);
+
+  Yumo_xy();
+}
+
+void HClass::Make_Yumo_1d(mdef_iter md) {
+  if (!md->hd->b) return;
+  TH1* hh;
+  md_yumo1 = &*md;
+
+  int nn=md->hd->bins*(md->hd->max - md->hd->min);
+  if (nn<1) nn=1;
+
+  //1d
+  HHist1(md,hh,(char*)"x1+x2",(char*)"x1+x2;x1+x2(ns);Counts",0);
+  HHist1(md,hh,(char*)"y1+y2",(char*)"y1+y2;y1+y2(ns);Counts",1);
+  HHist1(md,hh,(char*)"x1-x2",(char*)"x1-x2;x1-x2(ns);Counts",2);
+  HHist1(md,hh,(char*)"y1-y2",(char*)"y1-y2;y1-y2(ns);Counts",3);
+  HHist1(md,hh,(char*)"x1+x2_w",(char*)"x1+x2_w;x1+x2(ns);Counts",4);
+  HHist1(md,hh,(char*)"y1+y2_w",(char*)"y1+y2_w;y1+y2(ns);Counts",5);
+  HHist1(md,hh,(char*)"x1-x2_w",(char*)"x1-x2_w;x1-x2(ns);Counts",6);
+  HHist1(md,hh,(char*)"y1-y2_w",(char*)"y1-y2_w;y1-y2(ns);Counts",7);
+
+  Yumo_xy();
+}
+
+#endif //YUMO
+
 
 void HClass::FillHist(EventClass* evt, Double_t *hcut_flag) {
   // общие переменные для события
