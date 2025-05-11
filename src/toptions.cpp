@@ -513,10 +513,10 @@ Toptions::Toptions() {
 
     sDrv[i]=1;
     sD[i]=0;
-    Base1[i]=-10;
-    Base2[i]=-5;
-    Peak1[i]=5;
-    Peak2[i]=30;
+    B1[i]=-10;
+    B2[i]=-5;
+    P1[i]=5;
+    P2[i]=30;
     dTm[i]=100;
     Pile[i]=100;
     sTg[i]=-1;
@@ -533,7 +533,7 @@ Toptions::Toptions() {
     E0[i]=0;
     E1[i]=1;
     E2[i]=0;
-    Bc[i]=0;
+    //Bc[i]=0;
     Pz[i]=0;
   }
 
@@ -554,6 +554,7 @@ Toptions::Toptions() {
 
   memset(Filename,0,sizeof(Filename));
   memset(ch_name,0,sizeof(ch_name));
+  strcpy(Filename,"test01");
 
   const char* types[MAX_TP]={"NaI","BGO","HPGe","Si","Stilb","Demon","Plast",
   "NIM"};
@@ -689,7 +690,7 @@ Toptions::Toptions() {
 
   Peak_thr=0.2;
   Peak_wid=0;
-  Peak_bwidth=10;
+  Peak_bwidth=20;
   Peak_maxpeaks=2;
   Peak_smooth=0;
   Peak_use_mean=false;

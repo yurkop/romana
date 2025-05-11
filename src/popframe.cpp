@@ -64,9 +64,11 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
     AddEcalibr(w,h);
   }
   else if (menu_id==M_TCALIBR) {
+    fMain->ChangeOptions(fMain->GetOptions()|kFixedWidth);
     AddTcalibr();
   }
   else if (menu_id==M_PEAKS) {
+    fMain->ChangeOptions(fMain->GetOptions()|kFixedWidth);
     AddPeaks();
   }
 #ifdef CYUSB
@@ -255,13 +257,14 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
 
   ULong_t colr = TColor::RGB2Pixel(200,240,230);
   const char* txt =
-    "Calibrate all marked 1D histograms that have \"area\" in their name.\n"
-    "If there are several marked histograms with the same number,\n"
-    "only the first histogram will be included.\n\n"
+    "Calibrate all visible 1D histograms that have \"area\" in their name.\n"
+    "'Visible' means plotted either in Stack or in X/Y mode.\n"
+    "If there are several visible histograms with the same number,\n"
+    "like area_07 and area_07_cut1, only the first one will be calibrated.\n\n"
     "For 1-point pre-calibration:\n"
     "- edit reference value for the pre-calibration;\n"
-    "- use scrollbar in the Plots tab to select window in such a way that the peak which\n"
-    "corresponds to the reference value is maximal in the window;\n"
+    "- use scrollbar in the Plots tab to select window in such a way that the peak\n"
+    " which corresponds to the reference value is maximal in the window;\n"
     "- press Auto. The position of the peak will be auto-calibrated;\n"
     "- press Save to copy the calibration coefficients to channels' parameters;\n"
     "- close calibration window;\n"
@@ -453,13 +456,13 @@ void PopFrame::AddTcalibr() {
 void PopFrame::AddPeaks() {
   fMain->SetWindowName("Peak Search");
 
-  AddNum(opt.Peak_thr,31,"Threshold","Peak threshold relative to the highest peak");
-  AddNum(opt.Peak_smooth,32,"Smooth","Smooth before peak search");
-  AddNum(opt.Peak_wid,33,"Width","Minimal width for peak search\npeaks with width below this number are rejected");
-  AddNum(opt.Peak_bwidth,34,"Background","width of the background in units of peak sigma");
-  AddNum(opt.Peak_maxpeaks,35,"MaxPeaks","Maximal number of peaks");
-  AddChk(opt.Peak_use_mean,36,"Use Mean/RMS","Use Mean/RMS insted of fit");
-  AddChk(opt.Peak_print,37,"Print","Print peak parameters");
+  AddNum(opt.Peak_thr,1031,"Threshold","Peak threshold relative to the highest peak");
+  AddNum(opt.Peak_smooth,1032,"Smooth","Smooth before peak search");
+  AddNum(opt.Peak_wid,1033,"Width","Minimal width for peak search\npeaks with width below this number are rejected");
+  AddNum(opt.Peak_bwidth,1034,"Background","width of the background");
+  AddNum(opt.Peak_maxpeaks,1035,"MaxPeaks","Maximal number of peaks");
+  AddChk(opt.Peak_use_mean,1036,"Use Mean/RMS","Use Mean/RMS insted of fit");
+  AddChk(opt.Peak_print,1037,"Print","Print peak parameters");
 
   /*
   hframe = new TGHorizontalFrame(fMain,10,10);
@@ -668,26 +671,27 @@ void PopFrame::DoENum() {
   case 21:
     opt.E_auto=te->GetNumber();
     break;
-  case 31:
+  case 1031:
     opt.Peak_thr=te->GetNumber();
     break;
-  case 32:
+  case 1032:
     opt.Peak_smooth=te->GetNumber();
     break;
-  case 33:
+  case 1033:
     opt.Peak_wid=te->GetNumber();
     break;
-  case 34:
+  case 1034:
     opt.Peak_bwidth=te->GetNumber();
     break;
-  case 35:
+  case 1035:
     opt.Peak_maxpeaks=te->GetNumber();
     break;
-  case 36:
+  case 1036:
     opt.Peak_use_mean = chk->GetState();
     break;
-  case 37:
+  case 1037:
     opt.Peak_print = chk->GetState();
+    HiFrm->pkprint = chk->GetState();
     break;
   case 901:
     delay = te->GetNumber();
@@ -697,6 +701,10 @@ void PopFrame::DoENum() {
     break;
   default:
     ;
+  }
+
+  if (id/1000==1) {
+    HiFrm->HiUpdate();
   }
   // else if (id==14) {
   //   npeaks=te->GetNumber();
@@ -917,7 +925,7 @@ void PopFrame::Do_TApply() {
 void PopFrame::Do_Default() {
   fEdit->LoadBuffer(
 "# calibrate all marked energy histograms\n"
-"# all ROI must be set befor calibration\n"
+"# all ROI must be set before calibration\n"
 "# each ROI may contain several peaks,\n"
 "# fitted simultaneously\n"
 "#--------------------------------------\n"

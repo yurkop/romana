@@ -1,3 +1,31 @@
+git tag -a v0.915 -m ''
+- TODO: использовать cpar.on в Fill...
+- TODO: исправить Number of histograms is too large for Stack:
+  Убрать из подсчета 2D. Либо рисовать проекции...
+  Пропускать дубликаты гистограмм (с идентичными названиями)
+  TODO: unzoom (UZ) при запуске программы!!!
+
+git tag -a v0.914 -m ''
+- Help переделан из меню в желтую кнопку
+- файл help.pdf обновлен
+- DrawEvent delay min=500
+- Y_Slider подправлен
+- немного скорректировано описание romana -h
+- SetPadRightMargin(0.1) (было 0.05)
+- PopFrame - зафиксирована ширина для Time и Peak
+- Peak Search - Plot обовляется при изменении параметров
+- В Peak Search изменился смысл Background
+- удалены двойные вызовы saveroot в libmana
+- Base1,2, Peak1,2 переименованы в B1,2, P1,2; добавлен комментарий в toptions.h
+- параметры dTm и Pile убраны из интерфейса (но оставлены в toptions)
+- параметр Bc удвлен.
+- подправлено CRS::Print_Peaks.
+- исправлено создание AXAY гистограмм... Параметр MAX_AXAY удален.
+- поменялся интерфейс кнопок Stack/N
+- максимальное число cuts=30
+- исправлен баг в cuts/formula
+
+
 git tag -a v0.913 -m 'Y_Slider, UZ'
 - TODO: использовать cpar.on в Fill...
 - hclass переделано -> всюду MapHist...

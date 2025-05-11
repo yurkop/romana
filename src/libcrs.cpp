@@ -619,11 +619,11 @@ void CRS::Ana_start() {
   }
   //Set_Trigger();
   for (int i=0;i<MAX_CH;i++) {
-    b_len[i] = opt.Base2[i]-opt.Base1[i]+1;
-    p_len[i] = opt.Peak2[i]-opt.Peak1[i]+1;
+    b_len[i] = opt.B2[i]-opt.B1[i]+1;
+    p_len[i] = opt.P2[i]-opt.P1[i]+1;
     w_len[i] = opt.W2[i]-opt.W1[i]+1;
-    b_mean[i] = (opt.Base2[i]+opt.Base1[i])*0.5;
-    p_mean[i] = (opt.Peak2[i]+opt.Peak1[i])*0.5;
+    b_mean[i] = (opt.B2[i]+opt.B1[i])*0.5;
+    p_mean[i] = (opt.P2[i]+opt.P1[i])*0.5;
     w_mean[i] = (opt.W2[i]+opt.W1[i])*0.5;
     use_2nd_deriv[i] = opt.sTg[i]==5 || (opt.sTg[i]==-1 && cpar.Trg[i]==5);
     //cout << "Use_2nd: " << i << " " << use_2nd_deriv[i] << endl;
@@ -859,6 +859,24 @@ BufClass::~BufClass() {
 CRS::CRS() {
 
   /*
+  TH1F *hh = new TH1F("HH","HH",10,0,10);
+  Long64_t i=0;
+  double prev=0;
+  while (i<1e8) {
+    double aa = hh->GetBinContent(6);
+    if (aa!=prev) {
+      cout << "break: " << i << " " << aa << " " << prev << endl;
+      break;
+    }
+    if (!(i%1000000)) {
+      cout << i << " " << aa << " " << prev << endl;
+    }
+    hh->Fill(5);
+    prev++;//=hh->GetBinContent(6);
+    i++;
+  }
+  exit(-1);
+
   int test;
   int imin,imax;
   cpar.GetParm("hS",0,cpar.hS,imin,imax);
@@ -2106,9 +2124,9 @@ void CRS::AllParameters36() {
 
       Command32(2,chan,12,(int) trg2); //trigger type
 
-      Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
-      Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
-      Check33(17,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      Check33(13,chan,opt.B1[chan],opt.B2[chan],1,4095);
+      Check33(15,chan,opt.P1[chan],opt.P2[chan],1,4095);
+      Check33(17,chan,opt.P1[chan],opt.P2[chan],1,4095);
       Check33(19,chan,opt.T1[chan],opt.T2[chan],1,4095);
       Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
 
@@ -2125,7 +2143,7 @@ void CRS::AllParameters36() {
       Command32(2,chan,23,mask & cpar.RMask); //bitmask for discriminator
       Command32(2,chan,32,cntr); //type of centroid
 
-      int pwin = opt.Peak2[chan]; //окно повторных срабатываний
+      int pwin = opt.P2[chan]; //окно повторных срабатываний
       if (pwin<0) pwin=0;
       if (pwin>4095) pwin=4095;
       Command32(2,chan,33,pwin); //окно повторных срабатываний
@@ -2203,7 +2221,7 @@ void CRS::AllParameters35() {
       Command32(2,chan,23,mask & cpar.RMask); //bitmask for discriminator
       Command32(2,chan,32,drv[chan]); //type of centroid
 
-      int pwin = opt.Peak2[chan]; //окно повторных срабатываний
+      int pwin = opt.P2[chan]; //окно повторных срабатываний
       if (pwin<0) pwin=0;
       if (pwin>4095) pwin=4095;
       Command32(2,chan,33,pwin); //окно повторных срабатываний
@@ -2291,9 +2309,9 @@ void CRS::AllParameters33()
       if (trg2>5) trg2=4; //для триг6 устанавливаем триг4
       Command32(2,chan,12,(int) trg2); //trigger type
 
-      Check33(13,chan,opt.Base1[chan],opt.Base2[chan],1,4095);
-      Check33(15,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
-      Check33(17,chan,opt.Peak1[chan],opt.Peak2[chan],1,4095);
+      Check33(13,chan,opt.B1[chan],opt.B2[chan],1,4095);
+      Check33(15,chan,opt.P1[chan],opt.P2[chan],1,4095);
+      Check33(17,chan,opt.P1[chan],opt.P2[chan],1,4095);
       Check33(19,chan,opt.T1[chan],opt.T2[chan],1,4095);
       Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
     }
@@ -4801,9 +4819,10 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  ipls.Base/=b_len[ipls.Chan];
 	  ipls.Area=Area0 - ipls.Base;
 	  //ipls.Area=ipls.Area0 - ipls.Base;
-	  if (opt.Bc[ipls.Chan]) {
-	    ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
-	  }
+
+	  // if (opt.Bc[ipls.Chan]) {
+	  //   ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
+	  // }
 	  break;
 	case 1: //H – [12]; QX – [36]
 	  lll = data & 0xFFFFFFFFF;
@@ -4834,10 +4853,6 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	    AY=((iii<<8)>>8);
 
 	    ipls.Width=AY/w_len[ipls.Chan]-ipls.Base;
-	    //ipls.Width=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Width;
-	    // if (opt.Bc[ipls.Chan]) {
-	    //   ipls.Width+=opt.Bc[ipls.Chan]*ipls.Base;
-	    // }
 	    ipls.Width/=ipls.Area;
 	  }
 	  else {
@@ -4878,9 +4893,10 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	  // ipls.Area0=((iii<<4)>>4);
 	  // ipls.Area0/=p_len[ipls.Chan];
 	  // ipls.Area=ipls.Area0 - ipls.Base;
-	  if (opt.Bc[ipls.Chan]) {
-	    ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
-	  }
+
+	  // if (opt.Bc[ipls.Chan]) {
+	  //   ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
+	  // }
 	  break;
 	case 2: //QX – [40]
 	  lll = data & 0xFFFFFFFFFF;
@@ -4893,10 +4909,6 @@ void CRS::Decode34(UInt_t iread, UInt_t ibuf) {
 	    AY=((iii<<4)>>4);
 
 	    ipls.Width=AY/w_len[ipls.Chan]-ipls.Base;
-	    //ipls.Width=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Width;
-	    // if (opt.Bc[ipls.Chan]) {
-	    // 	ipls.Width+=opt.Bc[ipls.Chan]*ipls.Base;
-	    // }
 	    ipls.Width/=ipls.Area;
 	  }
 	  else {
@@ -5039,9 +5051,10 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
   }
 
   //ipls.Area=opt.E0[ipls.Chan] + opt.E1[ipls.Chan]*ipls.Area;
-  if (opt.Bc[ipls.Chan]) {
-    ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
-  }
+
+  // if (opt.Bc[ipls.Chan]) {
+  //   ipls.Area+=opt.Bc[ipls.Chan]*ipls.Base;
+  // }
 
 } //MakePk
 
@@ -5975,14 +5988,14 @@ void CRS::Print_Peaks(const char* file) {
   }
   std::ostream out(buf);
 
-  out << "Nevt Chan Tstamp(ns) Area Time" << endl;
+  out << "Nevt Chan Tstamp Area Time Width" << endl;
   for (std::list<EventClass>::iterator it=Levents.begin();
        it!=Levents.end();++it) {
     for (UInt_t i=0;i<it->pulses.size();i++) {
       PulseClass pp = it->pulses.at(i);
       // for (std::vector<PeakClass>::iterator pk=pp.Peaks.begin();
       // 	   pk!=pp.Peaks.end();++pk) {
-      out << it->Nevt << " " << (int)pp.Chan << " " << it->Tstmp << " " << pp.Tstamp64*int(opt.Period) << " " << pp.Area << " " << pp.Time << endl;
+      out << it->Nevt << " " << (int)pp.Chan << " " << it->Tstmp << " " << pp.Area << " " << pp.Time << " " << pp. Width << endl;
       //}
     }
     //out << endl;

@@ -529,10 +529,10 @@ void PulseClass::PeakAna33() {
 
   //pk=&Peaks.back();
 
-  B1=Pos+opt.Base1[Chan];
-  B2=Pos+opt.Base2[Chan];
-  P1=Pos+opt.Peak1[Chan];
-  P2=Pos+opt.Peak2[Chan];
+  B1=Pos+opt.B1[Chan];
+  B2=Pos+opt.B2[Chan];
+  P1=Pos+opt.P1[Chan];
+  P2=Pos+opt.P2[Chan];
   T1=Pos+opt.T1[Chan];
   T2=Pos+opt.T2[Chan];
   W1=Pos+opt.W1[Chan];
@@ -657,7 +657,7 @@ void PulseClass::PeakAna33() {
 	RMS2 = sqrt(RMS2/nbkg);
       }
 
-    } //else (slope2)
+    } // если Mt не 3
     //prnt("ss fs;",BGRN,"Sl2:",Sl2,RST);
 
     // 8. определяем RMS1 (baseline)

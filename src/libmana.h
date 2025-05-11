@@ -42,7 +42,7 @@ enum MENU_COM {
 //   M_YUMO,
 // #endif
   M_TEST,
-  M_HELP,
+  //M_HELP,
 };
 
 using namespace std;
@@ -143,9 +143,11 @@ class MainFrame : public TGMainFrame {
   TGLayoutHints* LayET1b;
   TGLayoutHints* LayET2;
   TGLayoutHints* LayET3;
-  //TGLayoutHints* LayLT3;
+  TGLayoutHints* LayLT3;
+  TGLayoutHints* LayRT3;
   TGLayoutHints* LayL1;
 
+  TGLayoutHints* LayEE0;
   TGLayoutHints* LayEE1;
   TGLayoutHints* LayEE2;
 
@@ -213,6 +215,7 @@ class MainFrame : public TGMainFrame {
   //void UpdateStatus(int rst=0);
 
   //void DoSetNumBuf();
+  void HandleHelp();
   void HandleMenu(Int_t);
 
   ClassDef(MainFrame, 0)

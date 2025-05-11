@@ -909,6 +909,7 @@ Mdef* HClass::Add_h2(int id1, int id2) {
 
   md.hd = new Hdef();
 
+  /*
   //YK!!
   int nn = MAX_CH+NGRP; //different 1d histograms
   if (id1==id2) { //axay: same 1d histograms 
@@ -916,6 +917,7 @@ Mdef* HClass::Add_h2(int id1, int id2) {
   }
 
   md.v_map.resize(nn);
+  */
 
   Mlist.push_back(md);
 
@@ -969,8 +971,8 @@ void HClass::Make_hist() {
   for (auto it = Mlist.begin();it!=Mlist.end();++it) {
     //prnt("ss d ss;",BGRN,"mkhst:",it->hnum,it->h_name.Data(),RST);
 
-    //YK!! //Здесь можно обнулять v_map...
-    memset(it->v_map.data(),0,it->v_map.size()*sizeof(HMap*));
+    //YK!: обнуление v_map перенесено в MapHist
+    // memset(it->v_map.data(),0,it->v_map.size()*sizeof(HMap*));
     if (it->hnum>0 && it->hnum<10) {// standard pulse variable
       Make_1d(it,opt.Nchan);
       it->ptr = pls.GetPtr(it->hnum);
@@ -1133,7 +1135,9 @@ void NameTitle(char* name, char* title, int i, int maxi,
 
 void HClass::MapHist(mdef_iter md, TH1* hh, int i) {
   if (i>=(int)md->v_map.size())
-    md->v_map.resize(i+1);
+    md->v_map.resize(i+1,0);
+
+  //memset(md->v_map.data(),0,md->v_map.size()*sizeof(HMap*));
 
   md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
   map_list->Add(md->v_map[i]);

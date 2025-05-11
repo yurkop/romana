@@ -297,7 +297,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - tof (ns);\n[7] - Height;\n[8] - Width;\n[9] - Slope1 (Baseline);\n[10] - Slope2 (Peak)";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - event real time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - time/tof (ns);\n[7] - Height;\n[8] - Width;\n[9] - Slope1 (Baseline);\n[10] - Slope2 (Peak)";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);
   tEnt->SetWidth(100);
@@ -1263,10 +1263,10 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
       return;
     }
 
-    B1=pulse->Pos+opt.Base1[ch];
-    B2=pulse->Pos+opt.Base2[ch];
-    P1=pulse->Pos+opt.Peak1[ch];
-    P2=pulse->Pos+opt.Peak2[ch];
+    B1=pulse->Pos+opt.B1[ch];
+    B2=pulse->Pos+opt.B2[ch];
+    P1=pulse->Pos+opt.P1[ch];
+    P2=pulse->Pos+opt.P2[ch];
     T1=pulse->Pos+opt.T1[ch];
     T2=pulse->Pos+opt.T2[ch];
     W1=pulse->Pos+opt.W1[ch];

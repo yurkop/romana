@@ -64,30 +64,48 @@ vector<const char*> ptip = {
   "Number of samples before the trigger",
   "Total length of the pulse in samples",
   "Additional Gain\nFor CRS-8/16 and CRS-128 grouped by 4 channels",
-  "Trigger type:\n0 - threshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, zero crossing\nNot all types are available for all devices",
+  "Trigger type:\n"
+  "0 - threshold crossing of pulse;\n"
+  "1 - threshold crossing of derivative;\n"
+  "2 - maximum of derivative;\n"
+  "3 - rise of derivative;\n"
+  "4 - fall of derivative;\n"
+  //"5 - fall of 2nd derivative, use 2nd deriv for timing;\n"
+  "5 - not used;\n"
+  "6 - fall of derivative, zero crossing\n"
+  "Not all types are available for all devices",
   "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
   "Trigger lower threshold (for Trg 3-6)",
-  "Start channel - used for making TOF start\nif there are many start channels in the event, the earliest is used",
+  "Start channel - used as start in Time spectra\nif there are many start channels in the event, the earliest is used",
   "Master/slave channel:\nEvents containing only slave channels are rejected\nEach event must contain at least one master channel",
   "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
   "Checked - write pulses in Dec",
   "Software delay in ns (can be negative or positive)",
-  "Dead-time window \nsubsequent peaks within this window are ignored",
-  "Pileup window \nmultiple peaks within this window are marked as pileup",
-  //"Timing mode (in 1st derivative):\n0 - threshold crossing (Pos);\n1 - left minimum (T1);\n2 - right minimum;\n3 - maximum in 1st derivative",
+  // "Dead-time window \nsubsequent peaks within this window are ignored",
+  // "Pileup window \nmultiple peaks within this window are marked as pileup",
   "Energy calibration type: 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline",
   "Energy calibration 0: E0+E1*x",
   "Energy calibration 1: E0+E1*x",
   "Energy calibration 2: E0+E1*x+E2*x*x",
   "Pole-Zero correction",
-  "Baseline correction",
+  //"Baseline correction",
   "Use channel for group histograms *_g1",
   "Use channel for group histograms *_g2",
   "Use channel for group histograms *_g3",
   "Use channel for group histograms *_g4",
   "Software smoothing. If negative - imitates hS (data are truncated to integer etc)",
-  "Software trigget type:\n0 - hreshold crossing of pulse;\n1 - threshold crossing of derivative;\n2 - maximum of derivative;\n3 - rise of derivative, LT (lower threshold) crossing;\n4 - fall of derivative;\n5 - fall of 2nd derivative, use 2nd deriv for timing;\n6 - fall of derivative, LT (lower threshold) crossing;\n7 - CFD, zero crosing;\n-1 - use hardware trigger",
+  "Software trigget type:\n"
+  "0 - hreshold crossing of pulse;\n"
+  "1 - threshold crossing of derivative;\n"
+  "2 - maximum of derivative;\n"
+  "3 - rise of derivative, LT (lower threshold) crossing;\n"
+  "4 - fall of derivative;\n"
+  //"5 - fall of 2nd derivative, use 2nd deriv for timing;\n"
+  "5 - not used;\n"
+  "6 - fall of derivative, LT (lower threshold) crossing;\n"
+  "7 - CFD, zero crosing;\n"
+  "-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
   "Software trigger threshold",
   "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction\n2 - base slope subtraction (for HPGe)\n3 - base slope2 instead of slope1 (using W1 & W2) + slope2 subtraction (for HPGe)\n  for Mt=3 RMS2 is not calculated; Width=Pos-Time in pulse mode",
@@ -932,6 +950,9 @@ void ParDlg::UpdateField(int nn) {
 	&& crs->Fmode!=1) {
       EnableField(nn,false);
     }
+    else if (pp->data==&opt.ntof_period) {
+      EnableField(nn,false);
+    }
 
   }
 
@@ -1503,7 +1524,7 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "";
   tip2= "Delay between drawing events (in msec)";
   label="DrawEvent delay";
-  AddLine_opt(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_lab,k_int,100,10000,100,10000,0,7<<4);
+  AddLine_opt(fF6,ww,NULL,&opt.tsleep,tip1,tip2,label,k_lab,k_int,100,10000,500,10000,0,7<<4);
 
   tip1= "Size of the USB buffer in kilobytes (1024 is OK)\n"
     "Small for low count rate; large for high count rate";
@@ -1522,7 +1543,8 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip2= "[CRS-8/16] Soft start (imitator) period (sec):\n"
     "(0->use LEMO START input)\n"
     "If non-zero, LEMO START input is blocked\n"
-    "1: 0.08, 2: 0.17, 3: 0.33, 4: 0.67, 5: 1.34, 6: 2.68, 7: 5.36, 8: 10.7";
+    "For CRS-8/128:  1: 0.08, 2: 0.17, 3: 0.33, 4: 0.67, 5: 1.34, 6: 2.68, 7: 5.36, 8: 10.7\n"
+    "For AK-32:           1: 0.05, 2: 0.11, 3: 0.21, 4: 0.43, 5: 0.86, 6: 1.72, 7: 3.44, 8: 6.87";
   label="Sampling Rate / Start period";
   // cout << "Smpl: " << cpar.Smpl << endl;
   AddLine_opt(fF6,ww,&cpar.Smpl,&cpar.St_Per,tip1,tip2,label,k_int,k_int,0,14,0,8,0x200|(2<<1)|1,0x200|(6<<1)|1);
@@ -1596,12 +1618,13 @@ int ParParDlg::AddNtof(TGCompositeFrame* frame) {
   tip1= "Ntof period (mks) (should be always zero if unsure why it's needed)";
   tip2= "Ntof start channel (255 for START input)";
   label="Ntof period / start channel";
+  opt.ntof_period = 0;
   AddLine_opt(fF6,ww,&opt.ntof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
-	      0,1e9,0,255,0x400,0x400);
+	      0,1e9,0,255,0x200|0x400,0x400);
 
   tip1= "Ntof Flight path (in meters) for Ntof-Energy conversion";
   tip2= "Ntof Time offset (in mks) for Ntof-Energy conversion";
-  label="Ntof Flpath / NTOF Zero";
+  label="Ntof Flpath / Ntof Zero";
   AddLine_opt(fF6,ww,&opt.Flpath,&opt.TofZero,tip1,tip2,label,k_r0,k_r0,
 	      0,1e9,-1e9,1e9,0x400,0x400);
 
@@ -1711,7 +1734,7 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
     "default value: FFFF\n\n"
 
     "Meaning of the bits:\n"
-    "0 - timestamp\n"
+    "0 - timestamp (must be always set to 1)\n"
     "1 - spin/counter\n"
     "2 - pulse data 11 bit\n"
     "3 - pulse data 16 bit\n"
@@ -2216,6 +2239,7 @@ void HistParDlg::AddLine_mean(TGHorizontalFrame *hfr1, Mdef* md) {
   sprintf(name,"b_pulse%d",id);
   chk_hist->SetName(name);
   DoMap(chk_hist,&md->hd->b,p_chk,0,0x100);
+  chk_hist->SetToolTipText("on/off");
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_hist,LayCC1);
 
@@ -2259,6 +2283,7 @@ void HistParDlg::AddLine_prof(TGHorizontalFrame *hfr1, Mdef* md) {
   id = Plist.size()+1;
   TGCheckButton *chk_hist = new TGCheckButton(hfr1, "", id);
   DoMap(chk_hist,&md->hd->b,p_chk,0,0x100|(4<<4));
+  chk_hist->SetToolTipText("on/off");
   chk_hist->Connect("Toggled(Bool_t)", "ParDlg", this, "DoCheckHist(Bool_t)");
   hfr1->AddFrame(chk_hist,LayCC1);
   //id0=id;
@@ -2389,14 +2414,14 @@ void HistParDlg::AddLine_2d(TGGroupFrame* frame, Mdef* md) {
 
   int col=0;
   double ww1=50,ww2=40;
-  int min2=0.0001;
-  int max2=10000;
+  double min2=0.0001,
+    max2=10000;
   char *tip11, *tip22;
 
   if (id1==id2) { //AXAY
     col=2<<1; //зеленый
-    min2=0;
-    max2=MAX_AXAY-1;
+    min2=1;
+    max2=opt.Nchan; //MAX_AXAY-1;
     tip11= (char*) "Number of bins per channel on X and Y axis";
     tip22= (char*) "Maximal channel number";
   }
@@ -2455,7 +2480,7 @@ void HistParDlg::AddLine_2d(TGGroupFrame* frame, Mdef* md) {
   id = Plist.size()+1;
   fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0,
 			    TGNumberFormat::kNEAAnyNumber,
-			    lim,min2,max2);
+			    lim,0,1000);
   DoMap(fNum1->GetNumberEntry(),&md->hd->rb,p_inum,0,4<<1|3<<4);//cyan + Update
   fNum1->GetNumberEntry()->SetToolTipText("Rebin X (only for drawing)");
   fNum1->SetWidth(ww2);
@@ -2467,7 +2492,7 @@ void HistParDlg::AddLine_2d(TGGroupFrame* frame, Mdef* md) {
   id = Plist.size()+1;
   fNum1 = new TGNumberEntry(hfr1, 0, 0, id, k_r0,
 			    TGNumberFormat::kNEAAnyNumber,
-			    lim,min2,max2);
+			    lim,0,1000);
   DoMap(fNum1->GetNumberEntry(),&md->hd->rb2,p_inum,0,4<<1|3<<4);//cyan + Update
   fNum1->GetNumberEntry()->SetToolTipText("Rebin Y (only for drawing)");
   fNum1->SetWidth(ww2);
@@ -2839,14 +2864,14 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"Dsp",opt.Dsp,0,0);
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"Pls",opt.Pls,0,0);
   AddColumn(jj,kk++,1,p_fnum,35,0,-9999,9999,"sD",opt.sD);
-  AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"dTm",opt.dTm);
-  AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"Pile",opt.Pile);
+  //AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"dTm",opt.dTm);
+  //AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"Pile",opt.Pile);
   AddColumn(jj,kk++,1,p_inum,20,0,0,2,"C",opt.calibr_t);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E0",opt.E0);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E1",opt.E1);
   AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E2",opt.E2);
   AddColumn(jj,kk++,1,p_inum,40,0,-99999,99999,"Pz",opt.Pz);
-  AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"Bc",opt.Bc);
+  //AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"Bc",opt.Bc);
   for (int i=1;i<=4;i++) {
     sprintf(txt,"g%d",i);
     AddColumn(jj,kk++,1,p_chk,24,0,0,0,txt,opt.Grp,0,0,40+i);
@@ -2860,10 +2885,10 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);
   AddColumn(jj,kk++,1,p_inum,20,0,0,3,"Mt",opt.Mt);
-  AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"Base1",opt.Base1);
-  AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"Base2",opt.Base2);
-  AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"Peak1",opt.Peak1);
-  AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"Peak2",opt.Peak2);
+  AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"B1",opt.B1);
+  AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"B2",opt.B2);
+  AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"P1",opt.P1);
+  AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"P2",opt.P2);
   AddColumn(jj,kk++,1,p_inum,30,0,1,999,"DD",opt.DD);
   AddColumn(jj,kk++,1,p_inum,30,0,1,9,"FF",opt.FF);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"T1",opt.T1);
@@ -2921,7 +2946,7 @@ AddColumn(int jj, int kk, int ii, P_Def pdef,
   char* ap = (char*)apar+first*sizeof(Bool_t);
 
   double amax = max;
-  if (max<-1e101) { //Base1, Peak1, T1, W1
+  if (max<-1e101) { //B1, Peak1, T1, W1
     //cout << "max!!!: " << jj << " " << kk << " " << pname << endl;
     amax = 1023;
     if (crs->crs_ch[jj]==1 || crs->crs_ch[jj]==2)

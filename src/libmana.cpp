@@ -487,9 +487,9 @@ void MakeVarList(int cp, int op) {
     }
   }
   // for (v_iter it=varlist.begin();it!=varlist.end();++it) {
-  //   cout << "varlist: " << it->name << " " << it->Dm->GetName() << endl;
+  //   cout << "varlist: " << it->name << " " << it->Dm->GetName() << " " << it->Dm->GetTitle() << endl;
   // }
-  //cout << varlist.size() << endl;
+  // cout << varlist.size() << endl;
   // exit(1);
 }
 
@@ -711,7 +711,9 @@ int BufToClass(char* buf, char* buf2, int op) {
 	    a=s1.First('[');
 	    b=s1.First(']');
 	    if (a>=0 && b>=0) {
+	      // prnt("sss;",BRED,TString(s1(a+1,b-a-1)).Data(),RST);
 	      if (memname.EqualTo(s1(a+1,b-a-1))) {
+		// prnt("sss;",BGRN,TString(s1(a+1,b-a-1)).Data(),RST);
 		tp=2;
 		break;
 	      }
@@ -1112,9 +1114,9 @@ int main(int argc, char **argv)
     "-m name: select module/device name (if several devices are connected)\n"
     "-l: print list of connected devices and exit\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
-    "-b [filename]: analyze file in batch mode (without gui) and exit\n"
-    "   Data are saved in filename[.raw/.dec/.root] depending on batch parameters\n"
-    "   [filename] is optional for -b. If omitted, the input filename is used.\n"
+    "-b [outfile]: analyze file in batch mode (without gui) and exit\n"
+    "   Data are saved in outfile[.raw/.dec/.root] depending on batch parameters\n"
+    "   [outfile] is optional for -b. If omitted, the input filename is used.\n"
     "   Program exits after Tstop time is reached\n"
 
     "-s [n] (only in batch mode): screen output frequency (0 - no output; n - every n-th buffer) \n"
@@ -1475,7 +1477,7 @@ int main(int argc, char **argv)
       crs->b_acq=false;
       crs->b_stop=true;
     }
-    else {
+    else { //batch, but not abatch
       crs->b_fana=true;
       crs->b_stop=false;
       crs->FAnalyze2(false);
@@ -1484,7 +1486,7 @@ int main(int argc, char **argv)
     }
 
     if (b_root) {
-      cout << "Histograms are saved in: " << crs->rootname << endl;
+      //cout << "Histograms are saved in: " << crs->rootname << endl;
       saveroot(crs->rootname.c_str());
     }
 
@@ -2158,14 +2160,16 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,5,2);
   LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
-  LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,0);
+  LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop);
   LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
   LayET1a = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,0);
   LayET1b = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,0,5);
   LayET2=new TGLayoutHints(kLHintsExpandX|kLHintsTop,15,15,2,2);
   LayET3 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,15);
-  //LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,1,1,1,1);
+  LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,2,2,2,2);
+  LayRT3 = new TGLayoutHints(kLHintsRight|kLHintsTop,2,2,2,2);
   LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
+  LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
   LayEE1 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1);
   LayEE2 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,3,3,3,3);
 
@@ -2181,7 +2185,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   gStyle->SetLabelSize(0.05,"xyz");
   gStyle->SetNdivisions(606,"xyz");
   gStyle->SetPadLeftMargin(0.13);
-  gStyle->SetPadRightMargin(0.05);
+  gStyle->SetPadRightMargin(0.1);
   //gStyle->SetPadBottomMargin(0.15);
   //gStyle->SetPadTopMargin(0.05);
 
@@ -2205,7 +2209,27 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   Connect("CloseWindow()", "MainFrame", this, "CloseWindow()");
 
-  fMenuBar = new TGMenuBar(this, 35, 50, kHorizontalFrame);
+  // Create a horizontal frame for MenuBar & Help button
+  TGHorizontalFrame *hf1 = new TGHorizontalFrame(this);
+  AddFrame(hf1, LayET0);
+
+  fMenuBar = new TGMenuBar(hf1, 35, 50, kHorizontalFrame);
+  hf1->AddFrame(fMenuBar, LayLT3); 
+	   //new TGLayoutHints(kLHintsTop | kLHintsExpandX, 2, 2, 2, 5));
+
+
+
+  TGTextButton *fHelp = new TGTextButton(hf1,"Help");
+  fHelp->SetToolTipText("Display Help file");
+  //fHelp->SetFont(tfont,false);
+  //fHelp->Resize(butx,buty);
+  //fHelp->ChangeOptions(fHelp->GetOptions() | kFixedSize);
+  fHelp->ChangeBackground(fYellow);
+  fHelp->Connect("Clicked()","MainFrame",this,"HandleHelp()");
+  hf1->AddFrame(fHelp, LayRT3);
+
+
+
 
   TGPopupMenu* fMenuFile = new TGPopupMenu(gClient->GetRoot());
 
@@ -2281,6 +2305,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
 
 
+
+  /*
   TGPopupMenu* fMenuHelp = new TGPopupMenu(gClient->GetRoot());
   fMenuHelp->AddEntry("Display Help file", M_HELP);
   //fMenuHelp->AddEntry("Test", M_TEST);
@@ -2290,8 +2316,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuBar->AddPopup("&Help", fMenuHelp,
 		     new TGLayoutHints(kLHintsTop|kLHintsRight,0,4,0,0));
 
-  AddFrame(fMenuBar, 
-	   new TGLayoutHints(kLHintsTop | kLHintsExpandX, 2, 2, 2, 5));
+  */
+
+
+
 
   //TGLabel *ver = new TGLabel(fMenuBar,GITVERSION);
   //fMenuBar->AddFrame(ver,new TGLayoutHints(kLHintsCenterY|kLHintsRight,0,4,0,0));
@@ -2344,9 +2372,9 @@ void MainFrame::Build() {
     return;
   }
 
-  // Create a vertical frame for everything
+  // Create a horizontal frame for everything
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(this);
-  AddFrame(hframe1, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
+  AddFrame(hframe1, LayEE0);
 
   // Create a left vertical frame with buttons
   TGVerticalFrame *vframe1 = new TGVerticalFrame(hframe1);
@@ -2848,9 +2876,9 @@ void MainFrame::DoStartStop(int rst) {
     //crs->Show();
     crs->DoStartStop(rst);
 
-    if (opt.root_write || b_root) {
-      saveroot(crs->rootname.c_str());
-    }
+    // if (opt.root_write || b_root) {
+    //   saveroot(crs->rootname.c_str());
+    // }
 
   }
   else { // START is pressed here
@@ -3003,7 +3031,7 @@ void MainFrame::DoClose() {
 void MainFrame::DoAna() {
 
   
-  //cout << "DoAna: " << gROOT->FindObject("Start") << endl;
+  //cout << "DoAna: " << crs->b_fana << endl;
   //cout << "Pmapsz: " << sizeof(Pmap) << " " << chanpar->Plist.size() << endl;
 
 
@@ -3022,9 +3050,9 @@ void MainFrame::DoAna() {
       //fAna->SetText(hAna);
     }
 
-    if (opt.root_write) {
-      saveroot(crs->rootname.c_str());
-    }
+    // if (opt.root_write) {
+    //   saveroot(crs->rootname.c_str());
+    // }
 
   }
   else { //start analysis
@@ -3840,9 +3868,6 @@ void MainFrame::EventInfo(Int_t event, Int_t px, Int_t py, TObject *selected)
 void MainFrame::HandleMenu(Int_t menu_id)
 {
 
-  char command[128];
-  int status;
-
   if (!crs->b_stop) {
     switch (menu_id) {
     case M_READINIT:
@@ -3943,18 +3968,18 @@ void MainFrame::HandleMenu(Int_t menu_id)
   //   break;
 
   case M_ECALIBR:
-    new PopFrame(this,800,600,M_ECALIBR);
+    new PopFrame(this,1,600,M_ECALIBR);
     break;
 
   case M_TCALIBR:
     //cout << "ecalibr: " << fTab->GetCurrent() << endl;
     fTab->SetTab("Plots");
-    new PopFrame(this,100,600,M_TCALIBR);
+    new PopFrame(this,250,1,M_TCALIBR);
     break;
 
   case M_PEAKS:
     fTab->SetTab("Plots");
-    new PopFrame(this,100,600,M_PEAKS);
+    new PopFrame(this,250,1,M_PEAKS);
     break;
 
 // #ifdef YUMO
@@ -3969,16 +3994,18 @@ void MainFrame::HandleMenu(Int_t menu_id)
     break;
 #endif
 
-  case M_HELP:
+  // case M_HELP: {
 
-    strcpy(command,"xdg-open ");
-    strcat(command,HELP);
-    status = system( command );
-    if (status == -1) {
-      cout << "Return value of system(command): " << status << endl;
-    }
+  //   char command[128];
+  //   strcpy(command,"xdg-open ");
+  //   strcat(command,HELP);
+  //   int status = system( command );
+  //   if (status == -1) {
+  //     cout << "Return value of system(command): " << status << endl;
+  //   }
+  // }
 
-    break;
+  //   break;
 
   case M_EXIT:
     DoExit();   // terminate theApp no need to use SendCloseMessage()
@@ -3988,24 +4015,27 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
 //______________________________________________________________________________
 
-/*
-  void MainFrame::HandleHelp()
-  {
+
+void MainFrame::HandleHelp() {
 
   if (!crs->b_stop) return;
 
-  cout << "test" << endl;
-
   char command[128];
 
-  strcpy(command,"evince ");
-  strcat(command,"help.pdf");
-  int status = system( command );
+  strcpy(command,"xdg-open ");
+  strcat(command,HELP);
+  int st = system( command );
 
-  cout << status << endl;
+  char* col=(char*)BGRN;
+  if (st) col=(char*)BRED;
+  prnt("ss s ds;",col,command,":",st,RST);
 
-  }
-*/
+  // strcpy(command,"xed log");
+  // st = system( command );
+  // cout << st << endl;
+
+}
+
 //______________________________________________________________________________
 
 /*

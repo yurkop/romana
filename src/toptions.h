@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 159
+#define CDEF 160
 
 /*
 #include <list>
@@ -73,6 +73,11 @@ public:
   Coptions();
   virtual ~Coptions() {};
 
+  // в квадратных скобках после комментария приводятся старые имена
+  // для обратной совместимости. Их количество не ограничено.
+  // Все имена (новые и старые) должны быть уникальны
+  // (общее пространоство имен для cpar и opt).
+
   //Version_t ver;
   // parameters of the crs32 or crs2 module
 
@@ -92,7 +97,7 @@ public:
   Int_t Trg[MAX_CHTP]; // [trg] Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
   Int_t Drv[MAX_CHTP]; // [kderiv] K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t Thr[MAX_CHTP]; // [threshold] T = –2048 .. +2047
-  Int_t LT[MAX_CHTP]; // [lower threshold] T = –2048 .. +2047
+  Int_t LT[MAX_CHTP]; // lower threshold T = –2048 .. +2047
   Int_t G[MAX_CHTP]; // [adcGain] G = 0..12
   Int_t fdiv[MAX_CHTP]; // frequency divider (=2 for 16-bit/100 MHz)
   Bool_t AC[MAX_CHTP]; // [acdc] AC-1; DC-0
@@ -143,6 +148,11 @@ public:
   Toptions();
   virtual ~Toptions() {};
 
+  // в квадратных скобках после комментария приводятся старые имена
+  // для обратной совместимости. Их количество не ограничено.
+  // Все имена (новые и старые) должны быть уникальны
+  // (общее пространоство имен для cpar и opt).
+
   char gitver[24]; //git version written in the .par file
   Int_t maxch;
   Int_t maxtp;
@@ -162,10 +172,10 @@ public:
   Int_t sDrv[MAX_CHTP]; //[Drv] [kdrv] parameter of derivative
   Int_t sThr[MAX_CHTP]; //[Thr] [thresh]
   Float_t sD[MAX_CHTP]; //[Delay] [delay]
-  Int_t Base1[MAX_CHTP]; //[bkg1]
-  Int_t Base2[MAX_CHTP]; //[bkg2]
-  Int_t Peak1[MAX_CHTP]; //[peak1]
-  Int_t Peak2[MAX_CHTP]; //[peak2]
+  Int_t B1[MAX_CHTP]; //[Base1] [bkg1]
+  Int_t B2[MAX_CHTP]; //[Base2] [bkg2]
+  Int_t P1[MAX_CHTP]; //[Peak1] [peak1]
+  Int_t P2[MAX_CHTP]; //[Peak2] [peak2]
   Int_t dTm[MAX_CHTP];//[deadT][dT]
   Int_t Pile[MAX_CHTP]; //[pile]
   //Int_t pile2[MAX_CHTP];
@@ -185,7 +195,7 @@ public:
   Float_t E0[MAX_CHTP]; // [emult0]
   Float_t E1[MAX_CHTP]; // [emult]
   Float_t E2[MAX_CHTP]; // [emult2]
-  Float_t Bc[MAX_CHTP]; // [bcor]
+  //Float_t Bc[MAX_CHTP]; // [bcor]
   Int_t Pz[MAX_CHTP];
 
   Float_t E_auto; //value for auto energy pre-calibration
@@ -365,7 +375,7 @@ public:
   Hdef h_hei; // 2 Height Channel Counts Maximal pulse height (in channels)
   Hdef h_width; // 3 Width width(a.u.) Counts Pulse width
   Hdef h_per; // 15 Period t(mks) Counts Pulse period (distance between two consecutive pulses), in mks
-  Hdef h_base; // 4 Base Channel Counts Base line, not calibrated
+  Hdef h_base; // 4 Base Channel Counts Base line, calibrated
 
 
 

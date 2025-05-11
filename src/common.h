@@ -26,11 +26,12 @@ const int MAX_CH=256; //256; //max number of channels
 const int MAX_TP=8; // 8 types, MAX_TP=other, MAX_TP+1=copy, MAX_TP+2=swap
 const int MAX_CHTP=MAX_CH+MAX_TP+1;
 const int NGRP=4; //number of groups of channels
-const int MAX_AXAY = sqrt(MAX_CH); //maximal number of channels used in AXAY-histograms
+//const int MAX_AXAY = sqrt(MAX_CH); //maximal number of channels used in AXAY-histograms
 
 const int MAXROI=20; //maximal number of ROI
 
-const int MAXCUTS=15; //20; //maximal number of cutG; should be less or equal to nr-1 of bits in hmap::bitwk; 
+const int MAXCUTS=31; //maximal number of cuts; Если 31 - выдает ошибку (?).
+                      //не может быть больше 31=число бит в Int_t.
 const int MAX_PCUTS=11; //maximal number of points in cutG
 const int MAX_PADS=256; //maximal number of sub-pads in histframe
 

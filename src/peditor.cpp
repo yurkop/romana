@@ -148,9 +148,11 @@ void PEditor::Load_Ing()
   fEdit->AddLine("# ---- Ing27 settings ----");
 
   fEdit->AddLine("# Format for Ing256:");
-  fEdit->AddLine("# Ing N X-ch Y-ch");
+  fEdit->AddLine("# Ing N X-ch Y-ch, where N - strip number;");
+  fEdit->AddLine("#              X,Y-ch - channels in the digitizer");
   fEdit->AddLine("# Format for Ing9:");
-  fEdit->AddLine("# Ing9 N Alpha-ch");
+  fEdit->AddLine("# Ing9 N Alpha-ch, where N - pixel number;");
+  fEdit->AddLine("#             Alpha-ch - channel in the digitizer");
 
   fEdit->AddLine("# N: Ing27 strip or pixel number");
   fEdit->AddLine("# X-ch: DAQ channel for the given X-strip");

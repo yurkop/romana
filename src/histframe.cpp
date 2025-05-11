@@ -372,7 +372,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   but->SetToolTipText("Cancel/interrupt adding a cut");
   fHor3->AddFrame(but, LayLC1);
 
-  but = new TGTextButton(fHor3,"Clr",3);
+  but = new TGTextButton(fHor3,"Del",3);
   but->Connect("Clicked()", "HistFrame", this, "ClearCutG()");
   but->SetToolTipText("Delete all cuts. Use right mouse button on a single cut to delete it");
   fHor3->AddFrame(but, LayLC1);
@@ -387,7 +387,7 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   // but->SetToolTipText("Sort all cuts");
   // fHor3->AddFrame(but, LayLC1);
 
-  const char* ttip = "Formula for the cut.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [0] [1] [2] ... for other cuts in the formula\nExamples:\n [0] && [1] - cut0 \"and\" cut1\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
+  const char* ttip = "Formula for the cut.\nUse standard C and root operators and functions\nFormula turns red in case of an error\nUse [1] [2] [3] ... for other cuts in the formula\nExamples:\n [1] && [2] - cut1 \"and\" cut2\n [2] || [3] - cut2 \"or\" cut3\n ![3] - not cut3";
 
   //tab2->AddFrame(new TGLabel(tab2, "--Formula--"), LayET0);
 
@@ -461,23 +461,29 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
 
   //-- main frame
 
-  const char* rlab[2] = {"Stack/N","X/Y:"};
+  fLab = new TGLabel(fHor2, "Stack/N:");
+  fHor2->AddFrame(fLab,LayLC1);
+
+  //const char* rlab[2] = {"Stack/N","X/Y:"};
+  const char* rlab[2] = {};
   Rb[0] = new TGRadioButton(fHor2,rlab[0],1);
+  Rb[0]->ChangeOptions(Rb[0]->GetOptions()|kFixedWidth);
+  Rb[0]->SetWidth(20);
   fHor2->AddFrame(Rb[0], LayLC2);
   Rb[0]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
   Rb[0]->SetToolTipText("Draw all marked histograms as stack");
   
+  Rb[1] = new TGRadioButton(fHor2,rlab[1],2);
+  fHor2->AddFrame(Rb[1], LayLC1);
+  Rb[1]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
+  Rb[1]->SetToolTipText("Draw histograms in separate subwindows");
+
   id = parpar->Plist.size()+1;
   chknorm = new TGCheckButton(fHor2,"",id);
   parpar->DoMap(chknorm,&opt.b_norm,p_chk,0,3<<4);
   chknorm->Connect("Toggled(Bool_t)", "ParDlg", parpar, "DoDaqChk(Bool_t)");
   fHor2->AddFrame(chknorm, LayLC2);
   chknorm->SetToolTipText("Normalize stacked histograms");
-
-  Rb[1] = new TGRadioButton(fHor2,rlab[1],2);
-  fHor2->AddFrame(Rb[1], LayLC1);
-  Rb[1]->Connect("Clicked()", "HistFrame", this, "DoRadio()");
-  Rb[1]->SetToolTipText("Draw histograms in separate subwindows");
 
   const char* ttip2[] = {"Horizontal divisions","Vertical divisions"};
 
@@ -1358,9 +1364,11 @@ void HistFrame::Y_Slider(TH1* hh, double a1, double a2, double y1, double y2) {
   fVslider->GetPosition(opt.hy_slider[1],opt.hy_slider[0]);
   h1=1-opt.hy_slider[0];
   h2=1-opt.hy_slider[1];
-  //prnt("ss f f f f f fs;",BGRN,"Sl:",opt.hy_slider[0],opt.hy_slider[1],h1,h2,y1,y2,RST);
+  //prnt("ss f f f f f f f fs;",BGRN,"Sl:",opt.hy_slider[0],opt.hy_slider[1],h1,h2,y1,y2,hh->GetYaxis()->GetXmin(),hh->GetYaxis()->GetXmax(),RST);
 
   if (h2-h1==1 && hh!=st_plot) {
+    hh->SetMinimum();
+    hh->SetMaximum();
     hh->GetYaxis()->UnZoom();
     return;
   }
@@ -1618,7 +1626,7 @@ void HistFrame::StartMouse() {
   if (id==1 && !opt.b_stack) { //add Cut
     int icut=Find_icut();
     if (icut<0) {
-      const char* msg = "Too manu cuts. Delete them first";
+      const char* msg = "Too many cuts. Delete them first";
       Int_t retval;
       new TGMsgBox(gClient->GetRoot(), this,
 	       "Graphical cut",
@@ -1640,12 +1648,12 @@ void HistFrame::StartMouse() {
 
 void HistFrame::AddFormula() {
   Pixel_t color;
-  int len = strlen(tForm->GetText());
-  //cout << "len: " << len << endl;
+  UInt_t len = strlen(tForm->GetText());
+  //cout << "len: " << len << " " << sizeof(opt.cut_form[0])-1 << endl;
   TFormula form = TFormula("form",tForm->GetText());
   int ires = form.Compile();
   //formula is not valid
-  if (ires || len>=16) {
+  if (ires || len>=sizeof(opt.cut_form[0])) {
     gClient->GetColorByName("red", color);
     tForm->SetBackgroundColor(color);
   }
@@ -1821,9 +1829,17 @@ void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
     TH1* h2= (TH1*) h1->Clone("hcln");
     hh = h2;
     hsmooth(hh,opt.Peak_smooth);
-    //h2->SetDrawOption("same");
-    //h1->GetListOfFunctions()->Add(h2);
-    //hsmooth(hh,opt.Peak_smooth);
+
+    // hsmooth(h2,opt.Peak_smooth);
+    // h2->SetDrawOption("same");
+    // h1->GetListOfFunctions()->Add(h2);
+
+    // TH1* h3= (TH1*) h2->Clone("hderiv");
+    // hderiv(h3);
+    // hsmooth(h3,opt.Peak_smooth);
+    // h3->SetDrawOption("same");
+    // h3->SetLineColor(3);
+    // h1->GetListOfFunctions()->Add(h3);
   }
 
   if (opt.Peak_thr>1) opt.Peak_thr=1;
@@ -1840,7 +1856,7 @@ void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
   for (auto i=n1;i<=n2;i++) {
     double bb = hh->GetBinContent(i) - bkg;
     double cc = hh->GetBinCenter(i);
-    // если точка выше текущего пика -> новое положеие пика, "обнуляем" w
+    // если точка выше hmax и текущего пика -> новое положеие пика, "обнуляем" w
     if (bb>=hmax && bb>pp.h) {
       inpeak=1;
       pp.h=bb;
@@ -1856,8 +1872,8 @@ void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
       //prnt("ss d d f f fs;",BBLU,"pk:",i,inpeak,pp.p,pp.h,pp.w,RST);
       continue;
     }
-    // если точка дальше, чем 3*w, пик найден
-    if (inpeak==2 && cc-pp.p>3*pp.w) {
+    // если точка дальше, чем peak+bwidth, пик найден
+    if (inpeak==2 && cc-pp.p>opt.Peak_bwidth) {
       //prnt("ss d d f f fs;",BGRN,"pk:",i,inpeak,pp.p,pp.h,pp.w,RST);
       if (pp.w>=opt.Peak_wid)
 	vv.push_back(pp);
@@ -1882,12 +1898,16 @@ void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
 
   vector<double> xx,yy;
   for (auto it=vv.begin(); it!=vv.end();++it) {
-    double ww = it->w*opt.Peak_bwidth;
-    it->b1 = it->p-ww;
-    it->b2 = it->p+ww;
+    // double ww = it->w*opt.Peak_bwidth;
+    // it->b1 = it->p-ww;
+    // it->b2 = it->p+ww;
+
+    it->b1 = it->p-opt.Peak_bwidth;
+    it->b2 = it->p+opt.Peak_bwidth;
+
     xx.push_back(it->p);
     yy.push_back(it->h+bkg);
-    //prnt("ss f f f fs;",BGRN,"peak:",it->p,it->h,it->w,bkg,RST);
+    //prnt("ss d f f f fs;",BGRN,"peak:",distance(vv.begin(),it),it->p,it->h,it->w,bkg,RST);
   }
 
   std::sort(vv.begin(),vv.end(),p_comp);
@@ -3272,7 +3292,6 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
 }
 
 void HistFrame::AllRebinDraw() {
-
   for (int npad = 0;npad<ndiv;npad++) {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
       continue;
