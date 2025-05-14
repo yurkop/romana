@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 160
+#define CDEF 162
 
 /*
 #include <list>
@@ -345,11 +345,8 @@ public:
   Bool_t Peak_use_mean;
   Bool_t Peak_print;
 
-  int wrk_check[64];
-  //
-  //Float_t SimSig;
-
-  //Int_t sThr2; // lower threshold for trig 3,4
+  int wrk_check[128]; //в папке MAIN (старая wrk) можно чекнуть
+  // максимум 128 гистограмм
 
   Int_t Nrows;
   Int_t ScrollPos;

@@ -162,10 +162,11 @@ public:
   void HiReset();
   void HiUpdate();
   void DrawStack();
-  void Make_Hmap_ChkList();
+  void Make_Hmap_ChkList(bool stk=0);
   bool CheckPads();
   void DrawHist();
   void OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj);
+  void ProjectXY(TH1* &hh);
   void AllRebinDraw();
   void DrawCuts(int npad);
   void DrawRoi(Hdef* hd, TVirtualPad* pad);//int npad);

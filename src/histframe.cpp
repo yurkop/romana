@@ -666,7 +666,6 @@ void HistFrame::Make_Ltree() {
   // }
 
   TObject* obj=0;
-  TIter next(hcl->map_list);
 
   char cutname[99];
   char name[99];
@@ -702,9 +701,11 @@ void HistFrame::Make_Ltree() {
     }
   }
 
-  next.Reset();
+  TIter next(hcl->map_list);
+  //next.Reset();
   while ( (obj=(TObject*)next()) ) {
     map = (HMap*) obj;
+    //prnt("ss s ss;",BGRN,"mpp:",map->GetName(),map->GetTitle(),RST);
     //if (!map->flg) {
       TString title = TString(map->GetTitle());
       if (!fListTree->FindChildByName(0,title)) {
@@ -1194,7 +1195,6 @@ void HistFrame::OptToCheck() {
 
 void HistFrame::CheckToOpt(TObject* obj, Bool_t check) {
   HMap* map;
-
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     TGListTreeItem *item = idir->GetFirstChild();
@@ -1643,7 +1643,7 @@ void HistFrame::StartMouse() {
   }
 
   HiUpdate();
-  
+
 }
 
 void HistFrame::AddFormula() {
@@ -2864,12 +2864,14 @@ void HistFrame::DrawStack() {
   //cv->SetLogy(opt.b_logy);
 
 
-  std::vector<Hdef*> def_list;
+  std::vector<Hdef*> def_list; //нужно для рисования Roi
   std::vector<Hdef*>::iterator it;
  
-  Make_Hmap_ChkList();
+  //Make_Hmap_ChkList();
+  Make_Hmap_ChkList(1);
 
   if (hmap_chklist->GetSize() > 16) {
+    //нужно ограничить, иначе при большом числе программа может зависать
     char ss[200];
     sprintf(ss,"Number of histograms is too large for Stack: %d (max 16)",hmap_chklist->GetSize());
     ttxt.DrawTextNDC(0.5,0.5,ss);
@@ -2892,13 +2894,16 @@ void HistFrame::DrawStack() {
   TObject* obj;
   while ( (obj=(TObject*)next2()) ) {
     HMap* map=(HMap*) obj;
-    if (map->hst && map->hst->GetDimension()==1) { //only 1d hist
+    //if (map->hst && map->hst->GetDimension()==1) { //only 1d hist
 
       pad_map.push_back(map);
 
-      it = find (def_list.begin(), def_list.end(), map->hd);
-      if (it == def_list.end()) {
-	def_list.push_back(map->hd);
+      // если hd еще не нахоится в def_list -> добавляем; только для Roi
+      if (opt.b_roi) {
+	it = find (def_list.begin(), def_list.end(), map->hd);
+	if (it == def_list.end()) {
+	  def_list.push_back(map->hd);
+	}
       }
 	
       TString name(map->hst->GetName());
@@ -2907,7 +2912,9 @@ void HistFrame::DrawStack() {
       TH1* hh = (TH1*) map->hst->Clone(name.Data());
       hh->UseCurrentStyle();
       OneRebinPreCalibr(map,hh,b_adj);
+      ProjectXY(hh);
 
+      //cout << "hh: " << hh->GetName() << endl;
       //hh->SetLineColor(EvtFrm->chcol[map->nn]);
       hh->SetLineColor(EvtFrm->chcol[cc%32]);
       cc++;
@@ -2921,7 +2928,7 @@ void HistFrame::DrawStack() {
 
       x1 = TMath::Min(x1,hh->GetXaxis()->GetXmin());
       x2 = TMath::Max(x2,hh->GetXaxis()->GetXmax());
-    }
+      //}
   } //while ( (obj=(TObject*)next2()) )
 
   
@@ -2986,15 +2993,30 @@ void HistFrame::DrawStack() {
 
 } //DrawStack
 
-void HistFrame::Make_Hmap_ChkList() {
+void HistFrame::Make_Hmap_ChkList(bool stk) {
+  //если stk добавляет только 1-мерные или 2-мерные если опция x/y
+  //иначе добавляет все
+
+  bool add=true;
+  bool projxy = false;
+  if (dopt[1].BeginsWith("x", TString::kIgnoreCase) ||
+      dopt[1].BeginsWith("y", TString::kIgnoreCase))
+    projxy=true;
+
   hmap_chklist->Clear();
   TGListTreeItem *idir = fListTree->GetFirstItem();
   while (idir) {
     TGListTreeItem *item = idir->GetFirstChild();
     while (item) {
-      if (item->GetUserData()) {
+      HMap* map=(HMap*) item->GetUserData();
+      if (map && map->hst) {
 	if (item->IsChecked()) {
-	  hmap_chklist->Add((TObject*)item->GetUserData());
+	  if (stk) { //stack: 1D or projxy && not Find
+	    add = (map->hst->GetDimension()==1 || projxy) &&
+	      hmap_chklist->FindObject(map)==0;
+	  }
+	  if (add)
+	    hmap_chklist->Add(map);
 	}
       }
       item = item->GetNextSibling();
@@ -3291,6 +3313,17 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
   hist->ResetStats();
 }
 
+void HistFrame::ProjectXY(TH1* &hh) {
+  if (hh->GetDimension()==2) {
+    if (dopt[1].BeginsWith("x", TString::kIgnoreCase)) {
+      hh = ((TH2*)hh)->ProjectionX("_px",0,-1,"o");
+    }
+    else if (dopt[1].BeginsWith("y", TString::kIgnoreCase)) {
+      hh = ((TH2*)hh)->ProjectionY("_py",0,-1,"o");
+    }
+  }
+}
+
 void HistFrame::AllRebinDraw() {
   for (int npad = 0;npad<ndiv;npad++) {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
@@ -3304,13 +3337,7 @@ void HistFrame::AllRebinDraw() {
       OneRebinPreCalibr(pad_map[npad], hh, b_adj);
       //TAxis* ya = pad_map[npad]->hst->GetYaxis();
 
-
-      if (dopt[1].BeginsWith("x", TString::kIgnoreCase)) {
-	hh = ((TH2*)hh)->ProjectionX("_px",0,-1,"o");
-      }
-      else if (dopt[1].BeginsWith("y", TString::kIgnoreCase)) {
-	hh = ((TH2*)hh)->ProjectionY("_py",0,-1,"o");
-      }
+      ProjectXY(hh);
 
       double a1,a2,y1=1e99,y2=-1e99;
       X_Slider(hh,a1,a2);

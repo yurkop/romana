@@ -1150,6 +1150,10 @@ int CRS::Open_USB() {
   // создает и заполняет cy_list
 
   //cout << "Open_USB" << endl;
+  if (devname && devname->EqualTo("0")) {
+    ndev=0;
+    return ndev;
+  }
 
   if (!cy_list.empty())
     cyusb_close();

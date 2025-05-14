@@ -221,15 +221,14 @@ void Mdef::Fill_01(HMap* map, Float_t x, Double_t *hcut_flag, int ncut) {
     if (!map) return;
   }
 
-  //double ww = map->hst->GetXaxis()->GetBinWidth(1);
-  //double rr = ww*(rnd.Rndm(x)-0.5);
-  //cout << "addrnd: " << x << " " << ww << " " << rr << endl;
+  //prnt("ss f ds;",BGRN,"hcut_flag:",x,ncut,RST);
   if (opt.addrandom) {
     x += map->hst->GetXaxis()->GetBinWidth(1)*(rnd.Rndm(x)-0.5);
   }
   map->hst->Fill(x);
 
   if (opt.ncuts && !ncut) {
+    //prnt("ss f ds;",BRED,"hcut_flag:",x,ncut,RST);
     for (int i=1;i<opt.ncuts;i++) {
       //если в этой гистограмме задан cut i
       if (getbit(*(map->hd->cut+map->nn),i)) {
@@ -269,8 +268,8 @@ void Mdef::Fill_02(HMap* map, Float_t x, Float_t y, Double_t *hcut_flag,
 
 void Mdef::Fill_1d(EventClass* evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    // пропускаем импульсы с "плохим" Chan и где не найден пик
-    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+    // пропускаем неактивные каналы и где не найден пик
+    if (cpar.on[ipls->Chan] && ipls->Pos>-32222) {
       // вызываем Fill_01 для данной гистограммы и группы, которой она принадлежит
       Float_t x = (this->*GetX)(evt,&*ipls);
       Fill_01(v_map[ipls->Chan],x,hcut_flag,ncut);
@@ -285,8 +284,8 @@ void Mdef::Fill_1d(EventClass* evt, Double_t *hcut_flag, int ncut) {
 
 void Mdef::Fill_1d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    // пропускаем импульсы с "плохим" Chan и где не найден пик
-    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+    // пропускаем неактивные каналы и где не найден пик
+    if (cpar.on[ipls->Chan] && ipls->Pos>-32222) {
       // вызываем Fill_01 для данной гистограммы и группы, которой она принадлежит
       Float_t x = (this->*GetX)(evt,&*ipls);
       Time_Extend(ipls->Chan, x);
@@ -302,8 +301,8 @@ void Mdef::Fill_1d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut) {
 
 void Mdef::Fill_2d(EventClass* evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    // пропускаем импульсы с "плохим" Chan и где не найден пик
-    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+    // пропускаем неактивные каналы и где не найден пик
+    if (cpar.on[ipls->Chan] && ipls->Pos>-32222) {
       // вызываем Fill_02 для данной гистограммы
 
       Float_t x = (mx->*mx->GetX)(evt,&*ipls);
@@ -322,8 +321,8 @@ void Mdef::Fill_2d(EventClass* evt, Double_t *hcut_flag, int ncut) {
 
 void Mdef::Fill_2d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    // пропускаем импульсы с "плохим" Chan и где не найден пик
-    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+    // пропускаем неактивные каналы и где не найден пик
+    if (cpar.on[ipls->Chan] && ipls->Pos>-32222) {
       // вызываем Fill_02 для данной гистограммы
 
       Float_t x = (mx->*mx->GetX)(evt,&*ipls);
@@ -345,8 +344,8 @@ void Mdef::Fill_axay(EventClass* evt, Double_t *hcut_flag, int ncut) {
   int nmax = hd->bins2+1;
 
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    // пропускаем импульсы с "плохим" Chan и где не найден пик
-    if (ipls->Chan<nmax && ipls->Pos>-32222) {
+    // пропускаем неактивные каналы и где не найден пик
+    if (cpar.on[ipls->Chan] && ipls->Pos>-32222) {
       // вызываем Fill_02 для данной гистограммы
 
       AA[ipls->Chan] = 1e5+(mx->*mx->GetX)(evt,&*ipls);
@@ -375,7 +374,8 @@ void Mdef::Fill_HWRate(EventClass* evt, Double_t *hcut_flag, int ncut) {
     if (evt->pulses.empty()) return;
 
     for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-      if (ipls->Chan<opt.Nchan) { //отсекаем канал 255
+      // пропускаем неактивные каналы и отсекаем канал 255
+      if (cpar.on[ipls->Chan] && ipls->Chan!=255) {
 	double t1 = crs->fTime[ipls->Chan]*crs->sPeriod;
 	double t2 = evt->Tstmp*crs->sPeriod;
 	crs->fTime[ipls->Chan] = evt->Tstmp;
@@ -429,8 +429,8 @@ void Mdef::Fill_HWRate(EventClass* evt, Double_t *hcut_flag, int ncut) {
 void Mdef::FillMult(EventClass* evt, Double_t *hcut_flag, int ncut) {
   Float_t mult[NGRP+1] = {0};
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-    // пропускаем импульсы с "плохим" Chan и где не найден пик
-    if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
+    // пропускаем неактивные каналы и где не найден пик
+    if (cpar.on[ipls->Chan] && ipls->Pos>-32222) {
       mult[NGRP]++;
       for (int j=0;j<NGRP;j++)
 	if (opt.Grp[ipls->Chan][j])
@@ -529,7 +529,8 @@ void Mdef::Fill_FFT(HMap* map,Float_t* Data,int nbins,int ch,int ncut) {
 void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
     int ch = ipls->Chan;
-    if (ch<opt.Nchan && v_map[ch]) {
+    // пропускаем неактивные каналы
+    if (cpar.on[ch] && v_map[ch]) {
       int newsz = ipls->sData.size();
 
       TH1* hh = v_map[ch]->hst;
@@ -560,7 +561,8 @@ void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
 void Mdef::Fill_Ampl(EventClass* evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
     int ch = ipls->Chan;
-    if (ch<opt.Nchan) { // && v_map[ch] - не нужен, т.к. проверяется в Fill_01
+    // пропускаем неактивные каналы
+    if (cpar.on[ch]) {// && v_map[ch] - не нужен, т.к. проверяется в Fill_01
       for (auto j=ipls->sData.begin();j!=ipls->sData.end();++j) {
 	Fill_01(v_map[ch],*j,hcut_flag,ncut);
       }
@@ -922,6 +924,19 @@ Mdef* HClass::Add_h2(int id1, int id2) {
   Mlist.push_back(md);
 
   return &Mlist.back();
+}
+mdef_iter HClass::Add_file(const char *name) {
+  Mdef md;
+
+  md.name = name;
+  md.h_name = name; //не знаю, что это
+
+  md.hd = new Hdef();
+
+  //MFilelist.push_back(md);
+  return MFilelist.insert(MFilelist.end(),md);
+
+  //return &MFilelist.back();
 }
 
 bool check_Base(int num) {
@@ -1556,7 +1571,7 @@ void HClass::FillHist(EventClass* evt, Double_t *hcut_flag) {
     }
   }
 
-  //заполняем все гистограммы в Actlist
+  //заполняем все гистограммы в Mfill_list
   for (auto it = MFill_list.begin();it!=MFill_list.end();++it) {
     ((*it)->*(*it)->MFill)(evt,hcut_flag,0);
   }

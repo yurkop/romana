@@ -95,11 +95,14 @@ public:
   ClassDef(Mdef, CDEF)
 };
 
-typedef std::list<Mdef>::iterator mdef_iter;
+typedef std::vector<Mdef> mdef_list; //было std::list
+typedef std::vector<Mdef*> mdef_p_list; //было std::list
+typedef mdef_list::iterator mdef_iter;
 
 //-----------------------------------------------
 class HMap: public TNamed {
-
+  //Name: histogram name
+  //Title: folder name
  public:
 
   HMap();
@@ -228,22 +231,30 @@ class HClass {
 
   //HMap *cutmap[MAXCUTS];
 
-  TList* map_list; //list of basic maps (excluding cuts) 
+  TList* map_list; //list of basic maps (excluding cuts)
+  //map_list - owner: при удалении map_list удаляются все члены 
   TList* allmap_list; //list of all maps (including cuts)
+  //allmap_list - not owner: при удалении allmap_list члены не удаляются
   TList* dir_list; //list of folders
+  //dir_list - owner: при удалении dir_list удаляются все члены 
 
-  std::list<Mdef> Mlist; // содержит Hdef всех существующих Mdef
+  mdef_list Mlist; // содержит все существующие Mdef (содержащие Hdef)
   //в т.ч. несозданных гистограмм
   //создается при инициализации; может дополняться в Add_h2
+  //кроме гистограмм, считанных из root файла
 
-  //std::vector<Mdef*> Actlist; // содержит Hdef* всех активных (созданных) гистограмм
-  std::list<Mdef*> MFill_list; // содержит указатели! Mdef* всех
+  mdef_p_list MFill_list; // содержит указатели! Mdef* всех
   // активных (созданных) гистограмм (у которых hd.b=1) -
   // для которых вызывается MFill.
   // Заполняется в Make_hist
 
-  std::list<Mdef*> Mainlist; // содержит указатели! Mdef* всех гистограмм в Main
+  mdef_p_list Mainlist; // содержит указатели! Mdef* всех гистограмм в Main
+  // список нужен для заполнения cut-гистограмм в FillHist
   //заполняется в ??? (Ana_Start???)
+
+  mdef_list MFilelist; // содержит (не указатели!) Mdef гистограмм
+  // из файлов
+
 
   TVirtualFFT* fft[MAX_CH];
 
@@ -254,6 +265,7 @@ class HClass {
 
   void Make_Mlist();
   Mdef* Add_h2(int id1, int id2);
+  mdef_iter Add_file(const char *name);
   void Make_hist();
 
   mdef_iter Find_Mdef(int id);

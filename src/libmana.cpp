@@ -1112,6 +1112,7 @@ int main(int argc, char **argv)
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
     "-n module: skip header when opening file (assuming file is without header); set module number\n"
     "-m name: select module/device name (if several devices are connected)\n"
+    "-m 0: don't open USB device\n"
     "-l: print list of connected devices and exit\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
     "-b [outfile]: analyze file in batch mode (without gui) and exit\n"
@@ -1640,7 +1641,9 @@ void saveroot(const char *name) {
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     HMap* map = (HMap*) obj;
-    if (map->hst->GetEntries() > 0) {
+    //cout << "saveroot: " << map->GetName() << " " << map->hst->GetEntries() << " " << map->hst->Integral() << endl;
+    //if (map->hst->GetEntries() > 0) {
+    if (map->hst->Integral() > 0) {
       map->hst->Write();
     }
   }
@@ -1667,46 +1670,82 @@ void saveascii(const char *fname) {
 int readroot(const char *name) {
   //return 0 - OK; 1 - error
 
-  gROOT->cd();
-  // TList *list = hcl->hist_list;
+  cout << "readroot:" << endl;
+  //gROOT->cd();
   TList *list = hcl->allmap_list;
-  //list->ls();
 
   TFile *tf = new TFile(name,"READ");
   if (!tf->IsOpen())
     return 1;
+
+  mdef_iter md = hcl->Add_file(name);
+  //Mdef *md = --hcl->MFilelist.end();
 
   TIter next(tf->GetListOfKeys());
 
   TKey *key;
   TObject *obj;
   TH1* obj2;
+  int i=0;
   while ((key = (TKey*)next())) {
-    //key->Print();
-
     //cout << "key: " << key->GetClassName() << endl;
-    //continue;
-
-    //if (strcmp(key->GetClassName(),"Toptions")) {
     obj=key->ReadObj();
     if (obj->InheritsFrom(TH1::Class())) {
-      //obj->Print();
       //cout << "obj: " << obj->GetName() << endl;
-      HMap* map = (HMap*) list->FindObject(obj->GetName());
-      if (map) {
-	//cout << "map: " << map->GetName() << endl;
-	//continue;
-	obj2 = map->hst;
-	//printf("%d\n",obj2);
-	// cout << "readroot1: " << obj2 << " " << obj2->GetName() << " "
-	//      << ((TH1*) obj2)->Integral() << endl;
-	TDirectory* dir = obj2->GetDirectory();
-	obj->Copy(*obj2);
-	obj->Delete();
-	obj2->SetDirectory(dir);
-	// cout << "readroot2: " << obj2 << " " << obj2->GetName() << " "
-	//      << ((TH1*) obj2)->Integral() << endl;
-      }
+      TH1* hh = (TH1*) obj;
+      hh->SetDirectory(0);
+
+
+
+
+      hcl->MapHist(md,hh,i++);
+      //HMap* map = new HMap("f01",hh,0,0);
+
+
+
+
+
+      // TGPicture *pic_1d = (TGPicture*) gClient->GetPicture("h1_t.xpm");
+      // TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("h2_t.xpm");
+
+      // TGPicture *pic=0;
+      // TGListTreeItem *iroot=0;
+      // TGListTreeItem *idir=0;
+      // TGListTreeItem *item=0;
+
+      // TString title = TString(map->GetTitle());
+      // if (!HiFrm->fListTree->FindChildByName(0,title)) {
+      // 	idir = HiFrm->Item_Ltree(iroot, title,map,0,0);
+      // }
+      // if (map->hst->InheritsFrom(TH2::Class()))
+      // 	pic=pic_2d;
+      // else
+      // 	pic=pic_1d;
+
+      // HiFrm->Item_Ltree(idir, map->GetName(), map, pic, pic); 
+
+
+
+
+
+
+
+      // HMap* map = (HMap*) list->FindObject(obj->GetName());
+      // if (map) {
+      // 	TDirectory* dir = map->hst->GetDirectory();
+      // 	cout << "dir: " << dir->GetName() << " " << dir->GetTitle() << endl;
+      // }
+
+
+
+
+      // if (map) {
+      // 	obj2 = map->hst;
+      // 	TDirectory* dir = obj2->GetDirectory();
+      // 	obj->Copy(*obj2);
+      // 	obj->Delete();
+      // 	obj2->SetDirectory(dir);
+      // }
     }
       //}
 
@@ -1722,6 +1761,9 @@ int readroot(const char *name) {
     //daqpar->AllEnabled(false);
   }
 
+  HiFrm->Clear_Ltree();
+  HiFrm->Make_Ltree();
+
   //crs->chan_changed = true;
 
   //strcpy(maintitle,pr_name);
@@ -1731,6 +1773,7 @@ int readroot(const char *name) {
   //cout << opt.channels[0] << endl;
   return 0;
 }
+
 */
 
 int readroot(const char *name) {
@@ -1784,6 +1827,7 @@ int readroot(const char *name) {
 
   return 0;
 } //readroot
+
 
 void clear_hist() {
 
@@ -2801,7 +2845,9 @@ void MainFrame::MakeTabs(bool reb) {
   histpar->Update();
 
   //prtime("tab05",1,BGRN);
+  //prnt("sss;",BGRN,"hifrm:",RST);
   HiFrm->HiReset();
+  //prnt("sss;",BGRN,"hifrm:",RST);
 
   //prtime("tab06",1,BGRN);
   local_nch=opt.Nchan;
