@@ -1,3 +1,12 @@
+git tag -a v0.916 -m 'saveroot/readpar_root: 2D hist'
+- в Makefile HELP заменено на HELPPATH
+- добавлено Mdef::is2d()
+- добавлены clear_list_mdef(), list_mdef_to_Mlist(), After_ReadPar
+- Hdef стал дочерним от TNamed
+- saveroot и readpar_root умеют записывать/считывать и создавать 2D гистограммы
+- удалено очень много закомментированного мусора!
+
+
 git tag -a v0.915 -m 'запись HWRate в файл'
 - исправлен баг с незаписью HWRate в root файл: Integral вместо GetEntries
 - во всех hclass:*Fill* вместо Nchan используется cpar.on

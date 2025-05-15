@@ -2101,7 +2101,7 @@ void HistParDlg::AddHist_2d() {
 
   //добавляем
   for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
-    if (it->hnum > 100) { // 2d hist
+    if (it->is2d()) { // 2d hist
       AddLine_2d(frame2d,&*it);
     }
   }

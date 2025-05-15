@@ -130,7 +130,12 @@ std::list<TString> listpar;
 typedef std::list<TString>::iterator l_iter;
 
 std::vector<Mdef> list_mdef;
-//TList listmap2;
+//В list_mdef записываются все найденные в файле параметров переменные Hdef.
+//Для каждого Hdef создается свой Mdef, в нем создается новый Hdef.
+//Имя гистограммы записывается в h_name (для 2-мерной с разделителем '.'
+//Mdef добавляется в list_mdef в функции Read_Hdef
+//Все члены list_mdef сравниваются с hcl->Mlist. Если в Mlist такой уже
+//  существует, в него копируется содержимое члена list_mdef.
 
 int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
 
@@ -409,8 +414,8 @@ Int_t ClassToBuf(const char* clname, const char* varname, char* var, char* buf) 
   TIter nextd(lst);
   TDataMember *dm;
   while ((dm = (TDataMember *) nextd())) {
-    //prnt("ss ss;",BGRN,"CTB:",dm->GetName(),RST);
-    if (dm->GetDataType()) {
+    //prnt("ss s s xs;",BGRN,"CTB:",clname,dm->GetName(),dm->GetDataType(),RST);
+    if (dm->GetDataType()) { //GetDataType()=0 для сложных типов, например, Hdef
       len = strlen(dm->GetName())+1;
       memcpy(buf+sz,&len,sizeof(len));
       sz+=sizeof(len);
@@ -527,18 +532,20 @@ void OneVar(char* var, TDataMember* dm, char* data, UShort_t len,
 void Read_Hdef(char* data, UShort_t len, TString &varname, TString &memname) {
   Mdef* md=0;
   for (auto it=list_mdef.rbegin();it!=list_mdef.rend();++it) {
+    // если Mdef с таким именем уже есть в list_mdef -> md = указатель на него
     if (it->h_name.EqualTo(varname)) {
       md = &*it;
       //prnt("ssss;",BGRN,"Found: ",varname.Data(),RST);
       break;
     }
   }
+  // если Mdef не найдена, создаем новую
   if (!md) {
     list_mdef.push_back(Mdef());
     md = &list_mdef.back();
     md->hd = new Hdef();
     md->h_name = varname;
-    //prnt("ssss;",BRED,"Found: ",varname.Data(),RST);
+    //prnt("ssss;",BBLU,"New: ",varname.Data(),RST);
   }
 
   TList* l1 = TClass::GetClass("Hdef")->GetListOfDataMembers();
@@ -609,8 +616,47 @@ Mdef* Create_2d(Mdef* it) {
     res=hcl->Add_h2(id1,id2);
     //prnt("ss d ds;",BGRN,"C2d: ",id1,id2,RST);
   }
+  //prnt("ss d d xs;",BYEL,"C2d: ",id1,id2,res,RST);
   return res;
-  //cout << "C2d: " << s1 << " " << s2 << " " << m1 << " " << m2 << endl;
+}
+
+void clear_list_mdef() {
+  for (auto it=list_mdef.rbegin();it!=list_mdef.rend();++it) {
+    delete it->hd;
+  }
+  list_mdef.clear();  
+}
+
+void list_mdef_to_Mlist() {
+  // копируем Hdef, попутно создаем 2d-гистограммы
+  for (auto it=list_mdef.begin();it!=list_mdef.end();++it) {
+    Mdef* target = 0;
+    //bool found=0;
+    for (auto it2 = hcl->Mlist.begin();it2!=hcl->Mlist.end();++it2) {
+      if (it->h_name.EqualTo(it2->h_name)) { //найдено
+	//prnt("ss s ds;",BGRN,"Hdef+:",it->h_name.Data(),it->hd->b,RST);
+	target = &*it2;
+	//*(it2->hd) = *(it->hd);
+    	//found=1;
+    	break;
+      }
+    }
+    if (!target) { // не найдено - создаем?
+      //проверяем старые названия 2d гистограмм
+      check_old_2d(&*it);
+      //prnt("ss s ds;",BRED,"Hdef-:",it->h_name.Data(),it->hd->b,RST);
+      target = Create_2d(&*it);
+    }
+    else {// найдено - ничего не делаем
+      //prnt("sss ds;",BYEL,"Hdef+: ",it->h_name.Data(),it->hd->b,RST);
+    }
+
+    if (target) {
+      //prnt("ss s s fs;",BCYN,"Copy+:",it->h_name.Data(),it->hd->GetName(),it->hd->bins2,RST);
+      //копируем из it->hd(list_mdef) в target->hd(Mlist)
+      *(target->hd) = *(it->hd);
+    }
+  } //for it
 }
 
 int BufToClass(char* buf, char* buf2, int op) {
@@ -627,10 +673,7 @@ int BufToClass(char* buf, char* buf2, int op) {
   // Возвращает 1 - если копирование успешно
   //            0 - если произошла ошибка
 
-  for (auto it=list_mdef.rbegin();it!=list_mdef.rend();++it) {
-    delete it->hd;
-  }
-  list_mdef.clear();
+  clear_list_mdef();
 
   TString classname;
   TString varname;
@@ -679,10 +722,6 @@ int BufToClass(char* buf, char* buf2, int op) {
     }
 
     if (classname.EqualTo("Hdef")) { // read Hdef variables
-      //memname.Prepend('.');
-      //memname.Prepend(varname);
-
-      //cout << "Hdef: " << classname << " " << varname << " " << memname << endl;
       if (op)
 	Read_Hdef(data,len,varname,memname);
     }
@@ -741,32 +780,7 @@ int BufToClass(char* buf, char* buf2, int op) {
 
   } //while sz<size
 
-  // копируем Hdef, попутно создаем 2d-гистограммы
-  for (auto it=list_mdef.begin();it!=list_mdef.end();++it) {
-    Mdef* target = 0;
-    //bool found=0;
-    for (auto it2 = hcl->Mlist.begin();it2!=hcl->Mlist.end();++it2) {
-      if (it->h_name.EqualTo(it2->h_name)) { //найдено
-	target = &*it2;
-	//*(it2->hd) = *(it->hd);
-    	//found=1;
-    	break;
-      }
-    }
-    if (!target) { // не найдено - создаем?
-      check_old_2d(&*it);
-      //prnt("sss ds;",BRED,"Hdef-: ",it->h_name.Data(),it->hd->b,RST);
-      target = Create_2d(&*it);
-    }
-    else {// найдено - ничего не делаем
-      //prnt("sss ds;",BYEL,"Hdef+: ",it->h_name.Data(),it->hd->b,RST);
-    }
-
-    if (target) {
-      //копируем
-      *(target->hd) = *(it->hd);
-    }
-  } //for it
+  list_mdef_to_Mlist();
 
   // for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
   //   prnt("sss d ds;",BMAG,"Mlist: ",it->h_name.Data(),it->hd->b,it->hnum,RST);
@@ -1510,24 +1524,11 @@ int main(int argc, char **argv)
   //crs->Dummy_trd();
 
   //EvtFrm->StartThread();
-  //gClient->GetColorByName("yellow", yellow);
-  //cout << "Init end2" << endl;
 
   //prtime("theRun");
+
   theApp.Run();
 
-  //cout << "Init end3" << endl;
-  //return 0;
-
-  //fclose(fp);
-  //gzclose(fp);
-
-  /*
-  //printf("%d buffers\n",nbuf);
-  printf("%lld bytes\n",recd*2);
-  printf("%d events\n",nevent);
-  printf("%d bad events\n",bad_events);
-  */
   //HRPUT(0,(char*)"spectra.hbook",(char*)" ");
 
   //memcpy(buf2,buf[0],BSIZE);
@@ -1542,9 +1543,6 @@ void SplitFilename (string str, string &folder, string &name)
   folder = str.substr(0,found+1);
   name = str.substr(found+1);
   //cout << "spl1: " << str << ";" << folder << ";" << name << endl;
-  //strcpy(folder,str.substr(0,found+1).c_str());
-  //strcpy(name,str.substr(found+1).c_str());
-
 }
 
 void SplitFilename (string str, string &folder, string &name, string &ext)
@@ -1560,8 +1558,6 @@ void SplitFilename (string str, string &folder, string &name, string &ext)
     ext = fname.substr(found);
   }
   //cout << "spl2: " << str << ";" << folder << ";" << name << ";" << ext << endl;
-  //strcpy(name,fname.substr(0,found).c_str());
-  //strcpy(ext,fname.substr(found+1).c_str());
 }
 
 /*
@@ -1648,12 +1644,27 @@ void saveroot(const char *name) {
     }
   }
 
+  opt.l2d.Clear();
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->is2d()) {
+      // prnt("ss s s x f ds;",BRED,"MLst:",it->name.Data(),it->h_name.Data(),
+      // 	   it->hd,it->hd->bins2,it->hnum,RST);
+      it->hd->SetName(it->h_name);
+      //cout << it->hd->GetName() << endl;
+      opt.l2d.Add(it->hd);
+    }
+  }
+  //opt.l2d.ls();
+
   cpar.Write();
   opt.Write();
 
+  tf->Close();
+
+  opt.l2d.Clear();
+
   cout << "Histograms and parameters are saved in file: " << name << endl;
 
-  tf->Close();
 }
 
 void saveascii(const char *fname) {
@@ -1857,15 +1868,30 @@ int readpar_root(const char* pname, int ropt)
   //int r1 =
   cpar.Read("Coptions");
   //cout << "Coptions: " << r1 << " " << f2->GetKey("Coptions") << endl;
-  if (ropt)
+  if (ropt) {
     opt.Read("Toptions");
 
-  opt.raw_write=false;
-  opt.dec_write=false;
-  opt.root_write=false;
+    clear_list_mdef();
+    Hdef *d1 = (Hdef*) opt.l2d.First();
+    while (d1) {
+      list_mdef.push_back(Mdef());
+      Mdef* md = &list_mdef.back();
+      md->hd = d1;
+      md->h_name = d1->GetName();
+      //prnt("sss fs;",BMAG,"RNew: ",md->h_name.Data(),md->hd->bins2,RST);
+      d1 = (Hdef*)opt.l2d.After(d1);
+    }
+    list_mdef_to_Mlist();
+    clear_list_mdef();
+    opt.l2d.Clear();
+  } // if ropt
+
 
   f2->Close();
   delete f2;
+
+  crs->After_ReadPar(ropt);
+
   return 0;
 }
 
@@ -3410,7 +3436,6 @@ void MainFrame::DoReset() {
 
   UpdateTimer(1);
   //UpdateStatus(1);
-
 }
 
 void MainFrame::UpdateTimer(int rst) {
@@ -4069,7 +4094,7 @@ void MainFrame::HandleHelp() {
   char command[128];
 
   strcpy(command,"xdg-open ");
-  strcat(command,HELP);
+  strcat(command,HELPPATH"/help.pdf");
   int st = system( command );
 
   char* col=(char*)BGRN;

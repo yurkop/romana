@@ -366,6 +366,7 @@ RQ_OBJECT("CRS")
   //void SendParametr(const char* name, int len_out); //send one parameter
   void DoReset(int rst=1); //reset BPulses
   int DoFopen(char* oname, int copt, int popt);
+  void After_ReadPar(int op);
   int ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op);
   void SaveParGz(gzFile &ff, Short_t mod);
   void DoProf(Int_t nn, Int_t *aa, Int_t off);

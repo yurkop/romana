@@ -517,40 +517,6 @@ void PopFrame::AddDevice() {
 
 #endif
 
-/*
-#ifdef YUMO
-void PopFrame::AddYumo() {
-  fMain->SetWindowName("YUMO");
-
-  AddNum(hcl->yumo_x1,801,"x1 channel");
-  AddNum(hcl->yumo_x2,802,"x2 channel");
-  AddNum(hcl->yumo_y1,803,"y1 channel");
-  AddNum(hcl->yumo_y2,804,"y2 channel");
-
-  TGTextButton* fTest = new TGTextButton(fMain, "      &Test1      ",1);
-  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
-  fTest->SetToolTipText("Stop-Pusk (cmd4-cmd3) N times");
-  fMain->AddFrame(fTest, LayBut3);
-
-  fTest = new TGTextButton(fMain, "      &Test2      ",2);
-  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
-  fTest->SetToolTipText("Information N times");
-  fMain->AddFrame(fTest, LayBut3);
-
-  fTest = new TGTextButton(fMain, "      &Test3      ",3);
-  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
-  fTest->SetToolTipText("Command32(8) N times");
-  fMain->AddFrame(fTest, LayBut3);
-
-  fTest = new TGTextButton(fMain, "      &Test4      ",4);
-  fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
-  fTest->SetToolTipText("myM->DoStartStop(1) N[x2] times");
-  fMain->AddFrame(fTest, LayBut3);
-
-}
-#endif
-*/
-
 #ifdef P_TEST
 void PopFrame::AddTest() {
   fMain->SetWindowName("Test");
@@ -715,22 +681,6 @@ void PopFrame::DoENum() {
 void PopFrame::Do_Auto_Ecalibr()
 {
 
-  /*
-  TIter next(&chklist);
-  HMap* map;
-  while ( (map=(HMap*)next()) ) {
-    //int i = map->nn;
-
-    if (map->hst) {
-      double a1,a2;
-      HiFrm->X_Slider(map->hst,a1,a2);
-      double xm = map->hst->GetBinCenter(map->hst->GetMaximumBin());
-      cout << "mpp: " << map->GetName() << " " << xm << " " << endl;
-    }
-
-  }
-  */
-
   for (int i=0;i<MAX_CH+NGRP+1;i++) {
     adj[i][0]=0;
     adj[i][1]=1;
@@ -830,27 +780,6 @@ void PopFrame::Do_Ecalibr()
       delete[] chr;
     }
   }
-
-
-
-
-  // for (UInt_t i=0;i<HiFrm->ee_calib.size();++i) {
-  //   cout << "ee: " << i;
-  //   for (UInt_t j=0;j<HiFrm->ee_calib[i].size();++j) {
-  //     cout << " " << HiFrm->ee_calib[i][j];
-  //   }
-  //   cout << endl;
-  // }
-  
-
-
-
-
-  // string command = ".x ";
-  // command+=MACRO;
-  // command+="/test.C+";
-  // gROOT->ProcessLine(command.c_str());
-
 
   HiFrm->Do_Ecalibr(this);
 

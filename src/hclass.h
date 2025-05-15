@@ -19,8 +19,7 @@ class Mdef {
   // общее имя для всех гистограмм данного типа;
   // вектор указателей на мапы гистограмм (N штук).
   // сами указатели создаются при генерации гистограмм
-  // N [=v_map.size()] должно быть задано при создании Mdef
-  // (вектор должен быть создан)
+  // N [=v_map.size()] автоматически увеличивается при добавлении нового map
 public:
   Int_t hnum=0;
   // =1..49 - standard 1d hist
@@ -29,7 +28,7 @@ public:
   // =53 - mean FFT
   // =61 - prof
   // =62 - prof_int
-  // >100 - 2d hist
+  // >100 && <10000 - 2d hist
 
   size_t ptr=0; //offset of PulseClass member for VarPulse
 
@@ -92,6 +91,7 @@ public:
   //void MFDef_cut(EventClass* evt, int i) {};
   //void (Mdef::*MFill_cut)(EventClass* evt, int i) = &Mdef::MFDef_cut;
 
+  bool is2d(); //true if 2D (100<hnum<10000)
   ClassDef(Mdef, CDEF)
 };
 
@@ -172,45 +172,6 @@ class HClass {
   // Time;   7
 
   //static const int MAX_ING=256;
-
-
-  /*
-  HMap* m_rate[MAX_CH+NGRP]; // software rate in real time
-  HMap* m_hwrate[MAX_CH+NGRP]; // hardware counter in real time
-  HMap* m_mult[MAX_CH+NGRP]; // event multiplicity
-  HMap* m_area[MAX_CH+NGRP]; //area of the peak
-  //HMap* m_area0[MAX_CH+NGRP]; //area of the peak w/o bkg
-  HMap* m_base[MAX_CH+NGRP]; //baseline - background
-  HMap* m_slope1[MAX_CH+NGRP]; //slope1 - baseline
-  HMap* m_slope2[MAX_CH+NGRP]; //slope2 - peak
-  //HMap* m_simul[MAX_CH+NGRP]; //simul
-  HMap* m_height[MAX_CH+NGRP]; //height of the peak
-  HMap* m_time[MAX_CH+NGRP]; // time of flight
-  HMap* m_ntof[MAX_CH+NGRP]; // neutron time of flight
-  HMap* m_etof[MAX_CH+NGRP]; // Energy from time of flight
-  HMap* m_ltof[MAX_CH+NGRP]; // Wavelength from time of flight
-  HMap* m_per[MAX_CH+NGRP]; // period
-  HMap* m_width[MAX_CH+NGRP]; // width
-  HMap* m_width2[MAX_CH+NGRP]; // width
-  //HMap* m_width3[MAX_CH+NGRP]; // width
-
-  HMap* m_pulse[MAX_CH]; // pulse shape
-  HMap* m_deriv[MAX_CH]; // pulse shape (deriv)
-
-  HMap* m_axay[MAX_CH*(MAX_CH+1)/2];
-  HMap* m_area_base[MAX_CH];
-  HMap* m_area_sl1[MAX_CH];
-  HMap* m_area_sl2[MAX_CH];
-  HMap* m_slope_12[MAX_CH];
-  //HMap* m_time_simul[MAX_CH];
-  HMap* m_area_time[MAX_CH];
-  HMap* m_area_width[MAX_CH];
-  HMap* m_area_width2[MAX_CH];
-  HMap* m_area_ntof[MAX_CH];
-  HMap* m_prof[256];
-  HMap* m_prof64[6];
-
-  */
 
   //std::vector<int> vcuts; //vector of
   Mdef *md_prof;

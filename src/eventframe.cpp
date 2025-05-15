@@ -759,21 +759,6 @@ void EventFrame::DoFormula() {
 
 void EventFrame::DoSlider() {
 
-  /*
-  TGDoubleSlider *btn = (TGDoubleSlider *) gTQSender;
-  Int_t id = btn->WidgetId();
-
-  float x1,x2;
-  btn->GetPosition(x1,x2);
-
-  cout << id << endl;
-  printf("DosLider: %f %f\n",x1,x2);
-
-  //float dx=gx2-gx1;
-  //float dx1=dx*x1;
-  //float dx2=dx*x2;
-
-  */
   //printf("DosLider: %d\n",nEvents);
   if (crs->b_stop) {
     ReDraw();
@@ -884,40 +869,7 @@ void EventFrame::FillDeriv1(int dr, int i, PulseClass* pulse, double dt) {
 
   }
 }
-/*
-void EventFrame::FillCFD(int dr, int i, int delay, double frac, PulseClass* pulse, double dt) {
-  Int_t kk=opt.sDrv[pulse->Chan];
-  if (kk<1) kk=1;
-  if (kk>(Int_t)pulse->sData.size()) kk=(Int_t)pulse->sData.size();
 
-  for (Int_t j=0;j<(Int_t)pulse->sData.size();j++) {
-    Gr[dr][i]->GetX()[j]=(j+dt);
-    double d0,d1,cfd;
-    int k0;
-    int j0 = j-delay;
-
-    if (j0>0 && j0<(Int_t)pulse->sData.size()) {
-      j0<kk ? k0=0 : k0=j0-kk;
-
-      d0=(pulse->sData[j0]-pulse->sData[k0])*frac;
-
-      if (opt.b_peak[11] && pulse->Area) { //normalize
-	dd*=1000/pulse->Area;
-      }
-
-      Gr[dr][i]->GetY()[j]=dd;
-
-      if (dd<gy1[dr][i])
-	gy1[dr][i]=dd;
-      if (dd>gy2[dr][i])
-	gy2[dr][i]=dd;
-    }
-    else {
-      Gr[dr][i]->GetY()[j]=0;
-    }
-  }
-}
-*/
 void EventFrame::FillGraph(int dr) {
   //Float_t dat[40000];
   //Float_t *pdat=0;
@@ -1126,28 +1078,9 @@ void EventFrame::DrawEvent2() {
   //cv->SetEditable(true);
   cv->Clear();
   
-  //cout << "draw1: " << Pevents << " " << &crs->Levents.back() << endl;
-  //cout << "draw111: " << Pevents->empty() << endl;
-
-  //cv->Update();
-  //int nnn=0;
-  //if (Pevents) nnn=Pevents->size();
-  //printf("DrawEvent0: %p %d %p %d\n",Pevents,nnn,crs->Pevents,crs->Pevents.size());
-
   if (Pevents->empty()) {
     return;
   }
-  /*
-  if (Pevents->empty()) {
-    txt.DrawTextNDC(0.2,0.7,"Empty event");
-    cv->Update();
-    //cout << "draw1a:" << endl;
-    //Emut2.UnLock();
-    return;
-  }
-  */
-  //cout << "draw1a:" << endl;
-
 
   char ss[99];
   sprintf(ss,"%lld",d_event->Nevt);
@@ -1169,22 +1102,6 @@ void EventFrame::DrawEvent2() {
     //Emut2.UnLock();
     return;
   }
-
-  /*
-  if (d_event->Spin & 128) {
-
-    // for (UInt_t i=0;i<d_event->pulses.size();i++) {
-    //   PulseClass *pulse = &d_event->pulses.at(i);
-    //   UInt_t ch= pulse->Chan;
-    //   prnt("ss d d d d ds;",KGRN,"DrEv2:",d_event->Spin,
-    // 	   d_event->pulses.size(),i,ch,pulse->Spin,RST);
-    // }
-
-    txt.DrawTextNDC(0.2,0.7,"Start trigger event");
-    cv->Update();
-    return;
-  }
-  */
 
   ULong64_t mask=0;
   ULong64_t one=1;
@@ -1512,25 +1429,6 @@ void EventFrame::ReDraw() {
 	  */
 	  if (opt.b_peak[0]) { //draw text & shape
 	    DrawShapeTxt(pulse);
-	    /*
-	    char ss[256];
-	    sprintf(ss,"Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f",
-		    pulse->Chan,pulse->Area,pulse->Base,
-		    pulse->Time,pulse->Width);
-
-	    tt.SetTextAlign(0);
-	    double sz=0.025*ndiv;
-	    tt.SetTextSize(sz);
-	    tt.SetTextColor(chcol[pulse->Chan]);
-	    double dd=0.74*2.0/32;
-
-	    tt.DrawTextNDC(0.17+tx*0.35,0.85-ty*dd,ss);
-	    tx++;
-	    if (tx>1) {
-	      tx=0;
-	      ty++;
-	    }
-	    */
 	  }
 	}
       } //for (UInt_t j=0;j<d_event->pulses.size();j++) {

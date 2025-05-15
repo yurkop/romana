@@ -342,15 +342,6 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   //tOpt->Connect("TextChanged(char*)", "ParDlg", parpar, "DoTxt()");
   tOpt->Connect("TextChanged(char*)", "HistFrame", this, "DoDrawopt()");
 
-  // TGNumberEntryField* fN =
-  //   new TGNumberEntryField(fHor4, 0, 7, TGNumberFormat::kNESInteger,
-  // 			   TGNumberFormat::kNEAPositive,
-  // 			   TGNumberFormat::kNELLimitMinMax,
-  // 			   1,1000);
-  // fN->SetToolTipText("Rebin all checked histograms (only for drawing)");
-  // fN->SetWidth(36);
-  // fHor4->AddFrame(fN, LayLC1);
-
   //-- Cuts
 
   fCutTree = new TGListTree(gCanvas2, kVerticalFrame);
@@ -1036,123 +1027,6 @@ void HistFrame::AddMainCuts(HMap* map) {
   }
 }
 
-/*
-void HistFrame::DoCheck(TObject* obj, Bool_t check)
-{
-  HMap* map;
-
-  TGListTreeItem *item = fListTree->GetFirstItem();
-  item = fListTree->FindItemByObj(item,obj);
-
-  cout << "DoCheck: " << obj << " " << item << " " << obj->GetName() << " " << obj->GetTitle() << endl;
-  // if (item) {
-  //   cout << "DoCheck: " << item->GetText() << endl;
-  //   cout << "DoCheck: " << item->GetParent() << endl;
-  //   cout << "DoCheck: " << item->GetUserData() << " " << check << endl;
-  // }
-
-  if (item) {
-    // if (item->GetParent()) { //single item
-    //   if (!TString(item->GetParent()->GetText()).Contains("MAIN",TString::kIgnoreCase)) { //not in MAIN* folder
-    // 	map = (HMap*) item->GetUserData();
-    // 	if (map) {
-    // 	  prnt("ss ds;",BGRN,"Chk1:",*(map->hd->c+map->nn),RST);
-    // 	  *(map->hd->c+map->nn) = item->IsChecked();
-    // 	  prnt("ss ds;",BBLU,"Chk2:",*(map->hd->c+map->nn),RST);
-    // 	}
-    //   }
-    // }
-    if (item->GetParent()) { //single item
-      map = (HMap*) item->GetUserData();
-      if (map) {
-	char path[256];
-	fListTree->GetPathnameFromItem(item, path, 0);
-	cout << map->GetName() << " " << map->GetTitle() << " "
-	     << item << " " << item->IsChecked() << " " << path << endl;
-	prnt("ss ds;",BGRN,"Chk1:",*(map->hd->c+map->nn),RST);
-	*(map->hd->c+map->nn) = item->IsChecked();
-	prnt("ss ds;",BBLU,"Chk2:",*(map->hd->c+map->nn),RST);
-      }
-    }
-    else { //folder
-      if (!TString(item->GetText()).Contains("MAIN",TString::kIgnoreCase)) { //not MAIN* folder
-	TGListTreeItem *item2 = item->GetFirstChild();
-	while (item2) {
-	  map = (HMap*) item2->GetUserData();
-	  if (map) {
-	    *(map->hd->c+map->nn) = item->IsChecked();
-	  }
-	  item2 = item2->GetNextSibling();
-	}
-      }
-    }
-  }
-
-  if (crs->b_stop)
-    Update();
-  else
-    changed=true;
-
-}
-*/
-
-// void HistFrame::OneCheck() {
-//   if (b_main) { //папка MAIN*
-//     setbit(opt.wrk_check[i],ncut,item->IsChecked());
-//     prnt("ss s s d d ds;",BGRN,"main1:",idir->GetText(),item->GetText(),ncut,i,(int)getbit(opt.wrk_check[i],ncut),RST);
-//     i++;
-//     if (i>=M_WCHK) break;
-//   }
-//   else { //не MAIN*
-//     map = (HMap*) item->GetUserData();
-//     if (map) {
-//       *(map->hd->c+map->nn) = item->IsChecked();
-//     }
-//   }
-//   item=item->GetNextSibling();
-// }
-
-/*
-void HistFrame::DoCheck(TObject* obj, Bool_t check)
-{
-  HMap* map;
-
-  TGListTreeItem *idir = fListTree->GetFirstItem();
-  while (idir) {
-    TGListTreeItem *item = idir->GetFirstChild();
-    bool b_main=TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase);
-    if (b_main) { //папка MAIN*
-      int ncut = stoi(numstr(idir->GetText()));
-      if (ncut<0)
-	ncut=0;
-      cout << "ct: " << idir->GetText() << " " << ncut << endl;
-      for (int i=0;i<M_WCHK;i++) {
-	setbit(opt.wrk_check[i],ncut,item->IsChecked());
-	prnt("ss s s d d ds;",BGRN,"main1:",idir->GetText(),item->GetText(),ncut,i,(int)getbit(opt.wrk_check[i],ncut),RST);
-	item=item->GetNextSibling();
-	if (!item) break;
-      }
-    }
-    else { //не MAIN*
-      while (item) {
-	map = (HMap*) item->GetUserData();
-	if (map) {
-	  *(map->hd->c+map->nn) = item->IsChecked();
-	}
-	item=item->GetNextSibling();
-      }
-    }
-    idir=idir->GetNextSibling();
-  }
-
-  if (crs->b_stop)
-    Update();
-  else
-    changed=true;
-
-}
-*/
-
 void HistFrame::OptToCheck() {
   HMap* map;
 
@@ -1543,13 +1417,6 @@ void HistFrame::MakeROI(TPolyLine *pl, HMap* map) {
 
     ItemROI(map,iroi);    
   }
-
-  // cout << "r: " << iroi << " " << map->GetName() << " " << map->GetTitle() << endl;
-  // for (int i=0;i<MAXROI;i++) {
-  //   cout << "roi: " << i << " " << map->hd->roi[i][0]
-  // 	 << " " << map->hd->roi[i][1] << endl;
-  // }
-
 }
 
 void HistFrame::CutClick(TGListTreeItem* item,Int_t but) {
@@ -1685,13 +1552,6 @@ void HistFrame::AddFormula() {
     
   }
 }
-
-// void HistFrame::DoFormula() {
-//   TGTextEntry *te = (TGTextEntry*) gTQSender;
-//   //Int_t id = te->WidgetId();
-//   strcpy(opt.cut_form,te->GetText());
-//   //cout << "DoFormula: " << te->GetText() << " " << opt.formula << endl;
-// }
 
 void HistFrame::ClearCutG()
 {
@@ -1925,146 +1785,7 @@ void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
   pm->SetMarkerColor(kRed);
   pm->SetMarkerSize(1.3);
 
-
-  //int i1=
-  //for (
 }
-
-
-/*
-void HistFrame::PeakSearch(TH1* hh, TH1* h2, double dist, double thresh) {
-  std::vector<double> ipeaks;
-  std::vector<double> peaks;
-
-  // предыдущий пик
-  double p_prev;
-  int i_prev;
-  // текущий пик
-  double p_current;
-  int i_current;
-  
-  double cprev=-1e99;
-  int iprev=0;
-  bool in_peak=false;
-
-  double pk=-1e99;
-  int ipk=0;
-
-  if (thresh>1) thresh=1;
-  double max = hh->GetBinContent(hh->GetMaximumBin())*thresh;
-
-  hh->Copy(*h2);
-  hsmooth(h2,10);
-  hsmooth(h2,10);
-  hderiv(h2);
-  cout << "ipeaks: " << ipeaks.size() << endl;
-  return;
-  
-  for (auto i=hh->GetXaxis()->GetFirst();i<hh->GetXaxis()->GetLast();i++) {
-    double cc=hh->GetBinContent(i);
-
-    if (cc>=max) { // в пике
-      in_peak=true;
-      if (cc>pk) {
-	pk=cc;
-	ipk=i;
-      }
-    }
-    else { //cc<max
-      if (in_peak) { //только вышли из пика
-	int idif = ipk - ipeaks.back();
-	if (idif > dist) {
-	  
-	}
-
-
-	in_peak=false;
-      }
-    } // else //cc<max
-  } //for
-    
-
-
-  TPolyMarker * pm =
-    (TPolyMarker*)hh->GetListOfFunctions()->FindObject("TPolyMarker");
-  if (pm) {
-    hh->GetListOfFunctions()->Remove(pm);
-    delete pm;
-  }
-  pm = new TPolyMarker(ipeaks.size(), ipeaks.data(), peaks.data());
-  hh->GetListOfFunctions()->Add(pm);
-  pm->SetMarkerStyle(23);
-  pm->SetMarkerColor(kRed);
-  pm->SetMarkerSize(1.3);
-
-
-
-  prnt("ss ds;",BGRN,"pks:",peaks.size(),RST);
-}
-*/
-
-/*
-void HistFrame::PeakSearch(TH1* hh, double sig1, double sig2) {
-  //cout << "srch: " << hh->GetXaxis()->GetFirst() << " " << hh->GetXaxis()->GetLast() << endl;
-  std::vector<double> ipeaks;
-  std::vector<double> peaks;
-  double cprev=-1e99;
-  int iprev=0;
-  bool in_peak=false;
-  double pk=0;
-  int ipk=0;
-  for (auto i=hh->GetXaxis()->GetFirst();i<hh->GetXaxis()->GetLast();i++) {
-    double cc=hh->GetBinContent(i);
-    if (!in_peak) { // не в пике - ищем
-      if (cc<cprev) {
-	// если текущая точка ниже предыдущей -> предыдущая пик-кандидат
-	ipk=iprev;
-	pk=cprev;
-	in_peak=true;
-	//здесь тоже нужно проверить сигму?
-      }
-      // иначе ничего не делаем
-    }
-    else { // в пике
-      if (cc<pk) { // если ниже пика - проверяем сигму
-	if (cc*2<pk) { // достигли полувысоты
-	  if (i-ipk
-	}
-
-	
-	  ipeaks.push_back(ipk);
-	  peaks.push_back(pk);
-	  in_peak=false;
-      }
-      else { // если выше пика - выходим
-	in_peak=false;
-      }
-    }
-
-    iprev=i;
-    cprev=hh->GetBinContent(i);
-  } //for
-
-
-
-  TPolyMarker * pm =
-    (TPolyMarker*)hh->GetListOfFunctions()->FindObject("TPolyMarker");
-  if (pm) {
-    hh->GetListOfFunctions()->Remove(pm);
-    delete pm;
-  }
-  pm = new TPolyMarker(ipeaks.size(), ipeaks.data(), peaks.data());
-  hh->GetListOfFunctions()->Add(pm);
-  pm->SetMarkerStyle(23);
-  pm->SetMarkerColor(kRed);
-  pm->SetMarkerSize(1.3);
-
-
-
-  prnt("ss ds;",BGRN,"pks:",peaks.size(),RST);
-
-}
-*/
 
 void HistFrame::MeanPeaks(TH1* hh, std::vector<vpeak> &vv,
 			 double* par, double* err, size_t i) {
@@ -2134,57 +1855,6 @@ void HistFrame::FitPeaks(TH1* hh, std::vector<vpeak> &vv,
 
   par[3]*=2.35;
   err[3]*=2.35;
-
-  //prnt("ss f f fs;",BGRN,"pk: ",par[0],par[1],par[2],RST);
-  //prnt("ss f f fs;",BBLU,"er: ",err[0],err[1],err[2],RST);
-
-
-    // for (auto i=0;i<f1->GetNpar();i++) {
-    // double rr = pow(10,round(log10(err[i]))-1);
-    // par[i] = round(par[i]/rr);
-    // par[i]*=rr;
-    // err[i] = round(err[i]/rr);
-    // err[i]*=rr;
-    // printf("%0.3g %0.1e %f %f\n",par[i],err[i],log10(err[i]),rr);
-    // //sprintf("%0.1e",ss,err[i]);
-    // //string str=ss;
-    // //double a=str
-    // }
-    // //prnt("ss d f d f fs;",BGRN,"pk1: ",j,peaks[j],bin,sig,width,RST);
-
-
-  /*
-  char s1[50],s2[100];
-  double A = par[0] / (sqrt(2*TMath::Pi())*par[2]);
-  sprintf(s1," %10.4g",A);
-  snprintf(s2,50,"%20s",s1);
-  vfit[0]+=s2;
-
-  for (auto i=0;i<3;i++) {
-    sprintf(s1," %10.4g#pm%0.3g",par[i],err[i]);
-    snprintf(s2,50,"%20s",s1);
-    //cout << i << " " << ss << endl;
-    vfit[i+1]+=s2;
-  }
-  */
-
-    // std::ostringstream oss;
-    // oss << par[1] << "(" << err[1] << ")";
-    // oss << " " << par[0] << "(" << err[0] << ")";
-    // oss << " " << par[2] << "(" << err[2] << ")";
-
-    // vfit.push_back(oss.str());
-
-
-
-  // oss << pp->p;
-  // for (auto i=0;i<3;i++) {
-  // 	oss << " " << par[i] << "(" << err[i] << ")";
-  // }
-
-
-  //cout << hh->GetTitle() << " " << oss.str() << endl;
-
 }
 
 void HistFrame::DoPeaks(TH1* hh) {
@@ -2194,17 +1864,6 @@ void HistFrame::DoPeaks(TH1* hh) {
 
   TSpectrum spec;
   vector<string> fitres;
-
-  //if (hh->GetDimension()>1) continue;
-
-    // TIter next(hh->GetListOfFunctions());
-    // TObject* obj;
-    // while ( (obj=(TObject*)next()) ) {
-    //   //cout << "item: " << obj << endl;
-    //   hh->GetListOfFunctions()->Remove(obj);
-    //   delete obj;
-    // }
-
 
   std::vector<string> vfit;
   std::vector<vpeak> vv;
@@ -2252,19 +1911,6 @@ void HistFrame::DoPeaks(TH1* hh) {
     hh->GetListOfFunctions()->Add(new TLine(vv[i].b2,y1,vv[i].b2,y2));
     //prnt("ss f f f fs;",BGRN,"vv:",vv[i].b1,y1,vv[i].b2,y2,RST);
 
-    // char s1[50],s2[100];
-    // double A = par[0] / (sqrt(2*TMath::Pi())*par[2]);
-    // sprintf(s1," %10.4g",A);
-    // snprintf(s2,50,"%20s",s1);
-    // vfit[0]+=s2;
-
-    // for (auto i=0;i<3;i++) {
-    //   sprintf(s1," %10.4g#pm%0.3g",par[i],err[i]);
-    //   snprintf(s2,50,"%20s",s1);
-    //   //cout << i << " " << ss << endl;
-    //   vfit[i+1]+=s2;
-    // }
-
   } // for i (vv)
 
   TPaveText *pt = new TPaveText(.6,0.6,.95,.9,"NDC");
@@ -2311,14 +1957,6 @@ void HistFrame::PeakFit(HMap* map,TH1* hist1,TH1* hist2,int nn,d2vect &d2) {
 
   //d2vect dd;
 
-  /*
-  cout << "peak: " << iroi;
-  for (UInt_t i=2;i<ee_calib[nn].size();i+=2) {
-    cout << " " << ee_calib[nn][i-1] << " " << ee_calib[nn][i];
-  }
-  cout << endl;
-  return;
-  */
   int np; //number of parameters
   TString str;
   dvect fpar;
@@ -2374,12 +2012,6 @@ void HistFrame::PeakFit(HMap* map,TH1* hist1,TH1* hist2,int nn,d2vect &d2) {
     d2[1].push_back(ee_calib[nn][i-1]);
 
   } //for i
-
-  // cout << str << " " << np << " " << d2.size() << " " << fpar.size() << endl;
-  // for (UInt_t i=0;i<fpar.size();i++) {
-  //   cout << " " << fpar[i];
-  // }
-  // cout << endl;
 
   TF1* f1=new TF1("fitf",str,x1,x2);
   f1->SetParameters(fpar.data());
@@ -2497,11 +2129,7 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
 	d2.push_back(dvect());
       }
       for (UInt_t i=0;i<ee_calib.size();++i) {
-	//int iroi = pl->GetX()[i];
-	//xx[i]=pl->GetY()[i];
-	//cout << "p1: " << i << endl;
 	PeakFit(map,hist1,hist2,i,d2);
-	//cout << "p2: " << i << endl;
       }
 
       //TCanvas* c1 = new TCanvas("c1","c1");
@@ -2512,16 +2140,7 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
       Item_Ltree(idir1, map1->GetName(), map1, pic, pic);
       delete hist2;
 
-      // cout << "11: " << map->GetName() << " " << d2[0].size()
-      // 	   << " " << d2[1].size()
-      // 	   << " " << d2[2].size()
-      // 	   << endl;
-
-      // for (UInt_t i=0;i<d2[0].size();i++) {
-      // 	cout << i << " " << d2[0][i] << " " << d2[1][i] << " " << d2[2][i] << endl;
-      // }
-      
-      //TGraphErrors* gr = new TGraphErrors(pl->GetN(),yy,xx,er,0);
+            //TGraphErrors* gr = new TGraphErrors(pl->GetN(),yy,xx,er,0);
       TGraphErrors* gr =
 	new TGraphErrors(d2[0].size(),d2[0].data(),d2[1].data(),d2[2].data(),0);
       //cout << "11a: " << map->GetName() << endl;
@@ -2648,65 +2267,6 @@ void HistFrame::Do_Tcalibr(PopFrame* pop) {
 
   HiUpdate();
 } //Do_Tcalibr
-
-/*
-void HistFrame::Do_Ecalibr()
-{
-  double sig = myM->p_pop->fwhm/2.35;
-  double width = myM->p_pop->range;
-  double* ee = myM->p_pop->ee;
-  
-  cout << "eee: " << sig << endl;
-  //return;
-
-  TSpectrum spec;
-
-  int nch;
-  int nn=1;
-  TIter next(st_hlist);
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    if (!fEc->GetCanvas()->GetPad(nn)) break;
-    fEc->GetCanvas()->cd(nn);
-    TH1 *hh = (TH1*) obj;
-    string str(hh->GetName());
-    size_t found = str.find_last_of("_");
-    std::stringstream ss(str.substr(found+1));
-    ss >> nch;
-
-    //cout << "hhh: " << hh->GetTitleSize() << endl;
-    //hh->Draw();
-    int npk = spec.Search(hh,sig,"",0.5);
-#if ROOT_VERSION_CODE > ROOT_VERSION(6,0,0)
-    Double_t* peaks = spec.GetPositionX();
-#else
-    Float_t* peaks = spec.GetPositionX();
-#endif
-    for (int j=0;j<npk;j++) {
-      //int bin = hh->FindFixBin(peaks[j]);
-
-      TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",peaks[j]-width,peaks[j]+width);
-      //cout << f1->GetNpar() << endl;
-      f1->SetParameters(spec.GetPositionY()[j],peaks[j],sig,0,0);
-
-      //f1->Print();
-      const char* fitopt="NQ+";
-      if (j==0) fitopt="NQ";
-
-      //TF1* fitf=new TF1("fitf","gaus",0,10);
-      hh->Fit(f1,fitopt,"",peaks[j]-width,peaks[j]+width);
-      f1->Draw("same");
-      opt.E1[nch]*=ee[0]/f1->GetParameter(1);
-      cout << "hist: " << nch << " " << opt.E1[nch] << " " << hh->GetName() << " " << f1->GetParameter(1) << endl;
-    }
-    nn++;
-  }
-  //fEc->GetCanvas()->SetEditable(true);
-  fEc->GetCanvas()->Update();
-  //fEc->GetCanvas()->SetEditable(false);
-
-}
-*/
 
 void HistFrame::DoUnZoom() {
   fHslider->SetPosition(0,1);
@@ -3147,24 +2707,6 @@ void HistFrame::DrawHist() {
     } //while ( (obj=(TObject*)next()) )
   } //if cpads
   else { //не изменилось -> заполняем старые копии гистограмм
-    /*
-    HMap *map = (HMap*) hmap_chklist->First();
-    while (map) {
-      if (ii>=opt.icheck) {
-	if (npad>=(int)pad_map.size())
-	  return true;
-	if (map != pad_map[npad])
-	  return true;
-	//cout << "npad: " << npad << " " << pad_map.size()
-	//<< " " << map-pad_map[npad] << endl;
-	npad++;
-	if (npad>=ndiv)
-	  break;
-      }
-      map = (HMap*) hmap_chklist->After(map);
-      ii++;
-    }
-    */
   }
 
   // draw pad_hist
@@ -3216,18 +2758,6 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
     }
 
 
-    /*
-    hold = ((TH1F*)map->hst)->GetArray();
-    hnew = ((TH1F*)hist)->GetArray();
-    memset(hnew,0,((TH1F*)hist)->GetSize()*sizeof(*hnew));
-
-    //hist->Reset();
-    for (int i=0;i<nx;i++) {
-      int j=i/rb;
-      hnew[j+1]+=hold[i+1];
-    }
-    */
-
     hist->Reset();
     for (int i=0;i<nx;i++) {
       int j=i/rb;
@@ -3236,78 +2766,32 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
 
   }
   else { //2d hist
-    // if (dopt[1].BeginsWith("QQ", TString::kIgnoreCase)) { //X projection
-    //   Int_t ny = map->hst->GetNbinsY();
-    //   hist->SetBins(newx,xmin,xmax);
-    //   hnew = ((TH1F*)hist)->GetArray();
-    //   memset(hnew,0,((TH1F*)hist)->GetSize()*sizeof(*hnew));
+    Int_t ny = map->hst->GetNbinsY();
+    Int_t rb2=map->hd->rb2;
+    if (rb2<1)
+      rb2=1;
+    if (rb2>ny)
+      rb2=ny;
 
-    //   for (int i=0;i<nx;i++) {
-    // 	int i2=i/rb;
-    // 	for (int j=0;j<ny;j++) {
-    // 	  hist->AddBinContent(hist->GetBin(i2+1),
-    // 			      map->hst->GetBinContent(i+1,j+1));
-    // 	}
-    //   }
-    // }
-    // else { //real 2d
-      Int_t ny = map->hst->GetNbinsY();
-      Int_t rb2=map->hd->rb2;
-      if (rb2<1)
-	rb2=1;
-      if (rb2>ny)
-	rb2=ny;
+    Int_t newy = ny/rb2;
+    TAxis* ya = map->hst->GetYaxis();
+    Double_t ymin  = ya->GetXmin();
+    Double_t ymax  = ya->GetXmax();
 
-      Int_t newy = ny/rb2;
-      TAxis* ya = map->hst->GetYaxis();
-      Double_t ymin  = ya->GetXmin();
-      Double_t ymax  = ya->GetXmax();
+    ((TH2*) hist)->SetBins(newx,xmin,xmax,newy,ymin,ymax);
 
-      ((TH2*) hist)->SetBins(newx,xmin,xmax,newy,ymin,ymax);
+    //hnew = ((TH2F*) hist)->GetArray();
+    //memset(hnew,0,((TH2F*)hist)->GetSize()*sizeof(*hnew));
 
-      //hnew = ((TH2F*) hist)->GetArray();
-      //memset(hnew,0,((TH2F*)hist)->GetSize()*sizeof(*hnew));
-
-      hist->Reset();
-      for (int i=0;i<nx;i++) {
-	int i2=i/rb;
-	for (int j=0;j<ny;j++) {
-	  int j2=j/rb2;
-	  hist->AddBinContent(hist->GetBin(i2+1,j2+1),
-			      map->hst->GetBinContent(i+1,j+1));
-	}
+    hist->Reset();
+    for (int i=0;i<nx;i++) {
+      int i2=i/rb;
+      for (int j=0;j<ny;j++) {
+	int j2=j/rb2;
+	hist->AddBinContent(hist->GetBin(i2+1,j2+1),
+			    map->hst->GetBinContent(i+1,j+1));
       }
-    // } //real 2d
-
-    /*
-    cout << "hist: " << hist->GetName() << " " << hist << endl;
-
-    TH1* hist2 = (TH1*) hist->Clone();
-    delete hist;
-    hist = hist2;
-
-    cout << "hist2: " << hist->GetName() << " " << hist << endl;
-
-    std::vector <TH1*>::iterator ih;
-    for (ih = pad_hist.begin(); ih != pad_hist.end(); ++ih) {
-      cout << "pad_hist: " << (*ih)->GetName() << " " << (*ih) << endl;
-      break;
     }
-    */
-
-    /*
-    if (dopt[1].BeginsWith("x", TString::kIgnoreCase)) {
-      TH1* hist2 = ((TH2*)hist)->ProjectionX();
-      delete hist;
-      hist = hist2;
-    }
-    else if (dopt[1].BeginsWith("y", TString::kIgnoreCase)) {
-      TH1* hist2 = ((TH2*)hist)->ProjectionY();
-      delete hist;
-      hist = hist2;
-    }
-    */
-
   }
 
   hist->ResetStats();
@@ -3363,24 +2847,6 @@ void HistFrame::AllRebinDraw() {
 	}
 
 	hh->Draw(dopt[0].Data());
-
-	// gPad->Update();
-	// TPaveStats *st = (TPaveStats*)hh->FindObject("stats");
-	// if (st)
-	//   cout << "stt: " << st->GetY1() << " " << st->GetY2() << " " << st->GetTextFont() << " " << gStyle->GetOptStat() << " " << gStyle->GetOptFit() << " " << gStyle->GetStatFontSize() << endl;
-
-
-
-
-	// cout << "padhist: " << pad_hist[npad]->GetName()
-	// 	   << " " << pad_hist[npad]->GetOption()
-	// 	   << " " << pad_hist[npad]->GetSumw2N()
-	// 	   << endl;
-
-	// TSpectrum ts;
-	// TH1* bkg = ts.Background(pad_hist[npad],40);
-	// bkg->SetLineColor(2);
-	// bkg->Draw("samehist");
       }
       else { //2D hist or projection
 	//cout << "dopt: " << dopt[1].Data()+1 << endl;
@@ -3497,27 +2963,6 @@ void HistFrame::DrawRoi(Hdef* hd, TVirtualPad* pad) {
   //}
 }
 
-/*
-void HistFrame::DrawHist()
-{
-
-  TCanvas *cv=fEc->GetCanvas();
-  cv->Clear();
-  cv->Divide(xdiv,ydiv);
-  //cv->Update();
-  //cout <<"dr1b: " << fEc << " " << fEc->GetCanvas() << endl;
-  //cout <<"dr2: " << hmap_chklist << endl;
-  //return;
-
-  for (int i=0;i<ndiv;i++) {
-    cv->cd(i+1);
-    //h_ampl[i]->Draw();
-  }
-  //return;
-  //cout <<"dr3:" << endl;
-  cv->Update();
-}
-*/
 void HistFrame::ReDraw()
 {
 
@@ -3539,21 +2984,7 @@ void HistFrame::ReDraw()
   else {
     //cout << "unchanged: " << cv << endl;
     AllRebinDraw();
-    // for (int i=0;i<ndiv;i++) {
-    //   //cv->GetPad(i+1)->Modified(1);
-    //   cv->cd(i+1);
-    //   gPad->Modified(1);
-    //   gPad->Draw();
-
-
-    //   gPad->Update();
-    // }
     cv->Update();
   }
 
 }
-
-// void HistFrame::DataDropped(TGListTreeItem *, TDNDData *data)
-// {
-//   cout << "YK dropped" << endl;
-// }

@@ -703,6 +703,9 @@ void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
 
 } //FillProf
 
+bool Mdef::is2d() {
+  return hnum > 100 && hnum < 10000;
+}
 //------------------------------
 
 HMap::HMap() {
@@ -1065,7 +1068,7 @@ void HClass::Make_hist() {
       it->MFill = &Mdef::FillYumo;
     }
 #endif
-    else if (it->hnum>100) { //2d
+    else if (it->is2d()) { //2d
       int res = Make_2d(it);
       if (res==1) { //normal 2d
 	if (it->mx->hnum==21 || it->my->hnum==21)

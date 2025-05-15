@@ -26,9 +26,10 @@ OBJ_D = obj
 
 #LIB_D = ../libcrs
 
-HELP := \"$(abspath $(SRC_D)/help.pdf)\"
+#HELP := \"$(abspath $(SRC_D)/help.pdf)\"
+HELPPATH := \"$(abspath $(SRC_D))\"
 MACRO := \"$(abspath $(PWD)/Macro/)\"
-CPPFLAGS += -DHELP=$(HELP) -DMACRO=$(MACRO)
+CPPFLAGS += -DHELPPATH=$(HELPPATH) -DMACRO=$(MACRO)
 
 SRC := $(wildcard $(SRC_D)/*.cpp)
 OBJ := $(addprefix $(OBJ_D)/,$(notdir $(SRC:.cpp=.o)))

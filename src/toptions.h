@@ -36,7 +36,7 @@ public:
   std::map<void*,arr> mcpar;
 };
 
-class Hdef {
+class Hdef: public TNamed  {
   // класс содержит параметры гистограмм в простых переменных,
   // которые можно легко сохранить в файл 
 public:
@@ -394,6 +394,8 @@ public:
 
   Hdef h_prof; // 61 Profilometer X(mm) Y(mm) 2d histograms for Profilometer
   Hdef h_prof_int; // 62 Prof_int - - Integral histograms for profilometer
+
+  TList l2d; //нужен только для сохранения и чтения 2d гистограмм в root файл
 
 #ifdef YUMO
   int yumo_x1;
