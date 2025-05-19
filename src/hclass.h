@@ -213,8 +213,10 @@ class HClass {
   // список нужен для заполнения cut-гистограмм в FillHist
   //заполняется в ??? (Ana_Start???)
 
-  mdef_list MFilelist; // содержит (не указатели!) Mdef гистограмм
-  // из файлов
+  mdef_list MFilelist; // содержит (не указатели!) Mdef для гистограмм из файлов
+  // 1 файл = 1 Mdef
+
+  TList fhist_list; //список гистограмм, считанных из файла в ReadRoot
 
 
   TVirtualFFT* fft[MAX_CH];
@@ -226,7 +228,6 @@ class HClass {
 
   void Make_Mlist();
   Mdef* Add_h2(int id1, int id2);
-  mdef_iter Add_file(const char *name);
   void Make_hist();
 
   mdef_iter Find_Mdef(int id);
@@ -255,7 +256,11 @@ class HClass {
   void Remove_Clones(HMap* map);
   void Make_cuts();
 
-   ClassDef(HClass, 0)
+  mdef_iter Add_file(const char *name);
+  void Root_to_allmap();
+  void Root_to_newtree(const char *name);
+  void ReadRoot(const char *name, int ww);
+  ClassDef(HClass, 0)
 };
 
 #endif

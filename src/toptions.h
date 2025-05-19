@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 162
+#define CDEF 163
 
 /*
 #include <list>
@@ -345,8 +345,8 @@ public:
   Bool_t Peak_use_mean;
   Bool_t Peak_print;
 
-  int wrk_check[128]; //в папке MAIN (старая wrk) можно чекнуть
-  // максимум 128 гистограмм
+  int wrk_check[128];//каждый бит: номер папки MAIN_cut[bit]. 0-й бит: MAIN
+  //в папке MAIN (старая wrk) можно чекнуть максимум 128 гистограмм
 
   Int_t Nrows;
   Int_t ScrollPos;

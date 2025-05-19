@@ -291,8 +291,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fListTree->Connect("Clicked(TGListTreeItem*,Int_t)","HistFrame",this,
    		     "DoClick(TGListTreeItem*,Int_t)");
 
-  // fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
-  // 		     this,"DoKey(TGListTreeItem*, UInt_t, UInt_t)");
+  fListTree->Connect("KeyPressed(TGListTreeItem*, UInt_t, UInt_t)","HistFrame",
+   		     this,"DoKey(TGListTreeItem*, UInt_t, UInt_t)");
 
   fHor4 = new TGHorizontalFrame(tab1, 10, 10);
   tab1->AddFrame(fHor4, LayET0);
@@ -628,6 +628,7 @@ HistFrame::~HistFrame()
 TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open, const TGPicture *closed) {
 
   HMap* map2 = (HMap*) userData;
+  //cout << "mapp: " << string << " " << map2 << endl;
   TGListTreeItem *item;
   if (parent) { //single item
     item=fListTree->AddItem(parent, string, userData, open, closed, true);
@@ -650,6 +651,14 @@ TGListTreeItem* HistFrame::Item_Ltree(TGListTreeItem* parent, const char* string
 
 }
 
+void HistFrame::Item_Hist(TGListTreeItem* &idir, HMap* &map) {
+  if (map->hst->InheritsFrom(TH2::Class()))
+    ppic=pic_2d;
+  else
+    ppic=pic_1d;
+  Item_Ltree(idir,map->GetName(),map,ppic,ppic);
+}
+
 void HistFrame::Make_Ltree() {
 
   // for (int i=0;i<opt.Nchan;i++) {
@@ -660,16 +669,7 @@ void HistFrame::Make_Ltree() {
 
   char cutname[99];
   char name[99];
-  TGPicture *pic_1d = (TGPicture*) gClient->GetPicture("h1_t.xpm");
-  TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("h2_t.xpm");
 
-  TGPicture *pic_c2 = (TGPicture*) gClient->GetPicture("marker30.xpm");
-  TGPicture *pic_c1 = (TGPicture*) gClient->GetPicture("hor_arrow_cursor.png");
-  TGPicture *pic_f = (TGPicture*) gClient->GetPicture("cpp_src_t.xpm");
-
-  TGPicture *pic_xy = (TGPicture*) gClient->GetPicture("marker7.xpm");
-
-  TGPicture *pic=0;
   TGListTreeItem *iroot=0;
   TGListTreeItem *idir=0;
   TGListTreeItem *item=0;
@@ -700,25 +700,52 @@ void HistFrame::Make_Ltree() {
     //if (!map->flg) {
       TString title = TString(map->GetTitle());
       if (!fListTree->FindChildByName(0,title)) {
-	idir = Item_Ltree(iroot, title,map,0,0);
+	idir = Item_Ltree(iroot,title,map,0,0);
       }
-      if (map->hst->InheritsFrom(TH2::Class()))
-	pic=pic_2d;
-      else
-	pic=pic_1d;
 
-      Item_Ltree(idir, map->GetName(), map, pic, pic);
+      /*
+      if (map->hst->InheritsFrom(TH2::Class()))
+	ppic=pic_2d;
+      else
+	ppic=pic_1d;
+      Item_Ltree(idir,map->GetName(),map,ppic,ppic);
+      */
+
+      Item_Hist(idir,map);
 
       if (*(map->hd->w+map->nn)) {
-	Item_Ltree(iMAIN, map->GetName(), map, pic, pic);
+	Item_Ltree(iMAIN,map->GetName(),map,ppic,ppic);
 	//make clones of _MAIN_ histograms and their hmaps
 	AddMainCuts(map);
       }
       //} //if
   } //while
 
+  //добавляем root файлы, если есть
+  for (auto md = hcl->MFilelist.begin();md!=hcl->MFilelist.end();++md) {
+    //map = md->v_map.front();
+    //cout << "mdd: " << &*md << " " << md->name << endl;
+    string dir, fname;
+    SplitFilename(string(md->name),dir,fname);
+    fname+="     ";
+    dir = md->name;
+    dir+="\nPress 'c' to close file";
+    //TString titl=md->name+"     ";
+
+    idir=fListTree->AddItem(iroot,fname.c_str(),&*md,0,0,true);
+    idir->SetTipText(dir.c_str());
+   //idir = Item_Ltree(iroot,titl,&*md,0,0);
+    for (auto it = md->v_map.begin();it!=md->v_map.end();++it) {
+      Item_Hist(idir,*it);
+    }
+  }
+
   SortMain();
   OptToCheck();
+
+
+
+
   //Here!!!
   // fListTree->CheckAllChildren(iMAIN,wrk_check[0]);
   // for (int cc=1;cc<opt.ncuts;cc++) {
@@ -727,21 +754,31 @@ void HistFrame::Make_Ltree() {
   //   }
   // }
 
+
+
+
+
+
+
+
+
+
+
   //fill fCutTree
   for (int i=1;i<opt.ncuts;i++) {
     if (opt.pcuts[i]) {
       TCutG* gcut = hcl->cutG[i];
 
       if (opt.pcuts[i]==1) //formula
-	pic=pic_f;
+	ppic=pic_f;
       else if (opt.pcuts[i]==2) //1d
-	pic=pic_c1;
+	ppic=pic_c1;
       else //2d
-	pic=pic_c2;
+	ppic=pic_c2;
 
       if (gcut->GetN() > 1) {
 	sprintf(name,"[%s] %s",gcut->GetName(),gcut->GetTitle());
-	item = fCutTree->AddItem(0, name, gcut, pic, pic, false);
+	item = fCutTree->AddItem(0, name, gcut, ppic, ppic, false);
 	for (int j=0;j<gcut->GetN();j++) {
 	  sprintf(name,"%0.2f; %0.2f",gcut->GetX()[j],gcut->GetY()[j]);
 	  fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
@@ -749,7 +786,7 @@ void HistFrame::Make_Ltree() {
       }
       else {
 	sprintf(name,"[%s] %s",gcut->GetName(),"formula");
-	item = fCutTree->AddItem(0, name, gcut, pic, pic, false);
+	item = fCutTree->AddItem(0, name, gcut, ppic, ppic, false);
 	sprintf(name,"%s",opt.cut_form[i]);
 	fCutTree->AddItem(item, name, pic_xy, pic_xy, false);
       }
@@ -1000,21 +1037,18 @@ void HistFrame::AddMainCuts(HMap* map) {
 
   //char cutname[99];
   //char name[99],htitle[99];
-  TGPicture *pic1 = (TGPicture*) gClient->GetPicture("h1_t.xpm");
-  TGPicture *pic2 = (TGPicture*) gClient->GetPicture("h2_t.xpm");
-  TGPicture *pic=0;
 
   if (*(map->hd->w+map->nn)) {
     if (map->hst->InheritsFrom(TH2::Class()))
-      pic=pic2;
+      ppic=pic_2d;
     else
-      pic=pic1;
+      ppic=pic_1d;
 
     for (int i=1;i<opt.ncuts;i++) {
       if (opt.pcuts[i]) {
 	HMap* mcut = map->h_cuts[i];
 	if (mcut)
-	  Item_Ltree(iMAIN_cut[i], mcut->GetName(), mcut, pic, pic);
+	  Item_Ltree(iMAIN_cut[i], mcut->GetName(), mcut, ppic, ppic);
       }
     }
 
@@ -1034,11 +1068,12 @@ void HistFrame::OptToCheck() {
   while (idir) {
     TGListTreeItem *item = idir->GetFirstChild();
     bool b_main=TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase);
-    int ncut = stoi(numstr(idir->GetText()));
-    if (ncut<0)
-      ncut=0;
-    //cout << "ct2: " << idir->GetText() << " " << ncut << endl;
-    int i=0; // номер итема в папке
+    int ncut=0;
+    if (b_main) {
+      ncut = stoi(numstr(idir->GetText()));
+    }
+    //cout << "ct2: " << idir->GetText() << " " << b_main << " " << ncut << endl;
+    int i=0; // номер итема в папке MAIN*
     while (item) {
       if (b_main) { //папка MAIN*
 	bool chk = getbit(opt.wrk_check[i],ncut);
@@ -1073,9 +1108,10 @@ void HistFrame::CheckToOpt(TObject* obj, Bool_t check) {
   while (idir) {
     TGListTreeItem *item = idir->GetFirstChild();
     bool b_main=TString(idir->GetText()).Contains("MAIN",TString::kIgnoreCase);
-    int ncut = stoi(numstr(idir->GetText()));
-    if (ncut<0)
-      ncut=0;
+    int ncut=0;
+    if (b_main) {
+      ncut = stoi(numstr(idir->GetText()));
+    }
     //cout << "ct: " << idir->GetText() << " " << ncut << endl;
     int i=0; // номер итема в папке
     while (item) {
@@ -1103,9 +1139,34 @@ void HistFrame::CheckToOpt(TObject* obj, Bool_t check) {
 
 }
 
-// void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask) {
-//   cout << "key: " << entry << " " << keysym << " " << mask << endl;
-// }
+void HistFrame::DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask) {
+  //cout << "key: " << entry << " " << keysym << " " << mask << endl;
+  if (keysym==99) {
+    Mdef* md = (Mdef*) entry->GetUserData();
+    for (auto it=hcl->MFilelist.begin();it!=hcl->MFilelist.end();++it) {
+      if (&*it==md) {
+	//cout << md << " " << md->name << " " << md->v_map.size() << endl;
+	cout << "closing file " << md->name << endl;
+	for (auto mm = md->v_map.begin(); mm!=md->v_map.end(); ++mm) {
+	  delete *mm;
+	}
+	delete md->hd;
+	hcl->MFilelist.erase(it);
+
+	HiFrm->Clear_Ltree();
+	HiFrm->Make_Ltree();
+	break;
+      }
+    }
+  }
+    
+  //mdef_iter it = find(hcl->MFilelist.begin(), hcl->MFilelist.end(), *md);
+  // if (find(hcl->MFilelist.begin(), hcl->MFilelist.end(), md)
+  //     !=hcl->MFilelist.end()) {
+  //   //if (hcl->MFilelist.FindObject(md)) {
+  //   cout << md << " " << md->name << endl;
+  // }
+}
 
 void HistFrame::DoRadio()
 {
@@ -1386,10 +1447,9 @@ void HistFrame::MakeCutG(TPolyLine *pl, HMap* map) {
 //YKYK
 void HistFrame::ItemROI(HMap* map, int iroi) {
   char name[99];
-  TGPicture *pic = (TGPicture*) gClient->GetPicture("hor_arrow_cursor.png");
-  TGPicture *pic_xy = (TGPicture*) gClient->GetPicture("marker7.xpm");
+
   sprintf(name,"%s_%02d",map->GetTitle(),iroi+1);
-  TGListTreeItem *item = fRoiTree->AddItem(0, name, map->hd->roi[iroi], pic, pic, false);
+  TGListTreeItem *item = fRoiTree->AddItem(0, name, map->hd->roi[iroi], pic_c1, pic_c1, false);
   for (int j=0;j<2;j++) {
     sprintf(name,"%f",map->hd->roi[iroi][j]);
     fRoiTree->AddItem(item, name, pic_xy, pic_xy, false);
@@ -2068,8 +2128,6 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
 
   TString name;
 
-  TGPicture *pic = (TGPicture*) gClient->GetPicture("h1_t.xpm");
-
   //Toptions &opt = *(gg->g_opt);
   //cout << "Do_ecalibr2: " << endl;
   HMap *map, *map1, *map2;
@@ -2137,7 +2195,7 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
       //hist->DrawCopy("same");
 
       map1 = new HMap(mapname1,hist1,hd1,map->nn);
-      Item_Ltree(idir1, map1->GetName(), map1, pic, pic);
+      Item_Ltree(idir1, map1->GetName(), map1, pic_1d, pic_1d);
       delete hist2;
 
             //TGraphErrors* gr = new TGraphErrors(pl->GetN(),yy,xx,er,0);
@@ -2173,7 +2231,7 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
       //cout << "Par: " << fitf->GetParameters() << endl;
 
       map2 = new HMap(mapname2,gr,hd2,map->nn);
-      Item_Ltree(idir2, map2->GetName(), map2, pic, pic);
+      Item_Ltree(idir2, map2->GetName(), map2, pic_1d, pic_1d);
 
       //break;
 
@@ -2186,8 +2244,6 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
 void HistFrame::Do_Tcalibr(PopFrame* pop) {
 
   TString name;
-
-  TGPicture *pic = (TGPicture*) gClient->GetPicture("h1_t.xpm");
 
   HMap *map, *map1;
   Hdef *hd1=0;
@@ -2250,7 +2306,7 @@ void HistFrame::Do_Tcalibr(PopFrame* pop) {
       // }
 
       map1 = new HMap(mapname1,hist1,hd1,map->nn);
-      Item_Ltree(idir1, map1->GetName(), map1, pic, pic);
+      Item_Ltree(idir1, map1->GetName(), map1, pic_1d, pic_1d);
 
 
       // for (int j=0;j<3;j++) {

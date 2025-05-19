@@ -1,3 +1,9 @@
+git tag -a v0.917 -m 'root файлы в отдельных папках'
+- меню File сдвинуто вправо
+- добавлена возможность считывания файлов root в "свои" папки в дереве.
+- папки можно удалять
+
+
 git tag -a v0.916 -m 'saveroot/readpar_root: 2D hist'
 - в Makefile HELP заменено на HELPPATH
 - добавлено Mdef::is2d()

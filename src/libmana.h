@@ -144,6 +144,8 @@ class MainFrame : public TGMainFrame {
   TGLayoutHints* LayET2;
   TGLayoutHints* LayET3;
   TGLayoutHints* LayLT3;
+  TGLayoutHints* LayLT_F;
+  TGLayoutHints* LayLT4;
   TGLayoutHints* LayRT3;
   TGLayoutHints* LayL1;
 

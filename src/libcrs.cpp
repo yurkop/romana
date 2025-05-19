@@ -2626,6 +2626,7 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
   }
 
   if (b_noheader) { //не читаем заголовок
+    //gzrewind(f_read);
   }
   else { //иначе читаем
     if (tp==0) { //crs32 or crs2 or dec
@@ -2749,23 +2750,12 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
 
   //prnt("sss d sd sd sds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
 
-  //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
-  if (fmt!=129 || mod>100 || sz>5e5){//возможно, это текстовый файл
+  cout << "mod: " << mod << " " << fmt << " " << sz << endl;
+  if (mod>100 || sz<5e4 || sz>5e5){//возможно, это текстовый файл
     //или старый файл без параметров
-    prnt("sss d d ds;",BRED,"Header not found: ",pname,fmt,mod,sz,RST);
+    if (cp)
+      prnt("sss d d ds;",BRED,"Header not found: ",pname,fmt,mod,sz,RST);
     return 1;
-    
-    /*
-    prnt("sss d d ds;",BRED,"Header not found. Assuming module=2: ",pname,fmt,mod,sz,RST);
-    if (f_read) gzclose(f_read);
-    f_read = gzopen(Fname,"rb");
-    if (!f_read) {
-      cout << "Can't open file: " << Fname << endl;
-      f_read=0;
-    }
-    module=22;
-    return 0;
-    */    
   }
   //cout << "ReadParGz: "<<pname<<" "<<sz<<" "<<m1<<" "<<cp<<" "<<op<<endl;
 
@@ -2804,12 +2794,13 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
       module=22;
       //cout << "CRS2 File: " << Fname << " " << module << endl;
     }
-    else if (mod>=32) {
+    else if (mod>=32 && mod<100) {
       module=mod;
       //cout << "CRS32 or decoded File: " << Fname << " " << module << endl;
     }
     else {
       Fmode=0;
+      prnt("ss s ds;",BRED,"Unknown module in file:",Fname,mod,RST);
       //cout << "Unknown file type: " << Fname << " " << mod << endl;
       res=1;
     }

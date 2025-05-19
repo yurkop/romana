@@ -6,6 +6,7 @@
 #include <sstream>
 #include <TVirtualFFT.h>
 #include <TSystem.h>
+#include <TKey.h>
 
 extern Toptions opt;
 
@@ -13,6 +14,7 @@ extern CRS* crs;
 extern ParParDlg *parpar;
 extern Coptions cpar;
 extern HClass* hcl;
+extern HistFrame* HiFrm;
 extern TRandom rnd;
 
 //------------------------------
@@ -928,19 +930,6 @@ Mdef* HClass::Add_h2(int id1, int id2) {
 
   return &Mlist.back();
 }
-mdef_iter HClass::Add_file(const char *name) {
-  Mdef md;
-
-  md.name = name;
-  md.h_name = name; //не знаю, что это
-
-  md.hd = new Hdef();
-
-  //MFilelist.push_back(md);
-  return MFilelist.insert(MFilelist.end(),md);
-
-  //return &MFilelist.back();
-}
 
 bool check_Base(int num) {
   // проверяем, есть ли хоть одна 1d или 2d гистограмма с base,slope,RMS
@@ -1754,3 +1743,98 @@ void HClass::Make_cuts() {
     cutG[i]->SetLineColor(cutcolor[i]);
   }
 }
+
+mdef_iter HClass::Add_file(const char *name) {
+  Mdef md;
+
+  md.name = name;
+  md.h_name = name; //не знаю, что это
+
+  md.hd = new Hdef();
+
+  //MFilelist.push_back(md);
+  return MFilelist.insert(MFilelist.end(),md);
+
+  //return &MFilelist.back();
+}
+
+void HClass::Root_to_allmap() {
+  //копируем считанные из файла гистограммы в существующие, если имя совпадает
+
+  TIter next(&fhist_list);
+  TObject* obj;
+  while ( (obj=(TObject*)next()) ) {
+    HMap* map = (HMap*) allmap_list->FindObject(obj->GetName());
+    if (map) {
+      TH1* hh = map->hst;
+      TDirectory* dir = hh->GetDirectory();
+      obj->Copy(*hh);
+      obj->Delete();
+      hh->SetDirectory(dir);
+    }    
+  }
+
+  //fhist_list.Clear();
+
+} //Root_to_allmap
+
+void HClass::Root_to_newtree(const char *name) {
+  //создаем новую запись в дереве для данного файла
+
+  mdef_iter md=Add_file(name);
+
+  int i=0;
+  TIter next(&fhist_list);
+  TObject* obj;
+  while ( (obj=(TObject*)next()) ) {
+    TH1* hh = (TH1*) obj;
+
+    if (i>=(int)md->v_map.size())
+      md->v_map.resize(i+1,0);
+
+    md->v_map[i] = new HMap(md->name.Data(),hh,md->hd,i);
+    //map_list->Add(md->v_map[i]);
+    //allmap_list->Add(md->v_map[i]);
+    i++;
+
+  }
+
+  //fhist_list.Clear();
+
+  HiFrm->Clear_Ltree();
+  HiFrm->Make_Ltree();
+
+} //Root_to_newtree
+
+void HClass::ReadRoot(const char *name, int ww) {
+  //ww=0 -> to_allmap; else to_newtree
+  //gROOT->cd();
+  fhist_list.Clear();
+
+  TFile *tf = new TFile(name,"READ");
+  if (!tf->IsOpen())
+    return;
+
+  TIter next(tf->GetListOfKeys());
+
+  TKey *key;
+  TObject *obj;
+  while ((key = (TKey*)next())) {
+    obj=key->ReadObj();
+    if (obj->InheritsFrom(TH1::Class())) {
+      TH1* hh = (TH1*) obj;
+      hh->SetDirectory(0);
+      fhist_list.Add(hh);
+    }
+  }
+
+  tf->Close();
+
+  if (ww==0)
+    Root_to_allmap();
+  else
+    Root_to_newtree(name);
+
+  fhist_list.Clear();
+
+} //ReadRoot

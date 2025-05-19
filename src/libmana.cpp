@@ -50,6 +50,7 @@
 #include "TThread.h"
 #include "TImage.h"
 #include "TMutex.h"
+#include "TObjString.h"
 
 //#include <TGColorDialog.h>
 
@@ -112,7 +113,7 @@ char* datfname=0;
 char* batch_fname=0;
 
 bool b_raw=false,b_dec=false,b_root=false,b_force=false;
-bool rd_root=false; //readroot from comand line
+int rd_root=0; //readroot from comand line
 bool b_resetusb=false;
 
 char startdir[200];
@@ -125,9 +126,11 @@ struct stat statb;
 const char* msg_exists = "Output file already exists.\nPress OK to overwrite it";
 const char* msg_ident = "Input and output files are identical";
 
-std::list<TString> listpar;
+std::vector<TString> listpar;
+typedef std::vector<TString>::iterator l_iter;
+
+std::vector<string> listfiles;
 //std::list<TString> listshow;
-typedef std::list<TString>::iterator l_iter;
 
 std::vector<Mdef> list_mdef;
 //В list_mdef записываются все найденные в файле параметров переменные Hdef.
@@ -1124,7 +1127,8 @@ int main(int argc, char **argv)
     "-u: reset USB after detecting device\n"
     "-p parfile: read parameters from parfile, parameters from filename are ignored\n"
     "-t parfile: save parameters from parfile to text file parfile.txt and exit\n"
-    "-n module: skip header when opening file (assuming file is without header); set module number\n"
+    "-n module: no header: don't read header/parameters when opening file\n"
+    "     (assuming file is without header); set module number\n"
     "-m name: select module/device name (if several devices are connected)\n"
     "-m 0: don't open USB device\n"
     "-l: print list of connected devices and exit\n"
@@ -1314,7 +1318,8 @@ int main(int argc, char **argv)
       // 	listshow.push_back(sarg);
       // }
       else {
-	datfname = argv[i];
+	listfiles.push_back(argv[i]);
+	//datfname = argv[i];
       }
       /*
 	char cc = argv[i][0];
@@ -1330,7 +1335,39 @@ int main(int argc, char **argv)
 	argnn++;
       */
     } //for i
+  } //if argc
+
+  if (!listfiles.empty()) {
+    datfname = new char[listfiles.front().size()+10];
+    strcpy(datfname,listfiles.front().c_str());
+    //datfname = (char*)(listfiles.front()).c_str();
   }
+
+  //cout << "size: " << listfiles.front().size() << endl;
+  //cout << "fff1: " << datfname << endl;
+
+  // после этого цикла listfiles содержит только root файлы
+  for (auto it=listfiles.begin(); it!=listfiles.end();) {
+    string dir, name, ext2;
+    SplitFilename(*it,dir,name,ext2);
+    TString ext(ext2);
+    ext.ToLower();
+
+    if (ext.EqualTo(".root")) {
+      rd_root++;
+      ++it;
+    }
+    else
+      listfiles.erase(it);
+    //cout << "fff: " << *it << endl;
+  }
+
+  if (rd_root>1)
+    crs->b_noheader=true;
+
+  //cout << "fff: " << datfname << " " << rd_root << endl;
+  //exit(1);
+
 
 
   //сначала читаем -p parfile2
@@ -1370,13 +1407,16 @@ int main(int argc, char **argv)
   if (datfname) {
     string dir, name, ext;
     SplitFilename(string(datfname),dir,name,ext);
-    //cout << dir << " " << name << " " << ext << endl;
+    //cout << "dirr: " << dir << " " << name << " " << ext << endl;
+    //cout << "dir2: " << int(parfile2==0) << endl;
     if (!ext.compare(".root")) { //root file
-      if (!parfile2) {
+      //if (!parfile2) {
+      if (!crs->b_noheader) {
+	//cout << "dir3: " << datfname << endl;
 	if (readpar_root(datfname,1))
 	  exit(-1);
       }
-      rd_root=true;
+      //rd_root=1;
       //prnt("ss d ds;",BBLU,"root:",rd_root,(bool)parfile2,RST);
     }
     else { //.raw or .dec file
@@ -1560,65 +1600,6 @@ void SplitFilename (string str, string &folder, string &name, string &ext)
   //cout << "spl2: " << str << ";" << folder << ";" << name << ";" << ext << endl;
 }
 
-/*
-void saveroot_old(const char *name) {
-
-  TFile * tf = new TFile(name,"RECREATE");
-
-  if (!tf->IsOpen()) {
-    cout << "Can't open file: " << name << endl;
-    return;
-  }
-  //cout << "saveroot11: " << name << " " << tf << " " << tf->IsOpen() << endl;
-
-  int col;
-
-  gROOT->cd();
-
-  TIter next(gDirectory->GetList());
-  //TIter next(hcl->map_list;);
-
-  tf->cd();
-
-  TH1F *h;
-  TH2F *h2;
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    if (obj->InheritsFrom(TH2::Class())) {
-      h2=(TH2F*) obj;
-      //h2->Print();
-      if (h2->GetEntries() > 0) {
-	//printf("saveroot2: %s\n",h2->GetName());
-	h2->Write();
-      }
-    }
-    else if (obj->InheritsFrom(TH1::Class())) {
-      h=(TH1F*) obj;
-      //h->Print();
-      if (h->GetEntries() > 0) {
-	col=h->GetLineColor();
-	//printf("saveroot1: %d %s\n",col,h->GetName());
-	if (col==0) {
-	  h->SetLineColor(50);
-	}
-	//tf->WriteTObject(obj);
-	h->Write();
-	h->SetLineColor(col);
-      }
-    }
-  }
-
-  //opt.Nevt=nevent;
-  //opt.Tof=tof;
-  cpar.Write();
-  opt.Write();
-
-  cout << "Histograms and parameters are saved in file: " << name << endl;
-
-  tf->Close();
-}
-*/
-
 void saveroot(const char *name) {
 
   TFile * tf = new TFile(name,"RECREATE");
@@ -1676,169 +1657,6 @@ void saveascii(const char *fname) {
   gSystem->MakeDirectory(dir.c_str());
 
 }
-
-/*
-int readroot(const char *name) {
-  //return 0 - OK; 1 - error
-
-  cout << "readroot:" << endl;
-  //gROOT->cd();
-  TList *list = hcl->allmap_list;
-
-  TFile *tf = new TFile(name,"READ");
-  if (!tf->IsOpen())
-    return 1;
-
-  mdef_iter md = hcl->Add_file(name);
-  //Mdef *md = --hcl->MFilelist.end();
-
-  TIter next(tf->GetListOfKeys());
-
-  TKey *key;
-  TObject *obj;
-  TH1* obj2;
-  int i=0;
-  while ((key = (TKey*)next())) {
-    //cout << "key: " << key->GetClassName() << endl;
-    obj=key->ReadObj();
-    if (obj->InheritsFrom(TH1::Class())) {
-      //cout << "obj: " << obj->GetName() << endl;
-      TH1* hh = (TH1*) obj;
-      hh->SetDirectory(0);
-
-
-
-
-      hcl->MapHist(md,hh,i++);
-      //HMap* map = new HMap("f01",hh,0,0);
-
-
-
-
-
-      // TGPicture *pic_1d = (TGPicture*) gClient->GetPicture("h1_t.xpm");
-      // TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("h2_t.xpm");
-
-      // TGPicture *pic=0;
-      // TGListTreeItem *iroot=0;
-      // TGListTreeItem *idir=0;
-      // TGListTreeItem *item=0;
-
-      // TString title = TString(map->GetTitle());
-      // if (!HiFrm->fListTree->FindChildByName(0,title)) {
-      // 	idir = HiFrm->Item_Ltree(iroot, title,map,0,0);
-      // }
-      // if (map->hst->InheritsFrom(TH2::Class()))
-      // 	pic=pic_2d;
-      // else
-      // 	pic=pic_1d;
-
-      // HiFrm->Item_Ltree(idir, map->GetName(), map, pic, pic); 
-
-
-
-
-
-
-
-      // HMap* map = (HMap*) list->FindObject(obj->GetName());
-      // if (map) {
-      // 	TDirectory* dir = map->hst->GetDirectory();
-      // 	cout << "dir: " << dir->GetName() << " " << dir->GetTitle() << endl;
-      // }
-
-
-
-
-      // if (map) {
-      // 	obj2 = map->hst;
-      // 	TDirectory* dir = obj2->GetDirectory();
-      // 	obj->Copy(*obj2);
-      // 	obj->Delete();
-      // 	obj2->SetDirectory(dir);
-      // }
-    }
-      //}
-
-  }
-
-  //opt.Read("Toptions");
-
-  tf->Close();
-
-  strcpy(mainname,name);
-  if (myM) {
-    myM->SetTitle((char*)name);
-    //daqpar->AllEnabled(false);
-  }
-
-  HiFrm->Clear_Ltree();
-  HiFrm->Make_Ltree();
-
-  //crs->chan_changed = true;
-
-  //strcpy(maintitle,pr_name);
-  //strcat(maintitle," ");
-  //strcat(maintitle,name);
-
-  //cout << opt.channels[0] << endl;
-  return 0;
-}
-
-*/
-
-int readroot(const char *name) {
-  //return 0 - OK; 1 - error
-
-  gROOT->cd();
-  TList *list = hcl->allmap_list;
-
-  TFile *tf = new TFile(name,"READ");
-  if (!tf->IsOpen())
-    return 1;
-
-  TIter next(tf->GetListOfKeys());
-
-  TKey *key;
-  TObject *obj;
-  TH1* obj2;
-  while ((key = (TKey*)next())) {
-    obj=key->ReadObj();
-    if (obj->InheritsFrom(TH1::Class())) {
-      //obj->Print();
-      //cout << "obj: " << obj->GetName() << endl;
-      HMap* map = (HMap*) list->FindObject(obj->GetName());
-      if (map) {
-	//cout << "map: " << map->GetName() << endl;
-	//continue;
-	obj2 = map->hst;
-	//printf("%d\n",obj2);
-	// cout << "readroot1: " << obj2 << " " << obj2->GetName() << " "
-	//      << ((TH1*) obj2)->Integral() << endl;
-	TDirectory* dir = obj2->GetDirectory();
-	obj->Copy(*obj2);
-	obj->Delete();
-	obj2->SetDirectory(dir);
-	// cout << "readroot2: " << obj2 << " " << obj2->GetName() << " "
-	//      << ((TH1*) obj2)->Integral() << endl;
-      }
-    }
-      //}
-
-  }
-
-  tf->Close();
-
-  strcpy(mainname,name);
-  if (myM) {
-    myM->SetTitle((char*)name);
-  }
-
-  //crs->chan_changed = true;
-
-  return 0;
-} //readroot
-
 
 void clear_hist() {
 
@@ -1959,7 +1777,7 @@ string numstr(string inpstr) { //convert str to string containing only digits
       res+=inpstr[i];
   }
   if (!res.size())
-    res="-1";
+    res="0";
   return res;
 }
 /*
@@ -2237,6 +2055,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   LayET2=new TGLayoutHints(kLHintsExpandX|kLHintsTop,15,15,2,2);
   LayET3 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,15);
   LayLT3 = new TGLayoutHints(kLHintsLeft|kLHintsTop,2,2,2,2);
+  LayLT_F = new TGLayoutHints(kLHintsLeft|kLHintsTop,100,0,0,0);
+  LayLT4 = new TGLayoutHints(kLHintsLeft|kLHintsTop,8,0,0,0);
   LayRT3 = new TGLayoutHints(kLHintsRight|kLHintsTop,2,2,2,2);
   LayL1 = new TGLayoutHints(kLHintsLeft,1,1,0,0);
   LayEE0 = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
@@ -2268,15 +2088,6 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     gDNDManager = new TGDNDManager(this, fDNDTypeList);
   */
 
-
-  //int nn=2;
-  //double xx[nn];
-  //double yy[nn];
-
-  //fEv=NULL;
-
-  //bRun = false;
-
   Connect("CloseWindow()", "MainFrame", this, "CloseWindow()");
 
   // Create a horizontal frame for MenuBar & Help button
@@ -2285,26 +2096,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   fMenuBar = new TGMenuBar(hf1, 35, 50, kHorizontalFrame);
   hf1->AddFrame(fMenuBar, LayLT3); 
-	   //new TGLayoutHints(kLHintsTop | kLHintsExpandX, 2, 2, 2, 5));
-
-
-
-  TGTextButton *fHelp = new TGTextButton(hf1,"Help");
-  fHelp->SetToolTipText("Display Help file");
-  //fHelp->SetFont(tfont,false);
-  //fHelp->Resize(butx,buty);
-  //fHelp->ChangeOptions(fHelp->GetOptions() | kFixedSize);
-  fHelp->ChangeBackground(fYellow);
-  fHelp->Connect("Clicked()","MainFrame",this,"HandleHelp()");
-  hf1->AddFrame(fHelp, LayRT3);
-
-
-
 
   TGPopupMenu* fMenuFile = new TGPopupMenu(gClient->GetRoot());
 
-  fMenuBar->AddPopup("&File", fMenuFile, 
-		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
+  fMenuBar->AddPopup("&File", fMenuFile, LayLT_F);
 
   fMenuFile->AddEntry("Read Parameters", M_READINIT);
   fMenuFile->AddEntry("Save Parameters", M_SAVEINIT);
@@ -2332,8 +2127,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGPopupMenu* fMenuDet = new TGPopupMenu(gClient->GetRoot());
 
-  fMenuBar->AddPopup("&Detectors", fMenuDet, 
-		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
+  fMenuBar->AddPopup("&Detectors", fMenuDet, LayLT4);
 
   fMenuDet->AddEntry("Profilometer 8x8", M_EDIT_PROF8);
   fMenuDet->Connect("Activated(Int_t)", "MainFrame", this,
@@ -2350,8 +2144,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   TGPopupMenu* fMenuAnalysis = new TGPopupMenu(gClient->GetRoot());
 
-  fMenuBar->AddPopup("&Analysis", fMenuAnalysis, 
-		     new TGLayoutHints(kLHintsLeft|kLHintsTop,0,4,0,0));
+  fMenuBar->AddPopup("&Analysis", fMenuAnalysis, LayLT4);
 
   // fMenuAnalysis->AddEntry("Energy Pre-calibration", M_PRECALIBR);
   // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
@@ -2388,24 +2181,17 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
   */
 
+  TGTextButton *fHelp = new TGTextButton(hf1,"Help");
+  fHelp->SetToolTipText("Display Help file");
+  //fHelp->SetFont(tfont,false);
+  //fHelp->Resize(butx,buty);
+  //fHelp->ChangeOptions(fHelp->GetOptions() | kFixedSize);
+  fHelp->ChangeBackground(fYellow);
+  fHelp->Connect("Clicked()","MainFrame",this,"HandleHelp()");
+  hf1->AddFrame(fHelp, LayRT3);
 
 
-
-  //TGLabel *ver = new TGLabel(fMenuBar,GITVERSION);
-  //fMenuBar->AddFrame(ver,new TGLayoutHints(kLHintsCenterY|kLHintsRight,0,4,0,0));
-
-  //fcanvas=NULL;
-  //fAna=NULL;
-
-  //fMain = new TGMainFrame(p,w,h);
-
-  // build->
   fTab=0;
-
-  // cout << "idev: " << crs->idev << " " << crs->cy_list.size() << endl;
-  // for (auto i=crs->cy_list.begin();i!=crs->cy_list.end();++i) {
-  //   cout << "list: " << *i << endl;
-  // }
 
   //Open_USB уже вызван в main
   switch (crs->ndev) {
@@ -2481,9 +2267,18 @@ void MainFrame::Build() {
 
   MakeTabs();
 
+  //cout << "rd_root: " << rd_root << endl;
   if (rd_root) {
-    if (readroot(datfname))
-      exit(-1);
+    for (auto it=listfiles.begin(); it!=listfiles.end(); ++it) {
+      if (crs->b_noheader || rd_root>1)
+	hcl->ReadRoot((*it).c_str(),1);
+      else
+	hcl->ReadRoot((*it).c_str(),0);
+      //cout << "fff7: " << *it << endl;
+    }
+
+  //hcl->ReadRoot(datfname,0);
+
     crs->Fmode=0;
     //SetTitle(datfname);
   }
@@ -3030,10 +2825,13 @@ void MainFrame::DoOpen(Int_t popt) {
     ext.ToLower();
 
     if (ext.EqualTo(".root")) {
-      readpar_root(fi.fFilename,popt);
-      DoReset();
+      if (popt) { //читаем параметры только если popt (т.е. open+)
+	readpar_root(fi.fFilename,popt);
+	DoReset();
+      }
 
-      readroot(fi.fFilename);
+      hcl->ReadRoot(fi.fFilename,0);
+      //readroot(fi.fFilename);
       HiFrm->HiUpdate();
     }
     else {
@@ -3278,12 +3076,12 @@ void MainFrame::DoRWinit(EFileDialogMode nn) {
 
 void MainFrame::DoReadRoot() {
 
-  char rname[255];
+  //char rname[255];
 
   if (!crs->b_stop) return;
 
   const char *dnd_types[] = {
-    "par files",     "*.root",
+    "ROOT files",     "*.root",
     "All files",     "*",
     0,               0
   };
@@ -3292,26 +3090,70 @@ void MainFrame::DoReadRoot() {
   TGFileInfo fi;
   fi.fFileTypes = dnd_types;
   fi.fIniDir    = StrDup(dir);
+  fi.fMultipleSelection = true;
 
   //printf("TGFile:\n");
 
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fi);
 
+  vector<string> fnames;
+
+  if (fi.fMultipleSelection && fi.fFileNamesList) {
+    TObjLink *lnk = fi.fFileNamesList->FirstLink();
+    while (lnk) {
+      TObjString* ts = (TObjString*)lnk->GetObject();
+      fnames.push_back(ts->GetString().Data());
+      //cout << "lnk: " << ts->GetString() << endl;
+      lnk = lnk->Next();
+    }        
+  }
+  else {
+    fnames.push_back(fi.fFilename);
+  }
+
+  for (auto it=fnames.begin(); it!=fnames.end(); ++it) {
+    cout << *it << endl;
+    hcl->ReadRoot((*it).c_str(),1);
+  }
+  //return;
+
+
+
+
+  /*
   if (fi.fFilename != NULL) {
 
     //rootname=new char[200];
 
     strcpy(rname,fi.fFilename);
 
-    readpar_root(rname,1);
-    DoReset();
+    cout << "rname: " << rname << " " << fi.fFilename << endl;
+    cout << "rname2: " << fi.fMultipleSelection << endl;
+    cout << "rname3: " << fi.fFileNamesList << endl;
+
+  
+    // fi.fFileNamesList->ls();
+    // TObjLink *lnk = fi.fFileNamesList->FirstLink();
+    // while (lnk) {
+    //   TObjString* ts = (TObjString*)lnk->GetObject();
+    //   cout << "lnk: " << ts->GetString() << endl;
+    //   lnk = lnk->Next();
+    // }
+  
+
+    //exit(-1);
+
+    //readpar_root(rname,1);
+    //DoReset();
     //new_hist();
 
-    readroot(rname);
+    cout << "rdroot: " << endl;
+    hcl->ReadRoot(rname,1);
+    //readroot(rname);
 
-    parpar->Update();
-    chanpar->Update();
-    HiFrm->HiUpdate();
+    //parpar->Update();
+    //chanpar->Update();
+    //HiFrm->HiUpdate();
 
     //nevent=opt.Nevt;
     //tof=opt.Tof;
@@ -3334,6 +3176,10 @@ void MainFrame::DoReadRoot() {
     //DoDraw();
 
   }
+*/
+
+
+
 
 #ifdef LINUX
   if (chdir(startdir)) {}

@@ -103,12 +103,23 @@ public:
   double fitsig;
   int nofit;
 
+  TGPicture *pic_1d = (TGPicture*) gClient->GetPicture("h1_t.xpm");
+  TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("h2_t.xpm");
+
+  TGPicture *pic_c2 = (TGPicture*) gClient->GetPicture("marker30.xpm");
+  TGPicture *pic_c1 = (TGPicture*) gClient->GetPicture("hor_arrow_cursor.png");
+  TGPicture *pic_f = (TGPicture*) gClient->GetPicture("cpp_src_t.xpm");
+
+  TGPicture *pic_xy = (TGPicture*) gClient->GetPicture("marker7.xpm");
+  TGPicture *ppic = 0;
+
 public:
   HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt);
   virtual ~HistFrame();
 
   //void AddButtons(TGHorizontalFrame *fHor3, TGLayoutHints* LayLC1, int num);
   TGListTreeItem* Item_Ltree(TGListTreeItem* parent, const char* string, void* userData, const TGPicture *open=0, const TGPicture *closed=0);
+  void Item_Hist(TGListTreeItem* &idir, HMap* &map);
   void Make_Ltree();
   void Clear_Ltree();
   TGListTreeItem* FindItem(const char* name);
@@ -124,7 +135,7 @@ public:
   void RoiClick(TGListTreeItem* item,Int_t but);
   void OptToCheck();
   void CheckToOpt(TObject* obj, Bool_t check);
-  //void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
+  void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
   void DoRadio();
   void DoButton();
   void DoDrawopt();
