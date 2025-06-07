@@ -20,6 +20,7 @@
 //#include <TTree.h>
 #include <TFile.h>
 #include <TFormula.h>
+#include <TMath.h>
 
 #include "pulseclass.h"
 #include "common.h"

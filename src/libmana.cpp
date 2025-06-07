@@ -2156,6 +2156,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
   // 		     "HandleMenu(Int_t)");
   fMenuAnalysis->AddEntry("Peak Search Parameters", M_PEAKS);
+  fMenuAnalysis->AddEntry("Optimize Parameters", M_OPTPAR);
 // #ifdef YUMO
 //   fMenuAnalysis->AddEntry("YUMO", M_YUMO);
 // #endif
@@ -2182,7 +2183,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   */
 
   TGTextButton *fHelp = new TGTextButton(hf1,"Help");
-  fHelp->SetToolTipText("Display Help file");
+  fHelp->SetToolTipText("Display manual");
   //fHelp->SetFont(tfont,false);
   //fHelp->Resize(butx,buty);
   //fHelp->ChangeOptions(fHelp->GetOptions() | kFixedSize);
@@ -2205,7 +2206,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     break;
   default:
     //cout << "crs->ndev= " << crs->ndev << endl;
-    new PopFrame(this,1,1,M_DEVICE);
+    if (!pops.at(M_DEVICE))
+      new PopFrame(this,1,1,M_DEVICE);
   }
 
   
@@ -2875,7 +2877,8 @@ void MainFrame::DoClose() {
       Build();
     break;
   default:
-    new PopFrame(this,1,1,M_DEVICE);
+    if (!pops.at(M_DEVICE))
+      new PopFrame(this,1,1,M_DEVICE);
   }
 
   /*  
@@ -3885,18 +3888,27 @@ void MainFrame::HandleMenu(Int_t menu_id)
   //   break;
 
   case M_ECALIBR:
-    new PopFrame(this,1,600,M_ECALIBR);
+    if (!pops.at(M_ECALIBR))
+      new PopFrame(this,1,600,M_ECALIBR);
     break;
 
   case M_TCALIBR:
     //cout << "ecalibr: " << fTab->GetCurrent() << endl;
     fTab->SetTab("Plots");
-    new PopFrame(this,250,1,M_TCALIBR);
+    if (!pops.at(M_TCALIBR))
+      new PopFrame(this,430,1,M_TCALIBR);
     break;
 
   case M_PEAKS:
     fTab->SetTab("Plots");
-    new PopFrame(this,250,1,M_PEAKS);
+    if (!pops.at(M_PEAKS))
+      new PopFrame(this,250,1,M_PEAKS);
+    break;
+
+  case M_OPTPAR:
+    fTab->SetTab("Optimize");
+    if (!pops.at(M_OPTPAR))
+      new PopFrame(this,250,1,M_OPTPAR);
     break;
 
 // #ifdef YUMO
@@ -3907,7 +3919,8 @@ void MainFrame::HandleMenu(Int_t menu_id)
 
 #ifdef P_TEST
   case M_TEST:
-    new PopFrame(this,100,600,M_TEST);
+    if (!pops.at(M_TEST))
+      new PopFrame(this,100,600,M_TEST);
     break;
 #endif
 
@@ -3940,7 +3953,7 @@ void MainFrame::HandleHelp() {
   char command[128];
 
   strcpy(command,"xdg-open ");
-  strcat(command,HELPPATH"/help.pdf");
+  strcat(command,HELPPATH"/manual.pdf");
   int st = system( command );
 
   char* col=(char*)BGRN;

@@ -1737,7 +1737,7 @@ void hderiv(TH1 *hh) {
 bool p_comp(vpeak a, vpeak b) {return (a.p<b.p);}
 bool h_comp(vpeak a, vpeak b) {return (a.h>b.h);}
 
-void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
+void HistFrame::PeakSearch(TH1* h1, vpeaks &vv) {
   // находит пики <p,h,w> (pos,hight,width) и сохраняет их в вектор vv,
   // отсортированный по height?
 
@@ -1847,8 +1847,7 @@ void HistFrame::PeakSearch(TH1* h1, std::vector<vpeak> &vv) {
 
 }
 
-void HistFrame::MeanPeaks(TH1* hh, std::vector<vpeak> &vv,
-			 double* par, double* err, size_t i) {
+void HistFrame::MeanPeaks(TH1* hh, vpeaks &vv, size_t i) {
 
   int x1 = hh->FindFixBin(vv[i].b1);
   int x2 = hh->FindFixBin(vv[i].b2);
@@ -1872,23 +1871,32 @@ void HistFrame::MeanPeaks(TH1* hh, std::vector<vpeak> &vv,
     //hh->SetBinContent(j,yy);
   }
 
-  par[0] = h2->Integral();
-  par[1] = h2->GetBinContent(h2->GetMaximumBin());
-  par[2] = h2->GetMean();
-  par[3] = h2->GetRMS()*2.35;
+  // par[0] = h2->Integral();
+  // par[1] = h2->GetBinContent(h2->GetMaximumBin());
+  // par[2] = h2->GetMean();
+  // par[3] = h2->GetRMS()*2.35;
 
-  err[0] = 0;
-  err[1] = 0;
-  err[2] = h2->GetMeanError();
-  err[3] = h2->GetRMSError()*2.35;
+  // err[0] = sqrt(par[0]);
+  // err[1] = 0;
+  // err[2] = h2->GetMeanError();
+  // err[3] = h2->GetRMSError()*2.35;
+
+  vv[i].a = h2->Integral();
+  vv[i].h = h2->GetBinContent(h2->GetMaximumBin());
+  vv[i].p = h2->GetMean();
+  vv[i].w = h2->GetRMS()*2.35;
+
+  vv[i].ea = sqrt(vv[i].a);
+  vv[i].eh = 0;
+  vv[i].ep = h2->GetMeanError();
+  vv[i].ew = h2->GetRMSError()*2.35;
 
   //hh->GetListOfFunctions()->Add(h2);
   delete h2;
 
 }
 
-void HistFrame::FitPeaks(TH1* hh, std::vector<vpeak> &vv,
-			 double* par, double* err, size_t i) {
+void HistFrame::FitPeaks(TH1* hh, vpeaks &vv, size_t i) {
 
   TF1* f1=new TF1("fitf","gaus(0)+pol1(3)",vv[i].b1,vv[i].b2);
   f1->SetParameters(vv[i].h,vv[i].p,vv[i].w,0,0);
@@ -1900,21 +1908,31 @@ void HistFrame::FitPeaks(TH1* hh, std::vector<vpeak> &vv,
   string fitopt = "Q"; //"Q"
   if (i!=0) fitopt+="+";
   hh->Fit(f1,fitopt.data(),"",vv[i].b1,vv[i].b2);
-  //double* par = f1->GetParameters();
-  //double err[100];
-  memcpy(par+1,f1->GetParameters(),f1->GetNpar()*sizeof(double));
-  memcpy(err+1,f1->GetParErrors(),f1->GetNpar()*sizeof(double));
-  // for (auto i=0;i<f1->GetNpar();i++) {
-  //   par[i] = 
-  //   err[i] = f1->GetParError(i);
-  // }
 
-  
-  par[0] = par[1]*sqrt(2*TMath::Pi())*par[3]/hh->GetBinWidth(1);
-  err[0] = 0; //   /= hh->GetBinWidth(1);
 
-  par[3]*=2.35;
-  err[3]*=2.35;
+  // memcpy(par+1,f1->GetParameters(),f1->GetNpar()*sizeof(double));
+  // memcpy(err+1,f1->GetParErrors(),f1->GetNpar()*sizeof(double));
+
+  // par[0] = par[1]*sqrt(2*TMath::Pi())*par[3]/hh->GetBinWidth(1);
+  // err[0] = 0; // слишком сложно...
+
+  // par[3]*=2.35;
+  // err[3]*=2.35;
+
+  vv[i].h = f1->GetParameter(0);
+  vv[i].eh = f1->GetParError(0);
+  vv[i].p = f1->GetParameter(1);
+  vv[i].ep = f1->GetParError(1);
+  vv[i].w = f1->GetParameter(2);
+  vv[i].ew = f1->GetParError(2);
+
+  vv[i].a = vv[i].h*sqrt(2*TMath::Pi())*vv[i].w/hh->GetBinWidth(1);
+  vv[i].ea = 0; // слишком сложно...
+
+  vv[i].w*=2.35;
+  vv[i].ew*=2.35;
+
+
 }
 
 void HistFrame::DoPeaks(TH1* hh) {
@@ -1926,8 +1944,9 @@ void HistFrame::DoPeaks(TH1* hh) {
   vector<string> fitres;
 
   std::vector<string> vfit;
-  std::vector<vpeak> vv;
-  PeakSearch(hh,vv);
+  FClass *fits = new FClass();
+  vpeaks *vv = &fits->vv;
+  PeakSearch(hh,*vv);
     //continue;
     //return;
 
@@ -1937,29 +1956,25 @@ void HistFrame::DoPeaks(TH1* hh) {
   vfit.push_back("fwhm:");
 
   //for (auto pp=vv.begin(); pp!=vv.end();++pp) { //цикл по найденным пикам
-  for (size_t i=0;i<vv.size();i++) { //цикл по найденным пикам
-    double par[100],err[100];
+  for (size_t i=0;i<vv->size();i++) { //цикл по найденным пикам
+    //double par[100],err[100];
     if (opt.Peak_use_mean) {
-      MeanPeaks(hh,vv,par,err,i);
+      MeanPeaks(hh,*vv,i);
     }
     else {
-      FitPeaks(hh,vv,par,err,i);
+      FitPeaks(hh,*vv,i);
     }
 
-
     char s1[50],s2[100];
-    //double A = par[0] / (sqrt(2*TMath::Pi())*par[2]);
-
-    // sprintf(s1," %10.4g",par[0]);
-    // snprintf(s2,50,"%20s",s1);
-    // vfit[0]+=s2;
-
-    for (auto i=0;i<4;i++) {
-      //sprintf(s1," %10.4g #pm %0.3g",par[i],err[i]);
-      sprintf(s1," %10.4g +/- %0.3g",par[i],err[i]);
+    for (auto j=0;j<4;j++) {
+      // sprintf(s1," %10.4g +/- %0.3g",par[j],err[j]);
+      // snprintf(s2,50,"%20s",s1);
+      // vfit[j]+=s2;
+      double *a = &vv->at(i).a;
+      double *b = &vv->at(i).ea;
+      sprintf(s1," %10.4g +/- %0.3g",*(a+j),*(b+j));
       snprintf(s2,50,"%20s",s1);
-      //cout << i << " " << ss << endl;
-      vfit[i]+=s2;
+      vfit[j]+=s2;
     }
 
 
@@ -1967,14 +1982,14 @@ void HistFrame::DoPeaks(TH1* hh) {
     double y2 = hh->GetMaximum();
     y2 = y1+(y2-y1)*0.4;
     
-    hh->GetListOfFunctions()->Add(new TLine(vv[i].b1,y1,vv[i].b1,y2));
-    hh->GetListOfFunctions()->Add(new TLine(vv[i].b2,y1,vv[i].b2,y2));
+    hh->GetListOfFunctions()->Add(new TLine(vv->at(i).b1,y1,vv->at(i).b1,y2));
+    hh->GetListOfFunctions()->Add(new TLine(vv->at(i).b2,y1,vv->at(i).b2,y2));
     //prnt("ss f f f fs;",BGRN,"vv:",vv[i].b1,y1,vv[i].b2,y2,RST);
 
   } // for i (vv)
 
-  TPaveText *pt = new TPaveText(.6,0.6,.95,.9,"NDC");
-  pt->SetFillStyle(0);
+  TPaveText *pt = new TPaveText(.55,0.65,.9,.9,"NDC");
+  pt->SetFillStyle(1);
 
   if (opt.Peak_print && pkprint) {
     cout << "--- " << hh->GetTitle() << " ---" << endl;
@@ -1992,6 +2007,7 @@ void HistFrame::DoPeaks(TH1* hh) {
   //cout << "pt: " << pt->GetTextSize() << " " << pt->GetTextFont() << endl;
 
   hh->GetListOfFunctions()->Add(pt);
+  hh->GetListOfFunctions()->Add(fits);
   //pt->Draw();
   //gStyle->SetOptFit();
 
@@ -2241,89 +2257,6 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
 } //Do_Ecalibr
 
 //--------------------------------------------
-void HistFrame::Do_Tcalibr(PopFrame* pop) {
-
-  TString name;
-
-  HMap *map, *map1;
-  Hdef *hd1=0;
-  const char* mapname1 = "Tfit";
-
-  TGListTreeItem *iroot=0;
-  TGListTreeItem *idir1;
-
-  hmap_chklist->Clear();
-
-  idir1=fListTree->FindChildByName(0,mapname1);
-  DelMaps(idir1);
-
-  if (hd1) delete hd1;
-  hd1 = new Hdef();
-
-
-  idir1 = Item_Ltree(iroot,mapname1,0,0,0);;
-  Make_Hmap_ChkList();
-
-  TIter next(hmap_chklist);
-  TObject* obj;
-  while ( (obj=(TObject*)next()) ) {
-    map=(HMap*) obj;
-    if (map->hd==&opt.h_time && map->hst->Integral()) {
-      name = mapname1 + TString::Format("_%02d",map->nn);
-      TH1* hist1 = (TH1*) map->hst->Clone(name.Data());
-      hist1->SetTitle(name);
-      OneRebinPreCalibr(map, hist1, false);
-
-      hist1->UseCurrentStyle();
-
-      double imax = hist1->GetBinCenter(hist1->GetMaximumBin());
-      double ymax = hist1->GetBinContent(hist1->GetMaximumBin());
-      double x1 = imax-pop->range;
-      double x2 = imax+pop->range;
-      double y1 = hist1->GetBinContent(hist1->FindFixBin(x1));
-      double y2 = hist1->GetBinContent(hist1->FindFixBin(x2));
-      double bkg=(y1+y2)/2;
-
-      // cout << "Tfit: " << name << " " << imax << " " << ymax
-      // 	   << " " << x1 << " " << x2 << endl; 
-
-      TF1* f1=new TF1("fitf","pol1(0)+gaus(2)",x1,x2);
-      f1->SetParameters(bkg,0,ymax,imax,pop->fwhm/2.35);
-
-      hist1->Fit(f1,"N","",x1,x2);
-      pop->sD[map->nn]=f1->GetParameter(3);
-
-      hist1->GetListOfFunctions()->Add((TF1*) f1->Clone());
-      hist1->GetListOfFunctions()->Add(new TLine(x1,0,x1,ymax));
-      hist1->GetListOfFunctions()->Add(new TLine(x2,0,x2,ymax));
-      
-      // d2vect d2;
-      // for (int i=0;i<3;i++) {
-      // 	d2.push_back(dvect());
-      // }
-      // for (UInt_t i=0;i<ee_calib.size();++i) {
-      // 	PeakFit(map,hist1,hist2,i,d2);
-      // }
-
-      map1 = new HMap(mapname1,hist1,hd1,map->nn);
-      Item_Ltree(idir1, map1->GetName(), map1, pic_1d, pic_1d);
-
-
-      // for (int j=0;j<3;j++) {
-      // 	opt.adj[map->nn][j]=fitf->GetParameter(j);
-      // }
-      
-      // map2 = new HMap(mapname2,gr,hd2,map->nn);
-      // Item_Ltree(idir2, map2->GetName(), map2, pic, pic);
-
-      //break;
-
-    }
-  } //next
-
-  HiUpdate();
-} //Do_Tcalibr
-
 void HistFrame::DoUnZoom() {
   fHslider->SetPosition(0,1);
   fVslider->SetPosition(0,1);

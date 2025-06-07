@@ -64,10 +64,44 @@ const int MXPK=14; // eventframe
 
 const double mks=0.001;
 
+
+enum MENU_COM {
+  M_READINIT,
+  M_SAVEINIT,
+  M_READROOT,
+  M_SAVEROOT,
+  M_SAVEASCII,
+  M_FILE_BROWSE,
+  M_RESET_USB,
+  M_DETECT_DEV,
+  M_EXPORT,
+  M_EXIT,
+  M_EDIT_PROF8,
+  M_EDIT_PROF64,
+  M_EDIT_CUTG,
+  M_PROF_TIME,
+  //M_PRECALIBR,
+  M_ECALIBR,
+  M_TCALIBR,
+  M_PEAKS,
+  M_OPTPAR,
+  M_DEVICE,
+// #ifdef YUMO
+//   M_YUMO,
+// #endif
+  M_TEST,
+  //M_HELP,
+  M_COUNT //нужно для вектора pops
+};
+
+
+
+
 //---------------------
 enum P_Def {
 	    p_null, // 0
 	    p_fnum,
+	    p_fnum2,
 	    p_inum,
 	    p_chk,
 	    p_cmb,

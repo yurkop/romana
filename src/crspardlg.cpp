@@ -414,15 +414,19 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
 }
 
 void ParDlg::SetNum(Pmap pp, UShort_t off, Double_t num) {
-  if (pp.type==p_fnum) {
+  switch (pp.type) {
+  case p_fnum:
+  case p_fnum2: {
     *((Float_t*)pp.data+off) = num;
     if (pp.data2) *((Float_t*)pp.data2+off) = num;
+    break;
   }
-  else if (pp.type==p_inum) {
+  case p_inum: {
     *((Int_t*)pp.data+off) = num;
     if (pp.data2) *((Int_t*)pp.data2+off) = num;
+    break;
   }
-  else {
+  default:
     cout << "(SetNum) Wrong type: " << pp.type << endl;
   }
 
@@ -733,15 +737,17 @@ void ParDlg::CopyParLine(int sel, int index, int line) {
 void ParDlg::CopyField(Pmap* pp, int from, int to) {
 
   //skip wrong types
-  if (pp->type!=p_inum && pp->type!=p_fnum && pp->type!=p_chk) {
+  switch (pp->type) {
+  case p_inum:
+  case p_fnum:
+  case p_fnum2:
+  case p_chk:
+    break;
+  default:
     return;
   }
 
-  //prnt("ss d d f d ds;",BMAG,"cpf:",id,off,fnum,dq,act,RST);
-
-  // if (pt1!=pt2) {
-  //   cout << "CopyField bad type: " << from << " " << to << " "
-  // 	 << (int) pt1 << " " << (int) pt2 << " " << endl;
+  // if (pp->type!=p_inum && pp->type!=p_fnum && pp->type!=p_chk) {
   //   return;
   // }
 	
@@ -750,6 +756,7 @@ void ParDlg::CopyField(Pmap* pp, int from, int to) {
     *((Int_t*)pp->data+to) = *((Int_t*)pp->data+from);
     break;
   case p_fnum:
+  case p_fnum2:
     *((Float_t*)pp->data+to) = *((Float_t*)pp->data+from);
     break;
   case p_chk:
@@ -779,7 +786,8 @@ void ParDlg::DoColor(Pmap* pp, Float_t val) {
       break;
     }
     case p_inum:
-    case p_fnum: {
+    case p_fnum:
+    case p_fnum2: {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
       if (te->IsEnabled()) {
 	bool vv = (val!=0);
@@ -844,7 +852,8 @@ void ParDlg::UpdateField(int nn) {
     te->SetNumber(*dat);
   }
     break;
-  case p_fnum: {
+  case p_fnum:
+  case p_fnum2: {
     TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
     Float_t *dat = ((Float_t*)pp->data) + pp->off;
     val = *dat;
@@ -993,6 +1002,7 @@ void ParDlg::EnableField(int nn, bool state) {
   switch (pp->type) {
   case p_inum:
   case p_fnum:
+  case p_fnum2:
     {
       TGNumberEntryField *te = (TGNumberEntryField*) pp->field;
       TString str = TString(te->GetParent()->GetName());
@@ -2863,13 +2873,13 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"Ms",opt.Ms);
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"Dsp",opt.Dsp,0,0);
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"Pls",opt.Pls,0,0);
-  AddColumn(jj,kk++,1,p_fnum,35,0,-9999,9999,"sD",opt.sD);
+  AddColumn(jj,kk++,1,p_fnum2,45,0,-9999,9999,"sD",opt.sD);
   //AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"dTm",opt.dTm);
   //AddColumn(jj,kk++,1,p_inum,35,0,0,9999,"Pile",opt.Pile);
   AddColumn(jj,kk++,1,p_inum,20,0,0,2,"C",opt.calibr_t);
-  AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E0",opt.E0);
-  AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E1",opt.E1);
-  AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"E2",opt.E2);
+  AddColumn(jj,kk++,1,p_fnum,50,0,-1e99,1e99,"E0",opt.E0);
+  AddColumn(jj,kk++,1,p_fnum,60,0,-1e99,1e99,"E1",opt.E1);
+  AddColumn(jj,kk++,1,p_fnum,50,0,-1e99,1e99,"E2",opt.E2);
   AddColumn(jj,kk++,1,p_inum,40,0,-99999,99999,"Pz",opt.Pz);
   //AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"Bc",opt.Bc);
   for (int i=1;i<=4;i++) {
@@ -2965,6 +2975,7 @@ AddColumn(int jj, int kk, int ii, P_Def pdef,
     break;
   case p_inum:
   case p_fnum:
+  case p_fnum2:
     AddNumPar(jj,kk,wd,all,daq,pdef,min,amax,hparl[ii][jj],pname,
 	      apar,off,cmd,apar2);
     break;
@@ -3106,15 +3117,19 @@ void ChanParDlg::AddNumPar(int j, int kk, int wd, int all, int daq, P_Def pdef, 
 
   int id = Plist.size()+1;
 
-  ETextJustification al;
-  TGNumberFormat::EStyle style;
-  if (pdef==p_fnum) {
+  //ETextJustification al=kTextRight;;
+  TGNumberFormat::EStyle style=TGNumberFormat::kNESInteger;
+  switch (pdef) {
+  case p_fnum:
     style=TGNumberFormat::kNESReal;
-    al = kTextLeft;
-  }
-  else {
-    style=TGNumberFormat::kNESInteger;
-    al = kTextRight;
+    //al = kTextLeft;
+    break;
+  case p_fnum2:
+    style=TGNumberFormat::kNESRealTwo;
+    //al = kTextLeft;
+    break;
+  default:
+    ;
   }
 
   TGNumberEntryField* fNum =
@@ -3129,8 +3144,9 @@ void ChanParDlg::AddNumPar(int j, int kk, int wd, int all, int daq, P_Def pdef, 
   fNum->SetToolTipText(ptip.at(kk));
   fNum->SetWidth(wd);
   fNum->SetHeight(PHeight);
-  fNum->SetAlignment(al);
-  //fNum->SetAlignment(kTextRight);
+  //fNum->SetAlignment(al);
+  fNum->SetAlignment(kTextRight);
+  //fNum->SetAlignment(kTextLeft);
   fNum->Connect("TextChanged(char*)", "ParDlg", this, "DoDaqNum()");
   hfr->AddFrame(fNum,LayCC0a);
 

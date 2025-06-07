@@ -28,7 +28,15 @@ typedef std::vector<double> dvect;
 typedef std::vector<dvect> d2vect;
 
 struct vpeak {
-  double p,h,w,b1,b2; //pos,height,width,border1,border2
+  double a,h,p,w,b1,b2, //area,height,pos,width(fwhm),border1,border2
+    ea,eh,ep,ew; //errors: area,height,pos,width
+};
+
+typedef std::vector<vpeak> vpeaks;
+
+class FClass: public TObject {
+public:
+  vpeaks vv;
 };
 
 //-----------------------------------------------
@@ -156,18 +164,14 @@ public:
   void ClearCutG();
   string CutsToStr();
   void EditCutG();
-  void PeakSearch(TH1* hh, std::vector<vpeak> &vv);
-  void MeanPeaks(TH1* hh, std::vector<vpeak> &vv,
-		double* par, double* err, size_t i);
-  void FitPeaks(TH1* hh, std::vector<vpeak> &vv,
-		double* par, double* err, size_t i);
+  void PeakSearch(TH1* hh, vpeaks &vv);
+  void MeanPeaks(TH1* hh, vpeaks &vv, size_t i);
+  void FitPeaks(TH1* hh, vpeaks &vv, size_t i);
     //std::vector<string> &vfit, size_t i);
   void DoPeaks(TH1* hh);
   void PeakFit(HMap* map, TH1* hist1, TH1* hist2, int i, d2vect &d2);
   void DelMaps(TGListTreeItem *idir);
   void Do_Ecalibr(PopFrame* pop);
-  void Do_Tcalibr(PopFrame* pop);
-  //void Do_Ecalibr();
   void DoUnZoom();
   void DoRst();
   void HiReset();

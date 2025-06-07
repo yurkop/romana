@@ -18,33 +18,6 @@
 #include <TDataMember.h>
 #include <list>
 
-enum MENU_COM {
-  M_READINIT,
-  M_SAVEINIT,
-  M_READROOT,
-  M_SAVEROOT,
-  M_SAVEASCII,
-  M_FILE_BROWSE,
-  M_RESET_USB,
-  M_DETECT_DEV,
-  M_EXPORT,
-  M_EXIT,
-  M_EDIT_PROF8,
-  M_EDIT_PROF64,
-  M_EDIT_CUTG,
-  M_PROF_TIME,
-  //M_PRECALIBR,
-  M_ECALIBR,
-  M_TCALIBR,
-  M_PEAKS,
-  M_DEVICE,
-// #ifdef YUMO
-//   M_YUMO,
-// #endif
-  M_TEST,
-  //M_HELP,
-};
-
 using namespace std;
 
 //#include "mainframe.h"
@@ -167,6 +140,8 @@ class MainFrame : public TGMainFrame {
 
   //PEditor* p_ed;
   //PopFrame* p_pop;
+
+  std::array<bool,M_COUNT> pops = {};
 
   TGTab                *fTab;
   std::vector<TGCompositeFrame*> tabfr;

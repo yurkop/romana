@@ -24,9 +24,10 @@ class PopFrame {
 
 public:
 
-  TGLayoutHints *LayLC0,*LayLC2,*LayCC3,*LayCC4,*LayEE2,*LayCB1,*LayCT1,
-    *LayBut1,*LayBut2,*LayBut3;
+  TGLayoutHints *LayLC0,*LayLC1,*LayLC2,*LayCC3,*LayCC4,*LayEE2,*LayCB1,*LayCT1,
+    *LayBut1,*LayBut1a,*LayBut2,*LayBut3;
 
+  MENU_COM m_id;
   void* ptr;
 
   TGTransientFrame *fMain;   // main frame of this widget
@@ -50,10 +51,8 @@ public:
   TRootEmbeddedCanvas  *fCanvas;
   TText txt;
   Int_t npeaks;
-  Int_t npol;
-  Double_t fwhm;
-  Double_t range;
   //Double_t ee[10];
+  Double_t time_ref=0;
   Int_t delay;
   Int_t n_iter;
 
@@ -63,10 +62,10 @@ public:
   Float_t adj[MAX_CH+NGRP+1][3];
   Int_t calibr_t[MAX_CHTP]; //type of calibration
 
-  Float_t sD[MAX_CHTP];
+  Float_t local_sD[MAX_CHTP];
 
 public:
-  PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id, void* p=0);
+  PopFrame(const TGWindow *main, UInt_t w, UInt_t h, MENU_COM menu_id, void* p=0);
   virtual ~PopFrame();
   void AddProfTime(UInt_t w, UInt_t h);
   void AddAdj(TGCompositeFrame* fcont1, HMap* map, int i);
@@ -75,6 +74,7 @@ public:
   void AddEcalibr(UInt_t w, UInt_t h);
   void AddTcalibr();
   void AddPeaks();
+  void AddOptPar();
 #ifdef CYUSB
   void AddDevice();
 #endif
@@ -91,8 +91,10 @@ public:
   void Do_EApply();
   void Do_Default();
   void Do_Revert();
-  void Do_Tcalibr();
+  //void Do_Tcalibr();
   void Do_TApply();
+  void Do_TRevert();
+  void Do_OptPar();
   void Do_Test();
 
   void CloseWindow();

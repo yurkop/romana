@@ -27,14 +27,18 @@ const int ww[]={15,90,60,60,60};
 
 using namespace std;
 
-PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
+PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, MENU_COM menu_id,
 		   void* p) {
+  m_id=menu_id;
+  myM->pops.at(m_id)=1;
+
   chklist.Clear();
   //ee_calib=0;
   ptr=p;
   fListBox=0;
 
-  LayLC0   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY);
+  LayLC0   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY,2,2,2,2);
+  LayLC1   = new TGLayoutHints(kLHintsLeft|kLHintsTop,20,2,2,2);
   LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 2,2,2,2);
   LayCC3   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 150,150,50,5);
   LayCC4   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 150,150,20,150);
@@ -42,6 +46,7 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
   LayCB1   = new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5);
   LayCT1   = new TGLayoutHints(kLHintsCenterX|kLHintsTop, 0, 0, 2, 2);
   LayBut1 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 5, 5, 5, 5);
+  LayBut1a = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 25, 25, 5, 5);
   LayBut2 = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 15, 5, 1, 1);
   LayBut3 = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 55, 55, 5, 5);
 
@@ -71,6 +76,10 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
     fMain->ChangeOptions(fMain->GetOptions()|kFixedWidth);
     AddPeaks();
   }
+  else if (menu_id==M_OPTPAR) {
+    fMain->ChangeOptions(fMain->GetOptions()|kFixedWidth);
+    AddOptPar();
+  }
 #ifdef CYUSB
   else if (menu_id==M_DEVICE) {
     AddDevice();
@@ -95,6 +104,7 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, Int_t menu_id,
 }
 PopFrame::~PopFrame()
 {
+  myM->pops.at(m_id)=0;
   fMain->DeleteWindow();  // deletes fMain
 }
 void PopFrame::CloseWindow()
@@ -255,7 +265,7 @@ void PopFrame::AddAdj(TGCompositeFrame* fcont1, HMap* map, int i) {
 
 void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
 
-  ULong_t colr = TColor::RGB2Pixel(200,240,230);
+  const ULong_t colr = TColor::RGB2Pixel(200,240,230);
   const char* txt =
     "Calibrate all visible 1D histograms that have \"area\" in their name.\n"
     "'Visible' means plotted either in Stack or in X/Y mode.\n"
@@ -399,14 +409,14 @@ void PopFrame::AddEcalibr(UInt_t w, UInt_t h) {
 
 void PopFrame::AddNum(double val, int id, const char* label, const char* tip) {
   TGHorizontalFrame *hframe = new TGHorizontalFrame(fMain);
-  fMain->AddFrame(hframe, LayLC2);
+  fMain->AddFrame(hframe, LayLC1);
   TGNumberEntry *fNum = new TGNumberEntry(hframe, val, 8, id, kr, ka, kn);
   fNum->GetNumberEntry()->Connect("TextChanged(char*)", "PopFrame", this,
 				  "DoENum()");
   fNum->GetNumberEntry()->SetToolTipText(tip);
-  hframe->AddFrame(fNum, LayLC2);
+  hframe->AddFrame(fNum, LayLC0);
   fLabel = new TGLabel(hframe, label);
-  hframe->AddFrame(fLabel, LayLC2);
+  hframe->AddFrame(fLabel, LayLC0);
 }
 
 void PopFrame::AddChk(bool val, int id, const char* label, const char* tip) {
@@ -426,11 +436,30 @@ void PopFrame::AddChk(bool val, int id, const char* label, const char* tip) {
 }
 
 void PopFrame::AddTcalibr() {
-  fwhm=1;
-  npol=1;
-  range=3;
 
-  memset(sD,0,sizeof(sD));
+  if (sizeof(local_sD)!=sizeof(opt.sD)) {
+    prnt("sss;",BRED,"local_sD!",RST);
+    return;
+  }
+
+  const ULong_t colr = TColor::RGB2Pixel(220,230,250);
+  const char* txt =
+    "To auto-calibrate Time spectra:\n\n"
+    " - plot all Time histograms in multiple sub-windows (no Stack)\n"
+    "      in such a way that the reference peak\n"
+    "      is the highest in the window;\n"
+    " - select \"Peaks\"; optionally optimize Peak search parameters;\n"
+    " - enter a reference value to which all peak positions will be adjusted;\n"
+    " - press \"Apply\" to adjust sD parameters to new peak positions;\n"
+    " - (re)start analysis/acquisition.\n\n"
+    "\"Revert\" will restore the sD values that were set\n"
+    "   when the Time calibration menu was opened.";
+  
+  fLabel = new TGLabel(fMain,txt);
+  fMain->AddFrame(fLabel, LayCT1);
+  fLabel->SetBackgroundColor(colr);
+
+  memcpy(local_sD,opt.sD,sizeof(local_sD));
   // for (int i=0;i<11;i++) {
   //   pframe[i]=0;
   // }
@@ -438,19 +467,19 @@ void PopFrame::AddTcalibr() {
   fMain->SetWindowName("Time Calibration");
   npeaks=1;
 
-  AddNum(fwhm,11,"Peak width (fwhm)");
-  AddNum(range,12,"+/- fit range");
-  AddNum(npeaks,14,"Number of peaks");
+  AddNum(time_ref,11,"New peak position");
 
   hframe = new TGHorizontalFrame(fMain,10,10);
-  fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
-  TGTextButton* fCalibr = new TGTextButton(hframe, "  &Calibr  ");
-  fCalibr->Connect("Clicked()", "PopFrame", this, "Do_Tcalibr()");
-  hframe->AddFrame(fCalibr, LayBut1);
+  //fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
+  fMain->AddFrame(hframe,LayBut1);
+
   TGTextButton* fTApply = new TGTextButton(hframe, "  &Apply  ");
   fTApply->Connect("Clicked()", "PopFrame", this, "Do_TApply()");
-  hframe->AddFrame(fTApply, LayBut1);
+  hframe->AddFrame(fTApply, LayBut1a);
 
+  TGTextButton* fCalibr = new TGTextButton(hframe, "  &Revert  ");
+  fCalibr->Connect("Clicked()", "PopFrame", this, "Do_TRevert()");
+  hframe->AddFrame(fCalibr, LayBut1a);
 }
 
 void PopFrame::AddPeaks() {
@@ -476,20 +505,33 @@ void PopFrame::AddPeaks() {
   */
 }
 
+void PopFrame::AddOptPar() {
+
+  //memset(local_sD,0,sizeof(local_sD));
+  // for (int i=0;i<11;i++) {
+  //   pframe[i]=0;
+  // }
+
+  fMain->SetWindowName("Time Calibration");
+  npeaks=1;
+
+  //AddNum(range,12,"+/- fit range");
+
+  hframe = new TGHorizontalFrame(fMain,10,10);
+  fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
+
+  TGTextButton* fCalibr = new TGTextButton(hframe, "  &Start  ");
+  fCalibr->Connect("Clicked()", "PopFrame", this, "Do_OptPar()");
+  hframe->AddFrame(fCalibr, LayBut1);
+
+}
+
 #ifdef CYUSB
 void PopFrame::AddDevice() {
   fMain->SetWindowName("Select Device");
 
-  //ULong_t colr = EvtFrm->gcol[2];
-  //cout << "colr: " << colr << endl;
-  
   fLabel = new TGLabel(fMain,"More than one device found. Select Device:");
-  //fLabel->SetTextJustify(kTextCenterX);
-
-  //fLabel->ChangeOptions(fLabel->GetOptions()|kFixedWidth);
-  //fLabel->SetWidth(ww[0]);
   fMain->AddFrame(fLabel, LayCC3);
-  //fLabel->SetBackgroundColor(colr);
 
   fListBox = new TGListBox(fMain, 2);
 
@@ -626,13 +668,7 @@ void PopFrame::DoENum() {
 
   switch (id) {
   case 11:
-    fwhm=te->GetNumber();
-    break;
-  case 12:
-    range=te->GetNumber();
-    break;
-  case 13:
-    npol=te->GetNumber();
+    time_ref=te->GetNumber();
     break;
   case 21:
     opt.E_auto=te->GetNumber();
@@ -799,13 +835,6 @@ void PopFrame::E_Update() {
   }
 }
 
-void PopFrame::Do_Tcalibr()
-{
-
-  HiFrm->Do_Tcalibr(this);
-
-} //Do_Tcalibr
-
 void PopFrame::Do_EApply() {
   for (int i=0;i<MAX_CH;i++) {
     if (fAdj[i][0]) {
@@ -843,13 +872,83 @@ void PopFrame::Do_EApply() {
 
 void PopFrame::Do_TApply() {
   //cout << "Appl: " << endl;
-  for (int i=0;i<MAX_CH;i++) {
-    if (sD[i]) {
-      opt.sD[i] = -sD[i];
+
+  for (int npad = 0;npad<HiFrm->ndiv;npad++) {
+    bool sss=false;
+    Float_t dt=0;
+    int nn;
+    if (npad < (int)HiFrm->pad_map.size() && HiFrm->pad_map[npad]
+	&& HiFrm->pad_hist[npad]) {
+
+      //TString str(hh->GetName());
+      if (HiFrm->pad_hist[npad]->InheritsFrom(TH1::Class())) {
+	TH1* hh = (TH1*) HiFrm->pad_hist[npad];
+	if ( TString(hh->GetName()).Contains("time",TString::kIgnoreCase)) {
+	  FClass *fits = (FClass*) hh->GetListOfFunctions()->Last();
+	  if (fits && fits->InheritsFrom(FClass::Class())) {
+	    if (fits->vv.size()) {
+	      sss=true;
+	      dt = fits->vv.at(0).p;
+	      nn = HiFrm->pad_map[npad]->nn;
+	      opt.sD[nn]=local_sD[nn]-dt+time_ref;
+	    }
+	  }
+	}
+      }
     }
-  }
-  //E_Update();
+
+
+    if (sss)
+      prnt("ss d s fs;",BGRN,"T:",nn,HiFrm->pad_map[npad]->GetName(),dt,RST);
+    else
+      prnt("ss ds;",BRED,"Wrong Pad:",npad+1,RST);
+  }  
+  //HiFrm->Do_Tcalibr(this);
+  chanpar->Update();
+
 }
+
+void PopFrame::Do_TRevert() {
+  memcpy(opt.sD,local_sD,sizeof(local_sD));  
+  chanpar->Update();
+}
+
+void PopFrame::Do_OptPar()
+{
+
+  /*
+  Bool_t Dsp2[MAX_CHTP];
+
+  //cout << "ZZ: " << sizeof(opt.Dsp) << endl;
+  memcpy(Dsp2, opt.Dsp, sizeof(opt.Dsp));
+  memset(opt.Dsp, 1, sizeof(opt.Dsp));
+
+  crs->b_fana=true;
+  crs->b_stop=false;
+
+  crs->FAnalyze2(true);
+
+  crs->b_fana=false;
+  crs->b_stop=true;
+
+  memcpy(opt.Dsp, Dsp2, sizeof(opt.Dsp));
+  */
+
+  HiFrm->DoRst();
+
+  for (auto evt = crs->Levents.begin();evt!=crs->Levents.end();++evt) {
+    for (auto pls = evt->pulses.begin();pls!=evt->pulses.end();++pls) {
+      crs->PulseAna(*pls);
+      //cout << "pls: " << (int) pls->Chan << endl;
+    }
+    //cout << evt->Nevt << " " << evt->Tstmp << endl;
+    Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
+    hcl->FillHist(&*evt,hcut_flag);
+  }
+  HiFrm->ReDraw();
+
+
+} //Do_OptPar
 
 void PopFrame::Do_Default() {
   fEdit->LoadBuffer(
