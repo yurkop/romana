@@ -216,7 +216,7 @@ class HClass {
   mdef_list MFilelist; // содержит (не указатели!) Mdef для гистограмм из файлов
   // 1 файл = 1 Mdef
 
-  TList fhist_list; //список гистограмм, считанных из файла в ReadRoot
+  //TList *fhist_list; //список гистограмм, считанных из файла в ReadRoot
 
 
   TVirtualFFT* fft[MAX_CH];
@@ -257,8 +257,8 @@ class HClass {
   void Make_cuts();
 
   mdef_iter Add_file(const char *name);
-  void Root_to_allmap();
-  void Root_to_newtree(const char *name);
+  void Root_to_allmap(TList* fhist_list);
+  void Root_to_newtree(const char *name, TList* fhist_list);
   void ReadRoot(const char *name, int ww);
   ClassDef(HClass, 0)
 };

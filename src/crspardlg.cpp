@@ -2895,12 +2895,12 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);
   AddColumn(jj,kk++,1,p_inum,20,0,0,3,"Mt",opt.Mt);
+  AddColumn(jj,kk++,1,p_inum,30,0,1,999,"DD",opt.DD);
+  AddColumn(jj,kk++,1,p_inum,30,0,1,9,"FF",opt.FF);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"B1",opt.B1);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"B2",opt.B2);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"P1",opt.P1);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"P2",opt.P2);
-  AddColumn(jj,kk++,1,p_inum,30,0,1,999,"DD",opt.DD);
-  AddColumn(jj,kk++,1,p_inum,30,0,1,9,"FF",opt.FF);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"T1",opt.T1);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"T2",opt.T2);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"W1",opt.W1);

@@ -574,7 +574,7 @@ void CRS::Ana_start() {
       //Mdef md = *(*it);
       bool inmain = false;
 
-      //prnt("ss s ss;",BGRN,"ML:",it->h_name.Data(),(*it)->h_name.Data(),RST);
+      //prnt("ss ss;",BGRN,"ML:",it->h_name.Data(),RST);
       //prnt("ss l ls;",BBLU,"ML:",it->v_map.size(),(*it)->v_map.size(),RST);
       //cout << "md: " << it->v_map[0] << " " << (*it)->v_map[0] << " " << it->hd << endl;
 
@@ -592,7 +592,6 @@ void CRS::Ana_start() {
       }
     }
   }
-
 
   //cout << "Command_start: " << endl;
 #ifdef LINUX
@@ -2750,7 +2749,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
 
   //prnt("sss d sd sd sds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
 
-  cout << "mod: " << mod << " " << fmt << " " << sz << endl;
+  //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
   if (mod>100 || sz<5e4 || sz>5e5){//возможно, это текстовый файл
     //или старый файл без параметров
     if (cp)
@@ -3934,8 +3933,8 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
 	ipls->Height = ((UInt_t) buf1u[7])<<8;
 
 	if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
-	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	  evt->T0=ipls->Time;
+	  evt->ChT0=ipls->Chan;
 	}
 	ipls->Ecalibr(ipls->Area);
       }
@@ -4050,10 +4049,9 @@ void CRS::Decode80(UInt_t iread, UInt_t ibuf) {
       }
       ipls->sData.push_back(buf4[0]);
 
-      
       if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
-	//prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	evt->T0=ipls->Time;
+	evt->ChT0=ipls->Chan;
       }
     }
 
@@ -4175,8 +4173,8 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
 	  ipls->Height = ((UInt_t) buf1u[7])<<8;
 
 	  if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
-	    //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	    evt->T0=ipls->Time;
+	    evt->ChT0=ipls->Chan;
 	  }
 	  ipls->Ecalibr(ipls->Area);
 	}
@@ -4233,6 +4231,7 @@ void CRS::Decode78(UInt_t iread, UInt_t ibuf) {
       ipls->Chan = buf2[3];
       if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
 	evt->T0=ipls->Time;
+	evt->ChT0=ipls->Chan;
       }
       ipls->Ecalibr(ipls->Area);
     }
@@ -4283,6 +4282,7 @@ void CRS::Decode77(UInt_t iread, UInt_t ibuf) {
       ipls->Chan = buf2[3];
       if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
 	evt->T0=ipls->Time;
+	evt->ChT0=ipls->Chan;
       }
       ipls->Ecalibr(ipls->Area);
     }
@@ -5524,8 +5524,8 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
 	ipls->Width = hit->w;
 	ipls->Pos = ipls->Time;
 	if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
-	  //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
 	  evt->T0=ipls->Time;
+	  evt->ChT0=ipls->Chan;
 	}
 	ipls->Ecalibr(ipls->Area);
       }

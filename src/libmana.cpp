@@ -2156,10 +2156,14 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // fMenuAnalysis->Connect("Activated(Int_t)", "MainFrame", this,
   // 		     "HandleMenu(Int_t)");
   fMenuAnalysis->AddEntry("Peak Search Parameters", M_PEAKS);
-  fMenuAnalysis->AddEntry("Optimize Parameters", M_OPTPAR);
-// #ifdef YUMO
-//   fMenuAnalysis->AddEntry("YUMO", M_YUMO);
-// #endif
+
+
+  //fMenuAnalysis->AddEntry("Optimize Parameters", M_OPTPAR);
+
+
+  // #ifdef YUMO
+  //   fMenuAnalysis->AddEntry("YUMO", M_YUMO);
+  // #endif
 #ifdef P_TEST
   fMenuAnalysis->AddEntry("Test", M_TEST);
 #endif
@@ -3908,7 +3912,7 @@ void MainFrame::HandleMenu(Int_t menu_id)
   case M_OPTPAR:
     fTab->SetTab("Optimize");
     if (!pops.at(M_OPTPAR))
-      new PopFrame(this,250,1,M_OPTPAR);
+      new PopFrame(this,350,1,M_OPTPAR);
     break;
 
 // #ifdef YUMO

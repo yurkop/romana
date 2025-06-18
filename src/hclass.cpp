@@ -21,9 +21,40 @@ extern TRandom rnd;
 
 Float_t Mdef::VarTime(EventClass* e, PulseClass* p){
   // if (e->Spin & 128) //Counters
-  //   cout << "vartime: " << (int)p->Chan << " " << (p->Time - e->T0)*opt.Period+opt.sD[p->Chan] << endl;
-  return (p->Time - e->T0)*opt.Period+opt.sD[p->Chan];
+  //prnt("ss l d f fs;",BMAG,"vartime:",e->Tstmp,p->Chan,p->Time,e->T0,RST);
+
+  if (p->Chan == e->ChT0 && p->Time == e->T0) // канал, в котором T0
+    return -99999;
+  else
+    return (p->Time - e->T0)*opt.Period+opt.sD[p->Chan];
 }
+
+/*
+Float_t Mdef::VarTime(EventClass* e, PulseClass* p){
+  // if (e->Spin & 128) //Counters
+  //prnt("ss l d f fs;",BBLU,"vartime:",e->Tstmp,p->Chan,p->Time,e->T0,RST);
+
+  if (e->pulses.size()<2)
+    return -99999;
+  else {
+    Float_t T0=99999;
+    for (auto ii=e->pulses.begin();ii!=e->pulses.end();++ii) {
+      if (opt.St[ii->Chan] && ii->Pos>-32222) {
+	Float_t T7 = ii->Time+opt.sD[ii->Chan]/opt.Period;
+	if (T7<T0) {
+      }
+    }
+  }
+
+  //mult<2 or Time Start channel
+  if (e->pulses.size()<2 ||
+      (e->Tpls>=0 && e->pulses[e->Tpls].Chan == p->Chan))
+    return -99999;
+  else {
+    return (p->Time - e->T0)*opt.Period+opt.sD[p->Chan];
+  }
+}
+*/
 
 Float_t Mdef::VarRate(EventClass* e, PulseClass* p){
   Float_t x = e->Tstmp*crs->sPeriod;
@@ -672,7 +703,8 @@ void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
 	  for (int j=0;j<64;j++) {
 	    if (h_sum[1][j]>opt.Prof64_THR) { //Y
 	      Fill_02(hcl->md_prof->v_map[ch_alpha],
-		       (i+0.5)*1.875,(j+0.5)*1.875,hcut_flag,ncut);
+		      opt.Prof64_X+(i+0.5)*1.875-60,
+		      opt.Prof64_Y+(j+0.5)*1.875-60,hcut_flag,ncut);
 	    } //if Y
 	  }
 	} //if X
@@ -690,7 +722,8 @@ void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
 	for (int j=0;j<64;j++) {
 	  if (h_sum[1][j]>opt.Prof64_THR) {
 	    Fill_02(hcl->md_prof_int->v_map[4],i+0.5,j+0.5,hcut_flag,ncut);
-	    Fill_02(hcl->md_prof_int->v_map[5],(i+0.5)*1.875,(j+0.5)*1.875,hcut_flag,ncut);
+	    Fill_02(hcl->md_prof_int->v_map[5],opt.Prof64_X+(i+0.5)*1.875-60,
+		    opt.Prof64_Y+(j+0.5)*1.875-60,hcut_flag,ncut);
 	  } //if Y
 	}
       } //if X
@@ -978,6 +1011,7 @@ void HClass::Make_hist() {
   for (auto it = Mlist.begin();it!=Mlist.end();++it) {
     //prnt("ss d ss;",BGRN,"mkhst:",it->hnum,it->h_name.Data(),RST);
 
+    it->v_map.clear();
     //YK!: обнуление v_map перенесено в MapHist
     // memset(it->v_map.data(),0,it->v_map.size()*sizeof(HMap*));
     if (it->hnum>0 && it->hnum<10) {// standard pulse variable
@@ -1194,7 +1228,6 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
 	hh=new TH1D(name2,title2,nn,md->hd->min,md->hd->max);
       else
 	hh=new TH1F(name2,title2,nn,md->hd->min,md->hd->max);
-
       MapHist(md,hh,i);
     }
   }
@@ -1277,8 +1310,9 @@ void HClass::Make_prof(mdef_iter md) {
       sprintf(title2,"%s_%d_%d%s",name.Data(),k+1,j+1,title.Data());
 
       int i=k+(opt.prof_ny-j-1)*opt.prof_ny;
-      TH2F* hh=new TH2F(name2,title2,md->hd->bins,0,120,md->hd->bins2,0,120);
-
+      TH2F* hh=new TH2F(name2,title2,md->hd->bins,
+			opt.Prof64_X-60,opt.Prof64_X+60,
+			md->hd->bins2,opt.Prof64_Y-60,opt.Prof64_Y+60);
       MapHist(md,hh,i);
     }
   }
@@ -1312,7 +1346,8 @@ void HClass::Make_prof_int(mdef_iter md, Hdef* hd2) {
 
   sprintf(name2,"%s",name3[5]);
   sprintf(title2,"%s%s",name3[5],";X(mm);Y(mm)");
-  hh=new TH2F(name2,title2,hd2->bins,0,120,hd2->bins2,0,120);
+  hh=new TH2F(name2,title2,hd2->bins,opt.Prof64_X-60,opt.Prof64_X+60,
+			hd2->bins2,opt.Prof64_Y-60,opt.Prof64_Y+60);
   MapHist(md,hh,5);
 
 }
@@ -1546,6 +1581,9 @@ void HClass::FillHist(EventClass* evt, Double_t *hcut_flag) {
   // общие переменные для события
   //Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
   //int mult[NGRP+1] = {0};
+
+  //prnt("ss ls;",BGRN,"FillHist:",evt->Tstmp,RST);
+
   opt.T_acq=(evt->Tstmp/*- crs->Tstart64*/)*crs->sPeriod;
   
   // проверка opt.Tstop -> Нужно добавить это в fTimer (?)
@@ -1562,6 +1600,27 @@ void HClass::FillHist(EventClass* evt, Double_t *hcut_flag) {
       return;
     }
   }
+
+  /*
+  //вычисляем T0 и Time2
+  if (evt->pulses.size()>1) {
+    Float_t T0=999999;
+    for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+      if (opt.St[ipls->Chan] && ipls->Pos>-32222) {
+	Float_t T7 = evt->Tstmp - ipls->Tstamp64;
+	T7+=ipls->Time;
+	T7*=opt.Period;
+	T7+=opt.sD[ipls->Chan];
+	if (T7<T0)
+	  T0=T7;
+      }
+    }
+
+    for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+      ipls->Time2 = ipls->Time*opt.Period - T0;
+    }
+  }
+  */
 
   //заполняем все гистограммы в Mfill_list
   for (auto it = MFill_list.begin();it!=MFill_list.end();++it) {
@@ -1591,6 +1650,7 @@ void HClass::FillHist(EventClass* evt, Double_t *hcut_flag) {
     }
   }
 
+  //prnt("ss ls;",BRED,"FillHist:",evt->Tstmp,RST);
 } //FillHist
 
 void HClass::Clone_Hist(HMap* map) {
@@ -1758,10 +1818,10 @@ mdef_iter HClass::Add_file(const char *name) {
   //return &MFilelist.back();
 }
 
-void HClass::Root_to_allmap() {
+void HClass::Root_to_allmap(TList* fhist_list) {
   //копируем считанные из файла гистограммы в существующие, если имя совпадает
 
-  TIter next(&fhist_list);
+  TIter next(fhist_list);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     HMap* map = (HMap*) allmap_list->FindObject(obj->GetName());
@@ -1774,17 +1834,15 @@ void HClass::Root_to_allmap() {
     }    
   }
 
-  //fhist_list.Clear();
-
 } //Root_to_allmap
 
-void HClass::Root_to_newtree(const char *name) {
+void HClass::Root_to_newtree(const char *name, TList* fhist_list) {
   //создаем новую запись в дереве для данного файла
 
   mdef_iter md=Add_file(name);
 
   int i=0;
-  TIter next(&fhist_list);
+  TIter next(fhist_list);
   TObject* obj;
   while ( (obj=(TObject*)next()) ) {
     TH1* hh = (TH1*) obj;
@@ -1799,17 +1857,16 @@ void HClass::Root_to_newtree(const char *name) {
 
   }
 
-  //fhist_list.Clear();
-
   HiFrm->Clear_Ltree();
   HiFrm->Make_Ltree();
 
 } //Root_to_newtree
 
 void HClass::ReadRoot(const char *name, int ww) {
-  //ww=0 -> to_allmap; else to_newtree
+  //ww=0 -> добавляем в существующие (to_allmap);
+  //else -> создаем новую запись в дереве (to_newtree)
   //gROOT->cd();
-  fhist_list.Clear();
+  TList* fhist_list = new TList();
 
   TFile *tf = new TFile(name,"READ");
   if (!tf->IsOpen())
@@ -1824,17 +1881,17 @@ void HClass::ReadRoot(const char *name, int ww) {
     if (obj->InheritsFrom(TH1::Class())) {
       TH1* hh = (TH1*) obj;
       hh->SetDirectory(0);
-      fhist_list.Add(hh);
+      fhist_list->Add(hh);
     }
   }
 
   tf->Close();
 
   if (ww==0)
-    Root_to_allmap();
+    Root_to_allmap(fhist_list);
   else
-    Root_to_newtree(name);
+    Root_to_newtree(name,fhist_list);
 
-  fhist_list.Clear();
+  delete fhist_list;
 
 } //ReadRoot

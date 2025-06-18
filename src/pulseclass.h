@@ -42,7 +42,7 @@ class PulseClass {
  public:
   Long64_t Tstamp64; //64-bit timestamp (corrected for overflows)
   Long64_t Counter; //pulse counter
-  std::vector <Float_t> sData; //(maybe smoothed) pulse data
+  std::vector<Float_t> sData; //(maybe smoothed) pulse data
 
   //PeakClass Peak;
   // std::vector <PeakClass> Peaks;
@@ -70,6 +70,7 @@ class PulseClass {
   Float_t Height; // maximum of pulse in the same region as Area
   Float_t Width; // peak width
   Float_t Time; // exact time relative to Pos (pulse start) in samples
+  //Float_t Time2=-999999; // = Time - T0, в наносекундах
   Float_t Rtime; // RiseTime
 
   //Float_t Simul2; //another version of Time (for simulions)
@@ -108,18 +109,20 @@ typedef std::vector<PulseClass> pulse_vect;
 class EventClass { //event of pulses
 
  public:
-  Long64_t Nevt;
-  UChar_t Spin;
+  Long64_t Nevt=0;
+  Long64_t Tstmp; //Event Timestamp (the earliest pulse threshold crossig)
+  Float_t T0=99999; //time of the earliest *START* peak, relative to Tstmp, in samples
+  UChar_t ChT0=255;// канал, в котором старт для Time
+  UChar_t Spin=0;
   //bit 0: channel state word (Control word - external input in crs32)
-  //bit 3 (=4): ER_OVF - присутствует только в каналах
+  //bit 2 (=4): ER_OVF - присутствует только в каналах
   //bit 6 (Spin|=64): event is writable in Dec (Ms - master channel)
   //bit 7 (=128): hardware counters
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
   //Spin=254 - end of Blist, just splice BB and Levents
-  Long64_t Tstmp; //Event Timestamp (the earliest pulse threshold crossig)
+
   //Long64_t Tstart0=0; //Timestamp of the start event
-  Float_t T0; //time of the earliest *START* peak, relative to Tstmp, in samples
   std::vector <PulseClass> pulses;
   //std::vector <Long64_t> *Counters;
   //Bool_t Analyzed;
@@ -129,8 +132,8 @@ class EventClass { //event of pulses
  //  void Fill01dw(HMap* map[], int ch, Float_t x, Double_t w=1);
 
 public:
-  EventClass();
-  virtual ~EventClass() {};
+  //EventClass();
+  //virtual ~EventClass() {};
 
   void AddPulse(PulseClass *pls);
   //void FillHist(Double_t *hcut_flag);

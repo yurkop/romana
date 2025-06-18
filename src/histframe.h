@@ -36,8 +36,12 @@ typedef std::vector<vpeak> vpeaks;
 
 class FClass: public TObject {
 public:
+  //int np=-1; //номер пада (pad number)
   vpeaks vv;
+  std::unique_ptr<TH1> hst;
 };
+
+typedef std::vector<FClass> FVect;
 
 //-----------------------------------------------
 class HistFrame: public TGCompositeFrame {
@@ -71,7 +75,7 @@ public:
   //TH1* pad_hist[MAX_PADS];     //copies of histograms for plotting in pads;
   //HMap *pad_map[MAX_PADS];       //maps plotted in pads
   std::vector <HMap*> pad_map;       //maps plotted in pads
-  //std::vector <TH1*> pad_hist;       //copies of histograms plotted in pads
+  // реально рисуются не maps, а их копии: см. pad_hist
   std::vector <TNamed*> pad_hist;    //copies of histograms or graphs
                                      //plotted in pads
                                      //or in DrawStack
@@ -111,6 +115,8 @@ public:
   double fitsig;
   int nofit;
 
+  FVect fitvect;
+
   TGPicture *pic_1d = (TGPicture*) gClient->GetPicture("h1_t.xpm");
   TGPicture *pic_2d = (TGPicture*) gClient->GetPicture("h2_t.xpm");
 
@@ -146,7 +152,7 @@ public:
   void DoKey(TGListTreeItem* entry, UInt_t keysym, UInt_t mask);
   void DoRadio();
   void DoButton();
-  void DoDrawopt();
+  //void DoDrawopt();
   void DoSlider();
   void GetHMinMax(TH1* hh, double x1, double x2,
 		  double &y1, double &y2);
@@ -168,8 +174,9 @@ public:
   void MeanPeaks(TH1* hh, vpeaks &vv, size_t i);
   void FitPeaks(TH1* hh, vpeaks &vv, size_t i);
     //std::vector<string> &vfit, size_t i);
-  void DoPeaks(TH1* hh);
-  void PeakFit(HMap* map, TH1* hist1, TH1* hist2, int i, d2vect &d2);
+  void DoPeaks(TH1* hh, int npad);
+  void E_PeakFit(HMap* map, TH1* hist1, TH1* hist2, int i, d2vect &d2);
+  //void GetFits();
   void DelMaps(TGListTreeItem *idir);
   void Do_Ecalibr(PopFrame* pop);
   void DoUnZoom();

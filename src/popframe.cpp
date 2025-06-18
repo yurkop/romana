@@ -490,8 +490,9 @@ void PopFrame::AddPeaks() {
   AddNum(opt.Peak_wid,1033,"Width","Minimal width for peak search\npeaks with width below this number are rejected");
   AddNum(opt.Peak_bwidth,1034,"Background","width of the background");
   AddNum(opt.Peak_maxpeaks,1035,"MaxPeaks","Maximal number of peaks");
-  AddChk(opt.Peak_use_mean,1036,"Use Mean/RMS","Use Mean/RMS insted of fit");
-  AddChk(opt.Peak_print,1037,"Print","Print peak parameters");
+  AddChk(opt.Peak_show_sm,1036,"Show smoothed","Show smoothed histogram");
+  AddChk(opt.Peak_use_mean,1037,"Use Mean/RMS","Use Mean/RMS insted of fit");
+  AddChk(opt.Peak_print,1038,"Print","Print peak parameters");
 
   /*
   hframe = new TGHorizontalFrame(fMain,10,10);
@@ -505,6 +506,52 @@ void PopFrame::AddPeaks() {
   */
 }
 
+void PopFrame::AddOnePar(TGCompositeFrame* fcont1, int id, void* var,
+			 const char* nm, int mmin, int mmax) {
+  hframe = new TGHorizontalFrame(fcont1,10,10);
+  fcont1->AddFrame(hframe,LayLC2);
+
+  //int nn=ps_all.pv.size();
+  PClass pp;
+  pp.name=nm;
+  pp.var = var;
+  pp.bb = opt.OptPar[id][0];
+  pp.min = opt.OptPar[id][1];
+  pp.max = opt.OptPar[id][2];
+  pp.step = opt.OptPar[id][3];
+  ps_all.pv.at(id) = pp;
+
+  TGCheckButton *fchk = new TGCheckButton(hframe, "", id*10);
+  fchk->SetState((EButtonState)opt.OptPar[id][0]);
+  fchk->Connect("Toggled(Bool_t)", "PopFrame", this, "DoPar()");
+  hframe->AddFrame(fchk, LayLC2);
+
+  TGNumberEntry *fNum[3];
+  fNum[0] = new TGNumberEntry(hframe, opt.OptPar[id][1]-1, 8, id*10+1,
+			      kr,ka,kl,mmin,mmax);
+  fNum[1] = new TGNumberEntry(hframe, opt.OptPar[id][2]-1, 8, id*10+2,
+			      kr,ka,kl,mmin,mmax);
+  fNum[2] = new TGNumberEntry(hframe, opt.OptPar[id][3]-1, 5, id*10+3,
+			      kr,ka,kl,-10,10);
+
+  for (int j=0;j<3;j++) {
+    fNum[j]->GetNumberEntry()->Connect("TextChanged(char*)","PopFrame",
+				       this,"DoPar()");
+    //следующая команда вынуждает проверку min/max
+    fNum[j]->IncreaseNumber(TGNumberFormat::kNSSSmall, 1, kFALSE);
+
+    fNum[j]->SetWidth(ww[j+2]);
+    hframe->AddFrame(fNum[j], LayLC0);
+    // if (i==MAX_CH+NGRP)
+    //   fAdj[i][j]->ChangeBackground(colr);
+  }
+
+  TGLabel* fLabel = new TGLabel(hframe, nm);
+  hframe->AddFrame(fLabel, LayLC0);
+  
+
+}
+
 void PopFrame::AddOptPar() {
 
   //memset(local_sD,0,sizeof(local_sD));
@@ -512,10 +559,41 @@ void PopFrame::AddOptPar() {
   //   pframe[i]=0;
   // }
 
-  fMain->SetWindowName("Time Calibration");
-  npeaks=1;
+  fMain->SetWindowName("Optimize Parameters");
+
+  hframe = new TGHorizontalFrame(fMain,1,1);
+  fMain->AddFrame(hframe, LayLC2);
+
+  const char* aa[] = {" ","hist","A0","A1","A2"};
+  for (int j=0;j<5;j++) {
+    TGTextEntry* fLab = new TGTextEntry(hframe, aa[j]);
+    fLab->SetState(false);
+    fLab->ChangeOptions(fLab->GetOptions()|kFixedSize|kRaisedFrame);
+    fLab->SetToolTipText("Pre-calibration coefficient");
+    fLab->SetWidth(ww[j]);
+    fLab->SetAlignment(kTextCenterX);
+    hframe->AddFrame(fLab, LayLC0);
+    //hframe->AddFrame(new TGLabel(hframe, aa[j]), LayLC2);
+  }
+
+  ps_all.pv.clear();
+  ps_all.pv.resize(MOP);
 
   //AddNum(range,12,"+/- fit range");
+  AddOnePar(fMain,0,(void*)opt.sS,"sS",-100,100);
+  AddOnePar(fMain,1,(void*)opt.sTg,"sTg",1,7);
+  AddOnePar(fMain,2,(void*)opt.sDrv,"sDrv",1,100);
+  AddOnePar(fMain,3,(void*)opt.Mt,"Mt",0,3);
+  AddOnePar(fMain,4,(void*)opt.DD,"DD",1,100);
+  AddOnePar(fMain,5,(void*)opt.FF,"FF",1,10);
+  AddOnePar(fMain,6,(void*)opt.B1,"B1",-1000,1000);
+  AddOnePar(fMain,7,(void*)opt.B2,"B2",-1000,1000);
+  AddOnePar(fMain,8,(void*)opt.P1,"P1",-1000,10000);
+  AddOnePar(fMain,9,(void*)opt.P2,"P2",-1000,10000);
+  AddOnePar(fMain,10,(void*)opt.T1,"T1",-100,100);
+  AddOnePar(fMain,11,(void*)opt.T2,"T2",-100,100);
+  AddOnePar(fMain,12,(void*)opt.W1,"W1",0,100);
+  AddOnePar(fMain,13,(void*)opt.W2,"W2",0,100);
 
   hframe = new TGHorizontalFrame(fMain,10,10);
   fMain->AddFrame(hframe,new TGLayoutHints(kLHintsExpandX|kLHintsCenterY, 2,2,2,2));
@@ -524,6 +602,7 @@ void PopFrame::AddOptPar() {
   fCalibr->Connect("Clicked()", "PopFrame", this, "Do_OptPar()");
   hframe->AddFrame(fCalibr, LayBut1);
 
+  npeaks=1;
 }
 
 #ifdef CYUSB
@@ -638,6 +717,40 @@ void PopFrame::Do_Save_Ecalibr() {
   fEdit->SaveFile("ecalibr.dat");
 }
 
+void PopFrame::DoPar() {
+  TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
+  TGCheckButton *chk = (TGCheckButton*) gTQSender;
+
+  Int_t id = te->WidgetId();
+  int i = id/10;
+  int j = id%10;
+
+  switch (j) {
+  case 0:
+    ps_all.pv.at(i).bb=chk->GetState();
+    opt.OptPar[i][j]=chk->GetState();
+    //cout << i << " " << pv.at(i).bb << endl;
+    break;
+  case 1:
+    ps_all.pv.at(i).min=te->GetNumber();
+    opt.OptPar[i][j]=te->GetNumber();
+    break;
+  case 2:
+    ps_all.pv.at(i).max=te->GetNumber();
+    opt.OptPar[i][j]=te->GetNumber();
+    break;
+  case 3:
+    ps_all.pv.at(i).step=te->GetNumber();
+    opt.OptPar[i][j]=te->GetNumber();
+    break;
+  default:
+    ;
+  }
+
+  //cout << "ij: " << i << " " << j << " " << opt.OptPar[2][2] << endl;
+
+}
+
 void PopFrame::DoAdj() {
   TGNumberEntryField *te = (TGNumberEntryField*) gTQSender;
   Int_t id = te->WidgetId();
@@ -689,9 +802,12 @@ void PopFrame::DoENum() {
     opt.Peak_maxpeaks=te->GetNumber();
     break;
   case 1036:
-    opt.Peak_use_mean = chk->GetState();
+    opt.Peak_show_sm = chk->GetState();
     break;
   case 1037:
+    opt.Peak_use_mean = chk->GetState();
+    break;
+  case 1038:
     opt.Peak_print = chk->GetState();
     HiFrm->pkprint = chk->GetState();
     break;
@@ -871,39 +987,24 @@ void PopFrame::Do_EApply() {
 }
 
 void PopFrame::Do_TApply() {
-  //cout << "Appl: " << endl;
 
-  for (int npad = 0;npad<HiFrm->ndiv;npad++) {
-    bool sss=false;
-    Float_t dt=0;
-    int nn;
-    if (npad < (int)HiFrm->pad_map.size() && HiFrm->pad_map[npad]
-	&& HiFrm->pad_hist[npad]) {
+  for (UInt_t i=0;i<HiFrm->fitvect.size();++i) {
+    //cout << "pad_map: " << i << " " << HiFrm->pad_map[i] << endl;
+    if (HiFrm->pad_hist[i] && HiFrm->pad_hist[i]->InheritsFrom(TH1::Class()) &&
+	TString(HiFrm->pad_hist[i]->GetName()).
+	Contains("time",TString::kIgnoreCase)) {
 
-      //TString str(hh->GetName());
-      if (HiFrm->pad_hist[npad]->InheritsFrom(TH1::Class())) {
-	TH1* hh = (TH1*) HiFrm->pad_hist[npad];
-	if ( TString(hh->GetName()).Contains("time",TString::kIgnoreCase)) {
-	  FClass *fits = (FClass*) hh->GetListOfFunctions()->Last();
-	  if (fits && fits->InheritsFrom(FClass::Class())) {
-	    if (fits->vv.size()) {
-	      sss=true;
-	      dt = fits->vv.at(0).p;
-	      nn = HiFrm->pad_map[npad]->nn;
-	      opt.sD[nn]=local_sD[nn]-dt+time_ref;
-	    }
-	  }
-	}
-      }
+      FClass *fits = &HiFrm->fitvect.at(i);
+      Float_t dt = fits->vv.at(0).p;
+      int nn = HiFrm->pad_map.at(i)->nn;
+      opt.sD[nn]=local_sD[nn]-dt+time_ref;
+
+      prnt("ss d s fs;",BGRN,"T:",nn,HiFrm->pad_map[i]->GetName(),dt,RST);
     }
-
-
-    if (sss)
-      prnt("ss d s fs;",BGRN,"T:",nn,HiFrm->pad_map[npad]->GetName(),dt,RST);
     else
-      prnt("ss ds;",BRED,"Wrong Pad:",npad+1,RST);
-  }  
-  //HiFrm->Do_Tcalibr(this);
+      prnt("ss ds;",BRED,"Wrong Pad:",i+1,RST);
+  }
+
   chanpar->Update();
 
 }
@@ -913,40 +1014,158 @@ void PopFrame::Do_TRevert() {
   chanpar->Update();
 }
 
+/*
+void PopFrame::DoOpt(UInt_t it) {
+
+  for (UInt_t i=0;i<pvect.size();++i) {
+    for (int j=pvect.at(i).min;j<=pvect.at(i).max;j+=pvect.at(i).step) {
+      pvect.at(i).ivar=j;
+      prnt("ss ",BGRN,"pp:");
+      for (UInt_t i=0;i<pvect.size();++i) {
+	cout << " " << pvect.at(i).ivar;
+      }
+      prnt("s;",RST);
+    }
+  }
+
+}
+*/
+
+void PopFrame::DoOpt(UInt_t i) {
+  //cout << "it: " << i << " " << pvect.size() << endl;
+  if (i>=ps.pv.size()) {
+
+    pss.push_back(ps);
+
+    // prnt("ss",BYEL,"pp:");
+    // for (UInt_t k=0;k<pv.size();++k) {
+    //   cout << " " << pv.at(k).ivar;
+    // }
+    // prnt("s;",RST);
+    return;
+  }
+  for (int j=ps.pv.at(i).min;j<=ps.pv.at(i).max;j+=ps.pv.at(i).step) {
+    //prnt("ss d ds;",BGRN,"p:",i,j,RST);
+    ps.pv.at(i).ivar=j;
+    DoOpt(i+1);
+  }
+}
+
 void PopFrame::Do_OptPar()
 {
+  //cout << "sz: " << sizeof(opt) << endl;
+  gzFile ff = gzopen("last.par","wb");
+  crs->SaveParGz(ff,crs->module);
+  gzclose(ff);
+  
 
-  /*
-  Bool_t Dsp2[MAX_CHTP];
+  char* opt2 = new char[sizeof(opt)];
+  //Toptions opt2;
+  memcpy(opt2, &opt, sizeof(opt));
 
-  //cout << "ZZ: " << sizeof(opt.Dsp) << endl;
-  memcpy(Dsp2, opt.Dsp, sizeof(opt.Dsp));
-  memset(opt.Dsp, 1, sizeof(opt.Dsp));
+  pss.clear();
+  ps.pv.clear();
 
-  crs->b_fana=true;
-  crs->b_stop=false;
-
-  crs->FAnalyze2(true);
-
-  crs->b_fana=false;
-  crs->b_stop=true;
-
-  memcpy(opt.Dsp, Dsp2, sizeof(opt.Dsp));
-  */
-
-  HiFrm->DoRst();
-
-  for (auto evt = crs->Levents.begin();evt!=crs->Levents.end();++evt) {
-    for (auto pls = evt->pulses.begin();pls!=evt->pulses.end();++pls) {
-      crs->PulseAna(*pls);
-      //cout << "pls: " << (int) pls->Chan << endl;
+  for (auto it=ps_all.pv.begin();it!=ps_all.pv.end();++it) {
+    if (it->bb) {
+      ps.pv.push_back(*it);
     }
-    //cout << evt->Nevt << " " << evt->Tstmp << endl;
-    Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
-    hcl->FillHist(&*evt,hcut_flag);
   }
-  HiFrm->ReDraw();
 
+  DoOpt(0);
+
+  for (auto it=pss.begin();it!=pss.end();++it) {
+    prnt("ss",BBLU,"pp:");
+    for (UInt_t k=0;k<it->pv.size();++k) {
+      cout << " " << it->pv.at(k).ivar;
+    }
+    prnt("s;",RST);
+  }
+
+  TList* fhist_list = new TList();
+  //int nn=0;
+  for (auto it=pss.begin();it!=pss.end();++it) {
+     // if (nn>5555555)
+     //   break;
+     // nn++;
+
+    //копируем параметры
+    for (UInt_t k=0;k<it->pv.size();++k) {
+      for (int m=0;m<MAX_CHTP;++m) {
+	Int_t* zz = (Int_t*) it->pv.at(k).var;
+	*(zz+m) = it->pv.at(k).ivar;
+      }
+      //cout << k << " " << it->pv.at(k).var << " " << &opt.sS << " " << opt.sS[7] << " " << opt.sTg[4] << endl;
+    }
+
+    HiFrm->DoRst();
+
+    std::vector<std::vector<Float_t>> esave;
+    for (auto evt = crs->Levents.begin();evt!=crs->Levents.end();++evt) {
+      evt->T0=99999;
+      evt->ChT0=255;
+      esave.clear();
+      for (auto pls = evt->pulses.begin();pls!=evt->pulses.end();++pls) {
+	esave.push_back(pls->sData);
+	crs->PulseAna(*pls);
+	pls->Time+=pls->Tstamp64 - evt->Tstmp;
+	if (opt.St[pls->Chan] && pls->Pos>-32222) {
+	  Float_t T7 = pls->Time+opt.sD[pls->Chan]/opt.Period;
+	  if (T7<evt->T0) {
+	    evt->T0=T7;
+	    evt->ChT0=pls->Chan;
+	  }
+	}
+      }
+      //cout << evt->Nevt << " " << evt->Tstmp << endl;
+      Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
+      hcl->FillHist(&*evt,hcut_flag);
+      for (UInt_t i = 0; i < evt->pulses.size(); ++i) {
+	evt->pulses[i].sData = esave[i];
+      }
+    }
+    HiFrm->ReDraw();
+
+    //FClass *fits = HiFrm->GetFits(hh);
+    //if (fits) {
+
+    cout << "pv: " << it->pv.size() << endl;
+    TString ss;
+    prnt("ss",BRED,"pp:");
+    for (UInt_t k=0;k<it->pv.size();++k) {
+      cout << " xxx " << endl;
+      cout << " z " << it->pv.at(k).name << ": w " << it->pv.at(k).ivar;
+      ss+=" ";
+      ss+=it->pv.at(k).name;
+      ss+=it->pv.at(k).ivar;
+    }
+
+    for (UInt_t i=0;i<HiFrm->fitvect.size();++i) {
+      if (HiFrm->pad_hist[i] && HiFrm->pad_hist[i]->InheritsFrom(TH1::Class())){
+	FClass *fits = &HiFrm->fitvect.at(i);
+	Float_t w = fits->vv.at(0).w;
+	cout << " " << w;
+	TString s2 = fits->hst->GetTitle()+ss+" "+w;
+	cout << s2 << endl;
+	fits->hst->SetTitle(s2);
+	fhist_list->Add(&*fits->hst);
+      }
+    }
+    prnt("s;",RST);
+
+  } //pss
+
+  // hcl->fhist_list.Clear();
+  // for (auto it=pss.begin();it!=pss.end();++it) {
+  //   hcl->fhist_list.Add();
+  // }
+
+  hcl->Root_to_newtree("opt",fhist_list);
+
+
+  delete fhist_list;
+  char* opt3 = (char*) &opt;
+  memcpy(opt3, opt2, sizeof(opt));
 
 } //Do_OptPar
 

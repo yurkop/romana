@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 163
+#define CDEF 165
 
 /*
 #include <list>
@@ -29,6 +29,8 @@ public:
 
 const int MM = 8; //количество типов модулей для mcpar
 typedef std::array<int,2*MM> arr;
+
+const int MOP = 15; // size of OptPar array
 
 //------------------------------------
 class GG {
@@ -305,6 +307,8 @@ public:
   Int_t Prof64_W[3]; //Windows: period, offset, width (in smp)
   Int_t Prof64_THR; //Threshold
   Int_t Prof64_GAT; //Coincidence gate with ing27 alpha
+  Int_t Prof64_X=0; //X-offset of the profilometer in mm
+  Int_t Prof64_Y=0; //Y-offset of the profilometer in mm
 
   //Int_t prof_ch[MAX_CH];
 
@@ -342,8 +346,13 @@ public:
   Float_t Peak_bwidth;
   Float_t Peak_maxpeaks;
   Float_t Peak_smooth;
+  Bool_t Peak_show_sm;
   Bool_t Peak_use_mean;
   Bool_t Peak_print;
+
+  //parameters for OptPar
+  Int_t OptPar[MOP][4];
+
 
   int wrk_check[128];//каждый бит: номер папки MAIN_cut[bit]. 0-й бит: MAIN
   //в папке MAIN (старая wrk) можно чекнуть максимум 128 гистограмм

@@ -230,6 +230,10 @@ void PEditor::LoadPar64()
   fEdit->AddLine(ss);
   sprintf(ss,"Prof64_GAT %d # Alpha - Prof coinc. gate (in ns)",opt.Prof64_GAT);
   fEdit->AddLine(ss);
+  sprintf(ss,"Prof64_X %d # X offset of the profilometer (in mm)",opt.Prof64_X);
+  fEdit->AddLine(ss);
+  sprintf(ss,"Prof64_Y %d # Y offset of the profilometer (in mm)",opt.Prof64_Y);
+  fEdit->AddLine(ss);
   
   fEdit->AddLine("");
   fEdit->AddLine("# Run Profilometer time calibration (TCalibr)");
@@ -327,6 +331,12 @@ void PEditor::DoSaveProf() {
       }
       else if (ts.EqualTo("prof64_gat")) {
 	opt.Prof64_GAT=j;
+      }
+      else if (ts.EqualTo("prof64_x")) {
+	opt.Prof64_X=j;
+      }
+      else if (ts.EqualTo("prof64_y")) {
+	opt.Prof64_Y=j;
       }
     }
   }

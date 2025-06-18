@@ -693,8 +693,16 @@ Toptions::Toptions() {
   Peak_bwidth=20;
   Peak_maxpeaks=2;
   Peak_smooth=0;
+  Peak_show_sm=false;
   Peak_use_mean=false;
   Peak_print=false;
+
+  for (auto i=0;i<MOP;i++) {
+    OptPar[i][0]=0;
+    OptPar[i][1]=0;
+    OptPar[i][2]=2;
+    OptPar[i][3]=1;
+  }
 
   memset(wrk_check,0,sizeof(wrk_check));
 

@@ -19,6 +19,25 @@
 // };
 
 class HMap;
+class PClass {
+public:
+  void* var;
+  int ivar;
+  int min=0,max=2,step=1;
+  bool bb=false;
+  //int zz[3] = {0,2,1}; //min,max,step
+  //int mmin,mmax;
+  std::string name;
+};
+
+typedef std::vector<PClass> PVect;
+
+class PSet {
+public:
+  PVect pv;
+  std::vector<double> res;
+};
+
 //-----------------------------------------------
 class PopFrame {
 
@@ -64,6 +83,10 @@ public:
 
   Float_t local_sD[MAX_CHTP];
 
+  PSet ps_all;
+  PSet ps;
+  std::vector<PSet> pss;
+
 public:
   PopFrame(const TGWindow *main, UInt_t w, UInt_t h, MENU_COM menu_id, void* p=0);
   virtual ~PopFrame();
@@ -74,6 +97,8 @@ public:
   void AddEcalibr(UInt_t w, UInt_t h);
   void AddTcalibr();
   void AddPeaks();
+  void AddOnePar(TGCompositeFrame* fcont1, int id, void* var,
+		 const char* nm, int mmin, int mmax);
   void AddOptPar();
 #ifdef CYUSB
   void AddDevice();
@@ -82,6 +107,7 @@ public:
 //   void AddYumo();
 // #endif
   void AddTest();
+  void DoPar();
   void DoAdj();
   void DoENum();
   void Do_Save_Ecalibr();
@@ -94,6 +120,7 @@ public:
   //void Do_Tcalibr();
   void Do_TApply();
   void Do_TRevert();
+  void DoOpt(UInt_t it);
   void Do_OptPar();
   void Do_Test();
 

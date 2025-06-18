@@ -735,9 +735,9 @@ void PulseClass::PeakAna33() {
   } //default
   } //switch
 
-  //prnt("ss d l d d fs;",BYEL,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
   Time-=cpar.Pre[Chan];
 
+  //prnt("ss d l d d fs;",BYEL,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
 
 
   //prnt("ss d l d d fs;",BGRN,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
@@ -891,12 +891,12 @@ void PulseClass::Ecalibr(Float_t& XX) {
 //   }
 // }
 
-EventClass::EventClass() {
-  Spin=0;
+//EventClass::EventClass() {
+  //Spin=0;
   //Tstmp=-9999999999;
-  T0=99999;
+  //T0=99999;
   //Analyzed=false;
-}
+//}
 
 void EventClass::AddPulse(PulseClass *pls) {
   // добавляет PulseClass *pls в текущее событие;
@@ -932,17 +932,15 @@ void EventClass::AddPulse(PulseClass *pls) {
     //pls->Simul2+=pls->Tstamp64 - Tstmp;
   }
 
-  pulses.push_back(*pls);
-
   if (opt.St[pls->Chan] && pls->Pos>-32222) {
     Float_t T7 = pls->Time+opt.sD[pls->Chan]/opt.Period;
     if (T7<T0) {
       T0=T7;
+      ChT0=pls->Chan;
     }
-    // if (pls->Time<T0) {
-    //   T0=pls->Time;
-    // }
   }
+
+  pulses.push_back(*pls);
 
 }
 

@@ -339,8 +339,8 @@ HistFrame::HistFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   		       "x or y in front of 2d option makes x/y projection"
   		       );
   parpar->DoMap(tOpt,opt.drawopt,p_txt,0,3<<4);
-  //tOpt->Connect("TextChanged(char*)", "ParDlg", parpar, "DoTxt()");
-  tOpt->Connect("TextChanged(char*)", "HistFrame", this, "DoDrawopt()");
+  tOpt->Connect("TextChanged(char*)", "ParDlg", parpar, "DoTxt()");
+  //tOpt->Connect("TextChanged(char*)", "HistFrame", this, "DoDrawopt()");
 
   //-- Cuts
 
@@ -1225,6 +1225,7 @@ void HistFrame::DoButton()
 
 }
 
+/*
 void HistFrame::DoDrawopt() {
   parpar->DoTxt();
 
@@ -1247,6 +1248,7 @@ void HistFrame::DoDrawopt() {
   HiUpdate();
 
 }
+*/
 
 void HistFrame::DoSlider() {
 
@@ -1316,9 +1318,8 @@ void HistFrame::Y_Slider(TH1* hh, double a1, double a2, double y1, double y2) {
     y1=1e99;
     y2=-1e99;
     GetHMinMax(hh,a1,a2,y1,y2);
+    y2*=1.05;
   }
-
-  y2*=1.05;
 
   //prnt("ss s f f f fs;",BBLU,"Y1:",hh->GetName(),y1,y2,log10(y1),log10(y2),RST);
 
@@ -1750,6 +1751,12 @@ void HistFrame::PeakSearch(TH1* h1, vpeaks &vv) {
     hh = h2;
     hsmooth(hh,opt.Peak_smooth);
 
+    if (opt.Peak_show_sm) {
+      hh->SetLineColor(3);
+      hh->SetDrawOption("same");
+      h1->GetListOfFunctions()->Add(hh);
+    }
+
     // hsmooth(h2,opt.Peak_smooth);
     // h2->SetDrawOption("same");
     // h1->GetListOfFunctions()->Add(h2);
@@ -1907,7 +1914,9 @@ void HistFrame::FitPeaks(TH1* hh, vpeaks &vv, size_t i) {
 
   string fitopt = "Q"; //"Q"
   if (i!=0) fitopt+="+";
+  //if (hh->Integral()) {
   hh->Fit(f1,fitopt.data(),"",vv[i].b1,vv[i].b2);
+  //}
 
 
   // memcpy(par+1,f1->GetParameters(),f1->GetNpar()*sizeof(double));
@@ -1935,7 +1944,7 @@ void HistFrame::FitPeaks(TH1* hh, vpeaks &vv, size_t i) {
 
 }
 
-void HistFrame::DoPeaks(TH1* hh) {
+void HistFrame::DoPeaks(TH1* hh, int npad) {
   //cout << "DoPeaks: " << opt.b_stack << " " << fEc->GetCanvas()->GetListOfPrimitives()->GetSize() << " " << pad_hist.size() << endl;
 
   //if (opt.b_stack) return;
@@ -1944,7 +1953,12 @@ void HistFrame::DoPeaks(TH1* hh) {
   vector<string> fitres;
 
   std::vector<string> vfit;
-  FClass *fits = new FClass();
+
+  fitvect.resize(npad+1);
+
+  FClass *fits = &fitvect[npad];// = new FClass();
+  //fits->np=npad;
+
   vpeaks *vv = &fits->vv;
   PeakSearch(hh,*vv);
     //continue;
@@ -2007,13 +2021,18 @@ void HistFrame::DoPeaks(TH1* hh) {
   //cout << "pt: " << pt->GetTextSize() << " " << pt->GetTextFont() << endl;
 
   hh->GetListOfFunctions()->Add(pt);
-  hh->GetListOfFunctions()->Add(fits);
+  //hh->GetListOfFunctions()->Add(fits);
+
   //pt->Draw();
   //gStyle->SetOptFit();
 
+  //std::unique_ptr<TH1F> clone(static_cast<TH1F*>(original.Clone("clone")));
+  fits->hst = std::unique_ptr<TH1>(static_cast<TH1*>(hh->Clone()));
+  //cout << "fits: " << fits->hst->GetName() << " " << fits->hst->GetTitle() << endl;
+
 } //DoPeaks
 
-void HistFrame::PeakFit(HMap* map,TH1* hist1,TH1* hist2,int nn,d2vect &d2) {
+void HistFrame::E_PeakFit(HMap* map,TH1* hist1,TH1* hist2,int nn,d2vect &d2) {
 			   // double &yy, double &er) {
 
   //cout << "PeakFit: " << map->GetName() << endl;
@@ -2118,6 +2137,45 @@ void HistFrame::PeakFit(HMap* map,TH1* hist1,TH1* hist2,int nn,d2vect &d2) {
 
 }
 
+/*
+void HistFrame::GetFits() {
+  fitvect.clear();
+
+  for (int npad = 0;npad<ndiv;npad++) {
+    bool sss=false;
+    Float_t dt=0;
+    int nn;
+    if (npad < (int)pad_map.size() && pad_map[npad] && pad_hist[npad]) {
+      //TString str(hh->GetName());
+      if (pad_hist[npad]->InheritsFrom(TH1::Class())) {
+	TH1* hh = (TH1*) pad_hist[npad];
+	if ( TString(hh->GetName()).Contains("time",TString::kIgnoreCase)) {
+	  FClass *fits = (FClass*) hh->GetListOfFunctions()->Last();
+	  if (fits && fits->InheritsFrom(FClass::Class())) {
+	    if (fits->vv.size()) {
+	      fitvect.push_back(*fits);
+	      sss=true;
+	      dt = fits->vv.at(0).p;
+	      nn = HiFrm->pad_map[npad]->nn;
+	      opt.sD[nn]=local_sD[nn]-dt+time_ref;
+	    }
+	  //}
+	  }
+	}
+      }
+    }
+  }
+}
+*/
+
+// FClass* HistFrame::GetFits(TH1* hh) {
+//   FClass *fits = (FClass*) hh->GetListOfFunctions()->Last();
+//   if (fits && fits->InheritsFrom(FClass::Class()) && fits->vv.size())
+//     return fits;
+//   else
+//     return 0;
+// }
+
 void HistFrame::DelMaps(TGListTreeItem *idir) {
   if (idir) {
     TGListTreeItem *item = idir->GetFirstChild();
@@ -2203,7 +2261,7 @@ void HistFrame::Do_Ecalibr(PopFrame* pop) {
 	d2.push_back(dvect());
       }
       for (UInt_t i=0;i<ee_calib.size();++i) {
-	PeakFit(map,hist1,hist2,i,d2);
+	E_PeakFit(map,hist1,hist2,i,d2);
       }
 
       //TCanvas* c1 = new TCanvas("c1","c1");
@@ -2315,6 +2373,19 @@ void HistFrame::HiReset()
 void HistFrame::HiUpdate()
 {
   //cout << "in_gcut: " << in_gcut << " " << opt.b_logy << " " << chklog << endl;
+
+  dopt = {"","zcol"};
+  string temp;
+  int nn=0;
+  if (opt.drawopt[0]==' ')
+    nn=1;
+
+  stringstream ss(opt.drawopt);
+  while ((ss>>temp) && nn<2) {
+    dopt[nn++] = temp;
+  }
+
+
 
   Hmut.Lock();
 
@@ -2456,7 +2527,7 @@ void HistFrame::DrawStack() {
       }
 	
       TString name(map->hst->GetName());
-      name+=' ';
+      name+='_';
 
       TH1* hh = (TH1*) map->hst->Clone(name.Data());
       hh->UseCurrentStyle();
@@ -2672,7 +2743,7 @@ void HistFrame::DrawHist() {
 
 	if (map->hst) { //histogram
 	  TString name(map->hst->GetName());
-	  name+=' ';
+	  name+='_';
 	  //if (pad_hist[npad]) delete pad_hist[npad];
 	  //pad_hist[npad] = (TH1*) map->hst->Clone(name.Data());
 	  TH1 *hh = (TH1*) map->hst->Clone(name.Data());
@@ -2681,7 +2752,7 @@ void HistFrame::DrawHist() {
 	}
 	else if (map->gr) { //graph
 	  TString name(map->gr->GetName());
-	  name+=' ';
+	  name+='_';
 	  TGraphErrors *gg = (TGraphErrors*) map->gr->Clone(name.Data());
 	  //gg->UseCurrentStyle();
 	  pad_hist.push_back(gg);
@@ -2798,6 +2869,9 @@ void HistFrame::ProjectXY(TH1* &hh) {
 }
 
 void HistFrame::AllRebinDraw() {
+  fitvect.clear();
+  //fitvect.resize(ndiv+1);
+
   for (int npad = 0;npad<ndiv;npad++) {
     if (npad >= (int)pad_map.size() || !pad_map[npad] || !pad_hist[npad])
       continue;
@@ -2831,8 +2905,8 @@ void HistFrame::AllRebinDraw() {
 	}
 	*/
 
-	if (opt.b_fpeaks) {
-	  DoPeaks(hh);
+	if (opt.b_fpeaks && hh->Integral()) {
+	  DoPeaks(hh,npad);
 	}
 
 	hh->Draw(dopt[0].Data());
