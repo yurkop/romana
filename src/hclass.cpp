@@ -7,6 +7,7 @@
 #include <TVirtualFFT.h>
 #include <TSystem.h>
 #include <TKey.h>
+#include <TH3.h>
 
 extern Toptions opt;
 
@@ -562,6 +563,9 @@ void Mdef::Fill_FFT(HMap* map,Float_t* Data,int nbins,int ch,int ncut) {
 void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
     int ch = ipls->Chan;
+    //prnt("ss l f ds;",BMAG,"MeanP:",evt->Tstmp,evt->T0,ch,RST);
+    //cout << v_map.size() << " " << v_map[ch] << endl;
+    //cout << v_map[ch]->hst << endl;
     // пропускаем неактивные каналы
     if (cpar.on[ch] && v_map[ch]) {
       int newsz = ipls->sData.size();
@@ -571,6 +575,7 @@ void Mdef::FillMeanPulse(EventClass* evt, Double_t *hcut_flag, int ncut) {
       	hh->SetBins(newsz,-cpar.Pre[ch],newsz-cpar.Pre[ch]);
       }
 
+      //prnt("ss l f ds;",BYEL,"MeanP2:",evt->Tstmp,evt->T0,ch,RST);
       switch (hnum) {
       case 51: //pulse
 	Fill_Mean1(v_map[ch], ipls->sData.data(), newsz, 0, ncut);
@@ -999,8 +1004,9 @@ void HClass::Make_hist() {
 
 #ifdef YUMO
   Mdef *myumo=0;
-  md_yumo2=0;
   md_yumo1=0;
+  md_yumo2=0;
+  md_yumo3=0;
 #endif
 
   bool b_bbb=false; 
@@ -1082,12 +1088,16 @@ void HClass::Make_hist() {
       it->MFill = &Mdef::FillProf;
     }
 #ifdef YUMO
-    else if (it->hnum==71) { //yumo_2d
+    else if (it->hnum==71) { //yumo_1d
+      Make_Yumo_1d(it);
+      it->MFill = &Mdef::FillYumo;
+    }
+    else if (it->hnum==72) { //yumo_2d
       Make_Yumo_2d(it);
       it->MFill = &Mdef::FillYumo;
     }
-    else if (it->hnum==72) { //yumo_1d
-      Make_Yumo_1d(it);
+    else if (it->hnum==73) { //yumo_3d
+      Make_Yumo_3d(it);
       it->MFill = &Mdef::FillYumo;
     }
 #endif
@@ -1202,6 +1212,17 @@ void HClass::HHist2(mdef_iter md, TH1* &hh, char* name, char* title, int i,
     hh=new TH2D(name,title,n1,min1,max1,n2,min2,max2);
   else
     hh=new TH2F(name,title,n1,min1,max1,n2,min2,max2);
+  MapHist(md,hh,i);
+}
+
+void HClass::HHist3(mdef_iter md, TH1* &hh, char* name, char* title, int i,
+		    int n1, float min1, float max1,
+		    int n2, float min2, float max2,
+		    int n3, float min3, float max3) {
+  if (md->hd->htp)
+    hh=new TH3D(name,title,n1,min1,max1,n2,min2,max2,n3,min3,max3);
+  else
+    hh=new TH3F(name,title,n1,min1,max1,n2,min2,max2,n3,min3,max3);
   MapHist(md,hh,i);
 }
 
@@ -1527,6 +1548,27 @@ void HClass::Yumo_xy() {
   }
 }
 
+void HClass::Make_Yumo_1d(mdef_iter md) {
+  if (!md->hd->b) return;
+  TH1* hh;
+  md_yumo1 = &*md;
+
+  int nn=md->hd->bins*(md->hd->max - md->hd->min);
+  if (nn<1) nn=1;
+
+  //1d
+  HHist1(md,hh,(char*)"x1+x2",(char*)"x1+x2;x1+x2(ns);Counts",0);
+  HHist1(md,hh,(char*)"y1+y2",(char*)"y1+y2;y1+y2(ns);Counts",1);
+  HHist1(md,hh,(char*)"x1-x2",(char*)"x1-x2;x1-x2(ns);Counts",2);
+  HHist1(md,hh,(char*)"y1-y2",(char*)"y1-y2;y1-y2(ns);Counts",3);
+  HHist1(md,hh,(char*)"x1+x2_w",(char*)"x1+x2_w;x1+x2(ns);Counts",4);
+  HHist1(md,hh,(char*)"y1+y2_w",(char*)"y1+y2_w;y1+y2(ns);Counts",5);
+  HHist1(md,hh,(char*)"x1-x2_w",(char*)"x1-x2_w;x1-x2(ns);Counts",6);
+  HHist1(md,hh,(char*)"y1-y2_w",(char*)"y1-y2_w;y1-y2(ns);Counts",7);
+
+  Yumo_xy();
+}
+
 void HClass::Make_Yumo_2d(mdef_iter md) {
   if (!md->hd->b) return;
   TH1* hh;
@@ -1553,23 +1595,35 @@ void HClass::Make_Yumo_2d(mdef_iter md) {
   Yumo_xy();
 }
 
-void HClass::Make_Yumo_1d(mdef_iter md) {
+void HClass::Make_Yumo_3d(mdef_iter md) {
   if (!md->hd->b) return;
   TH1* hh;
-  md_yumo1 = &*md;
+  md_yumo3 = &*md;
 
-  int nn=md->hd->bins*(md->hd->max - md->hd->min);
-  if (nn<1) nn=1;
+  mdef_iter md2 = hcl->Find_Mdef(72);
 
-  //1d
-  HHist1(md,hh,(char*)"x1+x2",(char*)"x1+x2;x1+x2(ns);Counts",0);
-  HHist1(md,hh,(char*)"y1+y2",(char*)"y1+y2;y1+y2(ns);Counts",1);
-  HHist1(md,hh,(char*)"x1-x2",(char*)"x1-x2;x1-x2(ns);Counts",2);
-  HHist1(md,hh,(char*)"y1-y2",(char*)"y1-y2;y1-y2(ns);Counts",3);
-  HHist1(md,hh,(char*)"x1+x2_w",(char*)"x1+x2_w;x1+x2(ns);Counts",4);
-  HHist1(md,hh,(char*)"y1+y2_w",(char*)"y1+y2_w;y1+y2(ns);Counts",5);
-  HHist1(md,hh,(char*)"x1-x2_w",(char*)"x1-x2_w;x1-x2(ns);Counts",6);
-  HHist1(md,hh,(char*)"y1-y2_w",(char*)"y1-y2_w;y1-y2(ns);Counts",7);
+  int n2=md2->hd->bins*(md2->hd->max - md2->hd->min);
+  int n3=md->hd->bins*(md->hd->max - md->hd->min);
+  if (n2<1) n2=1;
+  if (n3<1) n3=1;
+
+  char name[100],title[100];
+  strcpy(name,md->name.Data());
+  strcpy(title,name);
+  strcat(title,";X(ns);Y(ns);Ntof(mks)");
+
+  //3d
+
+  HHist3(md,hh,name,title,0,
+   	 n2,md2->hd->min,md2->hd->max,n2,md2->hd->min,md2->hd->max,
+	 n3,md->hd->min,md->hd->max);
+
+
+  // strcat(name,"_w");
+  // strcpy(title,name);
+  // strcat(title,";X(ns);Y(ns)");
+  // HHist3(md,hh,name,title,1,
+  // 	 nn,md->hd->min,md->hd->max,nn,md->hd->min,md->hd->max);
 
   Yumo_xy();
 }

@@ -17,7 +17,7 @@
 # make BITS=N compile with cutting lower bits in sData by N
 # removed!!!   make simul to compile with SIMUL option
 
-# make yumo compile with YUMO option
+# make [-j] yumo compile with YUMO option
 
 
 GIT_VERSION := $(shell git describe --abbrev=4 --always --tags --dirty)

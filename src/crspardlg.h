@@ -319,7 +319,7 @@ public:
   void AddLine_prof_int(TGHorizontalFrame *hfr1, Mdef* md);
   void AddLine_2d(TGGroupFrame* frame, Mdef* md);
 #ifdef YUMO
-  void Add_yumo(TGGroupFrame* frame, Mdef* md, Mdef* md2);
+  void Add_yumo(TGGroupFrame* frame, Mdef* md1, Mdef* md2, Mdef* md3);
 #endif
   //, Hdef* hd,
   //const char* tip, const char* label, int type);

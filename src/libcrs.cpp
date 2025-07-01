@@ -684,6 +684,9 @@ void CRS::Ana2(int all) {
     //std::advance(m_end,-opt.ev_min);
   }
 
+  //YK "костыль" нужен для исключения канала 255 из гистограмм
+  bool save_on=cpar.on[255];
+  cpar.on[255]=false;
   // analyze events from m_event to m_end
   while (m_event!=m_end) {
     if ((int)m_event->pulses.size()>=opt.mult1 &&
@@ -740,7 +743,9 @@ void CRS::Ana2(int all) {
     // 	m_event=crs->Levents.erase(m_event);
     // }
     ++m_event;
-  }
+  } //while
+  //YK "костыль" нужен для исключения канала 255 из гистограмм
+  cpar.on[255]=save_on;
 
   // erase events if the list is too long
   for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
@@ -4186,6 +4191,7 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
     } //while (idx1<buf_len)
 
     Dec_End(Blist,iread,254);
+    //prnt("ss ls;",BGRN,"d79_end:",nevents,RST);
 
   }
 

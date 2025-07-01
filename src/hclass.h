@@ -235,6 +235,9 @@ class HClass {
   void HHist1(mdef_iter md, TH1* &hh, char* name, char* title, int i);
   void HHist2(mdef_iter md, TH1* &hh, char* name, char* title, int i,
 	      int n1, float min1, float max1, int n2, float min2, float max2);
+  void HHist3(mdef_iter md, TH1* &hh, char* name, char* title, int i,
+	      int n1, float min1, float max1, int n2, float min2, float max2,
+	      int n3, float min3, float max3);
   void Make_1d(mdef_iter md, int maxi);
   void Make_1d_pulse(mdef_iter md);
   void Make_prof(mdef_iter md);
@@ -242,12 +245,13 @@ class HClass {
   int Make_2d(mdef_iter md);
 
 #ifdef YUMO
-  Mdef *md_yumo2, *md_yumo1;
+  Mdef *md_yumo1,*md_yumo2,*md_yumo3;
   //int yumo_x1,yumo_x2,yumo_y1,yumo_y2; //channels for x1,x2,y1,y2;
   std::vector<int> yumo_xy;
   void Yumo_xy();
-  void Make_Yumo_2d(mdef_iter md);
   void Make_Yumo_1d(mdef_iter md);
+  void Make_Yumo_2d(mdef_iter md);
+  void Make_Yumo_3d(mdef_iter md);
 #endif
 
   void FillHist(EventClass* evt, Double_t *hcut_flag);

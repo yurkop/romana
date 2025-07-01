@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 165
+#define CDEF 166
 
 /*
 #include <list>
@@ -413,8 +413,9 @@ public:
   int yumo_y2;
   Float_t yumo_peak1;
   Float_t yumo_peak2;
-  Hdef h_yumo_2d; // 71 Yumo_2d X(ns) Y(ns) 2d histograms for yumo
-  Hdef h_yumo_1d; // 72 Yumo_1d Time(ns) Counts 1d histograms for yumo
+  Hdef h_yumo_1d; // 71 Yumo_1d Time(ns) Counts 1d histograms for yumo
+  Hdef h_yumo_2d; // 72 Yumo_2d X(ns) Y(ns) 2d histograms for yumo
+  Hdef h_yumo_3d; // 73 Yumo_3d Time(ns) Counts 3d histogram for yumo
 #endif
 
   //Hdef h_width2;

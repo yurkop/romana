@@ -2035,12 +2035,13 @@ void HistParDlg::AddHist(TGCompositeFrame* frame2) {
 
   mdef_iter it1 = hcl->Find_Mdef(71);
   mdef_iter it2 = hcl->Find_Mdef(72);
+  mdef_iter it3 = hcl->Find_Mdef(73);
   if (it1!=hcl->Mlist.end() && it2!=hcl->Mlist.end()) {
     TGGroupFrame* frameYumo = new TGGroupFrame(hh, "YUMO", kVerticalFrame);
     frameYumo->SetTitlePos(TGGroupFrame::kCenter);
     hh->AddFrame(frameYumo, LayLT0);
 
-    Add_yumo(frameYumo,&*it1,&*it2);
+    Add_yumo(frameYumo,&*it1,&*it2,&*it3);
   }
 #else
   frame2d = new TGGroupFrame(frame2, "2D Histograms", kVerticalFrame);
@@ -2334,10 +2335,31 @@ void HistParDlg::AddLine_prof_int(TGHorizontalFrame *hfr1, Mdef* md) {
 }
 
 #ifdef YUMO
-void HistParDlg::Add_yumo(TGGroupFrame* frame, Mdef* md, Mdef* md2) {
+void HistParDlg::Add_yumo(TGGroupFrame* frame, Mdef* md1, Mdef* md2, Mdef* md3) {
 
   TGHorizontalFrame *hfr1;
   TGTextEntry *fLabel;
+
+  // 1d hist
+  hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1,LayLT1b);
+  Check_opt(hfr1,0,&md1->hd->b,"on/off",0x100|(2<<4),"");
+  Num_opt(hfr1,40,&md1->hd->bins,0,"Number of bins per channel",
+	  k_r0,0.01,10,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,50,&md1->hd->min,0,"Low edge",
+	  k_r0,0,0,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,50,&md1->hd->max,0,"Upper edge",
+	  k_r0,0,0,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,40,&md1->hd->rb,0,"Rebin (only for drawing)",
+	  k_int,1,1000,4<<1|3<<4,LayLT2);
+  Check_opt(hfr1,0,&md1->hd->htp,"Double/Float",0x100|(2<<1)|(2<<4),"");
+
+  fLabel=new TGTextEntry(hfr1, "YUMO 1d");
+  fLabel->SetState(false);
+  fLabel->ChangeOptions(0);
+  fLabel->SetToolTipText("1d YUMO histograms");
+  hfr1->AddFrame(fLabel,LayLT2);
+
 
   // 2d hist
   hfr1 = new TGHorizontalFrame(frame);
@@ -2345,16 +2367,16 @@ void HistParDlg::Add_yumo(TGGroupFrame* frame, Mdef* md, Mdef* md2) {
   //hfr1->Resize(HFRAME_WIDTH,0);
   frame->AddFrame(hfr1,LayLT1b);
 
-  Check_opt(hfr1,0,&md->hd->b,"on/off",0x100|(2<<4),"");
-  Num_opt(hfr1,40,&md->hd->bins,0,"Number of bins per channel on X and Y axis",
+  Check_opt(hfr1,0,&md2->hd->b,"on/off",0x100|(2<<4),"");
+  Num_opt(hfr1,40,&md2->hd->bins,0,"Number of bins per channel on X and Y axis",
 	  k_r0,0.01,10,0x100|(2<<4),LayLT2);
-  Num_opt(hfr1,50,&md->hd->min,0,"Low edge",
+  Num_opt(hfr1,50,&md2->hd->min,0,"Low edge",
 	  k_r0,0,0,0x100|(2<<4),LayLT2);
-  Num_opt(hfr1,50,&md->hd->max,0,"Upper edge",
+  Num_opt(hfr1,50,&md2->hd->max,0,"Upper edge",
 	  k_r0,0,0,0x100|(2<<4),LayLT2);
-  Num_opt(hfr1,40,&md->hd->rb,&md->hd->rb2,"Rebin X/Y (only for drawing)",
+  Num_opt(hfr1,40,&md2->hd->rb,&md2->hd->rb2,"Rebin X/Y (only for drawing)",
 	  k_int,1,1000,4<<1|3<<4,LayLT2);
-  Check_opt(hfr1,0,&md->hd->htp,"Double/Float",0x100|(2<<1)|(2<<4),"");
+  Check_opt(hfr1,0,&md2->hd->htp,"Double/Float",0x100|(2<<1)|(2<<4),"");
 
   fLabel=new TGTextEntry(hfr1, "YUMO 2d");
   //fLabel->SetWidth();
@@ -2365,24 +2387,29 @@ void HistParDlg::Add_yumo(TGGroupFrame* frame, Mdef* md, Mdef* md2) {
   hfr1->AddFrame(fLabel,LayLT2);
 
 
-  // 1d hist
+  // 3d hist
   hfr1 = new TGHorizontalFrame(frame);
+  //hfr1->ChangeOptions(hfr1->GetOptions()|kFixedWidth);
+  //hfr1->Resize(HFRAME_WIDTH,0);
   frame->AddFrame(hfr1,LayLT1b);
-  Check_opt(hfr1,0,&md2->hd->b,"on/off",0x100|(2<<4),"");
-  Num_opt(hfr1,40,&md2->hd->bins,0,"Number of bins per channel",
-	  k_r0,0.01,10,0x100|(2<<4),LayLT2);
-  Num_opt(hfr1,50,&md2->hd->min,0,"Low edge",
-	  k_r0,0,0,0x100|(2<<4),LayLT2);
-  Num_opt(hfr1,50,&md2->hd->max,0,"Upper edge",
-	  k_r0,0,0,0x100|(2<<4),LayLT2);
-  Num_opt(hfr1,40,&md2->hd->rb,&md->hd->rb2,"Rebin (only for drawing)",
-	  k_int,1,1000,4<<1|3<<4,LayLT2);
-  Check_opt(hfr1,0,&md2->hd->htp,"Double/Float",0x100|(2<<1)|(2<<4),"");
 
-  fLabel=new TGTextEntry(hfr1, "YUMO 1d");
+  Check_opt(hfr1,0,&md3->hd->b,"on/off",0x100|(2<<4),"");
+  Num_opt(hfr1,40,&md3->hd->bins,0,"Number of bins per channel on X and Y axis",
+	  k_r0,0.01,10,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,50,&md3->hd->min,0,"Low edge",
+	  k_r0,0,0,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,50,&md3->hd->max,0,"Upper edge",
+	  k_r0,0,0,0x100|(2<<4),LayLT2);
+  Num_opt(hfr1,40,&md3->hd->rb,&md3->hd->rb2,"Rebin X/Y (only for drawing)",
+	  k_int,1,1000,4<<1|3<<4,LayLT2);
+  Check_opt(hfr1,0,&md3->hd->htp,"Double/Float",0x100|(2<<1)|(2<<4),"");
+
+  fLabel=new TGTextEntry(hfr1, "YUMO 3d");
+  //fLabel->SetWidth();
   fLabel->SetState(false);
   fLabel->ChangeOptions(0);
-  fLabel->SetToolTipText("1d YUMO histograms");
+  fLabel->SetToolTipText("3d YUMO histograms");
+  //fLabel->SetAlignment(kTextCenterY);
   hfr1->AddFrame(fLabel,LayLT2);
 
 
