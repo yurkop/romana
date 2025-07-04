@@ -2416,15 +2416,16 @@ void HistParDlg::Add_yumo(TGGroupFrame* frame, Mdef* md1, Mdef* md2, Mdef* md3) 
   // x1x2y1y2
   hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1,LayLT1b);
+  Num_opt(hfr1,40,&opt.yumo_a,0,"Anode channel",k_int,0,31,0x100,LayLT0);
   Num_opt(hfr1,40,&opt.yumo_x1,0,"X1 channel",k_int,0,31,0x100,LayLT0);
   Num_opt(hfr1,40,&opt.yumo_x2,0,"X2 channel",k_int,0,31,0x100,LayLT0);
   Num_opt(hfr1,40,&opt.yumo_y1,0,"Y1 channel",k_int,0,31,0x100,LayLT0);
   Num_opt(hfr1,40,&opt.yumo_y2,0,"Y2 channel",k_int,0,31,0x100,LayLT0);
 
-  fLabel=new TGTextEntry(hfr1, "X1 X2 Y1 Y2 channels");
+  fLabel=new TGTextEntry(hfr1, "A X1 X2 Y1 Y2 channels");
   fLabel->SetState(false);
   fLabel->ChangeOptions(0);
-  fLabel->SetToolTipText("cathode channels");
+  fLabel->SetToolTipText("Anode & cathode channels");
   hfr1->AddFrame(fLabel,LayLT2);
 
 
@@ -2788,7 +2789,7 @@ void ChanParDlg::Build() {
 
   if (NFLD!=nfld) {
     prnt("ss d ds;",BRED,"NFLD constant is not set properly:",NFLD,nfld,RST);
-    exit(-1);
+    EExit(-1);
   }
 
   // for (int i=0;i<nfld;i++) {

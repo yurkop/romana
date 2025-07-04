@@ -72,6 +72,8 @@ public:
   void Fill_Ampl(EventClass* evt, Double_t *hcut_flag, int ncut);
   void FillProf(EventClass* evt, Double_t *hcut_flag, int ncut);
 #ifdef YUMO
+  void Fill_03(HMap* map, Float_t x, Float_t y, Float_t z,
+	       Double_t *hcut_flag, int ncut);
   void FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut);
 #endif
 
@@ -189,6 +191,9 @@ class HClass {
   TFormula* cform[MAXCUTS]; //starts from 1, not from 0
   bool b_formula; //at least one cut formula exists
   bool b_base[MAX_CHTP]; // использовать Base,Sl1,Sl2,RMS1,RMS2
+  bool b_ntof=0; //analyze ntof ot not !! Переделать для многопоточного анализа
+  Long64_t ntof_start=0;
+  Float_t ntof_time0=0;
 
   //HMap *cutmap[MAXCUTS];
 
@@ -247,6 +252,13 @@ class HClass {
 #ifdef YUMO
   Mdef *md_yumo1,*md_yumo2,*md_yumo3;
   //int yumo_x1,yumo_x2,yumo_y1,yumo_y2; //channels for x1,x2,y1,y2;
+  // вектор yumo_xy заполняется так, что его значения равны:
+  // 0 - для индекса, равного каналу X1
+  // 1 - для индекса, равного каналу X2
+  // 2 - для индекса, равного каналу Y1
+  // 3 - для индекса, равного каналу Y2
+  // 4 - для индекса, равного каналу A
+  // 5 - для всех остальных индексов
   std::vector<int> yumo_xy;
   void Yumo_xy();
   void Make_Yumo_1d(mdef_iter md);

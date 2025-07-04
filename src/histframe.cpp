@@ -675,7 +675,6 @@ void HistFrame::Make_Ltree() {
   TGListTreeItem *item=0;
   HMap* map;
 
-
   if (hcl->dir_list)
     delete hcl->dir_list;
 
@@ -1314,7 +1313,7 @@ void HistFrame::Y_Slider(TH1* hh, double a1, double a2, double y1, double y2) {
     y1=hh->GetYaxis()->GetXmin();
     y2=hh->GetYaxis()->GetXmax();
   }
-  else if (hh!=st_plot) {
+  else if (hh->GetDimension()==2 && hh!=st_plot) {
     y1=1e99;
     y2=-1e99;
     GetHMinMax(hh,a1,a2,y1,y2);
@@ -2367,7 +2366,6 @@ void HistFrame::HiReset()
 #endif
 
   HiUpdate();
-  //cout << "HiReset2: " << endl;
 }
 
 void HistFrame::HiUpdate()
@@ -2384,7 +2382,6 @@ void HistFrame::HiUpdate()
   while ((ss>>temp) && nn<2) {
     dopt[nn++] = temp;
   }
-
 
 
   Hmut.Lock();
@@ -2825,7 +2822,7 @@ void HistFrame::OneRebinPreCalibr(HMap* &map, TH1* &hist, bool badj) {
     }
 
   }
-  else { //2d hist
+  else if (map->hst->GetDimension()==2) { //2d hist
     Int_t ny = map->hst->GetNbinsY();
     Int_t rb2=map->hd->rb2;
     if (rb2<1)
@@ -2911,10 +2908,14 @@ void HistFrame::AllRebinDraw() {
 
 	hh->Draw(dopt[0].Data());
       }
-      else { //2D hist or projection
+      else if (hh->GetDimension()==2) { //2D hist or projection
 	//cout << "dopt: " << dopt[1].Data()+1 << endl;
 	gPad->SetLogz(opt.b_logy);
 	hh->Draw(dopt[1].Data());
+      }
+      else if (hh->GetDimension()==3) { //3D hist
+	gPad->SetLogz(opt.b_logy);
+	hh->Draw();
       }
 
       //draw cuts

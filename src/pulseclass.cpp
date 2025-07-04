@@ -78,7 +78,7 @@ size_t PulseClass::GetPtr(Int_t hnum) {
     break;
   default:
     prnt("ss ds;",BRED, "Wrong hnum number in GetPtr:", hnum, RST);
-    exit(-1);
+    EExit(-1);
   }
   // if (ptr==0) {
   //   prnt("ss ds;",BRED, "Wrong hnum number in GetPtr:", hnum, RST);

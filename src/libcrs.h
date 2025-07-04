@@ -25,6 +25,12 @@
 #include "pulseclass.h"
 #include "common.h"
 
+#include <queue>          // std::queue
+
+
+//#include <TServerSocket.h>
+//#include <TMonitor.h>
+
 enum ERR_NUM {
   ER_START=0,
   ER_CH,
@@ -81,6 +87,36 @@ public:
   ~BufClass();
 };
 
+#ifdef SOCK
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <poll.h> // For poll and pollfd
+
+class SockClass {
+  //RQ_OBJECT("SockClass")
+public:
+  int sockfd=0, //
+    newsockfd=0;
+  socklen_t clilen;
+  char buffer[0x10000];
+  struct sockaddr_in serv_addr, cli_addr;
+  struct pollfd fds[1]; // Or more if you're monitoring other sockets
+
+  std::queue<TString> l_com;
+  std::queue<TString> l_par;
+
+public:
+  SockClass(int portno);
+  ~SockClass();
+  void Poll();
+  //void Handle();
+  void Eval_Buf();
+  void Eval_Par();
+  void Eval_Com();
+  //void DoReset();
+  //void Created() { Emit("Created()"); } //*SIGNAL*
+};
+#endif
 
 //---------------------------
 class CRS {
@@ -245,6 +281,7 @@ RQ_OBJECT("CRS")
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
   bool b_stop; // true if acquisition and analysis are stopped
+  //bool b_sockana=false;
 
   Int_t b_run; // used for trd_ana
   // b_run=0 - stop analysis immediately (pause)
@@ -315,6 +352,17 @@ RQ_OBJECT("CRS")
   const Int_t PROF_64=1000000;
 
   //bool chan_changed = false;
+
+  //TServerSocket *serv_sock;
+  //TMonitor *mon;
+
+
+  //SockClass *gsock;
+  // int sockfd, newsockfd, portno;
+  // socklen_t clilen;
+  // char buffer[256];
+  // struct sockaddr_in serv_addr, cli_addr;
+
 
   //--------functions---------
 

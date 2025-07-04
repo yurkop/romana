@@ -85,18 +85,24 @@ Float_t Mdef::VarPeriod(EventClass* e, PulseClass* p){
 }
 
 Float_t Mdef::VarNtof(EventClass* e, PulseClass* p){
-  static Long64_t Tstart0=LLONG_MAX; //Tstamp of the ntof start pulses
-  static Float_t Time0=0; //Exact time of the ntof start pulses
+  //static Long64_t Tstart0=LLONG_MAX; //Tstamp of the ntof start pulses
+  //static Float_t Time0=0; //Exact time of the ntof start pulses
 
-  Float_t tt=0;
-  if (p->Chan==opt.start_ch) {
-    Tstart0 = e->Tstmp;
-    Time0 = p->Time;
-    return 0;
-  }
+  // Float_t tt=0;
+  // if (p->Chan==opt.start_ch) {
+  //   Tstart0 = e->Tstmp;
+  //   Time0 = p->Time;
+  //   return 0;
+  // }
 
-  tt = e->Tstmp - Tstart0;
-  tt+= p->Time - Time0;
+  // tt = e->Tstmp - Tstart0;
+  // tt+= p->Time - Time0;
+
+
+  Float_t tt = e->Tstmp - hcl->ntof_start;
+  tt+= p->Time - hcl->ntof_time0;
+
+
   tt*= mks*opt.Period;
 
   //check for missed starts - obsolete...
@@ -287,7 +293,8 @@ void Mdef::Fill_02(HMap* map, Float_t x, Float_t y, Double_t *hcut_flag,
     x += map->hst->GetXaxis()->GetBinWidth(1)*(rnd.Rndm(x)-0.5);
     y += map->hst->GetYaxis()->GetBinWidth(1)*(rnd.Rndm(y)-0.5);
   }
-  map->hst->Fill(x,y);
+  TH2* h2 = (TH2*) map->hst;
+  h2->Fill(x,y);
 
   if (opt.ncuts && !ncut) {
     for (int i=1;i<opt.ncuts;i++) {
@@ -1012,6 +1019,7 @@ void HClass::Make_hist() {
   bool b_bbb=false; 
   memset(b_base,0,sizeof(b_base));
 
+  b_ntof=0;
   Hdef* hd2=0;
   PulseClass pls;
   for (auto it = Mlist.begin();it!=Mlist.end();++it) {
@@ -1033,19 +1041,23 @@ void HClass::Make_hist() {
       //YK: it->MFill_cut = &Mdef::Fill_1d_cut???; здесь и ниже недоделано
     }
     else if (it->hnum==12) { //nTOF
-      //if (opt.b_ntof) {
+      if (it->hd->b)
+	b_ntof=1;
+      //cout << "b_ntof: " << b_ntof << endl;
       Make_1d(it,opt.Nchan);
       it->GetX = &Mdef::VarNtof;
       it->MFill = &Mdef::Fill_1d;
     }
     else if (it->hnum==13) { //etof
-      //if (opt.b_ntof) {
+      if (it->hd->b)
+	b_ntof=1;
       Make_1d(it,opt.Nchan);
       it->GetX = &Mdef::VarEtof;
       it->MFill = &Mdef::Fill_1d;
     }
     else if (it->hnum==14) { //ltof
-      //if (opt.b_ntof) {
+      if (it->hd->b)
+	b_ntof=1;
       Make_1d(it,opt.Nchan);
       it->GetX = &Mdef::VarLtof;
       it->MFill = &Mdef::Fill_1d;
@@ -1097,7 +1109,10 @@ void HClass::Make_hist() {
       it->MFill = &Mdef::FillYumo;
     }
     else if (it->hnum==73) { //yumo_3d
+      if (it->hd->b)
+	b_ntof=1;
       Make_Yumo_3d(it);
+      it->GetX = &Mdef::VarNtof;
       it->MFill = &Mdef::FillYumo;
     }
 #endif
@@ -1115,7 +1130,7 @@ void HClass::Make_hist() {
     }
     else {
       prnt("ss s ds;",BRED, "Wrong histogram type:", it->h_name.Data(),it->hnum, RST);
-      exit(-1);
+      EExit(-1);
     }
 
     if (it->hd->b) {
@@ -1479,16 +1494,51 @@ int HClass::Make_2d(mdef_iter md) {
 
 
 #ifdef YUMO
+void Mdef::Fill_03(HMap* map, Float_t x, Float_t y, Float_t z,
+		   Double_t *hcut_flag, int ncut) {
+  // заполняем 3d гистограмму
+  if (!map) return;
+  if (ncut) {
+    map=map->h_cuts[ncut];
+    if (!map) return;
+  }
+
+  if (opt.addrandom) {
+    x += map->hst->GetXaxis()->GetBinWidth(1)*(rnd.Rndm(x)-0.5);
+    y += map->hst->GetYaxis()->GetBinWidth(1)*(rnd.Rndm(y)-0.5);
+    z += map->hst->GetYaxis()->GetBinWidth(1)*(rnd.Rndm(z)-0.5);
+  }
+  TH3* h3 = (TH3*) map->hst;
+  h3->Fill(x,y,z);
+
+  /*
+  if (opt.ncuts && !ncut) {
+    for (int i=1;i<opt.ncuts;i++) {
+      if (getbit(*(map->hd->cut+map->nn),i)) {
+	if (hcl->cutG[i]->IsInside(x,y)) {
+	  hcut_flag[i]=1;
+	}
+      }
+    }
+  }
+  */
+}
+
 void Mdef::FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut) {
-  Float_t tt[5] = {}; //initialize to zero
+  Float_t tt[6] = {}; //initialize to zero
+  Float_t ntof = -99998;
   for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
     // пропускаем импульсы с "плохим" Chan и где не найден пик
     if (ipls->Chan<opt.Nchan && ipls->Pos>-32222) {
       tt[hcl->yumo_xy[ipls->Chan]]=ipls->Time + 1e4;
       // prnt("ss l d d fs;",BGRN,"tt:",evt->Tstmp,ipls->Chan,
       //  	   hcl->yumo_xy[ipls->Chan],ipls->Time,RST);
+      if (ipls->Chan==opt.yumo_a)
+	ntof=(this->*GetX)(evt,&*ipls);
     }
   }
+
+  //prnt("ss l fs;",BMAG,"ntof:",evt->Tstmp,ntof,RST);
 
   Float_t sx=-1e5,sy=-1e5,tx=0,ty=0;
 
@@ -1513,7 +1563,7 @@ void Mdef::FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut) {
   }
   if (t01 && t23) {
     if (hcl->md_yumo2) {
-      Fill_02(hcl->md_yumo2->v_map[0],tx,ty,hcut_flag,ncut);
+      Fill_02(hcl->md_yumo2->v_map[0],tx,ty,hcut_flag,ncut); //Yumo_2d
     }
     if (sx>=opt.yumo_peak1 && sx<=opt.yumo_peak2 && 
 	sy>=opt.yumo_peak1 && sy<=opt.yumo_peak2) { 
@@ -1524,7 +1574,10 @@ void Mdef::FillYumo(EventClass* evt, Double_t *hcut_flag, int ncut) {
 	Fill_01(hcl->md_yumo1->v_map[7],ty,hcut_flag,ncut);
       }
       if (hcl->md_yumo2) {
-	Fill_02(hcl->md_yumo2->v_map[1],tx,ty,hcut_flag,ncut);
+	Fill_02(hcl->md_yumo2->v_map[1],tx,ty,hcut_flag,ncut); //Yumo_2d_w
+      }
+      if (hcl->md_yumo3) {
+	Fill_03(hcl->md_yumo3->v_map[0],tx,ty,ntof,hcut_flag,ncut); //Yumo_3d
       }
     }
   }
@@ -1543,8 +1596,10 @@ void HClass::Yumo_xy() {
       yumo_xy.push_back(2);
     else if (i==opt.yumo_y2)
       yumo_xy.push_back(3);
-    else
+    else if (i==opt.yumo_a)
       yumo_xy.push_back(4);
+    else
+      yumo_xy.push_back(5);
   }
 }
 
@@ -1675,6 +1730,20 @@ void HClass::FillHist(EventClass* evt, Double_t *hcut_flag) {
     }
   }
   */
+
+  //определяем ntof_start
+  if (b_ntof) {
+    for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
+      // пропускаем неактивные каналы и где не найден пик
+      if (cpar.on[ipls->Chan] && ipls->Pos>-32222) {
+	if (ipls->Chan==opt.start_ch) {
+	  ntof_start = evt->Tstmp;
+	  ntof_time0 = ipls->Time;
+	  break;
+	}
+      }
+    }
+  }
 
   //заполняем все гистограммы в Mfill_list
   for (auto it = MFill_list.begin();it!=MFill_list.end();++it) {

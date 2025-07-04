@@ -39,8 +39,13 @@ using namespace std;
 #include <TGFileDialog.h>
 #include "TGMsgBox.h"
 
+//typedef std::vector<TString>::iterator l_iter;
+
 void prnt(const char* fmt, ...);
 void debug_mess(bool cond, const char* mess, double par1, int par2=-9999);
+
+void EExit(int ret);
+int evalpar(TString &it, char* var, const char* varname);
 
 void SplitFilename(string str, string &folder, string &name);
 void SplitFilename(string str, string &folder, string &name, string &ext);
@@ -107,6 +112,7 @@ class MainFrame : public TGMainFrame {
   // ULong_t gcol[MAX_CH+NGRP];
 
   TTimer* fTimer;
+  unsigned long tclock=0,tclock_prev=0;
 
   TGLayoutHints* LayCT1;
   TGLayoutHints* LayE1;
@@ -189,7 +195,7 @@ class MainFrame : public TGMainFrame {
   // void DoCross();
 
   void UpdateTimer(int rst=0);
-  //void UpdateStatus(int rst=0);
+  void UpdateStatus(int rst=0);
 
   //void DoSetNumBuf();
   void HandleHelp();

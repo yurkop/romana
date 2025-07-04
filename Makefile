@@ -76,8 +76,8 @@ ifdef BITS
 endif
 
 ifeq (yumo,$(findstring $(MAKECMDGOALS),yumo))
-  RFLAGS += -DYUMO=1
-  CPPFLAGS += -D YUMO=1
+  RFLAGS += -DYUMO=1 -DSOCK=1
+  CPPFLAGS += -DYUMO=1 -DSOCK=1
 endif
 
 #ifeq (simul,$(findstring $(MAKECMDGOALS),simul))

@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 166
+#define CDEF 168
 
 /*
 #include <list>
@@ -221,7 +221,7 @@ public:
   Float_t Tstart; //Tlim1
   Float_t Tstop; //Tlim2
   //Float_t Tstart,Tstop;
-  Int_t tsleep;
+  UInt_t tsleep;
   Int_t usb_size; //in kB
   Int_t rbuf_size; //in kB
 
@@ -287,7 +287,6 @@ public:
 
   Int_t seltab;
 
-  Bool_t b_ntof; //analyze ntof ot not
   Int_t start_ch;
   Float_t ntof_period;
   Float_t Flpath;
@@ -407,6 +406,7 @@ public:
   TList l2d; //нужен только для сохранения и чтения 2d гистограмм в root файл
 
 #ifdef YUMO
+  int yumo_a;
   int yumo_x1;
   int yumo_x2;
   int yumo_y1;

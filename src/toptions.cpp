@@ -596,7 +596,6 @@ Toptions::Toptions() {
   b_roi=false;
   b_fpeaks=false;
 
-  b_ntof=0;
   start_ch=0;
   ntof_period=0;
   Flpath=10;

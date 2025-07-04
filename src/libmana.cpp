@@ -74,6 +74,9 @@ Coptions cpar;
 Toptions opt;
 
 CRS* crs;
+#ifdef SOCK
+SockClass* gSock;
+#endif
 
 MyMainFrame* myM=0;
 EventFrame* EvtFrm=0;
@@ -127,7 +130,6 @@ const char* msg_exists = "Output file already exists.\nPress OK to overwrite it"
 const char* msg_ident = "Input and output files are identical";
 
 std::vector<TString> listpar;
-typedef std::vector<TString>::iterator l_iter;
 
 std::vector<string> listfiles;
 //std::list<TString> listshow;
@@ -230,6 +232,11 @@ void debug_mess(bool cond, const char* mess, double par1, int par2) {
   }
 }
 
+void EExit(int ret) {
+  delete crs;
+  exit(ret);
+}
+
 void print_var(int tp, TDataMember *dm, TString vname, TString memname, int len=0, int len2=0) {
   const char* dmname = "--";
   const char* col=BGRN;
@@ -258,7 +265,7 @@ void print_var(int tp, TDataMember *dm, TString vname, TString memname, int len=
   }	
 }
 
-int evalpar(l_iter it, char* var, const char* varname) {
+int evalpar(TString &it, char* var, const char* varname) {
   //returns 0 if OK
 
   //cout << "listpar: " << listpar.size() << endl;
@@ -274,9 +281,9 @@ int evalpar(l_iter it, char* var, const char* varname) {
     int buflen=0;
     //char* var = (char*) &opt;
 
-    ll = it->First("=");
-    p0 = (*it)(0,ll);
-    sdata=(*it)(ll+1,it->Length());
+    ll = it.First("=");
+    p0 = it(0,ll);
+    sdata=it(ll+1,it.Length());
 
     ll = p0.First("[");
     len = p0.First("]");
@@ -1037,6 +1044,7 @@ void ctrl_c_handler(int s){
     return;
   }
 
+  delete crs;
   gApplication->Terminate(0);
   // delete myM;
   // exit(1); 
@@ -1062,7 +1070,7 @@ void duplcheck() {
 	if (d1->GetDataType()) {
 	  if (!strcmp(d1->GetName(),d2->GetName())) {
 	    cout << "Duplicate names: " << d1->GetName() << " " << d2->GetName() << endl;
-	    exit(1);
+	    EExit(1);
 	  }
 	}
 	d2 = (TDataMember*)l2->After(d2);
@@ -1176,7 +1184,7 @@ int main(int argc, char **argv)
 	//cout << "sarg: " << i << " " << sarg << " " << (int) sarg[1] << endl;
 	switch (tolower(sarg[1])) {
 	case 'h':
-	  exit(0);
+	  EExit(0);
 	case 'u': //reset usb
 	  b_resetusb=true;
 	  continue;
@@ -1215,7 +1223,7 @@ int main(int argc, char **argv)
 	    }
 	  }
 	  prnt("sss;",BRED,"Parameter -a must be followed by a filename",RST);
-	  exit(-1);
+	  EExit(-1);
 
 	case 'b': //file in batch
 	  crs->batch=true;
@@ -1295,7 +1303,7 @@ int main(int argc, char **argv)
 	      // gzclose(f2);
 	    }
 	  }
-	  exit(0);
+	  EExit(0);
 	case 'l':
 #ifdef CYUSB
 	  crs->Open_USB();
@@ -1304,10 +1312,10 @@ int main(int argc, char **argv)
 	  for (auto i=crs->cy_list.begin();i!=crs->cy_list.end();++i) {
 	    prnt("sss;",BBLU,i->c_str(),RST);
 	  }
-	  exit(0);
+	  EExit(0);
 	default:
 	  prnt("ss ss;",BRED,"Unknown parameter:",argv[i],RST);
-	  exit(-1);
+	  EExit(-1);
 	}
       } //if (sarg[0]=='-')
       //else if (sarg.find("=")!=string::npos) {
@@ -1380,7 +1388,7 @@ int main(int argc, char **argv)
     ff = gzopen(parfile2,"rb");
     if (!ff) {
       cout << "Can't open par file: " << parfile2 << endl;
-      exit(-1);
+      EExit(-1);
     }
     else {
       crs->ReadParGz(ff,parfile2,0,1,1);
@@ -1414,14 +1422,14 @@ int main(int argc, char **argv)
       if (!crs->b_noheader) {
 	//cout << "dir3: " << datfname << endl;
 	if (readpar_root(datfname,1))
-	  exit(-1);
+	  EExit(-1);
       }
       //rd_root=1;
       //prnt("ss d ds;",BBLU,"root:",rd_root,(bool)parfile2,RST);
     }
     else { //.raw or .dec file
       if (crs->DoFopen(datfname,1,rdopt)) //read file and parameters from it
-	exit(-1);
+	EExit(-1);
     }
   }
   else {
@@ -1435,10 +1443,10 @@ int main(int argc, char **argv)
 
   //exit(1);
   //change individual parameters if listpar is not empty
-  for (l_iter it=listpar.begin(); it!=listpar.end(); ++it) {
+  for (auto it=listpar.begin(); it!=listpar.end(); ++it) {
     int res=0;
-    res+=evalpar(it,(char*)&opt,"Toptions");
-    res+=evalpar(it,(char*)&cpar,"Coptions");
+    res+=evalpar(*it,(char*)&opt,"Toptions");
+    res+=evalpar(*it,(char*)&cpar,"Coptions");
     if (res>=200) {
       prnt("ssssds;",BRED,"Parameter ",it->Data()," not found: ",res,RST);
     }
@@ -1482,7 +1490,7 @@ int main(int argc, char **argv)
   if (crs->batch) {
     if (strlen(datfname)==0 && !crs->abatch) {
       cout << "No input file. Exiting..." << endl;
-      exit(0);
+      EExit(0);
     }
 
     // if (crs->abatch && ret) {
@@ -1501,21 +1509,21 @@ int main(int argc, char **argv)
     // }
 
     if (!TestFile()) {
-      exit(0);
+      EExit(0);
     }
 
     hcl->Make_hist();
     if (CheckMem(1)>700) { //>70%
       cout << "Not enough memory. Reduce the size of histograms. Exitting... " << pinfo.fMemResident*1e-3 << " " << minfo.fMemTotal << endl;
-      crs->DoExit();
-      exit(-1);
+      //crs->DoExit();
+      EExit(-1);
       // gApplication->Terminate(0);
     }
 
     if (crs->abatch) {
       if (crs->ndev!=1) {
 	prnt("ss ds;",BRED,"Number of connected devices:",crs->cy_list.size(),RST);
-	exit(-1);
+	EExit(-1);
       }
 #ifdef CYUSB
       crs->Init_device();
@@ -1549,7 +1557,7 @@ int main(int argc, char **argv)
       cout << crs->errlabel[i] << " " << crs->errors[i] << endl;
     }
 
-    return 0;
+    EExit(0);
   }
 
   TApplication theApp("App",&argc,argv);
@@ -1874,11 +1882,11 @@ bool TestFile() {
 	cout << "flags: " << opt.raw_write << opt.dec_write << opt.root_write << endl;
 	cout << crs->rawname << endl;
 	cout << "\033[1;31mFile exists. Exiting...\033[0m" << endl;
-	exit(0);
+	EExit(0);
       }
       else if (b_ident) {
 	prnt("sss;",BRED,msg_ident,RST);
-	exit(0);
+	EExit(0);
       }
       else {
 	return true;
@@ -2007,7 +2015,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   : TGMainFrame(p,w,h) {
   // Create a main frame
 
-  fTimer = new TTimer(opt.tsleep);
+  fTimer = new TTimer(50);
+  //fTimer = new TTimer(opt.tsleep);
   fTimer->Connect("Timeout()", "MainFrame", this, "UpdateTimer()");
 
   gClient->GetColorByName("white", fWhite);
@@ -2222,6 +2231,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 }
 
 MainFrame::~MainFrame() {
+  delete crs;
   delete fTimer;
 }
 
@@ -2864,9 +2874,11 @@ void MainFrame::DoClose() {
   if (crs->f_read) {
     gzclose(crs->f_read);
     crs->f_read=0;
+    crs->Fmode=0;
   }
 
-  myM->SetTitle((char*)"");
+  strcpy(mainname,"");
+  //myM->SetTitle((char*)"");
   //daqpar->AllEnabled(true);
 
   parpar->Update();
@@ -3257,9 +3269,7 @@ void MainFrame::DoReset() {
 
   if (!crs->b_stop) return;
 
-  //cout << "Reset1: " << endl;
   crs->DoReset();
-  //cout << "Reset2: " << endl;
 
   if (local_nch!=opt.Nchan || local_nrows!=opt.Nrows) {
     // cout << "Rebuild: " << endl;
@@ -3289,9 +3299,42 @@ void MainFrame::DoReset() {
 
   UpdateTimer(1);
   //UpdateStatus(1);
+
 }
 
 void MainFrame::UpdateTimer(int rst) {
+  // cout << "UpdateTimer: " << crs->b_sockana << endl;
+  // if (crs->b_sockana) {
+  //   crs->b_sockana=false;
+  //   fAna->Emit("Clicked()");
+  // }
+
+  unsigned long t0 = (unsigned long)fTimer->GetAbsTime();
+  unsigned long tt = t0-tclock;
+  if (tt>=opt.tsleep) {
+    tclock=t0;
+    //cout << "UpdateTimer: " << t0 << " " << tt << endl;
+    UpdateStatus(rst);
+  }
+
+#ifdef SOCK
+  gSock->Poll();
+  if (!gSock->l_par.empty())
+    gSock->Eval_Par();
+  if (!gSock->l_com.empty())
+    gSock->Eval_Com();
+#endif
+}
+
+void MainFrame::UpdateStatus(int rst) {
+  // cout << "UpdateTimer: " << crs->b_sockana << endl;
+  // if (crs->b_sockana) {
+  //   crs->b_sockana=false;
+  //   fAna->Emit("Clicked()");
+  // }
+
+
+
   int ii=0;
 
   static Long64_t bytes1=0;
@@ -3388,112 +3431,6 @@ void MainFrame::UpdateTimer(int rst) {
 
   //cout << "proc: " << rst << " " << percent << " " << tot << endl;
 }
-
-/*
-void MainFrame::UpdateStatus(int rst) {
-
-  int ii=0;
-
-  static Long64_t bytes1=0;
-  static Long64_t nevents_old=0;
-  static Long64_t mtrig_old=0;
-  static double t1=0;
-  static double mb_rate,ev_rate,trig_rate;
-
-  static clock_t clk_old, proc_old;
-
-  struct tms timeSample;
-
-  Long64_t tot;
-  clock_t clk, proc;
-  static double percent=0;
-  static double pmem=0;
-
-  //gSystem->GetProcInfo(&pinfo);
-  
-  //cout << "updatestatus: " << rst << endl;
-
-  if (rst) {
-    bytes1=0;
-    nevents_old=0;
-    mtrig_old=0;
-    mb_rate=0;
-    ev_rate=0;
-    trig_rate=0;
-
-    clk_old=0;
-    proc_old=0;
-    percent=0;
-    pmem=0;
-
-    t1=0;
-    opt.T_acq=0;
-  }
-
-  //char txt[100];
-  //time_t tt = opt.F_start.GetSec();
-
-  //cout << "T_acq2: " << opt.T_acq << " " << crs->Tstart64 << endl;
-  // if (opt.Tstop && opt.T_acq>opt.Tstop) {
-  //   DoStartStop();
-  // }
-
-  double dt = opt.T_acq - t1;
-
-  if (dt>0.1) {
-    mb_rate = (crs->inputbytes-bytes1)/MB/dt;
-    ev_rate = (crs->nevents-nevents_old)/dt;
-    trig_rate = (crs->mtrig-mtrig_old)/dt;
-    //cout << "trig_rate: " << trig_rate << " " << dt << endl;
-
-    bytes1=crs->inputbytes;
-    nevents_old=crs->nevents;
-    mtrig_old=crs->mtrig;
-    t1=opt.T_acq;
-
-    //cpu
-    clk = times(&timeSample);
-    proc = timeSample.tms_stime + timeSample.tms_utime;
-    tot = clk-clk_old;
-    if (tot>10) {
-      percent = 100.*(proc-proc_old)/tot;
-      clk_old=clk;
-      proc_old=proc;
-    }
-    //else
-    //percent = 0;
-
-    //mem
-    gSystem->GetMemInfo(&minfo);
-    gSystem->GetProcInfo(&pinfo);
-    pmem = pinfo.fMemResident/minfo.fMemTotal*0.1;
-  }
-
-  fStat[ii++]->SetText(crs->txt_start,0);
-
-  fStat[ii++]->SetText(TGString::Format("%0.1f",opt.T_acq),0);
-  fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents),0);
-  fStat[ii++]->SetText(TGString::Format("%0.3f",ev_rate),0);
-  fStat[ii++]->SetText(TGString::Format("%lld",crs->mtrig),0);
-  fStat[ii++]->SetText(TGString::Format("%0.3f",trig_rate),0);
-  fStat[ii++]->SetText(TGString::Format("%lld",crs->nbuffers),0);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),0);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),0);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),0);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->decbytes/MB),0);
-
-  fStat[ii++]->SetText(TGString::Format("%0.2f",percent),0);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",pmem),0);
-
-  // cout << "Pinfo: " << clk << " " << proc << " " << percent
-  //      << " " << tot << " " << proc-proc_old
-  //      << " " << timeSample.tms_stime << " " << timeSample.tms_utime
-  //      << " " << timeSample.tms_cstime << " " << timeSample.tms_cutime
-  //      << endl;
-
-  //cout << "proc: " << rst << " " << percent << " " << tot << endl;
-}
-*/
 
 void MainFrame::CloseWindow() {
 
