@@ -2219,8 +2219,10 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
     break;
   default:
     //cout << "crs->ndev= " << crs->ndev << endl;
-    if (!pops.at(M_DEVICE))
+    if (!pops.at(M_DEVICE)) {
+      pops.at(M_DEVICE)=1;
       new PopFrame(this,1,1,M_DEVICE);
+    }
   }
 
   

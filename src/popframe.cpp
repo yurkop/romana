@@ -30,7 +30,7 @@ using namespace std;
 PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, MENU_COM menu_id,
 		   void* p) {
   m_id=menu_id;
-  myM->pops.at(m_id)=1;
+  //myM->pops.at(m_id)=1;
 
   chklist.Clear();
   //ee_calib=0;
@@ -104,7 +104,8 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, MENU_COM menu_id,
 }
 PopFrame::~PopFrame()
 {
-  myM->pops.at(m_id)=0;
+  if (myM)
+    myM->pops.at(m_id)=0;
   fMain->DeleteWindow();  // deletes fMain
 }
 void PopFrame::CloseWindow()

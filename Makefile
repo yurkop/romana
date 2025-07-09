@@ -178,7 +178,7 @@ param: $(OBJ_D)/paramdict.cpp utils/param.cpp $(SRC_D)/toptions.cpp
 	g++ $(CXXFLAGS) $(CPPFLAGS) -o param.x utils/param.cpp $(OBJ_D)/paramdict.cpp $(SRC_D)/toptions.cpp $(LDFLAGS)
 
 cyusblib:
-	cd cyusb && chmod 755 install.sh && sudo ./install.sh
+	cd cyusb && chmod 755 install.sh && sudo ./install.sh && chmod 644 install.sh
 
 install:
 	rm -f $(HOME)/bin/romana
