@@ -158,7 +158,18 @@ std::string Coptions::GetDevice(int module, int opt) {
 		      
 void Coptions::InitMinMax() {
   //см. parameters.xlsx
-  // первая строчка - мин; вторая - макс.
+  // 8+8: первая строчка - мин; вторая - макс.
+  // 8 чисел: crs_ch (см. libcrs.h):
+  //0 - undefined
+  //1 - CRS-2
+  //2 - CRS-32 11 bit
+  //3 - CRS-16 16 bit
+  //4 - CRS-8
+  //5 - CRS-128
+  //6 - AK32 14 bit
+  //7 - AK32 12 bit
+  
+
   arr mhS,mDt,mPre,mLen,mDrv,mThr,mLT,mG,mhD,mTrg,mRD;
 
   // см. sum: сглаживание (суммирование)
@@ -194,7 +205,7 @@ void Coptions::InitMinMax() {
 	 0,0,4075,4092,1023,255,250,250};
   // тип срабатывания дискриминатора
   mTrg = {0,0,0,0,0,0,0,0,
-	  0,1,6,6,6,6,6,6};
+	  0,1,6,6,6,6,7,7};
   // величина пересчета P ("незаписанных" срабатываний дискриминатора)
   mRD = {0,0,0,0,0,0,0,0,
 	 0,0,0,0,1023,1023,1023,1023};
@@ -529,6 +540,7 @@ Toptions::Toptions() {
     W2[i]=5;
 
     Mt[i]=0;
+    Mr[i]=0;
     calibr_t[i]=1;
     E0[i]=0;
     E1[i]=1;

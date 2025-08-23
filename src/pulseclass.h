@@ -84,6 +84,7 @@ class PulseClass {
   virtual ~PulseClass() {};
 
   size_t GetPtr(Int_t hnum);
+  Float_t CFD_sav_remove_later(int i, int kk, int delay, Float_t frac, Float_t &drv);
   Float_t CFD(int i, int kk, int delay, Float_t frac, Float_t &drv);
   //void Analyze();
   void FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac);

@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 168
+#define CDEF 169
 
 /*
 #include <list>
@@ -156,6 +156,8 @@ public:
   // (общее пространоство имен для cpar и opt).
 
   char gitver[24]; //git version written in the .par file
+  char ver_po=0; //версия ПО прошивки
+
   Int_t maxch;
   Int_t maxtp;
 
@@ -192,6 +194,9 @@ public:
   Int_t W2[MAX_CHTP]; // [wwin2]
 
   Int_t Mt[MAX_CHTP]; //analysis method
+  Int_t Mr[MAX_CHTP]; //ritesime method
+
+
   Int_t calibr_t[MAX_CHTP]; //type of calibration
   // 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline
   Float_t E0[MAX_CHTP]; // [emult0]

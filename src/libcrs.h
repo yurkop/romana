@@ -31,27 +31,6 @@
 //#include <TServerSocket.h>
 //#include <TMonitor.h>
 
-enum ERR_NUM {
-  ER_START=0,
-  ER_CH,
-  ER_MIS,
-  ER_FRMT,  
-  ER_LEN,
-  ER_ZERO,
-  ER_ALEN,
-  ER_TST,
-
-  ER_AREA,
-  ER_BASE,
-  ER_WIDTH,
-  ER_TIME,
-  
-  ER_ANA,
-  ER_DEC,
-  ER_LAG,
-  ER_OVF,
-};
-
 #define mask_e "TN"
 #define mask_p "AtWHBSsRrp"
 
@@ -72,8 +51,7 @@ using namespace std;
 class PkClass {
 public:
   Long64_t QX;
-  Int_t C,A,AY;
-  Int_t RX;
+  Int_t RX,C,A,AY,CF1,CF2;
   Short_t H;
   UChar_t E;
 };
@@ -317,7 +295,7 @@ RQ_OBJECT("CRS")
   Long64_t Counter[MAX_CH];
 
   Long64_t errors[MAX_ERR];
-  string errlabel[MAX_ERR] = {
+  std::string errlabel[MAX_ERR] = {
     "Bad buf start (obsolete):", //ER_START,
     "Bad channel:",              //ER_CH,
     "Channel mismatch:",         //ER_MIS,
@@ -327,16 +305,21 @@ RQ_OBJECT("CRS")
     "Wrong ADCM length:",        //ER_ALEN,
     "Bad ADCM Tstamp:",          //ER_TST,
 
-    "No area:",                  //ER_AREA
-    "No baseline:",              //ER_BASE
-    "No width:",                 //ER_WIDTH
-    "No time:",                  //ER_TIME
+    "Bad Area:",                  //ER_AREA
+    "Bad Baseline:",              //ER_BASE
+    "Bad Width:",                 //ER_WIDTH
+    "Bad Time:",                  //ER_TIME
+    "Bad Rtime:",                 //ER_RTIME
 
     "Slow analysis:",            //ER_ANA,
     "Slow decoding:",            //ER_DEC,
     "Event lag exceeded:",       //ER_LAG,    
-    "OVF:"                       //ER_OVF,    
+    "OVF:",                      //ER_OVF,    
+    "CFD:",                      //ER_CFD,    
+    "Overheat:",                 //ER_HEAT,    
   };
+
+
   Int_t prof_ch[MAX_CH];
   // -1: nothing;
   // 0..10: Prof8_x
@@ -397,6 +380,7 @@ RQ_OBJECT("CRS")
   //void AllParameters41(); // load all parameters
   //void AllParameters42(); // load all parameters
   //void AllParameters43(); // load all parameters
+  void AllParameters44a(); // parameters from TZ CFD+ (2025)
   void AllParameters45(); // load all parameters
   void AllParameters44(); // load all parameters
   void AllParameters36(); // load all parameters
@@ -487,8 +471,9 @@ RQ_OBJECT("CRS")
   void Fill_Dec79(EventClass* evt);
   void Fill_Dec80(EventClass* evt);
   void Fill_Dec81(EventClass* evt);
-
   void Fill_Dec82(EventClass* evt);
+
+  void Fill_Dec82_old(EventClass* evt);
 
   //void Fill_Txt(EventClass* evt);
 

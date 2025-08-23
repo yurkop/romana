@@ -76,6 +76,9 @@ size_t PulseClass::GetPtr(Int_t hnum) {
   case 9: //RiseTime
     ptr = (char*)&(this->Rtime) - (char*)this;
     break;
+  case 10: //Time
+    ptr = (char*)&(this->Time) - (char*)this;
+    break;
   default:
     prnt("ss ds;",BRED, "Wrong hnum number in GetPtr:", hnum, RST);
     EExit(-1);
@@ -88,7 +91,7 @@ size_t PulseClass::GetPtr(Int_t hnum) {
   return ptr;
 }
 
-Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
+Float_t PulseClass::CFD_sav_remove_later(int j, int kk, int delay, Float_t frac, Float_t &drv) {
   // возвращает CFD и одновременно drv в точке j
   // CFD = drv[j] - dev[j+delay]*frac
   // CFD = производная минус производная, сдвинутая влево на delay
@@ -114,9 +117,55 @@ Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
   //d0 = sData[j-delay] - sData[j-kk-delay];
   //return d0*frac - drv;
 
-
-
   //}
+}
+
+Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
+  if (delay>0) { //new CFD: Alpatov
+    // возвращает CFD и одновременно drv в точке j
+    // CFD = drv[j]*31/32 - drv[j+delay]*frac/32
+    // CFD = <производная> минус
+    // <производная, сдвинутая влево на delay и умноженная на frac>
+
+    // kk>0; delay>=0.
+    // CFD существует в диапазоне:
+    // - начальная точка (>=): kk
+    // - конечная точка (<):   sData.size()-delay
+    // Пример: for (UInt_t j=kk;j<sData.size()-delay;j++)
+
+    // CFD сдвинута вправо относительно drv
+
+    Float_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
+    drv = sData[j] - sData[j-kk];
+    return (drv*31-d0*frac)/32;
+
+    // вычисление в целых числах, как в приборе
+    /*
+    Int_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
+    drv = sData[j] - sData[j-kk];
+    Int_t cfd = (drv*31-d0*frac);//    /32;
+    return cfd;
+    */
+  }
+  else { //old CFD
+    delay=abs(delay);
+    // возвращает CFD и одновременно drv в точке j
+    // CFD = drv[j] - drv[j+delay]*frac
+    // CFD = <производная> минус
+    // <производная, сдвинутая влево на delay и умноженная на frac>
+
+    // kk>0; delay>=0.
+    // CFD существует в диапазоне:
+    // - начальная точка (>=): kk
+    // - конечная точка (<):   sData.size()-delay
+    // Пример: for (UInt_t j=kk;j<sData.size()-delay;j++)
+
+    // CFD сдвинута вправо относительно drv
+
+    Float_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
+    drv = sData[j] - sData[j-kk];
+    return drv-d0*frac*0.1; // -> original
+  }
 }
 
 void PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
@@ -461,7 +510,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
       Pos=Time+80;
     }
 
-  } //case 7
+  } //case 77
     break;
   // case 8: {
   // }
@@ -675,9 +724,27 @@ void PulseClass::PeakAna33() {
 
   } //if b_base
 
+  // 9. определяем Rtime и Area2
+  Rtime=0;
+  for (int j=T1;j<=T2;j++) {
+    Float_t dif=sData[j]-sData[j-kk];
+    if (dif<0) {
+      if (opt.Mr[Chan]<0) continue; //ignore negative values
+      if (opt.Mr[Chan]>0 && j-T1>opt.Mr[Chan]) break; //break if negative
+    }
+    Rtime+=dif*j;
+    Area2+=dif;
+  }
 
+  if (Area2) {
+    Rtime/=Area2;
+  }
+  else {
+    ++crs->errors[ER_RTIME];
+    Rtime=Pos-999;
+  }
 
-  // 9. определяем Time и Area2
+  // 10. определяем Time
   Float_t LT=cpar.LT[Chan];
   switch (stg) {
     //case 9:
@@ -687,20 +754,10 @@ void PulseClass::PeakAna33() {
   case 7:
     // FindZero определяет Time
     FindZero(kk,opt.sThr[Chan],LT);
-    if (opt.Mt[Chan]==1) {
-      for (int j=T1;j<=T2;j++) {
-	if (j<kk)
-	  continue;
-	Area2+=sData[j]-sData[j-kk];
-      }
-    }
     break;
-    //case 7:
-    //break;
   default: { //0,1,2,4,5
-    Time=0;
-
     if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv
+      Time=0;
       // 05.10.2020
       for (int j=T1;j<=T2;j++) {
 	if (j<kk+1)
@@ -711,38 +768,34 @@ void PulseClass::PeakAna33() {
 	Area2+=dif2;
 	//}
       }
+      if (Area2) {
+	Time/=Area2;
+      }
+      else {
+	++crs->errors[ER_TIME];
+	//prnt("ss d ls;",BGRN,"ErrTime1:",Chan,Tstamp64,RST);
+	Time=(T1+T2)*0.5;
+      }
     }
     else { //use 1st deriv
-      for (int j=T1;j<=T2;j++) {
-	if (j<kk)
-	  continue;
-	Float_t dif=sData[j]-sData[j-kk];
-	if (dif>0) {
-	  Time+=dif*j;
-	  Area2+=dif;
-	}
+      if (Area2)
+	Time = Rtime;
+      else {
+	++crs->errors[ER_TIME];
+	Time=(T1+T2)*0.5;
       }
     }
 
-    if (Area2) {
-      Time/=Area2;
-    }
-    else {
-      ++crs->errors[ER_TIME];
-      //prnt("ss d ls;",BGRN,"ErrTime1:",Chan,Tstamp64,RST);
-      Time=(T1+T2)*0.5;
-    }
   } //default
   } //switch
 
-  Time-=cpar.Pre[Chan];
+  Rtime-=Time;
+  Time-=Pos;//cpar.Pre[Chan];
+  //Rtime-=Pos;
 
   //prnt("ss d l d d fs;",BYEL,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
 
-
-  //prnt("ss d l d d fs;",BGRN,"Peakana33:",Chan,Tstamp64,cpar.Pre[Chan],Pos,Time,RST);
-
-
+  // 11. поправка Area в соответствии с Mt
   switch (opt.Mt[Chan]) {
   case 1: //Deriv
     Area=Area2;
@@ -778,9 +831,16 @@ void PulseClass::PeakAna33() {
     if (Width>99) Width=99;
   }
 
+  // 12. поправка Area на Rtime (если opt.Pz<0)
+  Float_t zz=0;
+  if (opt.Pz[Chan]<0) {
+    zz = 1 + 1.0/opt.Pz[Chan]*Rtime;
+    Area*=zz;
+  }
 
-  // 9. определяем RTime
 
+  // 10. определяем Rtime (old)
+  /*
   {
     //int j=Pos+Time-opt.DD[Chan];
     int j=Pos-opt.DD[Chan];
@@ -818,47 +878,6 @@ void PulseClass::PeakAna33() {
     //prnt("ss l d f f fs;",BRED,"RT:",Tstamp64,Pos,Time,Rtime,zz,RST);
 
   }
-  
-  /*
-    for (int j=T1;j<=T2;j++) {
-    if (j<kk)
-    continue;
-    Float_t dif=sData[j]-sData[j-kk];
-    //if (dif>0) {
-    Time+=dif*j;
-    Area2+=dif;
-    //}
-    }
-  */
-
-  // if (Chan==16) {
-  //   prnt("ss d l f f f f f f d ds;",BGRN,"pk:",Chan,Tstamp64,Area,Area0,Base,Sl1,Sl2,Width,opt.Mt[Chan],(int)hcl->b_base[Chan],RST);
-  // }
-
-  /*
-  //Simul2
-  if (Pos<1 || Pos+1>=sz) {
-    Simul2=-99999;
-  }
-  else {
-    Float_t y1=sData[Pos]-sData[Pos-kk];
-    Float_t y2=sData[Pos+1]-sData[Pos+1-kk];
-    if (y2<y1)
-      Simul2= Pos - y1/(y2-y1);
-    else
-      Simul2=Pos+0.5;
-  }
-  Simul2-=cpar.Pre[Chan];//+opt.SimSim[9]/opt.Period;
-
-  //Time=(Time+Simul2)/2;
-
-  //Simul2-=Pos;
-
-  //Time = Simul2;
-
-  //prnt("ss l d f fs;",KGRN,"Simul2:",Tstamp64,Pos,Simul2,Time,RST);
-  if (Tstamp64 < 10000)
-    prnt("ss d l f f f f f f d ds;",BGRN,"pk:",Chan,Tstamp64,Area,Area0,Base,Sl1,Sl2,Width,opt.Mt[Chan],(int)hcl->b_base[Chan],RST);
   */
 
 } //PeakAna33()

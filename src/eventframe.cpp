@@ -1167,8 +1167,11 @@ void EventFrame::DrawPeaks(int dr, int j, PulseClass* pulse, double y1,double y2
   UInt_t ch= pulse->Chan;
   //if (fChn[ch]->IsOn()) {
   if (fChn_on(ch)) {
-    int ithr=(opt.sTg[pulse->Chan]!=0);
-    if (dr==ithr && opt.b_peak[8]) {//threshold
+    bool tg0 = opt.sTg[ch]==0 || cpar.Trg[ch]==0;
+    bool bthr = tg0 && dr==0;
+    bthr = bthr || ((dr==1 || dr==3) && !tg0);
+    //int ithr=(opt.sTg[pulse->Chan]!=0);
+    if (bthr && opt.b_peak[8]) {//threshold
       doYline(opt.sThr[pulse->Chan],gx1[dr][j], gx2[dr][j],chcol[pulse->Chan],2);
       doYline(cpar.LT[pulse->Chan],gx1[dr][j], gx2[dr][j],chcol[pulse->Chan],3);
     }

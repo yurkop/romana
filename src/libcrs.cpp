@@ -734,6 +734,9 @@ void CRS::Ana2(int all) {
 	    case 81:
 	      crs->Fill_Dec81(&(*m_event));
 	      break;
+	    case 82:
+	      crs->Fill_Dec82(&(*m_event));
+	      break;
 	    default:
 	      ;
 	    } //switch
@@ -1018,6 +1021,9 @@ void SockClass::Eval_Com() {
 CRS::CRS() {
 
   /*
+  cout << MAX_ERR << endl;
+  exit(-1);
+
   TH1F *hh = new TH1F("HH","HH",10,0,10);
   Long64_t i=0;
   double prev=0;
@@ -1419,7 +1425,7 @@ int CRS::Init_device() {
   memcpy(cpar.device,buf_in+1,4);
 
   Short_t nplates=buf_in[3];
-  Short_t ver_po=buf_in[4];
+  opt.ver_po=buf_in[4];
 
   int nch2=0;
 
@@ -1429,7 +1435,7 @@ int CRS::Init_device() {
   case 3: //crs-16 or crs-2
     opt.Period=5;
     //crs2
-    if (ver_po==0) { // -> crs2
+    if (opt.ver_po==0) { // -> crs2
       module=22;
       chan_in_module=2;
       nch2=2;
@@ -1443,7 +1449,7 @@ int CRS::Init_device() {
     //crs32/16/6
     module=32;
     chan_in_module=nplates*4;
-    if (ver_po==1) {//версия ПО=1
+    if (opt.ver_po==1) {//версия ПО=1
       for (int i=0;i<nplates;i++) {
 	//cout << "Channels(" << i << "):";
 	for (int j=0;j<4;j++) {
@@ -1475,16 +1481,16 @@ int CRS::Init_device() {
 	//cout << endl;
 	sz--;
       }
-      if (ver_po==3) {//версия ПО=3
+      if (opt.ver_po==3) {//версия ПО=3
 	module=33;
       }
-      else if (ver_po==4) {//версия ПО=4
+      else if (opt.ver_po==4) {//версия ПО=4
 	module=34;
       }
-      else if (ver_po>=5 && ver_po<=6) {//версия ПО=5 или 6
+      else if (opt.ver_po>=5 && opt.ver_po<=6) {//версия ПО=5 или 6
 	module=35;
       }
-      else if (ver_po==7) {//версия ПО=7
+      else if (opt.ver_po==7) {//версия ПО=7
 	module=36;
       }
     }
@@ -2066,13 +2072,42 @@ void CRS::Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max) {
     len=min;
     a2=a1+min-1;
   }
-  Command32(2,ch,cmd,a1); //offset
-  Command32(2,ch,cmd+1,len); //length
+  //Command32(2,ch,cmd,a1); //offset
+  Command32(2,ch,cmd,len); //length
   // cout << "Check33: " << (int) ch << " " << (int) cmd << " " << a1
   // << " " << a2 << " " << len << endl;
 }
 
-void CRS::AllParameters45() {
+void CRS::AllParameters44a() {// parameters from TZ CFD+ (2025)
+  int
+    F1=31,
+    //F2=1,
+    FRR=5; //делитель=32
+
+  int MR=0; //способ вычисления QX/RX центроидаX
+  int T3=1; //промежуточная длит. центроида
+  for (auto chan = 0; chan < chan_in_module; chan++) {
+    if (cpar.on[chan]) {
+      MR=opt.Mr[chan]+1;
+      if (MR>1) {
+	T3=opt.Mr[chan];
+	MR=2;
+      }
+
+      int FD = abs(opt.DD[chan]);
+      if (FD==0) FD=1;
+      Command32(2,chan,38,FD); //FD – задержка CFD
+      Command32(2,chan,39,F1); //F1 – множитель 1 CFD
+      Command32(2,chan,40,opt.FF[chan]); //F2 – множитель 2 CFD
+      Command32(2,chan,41,FRR); //FRR – номер делителя CFD
+      Command32(2,chan,42,MR); //способ вычисления QX/RX центроидаX
+      //промежут. безусловная длительность центроидаX
+      Check33(43,chan,opt.T1[chan],T3,1,4095);
+    }
+  }
+}
+
+void CRS::AllParameters45() { //AK-32
   AllParameters44();
   //Индивидуальные параметры каналов:
   for (auto chan = 0; chan < chan_in_module; chan++) {
@@ -2080,6 +2115,7 @@ void CRS::AllParameters45() {
       Command32(2,chan,37,0); //входной импеданс - всегда 50 Ом
     }
   }
+  AllParameters44a(); //CFD, Rtime
   //Общие параметры:
   //Command32(11,10,0,0); // режим работы прибора Multi/Single (игнорируется)
   Command32(11,11,0,8); // число обслуживаемых рабочих плат MAIN-ом USB3
@@ -2107,6 +2143,9 @@ void CRS::AllParameters44() {
       mask_discr=0b0000000000011; //bits 0,1 (было еще 11,12)
       if (opt.dsp[chan]) {
 	mask_discr|=0b11101110000; // write DSP data
+	if (cpar.Trg[chan]==7) {
+	  mask_discr|=1<<13; // write CFD
+	}
       }
 
       if (cpar.pls[chan]) { //add 1100
@@ -2213,16 +2252,27 @@ void CRS::AllParameters36() {
 
       Command32(2,chan,12,(int) trg2); //trigger type
 
-      Check33(13,chan,opt.B1[chan],opt.B2[chan],1,4095);
-      Check33(15,chan,opt.P1[chan],opt.P2[chan],1,4095);
-      Check33(17,chan,opt.P1[chan],opt.P2[chan],1,4095);
-      Check33(19,chan,opt.T1[chan],opt.T2[chan],1,4095);
-      Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
+      // начало вычисляемого
+      Command32(2,chan,13,opt.B1[chan]);
+      Command32(2,chan,15,opt.P1[chan]);
+      Command32(2,chan,17,opt.P1[chan]);
+      Command32(2,chan,19,opt.T1[chan]);
+      Command32(2,chan,21,opt.W1[chan]);
+
+      // длина вычисляемого
+      Check33(14,chan,opt.B1[chan],opt.B2[chan],1,4095);
+      Check33(16,chan,opt.P1[chan],opt.P2[chan],1,4095);
+      Check33(18,chan,opt.P1[chan],opt.P2[chan],1,4095);
+      Check33(20,chan,opt.T1[chan],opt.T2[chan],1,4095);
+      Check33(22,chan,opt.W1[chan],opt.W2[chan],1,4095);
 
 
       mask=0b1100000000011; //bits 0,1 (было еще 11,12)
       if (opt.dsp[chan]) {
 	mask|=0b11101110000; // write DSP data
+	if (cpar.Trg[chan]==7) {
+	  mask|=1<<13; // write CFD
+	}
       }
 
       if (cpar.pls[chan]) { //add 1100
@@ -2398,11 +2448,19 @@ void CRS::AllParameters33()
       if (trg2>5) trg2=4; //для триг6 устанавливаем триг4
       Command32(2,chan,12,(int) trg2); //trigger type
 
-      Check33(13,chan,opt.B1[chan],opt.B2[chan],1,4095);
-      Check33(15,chan,opt.P1[chan],opt.P2[chan],1,4095);
-      Check33(17,chan,opt.P1[chan],opt.P2[chan],1,4095);
-      Check33(19,chan,opt.T1[chan],opt.T2[chan],1,4095);
-      Check33(21,chan,opt.W1[chan],opt.W2[chan],1,4095);
+      // начало вычисляемого
+      Command32(2,chan,13,opt.B1[chan]);
+      Command32(2,chan,15,opt.P1[chan]);
+      Command32(2,chan,17,opt.P1[chan]);
+      Command32(2,chan,19,opt.T1[chan]);
+      Command32(2,chan,21,opt.W1[chan]);
+
+      // длина вычисляемого
+      Check33(14,chan,opt.B1[chan],opt.B2[chan],1,4095);
+      Check33(16,chan,opt.P1[chan],opt.P2[chan],1,4095);
+      Check33(18,chan,opt.P1[chan],opt.P2[chan],1,4095);
+      Check33(20,chan,opt.T1[chan],opt.T2[chan],1,4095);
+      Check33(22,chan,opt.W1[chan],opt.W2[chan],1,4095);
     }
   }
 }
@@ -3854,24 +3912,61 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
   std::ostringstream oss_bad;
   std::ostringstream oss_good;
 
+  int ch=ipls.Chan;
+  Long64_t T=ipls.Tstamp64;
+
+
   //for (auto i=1;i<=8;i++) {
-  for (auto i: {1,2,3,4}) {
+  //                     1   2   3   4   5   6   7   8   9    10
+  const char* tt[10] = {"A","H","W","B","S","s","R","r","Rt","T"};
+
+  if (ipls.Pos!=ipls2.Pos) {
+    oss_bad<<" "<<"P:"<< ipls.Pos<<" "<<ipls2.Pos;
+    bad=true;
+  }
+
+  for (auto i: {1,2,3,4,9,10}) {
     a[i] = *(Float_t*)((char*)&ipls + ipls.GetPtr(i));
     b[i] = *(Float_t*)((char*)&ipls2 + ipls2.GetPtr(i));
-    if (a[i]!=b[i]) {
+    //для проверки того, что тест срабатывает:
+    //if (i==1) b[i]+=1;
+
+    /*
+    double ee = (a[i]+b[i])/2;
+    if (ee)
+      ee=(a[i]-b[i])/ee;
+    else
+      ee=a[i]-b[i];
+    */
+    double ee = a[i]-b[i];
+
+    if (abs(ee)>1e-4) {
       bad=true;
-      oss_bad << " " << i << ": " << a[i] << " " << b[i];
+      oss_bad << " " << tt[i-1] << ":" << a[i] << " " << b[i];
+      //<< " " << a[i]-b[i];
     }
     else {
-      oss_good << " " << i << ": " << a[i] << " " << b[i];
+      oss_good << " " << tt[i-1] << ":" << a[i];
     }
   }
 
   if (bad) {
-    prnt("ss l ss;",BGRN,"bad:",ipls.Tstamp64,oss_bad.str().c_str(),RST);
-    prnt("ss l ss;",BMAG,"good:",ipls.Tstamp64,oss_good.str().c_str(),RST);
+    prnt("ss d lss;",BRED,"bad:",ch,T,oss_bad.str().c_str(),RST);
+    prnt("ss d lss;",BYEL,"good:",ch,T,oss_good.str().c_str(),RST);
     cout << "-------" << endl;
   }
+  else {
+    if (opt.tsleep%100==1) {
+      prnt("ssd lss;",BGRN,"OK: ",ch,T,oss_good.str().c_str(),RST);
+    }
+  }
+
+  // static double t_last=0;
+  // if (opt.T_acq<t_last) t_last=opt.T_acq;
+  // if (opt.T_acq-t_last>2) {
+  //   t_last=opt.T_acq;
+  //   prnt("ssfs;",BGRN,"OK: ",opt.T_acq,RST);
+  // }
 
 }
 
@@ -4986,19 +5081,33 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
 
   ipls.Height=pk.H;
 
+  if (pk.RX!=0)
+    ipls.Rtime=Double_t(pk.QX)/pk.RX;
+  else {
+    ++errors[ER_RTIME];
+    ipls.Rtime=-999;
+    //YK;
+  }
+
   switch (cpar.Trg[ipls.Chan]) {
   case 3:
-  case 6:
+  case 6: {
+    int kk = cpar.Drv[ipls.Chan];
+    //cout << "pos: " << ipls.Pos << " " << kk << endl;
+    //if (ipls.Pos>=kk && (int)ipls.sData.size()>ipls.Pos+1) {
+    ipls.FindZero(kk,cpar.Thr[ipls.Chan],cpar.LT[ipls.Chan]);
+    ipls.Time-=ipls.Pos;
+    break;
+  }
   case 7:
-    {
-      int kk = cpar.Drv[ipls.Chan];
-      //cout << "pos: " << ipls.Pos << " " << kk << endl;
-      //if (ipls.Pos>=kk && (int)ipls.sData.size()>ipls.Pos+1) {
-      ipls.FindZero(kk,cpar.Thr[ipls.Chan],cpar.LT[ipls.Chan]);
-      ipls.Time-=ipls.Pos;
-    }
+    if (pk.CF1!=pk.CF2)
+      ipls.Time = -1 + Float_t(cpar.LT[ipls.Chan] - pk.CF1)/(pk.CF2-pk.CF1);
+    else
+      ipls.Time = 0;
     break;
   default:
+    ipls.Time=ipls.Rtime;
+    /*
     if (pk.RX!=0)
       ipls.Time=Double_t(pk.QX)/pk.RX;
     else {
@@ -5006,8 +5115,11 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
       //ipls.Time=-999;
       //YK;
     }
+    */
+
   } //switch
 
+  ipls.Rtime-=ipls.Time;
   //ipls.Time=pk.RX;
 
   Float_t wdth = pk.AY/w_len[ipls.Chan];
@@ -5241,6 +5353,20 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 	ipls.Spin|=4; //bit 2 - ER_OVF
       }
       //prnt("ss d l ls;",KGRN,"OVF:",ch,ipls.Tstamp64,data&1,RST);
+      break;
+    case 13: {
+      int bit23 = (data & 0x800000)>>23;
+      if (bit23) {
+	//cout << "bit23: " << data << " " << bit23 << endl;
+	++errors[ER_CFD];	
+      }
+      pk.CF1 = data & 0x7FFFFF; //23
+      pk.CF1 = (pk.CF1<<9)>>9;  //32-23
+      data>>=24;
+      pk.CF2 = data & 0x7FFFFF; //23
+      pk.CF2 = (pk.CF2<<9)>>9;  //32-23
+      //prnt("ss d l d d ds;",KGRN,"CFD:",ch,ipls.Tstamp64,bit23,pk.CF1,pk.CF2,RST);
+    }
       break;
     default:
       ++errors[ER_FRMT];
@@ -6459,6 +6585,7 @@ void CRS::Fill_Dec81(EventClass* evt) {
     }
   }
   else { //Peaks
+    //можно попробовать оптимизировать, используя std::unordered_map
     for (auto ipls=evt->pulses.begin(); ipls!=evt->pulses.end(); ++ipls) {
       int pos=0; //position in DecBuf8
       DecBuf2 = (Short_t*) DecBuf8;
@@ -6549,6 +6676,139 @@ void CRS::Fill_Dec81(EventClass* evt) {
   }
 
 } //Fill_Dec81
+
+void CRS::Fill_Dec82(EventClass* evt) {
+  //см. Еще вариант формата данных в decoder_format.docx
+
+  cout << "Fill_dec82" << endl;
+  ULong64_t* Dec0 = DecBuf8; //запоминаем начальный адрес буфера
+  ULong64_t* DecN = 0; //адрес буфера для записи длины
+  Short_t* DecBuf2;
+  UShort_t* UDecBuf2;
+
+  *DecBuf8 = 0x8000000000000000; //признак начала события
+
+  // общие параметры события
+  for (auto it=sdec_e.begin(); it!=sdec_e.end(); ++it) {
+    switch (*it) {
+    case 'T':
+      *DecBuf8 |= ((ULong64_t) (evt->Spin & 7)) << 48; //нижние 3 бита
+      *DecBuf8 |= evt->Tstmp & sixbytes;
+      *(++DecBuf8)=0;
+      break;
+    case 'N':
+      UDecBuf2 = (UShort_t*) DecBuf8;
+      UDecBuf2[0] = evt->pulses.size();
+      UDecBuf2[1] = evt->Nevt;
+      DecN = DecBuf8; //запоминаем, куда писать длину события
+      *(++DecBuf8)=0;
+      break;
+    }
+  }
+
+  // в событии либо счетчики, либо пики
+  if ((evt->Spin & 128) && sdec_c) { //Counters
+    for (auto ipls=evt->pulses.begin(); ipls!=evt->pulses.end(); ++ipls) {
+      *DecBuf8=ipls->Counter & sixbytes;
+      DecBuf2 = (Short_t*) DecBuf8;
+      DecBuf2[3]=0x4000|ipls->Chan; //0x4000: признак счетчиков
+      //DecBuf2[3]=0x4000; //признак счетчиков
+      //DecBuf2[3]|=ipls->Chan;
+      *(++DecBuf8)=0;
+    }
+  }
+  else { //Peaks
+    //можно попробовать оптимизировать, используя std::unordered_map
+    for (auto ipls=evt->pulses.begin(); ipls!=evt->pulses.end(); ++ipls) {
+      int pos=0; //position in DecBuf8
+      DecBuf2 = (Short_t*) DecBuf8;
+      for (auto it=sdec_p.begin(); it!=sdec_p.end(); ++it) {
+	switch (*it) {
+	case 'A':
+	  DecBuf2[pos] = ipls->Area;
+	  break;
+	case 't':
+	  DecBuf2[pos] = ipls->Time;
+	  break;
+	case 'W':
+	  DecBuf2[pos] = ipls->Width;
+	  break;
+	case 'H':
+	  DecBuf2[pos] = ipls->Height;
+	  break;
+	case 'B':
+	  DecBuf2[pos] = ipls->Base;
+	  break;
+	case 'S':
+	  DecBuf2[pos] = ipls->Sl1;
+	  break;
+	case 's':
+	  DecBuf2[pos] = ipls->Sl2;
+	  break;
+	case 'R':
+	  DecBuf2[pos] = ipls->RMS1;
+	  break;
+	case 'r':
+	  DecBuf2[pos] = ipls->RMS2;
+	  break;
+	case 'p':
+	  DecBuf2[pos] = ipls->ptype;
+	  break;
+	} //switch
+	pos++;
+	if (pos>=3) {//слово заполнено, записываем Chan
+	  DecBuf2[3]|=ipls->Chan;
+	  *(++DecBuf8)=0;
+	  DecBuf2 = (Short_t*) DecBuf8;
+	  pos=0;
+	}
+      } // for sdec
+      if (pos) {//значит, слово неполное, заканчиваем запись импульса
+	DecBuf2[3]|=ipls->Chan;
+	*(++DecBuf8)=0;
+	DecBuf2 = (Short_t*) DecBuf8;
+	pos=0;
+      }
+      if (sdec_d) { //записываем sData (в этой точке pos всегда 0)
+	for (auto j=ipls->sData.begin(); j!=ipls->sData.end(); ++j) {
+	  DecBuf2[pos] = *j;
+	  pos++;
+	  if (pos>=3) {
+	    DecBuf2[3]|=ipls->Chan;
+	    *(++DecBuf8)=0;
+	    DecBuf2 = (Short_t*) DecBuf8;
+	    pos=0;
+	  }
+	}
+	if (pos) {//значит, слово неполное
+	  DecBuf2[3]|=ipls->Chan;
+	  *(++DecBuf8)=0;
+	  //DecBuf2 = (Short_t*) DecBuf8;
+	  //pos=0;
+	}
+      } //if (sdec_d)
+    } //for ipls
+  }
+
+  // в конце записываем длину события, если надо
+  if (DecN) {
+    ULong64_t len = DecBuf8 - Dec0;
+    *DecN |= ((len & 0xFFFFFF) << 32);
+  }
+
+  idec = (UChar_t*)DecBuf8-DecBuf;
+  if (idec>DECSIZE) {
+    //levt=*evt;
+    //CRS::eventlist Blist;
+    //D79(DecBuf,idec,Blist);
+    //ULong64_t* buf8 = (ULong64_t*) (GLBuf);
+    //prnt("s l l l l x;", "Flush:", levt.Tstmp, Blist.size(),
+    // Blist.front().Tstmp, Blist.back().Tstmp, *buf8);
+    //cout << "Flush: " << levt.Tstmp << endl;
+    Flush_Dec();
+  }
+
+} //Fill_Dec82
 
 
 /*
@@ -6666,7 +6926,9 @@ void CRS::Fill_Dec81a(EventClass* evt) {
 
 
 
-void CRS::Fill_Dec82(EventClass* evt) {
+void CRS::Fill_Dec82_old(EventClass* evt) {
+  // какой-то совсем старый формат...
+
   // эти параметры должны быть заданы в opt
   const bool bit_area=true;
   const bool bit_time=true;
@@ -6676,7 +6938,7 @@ void CRS::Fill_Dec82(EventClass* evt) {
   const Float_t DT=100;
   const Float_t DW=10000;
 
-  //Fill_Dec81
+  //Fill_Dec82_old
 
   // fill_dec is not thread safe!!! (??? - not sure)
 
@@ -6782,7 +7044,7 @@ void CRS::Fill_Dec82(EventClass* evt) {
     Flush_Dec();
   }
 
-} //Fill_Dec82
+} //Fill_Dec82_old
 
 int CRS::Wr_Dec(UChar_t* buf, int len) {
   //return >0 if error

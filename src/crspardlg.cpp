@@ -68,11 +68,12 @@ vector<const char*> ptip = {
   "0 - threshold crossing of pulse;\n"
   "1 - threshold crossing of derivative;\n"
   "2 - maximum of derivative;\n"
-  "3 - rise of derivative;\n"
+  "3 - rise of derivative, LT (lower threshold) crossing;\n"
   "4 - fall of derivative;\n"
   //"5 - fall of 2nd derivative, use 2nd deriv for timing;\n"
   "5 - not used;\n"
-  "6 - fall of derivative, zero crossing\n"
+  "6 - fall of derivative, LT (lower threshold) crossing;\n"
+  "7 - CFD, LT (lower threshold) crosing (only AK-32!!!)\n"
   "Not all types are available for all devices",
   "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
@@ -88,7 +89,7 @@ vector<const char*> ptip = {
   "Energy calibration 0: E0+E1*x",
   "Energy calibration 1: E0+E1*x",
   "Energy calibration 2: E0+E1*x+E2*x*x",
-  "Pole-Zero correction",
+  "Pole-Zero correction\nPositive: correct for exponential decay in pulse\nNegative: correct for Rtime",
   //"Baseline correction",
   "Use channel for group histograms *_g1",
   "Use channel for group histograms *_g2",
@@ -104,17 +105,23 @@ vector<const char*> ptip = {
   //"5 - fall of 2nd derivative, use 2nd deriv for timing;\n"
   "5 - not used;\n"
   "6 - fall of derivative, LT (lower threshold) crossing;\n"
-  "7 - CFD, zero crosing;\n"
+  "7 - CFD, LT (lower threshold) crosing;\n"
   "-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
   "Software trigger threshold",
   "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction\n2 - base slope subtraction (for HPGe)\n3 - base slope2 instead of slope1 (using W1 & W2) + slope2 subtraction (for HPGe)\n  for Mt=3 RMS2 is not calculated; Width=Pos-Time in pulse mode",
+  "RiseTime method: centroid of derivative\n"
+  "-1: [T1..T2], ignore negative values;\n"
+  " 0: [T1..T2];\n"
+  " Mr>0: [T1..Mr] (all values), then [Mr+1..T2] (break if negative)\n"
+  "RiseTime works only for triggers 3,6,7\n"
+  "Parameter Mr also affects Time for triggers 0,1,2,4,5",
+  "CFD delay in samples. If negative, use old formula for CFD",
+  "CFD fraction. Old->New conversion: FF = old_FF*32*32/310",
   "Baseline start, relative to peak Pos (usually negative, included)",
   "Baseline end, relative to peak Pos (usually negative, included)",
   "Peak start, relative to peak Pos (usually negative, included)",
   "Peak end, relative to peak Pos (usually positive, included)",
-  "CFD delay in samples",
-  "CFD fraction x10",
   "Timing window start (usually negative, included)",
   //"CFD delay [delay=abs(T1)]",
   "Timing window end (usually positive, included)",
@@ -1484,7 +1491,13 @@ int ParParDlg::AddFiles(TGCompositeFrame* frame) {
   sprintf(txt,"CheckDSP");
   fchk = new TGCheckButton(hframe3, txt, id);
   // fchk->SetName(txt);
-  fchk->SetToolTipText("Compare software pulse analysis vs DSP data");
+  fchk->SetToolTipText("Compare Dsp data (1) vs software pulse analysis (2)\n"
+		       ": dsp and Dsp must be also checked\n"
+		       ": sTg must be equal to Trg (not -1)\n"
+		       ": Set DrawEvent delay's last digit to 1 to print OK"
+		       " for good events\n"
+		       ": Pulses in Events panel correspond to Dsp"
+		       );
   hframe3->AddFrame(fchk,LayCC1);
   DoMap(fchk,&opt.checkdsp,p_chk,0,0x100|(5<<1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoChk(Bool_t)");
@@ -1757,6 +1770,7 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
     "10 - OVF.counter QX (16 bit)\n"
     "11 - Counter\n"
     "12 - OVF"
+    "13 - CFD"
     ;
   label="Raw mask";
   AddLine_1opt(fF6,ww,&cpar.RMask,0,tip1,label,k_hex,0,0xFFFF);
@@ -2923,7 +2937,8 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);
   AddColumn(jj,kk++,1,p_inum,20,0,0,3,"Mt",opt.Mt);
-  AddColumn(jj,kk++,1,p_inum,30,0,1,999,"DD",opt.DD);
+  AddColumn(jj,kk++,1,p_inum,20,0,-1,9999,"Mr",opt.Mr);
+  AddColumn(jj,kk++,1,p_inum,30,0,-999,999,"DD",opt.DD);
   AddColumn(jj,kk++,1,p_inum,30,0,1,9,"FF",opt.FF);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"B1",opt.B1);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"B2",opt.B2);

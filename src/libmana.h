@@ -207,10 +207,11 @@ class MainFrame : public TGMainFrame {
 //--------------------------------------
 class MyMainFrame: public MainFrame {
  public:
+  bool test=false;
   MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MyMainFrame();
   ClassDef(MyMainFrame, 0)
-    };
+};
 
 
 

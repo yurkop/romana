@@ -35,7 +35,7 @@ const int MAXCUTS=31; //maximal number of cuts; Если 31 - выдает ош�
 const int MAX_PCUTS=11; //maximal number of points in cutG
 const int MAX_PADS=256; //maximal number of sub-pads in histframe
 
-const int MAX_ERR=16; //maximal number of error types;
+//const int MAX_ERR=18; //maximal number of error types;
 
 // const int A0A1_MAX=2; // maximal number of input channels used in A0A1 2d hists
 
@@ -94,8 +94,30 @@ enum MENU_COM {
   M_COUNT //нужно для вектора pops
 };
 
+enum ERR_NUM {
+  ER_START=0,
+  ER_CH,
+  ER_MIS,
+  ER_FRMT,  
+  ER_LEN,
+  ER_ZERO,
+  ER_ALEN,
+  ER_TST,
 
-
+  ER_AREA,
+  ER_BASE,
+  ER_WIDTH,
+  ER_TIME,
+  ER_RTIME,
+  
+  ER_ANA,
+  ER_DEC,
+  ER_LAG,
+  ER_OVF,
+  ER_CFD,
+  ER_HEAT,
+};
+const int MAX_ERR = ER_HEAT+1;
 
 //---------------------
 enum P_Def {
