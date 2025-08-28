@@ -586,7 +586,7 @@ void PopFrame::AddOptPar() {
   AddOnePar(fMain,2,(void*)opt.sDrv,"sDrv",1,100);
   AddOnePar(fMain,3,(void*)opt.Mt,"Mt",0,3);
   AddOnePar(fMain,4,(void*)opt.DD,"DD",1,100);
-  AddOnePar(fMain,5,(void*)opt.FF,"FF",1,10);
+  AddOnePar(fMain,5,(void*)opt.FF,"FF",-31,31);
   AddOnePar(fMain,6,(void*)opt.B1,"B1",-1000,1000);
   AddOnePar(fMain,7,(void*)opt.B2,"B2",-1000,1000);
   AddOnePar(fMain,8,(void*)opt.P1,"P1",-1000,10000);

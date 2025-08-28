@@ -32,7 +32,7 @@
 //#include <TMonitor.h>
 
 #define mask_e "TN"
-#define mask_p "AtWHBSsRrp"
+#define mask_p "AtWHBRSsMmf"
 
 //typedef unsigned char byte;
 
@@ -40,6 +40,17 @@ typedef std::list<EventClass>::iterator event_iter;
 typedef std::list<EventClass>::reverse_iterator event_reviter;
 
 typedef std::pair<unsigned char*,int> Pair;
+
+union union82 { // текущее положение в Dec буфере
+  UChar_t* b;
+  UShort_t* us;
+  Short_t* s;
+  UInt_t* ui;
+  Int_t* i;
+  Float_t* f;
+  Long64_t* l;
+};
+
 
 using namespace std;
 
@@ -137,12 +148,16 @@ RQ_OBJECT("CRS")
   string rootname;
   string logname;
 
-  UChar_t* DecBuf_ring;
-  UChar_t* DecBuf; 
+  UChar_t* DecBuf_ring; //указатель на буфер, куда пишутся декодированные данные
+  UChar_t* DecBuf; //текущий указатель в буфере DecBuf_ring
   UChar_t* DecBuf1; //for Fill_Dec80+ 
   ULong64_t* DecBuf8;
   Int_t idec; //index of DecBuf;
   std::list<Pair> decw_list;
+
+  //для Fill_dec82+
+  UChar_t *Buf82; // начало Dec буфера (должно быть внутри DecBuf_ring)
+  union82 u82; // текущее положение в Dec буфере
 
   Int_t mdec1; //index of Dec buffer in ring for decoding
   Int_t mdec2; //index of Dec buffer in ring for writing

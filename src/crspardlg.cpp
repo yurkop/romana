@@ -74,13 +74,22 @@ vector<const char*> ptip = {
   "5 - not used;\n"
   "6 - fall of derivative, LT (lower threshold) crossing;\n"
   "7 - CFD, LT (lower threshold) crosing (only AK-32!!!)\n"
-  "Not all types are available for all devices",
+  "Not all types are available for all devices\n\n"
+  "Negative trigger means:\n"
+  " - use software trigger sTg and pls data for timing (Pos, Rtime, Time)\n"
+  " - use hardware trigger |Trg| and dsp data for other parameters (Area, Base, Width, Height)\n"
+  " pls and dsp must be checked\n"
+  " Dsp must be NOT checked",
   "Parameter of derivative: S(i) - S(i-Drv)",
   "Trigger threshold",
-  "Trigger lower threshold (for Trg 3-6)",
+  "Trigger lower threshold (for Trg 3-7)",
   "Start channel - used as start in Time spectra\nif there are many start channels in the event, the earliest is used",
   "Master/slave channel:\nEvents containing only slave channels are rejected\nEach event must contain at least one master channel",
-  "Checked - use hardware pulse analysis (DSP)\nUnchecked - use software pulse analysis",
+  "Checked - use hardware pulse analysis (DSP)\n"
+  "Unchecked - use software pulse analysis\n"
+  "if Dsp is unchecked and Trg is negative:\n"
+  " - use software pulse analysis for timing (Pos, Rtime, Time);\n"
+  " - use hardware pulse analysis for other parameters (Area, Base, Width, Height)",
   "Checked - write pulses in Dec",
   "Software delay in ns (can be negative or positive)",
   // "Dead-time window \nsubsequent peaks within this window are ignored",
@@ -116,8 +125,9 @@ vector<const char*> ptip = {
   " Mr>0: [T1..Mr] (all values), then [Mr+1..T2] (break if negative)\n"
   "RiseTime works only for triggers 3,6,7\n"
   "Parameter Mr also affects Time for triggers 0,1,2,4,5",
-  "CFD delay in samples. If negative, use old formula for CFD",
-  "CFD fraction. Old->New conversion: FF = old_FF*32*32/310",
+  "CFD delay in samples",
+  "CFD fraction. Old->New conversion: FF = old_FF*32*32/310.\n"
+  "If negative, use old formula for CFD",
   "Baseline start, relative to peak Pos (usually negative, included)",
   "Baseline end, relative to peak Pos (usually negative, included)",
   "Peak start, relative to peak Pos (usually negative, included)",
@@ -153,11 +163,12 @@ const char* tip_dec=
   "W - Peak width\n"
   "H - Peak height\n"
   "B - Baseline\n"
+  "R - Risetime\n"
   "S - Slope (baseline)\n"
   "s - Slope (peak)\n"
-  "R - RMS (baseline)\n"
-  "r - RMS (peak)\n"
-  "p - Pileup\n"
+  "M - RMS (baseline)\n"
+  "m - RMS (peak)\n"
+  "f - Flags (Pileup etc)\n"
   "\n"
   "D - Pulse data (oscillogram)\n"
   "C - Hardware counter";
@@ -2938,8 +2949,8 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);
   AddColumn(jj,kk++,1,p_inum,20,0,0,3,"Mt",opt.Mt);
   AddColumn(jj,kk++,1,p_inum,20,0,-1,9999,"Mr",opt.Mr);
-  AddColumn(jj,kk++,1,p_inum,30,0,-999,999,"DD",opt.DD);
-  AddColumn(jj,kk++,1,p_inum,30,0,1,9,"FF",opt.FF);
+  AddColumn(jj,kk++,1,p_inum,30,0,1,127,"DD",opt.DD);
+  AddColumn(jj,kk++,1,p_inum,30,0,-31,31,"FF",opt.FF);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"B1",opt.B1);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,9999,"B2",opt.B2);
   AddColumn(jj,kk++,1,p_inum,40,0,-1024,amax,"P1",opt.P1);
