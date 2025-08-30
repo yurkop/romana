@@ -118,6 +118,7 @@ vector<const char*> ptip = {
   "-1 - use hardware trigger",
   "Software parameter of derivative: S(i) - S(i-Drv)",
   "Software trigger threshold",
+  "Software trigger lower threshold",
   "Analysis method:\n0 - standard;\n1 - area from 1st derivative between T1 and T2; no base subtraction\n2 - base slope subtraction (for HPGe)\n3 - base slope2 instead of slope1 (using W1 & W2) + slope2 subtraction (for HPGe)\n  for Mt=3 RMS2 is not calculated; Width=Pos-Time in pulse mode",
   "RiseTime method: centroid of derivative\n"
   "-1: [T1..T2], ignore negative values;\n"
@@ -1076,10 +1077,10 @@ void ParDlg::DaqDisable() {
       Clist[i]=wg->IsEnabled();
       // const char* col=KGRN;
       // if (pp->type == p_chk)
-      // 	col = BRED;
+      //  	col = BRED;
       // prnt("ss d d d ds;",col,"daqdis: ",i,pp->type,pp->cmd,(int)wg->IsEnabled(),RST);
       EnableField(i,false);
-      //prnt("ss d d d ds;",col,"daqdis2: ",i,pp->type,pp->cmd,(int)wg->IsEnabled(),RST);
+      // prnt("ss d d d ds;",col,"daqdis2: ",i,pp->type,pp->cmd,(int)wg->IsEnabled(),RST);
     }
   }
 }
@@ -2919,7 +2920,8 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,21,1,0,0,"Trg",cpar.Trg,0,1);
   AddColumn(jj,kk++,1,p_inum,36,1,0,0,"Drv",cpar.Drv,opt.sDrv,1|(8<<4));
   AddColumn(jj,kk++,1,p_inum,40,1,0,0,"Thr",cpar.Thr,opt.sThr,1|(8<<4));
-  AddColumn(jj,kk++,1,p_inum,40,1,0,0,"LT",cpar.LT,0,1);
+  AddColumn(jj,kk++,1,p_inum,30,1,0,0,"LT",cpar.LT,opt.sLT,1|(8<<4));
+  //AddColumn(jj,kk++,1,p_inum,40,1,0,0,"LT",cpar.LT,0,1);
 
   //Analysis
   AddColumn(jj,kk++,1,p_chk,24,0,0,0,"St",opt.St);
@@ -2947,6 +2949,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,26,0,-1,7,"sTg",opt.sTg);
   AddColumn(jj,kk++,1,p_inum,32,0,1,1023,"sDrv",opt.sDrv);
   AddColumn(jj,kk++,1,p_inum,40,0,0,65565,"sThr",opt.sThr);
+  AddColumn(jj,kk++,1,p_inum,30,0,0,65565,"sLT",opt.sLT);
   AddColumn(jj,kk++,1,p_inum,20,0,0,3,"Mt",opt.Mt);
   AddColumn(jj,kk++,1,p_inum,20,0,-1,9999,"Mr",opt.Mr);
   AddColumn(jj,kk++,1,p_inum,30,0,1,127,"DD",opt.DD);

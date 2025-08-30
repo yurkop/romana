@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 169
+#define CDEF 170
 
 /*
 #include <list>
@@ -99,7 +99,7 @@ public:
   Int_t Trg[MAX_CHTP]; // [trg] Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
   Int_t Drv[MAX_CHTP]; // [kderiv] K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t Thr[MAX_CHTP]; // [threshold] T = –2048 .. +2047
-  Int_t LT[MAX_CHTP]; // lower threshold T = –2048 .. +2047
+  Int_t LT[MAX_CHTP]; // lower threshold
   Int_t G[MAX_CHTP]; // [adcGain] G = 0..12
   Int_t fdiv[MAX_CHTP]; // frequency divider (=2 for 16-bit/100 MHz)
   Bool_t AC[MAX_CHTP]; // [acdc] AC-1; DC-0
@@ -175,6 +175,7 @@ public:
   Int_t sS[MAX_CHTP]; //[nsmoo] software smoothing 0..100
   Int_t sDrv[MAX_CHTP]; //[Drv] [kdrv] parameter of derivative
   Int_t sThr[MAX_CHTP]; //[Thr] [thresh]
+  Int_t sLT[MAX_CHTP]; // soft lower threshold
   Float_t sD[MAX_CHTP]; //[Delay] [delay]
   Int_t B1[MAX_CHTP]; //[Base1] [bkg1]
   Int_t B2[MAX_CHTP]; //[Base2] [bkg2]

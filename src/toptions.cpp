@@ -521,6 +521,7 @@ Toptions::Toptions() {
       Grp[i][j]=false;
     sS[i]=0;
     sThr[i]=cpar.Thr[i];
+    sLT[i]=cpar.LT[i];
 
     sDrv[i]=1;
     sD[i]=0;

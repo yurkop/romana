@@ -224,7 +224,7 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
       for (j=kk;j<sData.size();j++) {
 	D[j]=sData[j]-sData[j-kk];
 	if (p2) {
-	  if (D[j] < cpar.LT[Chan]) {
+	  if (D[j] < opt.sLT[Chan]) {
 	    return j-1;
 	    //break;
 	  }
@@ -254,7 +254,7 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
     Dpr=1;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
-      if (D[j] > cpar.LT[Chan] && Dpr<=cpar.LT[Chan]) {
+      if (D[j] > opt.sLT[Chan] && Dpr<=opt.sLT[Chan]) {
 	pp=j;
       }
       if (D[j] > opt.sThr[Chan]) {
@@ -271,7 +271,7 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
     for (j=kk;j<sData.size()-opt.DD[Chan];j++) {
       D[j]=CFD(j,kk,opt.DD[Chan],opt.FF[Chan],drv);
       //D[j]=sData[j]-sData[j-kk];
-      if (D[j] > cpar.LT[Chan] && Dpr<=cpar.LT[Chan]) {
+      if (D[j] > opt.sLT[Chan] && Dpr<=opt.sLT[Chan]) {
 	pp=j;
       }
       if (D[j] > opt.sThr[Chan]) {
@@ -524,7 +524,7 @@ void PulseClass::PeakAna33(bool onlyT) {
   }
 
   // 2. определяем Time
-  Float_t LT=cpar.LT[Chan];
+  Float_t LT=opt.sLT[Chan];
   switch (stg) {
     //case 9:
     //LT = cfd_frac;

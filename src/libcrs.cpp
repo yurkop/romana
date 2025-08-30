@@ -2975,11 +2975,19 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
       cout << "opt.Period from file: " << opt.Period << endl;
       cout << "Git version from file: " << opt.gitver << endl;
 
-      // update Dsp/dsp if file version is earlier than v0.870
+      //cout << "op2: " << copt  << endl;
+      /*
+	перенесено в ReadParGz 30.08.2025 (v0.925)
+      // копируем из dsp в Dsp для версии в файле < v0.870
+      // копируем из LT в sLT для версии в файле < v0.925
       // только если файл открывается впервые (oname!=0)
-      if (oname && string(opt.gitver).compare("v0.892")<0) {
-	memcpy(opt.Dsp,opt.dsp,sizeof(opt.dsp));
+      if (oname) {
+	if (string(opt.gitver).compare("v0.892")<0)
+	  memcpy(opt.Dsp,opt.dsp,sizeof(opt.dsp));
+	if (string(opt.gitver).compare("v0.925")<0)
+	  memcpy(opt.sLT,cpar.LT,sizeof(cpar.LT));
       }
+      */
   
     }
     else if (tp==2) { //Ortec Lis
@@ -3018,6 +3026,10 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
   prnt("ss s s s ds;",BGRN,"File:",Fname,
        cpar.GetDevice(module).c_str(),"Module:",module,RST);
 
+  //cout << chanpar << endl;
+  // if (chanpar)
+  //   chanpar->DaqDisable();
+
   return 0;
 } //DoFopen
 
@@ -3048,8 +3060,8 @@ void CRS::After_ReadPar(int op) {
 }
 int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   //m1 - read module (1/0) (читается только при открытии файла)
-  //cp - read cpar (1/0) (читается всегда =1)
-  //op - read opt (1/0) (не читается при открытии файла open- reopen 
+  //cp - read cpar (1/0) (не читается при открытии файла open- reopen)
+  //op - read opt (1/0) (не читается при открытии файла open- reopen)
 
   // 2 bytes: fmt - формат par файла
   //        if (fmt>=129) { //новый формат 129
@@ -3106,6 +3118,9 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     memset(opt.gitver,0,sizeof(opt.gitver));
   }
 
+  // cout << "before: " << opt.gitver << " " << opt.sLT[15] << " " << cpar.LT[15] << endl;
+  // cout << string(opt.gitver).compare("v0.925") << endl;
+
   ret=BufToClass(buf,buf+sz,op);
   if (!ret) {
     prnt("ssss;",BRED,"Warning: error reading parameters: ",pname,RST);
@@ -3113,6 +3128,31 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     res=1;
   }
   //exit(1);
+
+  // //копируем LT в sLT для старых файлов
+  // if (string(opt.gitver).compare("v0.922")<0) {
+  //   memcpy(opt.sLT,opt.dsp,sizeof(opt.dsp));
+  // }
+
+
+  // cout << "after: " << opt.sLT[15] << " " << cpar.LT[15] << endl;
+  // ret=FindVar(buf,sz,"LT",(char*)opt.sLT);
+  // if (ret) {
+  //   cout << "LT found: " << opt.sLT[15] << endl;
+  //   //memset(opt.gitver,0,sizeof(opt.gitver));
+  // }
+
+  //cout << "cp: " << cp << " " << op << " " << pname << endl;
+
+  // копируем из dsp в Dsp для версии в файле < v0.870
+  // копируем из LT в sLT для версии в файле < v0.925
+  // только если файл открывается впервые (op!=0)
+  if (op) {
+    if (string(opt.gitver).compare("v0.892")<0)
+      memcpy(opt.Dsp,opt.dsp,sizeof(opt.dsp));
+    if (string(opt.gitver).compare("v0.925")<0)
+      memcpy(opt.sLT,cpar.LT,sizeof(cpar.LT));
+  }
 
   //correct "other" ch_type, if needed
   for (int i=0;i<MAX_CHTP;i++) {
