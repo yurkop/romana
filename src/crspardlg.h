@@ -144,8 +144,8 @@ public:
   void Update();
   void EnableField(int nn, bool state);
   void AllEnabled(bool state);
-  void DaqDisable();
-  void DaqEnable();
+  //void FDisable();
+  void FEnable(bool state, UInt_t cmd);
   //void SelectEnabled(bool state, const char* text);
   TGFrame *FindWidget(void* p);
 
@@ -217,15 +217,15 @@ public:
 
   void Build();
   void BuildColumns(int jj);
-  void AddColumn(int jj, int kk, int ii, P_Def pdef,
-		 int wd, int daq, double min, double max, const char* pname,
+  void AddColumn(int jj, int kk, int ii, P_Def pdef, int wd,
+		 int dfile, int dev, double min, double max, const char* pname,
 		 void* apar=0, void* apar2=0, UInt_t cmd=1, int s2=0);
   //void AddHeader();
   void AddChan(int j, int kk, int wd, int all, TGHorizontalFrame *hfr,
 	       UShort_t off=0);
-  void AddCombo(int j, int wd, int all, TGHorizontalFrame *hfr);
-  void AddChkPar(int kk, int wd, int all, int daq, TGHorizontalFrame *hfr, void* apar, UShort_t off=0, UInt_t cmd=1, void* apar2=0, UChar_t step=1);
-  void AddNumPar(int i, int kk, int wd, int all, int daq, P_Def pdef, double min, double max, TGHorizontalFrame *hfr, const char* name, void* apar, UShort_t off=0, UInt_t cmd=1, void* apar2=0);
+  void AddCombo(int j, int wd, int all, int daq, TGHorizontalFrame *hfr);
+  void AddChkPar(int kk, int wd, int all, int dfile, TGHorizontalFrame *hfr, void* apar, UShort_t off=0, UInt_t cmd=1, void* apar2=0, UChar_t step=1);
+  void AddNumPar(int i, int kk, int wd, int all, int dfile, int dev, P_Def pdef, double min, double max, TGHorizontalFrame *hfr, const char* name, void* apar, UShort_t off=0, UInt_t cmd=1, void* apar2=0);
   void AddStatDaq(int jj,int kk,int wd,
 		  void* apar,TGHorizontalFrame* hfr);
   // void AddStatDaq(int kk, int wd, TGTextEntry* &fStat,

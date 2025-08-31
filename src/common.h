@@ -150,6 +150,7 @@ struct Pmap {
   //0x100 (bit8) disble during acq
   //0x200 (bit9) disble fields not existing in certain devices
   //0x400 (bit10) enable/disble fields for ntof analysis
+  //0x800 (bit11) disble fields for file analysis (mostly cpar)
 
   //Action (bit4-7): 
   // in DoDaqNum:

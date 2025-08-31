@@ -116,7 +116,6 @@ char* datfname=0;
 char* batch_fname=0;
 
 bool b_raw=false,b_dec=false,b_root=false,b_force=false;
-int rd_root=0; //readroot from comand line
 bool b_resetusb=false;
 
 char startdir[200];
@@ -131,8 +130,9 @@ const char* msg_ident = "Input and output files are identical";
 
 std::vector<TString> listpar;
 
-std::vector<string> listfiles;
-//std::list<TString> listshow;
+std::vector<string> listfiles; // список root файлов, которые будут считаны
+                               // в отдельные папки
+int dat_root=0; // если 1: datfname = root file
 
 std::vector<Mdef> list_mdef;
 //В list_mdef записываются все найденные в файле параметров переменные Hdef.
@@ -512,6 +512,7 @@ void OneVar(char* var, TDataMember* dm, char* data, UShort_t len,
 	    TString & memname) {
   //копирует одну переменную из буфера *data в переменную var+dm
 
+
   UShort_t len2=0;
   len2=dm->GetUnitSize();
   for (int i=0;i<dm->GetArrayDim();i++) {
@@ -530,10 +531,22 @@ void OneVar(char* var, TDataMember* dm, char* data, UShort_t len,
 	}
       }
     } //ch_name
+    if (memname.EqualTo("Dsp")) {
+      //cout << "Dsp: " << memname << " " << len << " " << len2 << " " << sizeof(bool) << " " << sizeof(int) << endl;
+      for (UInt_t i=0;i<len;i++) {
+	Int_t* vv = (Int_t*) (var+dm->GetOffset());
+	*(vv+i) = *(data+i);
+	//cout << i << " " << (int) *(data+i) << " " << *(vv+i) << " " << opt.Dsp[i] << " " << vv+i << " " << &opt.Dsp[i] << endl;
+      }
+    }
     else {
       memcpy(var+dm->GetOffset(),data,TMath::Min(len,len2));
     }
   }
+
+  // if (len!=len2)
+  //   cout << "mem: " << memname << " " << len << " " << len2 << endl;
+
   // if (debug&0x4) {
   //   print_var(dm,varname,memname,len,len2);
   // }
@@ -721,6 +734,8 @@ int BufToClass(char* buf, char* buf2, int op) {
     buf+=sizeof(len);
     memcpy(data,buf,len); //считываем данные в буфере
     buf+=len;
+
+    //cout << "memname: " << memname << " " << len << endl;
 
     if (memname.EqualTo("class")) {
       classname = TString(data,len-1); //считываем имя класса в буфере
@@ -1141,19 +1156,21 @@ int main(int argc, char **argv)
     "-m 0: don't open USB device\n"
     "-l: print list of connected devices and exit\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
-    "-b [outfile]: analyze file in batch mode (without gui) and exit\n"
-    "   Data are saved in outfile[.raw/.dec/.root] depending on batch parameters\n"
+    "-b [outfile]: analyze file in batch mode (without gui) and exit.\n"
+    "   Data are saved in outfile[.raw/.dec/.root] depending on batch parameters.\n"
     "   [outfile] is optional for -b. If omitted, the input filename is used.\n"
-    "   Program exits after Tstop time is reached\n"
+    "   Program exits after Tstop time is reached.\n"
+    "   Parameters <Filename>, <Write raw/decoded/root data> from input file\n"
+    "   are ignored in batch mode.\n"
 
     "-s [n] (only in batch mode): screen output frequency (0 - no output; n - every n-th buffer) \n"
     "-w (only in batch mode): create processed .raw file in subdirectory Raw/\n"
     "-d (only in batch mode): create decoded .dec file in subdirectory Dec/\n"
     "-r (only in batch mode): create .root file in subdirectory Root/\n"
     "-f (only in batch mode): force overwriting .raw/.dec/.root files\n"
+    "-R [file1.root] [file2.root] .. [filen.root]: read root histograms from files\n"
+    "   and store them in separate folders\n"
     "\n"
-    "   Parameters <Filename>, <Write raw/decoded/root data> from input file\n"
-    "   are ignored in batch mode\n"
     "[par=val] - set parameter par to val (see toptions.h for parameter names)\n"
     "   examples: Tstop=10 (set time limit to 10 sec)\n"
     "             Thr[5]=20 (set threshold for ch5 to 20)\n"
@@ -1169,6 +1186,7 @@ int main(int argc, char **argv)
 
   crs->abatch=true; //default: acquisition (for detect_device) - obsolete?
 
+  bool Rroot=false;
   listpar.clear();
   //listshow.clear();
   //process command line parameters
@@ -1182,7 +1200,7 @@ int main(int argc, char **argv)
 
       if (sarg[0]=='-') {
 	//cout << "sarg: " << i << " " << sarg << " " << (int) sarg[1] << endl;
-	switch (tolower(sarg[1])) {
+	switch (sarg[1]) {
 	case 'h':
 	  EExit(0);
 	case 'u': //reset usb
@@ -1313,6 +1331,9 @@ int main(int argc, char **argv)
 	    prnt("sss;",BBLU,i->c_str(),RST);
 	  }
 	  EExit(0);
+	case 'R':
+	  Rroot=true;
+	  continue;
 	default:
 	  prnt("ss ss;",BRED,"Unknown parameter:",argv[i],RST);
 	  EExit(-1);
@@ -1326,8 +1347,20 @@ int main(int argc, char **argv)
       // 	listshow.push_back(sarg);
       // }
       else {
-	listfiles.push_back(argv[i]);
-	//datfname = argv[i];
+	if (Rroot) { //заполняем listfiles: только .root
+	  string rstr(argv[i]);
+
+	  string dir, name, ext2;
+	  SplitFilename(rstr,dir,name,ext2);
+	  TString ext(ext2);
+	  ext.ToLower();
+
+	  if (ext.EqualTo(".root"))
+	    listfiles.push_back(argv[i]);
+	}
+	else
+	  if (!datfname) // считываем только первый файл
+	    datfname = argv[i];
       }
       /*
 	char cc = argv[i][0];
@@ -1345,35 +1378,31 @@ int main(int argc, char **argv)
     } //for i
   } //if argc
 
-  if (!listfiles.empty()) {
-    datfname = new char[listfiles.front().size()+10];
-    strcpy(datfname,listfiles.front().c_str());
-    //datfname = (char*)(listfiles.front()).c_str();
-  }
+  // if (!listfiles.empty()) {
+  //   datfname = new char[listfiles.front().size()+10];
+  //   strcpy(datfname,listfiles.front().c_str());
+  //   //datfname = (char*)(listfiles.front()).c_str();
+  // }
 
   //cout << "size: " << listfiles.front().size() << endl;
   //cout << "fff1: " << datfname << endl;
 
-  // после этого цикла listfiles содержит только root файлы
-  for (auto it=listfiles.begin(); it!=listfiles.end();) {
-    string dir, name, ext2;
-    SplitFilename(*it,dir,name,ext2);
-    TString ext(ext2);
-    ext.ToLower();
 
-    if (ext.EqualTo(".root")) {
-      rd_root++;
-      ++it;
-    }
-    else
-      listfiles.erase(it);
-    //cout << "fff: " << *it << endl;
+  /*
+  if (datfname)
+    cout << "datfname: " << datfname << " " << dat_root << endl;
+  cout << "listfiles: " << listfiles.size() << endl;
+  //exit(1);
+
+  for (auto it=listfiles.begin(); it!=listfiles.end(); ++it) {
+    cout << *it << endl;
   }
+  */
 
-  if (rd_root>1)
-    crs->b_noheader=true;
 
-  //cout << "fff: " << datfname << " " << rd_root << endl;
+  // if (dat_root>1)
+  //   crs->b_noheader=true;
+
   //exit(1);
 
 
@@ -1415,8 +1444,6 @@ int main(int argc, char **argv)
   if (datfname) {
     string dir, name, ext;
     SplitFilename(string(datfname),dir,name,ext);
-    //cout << "dirr: " << dir << " " << name << " " << ext << endl;
-    //cout << "dir2: " << int(parfile2==0) << endl;
     if (!ext.compare(".root")) { //root file
       //if (!parfile2) {
       if (!crs->b_noheader) {
@@ -1424,7 +1451,8 @@ int main(int argc, char **argv)
 	if (readpar_root(datfname,1))
 	  EExit(-1);
       }
-      //rd_root=1;
+      //hcl->ReadRoot(datfname,0);
+      dat_root=1;
       //prnt("ss d ds;",BBLU,"root:",rd_root,(bool)parfile2,RST);
     }
     else { //.raw or .dec file
@@ -1464,7 +1492,7 @@ int main(int argc, char **argv)
 
 #ifdef CYUSB
   if (crs->abatch) {
-    if (crs->Fmode!=2 && !rd_root) {
+    if (crs->Fmode!=2 /*&& !rd_root*/) {
       //if (crs->Fmode!=2) {
       bool d = opt.directraw;
       bool w = opt.raw_write;
@@ -2113,7 +2141,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   fMenuFile->AddEntry("Read Parameters", M_READINIT);
   fMenuFile->AddEntry("Save Parameters", M_SAVEINIT);
   fMenuFile->AddSeparator();
-  fMenuFile->AddEntry("Read ROOT file", M_READROOT);
+  fMenuFile->AddEntry("Read ROOT files", M_READROOT);
   fMenuFile->AddEntry("Save ROOT file", M_SAVEROOT);
   fMenuFile->AddEntry("Save ASCII files", M_SAVEASCII);
   fMenuFile->AddSeparator();
@@ -2286,20 +2314,19 @@ void MainFrame::Build() {
   MakeTabs();
 
   //cout << "rd_root: " << rd_root << endl;
-  if (rd_root) {
-    for (auto it=listfiles.begin(); it!=listfiles.end(); ++it) {
-      if (crs->b_noheader || rd_root>1)
-	hcl->ReadRoot((*it).c_str(),1);
-      else
-	hcl->ReadRoot((*it).c_str(),0);
-      //cout << "fff7: " << *it << endl;
-    }
+  
+  if (dat_root) { //считываем гистограммы из root файла в основные папки
+    hcl->ReadRoot(datfname,0);
+    strcpy(mainname,datfname);
+    //SetTitle(datfname);
+    crs->Fmode=0;
+  }
+
+  for (auto it=listfiles.begin(); it!=listfiles.end(); ++it) {
+    hcl->ReadRoot((*it).c_str(),1);
+  }
 
   //hcl->ReadRoot(datfname,0);
-
-    crs->Fmode=0;
-    //SetTitle(datfname);
-  }
 
   const int butx=70,buty=30;
 
@@ -2342,7 +2369,7 @@ void MainFrame::Build() {
 
   TGTextButton *fOpen = new TGTextButton(fGr2,new TGHotString("Open +"));
   fOpen->SetFont(tfont,false);
-  fOpen->SetToolTipText("Open data file with parameters");
+  fOpen->SetToolTipText("Open data or root file with parameters");
   fOpen->Resize(butx,buty*2/3);
   fOpen->ChangeOptions(fOpen->GetOptions() | kFixedSize);
   fOpen->ChangeBackground(fOrng);
@@ -2351,7 +2378,7 @@ void MainFrame::Build() {
 
   TGTextButton *fOpen2 = new TGTextButton(fGr2,new TGHotString("Open -"));
   fOpen2->SetFont(tfont,false);
-  fOpen2->SetToolTipText("Open data file without parameters");
+  fOpen2->SetToolTipText("Open data or root file without parameters");
   fOpen2->Resize(butx,buty*2/3);
   fOpen2->ChangeOptions(fOpen2->GetOptions() | kFixedSize);
   fOpen2->ChangeBackground(fOrng2);
@@ -2459,6 +2486,10 @@ void MainFrame::Build() {
   //EnableBut(fGr1,1);
   //EnableBut(fGr2,1);
 
+  if (crs->Fmode==2) { //file analysis
+    chanpar->FEnable(false,0x800);
+    chanpar->Update();    
+  }
 
   parpar->Update();
 
@@ -2882,6 +2913,8 @@ void MainFrame::DoClose() {
   strcpy(mainname,"");
   //myM->SetTitle((char*)"");
   //daqpar->AllEnabled(true);
+
+  chanpar->FEnable(true,0x800);
 
   parpar->Update();
   chanpar->Update();

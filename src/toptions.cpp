@@ -160,7 +160,7 @@ void Coptions::InitMinMax() {
   //см. parameters.xlsx
   // 8+8: первая строчка - мин; вторая - макс.
   // 8 чисел: crs_ch (см. libcrs.h):
-  //0 - undefined
+  //0 - undefined (=no device)
   //1 - CRS-2
   //2 - CRS-32 11 bit
   //3 - CRS-16 16 bit
@@ -174,41 +174,41 @@ void Coptions::InitMinMax() {
 
   // см. sum: сглаживание (суммирование)
   mhS = {0,0,0,0,0,0,0,0,
-	 0,0,512,512,512,128,128,128};
+	 512,0,512,512,512,128,128,128};
   // мертвое время дискриминатора
   mDt = {0,0,1,1,1,1,1,1,
-	 0,0};
+	 16383,0};
   fill_n(&mDt[MM+2],6,16383);
   // предзапись M
-  mPre = {0,0,-1023,-511,-1023,-511,-511,-511,
-          0,8184};
+  mPre = {-1023,0,-1023,-511,-1023,-511,-511,-511,
+          1024,8184};
   fill_n(&mPre[MM+2],6,1024);
   // общая длина записи
-  mLen = {0,0,1,1,1,1,1,1,
-	  0,16379,4068,3048,6114,1506,12000,12000};
+  mLen = {1,0,1,1,1,1,1,1,
+	  12000,16379,4068,3048,6114,1506,12000,12000};
   // параметр производной
-  mDrv = {0,0,1,1,1,1,1,1,
-	  0,1023,1023,1023,1023,255,255,255};
+  mDrv = {1,0,1,1,1,1,1,1,
+	  1023,1023,1023,1023,1023,255,255,255};
   // порог срабатывания
-  mThr = {0,0,-2048};
+  mThr = {-65536,0,-2048};
   fill_n(&mThr[3],5,-65536);
-  mThr[MM]=0; mThr[MM+1]=2047; mThr[MM+2]=2047;
+  mThr[MM]=65535; mThr[MM+1]=2047; mThr[MM+2]=2047;
   fill_n(&mThr[MM+3],5,65535);
   // нижний порог дискриминатора типов 3, 4
   mLT = mThr;
   mLT[3]=0; mLT[MM+3]=0;
   // дополнительное усиление
   mG = {0,5,5,0,0,0,0,0,
-	0,12,12,3,3,3,4,4};
+	12,12,12,3,3,3,4,4};
   // задержка
   mhD = {0,0,0,0,0,0,0,0,
-	 0,0,4075,4092,1023,255,250,250};
+	 250,0,4075,4092,1023,255,250,250};
   // тип срабатывания дискриминатора
-  mTrg = {0,0,-6,-6,-6,-6,-7,-7,
-	  0,1,6,6,6,6,7,7};
+  mTrg = {0,0,0,0,0,0,0,0,
+	  7,1,6,6,6,6,7,7};
   // величина пересчета P ("незаписанных" срабатываний дискриминатора)
   mRD = {0,0,0,0,0,0,0,0,
-	 0,0,0,0,1023,1023,1023,1023};
+	 1023,0,0,0,1023,1023,1023,1023};
 
   //arr mhS,mDt,mPre,mLen,mDrv,mThr,mLT,mG,mhD,mTrg,mRD;
 
@@ -239,7 +239,7 @@ void Coptions::GetParm(const char* name, int i, void *par, int &min, int &max) {
 
   min=-9999999;//0;
   max=9999999;//-1;
-  if (crs->crs_ch[i]==0) return;
+  //if (crs->crs_ch[i]==0) return;
 
   arr xx;
 
@@ -256,212 +256,6 @@ void Coptions::GetParm(const char* name, int i, void *par, int &min, int &max) {
   //prnt("ss s d d d ds;",BGRN,"GetParm:",name,i,crs->crs_ch[i],min,max,RST);
 
 } //GetParm
-
-/*
-void Coptions::GetPar(const char* name, int module, int i, Int_t crs_ch, int &par, int &min, int &max) {
-
-  min=-9999999;//0;
-  max=9999999;//-1;
-
-  //cout << "GetPAr7: " << module << " " << name << endl;
-    if (!strcmp(name,"hS")) {
-      par = hS[i];
-      min = 0;
-
-      switch (module) {
-      case 36:
-      case 44:
-	max=512;
-	break;
-      case 54:
-      case 45:
-	max=128;
-	break;
-      default:
-        max=9;
-      }
-
-    }
-    else if (!strcmp(name,"Dt")) {
-      par = Dt[i];
-      min = 1;
-      if (module==22)
-        max=1;
-      else
-        max=16383;
-    }
-    else if (!strcmp(name,"Pre")) {
-      par = Pre[i];
-
-      if (module==22) {
-        min = 0;
-        max=8184;        
-      }
-      else if (module==32) {
-        min = 0;
-        max=4093;        
-      }
-      else { //33,34,35,41,51,52
-        //!! знак противоположный тому, что в Протоколе!!!
-        // здесь отрицательный знак означает начало записи
-        // "после" срабатывания дискриминатора
-        max = 1024;
-        if (module==43 && crs_ch==1)
-          min=-511;
-	else if (module==53 || module==45) { //CRS-128, AK-32
-	  min=-511;
-	}
-        // if (crs_ch==1)
-        //   min=-511;
-	// else if (crs_ch==3) { //CRS-128
-	//   min=-511;
-	// }
-        else //0,2
-          min=-1023;
-      }
-    }
-    else if (!strcmp(name,"Len")) {
-      //prnt("ss d ds;",KRED,"len: ",i,Len[i],RST);
-      par = Len[i];
-      min = 1;
-      max=16379;
-      if (module==22)
-        max=16379;
-      else if (module==32)
-        max=32763;
-      else { //33,34,35,41,51,52
-        if (module>=33 && module<=35 && crs_ch==0)
-          max=4068;
-        else if (module>=33 && module<=35 && crs_ch==1)
-          max=3048;
-        else if (module==43)
-          max=6114;
-        else if (module==53)
-          max=1506;
-        else if (module==45) {
-	  if (cpar.F24)
-	    max=8000;
-	  else
-	    max=12000;
-	}
-      }
-      // else { //33,34,35,41,51,52
-      //   if (crs_ch==0)
-      //     max=4068;
-      //   else if (crs_ch==1)
-      //     max=3048;
-      //   else if (crs_ch==2)
-      //     max=6114;
-      //   else //3
-      //     max=1506;
-      // }
-    }
-    else if (!strcmp(name,"Drv")) {
-      par = Drv[i];
-      min = 1;
-      //if (crs_ch==3)
-      if (module==53 || module==45)
-	max=255;
-      else
-	max=1023;
-
-      // if (module<=32) //22 or 32
-      //   min = 0;
-      // else
-    }
-    else if (!strcmp(name,"Thr")) {
-      par = Thr[i];
-      if (crs_ch==0) {
-        min=-2048;
-        max=2047;
-      }
-      else { //1,2,3
-        min= -65536;
-        max= 65535;
-      }
-    }
-    else if (!strcmp(name,"LT")) {
-      par = LT[i];
-      if (crs_ch==0) {
-        min=-2048;
-        max=2047;
-      }
-      else { //1,2,3
-        min= -65536;
-        max= 65535;
-      }
-    }
-    else if (!strcmp(name,"G")) {
-      par = G[i];
-      if (crs_ch==0) {
-        min=5;
-        max=12;
-      }
-      else if (module==45) {
-        min=0;
-        max=4;
-      }
-      else { //1,2,3
-        min=0;
-        max=3;
-      }
-    }
-    else if (!strcmp(name,"hD")) {
-      par = hD[i];
-      min=0;
-      max=9999;
-      if (module==22) {
-        max=0;
-      }
-      else {
-        if (crs_ch==0)
-          max=4075;
-        else if (crs_ch==1)
-          max=4092;
-        //else if (crs_ch==2)
-        else if (crs_ch==2 && module!=53)
-          max=1023;
-        else if (module==45)
-          max=250;
-        else //3
-          max=255;
-      }
-    }
-    else if (!strcmp(name,"Trg")) {
-      par = Trg[i];
-      min=0;
-      max=9;
-      if (module>=35 && module<=70)
-        max=6;
-      else if (module>=32 && module<=34) //33,34
-        max=3;
-      else if (module==22) {
-	min=1;
-        max=1;
-      }
-      //else
-      //max=0;
-      // cout << "trig: " << module << " " << min << " " << max << endl;
-    }
-    else if (!strcmp(name,"RD")) {
-      //else if (!strcmp(name,"RD")) {
-      par = RD[i];
-      min=0;
-      max=1023;
-      // cout << "trig: " << module << " " << min << " " << max << endl;
-    }
-    else {
-      cout << "GetPar: wrong name: " << name << " " << module << " " << i << endl;
-      exit(-1);
-    }
-
-  if (crs_ch==255) {
-    min = -65536;
-    max= 65535;
-  }
-
-} //GetPar
-*/
 
 Int_t Coptions::ChkLen(Int_t i, Int_t module) {
   //выравнивает длину записи кратно 3 или 4 
@@ -512,7 +306,7 @@ Toptions::Toptions() {
     star[i]=true;
     chtype[i]=1;
     dsp[i]=false;
-    Dsp[i]=false;
+    Dsp[i]=0;
     Pls[i]=false;
     St[i]=true;
     Ms[i]=true;

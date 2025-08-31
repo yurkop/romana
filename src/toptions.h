@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 170
+#define CDEF 171
 
 /*
 #include <list>
@@ -165,7 +165,8 @@ public:
   Bool_t star[MAX_CHTP]; //asterix
   Int_t chtype[MAX_CHTP]; //ch type, starts from 1 (see MAX_TP in common.h)
   Bool_t dsp[MAX_CHTP]; //true - send dsp data
-  Bool_t Dsp[MAX_CHTP]; //true - use dsp for data analysis
+  Int_t Dsp[MAX_CHTP]; // 1 - use dsp for data analysis;
+                       // 2 - pls for timing, dsp for others
   Bool_t Pls[MAX_CHTP]; //true - write pulses in Dec
   Bool_t St[MAX_CHTP]; //[Start]
   Bool_t Ms[MAX_CHTP]; // [Master] Master/slave (see Spin)

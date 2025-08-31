@@ -91,35 +91,6 @@ size_t PulseClass::GetPtr(Int_t hnum) {
   return ptr;
 }
 
-Float_t PulseClass::CFD_sav_remove_later(int j, int kk, int delay, Float_t frac, Float_t &drv) {
-  // возвращает CFD и одновременно drv в точке j
-  // CFD = drv[j] - dev[j+delay]*frac
-  // CFD = производная минус производная, сдвинутая влево на delay
-  //       и умноженная на frac
-
-  // kk>0; delay>=0.
-  // CFD существует в диапазоне:
-  // - начальная точка (>=): kk
-  // - конечная точка (<):   sData.size()-delay
-  // Пример: for (UInt_t j=kk;j<sData.size()-delay;j++)
-
-  // CFD сдвинута вправо относительно drv
-
-  Float_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
-  drv = sData[j] - sData[j-kk];
-  //old -> return drv*frac-d0;
-
-
-  return drv-d0*frac*0.1; // -> original
-
-
-  //return drv*frac-d0;
-  //d0 = sData[j-delay] - sData[j-kk-delay];
-  //return d0*frac - drv;
-
-  //}
-}
-
 Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
   if (frac>0) { //new CFD: Alpatov
     // возвращает CFD и одновременно drv в точке j
@@ -299,7 +270,7 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
   // результат записывается в PulseClass::Time
 
   int stg = opt.sTg[Chan];
-  if (stg<0) stg=abs(cpar.Trg[Chan]);
+  if (stg<0) stg=cpar.Trg[Chan];
   //cout << "stg: " << Tstamp64 << " " << opt.sTg[Chan] << " " << stg << endl;
   switch (stg) {
   case 3: //rise of derivalive
@@ -485,7 +456,7 @@ void PulseClass::PeakAna33(bool onlyT) {
     } //if
   }
   else {//use hardware trigger
-    stg=abs(cpar.Trg[Chan]);
+    stg=cpar.Trg[Chan];
     Pos=cpar.Pre[Chan];
   }
 

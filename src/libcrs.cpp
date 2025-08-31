@@ -552,8 +552,9 @@ void CRS::Ana_start() {
   tproc=0;
 
   if (!batch) {
-    parpar->DaqDisable();
-    histpar->DaqDisable();
+    parpar->FEnable(false,0x100);
+    histpar->FEnable(false,0x100);
+    chanpar->FEnable(false,0x100);
   }
 
   if (opt.ev_min>=opt.ev_max) {
@@ -567,7 +568,7 @@ void CRS::Ana_start() {
     b_mean[i] = (opt.B2[i]+opt.B1[i])*0.5;
     p_mean[i] = (opt.P2[i]+opt.P1[i])*0.5;
     w_mean[i] = (opt.W2[i]+opt.W1[i])*0.5;
-    use_2nd_deriv[i] = opt.sTg[i]==5 || (opt.sTg[i]==-1 && abs(cpar.Trg[i])==5);
+    use_2nd_deriv[i] = opt.sTg[i]==5 || (opt.sTg[i]==-1 && cpar.Trg[i]==5);
     //cout << "Use_2nd: " << i << " " << use_2nd_deriv[i] << endl;
   }
 
@@ -2178,7 +2179,7 @@ void CRS::AllParameters44() {
       mask_discr=0b0000000000011; //bits 0,1 (было еще 11,12)
       if (opt.dsp[chan]) {
 	mask_discr|=0b11101110000; // write DSP data
-	if (abs(cpar.Trg[chan])==7) {
+	if (cpar.Trg[chan]==7) {
 	  mask_discr|=1<<13; // write CFD
 	}
       }
@@ -2276,7 +2277,7 @@ void CRS::AllParameters36() {
       //Command32(2,chan,9,0); //delay
       Command32(2,chan,10,0); //test signal is off
 
-      Int_t trg2=abs(cpar.Trg[chan]);
+      Int_t trg2=cpar.Trg[chan];
       Int_t cntr=0; //тип вычисления центроида (0,1)
       if (trg2==5) {
 	trg2=2; //для триг5 устанавливаем триг2
@@ -2305,7 +2306,7 @@ void CRS::AllParameters36() {
       mask=0b1100000000011; //bits 0,1 (было еще 11,12)
       if (opt.dsp[chan]) {
 	mask|=0b11101110000; // write DSP data
-	if (abs(cpar.Trg[chan])==7) {
+	if (cpar.Trg[chan]==7) {
 	  mask|=1<<13; // write CFD
 	}
       }
@@ -2369,7 +2370,7 @@ void CRS::AllParameters35() {
 
   for (int i=0;i<chan_in_module;i++) {
     s_Trg[i] = cpar.Trg[i];
-    if (abs(cpar.Trg[i])==5) {
+    if (cpar.Trg[i]==5) {
       cpar.Trg[i]=2;
       drv[i]=1;
     }
@@ -2479,7 +2480,7 @@ void CRS::AllParameters33()
       //Command32(2,chan,9,0); //delay
       Command32(2,chan,10,0); //test signal is off
 
-      Int_t trg2=abs(cpar.Trg[chan]);
+      Int_t trg2=cpar.Trg[chan];
       if (trg2==6) trg2=4; //для триг6 устанавливаем триг4
       Command32(2,chan,12,(int) trg2); //trigger type
 
@@ -3027,8 +3028,10 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
        cpar.GetDevice(module).c_str(),"Module:",module,RST);
 
   //cout << chanpar << endl;
-  // if (chanpar)
-  //   chanpar->DaqDisable();
+  if (chanpar) {
+    chanpar->FEnable(false,0x800);
+    chanpar->Update();
+  }
 
   return 0;
 } //DoFopen
@@ -3121,12 +3124,20 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   // cout << "before: " << opt.gitver << " " << opt.sLT[15] << " " << cpar.LT[15] << endl;
   // cout << string(opt.gitver).compare("v0.925") << endl;
 
+  // for (UInt_t i=0;i<sizeof(opt.dsp);i++)
+  //   prnt("ss d d ds;",BGRN,"Dsp:",i,opt.dsp[i],opt.Dsp[i],RST);
+
   ret=BufToClass(buf,buf+sz,op);
   if (!ret) {
     prnt("ssss;",BRED,"Warning: error reading parameters: ",pname,RST);
     gSystem->Sleep(1000);
     res=1;
   }
+
+  // for (UInt_t i=0;i<sizeof(opt.dsp);i++)
+  //   prnt("ss d d ds;",BRED,"Dsp:",i,opt.dsp[i],opt.Dsp[i],RST);
+
+
   //exit(1);
 
   // //копируем LT в sLT для старых файлов
@@ -3146,10 +3157,13 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
 
   // копируем из dsp в Dsp для версии в файле < v0.870
   // копируем из LT в sLT для версии в файле < v0.925
-  // только если файл открывается впервые (op!=0)
+  // только если из файла считываются opt (op!=0)
   if (op) {
-    if (string(opt.gitver).compare("v0.892")<0)
-      memcpy(opt.Dsp,opt.dsp,sizeof(opt.dsp));
+    if (string(opt.gitver).compare("v0.892")<0) {
+      for (UInt_t i=0;i<sizeof(opt.dsp);i++)
+	opt.Dsp[i]=opt.dsp[i];
+      //memcpy(opt.Dsp,opt.dsp,sizeof(opt.dsp));
+    }
     if (string(opt.gitver).compare("v0.925")<0)
       memcpy(opt.sLT,cpar.LT,sizeof(cpar.LT));
   }
@@ -3215,6 +3229,8 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   */
 
   //prtime("ReadParGz1");
+
+    
 
   return res;
 } //ReadParGz
@@ -3576,8 +3592,9 @@ void CRS::EndAna(int all) {
   // }
 
   if (!batch) {
-    parpar->DaqEnable();
-    histpar->DaqEnable();
+    parpar->FEnable(true,0x100);
+    histpar->FEnable(true,0x100);
+    chanpar->FEnable(true,0x100);
   }
 
 #ifdef TPROC
@@ -4117,7 +4134,7 @@ bool CRS::MakeDecMask() {
 }
 
 void CRS::PulseAna(PulseClass &ipls) {
-  if (!opt.Dsp[ipls.Chan]) { // не Dsp -> анализируем импульс
+  if (!opt.Dsp[ipls.Chan]) { // Dsp==0 -> анализируем импульс
     if (opt.sS[ipls.Chan]>1) {
       ipls.Smooth(opt.sS[ipls.Chan]);
     }
@@ -4126,7 +4143,7 @@ void CRS::PulseAna(PulseClass &ipls) {
     }
     ipls.PeakAna33();
   }
-  else { //Dsp -> не анализируем
+  else { //Dsp!=0 -> не анализируем
     PulseClass ipls2 = ipls;
     ipls.Pos=cpar.Pre[ipls.Chan];
     if (opt.checkdsp) {
@@ -5158,7 +5175,8 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
 
   ipls.Height=pk.H;
 
-  if (cpar.Trg[ipls.Chan]>=0) { //use hardware timing
+  //if (cpar.Trg[ipls.Chan]>=0) { //use hardware timing
+  if (opt.Dsp[ipls.Chan]!=2) { //use hardware timing
     //Rtime
     if (pk.RX!=0)
       ipls.Rtime=Double_t(pk.QX)/pk.RX;
