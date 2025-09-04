@@ -245,6 +245,9 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
       if (D[j] > opt.sLT[Chan] && Dpr<=opt.sLT[Chan]) {
 	pp=j;
       }
+      // if (Tstamp64<10000) {
+      // 	cout << "cfd: " << j << " " << D[j] << " " << Dpr << endl;
+      // }
       if (D[j] > opt.sThr[Chan]) {
 	return pp;
 	//break;
@@ -436,7 +439,7 @@ void PulseClass::PeakAna33(bool onlyT) {
   Float_t wdth=0; //temporary Width
   Float_t cfd_frac=0;
 
-  //prnt("sl d l d;","P33: ",Tstamp64,Pos,sData.size(),opt.sTg[Chan]);
+  //prnt("ss d l d l d ds;",BGRN,"P33:",BGRN,Chan,Tstamp64,Pos,sData.size(),opt.sTg[Chan],onlyT,RST);
 
   int sz=sData.size();
   Int_t kk=opt.sDrv[Chan];

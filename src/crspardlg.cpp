@@ -126,7 +126,8 @@ vector<const char*> ptip = {
   "RiseTime works only for triggers 3,6,7\n"
   "Parameter Mr also affects Time for triggers 0,1,2,4,5",
   "CFD delay in samples",
-  "CFD fraction. Old->New conversion: FF = old_FF*32*32/310.\n"
+  "CFD fraction.\n"
+  "Old->New conversion: FF = old_FF*32*32/310.\n"
   "If negative, use old formula for CFD",
   "Baseline start, relative to peak Pos (usually negative, included)",
   "Baseline end, relative to peak Pos (usually negative, included)",
@@ -1610,7 +1611,7 @@ int ParParDlg::AddOpt(TGCompositeFrame* frame) {
   tip1= "Maximal size of the event list:\nNumber of events available for viewing in the Events Tab";
   tip2= "Event lag:\nMaximal expected number of lagged events (see Errors/Event lag exceeded\nMust be at least 1)";
   label="Event_list size / Event lag";
-  AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,k_int,1,1000000,1,1000000);
+  AddLine_opt(fF6,ww,&opt.ev_max,&opt.ev_min,tip1,tip2,label,k_int,k_int,1,9999999,1,1000000);
 
   tip1= "[CRS-8/16] Sampling rate, MHz (0: 100, 1: 50, 2: 25 .. 14: ~0.006)";
   tip2= "[CRS-8/16] Soft start (imitator) period (sec):\n"
@@ -2936,6 +2937,7 @@ void ChanParDlg::BuildColumns(int jj) {
   //int cmd;
 
   int kk=0;
+  //------------------------wd,dfile,dev,min,max,"Ch",apar,apar2,cmd,s2---
   AddColumn(jj,kk++,0,p_chn,26,0,0,0,0,"Ch",0,0,0);
   AddColumn(jj,kk++,0,p_chk,24,0,1,0,0,"on",cpar.on,0,1);
   AddColumn(jj,kk++,0,p_chk,24,0,0,0,0,"*",opt.star,0,0);
@@ -2977,9 +2979,9 @@ void ChanParDlg::BuildColumns(int jj) {
   //AddColumn(jj,kk++,1,p_fnum,40,0,-1e99,1e99,"Bc",opt.Bc);
   for (int i=1;i<=4;i++) {
     sprintf(txt,"g%d",i);
-    AddColumn(jj,kk++,1,p_chk,24,0,0,0,0,txt,opt.Grp,0,0,40+i);
+    AddColumn(jj,kk++,1,p_chk,24,0,0,0,0,txt,opt.Grp,0,0x100,40+i);
+    //0x100: disble during daq/analysis
   }
-
 
   double amax=-2e101;
   //Peaks
@@ -3015,8 +3017,8 @@ AddColumn(int jj, int kk, int ii, P_Def pdef, int wd,
 	  void* apar, void* apar2, UInt_t cmd, int s2) {
 
   //dev=1 -> get min/max values for device using GetParm
-  //dev=1 for AddCombo -> disable during daq
-  //dfile=1 -> disable for file analysis
+  //dev=1 for AddCombo -> disable during daq/analysis
+  //dfile=1 -> disable when file is open for analysis
 
   //jj - nr of line; kk - nr of column; ii - nr of frame
   //s2 = step*10 + first+1; - only for p_chk
@@ -3154,8 +3156,8 @@ void ChanParDlg::AddCombo(int j, int wd, int all, int daq, TGHorizontalFrame *hf
 
     UInt_t cmd=0;
     if (daq) {
-      //cmd|=0x800; //disble for file analysis
-      cmd|=0x100; //disble during daq
+      //cmd|=0x800; //disble when file is open analysis
+      cmd|=0x100; //disble during daq/analysis
     }
 
     int id = Plist.size()+1;

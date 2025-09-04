@@ -15,9 +15,32 @@
 # make P_LIBUSB=1 compile with printing libusb messages
 # make P_CMD=1 compile with printing cmd32 & cmd2 messages
 # make BITS=N compile with cutting lower bits in sData by N
+# make [-j] yumo compile with YUMO option
+# make ANA3=1 новая версия анализа, USB и т.п.
+
 # removed!!!   make simul to compile with SIMUL option
 
-# make [-j] yumo compile with YUMO option
+define HELP_TEXT
+Доступные команды:
+make : compile
+make -j3 : compile using 3 CPUs
+make clean : clear compilation
+make cyusblib : compile and install cyusb library (need root password)
+make r2a : compile r2a (root2ascii)
+make NOUSB=1 : compile without cyusb library
+make TPROC=1 : compile with TPROC option
+     TPROC -> cpu usage in FillHist, only in singlethread
+make TIMES=1 : compile with TIMES option
+make DEBUG=1 : compile with debug option
+make PROF=1 : compile with profiling option
+make P_TEST=1 : compile with Test menu entry
+make P_LIBUSB=1 : compile with printing libusb messages
+make P_CMD=1 : compile with printing cmd32 \& cmd2 messages
+make BITS=N : compile with cutting lower bits in sData by N
+make [-j] : yumo compile with YUMO option
+make ANA3=1 новая версия анализа, USB и т.п.
+endef
+export HELP_TEXT
 
 
 GIT_VERSION := $(shell git describe --abbrev=4 --always --tags --dirty)
@@ -75,6 +98,10 @@ ifdef BITS
   CPPFLAGS += -D BITS=$(BITS)
 endif
 
+ifdef ANA3
+  CPPFLAGS += -D ANA3=1
+endif
+
 ifeq (yumo,$(findstring $(MAKECMDGOALS),yumo))
   RFLAGS += -DYUMO=1 -DSOCK=1
   CPPFLAGS += -DYUMO=1 -DSOCK=1
@@ -118,6 +145,10 @@ endif
 
 all: $(OBJ_D) $(PROG).x
 #all: svnver $(PROG).x
+
+.PHONY: help
+help:  ## Показать справку
+	@echo "$$HELP_TEXT"
 
 yumo: all
 

@@ -34,12 +34,14 @@
 #define mask_e "TN"
 #define mask_p "AtWHBRSsMmf"
 
+using namespace std;
+
 //typedef unsigned char byte;
 
-typedef std::list<EventClass>::iterator event_iter;
-typedef std::list<EventClass>::reverse_iterator event_reviter;
-
-typedef std::pair<unsigned char*,int> Pair;
+// struct bufstruct {
+//   unsigned char* addr;
+//   int size;
+// };
 
 union union82 { // текущее положение в Dec буфере
   UChar_t* b;
@@ -49,10 +51,9 @@ union union82 { // текущее положение в Dec буфере
   Int_t* i;
   Float_t* f;
   Long64_t* l;
+  ULong64_t* ul;
 };
 
-
-using namespace std;
 
 /* struct pair { */
 /*   char* buf; */
@@ -69,11 +70,20 @@ public:
 
 class BufClass {
 public:
-  char* Buf;
-  size_t Size;
-public:
-  BufClass(size_t sz);
-  ~BufClass();
+  UChar_t* b1=0; // указатель на начало буфера
+  UChar_t* b2=0; // указатель на конец "полных" событий в буфере
+  UChar_t* b3=0; // указатель на физический конец буфера
+  //size_t Size=0;
+  Long64_t bufid; // номер буфера (=идентификатор)
+  UChar_t flag=0;
+  //0 - empty, can be filled;
+  //1 - filled, can be analyzed;
+  //2 - analyzed, can be deleted.
+
+
+  // public:
+  //   BufClass(size_t sz);
+  //   ~BufClass();
 };
 
 #ifdef SOCK
@@ -106,6 +116,14 @@ public:
   //void Created() { Emit("Created()"); } //*SIGNAL*
 };
 #endif
+
+typedef std::list<EventClass>::iterator event_iter;
+typedef std::list<EventClass>::reverse_iterator event_reviter;
+
+typedef std::pair<unsigned char*,int> Pair;
+
+typedef std::list<BufClass>::iterator buf_iter;
+
 
 //---------------------------
 class CRS {
@@ -240,6 +258,9 @@ RQ_OBJECT("CRS")
 
   unsigned char *buftr[MAXTRANS];
   struct libusb_transfer *transfer[MAXTRANS];
+
+  //char* inp_buf=0; // буфер, куда записываются входные данные (usb или из файла)
+
 
   Long64_t inputbytes;
   Long64_t rawbytes;
@@ -386,6 +407,7 @@ RQ_OBJECT("CRS")
   void Free_Transfer();
   void Submit_all(int ntr);
   void Cancel_all(int ntr);
+  int Init_Transfer3();
   int Init_Transfer();
   int Command32_old(UChar_t cmd, UChar_t ch, UChar_t type, int par);
   int Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par);
@@ -422,6 +444,10 @@ RQ_OBJECT("CRS")
 
   //int CountChan();
 
+  void Init_Inp_Buf();
+  void AnaBuf3(buf_iter buf);
+  void Decode_switch3(UInt_t ibuf);
+
   void InitBuf();
   void StopThreads(int all);
   void EndAna(int all);
@@ -434,6 +460,12 @@ RQ_OBJECT("CRS")
   void Decode_switch(UInt_t ibuf);
   void Decode_any_MT(UInt_t iread, UInt_t ibuf, int loc_ibuf);
   void Decode_any(UInt_t ibuf);
+
+  // FindStart находит начало первого события
+  // и конец предпоследнего (по метке начала последнего)
+  // в буфере inbuf и возвращает результат в outbuf, где
+  // Buf указывает на первое событие, а Buf+Size - на последнее целое событие
+  void FindLast3(buf_iter buf_it);
 
   // FindLast* находит конец текущего буфера b_end[ibuf],
   // что является одновременно началом следующего b_start[ibuf2]
@@ -454,6 +486,7 @@ RQ_OBJECT("CRS")
   void Decode75(UInt_t iread, UInt_t ibuf);
 
   void MakePk(PkClass &pk, PulseClass &ipls);
+  void Decode36(BufClass &inbuf);
 
   //void Decode33(UInt_t iread, UInt_t ibuf);
   //void Decode42(UInt_t iread, UInt_t ibuf);

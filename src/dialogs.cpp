@@ -8,6 +8,7 @@
 #include <TGLabel.h>
 #include <TGTextBuffer.h>
 #include <TGTextEntry.h>
+#include <TMath.h>
 
 
 #include "dialogs.h"

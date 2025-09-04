@@ -297,7 +297,7 @@ EventFrame::EventFrame(const TGWindow *p,UInt_t w,UInt_t h, Int_t nt)
   fChk2->Connect("Clicked()","EventFrame",this,"DoCheckPoint()");
   fHor_but->AddFrame(fChk2, fLay4);
 
-  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - event real time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - time/tof (ns);\n[7] - Height;\n[8] - Width;\n[9] - Slope1 (Baseline);\n[10] - Slope2 (Peak)";
+  ttip = "Formula for the condition.\nUse standard C and root operators and functions\nFormula turns red in case of an error\n[0] - channel number;\n[1] - Tstamp;\n[2] - event real time (sec);\n[3] - multiplicity;\n[4] - Area;\n[5] - Base;\n[6] - Time (ns) (as in Time spectra);\n[7] - Height;\n[8] - Width;\n[9] - Slope1 (Baseline);\n[10] - Slope2 (Peak)";
   //cout << "formula: " << opt.formula << endl;
   tEnt = new TGTextEntry(fHor_but,opt.formula,0);
   tEnt->SetWidth(100);
@@ -1421,9 +1421,9 @@ void EventFrame::ReDraw() {
 	  if (Gr[i][j]->GetN()) { //draw graph
 	    //cout << "gr: " << i << " " << Gr[i][j]->GetX()[0] << " " << mx1 << endl;
 	    Gr[i][j]->Draw("lp");
-	    if (opt.b_peak[0] && i!=4) //draw peaks (not for FFT)
-	      DrawPeaks(i,j,pulse,y1,y2);
 	  }
+	  if (opt.b_peak[0] && i!=4) //draw peaks (not for FFT)
+	    DrawPeaks(i,j,pulse,y1,y2);
 	  /*
 	  if (i==3 && Gr[4][j]->GetN()) {
 	      Gr[4][j]->Draw("lp");

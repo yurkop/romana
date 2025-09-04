@@ -232,6 +232,8 @@ public:
   Int_t usb_size; //in kB
   Int_t rbuf_size; //in kB
 
+  Int_t ibuf_size=100; //inp_buf size in MB
+
   //Int_t event_buf; //length of event buffer
   //analysis starts only after filling first event_buf
 
