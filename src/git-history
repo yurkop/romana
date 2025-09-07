@@ -1,3 +1,13 @@
+git tag -a v0.928 -m 'Watchdog'
+- исправлен баг с заполнением гистограмм mult для групп
+- убрано сообщение "memory leak...": gROOT->GetListOfSpecials()->Clear();
+- добавлен параметр "Hide self-coincidences"
+- добавлены параметры "Watchdog channel/threshold"
+- обновлен manual
+- Makefile копирует romana.x в папку bin, а не создает линк.
+
+- ZZZZ нужна ли эта строчка???
+
 git tag -a v0.927 -m 'исправлен баг с палками в Time спектрах. v0.926-плохой'
 - исправлен баг с палками в Time спектрах
 - переделан Fill_Raw: пишет dsp данные (частично)

@@ -24,7 +24,7 @@ Float_t Mdef::VarTime(EventClass* e, PulseClass* p){
   // if (e->Spin & 128) //Counters
   //prnt("ss l d f fs;",BMAG,"vartime:",e->Tstmp,p->Chan,p->Time,e->T0,RST);
 
-  if (p->Chan == e->ChT0 && p->Time == e->T0) // канал, в котором T0
+  if (p->Chan == e->ChT0 && p->Time == e->T0 && opt.hideself) // канал, в котором T0
     return -99999;
   else
     return (p->Time - e->T0)*opt.Period+opt.sD[p->Chan];
@@ -473,19 +473,19 @@ void Mdef::FillMult(EventClass* evt, Double_t *hcut_flag, int ncut) {
     // пропускаем неактивные каналы и где не найден пик
     if (cpar.on[ipls->Chan] && ipls->Pos>-32222) {
       mult[NGRP]++;
-      for (int j=0;j<NGRP;j++)
+      for (int j=0;j<NGRP;j++) {
 	if (opt.Grp[ipls->Chan][j])
 	  mult[j]++;
+	//prnt("sd d d fs;",BGRN,ipls->Chan,j,opt.Grp[ipls->Chan][j],mult[j],RST);
+      }
     }
   }
 
   Fill_01(v_map[0],mult[NGRP],hcut_flag,ncut);
-
   for (int j=0;j<NGRP;j++) {
-    if (v_map[MAX_CH+j])
+    if (MAX_CH+j<(int)v_map.size() && v_map[MAX_CH+j])
       Fill_01(v_map[MAX_CH+j],mult[j],hcut_flag,ncut);
   }
-
 }
 
 void Mdef::Fill_Mean1(HMap* map,Float_t* Data,int nbins,int ideriv,int ncut) {
@@ -1921,6 +1921,7 @@ void HClass::Make_cuts() {
     }
     else { //normal cut (1d or 2d)
     }
+    gROOT->GetListOfSpecials()->Clear();
     cutG[i] = new TCutG(cutname,opt.pcuts[i],opt.gcut[i][0],opt.gcut[i][1]);
     cutG[i]->SetTitle(cuttitle[i]);
     cutG[i]->SetLineColor(cutcolor[i]);

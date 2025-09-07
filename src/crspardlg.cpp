@@ -392,6 +392,8 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
   DoColor(pp,(Float_t) fnum);
 
 #ifdef CYUSB
+  //prnt("ss d ds;",BYEL,"cmd:",pp->cmd,pp->cmd & 1,RST);
+
   int cmd = pp->cmd & 1;
   if (dq && cmd && crs->b_acq) {// && !jtrig) {
     crs->Command2(4,0,0,0);
@@ -1791,7 +1793,7 @@ void ParParDlg::AddLine_dec_format(TGCompositeFrame* frame, int width) {
 int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
   int ww=70;
-  const char *tip1, *label;
+  const char *tip1, *tip2, *label;
 
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "Expert", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
@@ -1858,7 +1860,16 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
 
   tip1= "Add random number when filling all histograms";
   label="Add random";
-  AddLine_1opt(fF6,ww,&opt.addrandom,0,tip1,label,k_chk,1,1000);
+  AddLine_1opt(fF6,ww,&opt.addrandom,0,tip1,label,k_chk,0,0);
+
+  tip1= "Suppress self-coincidences in Time spectra";
+  label="Hide self-coincidences";
+  AddLine_1opt(fF6,ww,&opt.hideself,0,tip1,label,k_chk,0,0);
+
+  tip1= "Whatchdog channel";
+  tip2= "Whatchdog threshold";
+  label="Whatchdog channel/threshold";
+  AddLine_opt(fF6,ww,&opt.wdog_ch,&opt.wdog_thr,tip1,tip2,label,k_int,k_int,-1,MAX_CH-1,0,9999999,0,0);
 
   tip1= "Max number of rows in Channels tab";
   label="Nrows";
@@ -2992,16 +3003,16 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,30,0,0,0,65565,"sLT",opt.sLT);
   AddColumn(jj,kk++,1,p_inum,20,0,0,0,3,"Mt",opt.Mt);
   AddColumn(jj,kk++,1,p_inum,20,0,0,-1,9999,"Mr",opt.Mr);
-  AddColumn(jj,kk++,1,p_inum,30,0,0,1,127,"DD",opt.DD);
-  AddColumn(jj,kk++,1,p_inum,30,0,0,-31,31,"FF",opt.FF);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"B1",opt.B1);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"B2",opt.B2);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"P1",opt.P1);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"P2",opt.P2);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"T1",opt.T1);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"T2",opt.T2);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"W1",opt.W1);
-  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"W2",opt.W2);
+  AddColumn(jj,kk++,1,p_inum,30,0,0,1,127,"DD",opt.DD,0,1);
+  AddColumn(jj,kk++,1,p_inum,30,0,0,-31,31,"FF",opt.FF,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"B1",opt.B1,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"B2",opt.B2,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"P1",opt.P1,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"P2",opt.P2,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"T1",opt.T1,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"T2",opt.T2,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"W1",opt.W1,0,1);
+  AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"W2",opt.W2,0,1);
 
   AddColumn(jj,kk++,2,p_stat,60,0,0,0,0,"P/sec (sw)",crs->rate_soft);
   AddColumn(jj,kk++,2,p_stat,60,0,0,0,0,"P/sec (hw)",crs->rate_hard);
@@ -3457,6 +3468,32 @@ void ChanParDlg::UpdateStatus(int rst) {
     if (Plist[i].type == p_stat)
       UpdateField(i);
   }
+
+  //WatchDog:
+  if (opt.wdog_ch>=0) {
+    double rate;
+    if (cpar.St_Per==0)
+      rate = crs->rate_soft[opt.wdog_ch];
+    else
+      rate = crs->rate_hard[opt.wdog_ch];
+
+    if (crs->b_acq) {
+      if (crs->b_wdog==0 && rate>=opt.wdog_thr)
+	crs->b_wdog=1; //если порог превышен -> запускаем wdog
+
+      if (crs->b_wdog==1 && abs(rate)<opt.wdog_thr) {
+	char cmd[200];
+	sprintf(cmd,"telegram-send \"romana alert: countrate in channel %d is low: %0.1f 1/s\"",opt.wdog_ch,rate);
+	gSystem->Exec(cmd);
+	crs->b_wdog=2;
+      }
+    }
+    // else
+    //   crs->b_wdog=0;
+  }
+
+
+
 
   /*
   for (int i=0;i<pmax;i++) {

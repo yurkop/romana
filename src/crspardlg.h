@@ -219,7 +219,7 @@ public:
   void BuildColumns(int jj);
   void AddColumn(int jj, int kk, int ii, P_Def pdef, int wd,
 		 int dfile, int dev, double min, double max, const char* pname,
-		 void* apar=0, void* apar2=0, UInt_t cmd=1, int s2=0);
+		 void* apar=0, void* apar2=0, UInt_t cmd=0, int s2=0);
   //void AddHeader();
   void AddChan(int j, int kk, int wd, int all, TGHorizontalFrame *hfr,
 	       UShort_t off=0);

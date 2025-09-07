@@ -650,7 +650,7 @@ void PopFrame::AddTest() {
 
   TGTextButton* fTest = new TGTextButton(fMain, "      &Test1      ",1);
   fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
-  fTest->SetToolTipText("Stop-Pusk (cmd4-cmd3) N times");
+  fTest->SetToolTipText("Stop-Pusk (cmd4-cmd3) N times.\nAcquisition must be started before.");
   fMain->AddFrame(fTest, LayBut3);
 
   fTest = new TGTextButton(fMain, "      &Test2      ",2);

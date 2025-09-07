@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 171
+#define CDEF 173
 
 /*
 #include <list>
@@ -273,8 +273,12 @@ public:
   //TString S_Filename;
   char Filename[255]; //->
 
-  bool addrandom; //true: add random number while filling histograms
+  bool addrandom=false; //true: add random number while filling histograms
   // (see Fill_01; Fill_02) 
+
+  bool hideself=false; //true: add random number while filling histograms
+  Int_t wdog_ch=-1; //whatchgod channel
+  Int_t wdog_thr=999999; //whatchgod threshold
 
   //TString S_ch_name[MAX_TP];
   char ch_name[MAX_TP][20];

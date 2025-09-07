@@ -295,6 +295,12 @@ RQ_OBJECT("CRS")
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
   bool b_stop; // true if acquisition and analysis are stopped
+  int b_wdog=0;
+  // b_wdog=0: не было ПРЕВЫШЕНИЯ порога (например, счетчик не считает)
+  // b_wdog=1: было ПРЕВЫШЕНИЯ порога: проверяем недостижение порога
+  // b_wdog=2: было недостижение порога: ничего не делаем
+
+
   //bool b_sockana=false;
 
   Int_t b_run; // used for trd_ana

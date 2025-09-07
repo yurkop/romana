@@ -1120,6 +1120,12 @@ void SockClass::Eval_Com() {
 CRS::CRS() {
 
   /*
+  char cmd[200];
+  sprintf(cmd,"telegram-send \"romana alert: countrate in channel %d is low: %0.1f 1/s\"",4,24.324456);
+  //string cmd = "telegram-send \"romana alert: countrate is too low\"";
+  gSystem->Exec(cmd);
+  exit(1);
+
   PkClass pk;
   pk.QX = -333;
   cout << hex << pk.QX << endl;
@@ -2734,6 +2740,7 @@ int CRS::DoStartStop(int rst) {
 	
   if (!b_acq) { //start
 
+    b_wdog=0;
     //cout << "start: " << rst << endl;
     crs->Free_Transfer();
 #ifdef P_LIBUSB

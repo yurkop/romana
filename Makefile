@@ -22,7 +22,10 @@
 
 define HELP_TEXT
 Доступные команды:
-make : compile
+make : compile and install romana
+make build : compile without installation
+make install : only install
+make link : only link (use link instead of copy for install)
 make -j3 : compile using 3 CPUs
 make clean : clear compilation
 make cyusblib : compile and install cyusb library (need root password)
@@ -38,10 +41,11 @@ make P_LIBUSB=1 : compile with printing libusb messages
 make P_CMD=1 : compile with printing cmd32 \& cmd2 messages
 make BITS=N : compile with cutting lower bits in sData by N
 make [-j] : yumo compile with YUMO option
-make ANA3=1 новая версия анализа, USB и т.п.
+make ANA3=1 : новая версия анализа, USB и т.п.
 endef
 export HELP_TEXT
 
+INSTALLED_PROG = $(HOME)/bin/romana.x
 
 GIT_VERSION := $(shell git describe --abbrev=4 --always --tags --dirty)
 SRC_D = src
@@ -143,10 +147,14 @@ endif
 #yumo1:
 #	echo $(MAKECMDGOALS) $(YM)
 
-all: $(OBJ_D) $(PROG).x
+.PHONY: all clean build link install help
+
+all: build install
+
+build: $(OBJ_D) $(PROG).x
 #all: svnver $(PROG).x
 
-.PHONY: help
+
 help:  ## Показать справку
 	@echo "$$HELP_TEXT"
 
@@ -211,7 +219,7 @@ param: $(OBJ_D)/paramdict.cpp utils/param.cpp $(SRC_D)/toptions.cpp
 cyusblib:
 	cd cyusb && chmod 755 install.sh && sudo ./install.sh && chmod 644 install.sh
 
-install:
+link:
 	rm -f $(HOME)/bin/romana
 	rm -f $(HOME)/bin/romana_rdict.pcm
 	rm -f $(HOME)/bin/romana.x
@@ -219,6 +227,17 @@ install:
 	ln -s $(PWD)/romana.x $(HOME)/bin/romana
 	ln -s $(PWD)/romana.x $(HOME)/bin/romana.x
 	ln -s $(PWD)/romana_rdict.pcm $(HOME)/bin
+
+install: $(INSTALLED_PROG)
+
+$(INSTALLED_PROG): $(PROG).x
+	@rm -f $(HOME)/bin/romana
+	@rm -f $(HOME)/bin/romana_rdict.pcm
+	@rm -f $(HOME)/bin/romana.x
+
+	@cp -pr $(PWD)/romana.x $(HOME)/bin/romana.x
+	@cp -pr $(PWD)/romana_rdict.pcm $(HOME)/bin
+	ln -s $(HOME)/bin/romana.x $(HOME)/bin/romana
 
 clean:
 	rm -f $(OBJ_D)/* $(SRC_D)/*~
