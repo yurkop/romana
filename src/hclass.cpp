@@ -1953,6 +1953,7 @@ void HClass::Root_to_allmap(TList* fhist_list) {
       TH1* hh = map->hst;
       TDirectory* dir = hh->GetDirectory();
       obj->Copy(*hh);
+      fhist_list->Remove(obj);
       obj->Delete();
       hh->SetDirectory(dir);
     }    
@@ -1990,6 +1991,7 @@ void HClass::ReadRoot(const char *name, int ww) {
   //ww=0 -> добавляем в существующие (to_allmap);
   //else -> создаем новую запись в дереве (to_newtree)
   //gROOT->cd();
+
   TList* fhist_list = new TList();
 
   TFile *tf = new TFile(name,"READ");

@@ -46,6 +46,10 @@ endef
 export HELP_TEXT
 
 INSTALLED_PROG = $(HOME)/bin/romana.x
+BASHRC = $(HOME)/.bashrc
+LIB_DIR = /usr/local/lib
+LIB_BIN = $(HOME)/bin
+
 
 GIT_VERSION := $(shell git describe --abbrev=4 --always --tags --dirty)
 SRC_D = src
@@ -216,8 +220,32 @@ endif
 param: $(OBJ_D)/paramdict.cpp utils/param.cpp $(SRC_D)/toptions.cpp
 	g++ $(CXXFLAGS) $(CPPFLAGS) -o param.x utils/param.cpp $(OBJ_D)/paramdict.cpp $(SRC_D)/toptions.cpp $(LDFLAGS)
 
-cyusblib:
+cyusblib: check_ld_library_path
 	cd cyusb && chmod 755 install.sh && sudo ./install.sh && chmod 644 install.sh
+	@echo "Now reboot you computer!"
+
+check_ld_library_path:
+	@if [ -z "$$LD_LIBRARY_PATH" ]; then \
+		echo "⚠ LD_LIBRARY_PATH не установлен"; \
+		echo "Добавляю $(LIB_DIR):$(LIB_BIN) в $(BASHRC)"; \
+		echo 'export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:$(LIB_DIR):$(LIB_BIN)' >> $(BASHRC); \
+		echo "✓ Добавлено. Выполните: source $(BASHRC)"; \
+	else \
+	if ! echo "$$LD_LIBRARY_PATH" | grep -q "$(LIB_DIR)"; then \
+		echo "⚠ LD_LIBRARY_PATH не содержит $(LIB_DIR)"; \
+		echo "Текущий LD_LIBRARY_PATH: $$LD_LIBRARY_PATH"; \
+		echo "Добавляю $(LIB_DIR) в $(BASHRC)"; \
+		echo 'export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:$(LIB_DIR)' >> $(BASHRC); \
+		echo "✓ Добавлено. Выполните: source $(BASHRC)"; \
+	fi; \
+	if ! echo "$$LD_LIBRARY_PATH" | grep -q "$(LIB_BIN)"; then \
+		echo "⚠ LD_LIBRARY_PATH не содержит $(LIB_BIN)"; \
+		echo "Текущий LD_LIBRARY_PATH: $$LD_LIBRARY_PATH"; \
+		echo "Добавляю $(LIB_BIN) в $(BASHRC)"; \
+		echo 'export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:$(LIB_BIN)' >> $(BASHRC); \
+		echo "✓ Добавлено. Выполните: source $(BASHRC)"; \
+	fi; \
+	fi
 
 link:
 	rm -f $(HOME)/bin/romana

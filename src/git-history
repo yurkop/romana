@@ -1,3 +1,12 @@
+git tag -a v0.929 -m 'LD_LIBRARY_PATH'
+- в Makefile добавлена проверка LD_LIBRARY_PATH (опция check_ld_library_path)
+- добавлен файл utils/repack_gzip.sh
+- исправлен баг в HistFrame::Y_Slider
+- исправлен баг в HClass::Root_to_allmap
+
+- ZZZZ нужна ли эта строчка???
+
+
 git tag -a v0.928 -m 'Watchdog'
 - исправлен баг с заполнением гистограмм mult для групп
 - убрано сообщение "memory leak...": gROOT->GetListOfSpecials()->Clear();

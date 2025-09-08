@@ -1296,7 +1296,8 @@ void HistFrame::X_Slider(TH1* hh, double &a1, double &a2) {
 
 void HistFrame::Y_Slider(TH1* hh, double a1, double a2, double y1, double y2) {
   //a1,a2 = X range after X_Slider; 
-  Float_t h1,h2;
+  Float_t h1,h2; //"перевернутые"(верх-низ) положения у-слайдера
+
   fVslider->GetPosition(opt.hy_slider[1],opt.hy_slider[0]);
   h1=1-opt.hy_slider[0];
   h2=1-opt.hy_slider[1];
@@ -1313,7 +1314,7 @@ void HistFrame::Y_Slider(TH1* hh, double a1, double a2, double y1, double y2) {
     y1=hh->GetYaxis()->GetXmin();
     y2=hh->GetYaxis()->GetXmax();
   }
-  else if (hh->GetDimension()==2 && hh!=st_plot) {
+  else if (hh->GetDimension()==1 && hh!=st_plot) {
     y1=1e99;
     y2=-1e99;
     GetHMinMax(hh,a1,a2,y1,y2);

@@ -2313,8 +2313,6 @@ void MainFrame::Build() {
 
   MakeTabs();
 
-  //cout << "rd_root: " << rd_root << endl;
-  
   if (dat_root) { //считываем гистограммы из root файла в основные папки
     hcl->ReadRoot(datfname,0);
     strcpy(mainname,datfname);
