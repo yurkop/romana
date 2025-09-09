@@ -1,3 +1,7 @@
+git tag -a v0.930 -m 'Watchdog low/high'
+- watchdog переделан (нижний и верхний пороги в каждом активном канале)
+- chanpar->UpdateStatus(1) переделан в crs->UpdateRates(1)
+
 git tag -a v0.929 -m 'LD_LIBRARY_PATH'
 - в Makefile добавлена проверка LD_LIBRARY_PATH (опция check_ld_library_path)
 - добавлен файл utils/repack_gzip.sh

@@ -231,7 +231,7 @@ public:
   // void AddStatDaq(int kk, int wd, TGTextEntry* &fStat,
   // 		   TGHorizontalFrame* hfr);
   //void AddChCombo(int i, int &id, int &kk, int &all);
-  void UpdateStatus(int rst=0);
+  //void UpdateStatus(int rst=0);
   void DoScroll(int pos);
   void HandleMouseWheel(Event_t *event);
   void Update();

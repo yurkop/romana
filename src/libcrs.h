@@ -278,6 +278,8 @@ RQ_OBJECT("CRS")
   Long64_t Tst3o[MAX_CH+1]; //old TimeStamp per channel (hardw)
   double rate_soft[MAX_CH+1]; //pulse rate per channel (softw)
   double rate_hard[MAX_CH+1]; //pulse rate per channel (hardw)
+  double rate_mean[MAX_CH+1]; //mean rate
+  Long64_t n_rate;
   //Long64_t npulses3o[MAX_CH]; //number of pulses per channel (hardw)
   double npulses_bad[MAX_CH+1]; //number of bad pulses per channel
 
@@ -295,11 +297,13 @@ RQ_OBJECT("CRS")
   bool b_acq; // true - acquisition is running
   bool b_fana; // true - file analysis is running
   bool b_stop; // true if acquisition and analysis are stopped
-  int b_wdog=0;
+  double t_wdog=0;
+  //int b_wdog=0; //0: wdog еще не сработал; 1 - wdog сработал
+  /*
   // b_wdog=0: не было ПРЕВЫШЕНИЯ порога (например, счетчик не считает)
   // b_wdog=1: было ПРЕВЫШЕНИЯ порога: проверяем недостижение порога
   // b_wdog=2: было недостижение порога: ничего не делаем
-
+  */
 
   //bool b_sockana=false;
 
@@ -547,6 +551,8 @@ RQ_OBJECT("CRS")
   void Print_b1(int idx1, std::ostream *out);
   void Print_Buf_err(UInt_t ibuf, const char* file=0);
   void Print_Buf8(UChar_t* buf, Long64_t size, const char* file=0);
+
+  void UpdateRates(int rst=0);
 
   // void SimulateInit();
   // void SimNameHist();

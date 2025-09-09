@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 173
+#define CDEF 174
 
 /*
 #include <list>
@@ -277,8 +277,11 @@ public:
   // (see Fill_01; Fill_02) 
 
   bool hideself=false; //true: add random number while filling histograms
-  Int_t wdog_ch=-1; //whatchgod channel
-  Int_t wdog_thr=999999; //whatchgod threshold
+  Int_t wdog_timer=0; //watchdog timer
+  Float_t wdog1=0; //watchdog threshold (lower threshold?)
+  Float_t wdog2=10000; //watchdog upper threshold - not used
+  //Int_t wdog_ch=-1; //watchgod channel
+  //Int_t wdog_thr=999999; //watchgod threshold
 
   //TString S_ch_name[MAX_TP];
   char ch_name[MAX_TP][20];

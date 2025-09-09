@@ -421,8 +421,7 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
     gzclose(ff);
     if (crs->module==22) {//CRS2
       myM->UpdateTimer(1);
-      //myM->UpdateStatus(1);
-      chanpar->UpdateStatus(1);
+      crs->UpdateRates(1);
     }
     /*
     gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
@@ -1866,10 +1865,26 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   label="Hide self-coincidences";
   AddLine_1opt(fF6,ww,&opt.hideself,0,tip1,label,k_chk,0,0);
 
-  tip1= "Whatchdog channel";
-  tip2= "Whatchdog threshold";
-  label="Whatchdog channel/threshold";
-  AddLine_opt(fF6,ww,&opt.wdog_ch,&opt.wdog_thr,tip1,tip2,label,k_int,k_int,-1,MAX_CH-1,0,9999999,0,0);
+
+
+  const char* tip0= "Watchdog timer (seconds). Zero: watchdog off";
+  tip1= "Watchdog lower threshold (%)";
+  tip2= "Watchdog upper threshold (%)";
+  label="Watchdog";
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(fF6);
+  fF6->AddFrame(hfr1);
+  Num_opt(hfr1,60,&opt.wdog_timer,0,tip0,k_int,0,100000,0,LayLT4);
+  Num_opt(hfr1,60,&opt.wdog1,0,tip1,k_r1,0,100,0,LayLT4);
+  Num_opt(hfr1,70,&opt.wdog2,0,tip2,k_r1,100,10000,0,LayLT4);
+  TGLabel* fLabel = new TGLabel(hfr1, label);
+  hfr1->AddFrame(fLabel,LayLT4);
+
+  //AddLine_opt(fF6,60,&opt.wdog1,&opt.wdog2,tip1,tip2,label,k_int,k_int,0,100,100,10000,0,0);
+
+  // tip1= "Watchdog channel";
+  // tip2= "Watchdog threshold";
+  // label="Watchdog channel/threshold";
+  // AddLine_opt(fF6,ww,&opt.wdog_ch,&opt.wdog_thr,tip1,tip2,label,k_int,k_int,-1,MAX_CH-1,0,9999999,0,0);
 
   tip1= "Max number of rows in Channels tab";
   label="Nrows";
@@ -3417,102 +3432,6 @@ void ChanParDlg::HandleMouseWheel(Event_t *event) {
     //Update();
     oldscroll=opt.ScrollPos;
   }
-}
-
-void ChanParDlg::UpdateStatus(int rst) {
-
-  //static Long64_t allbad;
-  static double t1;
-  //static Long64_t npulses2o[MAX_CH];
-  //static Long64_t npulses3o[MAX_CH];
-  //static double rate2[MAX_CH];
-  //static double rate_all2;
-  //static double rate3[MAX_CH];
-  //static double rate_all3;
-
-  if (rst) {
-    crs->npulses_bad[MAX_CH]=0;
-    t1=0;
-    opt.T_acq=0;
-    memset(crs->npulses2o,0,sizeof(crs->npulses2o));
-    //memset(npulses3o,0,sizeof(npulses3o));
-    memset(crs->rate_soft,0,sizeof(crs->rate_soft));
-    //memset(rate3,0,sizeof(rate3));
-  }
-
-  TGString txt;
-
-  double dt = opt.T_acq - t1;
-
-  if (dt>0.1) {
-    crs->rate_soft[MAX_CH]=0;
-    crs->rate_hard[MAX_CH]=0;
-
-    for (int i=0;i<opt.Nchan;i++) {
-      if (cpar.on[i]) { //only for active channels
-	crs->rate_soft[i] = (crs->npulses2[i]-crs->npulses2o[i])/dt;
-	// prnt("ss d f l ls;",BBLU,"rate:",i,crs->rate_soft[i],crs->npulses2[i],
-	//      crs->npulses2o[i],RST);
-	crs->npulses2o[i]=crs->npulses2[i];
-
-	crs->rate_soft[MAX_CH]+=crs->rate_soft[i];
-	crs->rate_hard[MAX_CH]+=crs->rate_hard[i];
-
-	crs->npulses_bad[MAX_CH]+=crs->npulses_bad[i];
-      }
-    }
-    t1=opt.T_acq;
-  }
-
-  for (UInt_t i=0;i<Plist.size();i++) {
-    if (Plist[i].type == p_stat)
-      UpdateField(i);
-  }
-
-  //WatchDog:
-  if (opt.wdog_ch>=0) {
-    double rate;
-    if (cpar.St_Per==0)
-      rate = crs->rate_soft[opt.wdog_ch];
-    else
-      rate = crs->rate_hard[opt.wdog_ch];
-
-    if (crs->b_acq) {
-      if (crs->b_wdog==0 && rate>=opt.wdog_thr)
-	crs->b_wdog=1; //если порог превышен -> запускаем wdog
-
-      if (crs->b_wdog==1 && abs(rate)<opt.wdog_thr) {
-	char cmd[200];
-	sprintf(cmd,"telegram-send \"romana alert: countrate in channel %d is low: %0.1f 1/s\"",opt.wdog_ch,rate);
-	gSystem->Exec(cmd);
-	crs->b_wdog=2;
-      }
-    }
-    // else
-    //   crs->b_wdog=0;
-  }
-
-
-
-
-  /*
-  for (int i=0;i<pmax;i++) {
-    txt.Form("%0.0f",rate2[i]);
-    fStat2[i]->SetText(txt);
-    txt.Form("%0.0f",crs->rate_hard[i]);
-    fStat3[i]->SetText(txt);
-    txt.Form("%d",crs->npulses_bad[i]);
-    fStatBad[i]->SetText(txt);
-  }
-
-  txt.Form("%0.0f",rate_all2);
-  fStat2[MAX_CH]->SetText(txt);
-  txt.Form("%0.0f",rate_all3);
-  fStat3[MAX_CH]->SetText(txt);
-  txt.Form("%lld",allbad);
-  fStatBad[MAX_CH]->SetText(txt);
-  */
-  //cout << "Updatestatus3: " << crs->rate_soft[0] << endl;
 }
 
 //-------------------------

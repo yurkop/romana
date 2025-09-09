@@ -682,6 +682,7 @@ void PopFrame::Do_Test() {
       case 1:
 	crs->Command2(4,0,0,0); //stop
 	gSystem->Sleep(delay); //300
+	//crs->Command32(1,0,0,0); //info
 	crs->Command2(3,0,0,0); //pusk
 	gSystem->Sleep(delay); //300
 	break;

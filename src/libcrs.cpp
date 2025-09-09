@@ -2740,7 +2740,8 @@ int CRS::DoStartStop(int rst) {
 	
   if (!b_acq) { //start
 
-    b_wdog=0;
+    //b_wdog=0;
+    t_wdog=0;
     //cout << "start: " << rst << endl;
     crs->Free_Transfer();
 #ifdef P_LIBUSB
@@ -3031,7 +3032,8 @@ void CRS::DoReset(int rst) {
     juststarted=true;
 
     if (chanpar) {
-      chanpar->UpdateStatus(rst);
+      //chanpar->UpdateStatus(rst);
+      UpdateRates(rst);
     }
 
     for (auto i=0;i<opt.Nchan;i++) {
@@ -4026,7 +4028,8 @@ void CRS::Show(bool force) {
       // 	}
       // }
     }
-    chanpar->UpdateStatus();
+    UpdateRates();
+    //chanpar->UpdateStatus();
     //myM->UpdateStatus();
     ErrFrm->ErrUpdate();
 #ifdef TIMES
@@ -8106,5 +8109,84 @@ void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
   rw_list.push_back(p);
   prnt("s d d;","Flush_raw: ",rw_list.size(),buf-GLBuf);
   raw_mut.UnLock();
+
+}
+
+void CRS::UpdateRates(int rst) {
+  static double t1;
+
+  if (rst) {
+    npulses_bad[MAX_CH]=0;
+    t1=0;
+    opt.T_acq=0;
+    memset(npulses2o,0,sizeof(npulses2o));
+    //memset(npulses3o,0,sizeof(npulses3o));
+    memset(rate_soft,0,sizeof(rate_soft));
+    //memset(rate3,0,sizeof(rate3));
+    memset(rate_mean,0,sizeof(rate_mean));
+    n_rate=0;
+  }
+
+  TGString txt;
+
+  double dt = opt.T_acq - t1;
+
+  if (dt>0.1) {
+    rate_soft[MAX_CH]=0;
+    rate_hard[MAX_CH]=0;
+
+    ++n_rate;
+    for (int i=0;i<opt.Nchan;i++) {
+      if (cpar.on[i]) { //only for active channels
+	rate_soft[i] = (npulses2[i]-npulses2o[i])/dt;
+	// prnt("ss d f l ls;",BBLU,"rate:",i,rate_soft[i],npulses2[i],
+	//      npulses2o[i],RST);
+	npulses2o[i]=npulses2[i];
+
+	rate_soft[MAX_CH]+=rate_soft[i];
+	rate_hard[MAX_CH]+=rate_hard[i];
+
+	npulses_bad[MAX_CH]+=npulses_bad[i];
+
+	if (b_acq) {
+	  double rr,dd=100,rm;
+	  if (cpar.St_Per==0) //soft
+	    rr=rate_soft[i];
+	  else //hard
+	    rr=rate_hard[i];
+
+	  rm=(rate_mean[i]*(n_rate-1)+rr)/n_rate;
+	  rate_mean[i]=rm;
+
+	  if (opt.wdog_timer>0 && opt.T_acq-t_wdog>opt.wdog_timer) {
+	    if (rm>0)
+	      dd = rr/rm*100;
+	    if (dd<opt.wdog1 || dd>opt.wdog2) { //alert!
+	    //if (rm>0)
+	    //  dd = abs(rr-rm)/rm*100;
+	    //if (dd>opt.wdog1) { //alert!
+	      t_wdog=opt.T_acq;
+	      char cmd[200];
+	      sprintf(cmd,"telegram-send "
+		      "\"romana alert: countrate in channel %d"
+		      " is %0.1f%% of average: %0.1f %0.1f\"",i,dd,
+		      rr,rm);
+	      gSystem->Exec(cmd);
+	      prnt("sss;",BRED,cmd,RST);
+	    }
+	  
+	  }
+
+	  //cout << "rate_mean: " << i << " " << n_rate << " " << rm << " " << dd << endl;
+	}
+      }
+    }
+    t1=opt.T_acq;
+  }
+
+  for (UInt_t i=0;i<chanpar->Plist.size();i++) {
+    if (chanpar->Plist[i].type == p_stat)
+      chanpar->UpdateField(i);
+  }
 
 }
