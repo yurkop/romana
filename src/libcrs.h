@@ -32,7 +32,23 @@
 //#include <TMonitor.h>
 
 #define mask_e "TN"
+//T: event Timestamp
+//E: event Number
+//N: number of pulses in event
+//F: event Flag (spin state(s))
 #define mask_p "AtWHBRSsMmf"
+//A: pulse area
+//t: pulse time
+//W: pulse width
+//H: pulse height
+//B: pulse Baseline
+//R: pulse Risetime
+//S: pulse Slope (baseline)
+//s: pulse Slope (peak)
+//M: pulse RMS (baseline)
+//m: pulse RMS (peak)
+//f: pulse flags (Pileup etc)
+
 
 using namespace std;
 
@@ -71,15 +87,26 @@ public:
 class BufClass {
 public:
   UChar_t* b1=0; // указатель на начало буфера
-  UChar_t* b2=0; // указатель на конец "полных" событий в буфере
   UChar_t* b3=0; // указатель на физический конец буфера
+  union {
+    UChar_t* b=0; // input: указатель на конец "полных" событий в буфере
+    UShort_t* us;  // output(dec|raw): текущий указатель на конец буфера
+    Short_t* s;
+    UInt_t* ui;
+    Int_t* i;
+    Float_t* f;
+    Long64_t* l;
+    ULong64_t* ul;
+  };
+  // input: всегда должно быть: b1 <= b < b3
+
   //size_t Size=0;
-  Long64_t bufid; // номер буфера (=идентификатор)
+  Long64_t bufnum=0; // номер буфера (=идентификатор)
   UChar_t flag=0;
   //0 - empty, can be filled;
   //1 - filled, can be analyzed;
   //2 - analyzed, can be deleted.
-
+  //9 - output: буфер готов, можно писать
 
   // public:
   //   BufClass(size_t sz);
@@ -141,7 +168,7 @@ RQ_OBJECT("CRS")
   //static const int MAXTRANS7=7;
   static const int RAWSIZE=10485760; //10 MB
 
-  static const int DECSIZE=1048576; //1 MB
+  //static const int DECSIZE=1048576; //1 MB
   static const int NDEC=300; // number of Dec buffers in ring
 
   //--------variables---------
@@ -166,21 +193,31 @@ RQ_OBJECT("CRS")
   string rootname;
   string logname;
 
-  UChar_t* DecBuf_ring; //указатель на буфер, куда пишутся декодированные данные
-  UChar_t* DecBuf; //текущий указатель в буфере DecBuf_ring
-  UChar_t* DecBuf1; //for Fill_Dec80+ 
-  ULong64_t* DecBuf8;
-  Int_t idec; //index of DecBuf;
-  std::list<Pair> decw_list;
+  //UChar_t* DecBuf_ring2; // = DecBuf_ring + OFF_SIZE
+  //UChar_t* DecBuf_ring; //указатель на буфер, куда пишутся декодированные данные
+
+
+
+
+  // UChar_t* DecBuf; //текущий указатель в буфере DecBuf_ring
+  // UChar_t* DecBuf1; //for Fill_Dec80+ 
+  // ULong64_t* DecBuf8;
+  // Int_t idec; //index of DecBuf;
+
+
+
+
+
+  //std::list<Pair> decw_list;
 
   //для Fill_dec82+
-  UChar_t *Buf82; // начало Dec буфера (должно быть внутри DecBuf_ring)
-  union82 u82; // текущее положение в Dec буфере
+  //UChar_t *Buf82; // начало Dec буфера (должно быть внутри DecBuf_ring)
+  //union82 u82; // текущее положение в Dec буфере
 
   Int_t mdec1; //index of Dec buffer in ring for decoding
   Int_t mdec2; //index of Dec buffer in ring for writing
   bool b_decwrite[NDEC];
-  Int_t dec_len[NDEC];
+  //Int_t dec_len[NDEC];
 
   //std::string smask_e,smask_p; //полные маски для e(event) и p(pulse)
   std::string sdec_e,sdec_p; //реальные маски для e(event) и p(pulse)
@@ -455,12 +492,12 @@ RQ_OBJECT("CRS")
   //int CountChan();
 
   void Init_Inp_Buf();
-  void AnaBuf3(buf_iter buf);
-  void Decode_switch3(UInt_t ibuf);
+  void AnaBuf3(buf_iter buf_it);
+  void Decode_switch3(buf_iter buf_it);
 
   void InitBuf();
-  void StopThreads(int all);
-  void EndAna(int all);
+  void StopThreads(int end_ana);
+  void EndAna(int end_ana);
   void FAnalyze2(bool nobatch);
   void AnaBuf(int loc_ibuf);
   int DoBuf();
@@ -512,7 +549,7 @@ RQ_OBJECT("CRS")
 
   //int Set_Trigger();
   void Ana_start();
-  void Ana2(int all);
+  void Ana2(int end_ana, buf_iter buf_it);
 
   void Event_Insert_Pulse(eventlist *Elist, PulseClass* pls);
   void Make_Events(std::list<eventlist>::iterator BB);
@@ -526,19 +563,20 @@ RQ_OBJECT("CRS")
   void Fill_Dec76(EventClass* evt);
   void Fill_Dec77(EventClass* evt);
   void Fill_Dec78(EventClass* evt);
-  void Fill_Dec79(EventClass* evt);
+  void Fill_Dec79(EventClass* evt, buf_iter buf_it);
   void Fill_Dec80(EventClass* evt);
   void Fill_Dec81(EventClass* evt);
   void Fill_Dec82(EventClass* evt);
 
-  void Fill_Dec82_old(EventClass* evt);
+  //void Fill_Dec82_old(EventClass* evt);
 
   //void Fill_Txt(EventClass* evt);
 
   void Fill_Dec_Simul();
   //void Flush_Dec_old();
   int Wr_Dec(UChar_t* buf, int len);
-  void Flush_Dec();
+  void Flush_Dec3(buf_iter buf_it, int end_ana);
+  //void Flush_Dec();
 
   void Fill_Raw(EventClass* evt);
   void Flush_Raw();

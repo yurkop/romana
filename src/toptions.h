@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 174
+#define CDEF 175
 
 /*
 #include <list>
@@ -232,7 +232,9 @@ public:
   Int_t usb_size; //in kB
   Int_t rbuf_size; //in kB
 
-  Int_t ibuf_size=100; //inp_buf size in MB
+  Int_t ibuf_size=100;   //inpbuf size in MB (input)
+  Int_t decbuf_size=100; //decbuf size in MB (output)
+  Int_t rawbuf_size=100; //rawbuf size in MB (output)
 
   //Int_t event_buf; //length of event buffer
   //analysis starts only after filling first event_buf

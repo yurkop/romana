@@ -14,18 +14,73 @@ UChar_t buf_in[64];
 UChar_t device[4] = {}; // device_code, Serial_n, nplates, ver_po
 
 cyusb_handle *cy_handle;
-int Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par);
+void init_usb(int ndevice);
+int Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par, int tmout, int delay, int ans);
 
 int main(int argc, char *argv[])
 {
   int r;
-  if (argc!=3) {
-    printf("Usage: %s ndevice niter \n",argv[0]);
+  if (argc!=7) {
+    printf("Usage: %s ndevice niter delay tmout ans\n",argv[0]);
+    printf("ndevice - номер прибора (если их несколько)\n");
+    printf("niter - число итераций\n");
+    printf("cmd: команда (1,3,4,8,9,34=3+4\n");
+    printf("delay - задержка в мсек\n");
+    printf("tmout - в bulk_transfer (мсек)\n");
+    printf("ans =1/0 - запрашивать/не запрашивать ответ на команду\n");
     return 1;
   }
   int ndevice = std::stoi(argv[1]);
   int niter = std::stoi(argv[2]);
+  int cmd = std::stoi(argv[3]);
+  int delay = std::stoi(argv[4]);
+  int tmout = std::stoi(argv[5]);
+  int ans = std::stoi(argv[6]);
 
+
+  init_usb(ndevice);
+
+
+  cout << "Reset usb (command7) start: " << endl;
+  Command32(7,0,0,0,tmout,delay,ans); //reset usb command
+  cyusb_close();
+  cy_handle=0;
+
+  std::this_thread::sleep_for(2000 * 1ms);
+  cout << "Reset usb (command7) end: " << endl;
+
+  init_usb(ndevice);
+
+
+
+  for (int i=0;i<niter;i++) {
+    cout << "Iter: " << i << endl;
+    switch (cmd) {
+    case 1:
+    case 3:
+    case 4:
+    case 8:
+    case 9: 
+      //cout << "Пуск: " << i << endl;
+      std::this_thread::sleep_for(delay * 1ms);
+      Command32(cmd,0,0,0,tmout,delay,ans); //pusk
+      break;
+    case 34:
+      //cout << "Стоп: " << i << endl;
+      std::this_thread::sleep_for(delay * 1ms);
+      Command32(3,0,0,0,tmout,delay,ans); //pusk
+      std::this_thread::sleep_for(delay * 1ms);
+      Command32(4,0,0,0,tmout,delay,ans); //stop
+      break;
+    default:
+      cout << "wrong cmd: " << i << " " << cmd << endl;
+    }
+  }
+
+}
+
+void init_usb(int ndevice) {
+  int r=0;
   int ndev = cyusb_open();
 
   // if ( ndev != 1 ) {
@@ -72,33 +127,23 @@ int main(int argc, char *argv[])
   else
     printf("Successfully claimed interface\n");
 
-  Command32(1,0,0,0);
+  Command32(1,0,0,0,0,0,1);
   memcpy(device,buf_in+1,4);
   for (auto i=0;i<4;i++) {
     cout << i << " " << (int) device[i] << endl;
   }
-
-  for (int i=0;i<niter;i++) {
-    // cout << "Пуск: " << i << endl;
-    // std::this_thread::sleep_for(1000ms);
-    // Command32(3,0,0,0); //pusk
-    cout << "Стоп: " << i << endl;
-    std::this_thread::sleep_for(1000ms);
-    Command32(4,0,0,0); //stop
-  }
-
 }
 
-int Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
+int Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par, int tmout, int delay, int ans) {
 
   int transferred = 0;
-  int r;
+  int r=0;
 
   int len_in,len_out;
 
 
 
-  printf("Cmd32: %d %d %d %d\n",(int) cmd, (int) ch, (int) type, par);
+  printf("Cmd32: %d %d %d %d %d %d\n",(int) cmd, (int) ch, (int) type, par, tmout, ans);
 
   buf_out[0] = cmd;
   buf_out[1] = ch;
@@ -146,34 +191,26 @@ int Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
   }
 
   std::ostringstream oss;
-  r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, 0);
+  // cout << "команда: " << (int)cmd << endl;
+  r = cyusb_bulk_transfer(cy_handle, 0x01, buf_out, len_out, &transferred, tmout);
+  // cout << "прошла: " << (int)cmd << endl;
   if (r) {
     oss << " Error_out";
-    //printf("Error6! %d: \n",buf_out[1]);
     cyusb_error(r);
-    //cyusb_close();
   }
 
-  if (cmd==8) { // если сброс сч./буф. -> задержка
-    std::this_thread::sleep_for(100ms);
-  }
+  std::this_thread::sleep_for(delay*1ms);
 
-  if (cmd!=7 && cmd!=12) { //сброс USB и Тест
-    r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, 0);
+  if (ans && cmd!=7 && cmd!=12) { // 7 и 12: сброс USB и Тест
+    // std::this_thread::sleep_for(3000*1ms);
+    // cout << "ответ: " << (int)cmd << endl;
+    r = cyusb_bulk_transfer(cy_handle, 0x81, buf_in, len_in, &transferred, tmout);
+    // cout << "прошел: " << (int)cmd << endl;
     if (r) {
       oss << " Error_in";
-	//sprintf(ss,"Error_in");
-      //printf("Error7! %d: \n",buf_out[1]);
       cyusb_error(r);
-      //cyusb_close();
     }
-    // else
-    //   oss << " " << len_in << " " << (int) buf_in[0];
-	//sprintf(ss,"%d %d",len_in,buf_in[0]);
   }
-  // else {
-  //   oss << " none";
-  // }
   if (oss.str().size()) {
     cout << oss.str().data() << endl;
   }

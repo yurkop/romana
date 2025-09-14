@@ -115,19 +115,49 @@ const int MAXSHORT=32767;
 //const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
 //const Long64_t GLBSIZE=1024*1024*1024; //1024 MB
 
-int tr_size; //=opt.usb_size*1024; - размер трансфера в байтах
-const int TR_SIZE = 1024*1024*2; //2 MB
-//OFF_SIZE должно быть >= макс. размера одного события (импульса)
-// Для AK-32 это ~32kB 
-const int OFF_SIZE = 64*1024; // 64kB > ~32kB
 
+
+
+
+// obsolete - проверить, где используется и удалить
+int tr_size; //=opt.usb_size*1024; - размер трансфера в байтах
+
+
+//---------- Input buffers--------------
+const Long64_t TR_SIZE = 1024*1024*2; //2 MB - размер трансфера в байтах
+const Long64_t OFF_SIZE = TR_SIZE; //2 MB, на всякий случай
+// OFF_SIZE должно быть >= макс. размера одного события (импульса)
+// Для AK-32 это ~32kB 
+// 2 MB - больше 32kB
+
+BufClass InpBuf_ring2; // = OFF_SIZE + InpBuf_ring
+BufClass InpBuf_ring;  // буфер, куда записываются все вход. данные (usb или из файла)
+// Реально создается InpBuf_ring2, начало которого на OFF_SIZE
+// сдвинуто влево от InpBuf_ring
+
+
+//---------- Decoder output buffers--------------
+const Long64_t DEC_SIZE = 1024*1024; //1 MB
+
+BufClass DecBuf_ring2; // = DecBuf_ring + OFF_SIZE
+BufClass DecBuf_ring; //указатель на буфер, куда пишутся декодированные данные
+// Реально создается DecBuf_ring2, КОНЕЦ которого на OFF_SIZE
+// сдвинут ВПРАВО от конца DecBuf_ring
+
+buf_iter decbuf_it;
+
+
+
+//---------- Input/output lists of buffers--------------
 std::list<BufClass> inp_list; // входные данные (usb или из файла)
 //std::deque<BufClass> raw_deq; // запись raw
 //std::deque<BufClass> dec_deq; // запись dec
+std::list<BufClass> dec_list;
+// выходные данные (dec)
+std::list<BufClass> raw_list;
+// выходные данные (raw)
 
-BufClass GBuf;  // буфер, куда записываются все вход. данные (usb или из файла)
-// Реально создается GBuf2, начало которого на OFF_SIZE сдвинуто влево от GBuf
-BufClass GBuf2; // = OFF_SIZE + Gbuf
+
 
 
 
@@ -240,7 +270,7 @@ static void cback3(libusb_transfer *trans) {
 
   double rr = trans->actual_length*100;
   rr/=TR_SIZE;
-  prnt("ss 4d 4.0fss;",BGRN,"cbk:",inp_list.size(),rr,"%",RST);
+  prnt("ss 4d l 4.0fss;",BGRN,"cbk:",inp_list.size(),trans->actual_length,rr,"%",RST);
 
   if (trans->actual_length) {
 
@@ -260,6 +290,10 @@ static void cback3(libusb_transfer *trans) {
       buf_it->b1 = trans->buffer;
       buf_it->b3 = trans->buffer+trans->actual_length;
 
+      // разделение на однопоточный/многопоточный должно быть в AnaBuf3
+      crs->AnaBuf3(buf_it);
+
+      /*
       if (opt.nthreads==1) { // однопоточный (линейный) анализ
 	crs->AnaBuf3(buf_it);
       }
@@ -268,6 +302,7 @@ static void cback3(libusb_transfer *trans) {
 	// анализ
 	//crs->AnaBuf3_MT();
       }
+      */
     }
 
     // запись
@@ -299,8 +334,8 @@ static void cback3(libusb_transfer *trans) {
     int itr = *(int*) trans->user_data; //номер трансфера
     int i_prev = (itr+crs->ntrans-1)%crs->ntrans; //previous itr
     UChar_t* next_buf=crs->transfer[i_prev]->buffer + TR_SIZE;
-    if (next_buf+TR_SIZE > GBuf.b3) {
-      next_buf = GBuf.b1;
+    if (next_buf+TR_SIZE > InpBuf_ring.b3) {
+      next_buf = InpBuf_ring.b1;
     }
 
     //prnt("ss d x x xs;",BBLU,"trf:",itr,gl_sz,trans->buffer-GLBuf,trans->actual_length,RST);
@@ -518,7 +553,7 @@ void *handle_ana(void *ctx) {
       gSystem->Sleep(1);
     }
 
-    crs->Ana2(ana_all);
+    crs->Ana2(ana_all,decbuf_it);
 
     // вычисляем, нужно ли замедлять чтение файла, если анализ отстает
     if (crs->Fmode>1) { //только для чтения файла
@@ -550,30 +585,38 @@ void *handle_ana(void *ctx) {
 } //handle_ana
 
 void *handle_dec_write(void *ctx) {
-  
+
   cmut.Lock();
   cout << "dec_write thread started: " << endl;
   cmut.UnLock();
 
-  while (wrt_thread_run || !crs->decw_list.empty()) {
+  while (wrt_thread_run || !dec_list.empty()) {
 
-    if (!crs->decw_list.empty()) { //write
+    //prnt("ss ls;",BGRN,"decwr:",dec_list.size(),RST);
 
-      Pair p=crs->decw_list.front();
-      UChar_t* buf = p.first;
-      int len = p.second;
+    if (!dec_list.empty()) { //пишем
 
-      decw_mut.Lock();
-      // prnt("ss d x d ls;",KGRN,"decw_write: ",crs->decw_list.size(), buf, len, crs->DecBuf-crs->DecBuf_ring,RST);
-      crs->decw_list.pop_front();
-      decw_mut.UnLock();
+      for (auto it=dec_list.begin();it!=dec_list.end();++it) {
+	// проверка bufnum не нужна,
+	// т.к. dec_list заполняется всегда последовательно
+	//bool good_buf = it->flag==9 && it->bufnum==DecBuf_ring.bufnum;
+	if (it->flag==9) {
+	  //gSystem->Sleep(50); // для искусственного замедления (тест)
+	  crs->Wr_Dec(it->b1,it->b-it->b1);
+	  decw_mut.Lock();
+	  dec_list.erase(it);
+	  decw_mut.UnLock();
+	  break;
+	}
+      }
 
-      crs->Wr_Dec(buf,len);
+    } //if (!decw_list.empty())
+    // else {
+    //   gSystem->Sleep(5);
+    // }
+    //prnt("ss ls;",BRED,"decwr:",dec_list.size(),RST);
 
-    } //if (!crs->decw_list.empty())
-    else {
-      gSystem->Sleep(5);
-    }
+    gSystem->Sleep(55);
 
   } //while (wrt_thread_run)
 
@@ -762,12 +805,12 @@ void CRS::Ana_start() {
   //cout << "Ana_start finished..." << endl;
 }
 
-void CRS::Ana2(int all) {
+void CRS::Ana2(int end_ana, buf_iter buf_it) {
   // вызываем ana2 после каждого cback или DoBuf
   // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
-  // если all==0 ->
+  // если end_ana==0 ->
   // анализируем данные от Levents.begin() до Levents.end()-opt.ev_min
-  // если all!=0 ->
+  // если end_ana!=0 ->
   // анализируем данные от Levents.begin() до Levents.end()
 
   int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
@@ -782,7 +825,7 @@ void CRS::Ana2(int all) {
 
   std::list<EventClass>::iterator m_end = crs->Levents.end();
   //m_end = crs->Levents.end();
-  if (!all) { //analyze up to ev_min events
+  if (!end_ana) { //analyze up to ev_min events
     int nmin=opt.ev_min;
     while (m_end!=m_event && nmin>0) {
       --m_end;
@@ -827,7 +870,7 @@ void CRS::Ana2(int all) {
 		//crs->Fill_Dec76(&(*m_event));
 		//crs->Fill_Dec77(&(*m_event));
 		//crs->Fill_Dec78(&(*m_event));
-		crs->Fill_Dec79(&(*m_event));
+		crs->Fill_Dec79(&(*m_event),decbuf_it);
 	      }
 	      break;
 	    case 81:
@@ -864,9 +907,9 @@ void CRS::Ana2(int all) {
 
   //removed on 06.02.2020
   //cout << "Flush_ana YK: " << endl;
-  if (all) {
+  if (end_ana) {
     if (opt.dec_write) {
-      crs->Flush_Dec();
+      crs->Flush_Dec3(decbuf_it,end_ana);
     }
     if (opt.raw_write && opt.fProc) {
       crs->Flush_Raw();
@@ -1120,6 +1163,21 @@ void SockClass::Eval_Com() {
 CRS::CRS() {
 
   /*
+  GBuf2.b1 = new UChar_t[16];
+  GBuf2.b3 = GBuf2.b1 + 16;
+
+  GBuf2.b1[0]=11;
+  GBuf2.b1[1]=12;
+
+  union82 uu; // текущее положение в буфере
+  uu.b = GBuf2.b3;
+  while (uu.b > GBuf2.b1) {
+    --uu.ui;
+    cout << (void*)GBuf2.b1 << " " << uu.ui << " " << (int) *uu.ui << endl; 
+  }
+  exit(1);
+
+
   char cmd[200];
   sprintf(cmd,"telegram-send \"romana alert: countrate in channel %d is low: %0.1f 1/s\"",4,24.324456);
   //string cmd = "telegram-send \"romana alert: countrate is too low\"";
@@ -1235,8 +1293,11 @@ CRS::CRS() {
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
 
-  DecBuf_ring=new UChar_t[DECSIZE*NDEC]; //1*100 MB
-  DecBuf=DecBuf_ring;
+  //DecBuf_ring=new UChar_t[DECSIZE*NDEC]; //1*100 MB
+  //DecBuf=DecBuf_ring;
+
+
+
   RawBuf=new UChar_t[RAWSIZE]; //10 MB
 
   //strcpy(Fname," ");
@@ -1283,12 +1344,12 @@ CRS::CRS() {
 
 CRS::~CRS() {
   DoExit();
-  //cout << "~CRS()" << endl;
 
-  if (GBuf2.b1)
-    delete[] GBuf2.b1;
+  if (InpBuf_ring2.b1)
+    delete[] InpBuf_ring2.b1;
 
-  delete[] DecBuf_ring;
+  if (DecBuf_ring2.b1)
+    delete[] DecBuf_ring2.b1;
   delete[] RawBuf;
   delete[] GLBuf2;
 #ifdef SOCK
@@ -1900,7 +1961,7 @@ int CRS::Init_Transfer3() {
     int* ntr = new int;
     (*ntr) = i;
 
-    UChar_t* buf = GBuf.b1+TR_SIZE*i;
+    UChar_t* buf = InpBuf_ring.b1+TR_SIZE*i;
 
     //unsigned int timeout=2000; //0 millisec
     unsigned int timeout=400*(i+1); //0 millisec
@@ -3287,6 +3348,66 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
 
   //prnt("sss d sd sd sds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
 
+  switch (mod) {
+  case 32:
+  case 33:
+  case 34:
+  case 41:
+  case 51:
+  case 42:
+  case 52:
+    // Decode34(dec_iread[ibuf]-1,ibuf);
+    // break;
+  case 80:
+    // Decode80(dec_iread[ibuf]-1,ibuf);
+    // break;
+  case 78:
+    // Decode78(dec_iread[ibuf]-1,ibuf);
+    // break;
+  case 77:
+    // Decode77(dec_iread[ibuf]-1,ibuf);
+    // break;
+  case 76:
+    // Decode76(dec_iread[ibuf]-1,ibuf);
+    // break;
+  case 75:
+    // Decode75(dec_iread[ibuf]-1,ibuf);
+    // break;
+  case 1:
+    // Decode_adcm(dec_iread[ibuf]-1,ibuf);
+    // break;
+  case 3:
+    // Decode_adcm_dec(dec_iread[ibuf]-1,ibuf);
+    // break;
+    
+    prnt("sss d d ds;",BRED,pname,": file is too old. Try to use romana v0.930 or earlier: ",fmt,mod,sz,RST);
+    return 1; 
+
+
+  // case 35:
+  // case 43:
+  // case 53:
+  // case 36:
+  // case 44:
+  // case 54:
+  // case 45:
+  //   Decode35(dec_iread[ibuf]-1,ibuf);
+  //   break;
+  // case 79:
+  //   Decode79(dec_iread[ibuf]-1,ibuf);
+  //   break;
+  // case 22:
+  //   Decode2(dec_iread[ibuf]-1,ibuf);
+  //   break;
+  // default:
+  //   eventlist *Blist;
+  //   Dec_Init(Blist,0);
+  //   break;
+  }
+
+
+
+
   //cout << "mod: " << mod << " " << fmt << " " << sz << endl;
   if (mod>100 || sz<5e4 || sz>5e5){//возможно, это текстовый файл
     //или старый файл без параметров
@@ -3498,34 +3619,510 @@ void CRS::Make_prof_ch() {
   // }
 }
 
+#ifdef ANA3
 void CRS::AnaBuf3(buf_iter buf_it) {
-  // Проверяем предыдущий буфер.
-  // Если его конец совпадает с началом текущего -> ничего не делаем.
-  // Если не совпадает -> копируем последнее событие перед началом текущего.
-  // (от b2 до b3)
+  // 1. Сначала смотрим на конец анализируемого буфера buf_it:
+  // - ищем начало последнего события в конце буфера
+  // - если нашли:
+  //   - записываем его в b текущего буфера
+  // - если не нашли (дошли до b1, начала события нет):
+  //   - ничего не делаем, b остается равным 0
+  // - flag текущего +1: сделан findlast 
 
-  if (buf_it!=inp_list.begin()) { //есть предыдущий буфер
-    buf_iter prev = std::prev(buf_it);
-    buf_it->bufid = prev->bufid+1;
-    if (prev->b3!=buf_it->b1) {
-      //конец предыдущего не совпадает с началом текущего
-      size_t count = prev->b3 - prev->b2;
-      memmove(buf_it->b1-count, prev->b2, count);
+  // 2. Потом смотрим на начало анализируемого буфера:
+  // - Проверяем предыдущий буфер.
+  // - Если его конец меньше начала текущего
+  //   или b1 предыдущего > b1 текущего (переход через кольцевой буфер), то:
+  //   1) копируем кусок последнего события из предыдущего перед началом
+  //   текущего (от b до b3 предыдущего буфера).
+  //   2) b1 текущего сдвигается влево
+  // - Если его конец больше начала текущего -> такого не может быть!!!
+  // - Если совпадают - ничего не делаем.
+  // - flag предыдущего +1: проверен/скопирован хвост.
+
+  // 3. Проверяем b==0
+  // - если b==0 ->
+  //     b=b1, весь буфер считается куском события
+  //     flag текущего +1: анализ (не нужен)
+  // - если b!=0 ->
+  //     запускаем анализ текущего буфера от b1 до b.
+  //     в конце анализа: flag текущего +1: провели анализ
+  //
+  // Итого если flag==3 (fildlast, скопирован хвост, проанализирован) ->
+  // элемент bufclass можно удалять
+  //
+
+
+
+  // 1. ищем начало события в конце буфера
+  // в следующем вызове этот "хвост" прицепится к следующему буферу
+  FindLast3(buf_it);
+  buf_it->flag++;
+ 
+  // 2. Копируем хвост предыдущего буфера.
+  //предыдущая запись всегда должна существовать
+  buf_iter prev = std::prev(buf_it);
+  buf_it->bufnum = prev->bufnum+1;
+  if (prev->b3<buf_it->b1 //конец предыдущего раньше начала текущего
+      || prev->b1 > buf_it->b1) { // или начало предыдущего позже начала
+    // текущего (переход через конец кольцевого буфера)
+    size_t count = prev->b3 - prev->b;
+    if (count > OFF_SIZE) {
+      prnt("ss l ls",BRED,"Error: count > OFF_SIZE:",buf_it->bufnum,count,RST);
+      return;
     }
+    buf_it->b1-=count; //сдвигаем начало буфера влево
+    memmove(buf_it->b1, prev->b, count);
   }
-  else // это первый буфер
-    buf_it->bufid=0;
+  else if (prev->b3>buf_it->b1) {
+    //конец предыдущего позже начала текущего: такого не может быть!
+    prnt("ss ls",BRED,"prev->b3>buf_it->b1:",buf_it->bufnum,RST);
+  }
+  else {
+    //иначе (они равны) ничего не делаем
+    cout << "----equal----" << endl;
+  }
+  prev->flag++;
+
+  prnt("ss ls;",BBLU,"Step2:",buf_it->bufnum,RST);
+
+  if (buf_it->b) {
+    buf_it->flag++; //анализ, в нем должно быть buf_it->flag++
+  }
+  else {
+    buf_it->b=buf_it->b1; //весь буфер считается куском события
+    buf_it->flag++; //анализ не нужен
+    cout << "----tail----" << endl;
+  }
+
+  prnt("ss l d x x xs;",BMAG,"Step3:",buf_it->bufnum,prev->flag,
+       buf_it->b1,buf_it->b,buf_it->b3,RST);
+  prnt("ss l d l l ls;",BRED,"Step3:",buf_it->bufnum,prev->flag,
+       buf_it->b3-buf_it->b1,
+       buf_it->b-buf_it->b1,
+       buf_it->b1-prev->b1,
+       RST);
 
 
-  // ищем начало события в начале буфера и в конце
-  //FindLast3(buf_it);
+
+
 
 
 
   //Decode_switch3(ibuf);
-  Make_Events(Bufevents.begin());
-  crs->Ana2(0);
+  //Make_Events(Bufevents.begin());
+  //crs->Ana2(0);
+} //AnaBuf3
+
+void CRS::FindLast3(buf_iter buf_it) {
+  // находит начало последнего события в буфере inbuf
+  // и записывает указатель на него в buf_it->b
+
+  UInt_t frmt;
+  union82 uu; // текущее положение в буфере
+  uu.b = buf_it->b3;
+  
+  switch (module) {
+  case 1: //adcm raw
+    /*
+      доделать, проверить!
+      while (uu.b > buf_it->b1) {
+      --uu.ui;
+      if (*uu.ui==0x2a500100) {
+      //outbuf.Buf=uu.b;
+      }
+      }
+    */
+    prnt("ss ls;",BRED,"Error: adcm raw no last event:",buf_it->bufnum,RST);
+    break;
+  case 3: //adcm dec
+    while (uu.b > buf_it->b1) {
+      --uu.us;
+      if (*uu.us==ID_EVNT) {
+	buf_it->b = uu.b;
+	break;
+      }
+    }
+    // если дошли до начала и не нашли, b остается равным 0
+    //prnt("ss ls",BRED,"Error: no last event:",buf_it->bufnum,RST);
+    break;
+  case 22:
+    while (uu.b > buf_it->b1) {
+      --uu.us;
+      //find frmt==0 -> this is the start of a pulse
+      frmt = *(uu.b+1) & 0x70;
+      if (frmt==0) {
+	buf_it->b = uu.b;
+	break;
+      }
+    }
+    // если дошли до начала и не нашли, b остается равным 0
+    break;
+  case 32:
+  case 33:
+  case 34:
+  case 35:
+  case 36:
+  case 41:
+  case 42:
+  case 43:
+  case 44:
+  case 51:
+  case 52:
+  case 53:
+  case 54:
+  case 45:
+    while (uu.b > buf_it->b1) {
+      --uu.ul;
+      //find frmt==0 -> this is the start of a pulse
+      frmt = *(uu.b+6) & 0xF0;
+      if (frmt==0) {
+	buf_it->b = uu.b;
+	break;
+      }
+    }
+    // если дошли до начала и не нашли, b остается равным 0
+    break;
+  case 75:
+  case 76:
+  case 77:
+  case 78:
+  case 79:
+  case 80:
+    while (uu.b > buf_it->b1) {
+      --uu.ul;
+      //find frmt==1 -> this is the start of a pulse
+      frmt = *(uu.b+7) & 0x80; //event start bit
+      if (frmt) {
+	buf_it->b = uu.b;
+	break;
+      }
+    }
+    // если дошли до начала и не нашли, b остается равным 0
+    break;
+
+  default:
+    cout << "Wrong module: " << module << endl;
+  }
+
+  //prnt("ss ls;",BRED,"Step1. FindLast3:",buf_it->bufnum,RST);
+
 }
+
+void CRS::Decode_switch3(buf_iter buf_it) {
+  int ibuf;
+
+  switch (module) {
+  case 32:
+  case 33:
+  case 34:
+  case 41:
+  case 51:
+    //Decode34(dec_iread[ibuf]-1,ibuf);
+    //break;
+  case 42:
+  case 52:
+    Decode34(dec_iread[ibuf]-1,ibuf);
+    //Decode42(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 35:
+  case 43:
+  case 53:
+  case 36:
+  case 44:
+  case 54:
+  case 45:
+    Decode35(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 80:
+    Decode80(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 79:
+    //decoder->Decode79(dec_iread[ibuf]-1,ibuf);
+    //cout << "Decode79: " << f_read << " " << *decoder->zfile << endl;
+    Decode79(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 78:
+    Decode78(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 77:
+    Decode77(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 76:
+    Decode76(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 75:
+    Decode75(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 22:
+    Decode2(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 1:
+    Decode_adcm(dec_iread[ibuf]-1,ibuf);
+    break;
+  case 3:
+    Decode_adcm_dec(dec_iread[ibuf]-1,ibuf);
+    break;
+  default:
+    eventlist *Blist;
+    Dec_Init(Blist,0);
+    break;
+  }
+
+  // gSystem->Sleep(100);
+  dec_iread[ibuf]=0;
+  //--------end
+} //Decode_switch3
+
+void CRS::Decode36(BufClass &inbuf) {
+  // декодирует буфер inbuf и складывает декодированные данные в Blist
+  // Blist записывается в "списке списков" Bufevents
+  // т.е. Bufevents содержит несколько Blist-ов, каждый для своего буфера
+  // Предполагается, что inbuf содержит полные события
+  // (отбор событий происходит до вызова Decode36
+
+  // сделать проверку inbuf.flag (нужно ли??)
+  // в Dec_End iread=0 (было не 0). Проверить, зачем это нужно.
+
+ 
+
+
+
+  ULong64_t data;
+  Int_t d32;
+  Short_t d16;
+  PkClass pk;
+  PulseClass ipls=dummy_pulse;
+
+  union82 uu; // текущее положение в буфере
+  uu.b = inbuf.b1;
+  UChar_t frmt = (uu.b[6] & 0xF0) >> 4;
+
+  eventlist *Blist;
+  Dec_Init(Blist,frmt);
+
+  // анализируем от начала буфера до конца "полных" событий (.b)
+  while (uu.b < inbuf.b) {
+    frmt = (uu.b[6] & 0xF0) >> 4;
+    data = *uu.ul & sixbytes;
+    UChar_t ch = uu.b[7];
+
+    // if (initevt!=3) {
+    //   prnt("ss l d d d ds;",BGRN,"d35:",idx1,ch,frmt,initevt,ipls.ptype,RST);
+    // }
+
+    if (frmt && ch!=ipls.Chan) { //channel mismatch
+      // if (initevt!=3) {
+      // 	prnt("ss d d d ds;",BRED,"m35:",ch,ipls.Chan,frmt,initevt,RST);
+      // }
+      ++errors[ER_MIS];
+      ipls.ptype|=P_BADCH;
+      uu.ul++;
+      continue;
+    }
+
+    //prnt("sss;",BRED,"Good",RST);
+    //prnt(" d",frmt);
+
+    switch (frmt) {
+    case 0:
+      //prnt("ss l d d ds;",BBLU,"CH:",idx1,ch,ipls.Chan,ipls.ptype,RST);
+      if (*uu.ul==0) {
+	++errors[ER_ZERO]; //zero data
+	uu.ul++;
+	continue;
+      }
+
+      // первый dummy_pulse, у которого ptype=P_BADPEAK
+      if (ipls.ptype==0) { //analyze old pulse (если не dummy)
+	if (opt.Dsp[ipls.Chan]) {
+	  MakePk(pk,ipls);
+	}
+	PulseAna(ipls);
+	Event_Insert_Pulse(Blist,&ipls);
+      }
+
+      // test ch, then create new pulse
+
+      if (ch!=255 && ch>=opt.Nchan) { //bad channel
+	++errors[ER_CH];
+	ipls.ptype|=P_BADCH;
+	//idx1+=8;
+	//continue;
+	break;
+      }
+
+      ipls=PulseClass();
+      npulses++;
+      ipls.Chan=ch;
+      ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.Pre[ch];
+
+      if (ch==255) { //start channel
+	ipls.Spin|=128; //bit 7 - hardware counters
+	//prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
+      }
+
+      break;
+
+    case 1:
+      ipls.Spin |= uu.b[5] & 1;
+      ipls.Counter = data & 0xFFFFFFFFFF;
+      //prnt("ss d l ls;",BMAG,"CONT1:",ch,ipls.Tstamp64,ipls.Counter,RST);
+      break;
+    case 2:
+      if ((int)ipls.sData.size()>=cpar.Len[ipls.Chan]) {
+	ipls.ptype|=P_BADSZ;
+	++errors[ER_LEN];
+	uu.ul++;
+	continue;
+      }
+      for (int i=0;i<4;i++) {
+#ifdef BITS
+	  (data>>=BITS)<<=BITS;
+#endif
+	d32 = data & 0x7FF; //11 bit
+	ipls.sData.push_back((d32<<21)>>21);
+	data>>=12;
+      }
+      break;
+    case 3:
+      if ((int)ipls.sData.size()>=cpar.Len[ipls.Chan]) {
+	ipls.ptype|=P_BADSZ;
+	++errors[ER_LEN];
+	uu.ul++;
+	continue;
+      }
+      if (cpar.F24) {
+	for (int i=0;i<2;i++) {
+#ifdef BITS
+	  (data>>=BITS)<<=BITS;
+#endif
+	  d32 = data & 0xFFFFFF; //24 bit
+	  Float_t f32 = (d32<<8)>>8;
+	  //Float_t f33 = f32+1;
+	  //Float_t f34 = f32-1;
+	  //Double_t f32 = (d32<<8)>>8;
+
+	  //printf("d32_0: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f32/256.0f);
+	  //printf("d32_1: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f33/256.0f);
+	  //printf("d32_2: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f34/256.0f);
+
+	  ipls.sData.push_back(f32/256.0f);
+	  data>>=24;
+	}
+      }
+      else { 
+	for (int i=0;i<3;i++) {
+#ifdef BITS
+	  (data>>=BITS)<<=BITS;
+#endif
+	  d16 = data & 0xFFFF; //16 bit
+	  ipls.sData.push_back(d16);
+	  data>>=16;
+	}
+      }
+      break;
+    case 4: //C – [24]; A – [24]
+      pk.A = data & 0xFFFFFF;
+      pk.A = (pk.A<<8)>>8;
+      data>>=24;
+      pk.C = data & 0xFFFFFF;
+      pk.C = (pk.C<<8)>>8;
+      break;
+    case 5: //RX – [12]; QX – [36]
+      pk.QX = data & 0xFFFFFFFFF;
+      pk.QX = (pk.QX<<28)>>28;
+      data>>=36;
+      pk.RX = data & 0xFFF;
+      pk.RX = (pk.RX<<20)>>20;
+      break;
+    case 6: //AY – [28]; [E]; H – [16]
+      pk.H = data & 0xFFFF;
+      data>>=16;
+      pk.E = data & 1;
+      data>>=4;
+      pk.AY = data & 0xFFFFFFF;
+      pk.AY = (pk.AY<<4)>>4;
+      break;
+    case 8: //RX – [20]; C – [28]
+      pk.C = data & 0xFFFFFFF;
+      pk.C = (pk.C<<4)>>4;
+      data>>=28;
+      pk.RX = data & 0xFFFFF;
+      pk.RX = (pk.RX<<12)>>12;
+      break;
+    case 9: //A – [28]
+      pk.A = data & 0xFFFFFFF;
+      pk.A = (pk.A<<4)>>4;
+      break;
+    case 10: //QX – [40]
+      pk.QX = data & 0xFFFFFFFFFF;
+      pk.QX = (pk.QX<<24)>>24;
+      break;
+    case 11: { //Counters
+      ipls.Counter = data;
+      ipls.Spin|=128; //bit 7 - hardware counters
+
+      double dt = (ipls.Tstamp64 - Tst3o[ipls.Chan])*1e-9*opt.Period;
+      if (dt) {
+	rate_hard[ipls.Chan] = (ipls.Counter - npulses3o[ipls.Chan])/dt;
+      }
+      Tst3o[ipls.Chan] = ipls.Tstamp64;
+      npulses3o[ipls.Chan] = ipls.Counter;
+
+      //prnt("ss d l l f fs;",BBLU,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate3[ipls.Chan],RST);
+      break;
+    }
+    case 12:
+      if (data & 1) {
+	++errors[ER_OVF];
+	ipls.Spin|=128; //bit 7 - hardware counters
+	ipls.Spin|=4; //bit 2 - ER_OVF
+      }
+      //prnt("ss d l ls;",KGRN,"OVF:",ch,ipls.Tstamp64,data&1,RST);
+      break;
+    case 13: {
+      int bit23 = (data & 0x800000)>>23;
+      if (!bit23) {
+	//cout << "bit23: " << data << " " << bit23 << endl;
+	++errors[ER_CFD];	
+      }
+      pk.CF1 = data & 0x7FFFFF; //23
+      pk.CF1 = (pk.CF1<<9)>>9;  //32-23
+      data>>=24;
+      pk.CF2 = data & 0x7FFFFF; //23
+      pk.CF2 = (pk.CF2<<9)>>9;  //32-23
+      //prnt("ss d l d d ds;",KGRN,"CFD:",ch,ipls.Tstamp64,bit23,pk.CF1,pk.CF2,RST);
+    }
+      break;
+    default:
+      ++errors[ER_FRMT];
+    } //switch (frmt);
+
+    uu.ul++;
+  } //while
+
+  //add last pulse to the list
+  // if (nevents>207000 && nevents<210000) {
+  //   cout << "last:" << endl;
+  //   ipls.PrintPulse(0);
+  // }
+  if (ipls.ptype==0) {
+    if (opt.Dsp[ipls.Chan]) {
+      MakePk(pk,ipls);
+    }
+    PulseAna(ipls);
+    Event_Insert_Pulse(Blist,&ipls);
+  }
+
+  Dec_End(Blist,0,255);
+
+} //decode36
+
+
+
+
+#endif //ANA3
 
 void CRS::AnaBuf(int loc_ibuf) {
 
@@ -3609,7 +4206,7 @@ int CRS::DoBuf() {
     //prnt("ss l ls;",BRED,"17:",nbuffers,nevents,RST);
     //gSystem->Sleep(100);
     
-    crs->Ana2(0);
+    crs->Ana2(0,decbuf_it);
 
     nbuffers++;
     //return nbuffers;
@@ -3646,7 +4243,7 @@ int CRS::DoBuf() {
   }
 
   return nbuffers;
-}
+} //DoBuf
 
 // int CRS::CountChan() {
 //   int res=0;
@@ -3658,20 +4255,26 @@ int CRS::DoBuf() {
 
 void CRS::Init_Inp_Buf() {
 
-  if (GBuf2.b1)
-    delete[] GBuf2.b1;
+  if (InpBuf_ring2.b1)
+    delete[] InpBuf_ring2.b1;
 
-  size_t sz = opt.ibuf_size*1024*1024;
-  GBuf2.b1 = new UChar_t[sz+OFF_SIZE];
-  GBuf2.b3 = GBuf2.b1 + sz + OFF_SIZE;
+  size_t sz = opt.ibuf_size*TR_SIZE;
+  InpBuf_ring2.b1 = new UChar_t[OFF_SIZE+sz];
+  InpBuf_ring2.b3 = InpBuf_ring2.b1 + OFF_SIZE + sz;
 
-  GBuf.b1 = GBuf2.b1 + OFF_SIZE;
-  GBuf.b3 = GBuf2.b3;
+  InpBuf_ring.b1 = InpBuf_ring2.b1 + OFF_SIZE;
+  InpBuf_ring.b3 = InpBuf_ring2.b3;
 
   inp_list.clear();
+  //inp_list не должен быть пустым. Вставляем в него "пустой" буфер,
+  // начало и конец которого совпадают с началом InpBuf_ring
+  auto buf_it = inp_list.insert(inp_list.end(),BufClass());
+  buf_it->b1 = InpBuf_ring.b1;
+  buf_it->b = InpBuf_ring.b1;
+  buf_it->b3 = InpBuf_ring.b1;
+  buf_it->flag=2;  // считаем, что сделаны Findlast + анализ
 
-
-  prnt("ss l ss;",BMAG,"GBuf size:",opt.ibuf_size,"MB",RST);
+  prnt("ss l ss;",BMAG,"InpBuf_ring size:",opt.ibuf_size,"MB",RST);
 
 }
 
@@ -3740,7 +4343,7 @@ void CRS::InitBuf() {
 
 }
 
-void CRS::StopThreads(int all) {
+void CRS::StopThreads(int end_ana) {
 
   //cout << "deleting threads... ";
   decode_thread_run=0;    
@@ -3765,9 +4368,8 @@ void CRS::StopThreads(int all) {
   }
 
   gSystem->Sleep(50);
-  //cout << "StopThreads: " << endl;
   ana_thread_run=0;
-  ana_all=all;
+  ana_all=end_ana;
   //ana_check=1;
   //ana_cond.Signal();
   if (trd_ana) {
@@ -3793,9 +4395,9 @@ void CRS::StopThreads(int all) {
   //cout << "done" << endl;
 }
 
-void CRS::EndAna(int all) {
-  //all=1 -> finish analysis of all buffers
-  //all=0 -> just stop, buffers remain not analyzed,
+void CRS::EndAna(int end_ana) {
+  //end_ana=1 -> finish analysis of all buffers
+  //end_ana=0 -> just stop, buffers remain not analyzed,
   //         can continue from this point on
 
   if (opt.nthreads>1) {
@@ -3804,12 +4406,12 @@ void CRS::EndAna(int all) {
       gSystem->Sleep(10);
     }
 
-    StopThreads(all);
+    StopThreads(end_ana);
   }
   else {
-    if (all) {
-      ana_all=all;
-      Ana2(1);
+    if (end_ana) {
+      ana_all=end_ana;
+      Ana2(1,decbuf_it);
     }
   }
 
@@ -4047,74 +4649,6 @@ void CRS::Show(bool force) {
   //cout << "Show end" << endl;
 }
 
-void CRS::Decode_switch3(UInt_t ibuf) {
-  if (ibuf!=gl_Nbuf-1) { // если текущий буфер (ibuf) не последний в кольце
-    FindLast(ibuf,9,7);
-  }
-
-  switch (module) {
-  case 32:
-  case 33:
-  case 34:
-  case 41:
-  case 51:
-    //Decode34(dec_iread[ibuf]-1,ibuf);
-    //break;
-  case 42:
-  case 52:
-    Decode34(dec_iread[ibuf]-1,ibuf);
-    //Decode42(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 35:
-  case 43:
-  case 53:
-  case 36:
-  case 44:
-  case 54:
-  case 45:
-    Decode35(dec_iread[ibuf]-1,ibuf);
-    //Decode42(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 80:
-    Decode80(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 79:
-    //decoder->Decode79(dec_iread[ibuf]-1,ibuf);
-    //cout << "Decode79: " << f_read << " " << *decoder->zfile << endl;
-    Decode79(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 78:
-    Decode78(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 77:
-    Decode77(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 76:
-    Decode76(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 75:
-    Decode75(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 22:
-    Decode2(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 1:
-    Decode_adcm(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 3:
-    Decode_adcm_dec(dec_iread[ibuf]-1,ibuf);
-    break;
-  default:
-    eventlist *Blist;
-    Dec_Init(Blist,0);
-    break;
-  }
-
-  // gSystem->Sleep(100);
-  dec_iread[ibuf]=0;
-  //--------end
-} //Decode_switch3
-
 void CRS::Decode_switch(UInt_t ibuf) {
   if (ibuf!=gl_Nbuf-1) { // если текущий буфер (ibuf) не последний в кольце
     FindLast(ibuf,9,7);
@@ -4195,136 +4729,7 @@ void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf, int loc_ibuf) {
 void CRS::Decode_any(UInt_t ibuf) {
   Decode_switch(ibuf);
   Make_Events(Bufevents.begin());
-  crs->Ana2(0);
-}
-
-void CRS::FindLast3(buf_iter buf_it) {
-  // находит начало последнего события в буфере inbuf
-  // в буфере inbuf и возвращает результат в outbuf, где
-  // Buf указывает на первое событие, а Buf+Size - на последнее целое событие
-
-  union82 uu; // текущее положение в буфере
-  uu.b = buf_it->b3;
-  
-  switch (module) {
-  case 1: //adcm raw
-    while (uu.b >= buf_it->b1) {
-      --uu.ui;
-      if (*uu.ui==0x2a500100) {
-	//outbuf.Buf=uu.b;
-      }
-    }
-    prnt("ss ls",BRED,"Error: no last event:",buf_it->bufid,RST);
-    break;
-  default:
-    cout << "Wrong module: " << module << endl;
-  }
-
-
-
-
-
-
-  /*
-  switch (module) {
-  case 1: //adcm raw
-    while (uu.b < inbuf.Buf+inbuf.Size) {
-      //for (Long64_t i=b_end[ibuf]-4;i>=b_start[ibuf];i-=4) {
-      //find *frmt==0x2a500100 -> this is the start of a pulse
-      frmt = *((UInt_t*) (GLBuf+i));
-      //cout << "for: " << i << " " << hex << frmt << dec << endl;
-      if (frmt==0x2a500100) {
-	if (sss>0) {
-	  UInt_t *header =  (UInt_t*) (GLBuf+i);
-	  header+=3;
-	  lflag=bits(*header,6,6);
-	  if (lflag) {
-	    b_end[ibuf]=sss;
-	    b_start[ibuf2]=sss;
-	    //prnt("ssd d l ls;",BGRN,"FindLast: ",ibuf,ibuf2,b_start[ibuf2],
-	    //b_end[ibuf],RST);
-	    return;
-	  }
-	} //if sss>0
-	sss=i;
-      } //if frmt
-    } //for i
-    cout << "1: Error: no last event: maybe USB buffer is too small: " << ibuf << endl;
-    break;
-  case 3: //adcm_dec
-    for (Long64_t i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
-      frmt = *((UShort_t*) (GLBuf+i));
-      if (frmt==ID_EVNT) {
-	b_end[ibuf]=i;
-	b_start[ibuf2]=i;
-	return;
-      }
-    } //for i
-    cout << "1: Error: no last event: maybe USB buffer is too small: " << ibuf << endl;
-    break;
-  case 22:
-    for (Long64_t i=b_end[ibuf]-2;i>=b_start[ibuf];i-=2) {
-      //find frmt==0 -> this is the start of a pulse
-      frmt = (GLBuf[i+1] & 0x70);
-      if (frmt==0) {
-	b_end[ibuf]=i;
-	b_start[ibuf2]=i;
-	return;
-      }
-    }
-    cout << "22: Error: no last event: maybe USB buffer is too small: " << ibuf << endl;
-    break;
-  case 32:
-  case 33:
-  case 34:
-  case 35:
-  case 36:
-  case 41:
-  case 42:
-  case 43:
-  case 44:
-  case 51:
-  case 52:
-  case 53:
-  case 54:
-  case 45:
-    for (Long64_t i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
-      //find frmt==0 -> this is the start of a pulse
-      frmt = (GLBuf[i+6] & 0xF0);
-      if (frmt==0) {
-	//Long64_t len = b_end[ibuf]-i;
-	b_end[ibuf]=i;
-	b_start[ibuf2]=i;
-        // prnt("ss2d2d2d 9d 9d 4d2ds;",KGRN,"FindL:",gl_iread, loc_ibuf, ibuf,
-        //      b_start[ibuf], b_end[ibuf], len, what, RST);
-        return;
-      }
-    }
-    // prnt("ss2d2d2d 9d 9d 9d 9d2ds;",KMAG,"ErrFL:",gl_iread, loc_ibuf, ibuf,
-    // 	b_start[ibuf], b_end[ibuf], b_start[ibuf2], b_end[ibuf]-b_start[ibuf], what, RST);
-    break;
-  case 75:
-  case 76:
-  case 77:
-  case 78:
-  case 79:
-  case 80:
-    for (Long64_t i=b_end[ibuf]-8;i>=b_start[ibuf];i-=8) {
-      //find frmt==1 -> this is the start of a pulse
-      frmt = GLBuf[i+7] & 0x80; //event start bit
-      if (frmt) {
-	b_end[ibuf]=i;
-	b_start[ibuf2]=i;
-	return;
-      }
-    }
-    cout << "75: Error: no last event: maybe USB buffer is too small: " << ibuf << endl;
-    break;
-  default:
-    cout << "Wrong module: " << module << endl;
-  }
-  */
-
+  crs->Ana2(0,decbuf_it);
 }
 
 void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
@@ -4725,6 +5130,7 @@ void CRS::Decode79a(UInt_t iread, UInt_t ibuf) {
 */
 
 void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
+  /*
   //ibuf - current sub-buffer
   // предполагается, что:
   //b_start[ibuf] - начинается на начале события (не может быть в середине)
@@ -4773,7 +5179,9 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
     }
 
     // в событии либо счетчики, либо пики
-    if (/*(evt->Spin & 128) &&*/ sdec_c) { //Counters
+    if (
+	//(evt->Spin & 128) &&
+	sdec_c) { //Counters
     } //Counters
     else { //Peaks
       for (auto ipls=evt->pulses.begin(); ipls!=evt->pulses.end(); ++ipls) {
@@ -4819,54 +5227,7 @@ void CRS::Decode81(UInt_t iread, UInt_t ibuf) {
   Dec_End(Blist,iread,254);
 
   //} //if (fill event)
-
-  /*
-  else { //fill pulses for reanalysis
-    while (idx1<b_end[ibuf]) {
-      frmt = GLBuf[idx1+7] & 0x80; //event start bit
-      buf8 = (ULong64_t*) (GLBuf+idx1);
-
-      if (frmt) { //event start
-	Tst = (*buf8) & sixbytes;
-	(*buf8)>>=48;
-	//Spn = UChar_t((*buf8) & 1);
-	Spn = UChar_t(*buf8);
-      }
-      else {
-	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
-	UShort_t* buf2u = (UShort_t*) buf2;
-	UChar_t* buf1u = (UChar_t*) buf2;
-	ipls->Chan = buf2[3];
-
-	if (Spn & 128) { //Counters
-	  ipls->Counter = (*buf8) & sixbytes;
-	  ipls->Pos = -32222;
-	}
-	else { //Peaks
-	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-
-	  //new2
-	  ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	  ipls->Tstamp64=Tst;// *opt.Period;
-
-	  ipls->Spin=Spn;
-	  ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
-
-	  ipls->Height = ((UInt_t) buf1u[7])<<8;
-
-	  ipls->Ecalibr(ipls->Area);
-	}
-	Event_Insert_Pulse(Blist,ipls);
-      }
-
-      idx1+=8;
-    } //while (idx1<buf_len)
-
-    Dec_End(Blist,iread,255);
-
-  } // else (if (opt.fProc))
-  */
-
+*/
 } //decode81
 
 void CRS::Decode80(UInt_t iread, UInt_t ibuf) {
@@ -5700,251 +6061,6 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
   // }
 
 } //MakePk
-
-void CRS::Decode36(BufClass &inbuf) {
-  // декодирует буфер inbuf и складывает декодированные данные в Blist
-  // Blist записывается в "списке списков" Bufevents
-  // т.е. Bufevents содержит несколько Blist-ов, каждый для своего буфера
-  // Предполагается, что inbuf содержит полные события
-  // (отбор событий происходит до вызова Decode36
-
-  // сделать проверку inbuf.flag (нужно ли??)
-  // в Dec_End iread=0 (было не 0). Проверить, зачем это нужно.
-
- 
-
-
-
-  ULong64_t data;
-  Int_t d32;
-  Short_t d16;
-  PkClass pk;
-  PulseClass ipls=dummy_pulse;
-
-  union82 uu; // текущее положение в буфере
-  uu.b = inbuf.b1;
-  UChar_t frmt = (uu.b[6] & 0xF0) >> 4;
-
-  eventlist *Blist;
-  Dec_Init(Blist,frmt);
-
-  // анализируем от начала буфера до конца "полных" событий (.b2)
-  while (uu.b < inbuf.b2) {
-    frmt = (uu.b[6] & 0xF0) >> 4;
-    data = *uu.ul & sixbytes;
-    UChar_t ch = uu.b[7];
-
-    // if (initevt!=3) {
-    //   prnt("ss l d d d ds;",BGRN,"d35:",idx1,ch,frmt,initevt,ipls.ptype,RST);
-    // }
-
-    if (frmt && ch!=ipls.Chan) { //channel mismatch
-      // if (initevt!=3) {
-      // 	prnt("ss d d d ds;",BRED,"m35:",ch,ipls.Chan,frmt,initevt,RST);
-      // }
-      ++errors[ER_MIS];
-      ipls.ptype|=P_BADCH;
-      uu.ul++;
-      continue;
-    }
-
-    //prnt("sss;",BRED,"Good",RST);
-    //prnt(" d",frmt);
-
-    switch (frmt) {
-    case 0:
-      //prnt("ss l d d ds;",BBLU,"CH:",idx1,ch,ipls.Chan,ipls.ptype,RST);
-      if (*uu.ul==0) {
-	++errors[ER_ZERO]; //zero data
-	uu.ul++;
-	continue;
-      }
-
-      // первый dummy_pulse, у которого ptype=P_BADPEAK
-      if (ipls.ptype==0) { //analyze old pulse (если не dummy)
-	if (opt.Dsp[ipls.Chan]) {
-	  MakePk(pk,ipls);
-	}
-	PulseAna(ipls);
-	Event_Insert_Pulse(Blist,&ipls);
-      }
-
-      // test ch, then create new pulse
-
-      if (ch!=255 && ch>=opt.Nchan) { //bad channel
-	++errors[ER_CH];
-	ipls.ptype|=P_BADCH;
-	//idx1+=8;
-	//continue;
-	break;
-      }
-
-      ipls=PulseClass();
-      npulses++;
-      ipls.Chan=ch;
-      ipls.Tstamp64=data;//+(Long64_t)opt.sD[ch];// - cpar.Pre[ch];
-
-      if (ch==255) { //start channel
-	ipls.Spin|=128; //bit 7 - hardware counters
-	//prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
-      }
-
-      break;
-
-    case 1:
-      ipls.Spin |= uu.b[5] & 1;
-      ipls.Counter = data & 0xFFFFFFFFFF;
-      //prnt("ss d l ls;",BMAG,"CONT1:",ch,ipls.Tstamp64,ipls.Counter,RST);
-      break;
-    case 2:
-      if ((int)ipls.sData.size()>=cpar.Len[ipls.Chan]) {
-	ipls.ptype|=P_BADSZ;
-	++errors[ER_LEN];
-	uu.ul++;
-	continue;
-      }
-      for (int i=0;i<4;i++) {
-#ifdef BITS
-	  (data>>=BITS)<<=BITS;
-#endif
-	d32 = data & 0x7FF; //11 bit
-	ipls.sData.push_back((d32<<21)>>21);
-	data>>=12;
-      }
-      break;
-    case 3:
-      if ((int)ipls.sData.size()>=cpar.Len[ipls.Chan]) {
-	ipls.ptype|=P_BADSZ;
-	++errors[ER_LEN];
-	uu.ul++;
-	continue;
-      }
-      if (cpar.F24) {
-	for (int i=0;i<2;i++) {
-#ifdef BITS
-	  (data>>=BITS)<<=BITS;
-#endif
-	  d32 = data & 0xFFFFFF; //24 bit
-	  Float_t f32 = (d32<<8)>>8;
-	  //Float_t f33 = f32+1;
-	  //Float_t f34 = f32-1;
-	  //Double_t f32 = (d32<<8)>>8;
-
-	  //printf("d32_0: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f32/256.0f);
-	  //printf("d32_1: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f33/256.0f);
-	  //printf("d32_2: %d %x %16.8f\n",((d32<<8)>>8),((d32<<8)>>8),f34/256.0f);
-
-	  ipls.sData.push_back(f32/256.0f);
-	  data>>=24;
-	}
-      }
-      else { 
-	for (int i=0;i<3;i++) {
-#ifdef BITS
-	  (data>>=BITS)<<=BITS;
-#endif
-	  d16 = data & 0xFFFF; //16 bit
-	  ipls.sData.push_back(d16);
-	  data>>=16;
-	}
-      }
-      break;
-    case 4: //C – [24]; A – [24]
-      pk.A = data & 0xFFFFFF;
-      pk.A = (pk.A<<8)>>8;
-      data>>=24;
-      pk.C = data & 0xFFFFFF;
-      pk.C = (pk.C<<8)>>8;
-      break;
-    case 5: //RX – [12]; QX – [36]
-      pk.QX = data & 0xFFFFFFFFF;
-      pk.QX = (pk.QX<<28)>>28;
-      data>>=36;
-      pk.RX = data & 0xFFF;
-      pk.RX = (pk.RX<<20)>>20;
-      break;
-    case 6: //AY – [28]; [E]; H – [16]
-      pk.H = data & 0xFFFF;
-      data>>=16;
-      pk.E = data & 1;
-      data>>=4;
-      pk.AY = data & 0xFFFFFFF;
-      pk.AY = (pk.AY<<4)>>4;
-      break;
-    case 8: //RX – [20]; C – [28]
-      pk.C = data & 0xFFFFFFF;
-      pk.C = (pk.C<<4)>>4;
-      data>>=28;
-      pk.RX = data & 0xFFFFF;
-      pk.RX = (pk.RX<<12)>>12;
-      break;
-    case 9: //A – [28]
-      pk.A = data & 0xFFFFFFF;
-      pk.A = (pk.A<<4)>>4;
-      break;
-    case 10: //QX – [40]
-      pk.QX = data & 0xFFFFFFFFFF;
-      pk.QX = (pk.QX<<24)>>24;
-      break;
-    case 11: { //Counters
-      ipls.Counter = data;
-      ipls.Spin|=128; //bit 7 - hardware counters
-
-      double dt = (ipls.Tstamp64 - Tst3o[ipls.Chan])*1e-9*opt.Period;
-      if (dt) {
-	rate_hard[ipls.Chan] = (ipls.Counter - npulses3o[ipls.Chan])/dt;
-      }
-      Tst3o[ipls.Chan] = ipls.Tstamp64;
-      npulses3o[ipls.Chan] = ipls.Counter;
-
-      //prnt("ss d l l f fs;",BBLU,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate3[ipls.Chan],RST);
-      break;
-    }
-    case 12:
-      if (data & 1) {
-	++errors[ER_OVF];
-	ipls.Spin|=128; //bit 7 - hardware counters
-	ipls.Spin|=4; //bit 2 - ER_OVF
-      }
-      //prnt("ss d l ls;",KGRN,"OVF:",ch,ipls.Tstamp64,data&1,RST);
-      break;
-    case 13: {
-      int bit23 = (data & 0x800000)>>23;
-      if (!bit23) {
-	//cout << "bit23: " << data << " " << bit23 << endl;
-	++errors[ER_CFD];	
-      }
-      pk.CF1 = data & 0x7FFFFF; //23
-      pk.CF1 = (pk.CF1<<9)>>9;  //32-23
-      data>>=24;
-      pk.CF2 = data & 0x7FFFFF; //23
-      pk.CF2 = (pk.CF2<<9)>>9;  //32-23
-      //prnt("ss d l d d ds;",KGRN,"CFD:",ch,ipls.Tstamp64,bit23,pk.CF1,pk.CF2,RST);
-    }
-      break;
-    default:
-      ++errors[ER_FRMT];
-    } //switch (frmt);
-
-    uu.ul++;
-  } //while
-
-  //add last pulse to the list
-  // if (nevents>207000 && nevents<210000) {
-  //   cout << "last:" << endl;
-  //   ipls.PrintPulse(0);
-  // }
-  if (ipls.ptype==0) {
-    if (opt.Dsp[ipls.Chan]) {
-      MakePk(pk,ipls);
-    }
-    PulseAna(ipls);
-    Event_Insert_Pulse(Blist,&ipls);
-  }
-
-  Dec_End(Blist,0,255);
-
-} //decode36
 
 void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
   //romana test140_HPGe_2_Labr_4_Ing27_87prc_Generator_100hz_Na_top_Pb_1mm_SiO2.raw -p test139.par
@@ -7130,14 +7246,22 @@ void CRS::Reset_Dec(Short_t mod) {
 
   sprintf(dec_opt,"ab%d",opt.dec_compr);
 
-  DecBuf=DecBuf_ring;
-  DecBuf8 = (ULong64_t*) DecBuf;
-  idec=0;
-  //dec82+
-  Buf82=DecBuf;
-  u82.b=Buf82;
+  if (DecBuf_ring2.b1)
+    delete[] DecBuf_ring2.b1;
+  size_t sz = opt.decbuf_size*DEC_SIZE;
+  DecBuf_ring2.b1 = new UChar_t[sz+OFF_SIZE];
+  DecBuf_ring2.b3 = DecBuf_ring2.b1 + sz + OFF_SIZE;
 
-  decw_list.clear();
+  DecBuf_ring.b1 = DecBuf_ring2.b1;
+  DecBuf_ring.b3 = DecBuf_ring2.b3 - OFF_SIZE;
+
+  dec_list.clear();
+  decbuf_it = dec_list.insert(dec_list.end(),BufClass());
+  decbuf_it->b1 = DecBuf_ring.b1;
+  decbuf_it->b = decbuf_it->b1;
+  decbuf_it->b3 = decbuf_it->b1+DEC_SIZE;
+  //decbuf_it->flag=??;  // считаем, что сделаны Findlast + анализ
+
 
   // mdec1=0;
   // mdec2=0;
@@ -7181,7 +7305,7 @@ void CRS::Reset_Txt() {
   //exit(-1);
 }
 
-void CRS::Fill_Dec79(EventClass* evt) {
+void CRS::Fill_Dec79(EventClass* evt, buf_iter buf_it) {
   //Fill_Dec79 - the same as 78, but different factor for Area
 
   // fill_dec is not thread safe!!!
@@ -7202,99 +7326,76 @@ void CRS::Fill_Dec79(EventClass* evt) {
   //    1 byte - channel
   //    7 bits - amplitude
 
-  /*
-  *DecBuf8 = 1;
-  *DecBuf8<<=63;
-  *DecBuf8 |= evt->Tstmp & sixbytes;
-  if (evt->Spin & 1) {
-    *DecBuf8 |= 0x1000000000000;
-  }
-  */
+  *buf_it->ul = 0x8000 | evt->Spin;
+  *buf_it->ul <<= 48;
+  *buf_it->ul |= evt->Tstmp & sixbytes;
 
-
-  *DecBuf8 = 0x8000 | evt->Spin;
-  *DecBuf8<<=48;
-  *DecBuf8 |= evt->Tstmp & sixbytes;
-  //if (evt->Spin & 1) {
-  //*DecBuf8 |= 0x1000000000000;
-  //}
-
-
-
-  //prnt("ss d l x ls;",BGRN,"Dec:",nevents,evt->Tstmp,*DecBuf8,(UChar_t*)DecBuf8-DecBuf,RST);
-  // if ((UChar_t*)DecBuf8==DecBuf) {
-  //   prnt("ss d l x ls;",BGRN,"Dec:",nevents,evt->Tstmp,*DecBuf8,(UChar_t*)DecBuf8-DecBuf,RST);
-  // }
-  ++DecBuf8;
+  ++buf_it->ul;
 
   if (evt->Spin & 128) { //Counters
     //prnt("ss ls;",BRED,"Counter:",evt->Tstmp,RST);
     for (pulse_vect::iterator ipls=evt->pulses.begin();
 	 ipls!=evt->pulses.end();++ipls) {
       //prnt("ss d d ls;",BGRN,"Ch:",ipls->Chan,ipls->Pos,ipls->Counter,RST);
-      *DecBuf8=ipls->Counter;
-      Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      Decbuf2[3] = ipls->Chan;
-      ++DecBuf8;
+      *buf_it->ul=ipls->Counter;
+      //Short_t* Decbuf2 = (Short_t*) DecBuf8;
+      buf_it->s[3] = ipls->Chan;
+      ++buf_it->ul;
+      //++DecBuf8;
     }
   }
   else { //Peaks
     for (pulse_vect::iterator ipls=evt->pulses.begin();
 	 ipls!=evt->pulses.end();++ipls) {
       if (ipls->Pos>-32222) {
-	*DecBuf8=0;
-	Short_t* Decbuf2 = (Short_t*) DecBuf8;
-	UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
-	UChar_t* Decbuf1u = (UChar_t*) DecBuf8;
+	*buf_it->ul=0;
+	//Short_t* Decbuf2 = (Short_t*) DecBuf8;
+	//UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
+	//UChar_t* Decbuf1u = (UChar_t*) DecBuf8;
 	if (ipls->Area<0) {
-	  *Decbuf2u = 0;
+	  *buf_it->us = 0;
 	}
 	else if (ipls->Area>13106){
-	  *Decbuf2u = 65535;
+	  *buf_it->us = 65535;
 	}
 	else {
-	  *Decbuf2u = ipls->Area*5+1;
+	  *buf_it->us = ipls->Area*5+1;
 	}
 	if (ipls->Time>327.6)
-	  Decbuf2[1] = 32767;
+	  buf_it->s[1] = 32767;
 	else if (ipls->Time<-327)
-	  Decbuf2[1] = -32767;
+	  buf_it->s[1] = -32767;
 	else
-	  Decbuf2[1] = ipls->Time*100;
+	  buf_it->s[1] = ipls->Time*100;
 
 	if (ipls->Width>32.76)
-	  Decbuf2[2] = 32767;
+	  buf_it->s[2] = 32767;
 	else if (ipls->Width<-32.76)
-	  Decbuf2[2] = -32767;
+	  buf_it->s[2] = -32767;
 	else
-	  Decbuf2[2] = ipls->Width*1000;
+	  buf_it->s[2] = ipls->Width*1000;
 
-	Decbuf2[3] = ipls->Chan;
+	buf_it->s[3] = ipls->Chan;
 	if (ipls->Height<0)
-	  Decbuf1u[7] = 0;
+	  buf_it->b[7] = 0;
 	else
-	  Decbuf1u[7] = ((int)ipls->Height)>>8;
-	//cout << evt->Nevt << " " << evt->Tstmp << " " << (int) evt->pulses[i].Chan << endl;
-	++DecBuf8;
+	  buf_it->b[7] = ((int)ipls->Height)>>8;
+	++buf_it->ul;
+	//++DecBuf8;
       }
     }
   }
 
-  idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
-    //levt=*evt;
-    //CRS::eventlist Blist;
-    //D79(DecBuf,idec,Blist);
-    //ULong64_t* buf8 = (ULong64_t*) (GLBuf);
-    //prnt("s l l l l x;", "Flush:", levt.Tstmp, Blist.size(),
-    // Blist.front().Tstmp, Blist.back().Tstmp, *buf8);
-    //cout << "Flush: " << levt.Tstmp << endl;
-    Flush_Dec();
+  //idec = (UChar_t*)DecBuf8-DecBuf;
+  //if (idec>DEC_SIZE) {
+  if (buf_it->b >= buf_it->b3) {
+    Flush_Dec3(buf_it, 0);
   }
 
 } //Fill_Dec79
 
 void CRS::Fill_Dec80(EventClass* evt) {
+  /*
   //Fill_Dec80 - for START trigger type
 
   // fill_dec is not thread safe!!!
@@ -7337,7 +7438,7 @@ void CRS::Fill_Dec80(EventClass* evt) {
   //prnt("ss l l ls;",BBLU,"Dc:",evt->Nevt,evt->Tstmp,evt->pulses[1].sData.size(),RST);
 
   idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
+  if (idec>DEC_SIZE) {
     //levt=*evt;
     //CRS::eventlist Blist;
     //D79(DecBuf,idec,Blist);
@@ -7347,7 +7448,7 @@ void CRS::Fill_Dec80(EventClass* evt) {
     //cout << "Flush: " << levt.Tstmp << endl;
     Flush_Dec();
   }
-
+  */
 } //Fill_Dec80
 
 // int sgn(int a) {
@@ -7361,7 +7462,7 @@ void CRS::Fill_Dec80(EventClass* evt) {
 
 
 void CRS::Fill_Dec81(EventClass* evt) {
-
+  /*
   cout << "Fill_dec81" << endl;
   ULong64_t* Dec0 = DecBuf8; //запоминаем начальный адрес буфера
   ULong64_t* DecN = 0; //адрес буфера для записи длины
@@ -7482,7 +7583,7 @@ void CRS::Fill_Dec81(EventClass* evt) {
   }
 
   idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
+  if (idec>DEC_SIZE) {
     //levt=*evt;
     //CRS::eventlist Blist;
     //D79(DecBuf,idec,Blist);
@@ -7492,13 +7593,14 @@ void CRS::Fill_Dec81(EventClass* evt) {
     //cout << "Flush: " << levt.Tstmp << endl;
     Flush_Dec();
   }
-
+*/
 } //Fill_Dec81
 
 void CRS::Fill_Dec82(EventClass* evt) {
+  /*
   // Переделать!!! u82 (и Buf82???) должны быть локальными переменными
 
-  //см. Еще вариант формата данных в decoder_format.docx
+  //см. формат данных 82 в decoder_format.docx
 
   cout << "Fill_dec82" << endl;
   //Buf82 - начало буфера, u82 - текущее положение буфера
@@ -7511,20 +7613,24 @@ void CRS::Fill_Dec82(EventClass* evt) {
   for (auto it=sdec_e.begin(); it!=sdec_e.end(); ++it) {
     switch (*it) {
     case 'T':
-      // Spin не пишем: нужно писать, где flag (доделать!)
-      //*DecBuf8 |= ((ULong64_t) (evt->Spin & 7)) << 48; //нижние 3 бита
-
       // записываем Tstmp со сдвигом влево на 2 байта. Эти 2 байта будут
       // перезаписаны при записи длины события
       u82.b-=2; //отступаем влево на 2 байта
-      *(u82.l) = evt->Tstmp & sixbytes;
+      *u82.l = evt->Tstmp & sixbytes;
+      u82.b+=6;
+      break;
+    case 'E':
+      *u82.l = evt->Nevt;
       u82.b+=6;
       break;
     case 'N':
-      *(u82.ui++) = evt->Nevt;
-      //UDecBuf2[0] = evt->pulses.size();
-      //DecN = DecBuf8; //запоминаем, куда писать длину события
-      //*(++DecBuf8)=0;
+      *u82.us++ = evt->pulses.size();
+      break;
+    case 'F':
+      *u82.b++ = evt->Spin & 1;
+      break;
+    default:
+      prnt("ss ss;",BRED,"Wrong format in sdec_e:",string(1,*it).c_str(),RST);
       break;
     }
   }
@@ -7534,9 +7640,9 @@ void CRS::Fill_Dec82(EventClass* evt) {
     if (sdec_c) {
       //1 байт: chan; 6 байтов: Counter
       for (auto ipls=evt->pulses.begin(); ipls!=evt->pulses.end(); ++ipls) {
-	*(u82.b++) = ipls->Chan;
-	*(u82.l) = ipls->Counter;
-	*(u82.l) <<= 16; //сдвиг на 2 байта (т.е. записываем 6 байтов)
+	*u82.b++ = ipls->Chan;
+	*u82.l = ipls->Counter;
+	*u82.l <<= 16; //сдвиг на 2 байта (т.е. записываем 6 байтов)
 	u82.b+=6;
       }
     }
@@ -7545,49 +7651,52 @@ void CRS::Fill_Dec82(EventClass* evt) {
     //можно попробовать оптимизировать, используя std::unordered_map
     for (auto ipls=evt->pulses.begin(); ipls!=evt->pulses.end(); ++ipls) {
 
-      *(u82.b++) = ipls->Chan;
+      *u82.b++ = ipls->Chan;
 
       for (auto it=sdec_p.begin(); it!=sdec_p.end(); ++it) {
 	switch (*it) {
 	case 'A':
-	  *(u82.f++) = ipls->Area;
+	  *u82.f++ = ipls->Area;
 	  break;
 	case 't':
-	  *(u82.f++) = ipls->Time;
+	  *u82.f++ = ipls->Time;
 	  break;
 	case 'W':
-	  *(u82.f++) = ipls->Width;
+	  *u82.f++ = ipls->Width;
 	  break;
 	case 'H':
-	  *(u82.s++) = ipls->Height;
+	  *u82.s++ = ipls->Height;
 	  break;
 	case 'B':
-	  *(u82.f++) = ipls->Base;
+	  *u82.f++ = ipls->Base;
 	  break;
 	case 'R':
-	  *(u82.f++) = ipls->Rtime;
+	  *u82.f++ = ipls->Rtime;
 	  break;
 	case 'S':
-	  *(u82.f++) = ipls->Sl1;
+	  *u82.f++ = ipls->Sl1;
 	  break;
 	case 's':
-	  *(u82.f++) = ipls->Sl2;
+	  *u82.f++ = ipls->Sl2;
 	  break;
 	case 'M':
-	  *(u82.f++) = ipls->RMS1;
+	  *u82.f++ = ipls->RMS1;
 	  break;
 	case 'm':
-	  *(u82.f++) = ipls->RMS2;
+	  *u82.f++ = ipls->RMS2;
 	  break;
 	case 'f':
-	  *(u82.b++) = ipls->ptype;
+	  *u82.b++ = ipls->ptype;
+	  break;
+	default:
+	  prnt("ss ss;",BRED,"Wrong format in sdec_p:",string(1,*it).c_str(),RST);
 	  break;
 	} //switch
       } // for sdec
       if (sdec_d) { //записываем sData
-	*(u82.us++) = ipls->sData.size();
+	*u82.us++ = ipls->sData.size();
 	for (auto j=ipls->sData.begin(); j!=ipls->sData.end(); ++j) {
-	  *(u82.f++) = *j;
+	  *u82.f++ = *j;
 	}
       } //if (sdec_d)
     } //for ipls
@@ -7597,11 +7706,13 @@ void CRS::Fill_Dec82(EventClass* evt) {
   UInt_t len = u82.b - (UChar_t*)ilen;
   *ilen = len;
 
+  UChar_t *Buf82;
+  union82 u82;
   auto nnn = u82.b - Buf82;
-  if (nnn>DECSIZE) {
+  if (nnn>DEC_SIZE) {
     Flush_Dec();
   }
-
+*/
 } //Fill_Dec82
 
 
@@ -7699,7 +7810,7 @@ void CRS::Fill_Dec81a(EventClass* evt) {
   }
 
   idec = (UChar_t*)DecBuf8-DecBuf;
-  if (idec>DECSIZE) {
+  if (idec>DEC_SIZE) {
     //levt=*evt;
     //CRS::eventlist Blist;
     //D79(DecBuf,idec,Blist);
@@ -7719,7 +7830,7 @@ void CRS::Fill_Dec81a(EventClass* evt) {
 
 
 
-
+/*
 void CRS::Fill_Dec82_old(EventClass* evt) {
   // какой-то совсем старый формат...
 
@@ -7834,15 +7945,19 @@ void CRS::Fill_Dec82_old(EventClass* evt) {
   }
 
   idec = DecBuf1-DecBuf;
-  if (idec>DECSIZE) {
+  if (idec>DEC_SIZE) {
     Flush_Dec();
   }
 
 } //Fill_Dec82_old
+*/
 
 int CRS::Wr_Dec(UChar_t* buf, int len) {
   //return >0 if error
   //       0 - OK
+
+  if (!len) //не пишем пустой буфер
+    return 0;
 
   sprintf(dec_opt,"ab%d",opt.dec_compr);
   f_dec = gzopen(decname.c_str(),dec_opt);
@@ -7872,8 +7987,58 @@ int CRS::Wr_Dec(UChar_t* buf, int len) {
 
 }
 
-void CRS::Flush_Dec() {
+void CRS::Flush_Dec3(buf_iter buf_it, int end_ana) {
+  if (opt.nthreads==1) { //single thread
+    Wr_Dec(buf_it->b1, buf_it->b-buf_it->b1);
+    buf_it->b1 = DecBuf_ring.b1;
+    buf_it->b = DecBuf_ring.b1;
+    buf_it->b3 = DecBuf_ring.b1+DEC_SIZE;
+  }
+  else { //multithreading
+    decw_mut.Lock();
 
+    //печатает на экран информацию о каждом 10-м буфере
+    static int rep=0;
+    rep++;
+    if (rep>0) {
+    // if (rep>p) {
+      double rr = DecBuf_ring.b3-DecBuf_ring.b1;
+      rr/=(buf_it->b-buf_it->b1);
+      prnt("s d x d l l l f;","Flush_dec3: ",dec_list.size(),buf_it->b1,
+	   buf_it->b-buf_it->b1,buf_it->b1-DecBuf_ring.b1,
+	   DecBuf_ring.b3-buf_it->b1,DecBuf_ring.b3-DecBuf_ring.b1,rr);
+      rep=0;
+    }
+
+    if (!end_ana) {
+      // если не конец -> задаем новый буфер
+      decbuf_it = dec_list.insert(dec_list.end(),BufClass());
+      if (buf_it->b < DecBuf_ring.b3) {
+	decbuf_it->b1 = buf_it->b;
+      }
+      else {
+	prnt("ssds;",BYEL,"---end of DecBuf---: ",NDEC,RST);
+	decbuf_it->b1 = DecBuf_ring.b1;
+      }
+      decbuf_it->b = decbuf_it->b1;
+      decbuf_it->b3 = decbuf_it->b1+DEC_SIZE;
+
+      decbuf_it->bufnum = buf_it->bufnum+1;
+      // bufnum всегда "линейный", независимо от многопоточности.
+      // анализ событий идет всегда последовательно,
+      // соответственно, и вызов Flush_Dec3 тоже последовательный
+    }
+
+    // устанавливаем флаг в старом буфере: можно писать
+    buf_it->flag=9;
+
+    decw_mut.UnLock();
+  }
+
+} //Flush_Dec3
+
+/*
+void CRS::Flush_Dec() {
   if (opt.nthreads==1) { //single thread
     Wr_Dec(DecBuf,idec);
     DecBuf8 = (ULong64_t*) DecBuf;
@@ -7881,34 +8046,37 @@ void CRS::Flush_Dec() {
     idec=0;
   }
   else { //multithreading
-    Pair p(DecBuf,idec);
-
     decw_mut.Lock();
-
-    decw_list.push_back(p);
+    // добавляем буфер в dec_list
+    auto buf_it = dec_list.insert(dec_list.end(),BufClass());
+    buf_it->b1 = DecBuf;
+    buf_it->b = DecBuf+idec;
 
     //печатает на экран информацию о каждом 10-м буфере
     static int rep=0;
     rep++;
     if (rep>9) {
-      prnt("s d x d l l;","Flush_dec: ",decw_list.size(),DecBuf,idec,DecBuf-DecBuf_ring,DecBuf_ring+DECSIZE*NDEC-DecBuf);
+      double rr = DecBuf_ring.b3-DecBuf_ring.b1;
+      rr/=idec;
+      prnt("s d x d l l l f;","Flush_dec: ",dec_list.size(),DecBuf,idec,DecBuf-DecBuf_ring.b1,DecBuf_ring.b3-DecBuf,DecBuf_ring.b3-DecBuf_ring.b1,rr);
       rep=0;
     }
 
     decw_mut.UnLock();
 
-    DecBuf+=idec;
-    if (DecBuf_ring+DECSIZE*NDEC-DecBuf<2*DECSIZE) {
+    //DecBuf+=idec;
+    DecBuf=buf_it->b;
+    if (DecBuf > DecBuf_ring.b3) {
       prnt("ssds;",BYEL,"---end of DecBuf---: ",NDEC,RST);
-      DecBuf=DecBuf_ring;
+      DecBuf=DecBuf_ring.b1;
     }
     DecBuf8 = (ULong64_t*) DecBuf;
     DecBuf1 = DecBuf;
     idec=0;
     
   }
-
 }
+*/
 
 void P_buf8(int id,ULong64_t* buf8) {
   //ULong64_t* buf8 = (ULong64_t*) buf;
