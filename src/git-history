@@ -1,13 +1,13 @@
 git tag -a v0.931a -m 'переделаны Fill_dec79, handle_dec_write'
 - временная, возможно, нестабильная версия
 - переделан Fill_dec79
+- переделана реализация handle_dec_write
 - Fill_dec80,Fill_dec81,Fill_dec82 не работают (отключены)
 - Decode81 не работает (отключен)
-- переделана реализация handle_dec_write
 - git diff не работает на libcrs.cpp (по-видимому, слишком много изменений):
       использовать git diff --diff-algorithm=patience
 - недоделаны mask_e, ask_p (сделано описание в libcrs.h, остальное недоделано)
-- переделан decoder_format.docx
+- подправлен decoder_format.docx
 - доделан(?) utils/usb.cpp
 
 - ZZZZ нужна ли эта строчка???
