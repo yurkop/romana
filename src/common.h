@@ -22,6 +22,19 @@ const int dstep = 10;
 #define AVM16_MASK1 0x00000000  //to read old type of data. Works also with new.
 #define AVM16_MASK2 0x000fffff //complementary to MASK1
 
+const ULong64_t sixbytes=0xFFFFFFFFFFFF;
+const Long64_t DEC_SIZE = 1024*1024; //1 MB
+
+
+const Long64_t TR_SIZE = 1024*1024*2; //2 MB - размер трансфера в байтах
+const Long64_t OFF_SIZE = TR_SIZE; //2 MB, на всякий случай
+// OFF_SIZE должно быть >= макс. размера одного события (импульса)
+// Для AK-32 это ~32kB 
+// 2 MB - больше 32kB
+
+
+
+
 const int MAX_CH=256; //256; //max number of channels
 const int MAX_TP=8; // 8 types, MAX_TP=other, MAX_TP+1=copy, MAX_TP+2=swap
 const int MAX_CHTP=MAX_CH+MAX_TP+1;

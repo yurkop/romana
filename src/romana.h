@@ -10,6 +10,7 @@
 #include "hclass.h"
 #include "peditor.h"
 #include "simul.h"
+#include "encoder.h"
 //#include "popframe.h"
 
 //--------------------------------------

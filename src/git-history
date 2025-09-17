@@ -1,3 +1,9 @@
+git tag -a v0.932 -m 'добавлен encoder.cpp'
+
+- добавлен класс Encoder (только для dec)
+- много чего переделано и удалено в libcrs
+
+
 git tag -a v0.931a -m 'переделаны Fill_dec79, handle_dec_write'
 - временная, возможно, нестабильная версия
 - переделан Fill_dec79

@@ -189,7 +189,7 @@ RQ_OBJECT("CRS")
   char Fname[255]; //имя файла для чтения/обработки
 
   string rawname;
-  string decname;
+  //string decname;
   string rootname;
   string logname;
 
@@ -548,15 +548,15 @@ RQ_OBJECT("CRS")
   //int Find_adcmraw_start();
 
   //int Set_Trigger();
-  void Ana_start();
-  void Ana2(int end_ana, buf_iter buf_it);
+  void Ana_start(int rst);
+  void Ana2(int end_ana);
 
   void Event_Insert_Pulse(eventlist *Elist, PulseClass* pls);
   void Make_Events(std::list<eventlist>::iterator BB);
   //void Select_Event(EventClass *evt);
 
   void Reset_Raw();
-  void Reset_Dec(Short_t mod);
+  //void Reset_Dec(Short_t mod);
   void Reset_Txt();
 
   void Fill_Dec75(EventClass* evt);
@@ -573,12 +573,10 @@ RQ_OBJECT("CRS")
   //void Fill_Txt(EventClass* evt);
 
   void Fill_Dec_Simul();
-  //void Flush_Dec_old();
-  int Wr_Dec(UChar_t* buf, int len);
-  void Flush_Dec3(buf_iter buf_it, int end_ana);
-  //void Flush_Dec();
 
   void Fill_Raw(EventClass* evt);
+  //void Flush_Raw3();
+  //int Wr_Raw(UChar_t* buf, int len);
   void Flush_Raw();
   void Flush_Raw_MT(UChar_t* buf, int len);
 

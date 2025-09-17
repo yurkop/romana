@@ -74,6 +74,7 @@ Coptions cpar;
 Toptions opt;
 
 CRS* crs;
+Encoder* encoder;
 #ifdef SOCK
 SockClass* gSock;
 #endif
@@ -234,6 +235,8 @@ void debug_mess(bool cond, const char* mess, double par1, int par2) {
 
 void EExit(int ret) {
   delete crs;
+  delete encoder;
+  delete hcl;
   exit(ret);
 }
 
@@ -1060,6 +1063,8 @@ void ctrl_c_handler(int s){
   }
 
   delete crs;
+  delete encoder;
+  delete hcl;
   gApplication->Terminate(0);
   // delete myM;
   // exit(1); 
@@ -1129,6 +1134,7 @@ int main(int argc, char **argv)
   // cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
   // cout << "sizeof(opt): " << sizeof(opt) << endl;
 	
+  encoder = new Encoder();
   hcl = new HClass();
   crs = new CRS();
 
@@ -1835,10 +1841,10 @@ bool TestFile() {
     dir = TString(startdir);
     //cout << "Root_dir: " << dir << endl;
 
-    crs->decname=dir;
+    encoder->decname=dir;
     crs->rootname=dir;
     crs->rawname=dir;
-    crs->decname.append("Dec/");
+    encoder->decname.append("Dec/");
     crs->rootname.append("Root/");
     crs->rawname.append("Raw/");
 
@@ -1851,9 +1857,9 @@ bool TestFile() {
 
     if (b_dec) {
 #ifdef LINUX
-      mkdir(crs->decname.c_str(),0755);
+      mkdir(encoder->decname.c_str(),0755);
 #else
-      _mkdir(crs->decname.c_str());
+      _mkdir(encoder->decname.c_str());
 #endif
     }
 
@@ -1873,7 +1879,7 @@ bool TestFile() {
 #endif
     }
 
-    crs->decname.append(name);
+    encoder->decname.append(name);
     crs->rootname.append(name);
     crs->rawname.append(name);
   } //batch
@@ -1881,24 +1887,24 @@ bool TestFile() {
     //SplitFilename(string(opt.Filename),dir,name,ext);
     dir.append(name);
     crs->rawname=dir;
-    crs->decname=dir;
+    encoder->decname=dir;
     crs->rootname=dir;
   }
 
-  crs->decname.append(".dec");
+  encoder->decname.append(".dec");
   crs->rootname.append(".root");
   crs->rawname.append(".raw");
 
   if (!crs->juststarted) return true;
 
   bool b1 = opt.raw_write && !stat(crs->rawname.c_str(), &statb);
-  bool b2 = opt.dec_write && !stat(crs->decname.c_str(), &statb);
+  bool b2 = opt.dec_write && !stat(encoder->decname.c_str(), &statb);
   bool b3 = opt.root_write && !stat(crs->rootname.c_str(), &statb);
 
   bool b_ident=false;
   if (crs->Fmode==2) {//file analysis - test for identical filename
     bool c1=b1 && !crs->rawname.compare(crs->Fname);
-    bool c2=b2 && !crs->decname.compare(crs->Fname);
+    bool c2=b2 && !encoder->decname.compare(crs->Fname);
     bool c3=b3 && !crs->rootname.compare(crs->Fname);
     b_ident=c1||c2||c3;
   }
@@ -2262,6 +2268,8 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
 MainFrame::~MainFrame() {
   delete crs;
+  delete encoder;
+  delete hcl;
   delete fTimer;
 }
 

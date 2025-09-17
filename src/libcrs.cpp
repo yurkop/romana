@@ -66,6 +66,7 @@ DecoderClass* decoder;
 Simul* sim2;
 
 extern CRS* crs;
+extern Encoder* encoder;
 extern Coptions cpar;
 extern Toptions opt;
 
@@ -109,7 +110,6 @@ std::list<EventClass>::iterator m_event; //важный параметр
 
 //int MT=1;
 
-const ULong64_t sixbytes=0xFFFFFFFFFFFF;
 const int MAXSHORT=32767;
 
 //const Long64_t GLBSIZE=2147483648;//1024*1024*1024*2; //1024 MB
@@ -124,28 +124,10 @@ int tr_size; //=opt.usb_size*1024; - размер трансфера в байт
 
 
 //---------- Input buffers--------------
-const Long64_t TR_SIZE = 1024*1024*2; //2 MB - размер трансфера в байтах
-const Long64_t OFF_SIZE = TR_SIZE; //2 MB, на всякий случай
-// OFF_SIZE должно быть >= макс. размера одного события (импульса)
-// Для AK-32 это ~32kB 
-// 2 MB - больше 32kB
-
 BufClass InpBuf_ring2; // = OFF_SIZE + InpBuf_ring
 BufClass InpBuf_ring;  // буфер, куда записываются все вход. данные (usb или из файла)
 // Реально создается InpBuf_ring2, начало которого на OFF_SIZE
 // сдвинуто влево от InpBuf_ring
-
-
-//---------- Decoder output buffers--------------
-const Long64_t DEC_SIZE = 1024*1024; //1 MB
-
-BufClass DecBuf_ring2; // = DecBuf_ring + OFF_SIZE
-BufClass DecBuf_ring; //указатель на буфер, куда пишутся декодированные данные
-// Реально создается DecBuf_ring2, КОНЕЦ которого на OFF_SIZE
-// сдвинут ВПРАВО от конца DecBuf_ring
-
-buf_iter decbuf_it;
-
 
 
 //---------- Input/output lists of buffers--------------
@@ -194,9 +176,7 @@ TThread* trd_mkev;
 //TCondition mkev_cond[CRS::MAXTRANS];
 //int mkev_check[CRS::MAXTRANS];
 TThread* trd_ana;
-//TCondition ana_cond;
-//int ana_check;
-TThread* trd_dec_write;
+//TThread* trd_dec_write;
 TThread* trd_raw_write;
 
 //TThread* trd_sock;
@@ -553,7 +533,7 @@ void *handle_ana(void *ctx) {
       gSystem->Sleep(1);
     }
 
-    crs->Ana2(ana_all,decbuf_it);
+    crs->Ana2(ana_all);
 
     // вычисляем, нужно ли замедлять чтение файла, если анализ отстает
     if (crs->Fmode>1) { //только для чтения файла
@@ -583,49 +563,6 @@ void *handle_ana(void *ctx) {
   // cmut.UnLock();
   return NULL;
 } //handle_ana
-
-void *handle_dec_write(void *ctx) {
-
-  cmut.Lock();
-  cout << "dec_write thread started: " << endl;
-  cmut.UnLock();
-
-  while (wrt_thread_run || !dec_list.empty()) {
-
-    //prnt("ss ls;",BGRN,"decwr:",dec_list.size(),RST);
-
-    if (!dec_list.empty()) { //пишем
-
-      for (auto it=dec_list.begin();it!=dec_list.end();++it) {
-	// проверка bufnum не нужна,
-	// т.к. dec_list заполняется всегда последовательно
-	//bool good_buf = it->flag==9 && it->bufnum==DecBuf_ring.bufnum;
-	if (it->flag==9) {
-	  //gSystem->Sleep(50); // для искусственного замедления (тест)
-	  crs->Wr_Dec(it->b1,it->b-it->b1);
-	  decw_mut.Lock();
-	  dec_list.erase(it);
-	  decw_mut.UnLock();
-	  break;
-	}
-      }
-
-    } //if (!decw_list.empty())
-    // else {
-    //   gSystem->Sleep(5);
-    // }
-    //prnt("ss ls;",BRED,"decwr:",dec_list.size(),RST);
-
-    gSystem->Sleep(55);
-
-  } //while (wrt_thread_run)
-
-  cmut.Lock();
-  cout << "dec_write thread stopped: " << endl;
-  cmut.UnLock();
-
-  return NULL;
-} //handle_dec_write
 
 void *handle_raw_write(void *ctx) {
 
@@ -683,7 +620,7 @@ void *handle_raw_write(void *ctx) {
   return NULL;
 } //handle_raw_write
 
-void CRS::Ana_start() {
+void CRS::Ana_start(int rst) {
   //set initial variables for analysis
   //should be called before first call of ana2
   // b_mem=false;
@@ -743,7 +680,6 @@ void CRS::Ana_start() {
     }
   }
 
-  //cout << "Command_start: " << endl;
 #ifdef LINUX
   if (chdir(startdir)) {}
 #else
@@ -753,6 +689,10 @@ void CRS::Ana_start() {
   SaveParGz(ff,module);
   gzclose(ff);
 
+
+
+  encoder->Encode_Start(rst);
+
   memset(dec_iread,0,sizeof(dec_iread));
   if (opt.nthreads>1) {
     decode_thread_run=1;
@@ -760,44 +700,31 @@ void CRS::Ana_start() {
     ana_thread_run=1;
     wrt_thread_run=1;
 
-    //cout << "gl_Nbuf: " << gl_Nbuf << endl;
-    //exit(1);
     for (UInt_t i=0;i<gl_Nbuf;i++) {
-      //dec_iread[i]=0;
-      //dec_check[i]=0;
-      //dec_finished[i]=0;
       char ss[50];
       sprintf(ss,"trd_dec%d",i);
       dec_nr[i] = i;
       trd_dec[i] = new TThread(ss, handle_decode, (void*) &dec_nr[i]);
       trd_dec[i]->Run();
-
-      //mkev_check[i]=0;
     }
 
-    //cout << "dec ready: " << endl;
-    //gSystem->Sleep(5000);
     trd_mkev = new TThread("trd_mkev", handle_mkev, (void*) 0);
     trd_mkev->Run();
 
-    //cout << "mkev ready: " << endl;
-    //gSystem->Sleep(5000);
     ana_all=0;
-    //ana_check=0;
 
     trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
     trd_ana->Run();
 
-    if (opt.dec_write) {
-      trd_dec_write = new TThread("trd_dec_write", handle_dec_write, (void*) 0);
-      trd_dec_write->Run();
-    }
+    // if (opt.dec_write) {
+    //   trd_dec_write = new TThread("trd_dec_write", handle_dec_write, (void*) 0);
+    //   trd_dec_write->Run();
+    // }
 
     if (opt.raw_write) {
       trd_raw_write = new TThread("trd_raw_write", handle_raw_write, (void*) 0);
       trd_raw_write->Run();
     }
-    //gSystem->Sleep(5000);
 
     gSystem->Sleep(100);
   }
@@ -805,7 +732,7 @@ void CRS::Ana_start() {
   //cout << "Ana_start finished..." << endl;
 }
 
-void CRS::Ana2(int end_ana, buf_iter buf_it) {
+void CRS::Ana2(int end_ana) {
   // вызываем ana2 после каждого cback или DoBuf
   // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
   // если end_ana==0 ->
@@ -857,31 +784,7 @@ void CRS::Ana2(int end_ana, buf_iter buf_it) {
 	if (!opt.maintrig || hcut_flag[opt.maintrig]) {
 	  ++crs->mtrig;
 	  if (opt.dec_write) {
-	    switch (opt.dec_format) {
-	    case 79:
-	    case 80:
-	      if (cpar.Trigger==1) { //trigger on START channel
-		crs->Fill_Dec80(&(*m_event));
-	      }
-	      else {
-		//crs->Fill_Dec73(&(*m_event));
-		//crs->Fill_Dec74(&(*m_event));
-		//crs->Fill_Dec75(&(*m_event));
-		//crs->Fill_Dec76(&(*m_event));
-		//crs->Fill_Dec77(&(*m_event));
-		//crs->Fill_Dec78(&(*m_event));
-		crs->Fill_Dec79(&(*m_event),decbuf_it);
-	      }
-	      break;
-	    case 81:
-	      crs->Fill_Dec81(&(*m_event));
-	      break;
-	    case 82:
-	      crs->Fill_Dec82(&(*m_event));
-	      break;
-	    default:
-	      ;
-	    } //switch
+	    encoder->Fill_Dec(m_event);
 	  } // if dec_write
 	  if (opt.raw_write && opt.fProc) {
 	    crs->Fill_Raw(&(*m_event));
@@ -908,9 +811,10 @@ void CRS::Ana2(int end_ana, buf_iter buf_it) {
   //removed on 06.02.2020
   //cout << "Flush_ana YK: " << endl;
   if (end_ana) {
-    if (opt.dec_write) {
-      crs->Flush_Dec3(decbuf_it,end_ana);
-    }
+    // if (opt.dec_write) {
+    //   crs->Flush_Dec3(decbuf_it,end_ana);
+    // }
+    //cout << "Ana2: " << opt.raw_write << " " << opt.fProc << endl;
     if (opt.raw_write && opt.fProc) {
       crs->Flush_Raw();
     }
@@ -930,22 +834,6 @@ void CRS::Ana2(int end_ana, buf_iter buf_it) {
 
 } //Ana2
 
-// void tt(int* i) {
-//   cout << i << " " << *i << endl;
-//   i = new int;
-//   *i=20;
-//   cout << i << " " << *i << endl;
-// }
-
-// BufClass::BufClass(size_t sz) {
-//   Size=sz;
-//   Buf = new char[Size];
-//   //cout << "size: " << Size << endl;
-// }
-
-// BufClass::~BufClass() {
-//   delete[] Buf;
-// }
 
 #ifdef SOCK
 extern SockClass *gSock;
@@ -1192,63 +1080,7 @@ CRS::CRS() {
   exit(1);
   
 
-
-
-  UChar_t ch = 17;
-  Long64_t tt = 0x452456;
-  UInt_t nn = 21354;
-
-  DecBuf_ring=new UChar_t[DECSIZE*NDEC]; //1*100 MB
-  DecBuf8 = (ULong64_t*)DecBuf_ring;
-  u82.b = DecBuf_ring;
-  //cout << hex << DecBuf_ring << endl;
-  cout << DecBuf8 << endl;
-  cout << "------" << endl;
-  cout << u82.s << endl;
-  cout << u82.l << endl;
-
-  memset(DecBuf_ring,0,DECSIZE*NDEC);
-  *(u82.b++) = ch;
-  *(u82.ui++) = nn;
-  *(u82.l) = tt;
-  *(u82.l) <<= 16; //сдвиг на 2 байта (т.е. записываем 6 байт)
-  u82.b+=6;
-
-  cout << "------" << endl;
-  int l = u82.b-DecBuf_ring;
-  cout << u82.l << " " << l << endl;
-
-  u82.b = DecBuf_ring;
-  cout << (int) *(u82.b) << endl;
-
-  u82.b = DecBuf_ring+1;
-  cout << *(u82.ui) << endl;
-
-  u82.b = DecBuf_ring+5;
-  cout << hex << *(u82.l) << endl;
-
-
   exit(1);
-  
-
-  TH1F *hh = new TH1F("HH","HH",10,0,10);
-  Long64_t i=0;
-  double prev=0;
-  while (i<1e8) {
-    double aa = hh->GetBinContent(6);
-    if (aa!=prev) {
-      cout << "break: " << i << " " << aa << " " << prev << endl;
-      break;
-    }
-    if (!(i%1000000)) {
-      cout << i << " " << aa << " " << prev << endl;
-    }
-    hh->Fill(5);
-    prev++;//=hh->GetBinContent(6);
-    i++;
-  }
-  exit(-1);
-
   */
 
   memset(crs_ch,0,sizeof(crs_ch));
@@ -1293,11 +1125,6 @@ CRS::CRS() {
   strcpy(raw_opt,"ab");
   //strcpy(dec_opt,"ab");
 
-  //DecBuf_ring=new UChar_t[DECSIZE*NDEC]; //1*100 MB
-  //DecBuf=DecBuf_ring;
-
-
-
   RawBuf=new UChar_t[RAWSIZE]; //10 MB
 
   //strcpy(Fname," ");
@@ -1325,7 +1152,6 @@ CRS::CRS() {
   trd_crs=0;
   trd_mkev=0;
   trd_ana=0;
-  trd_dec_write=0;
   trd_raw_write=0;
   //trd_sock=0;
 
@@ -1348,8 +1174,6 @@ CRS::~CRS() {
   if (InpBuf_ring2.b1)
     delete[] InpBuf_ring2.b1;
 
-  if (DecBuf_ring2.b1)
-    delete[] DecBuf_ring2.b1;
   delete[] RawBuf;
   delete[] GLBuf2;
 #ifdef SOCK
@@ -2898,9 +2722,9 @@ int CRS::DoStartStop(int rst) {
       if (opt.raw_write) {
 	Reset_Raw();
       }   
-      if (opt.dec_write) {
-	Reset_Dec(79);
-      }
+      // if (opt.dec_write) {
+      // 	encoder->Reset_Dec(opt.dec_format);
+      // }
       if (opt.fTxt) {
 	Reset_Txt();
       }
@@ -2950,7 +2774,7 @@ int CRS::DoStartStop(int rst) {
 
 void CRS::ProcessCrs(int rst) {
   b_run=1;
-  Ana_start();
+  Ana_start(rst);
 
   //prnt("ssf d ls;",BBLU,"T_acq: ",opt.T_acq,crs->module,crs->Tstart64,RST);;
   //decode_thread_run=1;
@@ -2989,7 +2813,7 @@ void CRS::ProcessCrs(int rst) {
   // cout << "stopped:" << endl;
   EndAna(1);
 
-}
+} //ProcessCrs
 
 #endif //CYUSB
 
@@ -3005,7 +2829,7 @@ void CRS::Text_time(const char* hd, Long64_t f_time) {
 
 void CRS::DoExit()
 {
-  cout << "CRS::DoExit" << endl;
+  //cout << "CRS::DoExit" << endl;
 
   event_thread_run=0;
 #ifdef CYUSB
@@ -4206,7 +4030,7 @@ int CRS::DoBuf() {
     //prnt("ss l ls;",BRED,"17:",nbuffers,nevents,RST);
     //gSystem->Sleep(100);
     
-    crs->Ana2(0,decbuf_it);
+    crs->Ana2(0);
 
     nbuffers++;
     //return nbuffers;
@@ -4379,13 +4203,14 @@ void CRS::StopThreads(int end_ana) {
   }
 
   //gSystem->Sleep(500);
-  wrt_thread_run=0;
-  if (trd_dec_write) {
-    trd_dec_write->Join();
-    trd_dec_write->Delete();
-    trd_dec_write=0;
-  }
+  // wrt_thread_run=0;
+  // if (trd_dec_write) {
+  //   trd_dec_write->Join();
+  //   trd_dec_write->Delete();
+  //   trd_dec_write=0;
+  // }
 
+  wrt_thread_run=0;
   if (trd_raw_write) {
     trd_raw_write->Join();
     trd_raw_write->Delete();
@@ -4400,6 +4225,8 @@ void CRS::EndAna(int end_ana) {
   //end_ana=0 -> just stop, buffers remain not analyzed,
   //         can continue from this point on
 
+  encoder->Encode_Stop(end_ana);
+
   if (opt.nthreads>1) {
     gSystem->Sleep(50);
     while (!Bufevents.empty()) {
@@ -4411,7 +4238,7 @@ void CRS::EndAna(int end_ana) {
   else {
     if (end_ana) {
       ana_all=end_ana;
-      Ana2(1,decbuf_it);
+      Ana2(1);
     }
   }
 
@@ -4458,9 +4285,9 @@ void CRS::FAnalyze2(bool nobatch) {
     if (opt.raw_write) {
       Reset_Raw();
     }   
-    if (opt.dec_write) {
-      Reset_Dec(79);
-    }   
+    // if (opt.dec_write) {
+    //   encoder->Reset_Dec(opt.dec_format);
+    // }   
     if (opt.fTxt) {
       Reset_Txt();
     }
@@ -4476,7 +4303,7 @@ void CRS::FAnalyze2(bool nobatch) {
   }
   //T_start = gSystem->Now();
 
-  Ana_start();
+  Ana_start(juststarted);
   //int res;
   while (crs->b_fana) {
     int res=crs->DoBuf();
@@ -4517,9 +4344,9 @@ void CRS::DoNBuf2(int nb) {
     if (opt.raw_write) {
       Reset_Raw();
     }   
-    if (opt.dec_write) {
-      Reset_Dec(79);
-    }   
+    // if (opt.dec_write) {
+    //   encoder->Reset_Dec(opt.dec_format);
+    // }   
     if (opt.fTxt) {
       Reset_Txt();
     }
@@ -4533,7 +4360,7 @@ void CRS::DoNBuf2(int nb) {
   cv->SetEditable(false);
 
 
-  Ana_start();
+  Ana_start(0);
 
   int res;
   int i=1;
@@ -4729,7 +4556,7 @@ void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf, int loc_ibuf) {
 void CRS::Decode_any(UInt_t ibuf) {
   Decode_switch(ibuf);
   Make_Events(Bufevents.begin());
-  crs->Ana2(0,decbuf_it);
+  crs->Ana2(0);
 }
 
 void CRS::FindLast(UInt_t ibuf, int loc_ibuf, int what) {
@@ -5993,10 +5820,9 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
     case 3:
     case 6: {
       int kk = cpar.Drv[ipls.Chan];
-      //cout << "pos: " << ipls.Pos << " " << kk << endl;
+      //cout << "ZZZZ pos: " << ipls.Pos << " " << kk << endl;
       //if (ipls.Pos>=kk && (int)ipls.sData.size()>ipls.Pos+1) {
       ipls.FindZero(kk,cpar.Thr[ipls.Chan],cpar.LT[ipls.Chan]);
-      // ZZZZ нужна ли эта строчка???
       ipls.Time-=ipls.Pos;
       break;
     }
@@ -7228,46 +7054,6 @@ void CRS::Reset_Raw() {
   rw_list.clear();
 }
 
-void CRS::Reset_Dec(Short_t mod) {
-  sprintf(dec_opt,"wb%d",opt.dec_compr);
-
-  if (cpar.Trigger==1) //trigger on START channel
-    mod=80;
-
-  f_dec = gzopen(crs->decname.c_str(),dec_opt);
-  if (f_dec) {
-    cout << "Writing parameters... : " << crs->decname.c_str() << endl;
-    SaveParGz(f_dec,mod);
-    gzclose(f_dec);
-  }
-  else {
-    cout << "Can't open file: " << crs->decname.c_str() << endl;
-  }
-
-  sprintf(dec_opt,"ab%d",opt.dec_compr);
-
-  if (DecBuf_ring2.b1)
-    delete[] DecBuf_ring2.b1;
-  size_t sz = opt.decbuf_size*DEC_SIZE;
-  DecBuf_ring2.b1 = new UChar_t[sz+OFF_SIZE];
-  DecBuf_ring2.b3 = DecBuf_ring2.b1 + sz + OFF_SIZE;
-
-  DecBuf_ring.b1 = DecBuf_ring2.b1;
-  DecBuf_ring.b3 = DecBuf_ring2.b3 - OFF_SIZE;
-
-  dec_list.clear();
-  decbuf_it = dec_list.insert(dec_list.end(),BufClass());
-  decbuf_it->b1 = DecBuf_ring.b1;
-  decbuf_it->b = decbuf_it->b1;
-  decbuf_it->b3 = decbuf_it->b1+DEC_SIZE;
-  //decbuf_it->flag=??;  // считаем, что сделаны Findlast + анализ
-
-
-  // mdec1=0;
-  // mdec2=0;
-  // memset(b_decwrite,0,sizeof(b_decwrite));
-} //Reset_Dec
-
 void CRS::Reset_Txt() {
 
   if (txt_out) {
@@ -7304,95 +7090,6 @@ void CRS::Reset_Txt() {
   //*txt_out << "--- Event: " << endl;
   //exit(-1);
 }
-
-void CRS::Fill_Dec79(EventClass* evt, buf_iter buf_it) {
-  //Fill_Dec79 - the same as 78, but different factor for Area
-
-  // fill_dec is not thread safe!!!
-  //format of decoded data:
-  // 1) one 8byte header word:
-  //    bit63=1 - start of event
-  //    lowest 6 bytes - Tstamp
-  //    byte 7 - Spin
-  // 2a) if Spin7(bit7):
-  //  N 8-byte words, each containing one pulse counter
-  //    bytes 0-5 - Counter
-  //    byte 7 - channel
-  // 2b) else (!Spin7(bit7)):
-  //  N 8-byte words, each containing one peak
-  //    1st (lowest) 2 bytes - (unsigned) Area*5+1
-  //    2 bytes - Time*100
-  //    2 bytes - Width*1000
-  //    1 byte - channel
-  //    7 bits - amplitude
-
-  *buf_it->ul = 0x8000 | evt->Spin;
-  *buf_it->ul <<= 48;
-  *buf_it->ul |= evt->Tstmp & sixbytes;
-
-  ++buf_it->ul;
-
-  if (evt->Spin & 128) { //Counters
-    //prnt("ss ls;",BRED,"Counter:",evt->Tstmp,RST);
-    for (pulse_vect::iterator ipls=evt->pulses.begin();
-	 ipls!=evt->pulses.end();++ipls) {
-      //prnt("ss d d ls;",BGRN,"Ch:",ipls->Chan,ipls->Pos,ipls->Counter,RST);
-      *buf_it->ul=ipls->Counter;
-      //Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      buf_it->s[3] = ipls->Chan;
-      ++buf_it->ul;
-      //++DecBuf8;
-    }
-  }
-  else { //Peaks
-    for (pulse_vect::iterator ipls=evt->pulses.begin();
-	 ipls!=evt->pulses.end();++ipls) {
-      if (ipls->Pos>-32222) {
-	*buf_it->ul=0;
-	//Short_t* Decbuf2 = (Short_t*) DecBuf8;
-	//UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
-	//UChar_t* Decbuf1u = (UChar_t*) DecBuf8;
-	if (ipls->Area<0) {
-	  *buf_it->us = 0;
-	}
-	else if (ipls->Area>13106){
-	  *buf_it->us = 65535;
-	}
-	else {
-	  *buf_it->us = ipls->Area*5+1;
-	}
-	if (ipls->Time>327.6)
-	  buf_it->s[1] = 32767;
-	else if (ipls->Time<-327)
-	  buf_it->s[1] = -32767;
-	else
-	  buf_it->s[1] = ipls->Time*100;
-
-	if (ipls->Width>32.76)
-	  buf_it->s[2] = 32767;
-	else if (ipls->Width<-32.76)
-	  buf_it->s[2] = -32767;
-	else
-	  buf_it->s[2] = ipls->Width*1000;
-
-	buf_it->s[3] = ipls->Chan;
-	if (ipls->Height<0)
-	  buf_it->b[7] = 0;
-	else
-	  buf_it->b[7] = ((int)ipls->Height)>>8;
-	++buf_it->ul;
-	//++DecBuf8;
-      }
-    }
-  }
-
-  //idec = (UChar_t*)DecBuf8-DecBuf;
-  //if (idec>DEC_SIZE) {
-  if (buf_it->b >= buf_it->b3) {
-    Flush_Dec3(buf_it, 0);
-  }
-
-} //Fill_Dec79
 
 void CRS::Fill_Dec80(EventClass* evt) {
   /*
@@ -7952,132 +7649,6 @@ void CRS::Fill_Dec82_old(EventClass* evt) {
 } //Fill_Dec82_old
 */
 
-int CRS::Wr_Dec(UChar_t* buf, int len) {
-  //return >0 if error
-  //       0 - OK
-
-  if (!len) //не пишем пустой буфер
-    return 0;
-
-  sprintf(dec_opt,"ab%d",opt.dec_compr);
-  f_dec = gzopen(decname.c_str(),dec_opt);
-  if (!f_dec) {
-    cout << "Can't open file: " << decname.c_str() << endl;
-    f_dec=0;
-    opt.dec_write=false;
-    //idec=0;
-    return 1;
-  }
-
-  int res=gzwrite(f_dec,buf,len);
-  if (res!=len) {
-    cout << "Error writing to file: " << decname.c_str() << " " 
-	 << res << " " << len << endl;
-    decbytes+=res;
-    opt.dec_write=false;
-    gzclose(f_dec);
-    f_dec=0;
-    return 2;
-  }
-  decbytes+=res;
-
-  gzclose(f_dec);
-  f_dec=0;
-  return 0;
-
-}
-
-void CRS::Flush_Dec3(buf_iter buf_it, int end_ana) {
-  if (opt.nthreads==1) { //single thread
-    Wr_Dec(buf_it->b1, buf_it->b-buf_it->b1);
-    buf_it->b1 = DecBuf_ring.b1;
-    buf_it->b = DecBuf_ring.b1;
-    buf_it->b3 = DecBuf_ring.b1+DEC_SIZE;
-  }
-  else { //multithreading
-    decw_mut.Lock();
-
-    //печатает на экран информацию о каждом 10-м буфере
-    static int rep=0;
-    rep++;
-    if (rep>0) {
-    // if (rep>p) {
-      double rr = DecBuf_ring.b3-DecBuf_ring.b1;
-      rr/=(buf_it->b-buf_it->b1);
-      prnt("s d x d l l l f;","Flush_dec3: ",dec_list.size(),buf_it->b1,
-	   buf_it->b-buf_it->b1,buf_it->b1-DecBuf_ring.b1,
-	   DecBuf_ring.b3-buf_it->b1,DecBuf_ring.b3-DecBuf_ring.b1,rr);
-      rep=0;
-    }
-
-    if (!end_ana) {
-      // если не конец -> задаем новый буфер
-      decbuf_it = dec_list.insert(dec_list.end(),BufClass());
-      if (buf_it->b < DecBuf_ring.b3) {
-	decbuf_it->b1 = buf_it->b;
-      }
-      else {
-	prnt("ssds;",BYEL,"---end of DecBuf---: ",NDEC,RST);
-	decbuf_it->b1 = DecBuf_ring.b1;
-      }
-      decbuf_it->b = decbuf_it->b1;
-      decbuf_it->b3 = decbuf_it->b1+DEC_SIZE;
-
-      decbuf_it->bufnum = buf_it->bufnum+1;
-      // bufnum всегда "линейный", независимо от многопоточности.
-      // анализ событий идет всегда последовательно,
-      // соответственно, и вызов Flush_Dec3 тоже последовательный
-    }
-
-    // устанавливаем флаг в старом буфере: можно писать
-    buf_it->flag=9;
-
-    decw_mut.UnLock();
-  }
-
-} //Flush_Dec3
-
-/*
-void CRS::Flush_Dec() {
-  if (opt.nthreads==1) { //single thread
-    Wr_Dec(DecBuf,idec);
-    DecBuf8 = (ULong64_t*) DecBuf;
-    DecBuf1 = DecBuf;
-    idec=0;
-  }
-  else { //multithreading
-    decw_mut.Lock();
-    // добавляем буфер в dec_list
-    auto buf_it = dec_list.insert(dec_list.end(),BufClass());
-    buf_it->b1 = DecBuf;
-    buf_it->b = DecBuf+idec;
-
-    //печатает на экран информацию о каждом 10-м буфере
-    static int rep=0;
-    rep++;
-    if (rep>9) {
-      double rr = DecBuf_ring.b3-DecBuf_ring.b1;
-      rr/=idec;
-      prnt("s d x d l l l f;","Flush_dec: ",dec_list.size(),DecBuf,idec,DecBuf-DecBuf_ring.b1,DecBuf_ring.b3-DecBuf,DecBuf_ring.b3-DecBuf_ring.b1,rr);
-      rep=0;
-    }
-
-    decw_mut.UnLock();
-
-    //DecBuf+=idec;
-    DecBuf=buf_it->b;
-    if (DecBuf > DecBuf_ring.b3) {
-      prnt("ssds;",BYEL,"---end of DecBuf---: ",NDEC,RST);
-      DecBuf=DecBuf_ring.b1;
-    }
-    DecBuf8 = (ULong64_t*) DecBuf;
-    DecBuf1 = DecBuf;
-    idec=0;
-    
-  }
-}
-*/
-
 void P_buf8(int id,ULong64_t* buf8) {
   //ULong64_t* buf8 = (ULong64_t*) buf;
 
@@ -8242,7 +7813,7 @@ void CRS::Fill_Raw(EventClass* evt) {
 void CRS::Flush_Raw() {
 
   if (!iraw) return;
-  sprintf(raw_opt,"ab%d",opt.raw_compr);
+  //sprintf(raw_opt,"ab%d",opt.raw_compr);
   f_raw = gzopen(crs->rawname.c_str(),raw_opt);
   if (!f_raw) {
     cout << "Can't open file: " << crs->rawname.c_str() << endl;
