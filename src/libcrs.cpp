@@ -743,7 +743,7 @@ void CRS::Ana2(int end_ana) {
   int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
 
   // cmut.Lock();
-  // cout << "Ana2_MT: " << crs->Levents.size() << " " << all << endl;
+  //cout << "Ana2_1: " << crs->Levents.size() << " " << end_ana << endl;
   // cmut.UnLock();
 
   if (m_event==crs->Levents.end()) {
@@ -4360,6 +4360,7 @@ void CRS::FAnalyze2(bool nobatch) {
     if (opt.fTxt) {
       Reset_Txt();
     }
+    Ana_start(juststarted);
   }
   juststarted=false;
 
@@ -4372,7 +4373,6 @@ void CRS::FAnalyze2(bool nobatch) {
   }
   //T_start = gSystem->Now();
 
-  Ana_start(juststarted);
   //int res;
   while (crs->b_fana) {
     int res=crs->DoBuf();
@@ -4419,6 +4419,7 @@ void CRS::DoNBuf2(int nb) {
     if (opt.fTxt) {
       Reset_Txt();
     }
+    Ana_start(juststarted);
   }
   juststarted=false;
 
@@ -4428,8 +4429,6 @@ void CRS::DoNBuf2(int nb) {
   TCanvas *cv=EvtFrm->fCanvas->GetCanvas();
   cv->SetEditable(false);
 
-
-  Ana_start(0);
 
   int res;
   int i=1;
