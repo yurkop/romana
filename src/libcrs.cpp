@@ -2625,9 +2625,40 @@ int CRS::DoStartStop(int rst) {
 	
   if (!b_acq) { //start
 
+
+    if (LogOK<3) {
+      //удаляем пробелы из opt.logFile
+      TString str(opt.logFile);
+      str.Remove(TString::kBoth,' ');
+      strcpy(opt.logFile,str.Data());
+
+      if (strlen(opt.logFile)) {
+	snprintf(logpath, sizeof(logpath), "%s", opt.logFile);
+      }
+      else {
+	const char *home = getenv("HOME");
+	if (!home) return 1;
+	snprintf(logpath, sizeof(logpath), "%s/romana.log", home);
+      }
+    
+      flog = fopen(logpath,"a");
+      if (!flog) {
+	prnt("ss ss;",BRED,"Can't open log file:",logpath,RST);
+	return 1;
+      }
+
+      prnt("ss ss;",BGRN,"Log is written to file:",logpath,RST);
+
+      if (LogOK==1) {
+	fprintf(flog,"----------------------------------------\n");
+	fprintf(flog,"File: %s raw:%d dec:%d root:%d\n",opt.Filename,
+		opt.raw_write,opt.dec_write,opt.root_write);
+	fprintf(flog,"Comment: %s\n",opt.Log);
+      }
+    } // if LogOK<3
+
     //b_wdog=0;
     t_wdog=0;
-    //cout << "start: " << rst << endl;
     crs->Free_Transfer();
 #ifdef P_LIBUSB
       prnt("sss;",BYEL,"Sleep 50",RST);
@@ -2716,7 +2747,22 @@ int CRS::DoStartStop(int rst) {
     //nsmp=0;
 
     cpar.F_start = gSystem->Now();
-    Text_time("S:",cpar.F_start);
+    //Text_time("S:",cpar.F_start);
+    Text_time(txt_start,"",cpar.F_start);
+
+    if (LogOK<3) {
+      if (LogOK==1)
+	fprintf(flog,"Start: %s\n",txt_start);
+      else
+	fprintf(flog,"Continue: %s\n",txt_start);
+      fclose(flog);
+    }
+
+    // cout << "File: " << opt.Filename << " " << opt.raw_write
+    // 	 << " " << opt.dec_write << " " << opt.root_write << endl;
+    // cout << "Comment: " << opt.Log << endl;
+    // cout << "Start: " << txt_start << endl;
+    // cout << "rst: " << rst << endl;
 
     if (rst) {
       if (opt.raw_write) {
@@ -2748,8 +2794,17 @@ int CRS::DoStartStop(int rst) {
     }
   } //start
   else { //stop
+    if (LogOK<3) {
+      flog = fopen(logpath,"a");
+      cpar.F_stop = gSystem->Now();
+      char txt_stop[30];
+      Text_time(txt_stop,"",cpar.F_stop);
+      fprintf(flog,"Stop:  %s\n",txt_stop);
+      //cout << "stop: " << txt_stop << " " << opt.T_acq << endl;
+    }
+
     //buf_out[0]=4;
-    cout << "Acquisition stopped" << endl;
+    //cout << "Acquisition stopped" << endl;
 
     Command2(4,0,0,0);
 #ifdef P_LIBUSB
@@ -2761,11 +2816,23 @@ int CRS::DoStartStop(int rst) {
 
     //cout << "Sleep(13000)" << endl;
 
-    // cout << "Acquisition stopped2" << endl;
+    //cout << "Acquisition stopped2" << endl;
     Cancel_all(ntrans);
     b_stop=true;
     b_run=2;
     //cout << "Acquisition stopped3" << endl;
+    //gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
+    cout << "Acquisition stopped" << endl;
+    //cout << "stop: " << opt.T_acq << endl;
+    gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
+    //cout << "stop: " << opt.T_acq << endl;
+
+    if (LogOK<3) {
+      fprintf(flog,"Run time from PC: %f sec\n",
+	      (cpar.F_stop-cpar.F_start)*0.001);
+      fprintf(flog,"Run time from DAQ: %f sec\n",opt.T_acq);
+      fclose(flog);
+    }
   }
 
   return 0;
@@ -2787,13 +2854,6 @@ void CRS::ProcessCrs(int rst) {
   }
   Command2(3,0,0,0);
 
-#ifdef P_TEST
-  if (myM->test) {
-    EndAna(1);
-    return;
-  }
-#endif //P_TEST
-
   while (!crs->b_stop) {
     if (!batch) {
       Show();
@@ -2808,6 +2868,15 @@ void CRS::ProcessCrs(int rst) {
       DoStartStop(0);
       //cout << "Stop2!!!" << endl;
     }
+
+#ifdef P_TEST
+  // if (myM->testdelay) {
+  //   gSystem->Sleep(myM->testdelay);   
+  //   EndAna(1);
+  //   return;
+  // }
+#endif //P_TEST
+
   }
 
   // cout << "stopped:" << endl;
@@ -2817,14 +2886,14 @@ void CRS::ProcessCrs(int rst) {
 
 #endif //CYUSB
 
-void CRS::Text_time(const char* hd, Long64_t f_time) {
+void CRS::Text_time(char* txt, const char* hd, Long64_t f_time) {
   //convert btw gSystem->Now and time_t
-  time_t tt = (cpar.F_start+788907600000)*0.001;
+  time_t tt = (f_time+788907600000)*0.001;
   struct tm *ptm = localtime(&tt);
   char ttt[100];
   strftime(ttt,sizeof(ttt),"%F %T",ptm);
-  strcpy(txt_start,hd);
-  strcat(txt_start,ttt);
+  strcpy(txt,hd);
+  strcat(txt,ttt);
 }
 
 void CRS::DoExit()
@@ -2859,7 +2928,7 @@ void CRS::DoReset(int rst) {
 
   if (!b_stop) return;
 
-  Init_Inp_Buf();
+  //Init_Inp_Buf();
 
   if (EvtFrm) {
     EvtFrm->DoReset();
@@ -3110,7 +3179,7 @@ void CRS::After_ReadPar(int op) {
   //op - то же, что и для ReadParGz
 
   Make_prof_ch();
-  Text_time("S:",cpar.F_start);
+  Text_time(txt_start,"S:",cpar.F_start);
 
   for (int i=0;i<MAX_CH;i++) {
     cpar.Len[i]=cpar.ChkLen(i,module);
@@ -4098,7 +4167,7 @@ void CRS::Init_Inp_Buf() {
   buf_it->b3 = InpBuf_ring.b1;
   buf_it->flag=2;  // считаем, что сделаны Findlast + анализ
 
-  prnt("ss l ss;",BMAG,"InpBuf_ring size:",opt.ibuf_size,"MB",RST);
+  //prnt("ss l ss;",BMAG,"InpBuf_ring size:",opt.ibuf_size,"MB",RST);
 
 }
 
@@ -6319,7 +6388,7 @@ int CRS::Detect_adcm() {
 
 
   cpar.F_stop = (modtime-788907600)*1000;
-  Text_time("E:",cpar.F_stop);
+  Text_time(txt_start,"E:",cpar.F_stop);
 
   if (r_id==0) {
     res=2;

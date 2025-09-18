@@ -665,7 +665,7 @@ void PopFrame::AddTest() {
 
   fTest = new TGTextButton(fMain, "      &Test4      ",4);
   fTest->Connect("Clicked()", "PopFrame", this, "Do_Test()");
-  fTest->SetToolTipText("myM->DoStartStop(1) N[x2] times");
+  fTest->SetToolTipText("myM->DoStartStop(1) + delay N times");
   fMain->AddFrame(fTest, LayBut3);
 
 }
@@ -696,15 +696,19 @@ void PopFrame::Do_Test() {
 	crs->Command32(8,0,0,0); //сброс сч./буф.
 	gSystem->Sleep(delay); //300
 	break;
-      case 4:
+      case 4: {
 	//prnt("ssd d ds;",BMAG,"Press1: ",i,crs->b_acq,delay,RST);
-	myM->test=true;
+	float tmp = opt.Tstop;
+	//myM->testdelay=delay;
+	opt.Tstop=delay*0.001;
 	myM->fStart->Clicked();
-	gSystem->Sleep(delay); //300
-	myM->fStart->Clicked();
-	gSystem->Sleep(delay); //300
-	myM->test=false;
+	gSystem->Sleep(delay*2); //300
+	//myM->fStart->Clicked();
+	//gSystem->Sleep(delay); //300
+	//myM->testdelay=0;
+	opt.Tstop=tmp;
 	break;
+      }
       default:
 	break;
       }

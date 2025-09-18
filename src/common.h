@@ -35,6 +35,7 @@ const Long64_t OFF_SIZE = TR_SIZE; //2 MB, на всякий случай
 
 
 
+const int MAXLOG=1024; //максимальная длина записи в логе
 const int MAX_CH=256; //256; //max number of channels
 const int MAX_TP=8; // 8 types, MAX_TP=other, MAX_TP+1=copy, MAX_TP+2=swap
 const int MAX_CHTP=MAX_CH+MAX_TP+1;
@@ -67,8 +68,11 @@ const int NDIV=5; // количество графов в eventframe
 #define MXLN 40
 #define MXNUM 60
 
-const int MAIN_HEIGHT = 550; //height of the main window
-const int MAIN_WIDTH = 630; //width of the main window
+const int MAIN_WIDTH = 958; //width of the main window
+const int MAIN_HEIGHT = 694; //height of the main window
+// const int MAIN_WIDTH = 630; //width of the main window
+// const int MAIN_HEIGHT = 550; //height of the main window
+
 const int W2_HEIGHT = 210; //height of the split frame containing ch_types
 
 const int HFRAME_WIDTH = 400; //width of histogram frames

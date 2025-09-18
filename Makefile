@@ -23,6 +23,7 @@
 define HELP_TEXT
 Доступные команды:
 make : compile and install romana
+make depend : install additional programs needed for romana
 make build : compile without installation
 make install : only install
 make link : only link (use link instead of copy for install)
@@ -151,9 +152,12 @@ endif
 #yumo1:
 #	echo $(MAKECMDGOALS) $(YM)
 
-.PHONY: all clean build link install help
+.PHONY: all clean depend build link install help
 
 all: build install
+
+depend: check_ld_library_path
+	sudo apt install imagemagick l3afpad telegram-send
 
 build: $(OBJ_D) $(PROG).x
 #all: svnver $(PROG).x

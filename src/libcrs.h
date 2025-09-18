@@ -179,6 +179,7 @@ RQ_OBJECT("CRS")
   gzFile f_read;
   gzFile f_dec;
   bool juststarted;
+  short LogOK=0; //0: undefined, 1: OK, 2: continue, 3: no Log; -1: bad
 
   std::ostream *txt_out;
   //std::streambuf *txt_buf;
@@ -192,6 +193,10 @@ RQ_OBJECT("CRS")
   //string decname;
   string rootname;
   string logname;
+
+  FILE* flog;
+  char logpath[256];
+
 
   //UChar_t* DecBuf_ring2; // = DecBuf_ring + OFF_SIZE
   //UChar_t* DecBuf_ring; //указатель на буфер, куда пишутся декодированные данные
@@ -477,7 +482,7 @@ RQ_OBJECT("CRS")
 #endif
 
 
-  void Text_time(const char* hd, Long64_t f_time);
+  void Text_time(char* txt, const char* hd, Long64_t f_time);
   void DoExit();
   //int Command_old(int len_out, int len_in); //send and receive command
   //void SendParametr(const char* name, int len_out); //send one parameter

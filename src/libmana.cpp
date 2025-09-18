@@ -233,6 +233,45 @@ void debug_mess(bool cond, const char* mess, double par1, int par2) {
   }
 }
 
+//определяет максимальную длину текста с учетоv кириллицы (UTF8)
+size_t max_cyrillic_length(const char* text, size_t max_bytes) {
+    size_t count = 0, bytes = 0;
+    while (text[bytes] && bytes < max_bytes) {
+        uint8_t b = static_cast<uint8_t>(text[bytes]);
+        size_t char_len = (b < 0x80) ? 1 : (b < 0xE0) ? 2 : (b < 0xF0) ? 3 : 4;
+        if (bytes + char_len > max_bytes) break;
+        bytes += char_len;
+        count++;
+    }
+    return count;
+}
+
+
+void CheckLog(const char* txt) {
+  //проверяет текст и записывает его в opt.Log
+  TString str(txt);
+  // Удаляем пробелы с двух сторон, после этого проверяем длину
+  str.Remove(TString::kBoth,' ');
+  int len = str.Length();
+  if (len==0) {
+    str="empty";
+    len=5;
+    crs->LogOK=-1; //bad
+  }
+  else
+    crs->LogOK=0; //undefined
+
+  if (str.EqualTo("0"))
+    crs->LogOK=3; //no log
+
+  if (len>=MAXLOG)
+    //len=MAXLOG-1;
+    len = max_cyrillic_length(str.Data(),MAXLOG)-1;
+
+  strncpy(opt.Log,str.Data(),len);
+  opt.Log[len]=0; //null termination
+}
+
 void EExit(int ret) {
   delete crs;
   delete encoder;
@@ -1161,6 +1200,7 @@ int main(int argc, char **argv)
     "-m name: select module/device name (if several devices are connected)\n"
     "-m 0: don't open USB device\n"
     "-l: print list of connected devices and exit\n"
+    "-0: do not write in the logfile\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
     "-b [outfile]: analyze file in batch mode (without gui) and exit.\n"
     "   Data are saved in outfile[.raw/.dec/.root] depending on batch parameters.\n"
@@ -1181,6 +1221,7 @@ int main(int argc, char **argv)
     "   examples: Tstop=10 (set time limit to 10 sec)\n"
     "             Thr[5]=20 (set threshold for ch5 to 20)\n"
     "             Thr=20 (set threshold for all channels to 20)\n"
+    "             Log=\"this is test\" (set Log message)\n"
     "   works only with Toptions class; doesn't work with 2d/3d hist parameters\n"
     //"[par:] - print value(s) of the parameter par\n"
     "----------------------------------------------";
@@ -1209,6 +1250,9 @@ int main(int argc, char **argv)
 	switch (sarg[1]) {
 	case 'h':
 	  EExit(0);
+	case '0':
+	  crs->LogOK=3; //no log
+	  continue;
 	case 'u': //reset usb
 	  b_resetusb=true;
 	  continue;
@@ -1484,6 +1528,11 @@ int main(int argc, char **argv)
     if (res>=200) {
       prnt("ssssds;",BRED,"Parameter ",it->Data()," not found: ",res,RST);
     }
+    if (it->Contains("Log")) {
+      CheckLog(opt.Log);
+      if (crs->LogOK>=0) //undefined or good
+	crs->LogOK=1;
+    }
   }
 
   //show individual parameters if listshow is not empty
@@ -1569,6 +1618,10 @@ int main(int argc, char **argv)
       prnt("ssfs;",BGRN,"Tstop=",opt.Tstop,RST);
       //prnt("ssss;",BGRN,"rawname=",crs->rawname.c_str(),RST);
 #ifdef CYUSB
+      if (crs->LogOK<=0) {
+	prnt("ss ss;",BRED,"Please specify Log mesaage:",opt.Log,RST);
+	EExit(-1);
+      }
       crs->DoStartStop(1);
 #endif
       crs->b_acq=false;
@@ -2605,8 +2658,9 @@ void MainFrame::Build() {
   //cout << "dd: " << dd.fWidth << " " << dd.fHeight << endl;
   //Resize(GetDefaultSize());
 
-  //Resize(954,694);
-  Resize(956,694);
+  //Resize(956,694);
+  Resize(MAIN_WIDTH,MAIN_HEIGHT);
+
   // Map main frame
   MapWindow();
 
@@ -2656,16 +2710,19 @@ void MainFrame::MakeTabs(bool reb) {
 
   tb = fTab->AddTab("Parameters");
   tabfr.push_back(tb);
-  parpar = new ParParDlg(tb, 1, MAIN_HEIGHT-5); //-5 ->иначе появляется слайдер
+  parpar = new ParParDlg(tb, 10, 10); //old: MAIN_HEIGHT-5 ->иначе появляется слайдер
   tb->AddFrame(parpar, LayEE1);
   parpar->Update();
   ntab++;
+
+  //здесь возможен return без крэша
+  //return;
 
   //chanpar;
   //YKWheel
   tb = fTab->AddTab("Channels");
   tabfr.push_back(tb);
-  chanpar = new ChanParDlg(tb, 1, MAIN_HEIGHT);
+  chanpar = new ChanParDlg(tb, 10, 10);
   tb->AddFrame(chanpar, LayEE2);
   ntab++;
   //YKWheel
@@ -2674,7 +2731,7 @@ void MainFrame::MakeTabs(bool reb) {
 
   tb = fTab->AddTab("Events");
   tabfr.push_back(tb);
-  EvtFrm = new EventFrame(tb, MAIN_WIDTH, MAIN_HEIGHT,ntab);
+  EvtFrm = new EventFrame(tb, 10, 10, ntab);
   tb->AddFrame(EvtFrm, LayEE1);
   ntab++;
   //cout << "tab2: " << ntab << endl;
@@ -2682,21 +2739,21 @@ void MainFrame::MakeTabs(bool reb) {
   tb = fTab->AddTab("Histograms");
   tabfr.push_back(tb);
   //histpar = new HistParDlg(tb, 600, MAIN_HEIGHT);
-  histpar = new HistParDlg(tb, 400, MAIN_HEIGHT);
+  histpar = new HistParDlg(tb, 10, 10);
   tb->AddFrame(histpar, LayEE1);
   ntab++;
   //cout << "tab3: " << ntab << endl;
 
   tb = fTab->AddTab("Plots");
   tabfr.push_back(tb);
-  HiFrm = new HistFrame(tb, 1, MAIN_HEIGHT,ntab);
+  HiFrm = new HistFrame(tb, 10, 10,ntab);
   tb->AddFrame(HiFrm, LayEE1);
   ntab++;
   //cout << "tab4: " << ntab << endl;
 
   tb = fTab->AddTab("Errors");
   tabfr.push_back(tb);
-  ErrFrm = new ErrFrame(tb, 250, MAIN_HEIGHT);
+  ErrFrm = new ErrFrame(tb, 250, 10);
   tb->AddFrame(ErrFrm, LayEE1);
   ntab++;
   //cout << "tab5: " << ntab << endl;
@@ -2780,7 +2837,7 @@ void MainFrame::DoStartStop(int rst) {
   //rst=1 - start/stop is pressed
   //rst=0 - continue/pause is pressed
 
-  //prnt("ssds;",BMAG,"DoStartStop1: ",crs->b_acq,RST);
+  //prnt("ssds;",BGRN,"DoStartStop1: ",crs->b_acq,RST);
 
 #ifdef CYUSB
   if (crs->b_acq) { //STOP or PAUSE is pressed here
@@ -2804,7 +2861,14 @@ void MainFrame::DoStartStop(int rst) {
 
   }
   else { // START is pressed here
-    if (TestFile()) {
+    //проверяем Log
+    while (crs->LogOK<=0) {
+      parpar->DoLog();
+    }
+    if (!rst)
+      crs->LogOK=2; //continue
+
+   if (TestFile()) {
       //ParLock();
       fStart->ChangeBackground(fRed);
       fStart->SetText("Stop");
@@ -3936,11 +4000,11 @@ void MainFrame::HandleHelp() {
 
   strcpy(command,"xdg-open ");
   strcat(command,HELPPATH"/manual.pdf");
-  int st = system( command );
+  int st =  system( command );
 
-  char* col=(char*)BGRN;
-  if (st) col=(char*)BRED;
-  prnt("ss s ds;",col,command,":",st,RST);
+  //char* col=(char*)BGRN;
+  if (st)
+    prnt("ss s ds;",BRED,command,":",st,RST);
 
   // strcpy(command,"xed log");
   // st = system( command );

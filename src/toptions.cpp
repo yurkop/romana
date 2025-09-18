@@ -360,6 +360,9 @@ Toptions::Toptions() {
   strcpy(dec_mask,"T AtW C");
 
   memset(Filename,0,sizeof(Filename));
+  memset(logFile,0,sizeof(logFile));
+  memset(Log,0,sizeof(Log));
+
   memset(ch_name,0,sizeof(ch_name));
   strcpy(Filename,"test01");
 

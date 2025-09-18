@@ -43,6 +43,7 @@ using namespace std;
 
 void prnt(const char* fmt, ...);
 void debug_mess(bool cond, const char* mess, double par1, int par2=-9999);
+void CheckLog(const char* txt);
 
 void EExit(int ret);
 int evalpar(TString &it, char* var, const char* varname);
@@ -207,7 +208,7 @@ class MainFrame : public TGMainFrame {
 //--------------------------------------
 class MyMainFrame: public MainFrame {
  public:
-  bool test=false;
+  //int testdelay=0;
   MyMainFrame(const TGWindow *p,UInt_t w,UInt_t h);
   virtual ~MyMainFrame();
   ClassDef(MyMainFrame, 0)

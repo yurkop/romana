@@ -1,3 +1,8 @@
+git tag -a v0.933 -m 'добавлен logfile'
+- добавлена кнопка Comment
+- запись в logfile
+- make depend в Makefile
+
 git tag -a v0.932 -m 'добавлен encoder.cpp'
 
 - добавлен класс Encoder (только для dec)

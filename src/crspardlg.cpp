@@ -6,6 +6,8 @@
 #include <TGToolTip.h>
 #include <TVirtualX.h>
 
+#include <sstream>
+
 extern std::list<VarClass> varlist;
 
 
@@ -210,6 +212,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   LayCC2   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 10, 0, 0, 0);
   LayET0   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 0, 0, 0, 0);
   LayET1   = new TGLayoutHints(kLHintsExpandX|kLHintsTop, 5, 5, 5, 5);
+  LayLC0   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY);
   LayLC1   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 1, 6, 1, 1);
   LayLC2   = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 1, 1, 1, 1);
   LayLT0   = new TGLayoutHints(kLHintsLeft|kLHintsTop);
@@ -223,6 +226,7 @@ ParDlg::ParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   LayLT5   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 1, 1, 1);
   LayLT6   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 50, 1, 20, -10);
   LayLT7   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 0, 5, 0);
+  LayLT8   = new TGLayoutHints(kLHintsLeft|kLHintsTop, 5, 5, 1, 5);
 
   LayLE0   = new TGLayoutHints(kLHintsLeft|kLHintsExpandY);
   LayEE0   = new TGLayoutHints(kLHintsExpandX|kLHintsExpandY);
@@ -1384,7 +1388,7 @@ ParParDlg::ParParDlg(const TGWindow *p,UInt_t w,UInt_t h)
   //hard_list.clear();
 
   AddFrame(fDock, LayEE0);
-  fDock->SetWindowName("Parameters");  
+  fDock->SetWindowName("Parameters");
 
   TGCompositeFrame *fMain=fDock->GetContainer();
   fMain->SetLayoutManager(new TGVerticalLayout(fMain));
@@ -1489,6 +1493,177 @@ void ParParDlg::AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 
 }
 
+TGPicture* createTextPicture(const char *text, int &height, UInt_t width = 800, int fontSize = 12) {
+  const double plen=2.3; //этот параметр управляет длиной разбитых строк
+  // чем он больше, тем длиннее будут строки
+  const double phei=1.6; //этот параметр управляет высотой картинки
+
+  // Сохраняем оригинальное разбиение на строки и проверяем длину
+  std::vector<std::string> lines;
+  std::stringstream ss(text);
+  std::string line;
+    
+  while (std::getline(ss, line)) {
+    // //пропускаем комментарии
+    // if (line[0]=='#') continue;
+    // Проверяем, нужно ли разбивать строку
+    if (line.length() * (fontSize/2) < width) {
+      lines.push_back(line);
+    } else {
+      // Разбиваем длинную строку на части
+      std::stringstream wordStream(line);
+      std::string word;
+      std::string currentLine;
+            
+      while (wordStream >> word) {
+	if (currentLine.empty()) {
+	  currentLine = word;
+	} else {
+	  std::string testLine = currentLine + " " + word;
+	  if (testLine.length() * (fontSize/plen) < width) {
+	    currentLine = testLine;
+	  } else {
+	    lines.push_back(currentLine);
+	    currentLine = word;
+	  }
+	}
+      }
+      if (!currentLine.empty()) {
+	lines.push_back(currentLine);
+      }
+    }
+  }
+
+  // Рассчитываем высоту исходя из количества строк
+  height = lines.size() * fontSize * phei;
+
+  // Собираем текст с переносами строк
+  TString formattedText;
+  for (size_t i = 0; i < lines.size(); i++) {
+    if (i > 0) formattedText += "\\n";
+    formattedText += lines[i].c_str();
+  }
+
+  // Создаем временный файл
+  TString tempFile = TString::Format("/tmp/text_%ld.png", long(gSystem->Now()));
+  gSystem->Exec(TString::Format("convert -size %dx%d -background white -fill black -pointsize %d -gravity west label:'%s' %s", width, height, fontSize, formattedText.Data(), tempFile.Data()));
+
+  // Загружаем картинку
+  const TGPicture* picture = gClient->GetPicture(tempFile.Data());
+
+  // Удаляем временный файл
+  gSystem->Unlink(tempFile.Data());
+
+  return const_cast<TGPicture*>(picture);
+}
+
+void TmpLogFile(const char* filename, const char* comment=0) {
+  //Добавляет комментарий в filename
+
+  // Читаем все строки из файла, кроме комментариев
+  std::ifstream inFile(filename);
+  std::vector<std::string> lines;
+  std::string line;
+    
+  while (std::getline(inFile, line)) {
+    if (line[0]!='#') //пропускаем комментарии
+      lines.push_back(line);
+  }
+  inFile.close();
+    
+  // Записываем обратно с добавлением комментария
+  std::ofstream outFile(filename);
+  if (comment)
+    outFile << comment; // Добавляем комментарий в начало
+  for (const auto& l : lines) {
+    outFile << l << "\n";
+  }
+  outFile.close();
+}
+
+void ParParDlg::UpdateLog() {
+  // Читаем текст из файла
+  TString text;
+
+  std::ifstream inFile(tmplogFilename);
+  std::string line;
+  while (std::getline(inFile, line)) {
+    if (line[0]!='#' && !line.empty()) {
+      //выбрасываем комментарии и пустые строчки
+      text+=line;
+      text+='\n';
+    }
+  }
+  inFile.close();
+
+  if (text.EndsWith("\n")) {
+    text.Remove(text.Length()-1);
+  }
+
+
+  /*
+  FILE* file = fopen(tmplogFilename, "r");
+  if (file) {
+    char buffer[1024];
+    while (fgets(buffer, sizeof(buffer), file)) {
+      text += buffer;
+    }
+    fclose(file);
+  }
+  // else {
+  //   text=" ";
+  //   //text += logFilename;
+  // }
+  */
+
+  CheckLog(text.Data());
+
+  // Создаем новую картинку
+  TGPicture* newPicture = createTextPicture(opt.Log,log_h,log_w,log_font);
+  if (newPicture) {
+    logButton->SetPicture(newPicture);
+    logButton->Resize(log_w, log_h);
+    //Resize(fWidth + 55, height + 85);
+    Layout();
+  }
+
+  if (crs->LogOK==0)
+    crs->LogOK=1;
+
+  //cout << "Logg: " << crs->LogOK << " " << opt.Log << " " << strlen(opt.Log) << endl;
+
+}
+
+void ParParDlg::DoLog() {
+  if (crs->b_stop) {
+    TmpLogFile(tmplogFilename, "# Enter the text for the log file, can be truncate if too long.\n# 0 means no log\n");
+
+
+
+    //команда wmctrl с параметрами делает окно l3afpad always_on_top через 2 сек
+    TString cmd = "bash -c \"";
+    cmd += "l3afpad ";
+    cmd += tmplogFilename;
+    cmd += "& ";
+    cmd += "APP_PID=\\$!; ";
+    cmd += "sleep 2; ";
+    cmd += "WINDOW_ID=\\$(wmctrl -l -p | awk -v pid=\\$APP_PID '\\$3 == pid {print \\$1; exit}'); ";
+    cmd += "if [ -n \\\"\\$WINDOW_ID\\\" ]; then ";
+    cmd += "    wmctrl -i -r \\$WINDOW_ID -b add,above; ";
+    // cmd += "else ";
+    // cmd += "    wmctrl -r :ACTIVE: -b add,above; ";
+    cmd += "fi; ";
+    cmd += "wait \\$APP_PID\"";
+
+    //gSystem->Unlink(tmplogFilename);
+
+    //int result =
+    gSystem->Exec(cmd);
+    UpdateLog();
+  }
+}
+
+
 void ParParDlg::AddFileName(TGCompositeFrame* frame) {
   int id;
 
@@ -1510,7 +1685,40 @@ void ParParDlg::AddFileName(TGCompositeFrame* frame) {
   tt->SetMaxLength(sizeof(opt.Filename)-1);
   frame->AddFrame(tt,LayET1);
   DoMap(tt,opt.Filename,p_txt,0,0x100);
+  tt->SetToolTipText("Name of the file to write raw/dec/root data");
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+
+  //Log message
+  hframe1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hframe1,LayET0);
+  fLabel = new TGLabel(hframe1, "Comment:");
+  hframe1->AddFrame(fLabel,LayLC0);
+
+  if (crs->LogOK==3)
+    strcpy(opt.Log,"0");
+    
+  CheckLog(opt.Log);
+  TGPicture* picture = createTextPicture(opt.Log, log_h, log_w, log_font);
+
+  if (picture) {
+    logButton = new TGPictureButton(hframe1, picture);
+    //TGIcon* icon = new TGIcon(frame, picture, width, height);
+    hframe1->AddFrame(logButton,LayLT8);
+    logButton->SetToolTipText("File description. The same text will be written to the log file.");
+    logButton->Connect("Clicked()", "ParParDlg", this, "DoLog()");
+  }
+
+
+  /*
+  id = Plist.size()+1;
+  TGTextEntry* tlog = new TGTextEntry(frame,"ertewrt  фывпывап", id);
+  //tt->SetDefaultSize(380,20);
+  tlog->SetMaxLength(sizeof(opt.Filename)-1);
+  frame->AddFrame(tlog,LayET1);
+  //DoMap(tlog,opt.Filename,p_txt,0,0x100);
+  //tlog->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+  TGTextEntry* tlog = new TGTextEntry(frame,"ertewrt  фывпывап", id);
+  */
 
 }
 
@@ -1760,17 +1968,11 @@ void ParParDlg::AddLine_dec_format(TGCompositeFrame* frame, int width) {
   TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1);
   TGTextEntry* tv = new TGTextEntry(hfr1,mask0);
-  //TGTextView* tv = new TGTextView(hfr1);
-  //tv->AddLine("test");
   hfr1->AddFrame(tv,LayLT4);
   tv->SetWidth(width);
-
-  //tv->SetState(false);
-  //tv->SetEditable(false);
-  //tv->SetEditDisabled(kEditDisable);
-  //tv->SetEnabled(false);
   tv->Connect("TextChanged(char*)", "ParParDlg", this, "FakeTxt()");
   tv->SetToolTipText(tip_dec);
+
 
   hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1);
@@ -1780,9 +1982,8 @@ void ParParDlg::AddLine_dec_format(TGCompositeFrame* frame, int width) {
   tt->SetWidth(width);
   tt->SetToolTipText(tip_dec);
   hfr1->AddFrame(tt,LayLT4);
-  DoMap(tt,opt.dec_mask,p_txt,0,0x100|(3<<1));
+  DoMap(tt,opt.dec_mask,p_txt,0,0x100|(3<<1)); //3<<1: DoColor
   tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
-  //tt->Connect("TextChanged(char*)", "ParParDlg", this, "DoDecFormat()");
   
   TGLabel* fLabel = new TGLabel(hfr1, "Dec mask");
   hfr1->AddFrame(fLabel,LayLT4);
@@ -1797,6 +1998,35 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   TGGroupFrame* fF6 = new TGGroupFrame(frame, "Expert", kVerticalFrame);
   fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
   frame->AddFrame(fF6, LayLT1);
+
+
+
+
+
+  tip1= "Log file location. If empty: $HOME/romana.log";
+
+  TGHorizontalFrame *hfr2 = new TGHorizontalFrame(fF6);
+  fF6->AddFrame(hfr2);
+
+  int id = Plist.size()+1;
+  TGTextEntry* tt = new TGTextEntry(hfr2,opt.logFile,id);
+  tt->SetWidth(200);
+  tt->SetToolTipText(tip1);
+  hfr2->AddFrame(tt,LayLT4);
+  DoMap(tt,opt.logFile,p_txt,0,0x100);//disable during daq; ?3<<1: DoColor
+  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+  
+  TGLabel* fLabel2 = new TGLabel(hfr2, "Log file");
+  hfr2->AddFrame(fLabel2,LayLT4);
+
+
+
+
+
+
+
+
+
 
   tip1= "Decoded data format";
   label="Dec format";

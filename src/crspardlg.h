@@ -52,6 +52,7 @@ public:
   TGLayoutHints* LayCC2 ;
   TGLayoutHints* LayET0 ;
   TGLayoutHints* LayET1 ;
+  TGLayoutHints* LayLC0 ;
   TGLayoutHints* LayLC1 ;
   TGLayoutHints* LayLC2 ;
   TGLayoutHints* LayLT0 ;
@@ -65,6 +66,7 @@ public:
   TGLayoutHints* LayLT5 ;
   TGLayoutHints* LayLT6 ;
   TGLayoutHints* LayLT7 ;
+  TGLayoutHints* LayLT8;
   TGLayoutHints* LayLE0 ;
   TGLayoutHints* LayEE0 ;
   TGLayoutHints* LayEE1 ;
@@ -259,13 +261,19 @@ protected:
   const char* tip2;
   const char* label;
 
+  int log_h,log_w=750,log_font=12;
+  TGPictureButton *logButton;
+  const char* tmplogFilename="/tmp/romana_log";
+
 public:
   TrigFrame* tTrig;
 
-public:
-
   void AddChk(TGGroupFrame* frame, const char* txt, Bool_t* opt_chk,
 	      Int_t* compr, Bool_t* rflag);
+
+  void UpdateLog();
+  void DoLog();
+
   void AddFileName(TGCompositeFrame* frame);
   int AddFiles(TGCompositeFrame* frame);
   //void AddHist(TGCompositeFrame* frame);
