@@ -35,7 +35,7 @@ const Long64_t OFF_SIZE = TR_SIZE; //2 MB, на всякий случай
 
 
 
-const int MAXLOG=1024; //максимальная длина записи в логе
+const int MAXLOG=8192; //максимальная длина записи в логе
 const int MAX_CH=256; //256; //max number of channels
 const int MAX_TP=8; // 8 types, MAX_TP=other, MAX_TP+1=copy, MAX_TP+2=swap
 const int MAX_CHTP=MAX_CH+MAX_TP+1;

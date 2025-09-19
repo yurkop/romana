@@ -43,7 +43,6 @@ TMutex stat_mut;
 
 TMutex decode_mut;
 TMutex raw_mut;
-TMutex decw_mut;
 
 //TMutex ringdec_mut;
 
@@ -2276,7 +2275,7 @@ void CRS::AllParameters44() {
 	  //wmask|=4; // запись по СС
 	}
       }
-
+      //cout << "mask_start: " << hex << mask_start << dec << endl;
       Command32(2,chan,23,mask_discr & cpar.RMask); //bitmask для дискр overwr AllPrms36
       Command32(2,chan,24,mask_start & cpar.RMask); //bitmask для START
       Command32(2,chan,25,wmask); // битовая маска разрешений записи
@@ -2626,36 +2625,14 @@ int CRS::DoStartStop(int rst) {
   if (!b_acq) { //start
 
 
+    const char *home = getenv("HOME");
+    if (!home) return 1;
+
     if (LogOK<3) {
-      //удаляем пробелы из opt.logFile
-      TString str(opt.logFile);
-      str.Remove(TString::kBoth,' ');
-      strcpy(opt.logFile,str.Data());
-
-      if (strlen(opt.logFile)) {
-	snprintf(logpath, sizeof(logpath), "%s", opt.logFile);
-      }
-      else {
-	const char *home = getenv("HOME");
-	if (!home) return 1;
-	snprintf(logpath, sizeof(logpath), "%s/romana.log", home);
-      }
-    
-      flog = fopen(logpath,"a");
-      if (!flog) {
-	prnt("ss ss;",BRED,"Can't open log file:",logpath,RST);
+      int res=OpenLog(opt.Daqlog,home);
+      if (res)
 	return 1;
-      }
-
-      prnt("ss ss;",BGRN,"Log is written to file:",logpath,RST);
-
-      if (LogOK==1) {
-	fprintf(flog,"----------------------------------------\n");
-	fprintf(flog,"File: %s raw:%d dec:%d root:%d\n",opt.Filename,
-		opt.raw_write,opt.dec_write,opt.root_write);
-	fprintf(flog,"Comment: %s\n",opt.Log);
-      }
-    } // if LogOK<3
+    }
 
     //b_wdog=0;
     t_wdog=0;
@@ -2757,12 +2734,6 @@ int CRS::DoStartStop(int rst) {
 	fprintf(flog,"Continue: %s\n",txt_start);
       fclose(flog);
     }
-
-    // cout << "File: " << opt.Filename << " " << opt.raw_write
-    // 	 << " " << opt.dec_write << " " << opt.root_write << endl;
-    // cout << "Comment: " << opt.Log << endl;
-    // cout << "Start: " << txt_start << endl;
-    // cout << "rst: " << rst << endl;
 
     if (rst) {
       if (opt.raw_write) {
@@ -3199,6 +3170,9 @@ void CRS::After_ReadPar(int op) {
     HiFrm->HiReset();
   }
 
+  if (!strcmp(opt.Log,"0"))
+    memset(opt.Log,0,sizeof(opt.Log));
+
 }
 int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
   //m1 - read module (1/0) (читается только при открытии файла)
@@ -3239,7 +3213,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  //prnt("sss d sd sd sds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
+  prnt("sss d sd sd sds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
 
   switch (mod) {
   case 32:
@@ -4341,6 +4315,8 @@ void CRS::EndAna(int end_ana) {
 
 void CRS::FAnalyze2(bool nobatch) {
 
+  char txt_time[30];
+
   if (gzeof(f_read)) {
     cout << "Enf of file: " << endl;
     //Ana2(1);
@@ -4351,6 +4327,7 @@ void CRS::FAnalyze2(bool nobatch) {
   TCanvas *cv=0;
 
   if (juststarted) {
+
     if (opt.raw_write) {
       Reset_Raw();
     }   
@@ -4360,6 +4337,17 @@ void CRS::FAnalyze2(bool nobatch) {
     if (opt.fTxt) {
       Reset_Txt();
     }
+
+    LogOK=1;
+    int res=OpenLog(opt.Analog,".");
+    if (res)
+      return;
+
+    Text_time(txt_time,"",cpar.F_start);
+    fprintf(flog,"Start from file: %s\n",txt_time);
+    fclose(flog);
+
+
     Ana_start(juststarted);
   }
   juststarted=false;
@@ -4400,6 +4388,13 @@ void CRS::FAnalyze2(bool nobatch) {
     Show(true);
     cv->SetEditable(true);
   }
+
+
+  flog = fopen(logpath,"a");
+  fprintf(flog,"End of analysis.\n");
+  fprintf(flog,"Run time from file: %f sec\n",opt.T_acq);
+  fclose(flog);
+
 }
 
 void CRS::DoNBuf2(int nb) {
@@ -5989,6 +5984,9 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
     data = buf8[idx1/8] & sixbytes;
     UChar_t ch = GLBuf[idx1+7];
 
+    // if (ch==255)
+    //   prnt("ss d d d s;",BRED,"chn:",ch,ipls.Chan,frmt,RST);
+
     // if (idx1<200000) {
     //   prnt("ss d d d d xs;",BGRN,"d35:",ch,ipls.Chan,frmt,ipls.ptype,buf8[idx1/8],RST);
     // }
@@ -6160,7 +6158,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       Tst3o[ipls.Chan] = ipls.Tstamp64;
       npulses3o[ipls.Chan] = ipls.Counter;
 
-      //prnt("ss d l l f fs;",BBLU,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate3[ipls.Chan],RST);
+      //prnt("ss d l l f fs;",BBLU,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate_hard[ipls.Chan],RST);
       break;
     }
     case 12:
@@ -7973,13 +7971,20 @@ void CRS::UpdateRates(int rst) {
 	    //  dd = abs(rr-rm)/rm*100;
 	    //if (dd>opt.wdog1) { //alert!
 	      t_wdog=opt.T_acq;
-	      char cmd[200];
-	      sprintf(cmd,"telegram-send "
-		      "\"romana alert: countrate in channel %d"
-		      " is %0.1f%% of average: %0.1f %0.1f\"",i,dd,
+	      char msg[100];
+	      sprintf(msg,"countrate in channel %d"
+		      " is %0.1f%% of average: %0.1f %0.1f",i,dd,
 		      rr,rm);
+	      char cmd[200];
+	      sprintf(cmd,"telegram-send \"%s\"",msg);
 	      gSystem->Exec(cmd);
 	      prnt("sss;",BRED,cmd,RST);
+
+	      if (logpath.Length()>0 && LogOK==1) {
+		flog = fopen(logpath,"a");
+		fprintf(flog,"%s\n",msg);
+		fclose(flog);
+	      }
 	    }
 	  
 	  }
@@ -7996,4 +8001,42 @@ void CRS::UpdateRates(int rst) {
       chanpar->UpdateField(i);
   }
 
+}
+
+int CRS::OpenLog(char* logname,const char* home) {
+  //if (LogOK<3) {
+  //удаляем пробелы из logname
+  TString str(logname);
+  str.Remove(TString::kBoth,' ');
+  strcpy(logname,str.Data());
+
+  if (strlen(logname)) {
+    logpath=TString(logname);
+    //snprintf(logpath, sizeof(logpath), "%s", logname);
+  }
+  else {
+    //const char *home = getenv("HOME");
+    //if (!home) return 1;
+    logpath=TString(home);
+    logpath+="/romana.log";
+  //snprintf(logpath, sizeof(logpath), "%s/romana.log", home);
+  }
+    
+  flog = fopen(logpath,"a");
+  if (!flog) {
+    prnt("ss ss;",BRED,"Can't open log file:",logpath.Data(),RST);
+    logpath.Resize(0);
+    return 1;
+  }
+
+  prnt("ss ss;",BGRN,"Log is written to file:",logpath.Data(),RST);
+
+  if (LogOK==1) {
+    fprintf(flog,"----------------------------------------\n");
+    fprintf(flog,"File: %s raw:%d dec:%d root:%d\n",opt.Filename,
+	    opt.raw_write,opt.dec_write,opt.root_write);
+    fprintf(flog,"Comment: %s\n",opt.Log);
+  }
+  //} // if LogOK<3
+  return 0;
 }

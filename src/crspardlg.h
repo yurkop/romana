@@ -173,6 +173,10 @@ public:
 		   double min1=0, double max1=0,
 		   UInt_t cmd1=0, TGLayoutHints* Lay1=0);
 
+  void AddLine_txt(TGCompositeFrame* frame, int width, void *x1,
+		   const char* tip1, const char* label,
+		   UInt_t cmd1=0, TGLayoutHints* Lay1=0);
+
   // void Rebuild();
 
   ClassDef(ParDlg, 0)

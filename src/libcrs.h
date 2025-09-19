@@ -194,8 +194,8 @@ RQ_OBJECT("CRS")
   string rootname;
   string logname;
 
-  FILE* flog;
-  char logpath[256];
+  FILE* flog=0;
+  TString logpath;
 
 
   //UChar_t* DecBuf_ring2; // = DecBuf_ring + OFF_SIZE
@@ -594,6 +594,8 @@ RQ_OBJECT("CRS")
   void Print_Buf8(UChar_t* buf, Long64_t size, const char* file=0);
 
   void UpdateRates(int rst=0);
+
+  int OpenLog(char* logname,const char* home);
 
   // void SimulateInit();
   // void SimNameHist();

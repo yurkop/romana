@@ -1297,6 +1297,29 @@ void ParDlg::AddLine_1opt(TGCompositeFrame* frame, int width, void *x1,
   hfr1->AddFrame(fLabel,LayLT4);
 }
 
+void ParDlg::AddLine_txt(TGCompositeFrame* frame, int width, void *x1,
+			 const char* tip1, const char* label,
+			 UInt_t cmd1, TGLayoutHints* Lay1) {
+  if (!Lay1) Lay1 = LayLT4;
+
+
+  TGHorizontalFrame *hfr1 = new TGHorizontalFrame(frame);
+  frame->AddFrame(hfr1);
+
+  int id = Plist.size()+1;
+  TGTextEntry* tt = new TGTextEntry(hfr1,"",id);
+  tt->SetWidth(width);
+  tt->SetToolTipText(tip1);
+
+  hfr1->AddFrame(tt,Lay1);
+  DoMap(tt,x1,p_txt,0,cmd1); //disable during daq; ?3<<1: DoColor
+  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
+  
+  TGLabel* fLabel1 = new TGLabel(hfr1, label);
+  hfr1->AddFrame(fLabel1,LayLT4);
+
+}
+
 //------ TrigFrame -------
 TrigFrame::TrigFrame(TGGroupFrame *p, int opt)
   :TGHorizontalFrame(p)
@@ -2000,32 +2023,11 @@ int ParParDlg::AddExpert(TGCompositeFrame* frame) {
   frame->AddFrame(fF6, LayLT1);
 
 
+  tip1= "Daq Log file location. If empty: $HOME/romana.log";
+  AddLine_txt(fF6, 200, opt.Daqlog, tip1, "Daq log file", 0x100);
 
-
-
-  tip1= "Log file location. If empty: $HOME/romana.log";
-
-  TGHorizontalFrame *hfr2 = new TGHorizontalFrame(fF6);
-  fF6->AddFrame(hfr2);
-
-  int id = Plist.size()+1;
-  TGTextEntry* tt = new TGTextEntry(hfr2,opt.logFile,id);
-  tt->SetWidth(200);
-  tt->SetToolTipText(tip1);
-  hfr2->AddFrame(tt,LayLT4);
-  DoMap(tt,opt.logFile,p_txt,0,0x100);//disable during daq; ?3<<1: DoColor
-  tt->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
-  
-  TGLabel* fLabel2 = new TGLabel(hfr2, "Log file");
-  hfr2->AddFrame(fLabel2,LayLT4);
-
-
-
-
-
-
-
-
+  tip1= "Analysis Log file location. If empty: <current folder>/analysis.log";
+  AddLine_txt(fF6, 200, opt.Analog, tip1, "Analysis log file", 0x100);
 
 
   tip1= "Decoded data format";
