@@ -2624,15 +2624,9 @@ int CRS::DoStartStop(int rst) {
 	
   if (!b_acq) { //start
 
-
-    const char *home = getenv("HOME");
-    if (!home) return 1;
-
-    if (LogOK<3) {
-      int res=OpenLog(opt.Daqlog,home);
-      if (res)
-	return 1;
-    }
+    int res=OpenLog(flog,1,0,opt.Filename); //daq
+    if (res)
+      return 1;
 
     //b_wdog=0;
     t_wdog=0;
@@ -2725,13 +2719,13 @@ int CRS::DoStartStop(int rst) {
 
     cpar.F_start = gSystem->Now();
     //Text_time("S:",cpar.F_start);
-    Text_time(txt_start,"",cpar.F_start);
+    txt_start=Text_time("",cpar.F_start);
 
-    if (LogOK<3) {
+    if (LogOK<3) { //1 или 2
       if (LogOK==1)
-	fprintf(flog,"Start: %s\n",txt_start);
-      else
-	fprintf(flog,"Continue: %s\n",txt_start);
+	fprintf(flog,"Start: %s\n",txt_start.Data());
+      else //=2
+	fprintf(flog,"Continue: %s\n",txt_start.Data());
       fclose(flog);
     }
 
@@ -2766,11 +2760,10 @@ int CRS::DoStartStop(int rst) {
   } //start
   else { //stop
     if (LogOK<3) {
-      flog = fopen(logpath,"a");
+      flog = fopen(opt.Daqlog,"a");
       cpar.F_stop = gSystem->Now();
-      char txt_stop[30];
-      Text_time(txt_stop,"",cpar.F_stop);
-      fprintf(flog,"Stop:  %s\n",txt_stop);
+      TString txt_stop=Text_time("",cpar.F_stop);
+      fprintf(flog,"Stop:  %s\n",txt_stop.Data());
       //cout << "stop: " << txt_stop << " " << opt.T_acq << endl;
     }
 
@@ -2794,9 +2787,6 @@ int CRS::DoStartStop(int rst) {
     //cout << "Acquisition stopped3" << endl;
     //gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
     cout << "Acquisition stopped" << endl;
-    //cout << "stop: " << opt.T_acq << endl;
-    gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
-    //cout << "stop: " << opt.T_acq << endl;
 
     if (LogOK<3) {
       fprintf(flog,"Run time from PC: %f sec\n",
@@ -2857,14 +2847,17 @@ void CRS::ProcessCrs(int rst) {
 
 #endif //CYUSB
 
-void CRS::Text_time(char* txt, const char* hd, Long64_t f_time) {
+TString CRS::Text_time(const char* header, Long64_t f_time) {
   //convert btw gSystem->Now and time_t
   time_t tt = (f_time+788907600000)*0.001;
   struct tm *ptm = localtime(&tt);
   char ttt[100];
   strftime(ttt,sizeof(ttt),"%F %T",ptm);
-  strcpy(txt,hd);
-  strcat(txt,ttt);
+  TString ss(header);
+  ss+=ttt;
+  //strcpy(txt,hd);
+  //strcat(txt,ttt);
+  return ss;
 }
 
 void CRS::DoExit()
@@ -3150,7 +3143,7 @@ void CRS::After_ReadPar(int op) {
   //op - то же, что и для ReadParGz
 
   Make_prof_ch();
-  Text_time(txt_start,"S:",cpar.F_start);
+  txt_start=Text_time("S:",cpar.F_start);
 
   for (int i=0;i<MAX_CH;i++) {
     cpar.Len[i]=cpar.ChkLen(i,module);
@@ -3170,8 +3163,9 @@ void CRS::After_ReadPar(int op) {
     HiFrm->HiReset();
   }
 
-  if (!strcmp(opt.Log,"0"))
-    memset(opt.Log,0,sizeof(opt.Log));
+  CheckLog(opt.Log,0); //After_ReadPar
+  // if (!strcmp(opt.Log,"0"))
+  //   memset(opt.Log,0,sizeof(opt.Log));
 
 }
 int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
@@ -4315,7 +4309,8 @@ void CRS::EndAna(int end_ana) {
 
 void CRS::FAnalyze2(bool nobatch) {
 
-  char txt_time[30];
+  TString txt_time;
+  Long64_t A_start=0,A_stop=0;
 
   if (gzeof(f_read)) {
     cout << "Enf of file: " << endl;
@@ -4328,6 +4323,17 @@ void CRS::FAnalyze2(bool nobatch) {
 
   if (juststarted) {
 
+    int res=OpenLog(flog,0,Fname,opt.Filename); //Ana
+    if (res)
+      return;
+
+    if (LogOK!=3) {
+      txt_time=Text_time("",cpar.F_start);
+      fprintf(flog,"Start from file: %s\n",txt_time.Data());
+      fclose(flog);
+    }
+
+
     if (opt.raw_write) {
       Reset_Raw();
     }   
@@ -4337,16 +4343,6 @@ void CRS::FAnalyze2(bool nobatch) {
     if (opt.fTxt) {
       Reset_Txt();
     }
-
-    LogOK=1;
-    int res=OpenLog(opt.Analog,".");
-    if (res)
-      return;
-
-    Text_time(txt_time,"",cpar.F_start);
-    fprintf(flog,"Start from file: %s\n",txt_time);
-    fclose(flog);
-
 
     Ana_start(juststarted);
   }
@@ -4360,6 +4356,14 @@ void CRS::FAnalyze2(bool nobatch) {
     cv->SetEditable(false);
   }
   //T_start = gSystem->Now();
+
+  if (LogOK!=3) {
+    flog = fopen(opt.Analog,"a");
+    A_start=gSystem->Now();
+    txt_time=Text_time("",A_start);
+    fprintf(flog,"Start: %s\n",txt_time.Data());
+    fclose(flog);
+  }
 
   //int res;
   while (crs->b_fana) {
@@ -4390,10 +4394,15 @@ void CRS::FAnalyze2(bool nobatch) {
   }
 
 
-  flog = fopen(logpath,"a");
-  fprintf(flog,"End of analysis.\n");
-  fprintf(flog,"Run time from file: %f sec\n",opt.T_acq);
-  fclose(flog);
+  if (LogOK!=3) {
+    flog = fopen(opt.Analog,"a");
+    A_stop=gSystem->Now();
+    txt_time=Text_time("",A_stop);
+    fprintf(flog,"Stop: %s\n",txt_time.Data());
+    fprintf(flog,"Run time: %f sec\n",(A_stop-A_start)*0.001);
+    fprintf(flog,"Run time from file: %f sec\n",opt.T_acq);
+    fclose(flog);
+  }
 
 }
 
@@ -6385,7 +6394,7 @@ int CRS::Detect_adcm() {
 
 
   cpar.F_stop = (modtime-788907600)*1000;
-  Text_time(txt_start,"E:",cpar.F_stop);
+  txt_start=Text_time("E:",cpar.F_stop);
 
   if (r_id==0) {
     res=2;
@@ -7980,8 +7989,8 @@ void CRS::UpdateRates(int rst) {
 	      gSystem->Exec(cmd);
 	      prnt("sss;",BRED,cmd,RST);
 
-	      if (logpath.Length()>0 && LogOK==1) {
-		flog = fopen(logpath,"a");
+	      if (LogOK==1) {
+		flog = fopen(opt.Daqlog,"a");
 		fprintf(flog,"%s\n",msg);
 		fclose(flog);
 	      }
@@ -8003,40 +8012,90 @@ void CRS::UpdateRates(int rst) {
 
 }
 
-int CRS::OpenLog(char* logname,const char* home) {
-  //if (LogOK<3) {
+void CRS::SetLogFile(char* logname) {
   //удаляем пробелы из logname
   TString str(logname);
   str.Remove(TString::kBoth,' ');
+
+  if (logname==opt.Daqlog) { //Daqlog
+    if (!str.Length()) { // пусто
+      const char *home = getenv("HOME");
+      if (!home) {
+	prnt("sss;",BRED,"HOME environment is not set",RST);
+	EExit(0);
+      }
+      str+=home;
+      str+="/romana.log";
+    }
+  }
+  else { //Analog
+    if (!str.Length()) { // пусто
+      str="analysis.log";
+    }
+  }
+
   strcpy(logname,str.Data());
 
-  if (strlen(logname)) {
-    logpath=TString(logname);
-    //snprintf(logpath, sizeof(logpath), "%s", logname);
+}
+
+int CRS::OpenLog(FILE* &flog, int daq, const char* f_in, const char* f_out) {
+  char* logname=opt.Analog;
+  if (daq)
+    logname=opt.Daqlog;
+
+  SetLogFile(logname);
+  // if (flog) {
+  //   fclose(flog);
+  //   flog=0;
+  // }
+
+  //const char* msg="Start: ";
+  bitset<2> wlog;
+  //[0] - пишем date + f_in
+  //[1] - пишем comment
+  switch (LogOK) {
+  case -1:
+  case 0:
+    wlog[0]=1; //date + f_in
+    wlog[1]=1; //comment
+    break;
+  case 1:
+    wlog[0]=1; //date + f_in
+    wlog[1]=1; //comment
+    break;
+  case 2:
+    //msg="Continue: ";
+    break; //открываем, не пишем
+  case 3:
+    return 0; //не открываем
   }
-  else {
-    //const char *home = getenv("HOME");
-    //if (!home) return 1;
-    logpath=TString(home);
-    logpath+="/romana.log";
-  //snprintf(logpath, sizeof(logpath), "%s/romana.log", home);
-  }
-    
-  flog = fopen(logpath,"a");
+
+  // prnt("ss d d d d s ss;",BBLU,"OL:",daq,LogOK,(bool)wlog[0],(bool)wlog[1],logname,opt.Log,RST);
+  // return 1;
+
+  flog = fopen(logname,"a");
   if (!flog) {
-    prnt("ss ss;",BRED,"Can't open log file:",logpath.Data(),RST);
-    logpath.Resize(0);
+    prnt("ss ss;",BRED,"Can't open log file:",logname,RST);
+    //logpath.Resize(0);
     return 1;
   }
 
-  prnt("ss ss;",BGRN,"Log is written to file:",logpath.Data(),RST);
+  prnt("ss ss;",BGRN,"Log is written to file:",logname,RST);
 
-  if (LogOK==1) {
+  if (wlog[0]) {
     fprintf(flog,"----------------------------------------\n");
-    fprintf(flog,"File: %s raw:%d dec:%d root:%d\n",opt.Filename,
+    fprintf(flog,"%s\n",Text_time("",gSystem->Now()).Data());
+    if (f_in)
+      fprintf(flog,"Input File: %s\n",f_in);
+
+    fprintf(flog,"Output file: %s raw:%d dec:%d root:%d\n",f_out,
 	    opt.raw_write,opt.dec_write,opt.root_write);
+  }
+
+  if (wlog[1]) {
     fprintf(flog,"Comment: %s\n",opt.Log);
   }
-  //} // if LogOK<3
+
   return 0;
 }
+

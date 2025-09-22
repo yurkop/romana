@@ -342,6 +342,8 @@ Toptions::Toptions() {
     E2[i]=0;
     //Bc[i]=0;
     Pz[i]=0;
+
+    Fpath[i]=10;
   }
 
   raw_write=false;
@@ -408,7 +410,7 @@ Toptions::Toptions() {
 
   start_ch=0;
   ntof_period=0;
-  Flpath=10;
+  //Flpath=10;
   TofZero=0;
 
   Prof_type=64;

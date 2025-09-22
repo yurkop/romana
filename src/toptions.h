@@ -9,7 +9,7 @@
 //#include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 177
+#define CDEF 178
 
 /*
 #include <list>
@@ -198,6 +198,7 @@ public:
   Int_t Mt[MAX_CHTP]; //analysis method
   Int_t Mr[MAX_CHTP]; //ritesime method
 
+  Float_t Fpath[MAX_CHTP]; //individual flight path
 
   Int_t calibr_t[MAX_CHTP]; //type of calibration
   // 0 - no calibration; 1 - linear; 2 - parabola; 3 - spline
@@ -310,7 +311,7 @@ public:
 
   Int_t start_ch;
   Float_t ntof_period;
-  Float_t Flpath;
+  //Float_t Flpath;
   Float_t TofZero;
 
   Int_t Prof_type; //Profilometer type: 64 or 8

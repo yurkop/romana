@@ -1,3 +1,9 @@
+git tag -a v0.936 -m 'Fpath вместо Flpath; analysis.log'
+- переделана/исправлена запись в Log для анализа (рабтает почти как для daq)
+- logfile для анализа: ./analysis.log (был ./romana.log)
+- добавлен индивидуальный параметр Fpath вместо общего Flpath
+- обновлен manual
+
 git tag -a v0.935 -m 'добавлен Log для анализа'
 - размер Log записи увеличен до 8192 байт
 - watchgod пишет также в log

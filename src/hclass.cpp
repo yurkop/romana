@@ -129,7 +129,11 @@ Float_t Mdef::VarEtof(EventClass* e, PulseClass* p){
   tt+= p->Time - Time0;
   tt*= mks*opt.Period;
 
-  Float_t ee = 72.298*opt.Flpath/(tt-opt.TofZero);
+  Float_t ee;
+  if (tt!=opt.TofZero)
+    ee = 72.298*opt.Fpath[p->Chan]/(tt-opt.TofZero);
+  else
+    ee = 99999;
 
   //check for missed starts - obsolete...
   // if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
@@ -155,7 +159,11 @@ Float_t Mdef::VarLtof(EventClass* e, PulseClass* p){
   tt+= p->Time - Time0;
   tt*= mks*opt.Period;
 
-  Float_t sqee = 72.298*opt.Flpath/(tt-opt.TofZero);
+  Float_t sqee;
+  if (tt!=opt.TofZero)
+    sqee = 72.298*opt.Fpath[p->Chan]/(tt-opt.TofZero);
+  else
+    sqee = 99999;
   Float_t lambda = 0.286*sqee;
 
   //check for missed starts - obsolete...

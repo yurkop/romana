@@ -141,6 +141,7 @@ vector<const char*> ptip = {
   //"CFD fraction x10",
   "Width window start (included)",
   "Width window end (included)",
+  "Ntof flight path (in meters) for Ntof-Energy conversion",
   "Pulse rate (software)",
   "Pulse rate (hardware)",
   "Number of bad pulses"
@@ -1639,7 +1640,7 @@ void ParParDlg::UpdateLog() {
   // }
   */
 
-  CheckLog(text.Data());
+  CheckLog(text.Data(),1); //UpdateLog (from DoLog)
 
   // Создаем новую картинку
   TGPicture* newPicture = createTextPicture(opt.Log,log_h,log_w,log_font);
@@ -1650,18 +1651,13 @@ void ParParDlg::UpdateLog() {
     Layout();
   }
 
-  if (crs->LogOK==0)
-    crs->LogOK=1;
-
   //cout << "Logg: " << crs->LogOK << " " << opt.Log << " " << strlen(opt.Log) << endl;
 
 }
 
 void ParParDlg::DoLog() {
   if (crs->b_stop) {
-    TmpLogFile(tmplogFilename, "# Enter the text for the log file, can be truncate if too long.\n# 0 means no log\n");
-
-
+    TmpLogFile(tmplogFilename, "# Enter the text for the log file, can be truncated if too long.\n# 0 means no log\n");
 
     //команда wmctrl с параметрами делает окно l3afpad always_on_top через 2 сек
     TString cmd = "bash -c \"";
@@ -1684,7 +1680,7 @@ void ParParDlg::DoLog() {
     gSystem->Exec(cmd);
     UpdateLog();
   }
-}
+} //DoLog
 
 
 void ParParDlg::AddFileName(TGCompositeFrame* frame) {
@@ -1720,7 +1716,7 @@ void ParParDlg::AddFileName(TGCompositeFrame* frame) {
   if (crs->LogOK==3)
     strcpy(opt.Log,"0");
     
-  CheckLog(opt.Log);
+  //CheckLog(opt.Log);
   TGPicture* picture = createTextPicture(opt.Log, log_h, log_w, log_font);
 
   if (picture) {
@@ -1920,19 +1916,20 @@ int ParParDlg::AddNtof(TGCompositeFrame* frame) {
 
 
 
-
-  tip1= "Ntof period (mks) (should be always zero if unsure why it's needed)";
-  tip2= "Ntof start channel (255 for START input)";
-  label="Ntof period / start channel";
+  tip1= "";
+  tip2= "Ntof period (mks) (should be always zero if unsure why it's needed)";
+  //tip2= "Ntof start channel (255 for START input)";
+  label="Ntof period";
   opt.ntof_period = 0;
-  AddLine_opt(fF6,ww,&opt.ntof_period,&opt.start_ch,tip1,tip2,label,k_r1,k_int,
-	      0,1e9,0,255,0x200|0x400,0x400);
+  AddLine_opt(fF6,ww,NULL,&opt.ntof_period,tip1,tip2,label,k_lab,k_r1,
+	      0,1,0,1e9,0,0x200|0x400);
 
-  tip1= "Ntof Flight path (in meters) for Ntof-Energy conversion";
-  tip2= "Ntof Time offset (in mks) for Ntof-Energy conversion";
-  label="Ntof Flpath / Ntof Zero";
-  AddLine_opt(fF6,ww,&opt.Flpath,&opt.TofZero,tip1,tip2,label,k_r0,k_r0,
-	      0,1e9,-1e9,1e9,0x400,0x400);
+  tip1= "Ntof Time offset (in mks) for Ntof-Energy conversion.\n"
+    "Ntof Fligh path is individual parameter for each channel.";
+  tip2= "Ntof start channel (255 for START input)";
+  label="Ntof Zero / Ntof start channel";
+  AddLine_opt(fF6,ww,&opt.TofZero,&opt.start_ch,tip1,tip2,label,k_r0,k_int,
+	      -1e9,1e9,0,255,0x400,0x400);
 
   fF6->Resize();
   return fF6->GetDefaultWidth();
@@ -3260,6 +3257,7 @@ void ChanParDlg::BuildColumns(int jj) {
   AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"T2",opt.T2,0,1);
   AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,amax,"W1",opt.W1,0,1);
   AddColumn(jj,kk++,1,p_inum,40,0,0,-1024,9999,"W2",opt.W2,0,1);
+  AddColumn(jj,kk++,1,p_fnum,60,0,0,0,9999,"Fpath",opt.Fpath,0,0);
 
   AddColumn(jj,kk++,2,p_stat,60,0,0,0,0,"P/sec (sw)",crs->rate_soft);
   AddColumn(jj,kk++,2,p_stat,60,0,0,0,0,"P/sec (hw)",crs->rate_hard);

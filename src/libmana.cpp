@@ -116,7 +116,8 @@ char* parfile2=0; //for -p option
 char* datfname=0;
 char* batch_fname=0;
 
-bool b_raw=false,b_dec=false,b_root=false,b_force=false;
+bool b_raw=false,b_dec=false,b_root=false,b_force=false,
+  b_comment=false;
 bool b_resetusb=false;
 
 char startdir[200];
@@ -247,19 +248,29 @@ size_t max_cyrillic_length(const char* text, size_t max_bytes) {
 }
 
 
-void CheckLog(const char* txt) {
+void CheckLog(const char* txt, int OK) {
+  // Если OK==1, на выходе LogOK=-1(bad) или 3("0") или 1-OK (не 0)
+  // Если OK==0, на выходе LogOK=-1(bad) или 3("0") или 0-undefined
+  // Если OK< 0, на выходе LogOK=-1(bad) или 3("0") или не меняется
+  // OK=1 при чтении Log= из командной строки
+  // OK=-1 после загрузки параметров, т.е. после чтения Log=
+  // OK=0 после readpargz
+
+  if (OK!=1 && crs->LogOK==3)
+    txt="0";
+
   //проверяет текст и записывает его в opt.Log
   TString str(txt);
   // Удаляем пробелы с двух сторон, после этого проверяем длину
   str.Remove(TString::kBoth,' ');
   int len = str.Length();
-  if (len==0) {
-    str="empty";
-    len=5;
+  if (len==0 || str.EqualTo("-")) {
+    str="-";
+    len=1;
     crs->LogOK=-1; //bad
   }
-  else
-    crs->LogOK=0; //undefined
+  else if (OK>=0)
+    crs->LogOK=OK; //OK or undefined
 
   if (str.EqualTo("0"))
     crs->LogOK=3; //no log
@@ -1201,6 +1212,7 @@ int main(int argc, char **argv)
     "-m 0: don't open USB device\n"
     "-l: print list of connected devices and exit\n"
     "-0: do not write in the logfile\n"
+    "-c [filename]: print Comment from file and exit\n"
     "-a filename: start acquisition in batch mode (without gui)\n"
     "-b [outfile]: analyze file in batch mode (without gui) and exit.\n"
     "   Data are saved in outfile[.raw/.dec/.root] depending on batch parameters.\n"
@@ -1252,6 +1264,9 @@ int main(int argc, char **argv)
 	  EExit(0);
 	case '0':
 	  crs->LogOK=3; //no log
+	  continue;
+	case 'c':
+	  b_comment=true;
 	  continue;
 	case 'u': //reset usb
 	  b_resetusb=true;
@@ -1529,11 +1544,23 @@ int main(int argc, char **argv)
       prnt("ssssds;",BRED,"Parameter ",it->Data()," not found: ",res,RST);
     }
     if (it->Contains("Log")) {
-      CheckLog(opt.Log);
-      if (crs->LogOK>=0) //undefined or good
-	crs->LogOK=1;
+      CheckLog(opt.Log,1); //"Log="
     }
   }
+
+  // Здесь закончилась загрузка всех параметров (readpargz + командная строка)
+
+  if (b_comment) { //print comment
+    TString txt=crs->Text_time("",cpar.F_start);
+    printf("File: %s F_start: %s\n",datfname,txt.Data());
+    printf("Comment: %s\n",opt.Log);
+    EExit(0);
+    //cout << "File: " << datfname << " " 
+  }
+
+  CheckLog(opt.Log,-1); //после зугрузки
+  crs->SetLogFile(opt.Daqlog);
+  crs->SetLogFile(opt.Analog);
 
   //show individual parameters if listshow is not empty
   //showpar();
@@ -1562,6 +1589,7 @@ int main(int argc, char **argv)
   }
 #endif
 
+  //cout << "libmana:" << endl;
   //int ret=1;
 
 // #ifdef CYUSB
@@ -2865,10 +2893,11 @@ void MainFrame::DoStartStop(int rst) {
     while (crs->LogOK<=0) {
       parpar->DoLog();
     }
-    if (!rst)
-      crs->LogOK=2; //continue
+    if (crs->LogOK!=3) {
+      rst ? crs->LogOK=1 : crs->LogOK=2;
+    }
 
-   if (TestFile()) {
+    if (TestFile()) {
       //ParLock();
       fStart->ChangeBackground(fRed);
       fStart->SetText("Stop");
@@ -3512,7 +3541,7 @@ void MainFrame::UpdateStatus(int rst) {
     pmem = pinfo.fMemResident/minfo.fMemTotal*0.1;
   }
 
-  fStat[ii++]->SetText(crs->txt_start,0);
+  fStat[ii++]->SetText(crs->txt_start.Data(),0);
 
   fStat[ii++]->SetText(TGString::Format("%0.1f",opt.T_acq),0);
   fStat[ii++]->SetText(TGString::Format("%lld",crs->nevents),0);

@@ -179,7 +179,21 @@ RQ_OBJECT("CRS")
   gzFile f_read;
   gzFile f_dec;
   bool juststarted;
-  short LogOK=0; //0: undefined, 1: OK, 2: continue, 3: no Log; -1: bad
+  short LogOK=0; // -1: bad; 0: undefined, 1: OK, 2: continue, 3: no Log
+  //-1: Log="-";          Acq: DoLog;    Ana: стартуем;
+  //                 logfile (Daq): никогда не вызывается
+  //                 logfile (Ana): пишем, no Comment
+  // 0: Log="-" или text; Acq: DoLog;    Ana: стартуем;
+  //                 logfile (Daq): никогда не вызывается
+  //                 logfile (Ana): пишем, no Comment
+  // 1: Log=text;             Acq: стартуем; Ana: стартуем;
+  //                 logfile (Daq): пишем все
+  //                 logfile (Ana): пишем все
+  // 2: Log=text;             Acq: стартуем; Ana: стартуем;
+  //                 logfile (Daq): пишем "continue", no Comment
+  //                 logfile (Ana): пишем "continue", no Comment
+  // 3: Log="0";              Acq: стартуем; Ana: стартуем;
+  //                 logfile: не пишем
 
   std::ostream *txt_out;
   //std::streambuf *txt_buf;
@@ -192,10 +206,10 @@ RQ_OBJECT("CRS")
   string rawname;
   //string decname;
   string rootname;
-  string logname;
+  //string logname;
 
   FILE* flog=0;
-  TString logpath;
+  //TString logpath;
 
 
   //UChar_t* DecBuf_ring2; // = DecBuf_ring + OFF_SIZE
@@ -360,7 +374,7 @@ RQ_OBJECT("CRS")
   Long64_t Tstart64; //Tstamp of the first event (or analysis/acquisition start)
   //Long64_t Tstart0; //Tstamp of the ntof start pulses
   //Float_t Time0; //Exact time of the ntof start pulses
-  char txt_start[30]; //local text copy of F_start, start of the acquisition
+  TString txt_start; //local text copy of F_start, start of the acquisition
 
   Double_t sPeriod; // Tstmp*sPeriod = sec
   // Double_t nsPeriod; // Tstmp*nsPeriod = nsec
@@ -482,7 +496,7 @@ RQ_OBJECT("CRS")
 #endif
 
 
-  void Text_time(char* txt, const char* hd, Long64_t f_time);
+  TString Text_time(const char* header, Long64_t f_time);
   void DoExit();
   //int Command_old(int len_out, int len_in); //send and receive command
   //void SendParametr(const char* name, int len_out); //send one parameter
@@ -595,7 +609,8 @@ RQ_OBJECT("CRS")
 
   void UpdateRates(int rst=0);
 
-  int OpenLog(char* logname,const char* home);
+  void SetLogFile(char* logname);
+  int OpenLog(FILE* &flog, int daq, const char* f_in, const char* f_out);
 
   // void SimulateInit();
   // void SimNameHist();
