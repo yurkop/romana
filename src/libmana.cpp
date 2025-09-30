@@ -74,7 +74,7 @@ Coptions cpar;
 Toptions opt;
 
 CRS* crs;
-Encoder* encoder;
+EDec* edec;
 #ifdef SOCK
 SockClass* gSock;
 #endif
@@ -110,6 +110,10 @@ Pixel_t fCol[7];// = {fYellow,fGreen,fRed,fRed10,fCyan,fOrng,fBlue};
 
 gzFile ff;
 
+bool b_telegram;
+char* Logname=0; //path to the log file (daq or ana)
+std::mutex mtx_log;
+
 //TString parfile,lastpar;
 char* parfile=(char*)"romana.par";;
 char* parfile2=0; //for -p option
@@ -119,6 +123,7 @@ char* batch_fname=0;
 bool b_raw=false,b_dec=false,b_root=false,b_force=false,
   b_comment=false;
 bool b_resetusb=false;
+
 
 char startdir[200];
 char pr_name[200];
@@ -283,11 +288,81 @@ void CheckLog(const char* txt, int OK) {
   opt.Log[len]=0; //null termination
 }
 
+bool check_telegram_send() { // проверяет конфигурацию telegram-send
+  // Получаем домашнюю директорию
+  const char* home_dir = std::getenv("HOME");
+  if (!home_dir) {
+    return 0;
+  }
+    
+  // Формируем путь к конфигурационному файлу
+  std::string config_path = std::string(home_dir) + "/.config/telegram-send.conf";
+    
+  // Команда для проверки токена через API Telegram
+  std::string command = "grep 'token' " + config_path + 
+    " 2>/dev/null | cut -d'=' -f2 | tr -d ' '";
+    
+  // Выполняем команду и получаем токен
+  FILE* pipe = popen(command.c_str(), "r");
+  if (!pipe) {
+    return 0;
+  }
+    
+  char token[256];
+  if (!fgets(token, sizeof(token), pipe)) {
+    pclose(pipe);
+    return 0;
+  }
+  pclose(pipe);
+    
+  // Убираем символ новой строки
+  std::string token_str = token;
+  if (!token_str.empty() && token_str.back() == '\n') {
+    token_str.pop_back();
+  }
+    
+  if (token_str.empty()) {
+    return 0;
+  }
+    
+  // Проверяем токен через API Telegram
+  std::string api_check = "curl -s \"https://api.telegram.org/bot" + 
+    token_str + "/getMe\" | grep -q '\"ok\":true'";
+    
+  int result = system(api_check.c_str());
+    
+  // system возвращает 0 если команда выполнена успешно (grep нашел "ok":true)
+  return (result == 0) ? 1 : 0;
+}
+
 void EExit(int ret) {
   delete crs;
-  delete encoder;
+  delete edec;
   delete hcl;
   exit(ret);
+}
+
+void EError(int t, int l, int e, TString msg) { //t: telegram; l: log; e: Error
+  if (t && b_telegram) {
+    TString cmd = TString("telegram-send ")+"\""+msg+"\"";
+    //char cmd[200];
+    //sprintf(cmd,"telegram-send \"%s\"",msg);
+    gSystem->Exec(cmd);
+  }
+
+  if (e)
+    msg.Prepend(">> Error: ");
+  else
+    msg.Prepend(">> Warning: ");
+
+  if (l && crs->LogOK!=3 && Logname) {
+    mtx_log.lock();
+    crs->flog = fopen(Logname,"a");
+    fprintf(crs->flog,"%s\n",msg.Data());
+    fclose(crs->flog);
+    mtx_log.unlock();
+  }
+  prnt("sss;",BRED,msg.Data(),RST);
 }
 
 void print_var(int tp, TDataMember *dm, TString vname, TString memname, int len=0, int len2=0) {
@@ -1113,7 +1188,7 @@ void ctrl_c_handler(int s){
   }
 
   delete crs;
-  delete encoder;
+  delete edec;
   delete hcl;
   gApplication->Terminate(0);
   // delete myM;
@@ -1184,7 +1259,7 @@ int main(int argc, char **argv)
   // cout << "sizeof(Toptions): " << sizeof(Toptions) << endl;
   // cout << "sizeof(opt): " << sizeof(opt) << endl;
 	
-  encoder = new Encoder();
+  edec = new EDec();
   hcl = new HClass();
   crs = new CRS();
 
@@ -1290,7 +1365,7 @@ int main(int argc, char **argv)
 	  ++i;
 
 	  if (i<argc) {
-	    crs->devname = new TString(argv[i]);
+	    crs->devname = TString(argv[i]);
 	  }
 	  //cout << "dev: " << crs->devname << endl;
 
@@ -1550,7 +1625,7 @@ int main(int argc, char **argv)
 
   // Здесь закончилась загрузка всех параметров (readpargz + командная строка)
 
-  if (b_comment) { //print comment
+  if (b_comment) { //print comment and exit
     TString txt=crs->Text_time("",cpar.F_start);
     printf("File: %s F_start: %s\n",datfname,txt.Data());
     printf("Comment: %s\n",opt.Log);
@@ -1561,6 +1636,7 @@ int main(int argc, char **argv)
   CheckLog(opt.Log,-1); //после зугрузки
   crs->SetLogFile(opt.Daqlog);
   crs->SetLogFile(opt.Analog);
+  Logname=0;
 
   //show individual parameters if listshow is not empty
   //showpar();
@@ -1571,6 +1647,23 @@ int main(int argc, char **argv)
   //cout << "gStyle2: " << gStyle << endl;
 
   //cout << "detect: " << crs->abatch << " " << endl;
+
+  b_telegram = check_telegram_send();
+
+
+  /*
+  gzFile gzf = gzopen("sdfa/test.gz","w");
+  cout << gzf << endl;
+  TString msg = "test_test";
+  cout << opt.Daqlog << endl;
+  cout << opt.Analog << endl;
+  EError(1,1,msg.Data());
+  gzclose(gzf);
+  gzclose(gzf);
+  gzclose(gzf);
+  exit(1);
+  */
+
 
 #ifdef CYUSB
   if (crs->abatch) {
@@ -1922,10 +2015,10 @@ bool TestFile() {
     dir = TString(startdir);
     //cout << "Root_dir: " << dir << endl;
 
-    encoder->decname=dir;
+    edec->wr_name=dir;
     crs->rootname=dir;
     crs->rawname=dir;
-    encoder->decname.append("Dec/");
+    edec->wr_name.append("Dec/");
     crs->rootname.append("Root/");
     crs->rawname.append("Raw/");
 
@@ -1938,9 +2031,9 @@ bool TestFile() {
 
     if (b_dec) {
 #ifdef LINUX
-      mkdir(encoder->decname.c_str(),0755);
+      mkdir(edec->wr_name.c_str(),0755);
 #else
-      _mkdir(encoder->decname.c_str());
+      _mkdir(edec->wr_name.c_str());
 #endif
     }
 
@@ -1960,7 +2053,7 @@ bool TestFile() {
 #endif
     }
 
-    encoder->decname.append(name);
+    edec->wr_name.append(name);
     crs->rootname.append(name);
     crs->rawname.append(name);
   } //batch
@@ -1968,24 +2061,24 @@ bool TestFile() {
     //SplitFilename(string(opt.Filename),dir,name,ext);
     dir.append(name);
     crs->rawname=dir;
-    encoder->decname=dir;
+    edec->wr_name=dir;
     crs->rootname=dir;
   }
 
-  encoder->decname.append(".dec");
+  edec->wr_name.append(".dec");
   crs->rootname.append(".root");
   crs->rawname.append(".raw");
 
   if (!crs->juststarted) return true;
 
   bool b1 = opt.raw_write && !stat(crs->rawname.c_str(), &statb);
-  bool b2 = opt.dec_write && !stat(encoder->decname.c_str(), &statb);
+  bool b2 = opt.dec_write && !stat(edec->wr_name.c_str(), &statb);
   bool b3 = opt.root_write && !stat(crs->rootname.c_str(), &statb);
 
   bool b_ident=false;
   if (crs->Fmode==2) {//file analysis - test for identical filename
     bool c1=b1 && !crs->rawname.compare(crs->Fname);
-    bool c2=b2 && !encoder->decname.compare(crs->Fname);
+    bool c2=b2 && !edec->wr_name.compare(crs->Fname);
     bool c3=b3 && !crs->rootname.compare(crs->Fname);
     b_ident=c1||c2||c3;
   }
@@ -2349,7 +2442,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 
 MainFrame::~MainFrame() {
   delete crs;
-  delete encoder;
+  delete edec;
   delete hcl;
   delete fTimer;
 }
@@ -3552,7 +3645,7 @@ void MainFrame::UpdateStatus(int rst) {
   fStat[ii++]->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),0);
   fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),0);
   fStat[ii++]->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),0);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->decbytes/MB),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",edec->wr_bytes/MB),0);
 
   fStat[ii++]->SetText(TGString::Format("%0.2f",percent),0);
   fStat[ii++]->SetText(TGString::Format("%0.2f",pmem),0);

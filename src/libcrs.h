@@ -90,6 +90,7 @@ public:
   UChar_t* b3=0; // указатель на физический конец буфера
   union {
     UChar_t* b=0; // input: указатель на конец "полных" событий в буфере
+                  // или на конец буфера (для записи)
     UShort_t* us;  // output(dec|raw): текущий указатель на конец буфера
     Short_t* s;
     UInt_t* ui;
@@ -206,7 +207,6 @@ RQ_OBJECT("CRS")
   string rawname;
   //string decname;
   string rootname;
-  //string logname;
 
   FILE* flog=0;
   //TString logpath;
@@ -320,7 +320,6 @@ RQ_OBJECT("CRS")
 
   Long64_t inputbytes;
   Long64_t rawbytes;
-  Long64_t decbytes;
   Long64_t npulses; //total number of pulses (zero at Reset (Start button))
   //UInt_t npulses_buf; //pulses in the current buffer
   Long64_t nevents; //total number of events (zero at Reset (Start button))
@@ -341,6 +340,8 @@ RQ_OBJECT("CRS")
 
   Long64_t fCounter[MAX_CH]; //old Counter
   Long64_t fTime[MAX_CH]; //old Tstamp for Counter
+  // Long64_t pCounter[MAX_CH]; //current Counter
+  // Long64_t pTime[MAX_CH]; //current Tstamp for Counter
 
   //int nchan_on;
 
@@ -459,9 +460,9 @@ RQ_OBJECT("CRS")
   //---CRS
   short idev; // номер девайса в cyusb [0,1,2...].
               //Если =-1 -> номер девайса еще не выбран
-  short ndev;
+  short ndev; //количество найденных модулей
   vector<string> cy_list; // список имен ВСЕХ подключенных девайсов
-  TString *devname; // имя, заданное в '-m'. Если =0 -> не задано
+  TString devname; // имя, заданное в '-m'. Если =0 -> не задано
 #ifdef CYUSB
   cyusb_handle *cy_handle;
 
@@ -609,7 +610,7 @@ RQ_OBJECT("CRS")
 
   void UpdateRates(int rst=0);
 
-  void SetLogFile(char* logname);
+  void SetLogFile(char* lgname);
   int OpenLog(FILE* &flog, int daq, const char* f_in, const char* f_out);
 
   // void SimulateInit();

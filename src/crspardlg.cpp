@@ -1581,28 +1581,19 @@ TGPicture* createTextPicture(const char *text, int &height, UInt_t width = 800, 
   return const_cast<TGPicture*>(picture);
 }
 
-void TmpLogFile(const char* filename, const char* comment=0) {
-  //Добавляет комментарий в filename
+void TmpLogFile(const char* filename, const char* comment=0, int app=0) {
+  std::ofstream outFile;
+  //Добавляет текст в filename
+  if (app)
+    outFile.open(filename, std::ios::app);
+  else
+    outFile.open(filename);
 
-  // Читаем все строки из файла, кроме комментариев
-  std::ifstream inFile(filename);
-  std::vector<std::string> lines;
-  std::string line;
-    
-  while (std::getline(inFile, line)) {
-    if (line[0]!='#') //пропускаем комментарии
-      lines.push_back(line);
+  if (outFile.is_open()) {
+    if (comment)
+      outFile << comment;
+    outFile.close();
   }
-  inFile.close();
-    
-  // Записываем обратно с добавлением комментария
-  std::ofstream outFile(filename);
-  if (comment)
-    outFile << comment; // Добавляем комментарий в начало
-  for (const auto& l : lines) {
-    outFile << l << "\n";
-  }
-  outFile.close();
 }
 
 void ParParDlg::UpdateLog() {
@@ -1657,7 +1648,8 @@ void ParParDlg::UpdateLog() {
 
 void ParParDlg::DoLog() {
   if (crs->b_stop) {
-    TmpLogFile(tmplogFilename, "# Enter the text for the log file, can be truncated if too long.\n# 0 means no log\n");
+    TmpLogFile(tmplogFilename, "# Здесь можно задать комментарий к файлу (макс. ~4000 символов)\n# 0 означает отсутствие комментария\n");
+    TmpLogFile(tmplogFilename, opt.Log, 1);
 
     //команда wmctrl с параметрами делает окно l3afpad always_on_top через 2 сек
     TString cmd = "bash -c \"";

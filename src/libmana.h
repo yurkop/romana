@@ -44,8 +44,10 @@ using namespace std;
 void prnt(const char* fmt, ...);
 void debug_mess(bool cond, const char* mess, double par1, int par2=-9999);
 void CheckLog(const char* txt, int OK);
+bool check_telegram_send();
 
 void EExit(int ret);
+void EError(int t, int l, int e, TString msg);
 int evalpar(TString &it, char* var, const char* varname);
 
 void SplitFilename(string str, string &folder, string &name);

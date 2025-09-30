@@ -418,21 +418,72 @@ void Mdef::Fill_axay(EventClass* evt, Double_t *hcut_flag, int ncut) {
 
 }
 
+/*
+void Mdef::AddBin_01(HMap* map, int bin, Double_t ww,
+		     Double_t *hcut_flag, int ncut) {
+  // заполняем 1d гистограмму и 1-мерный cut
+  if (!map) return;
+  if (ncut) {
+    map=map->h_cuts[ncut];
+    if (!map) return;
+  }
+
+  // if (opt.addrandom) {
+  //   x += map->hst->GetXaxis()->GetBinWidth(1)*(rnd.Rndm(x)-0.5);
+  // }
+  map->hst->AddBinContent(bin,ww);
+
+  if (opt.ncuts && !ncut) {
+    //prnt("ss f ds;",BRED,"hcut_flag:",x,ncut,RST);
+    for (int i=1;i<opt.ncuts;i++) {
+      //если в этой гистограмме задан cut i
+      if (getbit(*(map->hd->cut+map->nn),i)) {
+	double x1=map->hst->GetBinLowEdge(bin);
+	double x2=x1+map->hst->GetBinWidth(bin);
+	if (x1>=hcl->cutG[i]->GetX()[0] && x2<hcl->cutG[i]->GetX()[1]) {
+	  hcut_flag[i]=1;
+	}
+      }
+    }
+  }
+}
+*/
+
+void Mdef::AddBin_1d(HMap* map, PulseClass* ipls, int bin, Double_t ww,
+		     Double_t *hcut_flag, int ncut) {
+
+  if (!ncut) { // для cut-ов не работает
+    map->hst->AddBinContent(bin,ww);
+    //AddBin_01(map,bin,ww,hcut_flag,ncut);
+
+    for (int j=0;j<NGRP;j++)
+      if (opt.Grp[ipls->Chan][j])
+	v_map[MAX_CH+j]->hst->AddBinContent(bin,ww);
+    //AddBin_01(v_map[MAX_CH+j],bin,ww,hcut_flag,ncut);
+  }
+
+}
+
 void Mdef::Fill_HWRate(EventClass* evt, Double_t *hcut_flag, int ncut) {
   if (evt->Spin & 128) {
     if (evt->pulses.empty()) return;
 
     for (auto ipls=evt->pulses.begin();ipls!=evt->pulses.end();++ipls) {
-      // пропускаем неактивные каналы и отсекаем канал 255
-      if (cpar.on[ipls->Chan] && ipls->Chan!=255) {
-	double t1 = crs->fTime[ipls->Chan]*crs->sPeriod;
-	double t2 = evt->Tstmp*crs->sPeriod;
-	crs->fTime[ipls->Chan] = evt->Tstmp;
+      HMap* map = v_map[ipls->Chan];
+      // пропускаем неактивные каналы, канал 255 и каналы с неактивным map
+      if (cpar.on[ipls->Chan] && ipls->Chan!=255 && map) {
+	double t1 = crs->fTime[ipls->Chan]*crs->sPeriod; //old time (in sec)
+	double t2 = evt->Tstmp*crs->sPeriod; //current time (in sec)
+	if (!ncut) //записывает fTime (old time) только для ncut==0 
+	  crs->fTime[ipls->Chan] = evt->Tstmp;
+
+	//cout << "t1: " << t1 << " " << t2 << " " << crs->fTime[ipls->Chan]
+	// << " " << crs->pTime[ipls->Chan] << endl;
 
 	// вызываем Time_Extend
 	Time_Extend(ipls->Chan,t2);
 
-	TH1* hh = v_map[ipls->Chan]->hst;
+	TH1* hh = map->hst;
 	double ww = hh->GetBinWidth(1);
 	int bin1 = hh->FindFixBin(t1);
 
@@ -460,12 +511,15 @@ void Mdef::Fill_HWRate(EventClass* evt, Double_t *hcut_flag, int ncut) {
 	if (!cnt.empty()) {
 
 	  Long64_t count2 = ipls->Counter - crs->fCounter[ipls->Chan];
-	  crs->fCounter[ipls->Chan] = ipls->Counter;
+	  if (!ncut) //записывает fCounter (old counter) только для ncut==0 
+	    crs->fCounter[ipls->Chan] = ipls->Counter;
 
 	  int bin=bin1;
 	  for (auto it=cnt.begin();it!=cnt.end();++it) {
-	    double cc = *it/sum*count2;
-	    v_map[ipls->Chan]->hst->AddBinContent(bin,cc);
+	    double ww = *it/sum*count2;
+	    //cout << "bin: " << map->GetName() << " " << bin << " " << t1 << " " << t2 << " " << ww << " " << " " << *it << " " << count2 << " " << ncut << endl;
+	    AddBin_1d(map,&*ipls,bin,ww,hcut_flag,ncut);
+	    //v_map[ipls->Chan]->hst->AddBinContent(bin,ww);
 	    bin++;
 	  }
 	}
@@ -1767,8 +1821,6 @@ void HClass::FillHist(EventClass* evt, Double_t *hcut_flag) {
       //cout << "cut_flag: " << Nevt << " " << i << " " << cut_flag[i] << endl;
     }
   }
-
-
 
 
   for (int i=1;i<opt.ncuts;i++) {

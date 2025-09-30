@@ -65,7 +65,7 @@ DecoderClass* decoder;
 Simul* sim2;
 
 extern CRS* crs;
-extern Encoder* encoder;
+extern EDec* edec;
 extern Coptions cpar;
 extern Toptions opt;
 
@@ -85,6 +85,8 @@ const double MB = 1024*1024;
 const Long64_t iMB = 1024*1024;
 
 extern char mainname[200];
+extern char* Logname;
+extern std::mutex mtx_log;
 
 //MemInfo_t info;
 
@@ -690,7 +692,8 @@ void CRS::Ana_start(int rst) {
 
 
 
-  encoder->Encode_Start(rst);
+  edec->Encode_Start(rst,opt.dec_format,opt.dec_write,opt.dec_compr,
+			opt.decbuf_size*Megabyte,Megabyte,2*Megabyte);
 
   memset(dec_iread,0,sizeof(dec_iread));
   if (opt.nthreads>1) {
@@ -783,7 +786,7 @@ void CRS::Ana2(int end_ana) {
 	if (!opt.maintrig || hcut_flag[opt.maintrig]) {
 	  ++crs->mtrig;
 	  if (opt.dec_write) {
-	    encoder->Fill_Dec(m_event);
+	    edec->Fill_Dec(m_event);
 	  } // if dec_write
 	  if (opt.raw_write && opt.fProc) {
 	    crs->Fill_Raw(&(*m_event));
@@ -1100,7 +1103,7 @@ CRS::CRS() {
   ndev=0;
 
   idev=0;
-  devname=0;
+  devname="";
   Fmode=0;
   opt.Period=5;
 
@@ -1224,6 +1227,7 @@ void CRS::DoDetectDev() {
     }
   }
 
+  devname="";
   Open_USB();
 
   switch (ndev) {
@@ -1308,7 +1312,7 @@ int CRS::Open_USB() {
   // создает и заполняет cy_list
 
   //cout << "Open_USB" << endl;
-  if (devname && devname->EqualTo("0")) {
+  if (devname.EqualTo("0")) {
     ndev=0;
     return ndev;
   }
@@ -1341,7 +1345,7 @@ int CRS::Open_USB() {
     cy_list.push_back(cpar.GetDevice(0,0));
 
     TString sdev = cpar.GetDevice(0,0);
-    if (devname && sdev.Contains(*devname,TString::kIgnoreCase)) {
+    if (devname.Length() && sdev.Contains(devname,TString::kIgnoreCase)) {
       idev = i;
       ndev=1;
     }
@@ -2722,11 +2726,13 @@ int CRS::DoStartStop(int rst) {
     txt_start=Text_time("",cpar.F_start);
 
     if (LogOK<3) { //1 или 2
+      mtx_log.lock();
       if (LogOK==1)
 	fprintf(flog,"Start: %s\n",txt_start.Data());
       else //=2
 	fprintf(flog,"Continue: %s\n",txt_start.Data());
       fclose(flog);
+      mtx_log.unlock();
     }
 
     if (rst) {
@@ -2760,11 +2766,13 @@ int CRS::DoStartStop(int rst) {
   } //start
   else { //stop
     if (LogOK<3) {
+      mtx_log.lock();
       flog = fopen(opt.Daqlog,"a");
       cpar.F_stop = gSystem->Now();
       TString txt_stop=Text_time("",cpar.F_stop);
       fprintf(flog,"Stop:  %s\n",txt_stop.Data());
       //cout << "stop: " << txt_stop << " " << opt.T_acq << endl;
+      mtx_log.unlock();
     }
 
     //buf_out[0]=4;
@@ -2789,10 +2797,12 @@ int CRS::DoStartStop(int rst) {
     cout << "Acquisition stopped" << endl;
 
     if (LogOK<3) {
+      mtx_log.lock();
       fprintf(flog,"Run time from PC: %f sec\n",
 	      (cpar.F_stop-cpar.F_start)*0.001);
       fprintf(flog,"Run time from DAQ: %f sec\n",opt.T_acq);
       fclose(flog);
+      mtx_log.unlock();
     }
   }
 
@@ -2927,7 +2937,7 @@ void CRS::DoReset(int rst) {
 
     inputbytes=0;
     rawbytes=0;
-    decbytes=0;
+    edec->wr_bytes=0;
 
     npulses=0;
     nbuffers=0;
@@ -3207,7 +3217,7 @@ int CRS::ReadParGz(gzFile &ff, char* pname, int m1, int cp, int op) {
     gzread(ff,&sz,sizeof(UShort_t));
   }
 
-  prnt("sss d sd sd sds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
+  //prnt("sss d sd sd sds;",BGRN,"rpgz: ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
 
   switch (mod) {
   case 32:
@@ -4080,6 +4090,7 @@ int CRS::DoBuf() {
     length=gzread(f_read,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
     b_end[gl_ibuf]=b_fill[gl_ibuf]+length;
 
+    //читаем и сразу пишем. непонятно, зачем...
     if (opt.raw_write && !opt.fProc) {
       crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
       if (crs->f_raw) {
@@ -4262,7 +4273,7 @@ void CRS::EndAna(int end_ana) {
   //end_ana=0 -> just stop, buffers remain not analyzed,
   //         can continue from this point on
 
-  encoder->Encode_Stop(end_ana);
+  edec->Encode_Stop(end_ana,opt.dec_write);
 
   if (opt.nthreads>1) {
     gSystem->Sleep(50);
@@ -4329,8 +4340,10 @@ void CRS::FAnalyze2(bool nobatch) {
 
     if (LogOK!=3) {
       txt_time=Text_time("",cpar.F_start);
+      mtx_log.lock();
       fprintf(flog,"Start from file: %s\n",txt_time.Data());
       fclose(flog);
+      mtx_log.unlock();
     }
 
 
@@ -4361,7 +4374,9 @@ void CRS::FAnalyze2(bool nobatch) {
     flog = fopen(opt.Analog,"a");
     A_start=gSystem->Now();
     txt_time=Text_time("",A_start);
+    mtx_log.lock();
     fprintf(flog,"Start: %s\n",txt_time.Data());
+    mtx_log.unlock();
     fclose(flog);
   }
 
@@ -4398,9 +4413,11 @@ void CRS::FAnalyze2(bool nobatch) {
     flog = fopen(opt.Analog,"a");
     A_stop=gSystem->Now();
     txt_time=Text_time("",A_stop);
+    mtx_log.lock();
     fprintf(flog,"Stop: %s\n",txt_time.Data());
     fprintf(flog,"Run time: %f sec\n",(A_stop-A_start)*0.001);
     fprintf(flog,"Run time from file: %f sec\n",opt.T_acq);
+    mtx_log.unlock();
     fclose(flog);
   }
 
@@ -6012,6 +6029,8 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
     //prnt("sss;",BRED,"Good",RST);
     //prnt(" d",frmt);
+
+    //UChar_t ini = (GLBuf[idx1+6] & 0xE); //инициирующее запись событие
 
     switch (frmt) {
     case 0:
@@ -7962,8 +7981,8 @@ void CRS::UpdateRates(int rst) {
 
 	npulses_bad[MAX_CH]+=npulses_bad[i];
 
-	if (b_acq) {
-	  double rr,dd=100,rm;
+	if (opt.wdog_timer>0 && b_acq) {
+	  double rr,rm,dd=100;
 	  if (cpar.St_Per==0) //soft
 	    rr=rate_soft[i];
 	  else //hard
@@ -7972,36 +7991,23 @@ void CRS::UpdateRates(int rst) {
 	  rm=(rate_mean[i]*(n_rate-1)+rr)/n_rate;
 	  rate_mean[i]=rm;
 
-	  if (opt.wdog_timer>0 && opt.T_acq-t_wdog>opt.wdog_timer) {
+	  if (opt.T_acq-t_wdog>opt.wdog_timer) {
+	    //время с прошлого срабатывания wdog-a > opt.wdog_timer
 	    if (rm>0)
 	      dd = rr/rm*100;
 	    if (dd<opt.wdog1 || dd>opt.wdog2) { //alert!
-	    //if (rm>0)
-	    //  dd = abs(rr-rm)/rm*100;
-	    //if (dd>opt.wdog1) { //alert!
 	      t_wdog=opt.T_acq;
 	      char msg[100];
-	      sprintf(msg,"countrate in channel %d"
-		      " is %0.1f%% of average: %0.1f %0.1f",i,dd,
+	      sprintf(msg,"countrate in channel %d:"
+		      " %0.1f%% of average: %0.1f %0.1f",i,dd,
 		      rr,rm);
-	      char cmd[200];
-	      sprintf(cmd,"telegram-send \"%s\"",msg);
-	      gSystem->Exec(cmd);
-	      prnt("sss;",BRED,cmd,RST);
-
-	      if (LogOK==1) {
-		flog = fopen(opt.Daqlog,"a");
-		fprintf(flog,"%s\n",msg);
-		fclose(flog);
-	      }
+	      EError(1,1,0,TString(msg));
 	    }
-	  
 	  }
-
 	  //cout << "rate_mean: " << i << " " << n_rate << " " << rm << " " << dd << endl;
-	}
-      }
-    }
+	} //if opt.wdog_timer>0 && b_acq
+      } //if (cpar.on[i])
+    } //for
     t1=opt.T_acq;
   }
 
@@ -8012,12 +8018,12 @@ void CRS::UpdateRates(int rst) {
 
 }
 
-void CRS::SetLogFile(char* logname) {
-  //удаляем пробелы из logname
-  TString str(logname);
+void CRS::SetLogFile(char* lgname) {
+  //удаляем пробелы из lgname
+  TString str(lgname);
   str.Remove(TString::kBoth,' ');
 
-  if (logname==opt.Daqlog) { //Daqlog
+  if (lgname==opt.Daqlog) { //Daqlog
     if (!str.Length()) { // пусто
       const char *home = getenv("HOME");
       if (!home) {
@@ -8034,16 +8040,17 @@ void CRS::SetLogFile(char* logname) {
     }
   }
 
-  strcpy(logname,str.Data());
+  // Logname = [opt.Daqlog или opt.Analog]: память всегда 255 байт.
+  strncpy(lgname,str.Data(),250);
 
 }
 
 int CRS::OpenLog(FILE* &flog, int daq, const char* f_in, const char* f_out) {
-  char* logname=opt.Analog;
+  Logname=opt.Analog;
   if (daq)
-    logname=opt.Daqlog;
+    Logname=opt.Daqlog;
 
-  SetLogFile(logname);
+  SetLogFile(Logname);
   // if (flog) {
   //   fclose(flog);
   //   flog=0;
@@ -8073,15 +8080,16 @@ int CRS::OpenLog(FILE* &flog, int daq, const char* f_in, const char* f_out) {
   // prnt("ss d d d d s ss;",BBLU,"OL:",daq,LogOK,(bool)wlog[0],(bool)wlog[1],logname,opt.Log,RST);
   // return 1;
 
-  flog = fopen(logname,"a");
+  flog = fopen(Logname,"a");
   if (!flog) {
-    prnt("ss ss;",BRED,"Can't open log file:",logname,RST);
+    prnt("ss ss;",BRED,"Can't open log file:",Logname,RST);
     //logpath.Resize(0);
     return 1;
   }
 
-  prnt("ss ss;",BGRN,"Log is written to file:",logname,RST);
+  prnt("ss ss;",BGRN,"Log is written to file:",Logname,RST);
 
+  mtx_log.lock();
   if (wlog[0]) {
     fprintf(flog,"----------------------------------------\n");
     fprintf(flog,"%s\n",Text_time("",gSystem->Now()).Data());
@@ -8095,6 +8103,7 @@ int CRS::OpenLog(FILE* &flog, int daq, const char* f_in, const char* f_out) {
   if (wlog[1]) {
     fprintf(flog,"Comment: %s\n",opt.Log);
   }
+  mtx_log.unlock();
 
   return 0;
 }

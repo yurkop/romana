@@ -23,15 +23,16 @@ const int dstep = 10;
 #define AVM16_MASK2 0x000fffff //complementary to MASK1
 
 const ULong64_t sixbytes=0xFFFFFFFFFFFF;
-const Long64_t DEC_SIZE = 1024*1024; //1 MB
 
+const int Megabyte=1024*1024; //1 MB
 
-const Long64_t TR_SIZE = 1024*1024*2; //2 MB - размер трансфера в байтах
-const Long64_t OFF_SIZE = TR_SIZE; //2 MB, на всякий случай
+const Long64_t TR_SIZE = 2*Megabyte; //2 MB - размер трансфера в байтах
+const Long64_t OFF_SIZE = 2*Megabyte; //2 MB, на всякий случай
 // OFF_SIZE должно быть >= макс. размера одного события (импульса)
 // Для AK-32 это ~32kB 
 // 2 MB - больше 32kB
 
+//const Long64_t DEC_SIZE = Megabyte; //1 MB
 
 
 

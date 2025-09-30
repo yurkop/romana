@@ -59,6 +59,11 @@ public:
   void Fill_02(HMap* map, Float_t x, Float_t y, Double_t *hcut_flag,
 	       int ncut);
 
+  // void AddBin_01(HMap* map, int bin, Double_t ww,
+  // 		 Double_t *hcut_flag, int ncut);
+  void AddBin_1d(HMap* map, PulseClass* ipls, int bin, Double_t ww,
+		 Double_t *hcut_flag, int ncut);
+
   void Fill_1d(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_1d_Extend(EventClass* evt, Double_t *hcut_flag, int ncut);
   void Fill_2d(EventClass* evt, Double_t *hcut_flag, int ncut);

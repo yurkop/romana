@@ -1,3 +1,13 @@
+git tag -a v0.937 -m 'watchdog для записи файла (Dec)'
+- переделан Mdef::Fill_HWRate. Исправлена ошибка, возникающая при
+  включении неактивного канала во время работы накопления/анализа
+- исправлено поведение при нажатии на кнопку Comment
+- переделан TmpLogFile
+- подправлен make depend в Makefile
+- переделан Encoder: Edec
+- добавлен watchdog для записи файла (пока работает только для dec: см Encoder)
+- manual обновлен.
+
 git tag -a v0.936 -m 'Fpath вместо Flpath; analysis.log'
 - переделана/исправлена запись в Log для анализа (рабтает почти как для daq)
 - logfile для анализа: ./analysis.log (был ./romana.log)

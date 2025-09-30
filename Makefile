@@ -157,7 +157,9 @@ endif
 all: build install
 
 depend: check_ld_library_path
-	sudo apt install imagemagick l3afpad telegram-send
+	sudo apt install imagemagick
+	sudo apt install l3afpad
+	sudo apt install telegram-send
 
 build: $(OBJ_D) $(PROG).x
 #all: svnver $(PROG).x
