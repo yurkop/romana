@@ -1,18 +1,21 @@
 #pragma once
 
 #include "libcrs.h"
-#include "TMutex.h"
-#include "TThread.h"
+#include <mutex>
+#include <thread>
+#include <atomic>
+#include <memory>
+#include <condition_variable>
 
 class Encoder {
 public:
+  std::vector<UChar_t> buffer_storage;
   BufClass Buf_ring2; // = Buf_ring + OFF_SIZE
   BufClass Buf_ring; //указатель на буфер, куда пишутся [декодированные] данные
   // Реально создается Buf_ring2, КОНЕЦ которого на OFF_SIZE
   // сдвинут ВПРАВО от конца Buf_ring
 
   buf_iter buf_it;
-
   std::list<BufClass> buf_list;
   char wr_opt[5];
   gzFile gzf;
@@ -25,21 +28,16 @@ public:
 
   Long64_t buf_size; // размер одного буфера
   Long64_t wtime_prev,wtime_0,wtime_1; //prev, start, last wdog
-  //Long64_t wr_bytes_prev;
   Long64_t size_prev;
   Double_t wrate_mean;
 
-
-  TMutex wr_mut;
-  TMutex cmut;
-  TThread* trd_write=0;
-  int wrt_thread_run=0;
-
-  struct ThreadArgs {
-    Encoder* instance;
-    void* user_arg;
-    ThreadArgs(Encoder* inst, void* arg) : instance(inst), user_arg(arg) {}
-  };
+  std::mutex wr_mut;
+  std::mutex cmut;
+  std::unique_ptr<std::thread> trd_write;
+  std::atomic<int> wrt_thread_run{0};
+  
+  // Добавляем condition variable
+  std::condition_variable cv_buf;
 
 public:
   Encoder();
@@ -50,13 +48,11 @@ public:
   void Reset_Wrt();
   void Flush3(int end_ana);
   int Write3(UChar_t* buf, int len);
-  void Handle_write(void *ctx);
-  static void* StaticWrapper(void* arg);
+  void Handle_write();
 };
 
 //------------------------------
 class EDec: public Encoder {
-
 public:
   EDec();
   void Fill_Dec(event_iter evt);

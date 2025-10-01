@@ -1,6 +1,7 @@
 #include "romana.h"
 #include <TSystem.h>
 #include <filesystem>
+#include <condition_variable>
 
 extern Toptions opt;
 extern Coptions cpar;
@@ -10,8 +11,6 @@ Encoder::Encoder() {
 }
 
 Encoder::~Encoder() {
-  if (Buf_ring2.b1)
-    delete[] Buf_ring2.b1;
 }
 
 void Encoder::Encode_Start(int rst, int mm, bool bb, int cc,
@@ -24,11 +23,9 @@ void Encoder::Encode_Start(int rst, int mm, bool bb, int cc,
     if (b_wrt) {
       Reset_Wrt();
 
-
-      if (Buf_ring2.b1)
-	delete[] Buf_ring2.b1;
-
-      Buf_ring2.b1 = new UChar_t[r_size+o_size];
+      // Новый код с безопасным управлением памятью:
+      buffer_storage.resize(r_size + o_size);
+      Buf_ring2.b1 = buffer_storage.data();
       Buf_ring2.b3 = Buf_ring2.b1 + r_size + o_size;
 
       Buf_ring.b1 = Buf_ring2.b1;
@@ -48,10 +45,6 @@ void Encoder::Encode_Start(int rst, int mm, bool bb, int cc,
     // }
   }
 
-
-
-
-
   if (opt.nthreads>1) {
     //decode_thread_run=1;
     //mkev_thread_run=1;
@@ -61,9 +54,7 @@ void Encoder::Encode_Start(int rst, int mm, bool bb, int cc,
     //ana_all=0;
 
     if (b_wrt) {
-      ThreadArgs* args = new ThreadArgs(this, new int(0));
-      trd_write = new TThread("trd_write", StaticWrapper, args);
-      trd_write->Run();
+      trd_write = std::make_unique<std::thread>(&Encoder::Handle_write, this);
     }
 
     // if (opt.raw_write) {
@@ -73,24 +64,21 @@ void Encoder::Encode_Start(int rst, int mm, bool bb, int cc,
 
     //gSystem->Sleep(100);
   }
-
-
 }
 
 void Encoder::Encode_Stop(int end_ana, bool opt_wrt) {
-
   if (end_ana) {
     if (opt_wrt) {
       Flush3(end_ana);
     }
   }
 
-
-  wrt_thread_run=0;
-  if (trd_write) {
-    trd_write->Join();
-    trd_write->Delete();
-    trd_write=0;
+  wrt_thread_run = 0;
+  cv_buf.notify_one();  // Будим поток для завершения
+  
+  if (trd_write && trd_write->joinable()) {
+    trd_write->join();
+    trd_write.reset();
   }
 }
 
@@ -134,7 +122,7 @@ void Encoder::Flush3(int end_ana) {
     buf_it->b3 = Buf_ring.b1+buf_size;
   }
   else { //multithreading
-    wr_mut.Lock();
+    std::unique_lock<std::mutex> wr_lock(wr_mut);
 
     //печатает на экран информацию о каждом 10-м буфере
     static int rep=0;
@@ -172,8 +160,10 @@ void Encoder::Flush3(int end_ana) {
 
     // устанавливаем флаг в старом буфере: можно писать
     prev->flag=9;
-
-    wr_mut.UnLock();
+    
+    // Разблокируем в правильном порядке
+    wr_lock.unlock();
+    cv_buf.notify_one();
   }
 
 } //Flush3
@@ -251,63 +241,46 @@ int Encoder::Write3(UChar_t* buf, int len) {
     // 	 << " " << size << " " << rate << " " << wrate_mean << endl;
   }
 
-
-
-
-
   return rr;
 } //Write3
 
-void Encoder::Handle_write(void *ctx) {
+void Encoder::Handle_write() {
+  {
+    std::lock_guard<std::mutex> lock(cmut);
+    cout << "dec_write thread started: " << endl;
+  }
 
-  cmut.Lock();
-  cout << "dec_write thread started: " << endl;
-  cmut.UnLock();
-
-  while (wrt_thread_run || !buf_list.empty()) {
-
-    //prnt("ss ls;",BGRN,"decwr:",buf_list.size(),RST);
-
-    if (!buf_list.empty()) { //пишем
-
-      for (auto it=buf_list.begin();it!=buf_list.end();++it) {
-	// проверка bufnum не нужна,
+  while (wrt_thread_run.load() || !buf_list.empty()) {
+    std::unique_lock<std::mutex> lock(wr_mut);
+    
+    cv_buf.wait(lock, [this]() {
+      return !buf_list.empty() || !wrt_thread_run.load();
+    });
+    
+    if (!buf_list.empty()) {
+      for (auto it = buf_list.begin(); it != buf_list.end(); ++it) {
+ 	// проверка bufnum не нужна,
 	// т.к. buf_list заполняется всегда последовательно
-	//bool good_buf = it->flag==9 && it->bufnum==Buf_ring.bufnum;
-	if (it->flag==9) {
-	  //gSystem->Sleep(50); // для искусственного замедления (тест)
-	  Write3(it->b1,it->b-it->b1);
-	  wr_mut.Lock();
-	  buf_list.erase(it);
-	  wr_mut.UnLock();
+	if (it->flag == 9) {
+	  lock.unlock(); // Сначала РАЗБЛОКИРОВАТЬ перед долгой операцией
+          Write3(it->b1, it->b - it->b1);
+ 	  //gSystem->Sleep(50); // для искусственного замедления (тест)
+          lock.lock();
+          buf_list.erase(it);
 	  break;
-	}
+        }
       }
+    }
+    
+    lock.unlock();
+    
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1)); //ИЗБЫТОЧНО
+  }
 
-    } //if (!buf_list.empty())
-    // else {
-    //   gSystem->Sleep(5);
-    // }
-    //prnt("ss ls;",BRED,"decwr:",buf_list.size(),RST);
-
-    gSystem->Sleep(55);
-
-  } //while (wrt_thread_run)
-
-  cmut.Lock();
-  cout << "dec_write thread stopped: " << endl;
-  cmut.UnLock();
-
-  //return NULL;
-} //handle_write
-
-// Статическая обертка
-void* Encoder::StaticWrapper(void* arg) {
-  ThreadArgs* args = static_cast<ThreadArgs*>(arg);
-  args->instance->Handle_write(args->user_arg);
-  delete static_cast<int*>(args->user_arg); // чистим аргументы
-  delete args; // чистим структуру
-  return nullptr;
+  {
+    std::lock_guard<std::mutex> lock(cmut);
+    cout << "dec_write thread stopped: " << endl;
+  }
 }
 
 //------------------------
@@ -316,7 +289,6 @@ EDec::EDec() {
 }
 
 void EDec::Fill_Dec(event_iter evt) {
-
   switch (opt.dec_format) {
   case 79:
   case 80:
@@ -336,7 +308,6 @@ void EDec::Fill_Dec(event_iter evt) {
   default:
     ;
   } //switch
-
 }
 
 void EDec::Fill_Dec79(event_iter evt) {
