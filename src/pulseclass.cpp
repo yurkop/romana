@@ -106,17 +106,18 @@ Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
 
     // CFD сдвинута вправо относительно drv
 
-    Float_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
-    drv = sData[j] - sData[j-kk];
-    return (drv*31-d0*frac)/32;
-
+#ifdef PPK
     // вычисление в целых числах, как в приборе
-    /*
     Int_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
     drv = sData[j] - sData[j-kk];
     Int_t cfd = (drv*31-d0*frac);//    /32;
     return cfd;
-    */
+#else
+    Float_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
+    drv = sData[j] - sData[j-kk];
+    return (drv*31-d0*frac)/32;
+#endif
+
   }
   else { //old CFD
     frac=abs(frac);
@@ -137,7 +138,7 @@ Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
     drv = sData[j] - sData[j-kk];
     return drv-d0*frac*0.1; // -> original
   }
-}
+} //CFD
 
 Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
   //Находим только первый пик
@@ -195,7 +196,7 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
       for (j=kk;j<sData.size();j++) {
 	D[j]=sData[j]-sData[j-kk];
 	if (p2) {
-	  if (D[j] < opt.sLT[Chan]) {
+	  if (D[j] <= opt.sLT[Chan]) {
 	    return j-1;
 	    //break;
 	  }
@@ -220,8 +221,6 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
     }
     break;
   case 3: // rise of derivative;
-    //case 7: // CFD from deriv
-    //case 8: // CFD from pulse
     Dpr=1;
     for (j=kk;j<sData.size();j++) {
       D[j]=sData[j]-sData[j-kk];
@@ -241,13 +240,12 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
     Float_t drv;
     for (j=kk;j<sData.size()-opt.DD[Chan];j++) {
       D[j]=CFD(j,kk,opt.DD[Chan],opt.FF[Chan],drv);
-      //D[j]=sData[j]-sData[j-kk];
+#ifdef PPK
+      D[j]/=32;
+#endif
       if (D[j] > opt.sLT[Chan] && Dpr<=opt.sLT[Chan]) {
 	pp=j;
       }
-      // if (Tstamp64<10000) {
-      // 	cout << "cfd: " << j << " " << D[j] << " " << Dpr << endl;
-      // }
       if (D[j] > opt.sThr[Chan]) {
 	return pp;
 	//break;
@@ -266,13 +264,12 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
 
 } //FindPeaks
 
-void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
+void PulseClass::FindZero(Int_t kk, Int_t stg, Int_t thresh, Float_t LT) {
   // определяем точное пересечение нуля или LT (нижнего порога)
   // Pos - уже найден; kk - параметр производной
   // для Trig=4 Pos - точка ПЕРЕД пересечением нуля
   // результат записывается в PulseClass::Time
 
-  int stg = opt.sTg[Chan];
   if (stg<0) stg=cpar.Trg[Chan];
   //cout << "stg: " << Tstamp64 << " " << opt.sTg[Chan] << " " << stg << endl;
   switch (stg) {
@@ -316,102 +313,25 @@ void PulseClass::FindZero(Int_t kk, Int_t thresh, Float_t LT) {
 	Time = Pos;
       }
       //prnt("ss d l d f f fs;",BGRN,"CFD:",Chan,Tstamp64,Pos,DD,Dpr,Time,RST);
+#ifdef PPK
+      ppk.CF1=Dpr;
+      ppk.CF2=DD;
+#endif
     }
     else
       ++crs->errors[ER_TIME];
   } break;
-  case 77: { //old case 7
-    // error (bin in Width spectrum):
-    // 80 - не достигнут порог (thresh) - ошибка некритичная и допустимая
-    // 85 - не найдено пересечение с 0 - возможно, допустимо
-    // 89 - CFD всегда отрицательно - маловероятно и наверное недопустимо
-
-    //int delay = abs(opt.T1[Chan]);
-    if (kk >= (int)sData.size()-opt.DD[Chan]) {
-      Pos=-32222;
-      ++crs->errors[ER_TIME];
-      break;
-    }
-
-    Float_t D[20000]; //максимальная длина записи 16379
-    Int_t pp=kk; // временный Pos
-    float max=-1e9;
-    Float_t drv;
-    Float_t Dpr = -1e6;
-    bool porog=false;
-
-    //sData.erase(sData.end()-10,sData.end());
-
-    // CFD сдвинута вправо относительно drv
-    // находим максимум - либо локальный после пересечения порога,
-    // либо глобальный: pp - позиция максимума
-    Int_t j;
-    for (j=TMath::Max(kk,(int)Pos);j<(int)sData.size()-opt.DD[Chan];j++) {
-      D[j]=CFD(j,kk,opt.DD[Chan],opt.FF[Chan],drv);
-      //drv=sData[j]-sData[j-kk];
-      if (D[j]>max) {
-	max=D[j];
-	pp=j;
-      }
-      if (drv>=thresh)
-	porog=true;
-      if (porog && D[j]>0 && D[j]<Dpr)
-       	break;
-      Dpr=D[j];
-    }
-
-    // если первая точка CFD<=0 -> error 89
-    D[pp]=CFD(pp,kk,opt.DD[Chan],opt.FF[Chan],drv);
-    if (D[pp]<=0) {
-      //prnt("ss l d f fs;",BRED, "D<0:", Tstamp64, pp, D[pp], Pos-cpar.Pre[Chan]-Time, RST);
-      Time=pp;
-      Pos=Time+89;
-      break;
-    }
-
-    // ищем пересечение с нулем
-    pp--;
-    while (pp>kk) {
-      D[pp]=CFD(pp,kk,opt.DD[Chan],opt.FF[Chan],drv);
-      if (D[pp]<=0) {
-	break;
-      }
-      pp--;
-    }
-
-    // если пересечение не найдено -> error 85
-    if (pp==kk) {
-      Time=pp-1;
-      Pos=Time+85;
-      //prnt("ss l d d d fs;",BBLU, "Pos:", Tstamp64, pp, kk, sData.size(), Pos-cpar.Pre[Chan]-Time, RST);
-      break;
-    }
-    //else
-    //prnt("ss l d d ds;",BGRN, "Pos:", Tstamp64, pp, kk, sData.size(), RST);
-
-    if (D[pp+1] == D[pp]) {
-      prnt("ss d fs;",BRED,"DD:",Chan,D[pp],RST);
-      Time = pp;
-    }
-    else
-      Time = pp - D[pp]/(D[pp+1] - D[pp]);
-    //cout << "pp: " << Tstamp64 << " " << pp << " " << Time << " " << Pos << endl;
-
-    // если не достигнут порог -> error +80
-    if (!porog) {
-      Pos=Time+80;
-    }
-
-  } //case 77
-    break;
-  // case 8: {
-  // }
-  //   break;
+    // case 77: { //old case 7 - см. версию ниже v0.938
+    // } //case 77
+    // break;
+    // case 8: {
+    // }
+    //   break;
   default:
     break;
   }
     
-  //prnt("ssfs;",BYEL,"Zero: ",Time,RST);
+  //prnt("ss d fs;",BYEL,"Zero:",stg,Time,RST);
 }
 
 //-----------------------------
@@ -498,7 +418,6 @@ void PulseClass::PeakAna33(bool onlyT) {
   }
 
   // 2. определяем Time
-  Float_t LT=opt.sLT[Chan];
   switch (stg) {
     //case 9:
     //LT = cfd_frac;
@@ -506,7 +425,7 @@ void PulseClass::PeakAna33(bool onlyT) {
   case 6:
   case 7:
     // FindZero определяет Time
-    FindZero(kk,opt.sThr[Chan],LT);
+    FindZero(kk,opt.sTg[Chan],opt.sThr[Chan],opt.sLT[Chan]);
     break;
   default: { //0,1,2,4,5
     if (crs->use_2nd_deriv[Chan]) { //use 2nd deriv

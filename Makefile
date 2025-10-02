@@ -41,7 +41,8 @@ make P_TEST=1 : compile with Test menu entry
 make P_LIBUSB=1 : compile with printing libusb messages
 make P_CMD=1 : compile with printing cmd32 \& cmd2 messages
 make BITS=N : compile with cutting lower bits in sData by N
-make [-j] : yumo compile with YUMO option
+make PPK1 : compile with PPK: additional output in Check DSP (CFD)
+make [-j] yumo : compile with YUMO option
 make ANA3=1 : новая версия анализа, USB и т.п.
 endef
 export HELP_TEXT
@@ -105,6 +106,10 @@ endif
 
 ifdef BITS
   CPPFLAGS += -D BITS=$(BITS)
+endif
+
+ifdef PPK
+  CPPFLAGS += -D PPK=1
 endif
 
 ifdef ANA3

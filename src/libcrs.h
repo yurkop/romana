@@ -76,14 +76,6 @@ union union82 { // текущее положение в Dec буфере
 /*   size_t len; */
 /* }; */
 
-class PkClass {
-public:
-  Long64_t QX;
-  Int_t RX,C,A,AY,CF1,CF2;
-  Short_t H;
-  UChar_t E;
-};
-
 class BufClass {
 public:
   UChar_t* b1=0; // указатель на начало буфера
@@ -484,8 +476,9 @@ RQ_OBJECT("CRS")
   //void AllParameters41(); // load all parameters
   //void AllParameters42(); // load all parameters
   //void AllParameters43(); // load all parameters
-  void AllParameters44a(); // parameters from TZ CFD+ (2025)
-  void AllParameters45(); // load all parameters
+  void AllParameters_AK32();
+  void AllParameters_CRS8();
+  void AllParameters44_CFD(); // parameters from TZ CFD+ (2025)
   void AllParameters44(); // load all parameters
   void AllParameters36(); // load all parameters
   void AllParameters35(); // load all parameters

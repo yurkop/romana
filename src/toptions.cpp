@@ -107,7 +107,7 @@ std::string Coptions::GetDevice(int module, int opt) {
 
     if (opt) {
       res+=" Npl:"+std::to_string(device[2]);
-      res+=" Ver:"+std::to_string(device[2]);
+      res+=" Ver:"+std::to_string(device[3]);
     }
   } //device[0]
   else {
@@ -205,7 +205,7 @@ void Coptions::InitMinMax() {
 	 4100,0,4075,4092,1023,255,250,250};
   // тип срабатывания дискриминатора
   mTrg = {0,0,0,0,0,0,0,0,
-	  7,1,6,6,6,6,7,7};
+	  7,1,6,6,7,6,7,7};
   // величина пересчета P ("незаписанных" срабатываний дискриминатора)
   mRD = {0,0,0,0,0,0,0,0,
 	 1023,0,0,0,1023,1023,1023,1023};
@@ -229,13 +229,7 @@ void Coptions::InitMinMax() {
 }
 
 void Coptions::GetParm(const char* name, int i, void *par, int &min, int &max) {
-  // std::vector<int> myvector(10);
-  // try {
-  //   myvector.at(20)=100;      // vector::at throws an out-of-range
-  // }
-  // catch (const std::out_of_range& oor) {
-  //   std::cerr << "Out of Range error: " << oor.what() << '\n';
-  // }
+  // см. Coptions::InitMinMax()
 
   min=-9999999;//0;
   max=9999999;//-1;

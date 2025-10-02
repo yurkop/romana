@@ -1678,11 +1678,13 @@ int CRS::SetPar() {
   //   AllParameters43();
   //   break;
   case 44:
+    AllParameters_CRS8();
+    break;
   case 54:
     AllParameters44();
     break;
   case 45:
-    AllParameters45();
+    AllParameters_AK32();
     break;
   default:
     cout << "SetPar Error! No module found" << endl;
@@ -2177,7 +2179,7 @@ void CRS::Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max) {
   // << " " << a2 << " " << len << endl;
 }
 
-void CRS::AllParameters44a() {// parameters from TZ CFD+ (2025)
+void CRS::AllParameters44_CFD() {// parameters from TZ CFD+ (2025)
   int
     F1=31,
     //F2=1,
@@ -2201,13 +2203,13 @@ void CRS::AllParameters44a() {// parameters from TZ CFD+ (2025)
       Command32(2,chan,40,ff); //F2 – множитель 2 CFD
       Command32(2,chan,41,FRR); //FRR – номер делителя CFD
       Command32(2,chan,42,MR); //способ вычисления QX/RX центроидаX
-      //промежут. безусловная длительность центроидаX
+      //43: промежут. безусловная длительность центроидаX
       Check33(43,chan,opt.T1[chan],T3,1,4095);
     }
   }
 }
 
-void CRS::AllParameters45() { //AK-32
+void CRS::AllParameters_AK32() { //AK-32
   AllParameters44();
   //Индивидуальные параметры каналов:
   for (auto chan = 0; chan < chan_in_module; chan++) {
@@ -2215,10 +2217,15 @@ void CRS::AllParameters45() { //AK-32
       Command32(2,chan,37,0); //входной импеданс - всегда 50 Ом
     }
   }
-  AllParameters44a(); //CFD, Rtime
+  AllParameters44_CFD(); //CFD, Rtime
   //Общие параметры:
   //Command32(11,10,0,0); // режим работы прибора Multi/Single (игнорируется)
   Command32(11,11,0,8); // число обслуживаемых рабочих плат MAIN-ом USB3
+}
+
+void CRS::AllParameters_CRS8() { //ЦРС-8
+  AllParameters44();
+  AllParameters44_CFD(); //CFD, Rtime
 }
 
 void CRS::AllParameters44() {
@@ -4776,6 +4783,9 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
     oss_bad<<" "<<"P:"<< ipls.Pos<<" "<<ipls2.Pos;
     bad=true;
   }
+  else {
+    oss_good<<" "<<"P:"<< ipls.Pos;
+  }
 
   for (auto i: {1,2,3,4,9,10}) {
     a[i] = *(Float_t*)((char*)&ipls + ipls.GetPtr(i));
@@ -4792,7 +4802,7 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
     */
     double ee = a[i]-b[i];
 
-    if (abs(ee)>1e-4) {
+    if (abs(ee)>opt.Tstart) {
       bad=true;
       oss_bad << " " << tt[i-1] << ":" << a[i] << " " << b[i];
       //<< " " << a[i]-b[i];
@@ -4805,6 +4815,11 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
   if (bad) {
     prnt("ss d lss;",BRED,"bad:",ch,T,oss_bad.str().c_str(),RST);
     prnt("ss d lss;",BYEL,"good:",ch,T,oss_good.str().c_str(),RST);
+#ifdef PPK
+    cout << ipls.ppk.CF1 << " " << ipls.ppk.CF2 << endl;
+    cout << ipls2.ppk.CF1 << " " << ipls2.ppk.CF2 << endl;
+    cout << 1.0*ipls.ppk.CF1/ipls2.ppk.CF1 << " " << 1.0*ipls.ppk.CF2/ipls2.ppk.CF2 << endl;
+#endif
     cout << "-------" << endl;
   }
   else {
@@ -4903,6 +4918,8 @@ void CRS::PulseAna(PulseClass &ipls) {
   }
   else { //Dsp!=0 -> не анализируем
     if (opt.checkdsp) {
+      int t_tg = opt.sTg[ipls.Chan];
+      opt.sTg[ipls.Chan] = cpar.Trg[ipls.Chan];
       PulseClass ipls2 = ipls;
       ipls.Pos=cpar.Pre[ipls.Chan];
       // if (ipls.Peaks.size()!=1) {
@@ -4910,6 +4927,7 @@ void CRS::PulseAna(PulseClass &ipls) {
       // }
       ipls2.PeakAna33();
       CheckDSP(ipls,ipls2);
+      opt.sTg[ipls.Chan] = t_tg;
     }
     // else {
     //   // для sTg=3,6,7 ищем пересечение нижнего порога/нуля
@@ -5878,6 +5896,10 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
   //PeakClass *ipk=&ipls.Peaks[0];
   Float_t Area0;
 
+#ifdef PPK
+  ipls.ppk=pk;
+#endif
+
   ipls.Pos = cpar.Pre[ipls.Chan];
 
   Area0=pk.A/p_len[ipls.Chan];
@@ -5911,7 +5933,7 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
       int kk = cpar.Drv[ipls.Chan];
       //cout << "ZZZZ pos: " << ipls.Pos << " " << kk << endl;
       //if (ipls.Pos>=kk && (int)ipls.sData.size()>ipls.Pos+1) {
-      ipls.FindZero(kk,cpar.Thr[ipls.Chan],cpar.LT[ipls.Chan]);
+      ipls.FindZero(kk,cpar.Trg[ipls.Chan],cpar.Thr[ipls.Chan],cpar.LT[ipls.Chan]);
       ipls.Time-=ipls.Pos;
       break;
     }

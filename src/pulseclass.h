@@ -37,6 +37,14 @@ const unsigned char P_BADPEAK=128;
 // It may (or may not) contain raw data (oscillogram)
 // It may (or may not) contain peaks
 
+class PkClass {
+public:
+  Long64_t QX;
+  Int_t RX,C,A,AY,CF1,CF2;
+  Short_t H;
+  UChar_t E;
+};
+
 class PulseClass {
 
  public:
@@ -78,6 +86,9 @@ class PulseClass {
   //Float_t Noise2;
 
   //bool Analyzed; //true if pulse is already analyzed
+#ifdef PPK
+  PkClass ppk;
+#endif
 
  public:
   PulseClass();// {};
@@ -87,7 +98,7 @@ class PulseClass {
   Float_t CFD(int i, int kk, int delay, Float_t frac, Float_t &drv);
   //void Analyze();
   Short_t FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac);
-  void FindZero(Int_t kk, Int_t thresh, Float_t LT);
+  void FindZero(Int_t kk, Int_t stg, Int_t thresh, Float_t LT);
   //void FindPeaks(Float_t thresh, int deadtime);
   //void PeakAna();
   void PeakAna33(bool onlyT=false);

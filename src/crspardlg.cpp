@@ -1763,11 +1763,15 @@ int ParParDlg::AddFiles(TGCompositeFrame* frame) {
   fchk = new TGCheckButton(hframe3, txt, id);
   // fchk->SetName(txt);
   fchk->SetToolTipText("Compare Dsp data (1) vs software pulse analysis (2)\n"
-		       ": dsp and Dsp must be also checked\n"
-		       ": sTg must be equal to Trg (not -1)\n"
+		       ": dsp be checked\n"
+		       ": Dsp must be 1 or 2 (can be tested separately)\n"
+		       ": sTg can be any\n"
 		       ": Set DrawEvent delay's last digit to 1 to print OK"
 		       " for good events\n"
-		       ": Pulses in Events panel correspond to Dsp"
+		       ": Set Tstart to epsilon (tolerance level)."
+		       " For some parameters epsilon can be about 3e-3\n"
+		       ": Output: first dsp, then pls\n"
+		       ": Pulses in Events panel correspond to Dsp analysis"
 		       );
   hframe3->AddFrame(fchk,LayCC1);
   DoMap(fchk,&opt.checkdsp,p_chk,0,0x100|(5<<1));
