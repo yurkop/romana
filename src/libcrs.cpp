@@ -58,7 +58,7 @@ extern MemInfo_t minfo;
 extern ProcInfo_t pinfo;
 // extern double rmem;
 
-DecoderClass* decoder;
+Decoder* decoder;
 Simul* sim2;
 
 extern CRS* crs;
@@ -240,13 +240,14 @@ void *handle_events_func(void *ctx)
 }
 
 #ifdef ANA3
+
 static void cback3(libusb_transfer *trans) {
   // сохраняем текущий буфер
   //unsigned char* cbuf = trans->buffer;
 
   double rr = trans->actual_length*100;
   rr/=TR_SIZE;
-  prnt("ss 4d l 4.0fss;",BGRN,"cbk:",inp_list.size(),trans->actual_length,rr,"%",RST);
+  //prnt("ss 4d l 4.0fss;",BGRN,"cbk:",inp_list.size(),trans->actual_length,rr,"%",RST);
 
   if (trans->actual_length) {
 
@@ -256,30 +257,37 @@ static void cback3(libusb_transfer *trans) {
       gSystem->Sleep(1);
     }
 
-    // запускаем анализ и запись буфера
-    if (!opt.directraw) {
-      // заполняем inp_list
-      auto buf_it = inp_list.insert(inp_list.end(),BufClass());
-      //inp_list.push_back(BufClass());
+    decoder->Add_to_copy_queue(trans->buffer, trans->actual_length);
 
-      //BufClass* inbuf = &inp_list.back();
-      buf_it->b1 = trans->buffer;
-      buf_it->b3 = trans->buffer+trans->actual_length;
 
-      // разделение на однопоточный/многопоточный должно быть в AnaBuf3
-      crs->AnaBuf3(buf_it);
+    // // запускаем анализ и запись буфера
+    // if (!opt.directraw) {
+    //   // заполняем inp_list
+    //   auto buf_it = inp_list.insert(inp_list.end(),BufClass());
+    //   buf_it->b1 = trans->buffer;
+    //   buf_it->b3 = trans->buffer+trans->actual_length;
 
-      /*
-      if (opt.nthreads==1) { // однопоточный (линейный) анализ
-	crs->AnaBuf3(buf_it);
-      }
-      else { // многопоточный анализ
-	// заполняем deq
-	// анализ
-	//crs->AnaBuf3_MT();
-      }
-      */
-    }
+    //   // КОПИРОВАНИЕ В ОТДЕЛЬНЫЙ БУФЕР
+    //   if (analysis_ring_buffer.write_available(trans->actual_length)) {
+    //     analysis_ring_buffer.write(trans->buffer, trans->actual_length);
+    //   } else {
+    //     ++crs->errors[ER_BUF_OVERFLOW]; // статистика переполнения
+    //   }
+
+    //   // разделение на однопоточный/многопоточный должно быть в AnaBuf3
+    //   crs->AnaBuf3(buf_it);
+
+    //   /*
+    //   if (opt.nthreads==1) { // однопоточный (линейный) анализ
+    // 	crs->AnaBuf3(buf_it);
+    //   }
+    //   else { // многопоточный анализ
+    // 	// заполняем deq
+    // 	// анализ
+    // 	//crs->AnaBuf3_MT();
+    //   }
+    //   */
+    // }
 
     // запись
     if (opt.raw_write && !opt.fProc) {
@@ -329,6 +337,7 @@ static void cback3(libusb_transfer *trans) {
   }
 
 } //cback3
+
 #else //ANA3
 
 static void cback(libusb_transfer *trans) {
@@ -556,230 +565,6 @@ void *handle_ana(void *ctx) {
   return NULL;
 } //handle_ana
 
-void CRS::Ana_start(int rst) {
-  //set initial variables for analysis
-  //should be called before first call of ana2
-  // b_mem=false;
-
-  MakeDecMask();
-
-  tproc=0;
-
-  if (!batch) {
-    parpar->FEnable(false,0x100);
-    histpar->FEnable(false,0x100);
-    chanpar->FEnable(false,0x100);
-  }
-
-  if (opt.ev_min>=opt.ev_max) {
-    opt.ev_min=opt.ev_max/2;
-  }
-  //Set_Trigger();
-  for (int i=0;i<MAX_CH;i++) {
-    b_len[i] = opt.B2[i]-opt.B1[i]+1;
-    p_len[i] = opt.P2[i]-opt.P1[i]+1;
-    w_len[i] = opt.W2[i]-opt.W1[i]+1;
-    b_mean[i] = (opt.B2[i]+opt.B1[i])*0.5;
-    p_mean[i] = (opt.P2[i]+opt.P1[i])*0.5;
-    w_mean[i] = (opt.W2[i]+opt.W1[i])*0.5;
-    use_2nd_deriv[i] = opt.sTg[i]==5 || (opt.sTg[i]==-1 && cpar.Trg[i]==5);
-    //cout << "Use_2nd: " << i << " " << use_2nd_deriv[i] << endl;
-  }
-
-  sPeriod = opt.Period*1e-9;
-
-
-  // Создаем список Mainlist (гистограмм в Main)
-  hcl->Mainlist.clear();
-  //for (auto it = hcl->Actlist.begin();it!=hcl->Actlist.end();++it) {
-  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
-    if (it->hd->b) { //активные (созданные) гистограммы
-      //Mdef md = *(*it);
-      bool inmain = false;
-
-      //prnt("ss ss;",BGRN,"ML:",it->h_name.Data(),RST);
-      //prnt("ss l ls;",BBLU,"ML:",it->v_map.size(),(*it)->v_map.size(),RST);
-      //cout << "md: " << it->v_map[0] << " " << (*it)->v_map[0] << " " << it->hd << endl;
-
-      for (auto map = it->v_map.begin();map!=it->v_map.end();++map) {
-	if (*(map) && *(it->hd->w+(*map)->nn)) { // если эта гистограмма в MAIN
-	  inmain=true;
-	  //prnt("ss ds;",BRED,"Main:",(*map)->nn,RST);
-	}
-	//else {
-	  //*map=0;
-	//}
-      }
-      if (inmain) {
-	hcl->Mainlist.push_back(&*it);
-      }
-    }
-  }
-
-#ifdef LINUX
-  if (chdir(startdir)) {}
-#else
-  _chdir(startdir);
-#endif
-  gzFile ff = gzopen("last.par","wb");
-  SaveParGz(ff,module);
-  gzclose(ff);
-
-
-  if (opt.fProc) { //для переобработанных данных (пишем в формате 36)
-    eraw->Encode_Start(rst,36,opt.raw_write,opt.raw_compr,0,
-		       opt.rawbuf_size*Megabyte,2*Megabyte);
-  }
-  else {
-    eraw->Encode_Start(rst,module,opt.raw_write,opt.raw_compr,GLBuf,
-		       gl_sz,2*Megabyte);
-  }
-
-  edec->Encode_Start(rst,opt.dec_format,opt.dec_write,opt.dec_compr,0,
-		     opt.decbuf_size*Megabyte,2*Megabyte);
-
-
-
-
-
-  memset(dec_iread,0,sizeof(dec_iread));
-  if (opt.nthreads>1) {
-    decode_thread_run=1;
-    mkev_thread_run=1;
-    ana_thread_run=1;
-
-    for (UInt_t i=0;i<gl_Nbuf;i++) {
-      char ss[50];
-      sprintf(ss,"trd_dec%d",i);
-      dec_nr[i] = i;
-      trd_dec[i] = new TThread(ss, handle_decode, (void*) &dec_nr[i]);
-      trd_dec[i]->Run();
-    }
-
-    trd_mkev = new TThread("trd_mkev", handle_mkev, (void*) 0);
-    trd_mkev->Run();
-
-    ana_all=0;
-
-    trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
-    trd_ana->Run();
-
-    // if (opt.dec_write) {
-    //   trd_dec_write = new TThread("trd_dec_write", handle_dec_write, (void*) 0);
-    //   trd_dec_write->Run();
-    // }
-
-    gSystem->Sleep(100);
-  }
-
-  //cout << "Ana_start finished..." << endl;
-}
-
-void CRS::Ana2(int end_ana) {
-  // вызываем ana2 после каждого cback или DoBuf
-  // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
-  // если end_ana==0 ->
-  // анализируем данные от Levents.begin() до Levents.end()-opt.ev_min
-  // если end_ana!=0 ->
-  // анализируем данные от Levents.begin() до Levents.end()
-
-  int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
-
-  // cmut.Lock();
-  //cout << "Ana2_1: " << crs->Levents.size() << " " << end_ana << endl;
-  // cmut.UnLock();
-
-  if (m_event==crs->Levents.end()) {
-    m_event=crs->Levents.begin();
-  }
-
-  std::list<EventClass>::iterator m_end = crs->Levents.end();
-  //m_end = crs->Levents.end();
-  if (!end_ana) { //analyze up to ev_min events
-    int nmin=opt.ev_min;
-    while (m_end!=m_event && nmin>0) {
-      --m_end;
-      --nmin;
-    }
-    //std::advance(m_end,-opt.ev_min);
-  }
-
-  //YK "костыль" нужен для исключения канала 255 из гистограмм
-  bool save_on=cpar.on[255];
-  cpar.on[255]=false;
-  // analyze events from m_event to m_end
-  while (m_event!=m_end) {
-    if ((int)m_event->pulses.size()>=opt.mult1 &&
-	(int)m_event->pulses.size()<=opt.mult2) {
-
-#ifdef TPROC
-      TTimeStamp pt1,pt2;
-      pt1.Set();
-#endif
-
-      Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
-      hcl->FillHist(&*m_event,hcut_flag);
-#ifdef TPROC
-      pt2.Set();
-      tproc+=pt2.AsDouble()-pt1.AsDouble();
-#endif
-      if (m_event->Spin & 64) { //Ms channel
-	if (!opt.maintrig || hcut_flag[opt.maintrig]) {
-	  ++crs->mtrig;
-	  if (opt.raw_write && opt.fProc) {
-	    //crs->Fill_Raw(&(*m_event));
-	  }
-	  if (opt.dec_write) {
-	    edec->Fill_Dec(m_event);
-	  } // if dec_write
-	  if (opt.fTxt && opt.nthreads==1) {
-	    crs->Print_OneEvent(&(*m_event));
-	  }
-	} //maintrig
-      } // if spin
-    } // mult
-    // else {
-    // 	m_event=crs->Levents.erase(m_event);
-    // }
-    ++m_event;
-  } //while
-  //YK "костыль" нужен для исключения канала 255 из гистограмм
-  cpar.on[255]=save_on;
-
-  // erase events if the list is too long
-  for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
-    it=crs->Levents.erase(it);
-  }
-
-  /*
-  //removed on 06.02.2020
-  //cout << "Flush_ana YK: " << endl;
-  if (end_ana) {
-    // if (opt.dec_write) {
-    //   crs->Flush_Dec3(decbuf_it,end_ana);
-    // }
-    //cout << "Ana2: " << opt.raw_write << " " << opt.fProc << endl;
-    if (opt.raw_write && opt.fProc) {
-      crs->Flush_Raw();
-    }
-  }
-  */
-
-  // fill Tevents for EvtFrm::DrawEvent2
-  if (EvtFrm) {
-    EvtFrm->Tevents.clear();
-    if (m_event!=crs->Levents.end()) {
-      EvtFrm->Tevents.push_back(*m_event);
-    }
-    else if (!crs->Levents.empty()) {
-      EvtFrm->Tevents.push_back(crs->Levents.back());     
-    }
-    EvtFrm->d_event=EvtFrm->Pevents->begin();
-  }
-
-} //Ana2
-
-
 #ifdef SOCK
 extern SockClass *gSock;
 
@@ -993,6 +778,24 @@ void SockClass::Eval_Com() {
 }
 #endif
 
+void BufClass::Ring_Write(const UChar_t* data, size_t data_size) {
+  // нужно добавить проверку на доступность буфера (гонка с анализом)
+
+  //cout << "wrt: " << (size_t) b1 << " " << (size_t) b << " " << (size_t) b3 << endl;
+
+  if (b + data_size <= b3) {
+    // Данные помещаются
+    memcpy(b, data, data_size);
+    b += data_size;
+  } else {
+    // Данные не помещаются - записываем в начало
+    memcpy(b1, data, data_size);
+    b = b1 + data_size;
+  }
+  //prnt("ss f fs;",BMAG,"wrt:",1.*(b-data_size-b1)/Megabyte,1.*(b-b1)/Megabyte, RST);
+}
+
+
 CRS::CRS() {
 
   /*
@@ -1031,8 +834,8 @@ CRS::CRS() {
   memset(crs_ch,0,sizeof(crs_ch));
 
   //InBuf = new BufClass(1024*iMB); //1GB
-  decoder = new DecoderClass();
-  decoder->zfile = &f_read;
+  decoder = new Decoder();
+  //decoder->zfile = &f_read;
 
   GLBuf2 = NULL;//new UChar_t[GLBSIZE];
   GLBuf = NULL;//new UChar_t[GLBSIZE];
@@ -1128,6 +931,235 @@ CRS::~CRS() {
   trd_dum->Run();
   }
 */
+
+void CRS::Ana_start(int rst) {
+  //set initial variables for analysis
+  //should be called before first call of ana2
+  // b_mem=false;
+
+  MakeDecMask();
+
+  tproc=0;
+
+  if (!batch) {
+    parpar->FEnable(false,0x100);
+    histpar->FEnable(false,0x100);
+    chanpar->FEnable(false,0x100);
+  }
+
+  if (opt.ev_min>=opt.ev_max) {
+    opt.ev_min=opt.ev_max/2;
+  }
+  //Set_Trigger();
+  for (int i=0;i<MAX_CH;i++) {
+    b_len[i] = opt.B2[i]-opt.B1[i]+1;
+    p_len[i] = opt.P2[i]-opt.P1[i]+1;
+    w_len[i] = opt.W2[i]-opt.W1[i]+1;
+    b_mean[i] = (opt.B2[i]+opt.B1[i])*0.5;
+    p_mean[i] = (opt.P2[i]+opt.P1[i])*0.5;
+    w_mean[i] = (opt.W2[i]+opt.W1[i])*0.5;
+    use_2nd_deriv[i] = opt.sTg[i]==5 || (opt.sTg[i]==-1 && cpar.Trg[i]==5);
+    //cout << "Use_2nd: " << i << " " << use_2nd_deriv[i] << endl;
+  }
+
+  sPeriod = opt.Period*1e-9;
+
+
+  // Создаем список Mainlist (гистограмм в Main)
+  hcl->Mainlist.clear();
+  //for (auto it = hcl->Actlist.begin();it!=hcl->Actlist.end();++it) {
+  for (auto it = hcl->Mlist.begin();it!=hcl->Mlist.end();++it) {
+    if (it->hd->b) { //активные (созданные) гистограммы
+      //Mdef md = *(*it);
+      bool inmain = false;
+
+      //prnt("ss ss;",BGRN,"ML:",it->h_name.Data(),RST);
+      //prnt("ss l ls;",BBLU,"ML:",it->v_map.size(),(*it)->v_map.size(),RST);
+      //cout << "md: " << it->v_map[0] << " " << (*it)->v_map[0] << " " << it->hd << endl;
+
+      for (auto map = it->v_map.begin();map!=it->v_map.end();++map) {
+	if (*(map) && *(it->hd->w+(*map)->nn)) { // если эта гистограмма в MAIN
+	  inmain=true;
+	  //prnt("ss ds;",BRED,"Main:",(*map)->nn,RST);
+	}
+	//else {
+	  //*map=0;
+	//}
+      }
+      if (inmain) {
+	hcl->Mainlist.push_back(&*it);
+      }
+    }
+  }
+
+#ifdef LINUX
+  if (chdir(startdir)) {}
+#else
+  _chdir(startdir);
+#endif
+  gzFile ff = gzopen("last.par","wb");
+  SaveParGz(ff,module);
+  gzclose(ff);
+
+  //cout << "Ana_Start1: " << b_acq << endl;
+#ifdef ANA3
+  decoder->Decode_Start(opt.ibuf_size*Megabyte,2*Megabyte);
+#endif
+
+  if (opt.fProc) { //для переобработанных данных (пишем в формате 36)
+    eraw->Encode_Start(rst,36,opt.raw_write,opt.raw_compr,0,
+		       opt.rawbuf_size*Megabyte,2*Megabyte);
+  }
+  else {
+    eraw->Encode_Start(rst,module,opt.raw_write,opt.raw_compr,GLBuf,
+		       gl_sz,2*Megabyte);
+  }
+
+  edec->Encode_Start(rst,opt.dec_format,opt.dec_write,opt.dec_compr,0,
+		     opt.decbuf_size*Megabyte,2*Megabyte);
+
+
+  //cout << "Ana_Start2: " << b_acq << endl;
+
+
+
+  memset(dec_iread,0,sizeof(dec_iread));
+  if (opt.nthreads>1) {
+    decode_thread_run=1;
+    mkev_thread_run=1;
+    ana_thread_run=1;
+
+    for (UInt_t i=0;i<gl_Nbuf;i++) {
+      char ss[50];
+      sprintf(ss,"trd_dec%d",i);
+      dec_nr[i] = i;
+      trd_dec[i] = new TThread(ss, handle_decode, (void*) &dec_nr[i]);
+      trd_dec[i]->Run();
+    }
+
+    trd_mkev = new TThread("trd_mkev", handle_mkev, (void*) 0);
+    trd_mkev->Run();
+
+    ana_all=0;
+
+    trd_ana = new TThread("trd_ana", handle_ana, (void*) 0);
+    trd_ana->Run();
+
+    // if (opt.dec_write) {
+    //   trd_dec_write = new TThread("trd_dec_write", handle_dec_write, (void*) 0);
+    //   trd_dec_write->Run();
+    // }
+
+    gSystem->Sleep(100);
+  }
+
+  //cout << "Ana_start finished..." << endl;
+}
+
+void CRS::Ana2(int end_ana) {
+  // вызываем ana2 после каждого cback или DoBuf
+  // Входные данные: Levents, МЕНЯЕТСЯ во время работы ana2 (если MT)
+  // если end_ana==0 ->
+  // анализируем данные от Levents.begin() до Levents.end()-opt.ev_min
+  // если end_ana!=0 ->
+  // анализируем данные от Levents.begin() до Levents.end()
+
+  int nmax = crs->Levents.size()-opt.ev_max; //number of events to be deleted
+
+  // cmut.Lock();
+  //cout << "Ana2_1: " << crs->Levents.size() << " " << end_ana << endl;
+  // cmut.UnLock();
+
+  if (m_event==crs->Levents.end()) {
+    m_event=crs->Levents.begin();
+  }
+
+  std::list<EventClass>::iterator m_end = crs->Levents.end();
+  //m_end = crs->Levents.end();
+  if (!end_ana) { //analyze up to ev_min events
+    int nmin=opt.ev_min;
+    while (m_end!=m_event && nmin>0) {
+      --m_end;
+      --nmin;
+    }
+    //std::advance(m_end,-opt.ev_min);
+  }
+
+  //YK "костыль" нужен для исключения канала 255 из гистограмм
+  bool save_on=cpar.on[255];
+  cpar.on[255]=false;
+  // analyze events from m_event to m_end
+  while (m_event!=m_end) {
+    if ((int)m_event->pulses.size()>=opt.mult1 &&
+	(int)m_event->pulses.size()<=opt.mult2) {
+
+#ifdef TPROC
+      TTimeStamp pt1,pt2;
+      pt1.Set();
+#endif
+
+      Double_t hcut_flag[MAXCUTS] = {0}; //признак срабатывания окон
+      hcl->FillHist(&*m_event,hcut_flag);
+#ifdef TPROC
+      pt2.Set();
+      tproc+=pt2.AsDouble()-pt1.AsDouble();
+#endif
+      if (m_event->Spin & 64) { //Ms channel
+	if (!opt.maintrig || hcut_flag[opt.maintrig]) {
+	  ++crs->mtrig;
+	  if (opt.raw_write && opt.fProc) {
+	    //crs->Fill_Raw(&(*m_event));
+	  }
+	  if (opt.dec_write) {
+	    edec->Fill_Dec(m_event);
+	  } // if dec_write
+	  if (opt.fTxt && opt.nthreads==1) {
+	    crs->Print_OneEvent(&(*m_event));
+	  }
+	} //maintrig
+      } // if spin
+    } // mult
+    // else {
+    // 	m_event=crs->Levents.erase(m_event);
+    // }
+    ++m_event;
+  } //while
+  //YK "костыль" нужен для исключения канала 255 из гистограмм
+  cpar.on[255]=save_on;
+
+  // erase events if the list is too long
+  for (event_iter it=crs->Levents.begin(); it!=m_event && nmax>0;--nmax) {
+    it=crs->Levents.erase(it);
+  }
+
+  /*
+  //removed on 06.02.2020
+  //cout << "Flush_ana YK: " << endl;
+  if (end_ana) {
+    // if (opt.dec_write) {
+    //   crs->Flush_Dec3(decbuf_it,end_ana);
+    // }
+    //cout << "Ana2: " << opt.raw_write << " " << opt.fProc << endl;
+    if (opt.raw_write && opt.fProc) {
+      crs->Flush_Raw();
+    }
+  }
+  */
+
+  // fill Tevents for EvtFrm::DrawEvent2
+  if (EvtFrm) {
+    EvtFrm->Tevents.clear();
+    if (m_event!=crs->Levents.end()) {
+      EvtFrm->Tevents.push_back(*m_event);
+    }
+    else if (!crs->Levents.empty()) {
+      EvtFrm->Tevents.push_back(crs->Levents.back());     
+    }
+    EvtFrm->d_event=EvtFrm->Pevents->begin();
+  }
+
+} //Ana2
+
 
 void CRS::DoDetectDev() {
 #ifdef CYUSB
@@ -1730,8 +1762,8 @@ int CRS::Init_Transfer3() {
 
     UChar_t* buf = InpBuf_ring.b1+TR_SIZE*i;
 
-    //unsigned int timeout=2000; //0 millisec
-    unsigned int timeout=400*(i+1); //0 millisec
+    //unsigned int timeout=400*(i+1); //0 millisec
+    unsigned int timeout=1000+100*i; //0 millisec
     libusb_fill_bulk_transfer(transfer[i], cy_handle, 0x86, buf, TR_SIZE, cback3, ntr, timeout);
 
 #ifdef P_LIBUSB
@@ -3438,7 +3470,9 @@ void CRS::Make_prof_ch() {
 
 #ifdef ANA3
 void CRS::AnaBuf3(buf_iter buf_it) {
-  // 1. Сначала смотрим на конец анализируемого буфера buf_it:
+  // анализирует буфер, на который указывает  buf_it
+
+  // 1. Сначала смотрим на конец текущего анализируемого буфера buf_it:
   // - ищем начало последнего события в конце буфера
   // - если нашли:
   //   - записываем его в b текущего буфера
@@ -3448,7 +3482,7 @@ void CRS::AnaBuf3(buf_iter buf_it) {
 
   // 2. Потом смотрим на начало анализируемого буфера:
   // - Проверяем предыдущий буфер.
-  // - Если его конец меньше начала текущего
+  // - Если его конец меньше начала текущего (есть хвост)
   //   или b1 предыдущего > b1 текущего (переход через кольцевой буфер), то:
   //   1) копируем кусок последнего события из предыдущего перед началом
   //   текущего (от b до b3 предыдущего буфера).
@@ -3463,9 +3497,10 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   //     flag текущего +1: анализ (не нужен)
   // - если b!=0 ->
   //     запускаем анализ текущего буфера от b1 до b.
+  //     Здесь (в анализе) начинается многопоточность
   //     в конце анализа: flag текущего +1: провели анализ
   //
-  // Итого если flag==3 (fildlast, скопирован хвост, проанализирован) ->
+  // Итого, если flag==3 (fildlast, скопирован хвост, проанализирован) ->
   // элемент bufclass можно удалять
   //
 
@@ -3480,7 +3515,7 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   //предыдущая запись всегда должна существовать
   buf_iter prev = std::prev(buf_it);
   buf_it->bufnum = prev->bufnum+1;
-  if (prev->b3<buf_it->b1 //конец предыдущего раньше начала текущего
+  if (prev->b3<buf_it->b1//конец предыдущего раньше начала текущего (есть хвост)
       || prev->b1 > buf_it->b1) { // или начало предыдущего позже начала
     // текущего (переход через конец кольцевого буфера)
     size_t count = prev->b3 - prev->b;
@@ -3489,7 +3524,7 @@ void CRS::AnaBuf3(buf_iter buf_it) {
       return;
     }
     buf_it->b1-=count; //сдвигаем начало буфера влево
-    memmove(buf_it->b1, prev->b, count);
+    memmove(buf_it->b1, prev->b, count); //копируем хвост
   }
   else if (prev->b3>buf_it->b1) {
     //конец предыдущего позже начала текущего: такого не может быть!
@@ -3504,10 +3539,15 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   prnt("ss ls;",BBLU,"Step2:",buf_it->bufnum,RST);
 
   if (buf_it->b) {
-    buf_it->flag++; //анализ, в нем должно быть buf_it->flag++
+    //анализ, в нем должно быть buf_it->flag++
+    Decode_switch3(buf_it);
+
+
+    //buf_it->flag++; //анализ, в нем должно быть buf_it->flag++
   }
-  else {
-    buf_it->b=buf_it->b1; //весь буфер считается куском события
+  else { //buf_it->b==0
+    buf_it->b=buf_it->b1; //весь буфер считается куском события,
+    // конец b совпадает с началом b1
     buf_it->flag++; //анализ не нужен
     cout << "----tail----" << endl;
   }
@@ -3534,6 +3574,7 @@ void CRS::AnaBuf3(buf_iter buf_it) {
 void CRS::FindLast3(buf_iter buf_it) {
   // находит начало последнего события в буфере inbuf
   // и записывает указатель на него в buf_it->b
+  // если не найдено, buf_it->b не меняется (по умолчанию =0)
 
   UInt_t frmt;
   union82 uu; // текущее положение в буфере
@@ -3624,7 +3665,7 @@ void CRS::FindLast3(buf_iter buf_it) {
 
   //prnt("ss ls;",BRED,"Step1. FindLast3:",buf_it->bufnum,RST);
 
-}
+} //FindLast3
 
 void CRS::Decode_switch3(buf_iter buf_it) {
   int ibuf;
@@ -4198,6 +4239,9 @@ void CRS::EndAna(int end_ana) {
   //end_ana=0 -> just stop, buffers remain not analyzed,
   //         can continue from this point on
 
+#ifdef ANA3
+  decoder->Decode_Stop();
+#endif
   eraw->Encode_Stop(end_ana,opt.raw_write);
   edec->Encode_Stop(end_ana,opt.dec_write);
 

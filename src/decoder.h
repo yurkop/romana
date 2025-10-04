@@ -1,36 +1,31 @@
-#ifndef decoder_H
-#define decoder_H 1
+#pragma once
+#include "romana.h"
 
-#include "pulseclass.h"
-#include <zlib.h>
-#include <deque>
-//#include <boost/circular_buffer.hpp>
+class Decoder {
+public:
+  struct CopyData {
+    UChar_t* data;  // указатель на данные USB
+    size_t size;    // размер данных
+  };
 
-using namespace std;
+  std::vector<UChar_t> buffer_storage;
+  BufClass Buf_ring; //указатель на буфер, куда пишутся данные
+  // начало Buf_ring.b1 сдвинуто вправо на o_size
 
-struct DecRecord {
-  char* buf; // указатель на буфер с данными
-  UInt_t len; // длина буфера в байтах
-  int status; // статус буфера (пустой, заполненный, проанализированный?)
+  // Поток копирования и связанные переменные
+  std::unique_ptr<std::thread> copy_thread;
+  std::atomic<bool> copy_running{false};
+  std::vector<CopyData> copy_queue;
+  std::mutex queue_mutex;
+  std::condition_variable queue_cond;
+
+public:
+  ~Decoder();
+  void Decode_Start(Long64_t r_size, Long64_t o_size);
+  void Decode_Stop();
+
+  // Метод для добавления данных в очередь извне
+  void Add_to_copy_queue(UChar_t* data, size_t size);
+  UChar_t* FindEvent(UChar_t* begin, UChar_t* end);
+
 };
-
-//typedef std::pair<unsigned char*,int> DecPair;
-
-class DecoderClass {
- public:
-  std::deque<DecRecord> declist;
-  gzFile *zfile;
-  //string zfname;
-  //char dec_opt[10];
-
- public:
-  DecoderClass();
-  virtual ~DecoderClass();
-
-  //void Reset_Dec();
-  
-  void Decode79(UInt_t iread, UInt_t ibuf);
-};
-
-
-#endif

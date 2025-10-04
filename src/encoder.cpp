@@ -30,16 +30,14 @@ void Encoder::Encode_Start(int rst, int mm, bool &bb, int cc, UChar_t* BBuf,
 
       // Новый код с безопасным управлением памятью:
       if (BBuf) {
-	Buf_ring2.b1 = BBuf;
+	Buf_ring.b1 = BBuf;
       }
       else {
 	buffer_storage.resize(r_size + o_size);
-	Buf_ring2.b1 = buffer_storage.data();
+	Buf_ring.b1 = buffer_storage.data();
       }
-      Buf_ring2.b3 = Buf_ring2.b1 + r_size + o_size;
 
-      Buf_ring.b1 = Buf_ring2.b1;
-      Buf_ring.b3 = Buf_ring.b1 + r_size;
+      Buf_ring.b3=Buf_ring.b1+r_size;//на o_size меньше, чем выделенный размер 
 
       buf_list.clear();
       buf_it = buf_list.insert(buf_list.end(),BufClass());

@@ -104,6 +104,7 @@ public:
   // public:
   //   BufClass(size_t sz);
   //   ~BufClass();
+  void Ring_Write(const UChar_t* data, size_t data_size);
 };
 
 #ifdef SOCK

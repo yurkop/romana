@@ -1,162 +1,193 @@
 #include "decoder.h"
 #include <iostream>
+#define ID_ADCM  0x2A50
+#define ID_CMAP  0x504D
+#define ID_EVNT  0x5645
+#define ID_CNTR  0x5443
 
-//extern Long64_t b_start[CRS::MAXTRANS];
+extern CRS* crs;
 
-DecoderClass::DecoderClass() {
-  //zfile=;
+Decoder::~Decoder() {
+  Decode_Stop();
 }
 
-DecoderClass::~DecoderClass() {
-  gzclose(*zfile);
-  *zfile=0;
-}
+void Decoder::Decode_Start(Long64_t r_size, Long64_t o_size) {
+  // r_size - total size of buffer (на самом деле + o_size)
+  // o_size - offset size
 
-/*
-void DecoderClass::Reset_Dec(Short_t mod, Int_t compr) {
-  // сбрасывает декодер перед началом записи в файл
+  // Новый код с безопасным управлением памятью:
+  buffer_storage.resize(o_size + r_size);
 
-  sprintf(dec_opt,"wb%d",compr);
-
-  zfile = gzopen(zfname.c_str(),dec_opt);
-  if (zfile) {
-    cout << "Writing parameters... : " << crs->decname.c_str() << endl;
-    SaveParGz(f_dec,mod);
-    gzclose(f_dec);
-  }
-  else {
-    cout << "Can't open file: " << crs->decname.c_str() << endl;
-  }
-
-  sprintf(dec_opt,"ab%d",opt.dec_compr);
-
-  DecBuf=DecBuf_ring;
-  DecBuf8 = (ULong64_t*) DecBuf;
-  idec=0;
-  decw_list.clear();
-
-  // mdec1=0;
-  // mdec2=0;
-  // memset(b_decwrite,0,sizeof(b_decwrite));
-} //Reset_Dec
-*/
-
-void DecoderClass::Decode79(UInt_t iread, UInt_t ibuf) {
-  //Decode79 - the same as 78, but different factor for Area
+  Buf_ring.b1 = buffer_storage.data() + o_size;
+  Buf_ring.b3 = Buf_ring.b1 + r_size;
+  Buf_ring.b = Buf_ring.b1;
 
   /*
-  cout << "Decode79: " << zfile << endl;
+    buf_list.clear();
+    buf_it = buf_list.insert(buf_list.end(),BufClass());
+    buf_it->b1 = Buf_ring.b1;
+    buf_it->b = buf_it->b1;
+    buf_it->b3 = buf_it->b1+buf_size;
+    //buf_it->flag=??;  // считаем, что сделаны Findlast + анализ
+    */
 
-  //ibuf - current sub-buffer
-  Long64_t idx1=b_start[ibuf]; // current index in the buffer (in 1-byte words)
 
-  EventClass* evt=&dummy_event;
-
-  eventlist *Blist;
-  UChar_t frmt = GLBuf[idx1+7] & 0x80;
-  Dec_Init(Blist,!frmt);
-  PulseClass pls=good_pulse;
-  PulseClass* ipls=&pls;
-  static Long64_t Tst;
-  static UChar_t Spn;
-  ULong64_t* buf8;
-
-  //prnt("sl;","d79: ",nevents);
-
-  if (opt.fProc) { //fill pulses for reanalysis
-    while (idx1<b_end[ibuf]) {
-      frmt = GLBuf[idx1+7] & 0x80; //event start bit
-      buf8 = (ULong64_t*) (GLBuf+idx1);
-
-      if (frmt) { //event start
-	Tst = (*buf8) & sixbytes;
-	(*buf8)>>=48;
-	//Spn = UChar_t((*buf8) & 1);
-	Spn = UChar_t(*buf8);
-      }
-      else {
-	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
-	UShort_t* buf2u = (UShort_t*) buf2;
-	UChar_t* buf1u = (UChar_t*) buf2;
-	ipls->Chan = buf2[3];
-
-	if (Spn & 128) { //Counters
-	  ipls->Counter = (*buf8) & sixbytes;
-	}
-	else { //Peaks
-	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-
-	  //new2
-	  ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01; //in samples
-	  ipls->Tstamp64=Tst;// *opt.Period;
-
-	  ipls->Spin=Spn;
-	  ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
-
-	  ipls->Height = ((UInt_t) buf1u[7])<<8;
-
-	  ipls->Ecalibr(ipls->Area);
-	}
-	Event_Insert_Pulse(Blist,ipls);
-      }
-
-      idx1+=8;
-    } //while (idx1<buf_len)
-
-    Dec_End(Blist,iread,255);
-
-  } //if (opt.fProc)
-
-  else { //!opt.fProc -> fill event
-    while (idx1<b_end[ibuf]) {
-      frmt = GLBuf[idx1+7] & 0x80; //event start bit
-      buf8 = (ULong64_t*) (GLBuf+idx1);
-
-      if (frmt) { //event start	
-	evt = &*Blist->insert(Blist->end(),good_event);
-	evt->Nevt=nevents;
-	nevents++;
-	evt->Tstmp = (*buf8) & sixbytes;
-	(*buf8)>>=48;
-	//evt->Spin |= UChar_t((*buf8) & 1);
-	evt->Spin |= UChar_t(*buf8);
-	//prnt("ss l ds;",BGRN,"d79:",evt->Tstmp,evt->Spin,RST);
-      }
-      else {
-	Short_t* buf2 = (Short_t*) (GLBuf+idx1);
-	UShort_t* buf2u = (UShort_t*) buf2;
-	UChar_t* buf1u = (UChar_t*) buf2;
-	pulse_vect::iterator itpls =
-	  evt->pulses.insert(evt->pulses.end(),pls);
-	ipls = &(*itpls);
-	ipls->Chan = buf2[3];
-
-	if (evt->Spin & 128) { //Counters
-	  ipls->Counter = (*buf8) & sixbytes;
-	}
-	else { //Peaks
-	  ipls->Area = (*buf2u+rnd.Rndm()-1.5)*0.2;
-	  ipls->Time = (buf2[1]+rnd.Rndm()-0.5)*0.01
-	    + opt.sD[ipls->Chan]/opt.Period; //in samples
-	  ipls->Width = (buf2[2]+rnd.Rndm()-0.5)*0.001;
-
-	  ipls->Height = ((UInt_t) buf1u[7])<<8;
-
-	  if (opt.St[ipls->Chan] && ipls->Time < evt->T0) {
-	    //prnt("ssd f l f f fs;",KGRN,"pls: ",ipls->Chan,evt->T0,evt->Tstmp,ipls->Time,opt.sD[ipls->Chan],opt.Period,RST);
-	    evt->T0=ipls->Time;
+  if (crs->b_acq) {// стартуем поток копирования - только если acquisition
+    copy_running = true;
+    copy_thread = std::make_unique<std::thread>([this]() {
+      // Лямбда-функция вместо метода класса
+      while (true) {
+	std::vector<CopyData> local_queue;
+                
+	{
+	  std::unique_lock<std::mutex> lock(queue_mutex);
+	  queue_cond.wait(lock, [this]{ 
+	    return !copy_queue.empty() || !copy_running;
+	  });
+      
+	  // Выходим только когда остановка И очередь пуста
+	  if (!copy_running && copy_queue.empty()) {
+	    break;
 	  }
-	  ipls->Ecalibr(ipls->Area);
+                    
+	  if (!copy_queue.empty()) {
+	    local_queue.swap(copy_queue);
+	  }
+	}
+                
+	for (auto& item : local_queue) {
+	  Buf_ring.Ring_Write(item.data, item.size);
 	}
       }
-
-      //prnt("ss l d ls;",BCYN,"d79:",evt->Tstmp,evt->Spin,evt->pulses.size(),RST);
-
-      idx1+=8;
-    } //while (idx1<buf_len)
-
-    Dec_End(Blist,iread,254);
-
+    });
   }
-  */
-} //decode79
+}
+
+void Decoder::Decode_Stop() {
+  if (!copy_running) return;
+
+  copy_running = false;
+  queue_cond.notify_all();
+
+  // Ждем пока поток обработает ВСЕ данные из очереди
+  if (copy_thread && copy_thread->joinable()) {
+    copy_thread->join(); // Поток сам выйдет когда queue пуста И copy_running=false
+  }
+  copy_thread.reset(); // освобождаем память
+
+  // Очистка очереди
+  //std::lock_guard<std::mutex> lock(queue_mutex);
+  //copy_queue.clear();
+}
+
+// Метод для добавления данных в очередь извне
+void Decoder::Add_to_copy_queue(UChar_t* data, size_t size) {
+  std::lock_guard<std::mutex> lock(queue_mutex);
+  copy_queue.push_back({data, size});
+  queue_cond.notify_one(); // Будим поток даже если copy_running=false
+}
+
+UChar_t* Decoder::FindEvent(UChar_t* begin, UChar_t* end) {
+  // возвращает начало первого найденного события в буфере от begin до end
+  // если не найдено, возврвщает 0
+
+  if ((end-begin)%8) {
+    prnt("sss;",BRED,"Error: end-begin is not a multiple of 8",RST);
+    return 0;
+  }
+
+  int step=1;
+  if (begin>end) step=-1;
+
+  UChar_t* res=0;
+
+  UInt_t frmt;
+  union82 uu; // текущее положение в буфере
+  uu.b = begin;
+  
+  switch (crs->module) {
+  case 1: //adcm raw
+    /*
+      доделать, проверить!
+      while (uu.b > buf_it->b1) {
+      --uu.ui;
+      if (*uu.ui==0x2a500100) {
+      //outbuf.Buf=uu.b;
+      }
+      }
+    */
+    //prnt("ss ls;",BRED,"Error: adcm raw no last event:",buf_it->bufnum,RST);
+    //break;
+    return 0;
+  case 3: //adcm dec
+    while (uu.b != end) {
+      uu.us+=step;
+      if (*uu.us==ID_EVNT) {
+	res = uu.b;
+	break;
+      }
+    }
+    //prnt("ss ls",BRED,"Error: no last event:",buf_it->bufnum,RST);
+    break;
+  case 22:
+    while (uu.b != end) {
+      uu.us+=step;
+      //find frmt==0 -> this is the start of a pulse
+      frmt = *(uu.b+1) & 0x70;
+      if (frmt==0) {
+	res = uu.b;
+	break;
+      }
+    }
+    break;
+  case 32:
+  case 33:
+  case 34:
+  case 35:
+  case 36:
+  case 41:
+  case 42:
+  case 43:
+  case 44:
+  case 51:
+  case 52:
+  case 53:
+  case 54:
+  case 45:
+    while (uu.b != end) {
+      uu.ul+=step;
+      //find frmt==0 -> this is the start of a pulse
+      frmt = *(uu.b+6) & 0xF0;
+      if (frmt==0) {
+	res = uu.b;
+	break;
+      }
+    }
+    // если дошли до начала и не нашли, b остается равным 0
+    break;
+  case 75:
+  case 76:
+  case 77:
+  case 78:
+  case 79:
+  case 80:
+    while (uu.b != end) {
+      uu.ul+=step;
+      //find frmt==1 -> this is the start of a pulse
+      frmt = *(uu.b+7) & 0x80; //event start bit
+      if (frmt) {
+        res = uu.b;
+	break;
+      }
+    }
+    // если дошли до начала и не нашли, b остается равным 0
+    break;
+
+  default:
+    cout << "Wrong module: " << crs->module << endl;
+  }
+
+  //prnt("ss ls;",BRED,"Step1. FindLast3:",buf_it->bufnum,RST);
+  return res;
+
+} //FindEvent
