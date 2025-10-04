@@ -42,11 +42,8 @@ TMutex stat_mut;
 //TMutex ana_mut;
 
 TMutex decode_mut;
-TMutex raw_mut;
 
 //TMutex ringdec_mut;
-
-TMutex cmut;
 
 const int BFMAX=999999999;
 
@@ -65,6 +62,7 @@ DecoderClass* decoder;
 Simul* sim2;
 
 extern CRS* crs;
+extern ERaw* eraw;
 extern EDec* edec;
 extern Coptions cpar;
 extern Toptions opt;
@@ -164,7 +162,6 @@ int event_thread_run;//=1;
 int decode_thread_run;
 int mkev_thread_run;
 int ana_thread_run;
-int wrt_thread_run;
 int dec_nr[CRS::MAXTHREADS];
 
 
@@ -177,8 +174,6 @@ TThread* trd_mkev;
 //TCondition mkev_cond[CRS::MAXTRANS];
 //int mkev_check[CRS::MAXTRANS];
 TThread* trd_ana;
-//TThread* trd_dec_write;
-TThread* trd_raw_write;
 
 //TThread* trd_sock;
 
@@ -288,6 +283,8 @@ static void cback3(libusb_transfer *trans) {
 
     // запись
     if (opt.raw_write && !opt.fProc) {
+      // см. cback
+      /*
       if (opt.nthreads==1) { // однопоточная (линейная) запись
 	crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
 	if (crs->f_raw) {
@@ -302,6 +299,7 @@ static void cback3(libusb_transfer *trans) {
       }
       else // многопоточная запись
 	crs->Flush_Raw_MT(trans->buffer, trans->actual_length);
+      */
     }
   }
 
@@ -363,23 +361,16 @@ static void cback(libusb_transfer *trans) {
 
     // запускаем запись буфера, если opt.raw_write (переделать!)
     if (opt.raw_write && !opt.fProc) {
+      // для cback3, возможно, переделать, используя
+      // буфер декодера. Типа *(eraw->buf_it) = *("decoder"->buf_it);
 
-      if (opt.nthreads>1) {
-	crs->Flush_Raw_MT(trans->buffer, trans->actual_length);
-      }
-      else {
-	crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
-	if (crs->f_raw) {
-	  int res=gzwrite(crs->f_raw,trans->buffer,trans->actual_length);
-	  gzclose(crs->f_raw);
-	  crs->rawbytes+=res;
-	}
-	else {
-	  cout << "Can't open file: " << crs->rawname.c_str() << endl;
-	  opt.raw_write=false;
-	}
-      }
-      
+      eraw->buf_it->b1=trans->buffer; //начало записи буфера
+      eraw->buf_it->b=trans->buffer+trans->actual_length; //конец записи буфера
+      eraw->buf_it->b3=eraw->buf_it->b; //физический конец буфера
+
+
+      // пока так. проверить все, что делает Flush3. возможно, для raw не годится
+      eraw->Flush3(0);
     }
 
     //trans->buffer=next_buf;
@@ -565,62 +556,6 @@ void *handle_ana(void *ctx) {
   return NULL;
 } //handle_ana
 
-void *handle_raw_write(void *ctx) {
-
-  cmut.Lock();
-  cout << "raw_write thread started: " << endl;
-  cmut.UnLock();
-
-  //return 0;
-  while (wrt_thread_run || !crs->rw_list.empty()) {
-
-    if (!crs->rw_list.empty()) { //write
-
-      Pair p=crs->rw_list.front();
-      UChar_t* buf = p.first;
-      int len = p.second;
-
-      raw_mut.Lock();
-      crs->rw_list.pop_front();
-      //prnt("ss d ds;",KGRN,"raw_write: ",crs->rw_list.size(),buf-GLBuf,RST);
-      raw_mut.UnLock();
-
-      crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
-      if (crs->f_raw) {
-	int res=gzwrite(crs->f_raw,buf,len);
-	if (res!=len) {
-	  cout << "Error writing to file: " << crs->rawname.c_str() << " " 
-	       << res << " " << len << endl;
-	  crs->rawbytes+=res;
-	  opt.raw_write=false;
-	  gzclose(crs->f_raw);
-	  crs->f_raw=0;
-	  break;
-	}
-	gzclose(crs->f_raw);
-	crs->f_raw=0;
-	crs->rawbytes+=res;
-	
-      }
-      else {
-	cout << "Can't open file: " << crs->rawname.c_str() << endl;
-	opt.raw_write=false;
-      }
-      
-    }
-    else {
-      gSystem->Sleep(5);
-    }
-
-  } //while (wrt_thread_run)
-
-  cmut.Lock();
-  cout << "raw_write thread stopped: " << endl;
-  cmut.UnLock();
-
-  return NULL;
-} //handle_raw_write
-
 void CRS::Ana_start(int rst) {
   //set initial variables for analysis
   //should be called before first call of ana2
@@ -691,16 +626,27 @@ void CRS::Ana_start(int rst) {
   gzclose(ff);
 
 
+  if (opt.fProc) { //для переобработанных данных (пишем в формате 36)
+    eraw->Encode_Start(rst,36,opt.raw_write,opt.raw_compr,0,
+		       opt.rawbuf_size*Megabyte,2*Megabyte);
+  }
+  else {
+    eraw->Encode_Start(rst,module,opt.raw_write,opt.raw_compr,GLBuf,
+		       gl_sz,2*Megabyte);
+  }
 
-  edec->Encode_Start(rst,opt.dec_format,opt.dec_write,opt.dec_compr,
-			opt.decbuf_size*Megabyte,Megabyte,2*Megabyte);
+  edec->Encode_Start(rst,opt.dec_format,opt.dec_write,opt.dec_compr,0,
+		     opt.decbuf_size*Megabyte,2*Megabyte);
+
+
+
+
 
   memset(dec_iread,0,sizeof(dec_iread));
   if (opt.nthreads>1) {
     decode_thread_run=1;
     mkev_thread_run=1;
     ana_thread_run=1;
-    wrt_thread_run=1;
 
     for (UInt_t i=0;i<gl_Nbuf;i++) {
       char ss[50];
@@ -722,11 +668,6 @@ void CRS::Ana_start(int rst) {
     //   trd_dec_write = new TThread("trd_dec_write", handle_dec_write, (void*) 0);
     //   trd_dec_write->Run();
     // }
-
-    if (opt.raw_write) {
-      trd_raw_write = new TThread("trd_raw_write", handle_raw_write, (void*) 0);
-      trd_raw_write->Run();
-    }
 
     gSystem->Sleep(100);
   }
@@ -785,12 +726,12 @@ void CRS::Ana2(int end_ana) {
       if (m_event->Spin & 64) { //Ms channel
 	if (!opt.maintrig || hcut_flag[opt.maintrig]) {
 	  ++crs->mtrig;
+	  if (opt.raw_write && opt.fProc) {
+	    //crs->Fill_Raw(&(*m_event));
+	  }
 	  if (opt.dec_write) {
 	    edec->Fill_Dec(m_event);
 	  } // if dec_write
-	  if (opt.raw_write && opt.fProc) {
-	    crs->Fill_Raw(&(*m_event));
-	  }
 	  if (opt.fTxt && opt.nthreads==1) {
 	    crs->Print_OneEvent(&(*m_event));
 	  }
@@ -810,6 +751,7 @@ void CRS::Ana2(int end_ana) {
     it=crs->Levents.erase(it);
   }
 
+  /*
   //removed on 06.02.2020
   //cout << "Flush_ana YK: " << endl;
   if (end_ana) {
@@ -821,6 +763,7 @@ void CRS::Ana2(int end_ana) {
       crs->Flush_Raw();
     }
   }
+  */
 
   // fill Tevents for EvtFrm::DrawEvent2
   if (EvtFrm) {
@@ -1107,11 +1050,7 @@ CRS::CRS() {
   Fmode=0;
   opt.Period=5;
 
-  f_raw=0;
   f_read=0;
-  f_dec=0;
-  //f_tree=0;
-  //Tree=0;
 
   batch=false;
   scrn=0;
@@ -1154,7 +1093,6 @@ CRS::CRS() {
   trd_crs=0;
   trd_mkev=0;
   trd_ana=0;
-  trd_raw_write=0;
   //trd_sock=0;
 
   for (int i=0;i<MAXTHREADS;i++) {
@@ -2743,9 +2681,9 @@ int CRS::DoStartStop(int rst) {
     }
 
     if (rst) {
-      if (opt.raw_write) {
-	Reset_Raw();
-      }   
+      // if (opt.raw_write) {
+      // 	Reset_Raw();
+      // }   
       // if (opt.dec_write) {
       // 	encoder->Reset_Dec(opt.dec_format);
       // }
@@ -2944,6 +2882,7 @@ void CRS::DoReset(int rst) {
 
     inputbytes=0;
     rawbytes=0;
+    eraw->wr_bytes=0;
     edec->wr_bytes=0;
 
     npulses=0;
@@ -4099,15 +4038,9 @@ int CRS::DoBuf() {
 
     //читаем и сразу пишем. непонятно, зачем...
     if (opt.raw_write && !opt.fProc) {
-      crs->f_raw = gzopen(crs->rawname.c_str(),crs->raw_opt);
-      if (crs->f_raw) {
-	int res=gzwrite(crs->f_raw,GLBuf+b_fill[gl_ibuf],opt.rbuf_size*1024);
-	gzclose(crs->f_raw);
-	crs->rawbytes+=res;
-      }
-      else {
-	cout << "Can't open file: " << crs->rawname.c_str() << endl;
-      }
+      UChar_t* buf=GLBuf+b_fill[gl_ibuf];
+      int len = opt.rbuf_size*1024;
+      eraw->Write3(buf,len);
     }
 
     if (length>0) {
@@ -4257,21 +4190,6 @@ void CRS::StopThreads(int end_ana) {
     trd_ana=0;
   }
 
-  //gSystem->Sleep(500);
-  // wrt_thread_run=0;
-  // if (trd_dec_write) {
-  //   trd_dec_write->Join();
-  //   trd_dec_write->Delete();
-  //   trd_dec_write=0;
-  // }
-
-  wrt_thread_run=0;
-  if (trd_raw_write) {
-    trd_raw_write->Join();
-    trd_raw_write->Delete();
-    trd_raw_write=0;
-  }
-
   //cout << "done" << endl;
 }
 
@@ -4280,6 +4198,7 @@ void CRS::EndAna(int end_ana) {
   //end_ana=0 -> just stop, buffers remain not analyzed,
   //         can continue from this point on
 
+  eraw->Encode_Stop(end_ana,opt.raw_write);
   edec->Encode_Stop(end_ana,opt.dec_write);
 
   if (opt.nthreads>1) {
@@ -4354,9 +4273,9 @@ void CRS::FAnalyze2(bool nobatch) {
     }
 
 
-    if (opt.raw_write) {
-      Reset_Raw();
-    }   
+    // if (opt.raw_write) {
+    //   Reset_Raw();
+    // }   
     // if (opt.dec_write) {
     //   encoder->Reset_Dec(opt.dec_format);
     // }   
@@ -4438,9 +4357,9 @@ void CRS::DoNBuf2(int nb) {
   }
 
   if (juststarted) {
-    if (opt.raw_write) {
-      Reset_Raw();
-    }   
+    // if (opt.raw_write) {
+    //   Reset_Raw();
+    // }   
     // if (opt.dec_write) {
     //   encoder->Reset_Dec(opt.dec_format);
     // }   
@@ -4771,6 +4690,8 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
   std::ostringstream oss_bad;
   std::ostringstream oss_good;
 
+  //cout << "npulses: " << npulses << endl;
+
   int ch=ipls.Chan;
   Long64_t T=ipls.Tstamp64;
 
@@ -4816,9 +4737,9 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
     prnt("ss d lss;",BRED,"bad:",ch,T,oss_bad.str().c_str(),RST);
     prnt("ss d lss;",BYEL,"good:",ch,T,oss_good.str().c_str(),RST);
 #ifdef PPK
-    cout << ipls.ppk.CF1 << " " << ipls.ppk.CF2 << endl;
-    cout << ipls2.ppk.CF1 << " " << ipls2.ppk.CF2 << endl;
-    cout << 1.0*ipls.ppk.CF1/ipls2.ppk.CF1 << " " << 1.0*ipls.ppk.CF2/ipls2.ppk.CF2 << endl;
+    cout << "dsp CF1 CF2: " << ipls.ppk.CF1 << " " << ipls.ppk.CF2 << endl;
+    cout << "pls CF1 CF2: " << ipls2.ppk.CF1 << " " << ipls2.ppk.CF2 << endl;
+    cout << "ratio: " << 1.0*ipls.ppk.CF1/ipls2.ppk.CF1 << " " << 1.0*ipls.ppk.CF2/ipls2.ppk.CF2 << endl;
 #endif
     cout << "-------" << endl;
   }
@@ -7145,31 +7066,6 @@ void CRS::Make_Events(std::list<eventlist>::iterator BB) {
   //std::advance(m_end,-opt.ev_min);  
 }
 
-void CRS::Reset_Raw() {
-  sprintf(raw_opt,"wb%d",opt.raw_compr);
-
-  f_raw = gzopen(crs->rawname.c_str(),raw_opt);
-  if (f_raw) {
-    cout << "Writing parameters... : " << crs->rawname.c_str() << " " << module << endl;
-    if (opt.fProc) {
-      SaveParGz(f_raw,35);
-    }
-    else {
-      SaveParGz(f_raw,module);
-    }
-    gzclose(f_raw);
-  }
-  else {
-    cout << "Can't open file: " << crs->rawname.c_str() << endl;
-  }
-
-  sprintf(raw_opt,"ab%d",opt.raw_compr);
-
-  //RawBuf8 = (ULong64_t*) RawBuf;
-  iraw=0;
-  rw_list.clear();
-}
-
 void CRS::Reset_Txt() {
 
   if (txt_out) {
@@ -7785,6 +7681,7 @@ void P_buf8(int id,ULong64_t* buf8) {
 }
 
 void CRS::Fill_Raw(EventClass* evt) {
+  /*
   // записывает импульс (возможноб обрезанны в конце) и fmt4 fmt5
   // калибровку лучше отключить, Mt=0
 
@@ -7923,49 +7820,8 @@ void CRS::Fill_Raw(EventClass* evt) {
   //     prnt("ss d xs;",BGRN,"D:",mm++,*i,RST);
   //   }
   // }
-
+  */
 } //Fill_Raw
-
-void CRS::Flush_Raw() {
-
-  if (!iraw) return;
-  //sprintf(raw_opt,"ab%d",opt.raw_compr);
-  f_raw = gzopen(crs->rawname.c_str(),raw_opt);
-  if (!f_raw) {
-    cout << "Can't open file: " << crs->rawname.c_str() << endl;
-    opt.raw_write=false;
-    iraw=0;
-    return;
-  }
-
-  int res=gzwrite(f_raw,RawBuf,iraw);
-  if (res!=iraw) {
-    cout << "Error writing to file: " << crs->rawname.c_str() << " " 
-	 << res << " " << iraw << endl;
-    rawbytes+=res;
-    opt.raw_write=false;
-    return;
-  }
-  iraw=0;
-  rawbytes+=res;
-
-  gzclose(f_raw);
-  f_raw=0;
-
-}
-
-void CRS::Flush_Raw_MT(UChar_t* buf, int len) {
-
-  Pair p;
-  p.first=buf;
-  p.second=len;
-  
-  raw_mut.Lock();
-  rw_list.push_back(p);
-  prnt("s d d;","Flush_raw: ",rw_list.size(),buf-GLBuf);
-  raw_mut.UnLock();
-
-}
 
 void CRS::UpdateRates(int rst) {
   static double t1;

@@ -157,8 +157,6 @@ RQ_OBJECT("CRS")
   //--------constants---------
   static const int MAXTHREADS=8;
   static const int MAXTRANS=7; //было 8
-  //static const int MAXTRANS=7;
-  //static const int MAXTRANS7=7;
   static const int RAWSIZE=10485760; //10 MB
 
   //static const int DECSIZE=1048576; //1 MB
@@ -168,9 +166,8 @@ RQ_OBJECT("CRS")
 
   //int MAXTRANS2; //real maxtrans, depends on usb_size
   
-  gzFile f_raw;
   gzFile f_read;
-  gzFile f_dec;
+
   bool juststarted;
   short LogOK=0; // -1: bad; 0: undefined, 1: OK, 2: continue, 3: no Log
   //-1: Log="-";          Acq: DoLog;    Ana: стартуем;
@@ -196,7 +193,7 @@ RQ_OBJECT("CRS")
   char dec_opt[5];
   char Fname[255]; //имя файла для чтения/обработки
 
-  string rawname;
+  //string rawname;
   //string decname;
   string rootname;
 
@@ -568,7 +565,6 @@ RQ_OBJECT("CRS")
   void Make_Events(std::list<eventlist>::iterator BB);
   //void Select_Event(EventClass *evt);
 
-  void Reset_Raw();
   //void Reset_Dec(Short_t mod);
   void Reset_Txt();
 
@@ -588,10 +584,6 @@ RQ_OBJECT("CRS")
   void Fill_Dec_Simul();
 
   void Fill_Raw(EventClass* evt);
-  //void Flush_Raw3();
-  //int Wr_Raw(UChar_t* buf, int len);
-  void Flush_Raw();
-  void Flush_Raw_MT(UChar_t* buf, int len);
 
   //void Print_Pulses();
   void Print_OneEvent(EventClass* evt);

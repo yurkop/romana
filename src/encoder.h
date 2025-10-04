@@ -22,7 +22,7 @@ public:
   string wr_name;
   Long64_t wr_bytes;
 
-  bool b_wrt;
+  bool *b_wrt; //указывает либо на opt.raw_write, либо на opt.dec_write
   int w_compr=1;
   int w_module=79;
 
@@ -42,8 +42,8 @@ public:
 public:
   Encoder();
   virtual ~Encoder();
-  void Encode_Start(int rst, int mm, bool bb, int cc,
-		    Long64_t r_size, Long64_t b_size, Long64_t o_size);
+  void Encode_Start(int rst, int mm, bool &bb, int cc, UChar_t* BBuf,
+		    Long64_t r_size, Long64_t o_size);
   void Encode_Stop(int end_ana, bool opt_wrt);
   void Reset_Wrt();
   void Flush3(int end_ana);
@@ -57,4 +57,9 @@ public:
   EDec();
   void Fill_Dec(event_iter evt);
   void Fill_Dec79(event_iter evt);
+};
+//------------------------------
+class ERaw: public Encoder {
+public:
+  ERaw();
 };

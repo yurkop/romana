@@ -13,19 +13,29 @@ Encoder::Encoder() {
 Encoder::~Encoder() {
 }
 
-void Encoder::Encode_Start(int rst, int mm, bool bb, int cc,
-			   Long64_t r_size, Long64_t b_size, Long64_t o_size) {
+void Encoder::Encode_Start(int rst, int mm, bool &bb, int cc, UChar_t* BBuf,
+			   Long64_t r_size, Long64_t o_size) {
+  // rst=rst; mm - module; bb - write flag; cc - compression
+  // BBuf: если не 0, задает Buf_ring; если 0, Buf_ring создается
+  // r_size - total size of buffer (на самом деле + o_size)
+  // o_size - offset size
+
   w_module=mm;
-  b_wrt=bb;
+  b_wrt=&bb;
   w_compr=cc;
 
   if (rst) {
-    if (b_wrt) {
+    if (*b_wrt) {
       Reset_Wrt();
 
       // Новый код с безопасным управлением памятью:
-      buffer_storage.resize(r_size + o_size);
-      Buf_ring2.b1 = buffer_storage.data();
+      if (BBuf) {
+	Buf_ring2.b1 = BBuf;
+      }
+      else {
+	buffer_storage.resize(r_size + o_size);
+	Buf_ring2.b1 = buffer_storage.data();
+      }
       Buf_ring2.b3 = Buf_ring2.b1 + r_size + o_size;
 
       Buf_ring.b1 = Buf_ring2.b1;
@@ -53,7 +63,7 @@ void Encoder::Encode_Start(int rst, int mm, bool bb, int cc,
 
     //ana_all=0;
 
-    if (b_wrt) {
+    if (*b_wrt) {
       trd_write = std::make_unique<std::thread>(&Encoder::Handle_write, this);
     }
 
@@ -97,7 +107,7 @@ void Encoder::Reset_Wrt() {
   else {
     TString msg=TString("Can't open file: ") + wr_name.c_str();
     EError(1,1,1,msg);
-    opt.dec_write=false;
+    *b_wrt=false;
   }
 
   sprintf(wr_opt,"ab%d",w_compr);
@@ -132,8 +142,8 @@ void Encoder::Flush3(int end_ana) {
       double rr = Buf_ring.b3-Buf_ring.b1;
       rr/=(buf_it->b-buf_it->b1);
       prnt("s d x d l l l f;","Flush3: ",buf_list.size(),buf_it->b1,
-	   buf_it->b-buf_it->b1,buf_it->b1-Buf_ring.b1,
-	   Buf_ring.b3-buf_it->b1,Buf_ring.b3-Buf_ring.b1,rr);
+	   (buf_it->b-buf_it->b1)/1024,(buf_it->b1-Buf_ring.b1)/1024,
+	   (Buf_ring.b3-buf_it->b1)/1024,(Buf_ring.b3-Buf_ring.b1)/1024,rr);
       rep=0;
     }
 
@@ -146,7 +156,8 @@ void Encoder::Flush3(int end_ana) {
 	buf_it->b1 = prev->b;
       }
       else {
-	prnt("sss;",BYEL,"---end of Buf---: ",RST);
+	prnt("ss d x xs;",BYEL,"---end of Buf---: ",buf_it->bufnum,
+	     prev->b,Buf_ring.b3,RST);
 	buf_it->b1 = Buf_ring.b1;
       }
       buf_it->b = buf_it->b1;
@@ -174,14 +185,14 @@ int Encoder::Write3(UChar_t* buf, int len) {
   int rr=0;
   TString msg;
 
-  if (len) { //не пишем пустой буфер
+  if (len) { //пишем непустой буфер
 
     //sprintf(wr_opt,"ab%d",opt.dec_compr);
     gzf = gzopen(wr_name.c_str(),wr_opt);
     if (!gzf) {
       msg=TString("Can't open file: ") + wr_name.c_str();
       EError(1,1,1,msg);
-      opt.dec_write=false;
+      *b_wrt=false;
       //idec=0;
       rr=1;
     }
@@ -191,7 +202,7 @@ int Encoder::Write3(UChar_t* buf, int len) {
       msg=TString("Error writing to file: ")+wr_name.c_str()+" "+res+" "+len;
       EError(1,1,1,msg);
       wr_bytes+=res;
-      opt.dec_write=false;
+      *b_wrt=false;
       //gzclose(gzf);
       rr=2;
     }
@@ -247,7 +258,7 @@ int Encoder::Write3(UChar_t* buf, int len) {
 void Encoder::Handle_write() {
   {
     std::lock_guard<std::mutex> lock(cmut);
-    cout << "dec_write thread started: " << endl;
+    cout << "write thread started: " << endl;
   }
 
   while (wrt_thread_run.load() || !buf_list.empty()) {
@@ -279,7 +290,7 @@ void Encoder::Handle_write() {
 
   {
     std::lock_guard<std::mutex> lock(cmut);
-    cout << "dec_write thread stopped: " << endl;
+    cout << "write thread stopped: " << endl;
   }
 }
 
@@ -398,3 +409,9 @@ void EDec::Fill_Dec79(event_iter evt) {
   }
 
 } //Fill_Dec79
+
+//------------------------
+ERaw::ERaw() {
+  cout << "перенести Fill_Raw в ERaw (search Fill_Raw in libcrs.cpp)" << endl;
+  buf_size=2*Megabyte;
+}

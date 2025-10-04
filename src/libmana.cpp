@@ -66,8 +66,6 @@ ProcInfo_t pinfo;
 std::list<VarClass> varlist;
 //typedef std::list<VarClass>::iterator v_iter;
 
-extern TMutex cmut;
-
 GlbClass* glb;
 
 Coptions cpar;
@@ -75,6 +73,7 @@ Toptions opt;
 
 CRS* crs;
 EDec* edec;
+ERaw* eraw;
 #ifdef SOCK
 SockClass* gSock;
 #endif
@@ -113,6 +112,7 @@ gzFile ff;
 bool b_telegram;
 char* Logname=0; //path to the log file (daq or ana)
 std::mutex mtx_log;
+std::mutex cmut;
 
 //TString parfile,lastpar;
 char* parfile=(char*)"romana.par";;
@@ -166,7 +166,7 @@ void prnt(const char* fmt...)
   // [0..9] - set width (only 1 digit) of next output
   // . - set precision (e.g 3.2 - width3.precision2)
   // ; - endl;
-  cmut.Lock();
+  std::lock_guard<std::mutex> lock(cmut);
 
   va_list args;
   va_start(args, fmt);
@@ -227,7 +227,6 @@ void prnt(const char* fmt...)
 
   std::cout << std::setprecision(-1);
   va_end(args);
-  cmut.UnLock();
 }
 
 void debug_mess(bool cond, const char* mess, double par1, int par2) {
@@ -338,6 +337,7 @@ bool check_telegram_send() { // проверяет конфигурацию tele
 void EExit(int ret) {
   delete crs;
   delete edec;
+  delete eraw;
   delete hcl;
   exit(ret);
 }
@@ -356,11 +356,10 @@ void EError(int t, int l, int e, TString msg) { //t: telegram; l: log; e: Error
     msg.Prepend(">> Warning: ");
 
   if (l && crs->LogOK!=3 && Logname) {
-    mtx_log.lock();
+    std::lock_guard<std::mutex> lock(mtx_log);
     crs->flog = fopen(Logname,"a");
     fprintf(crs->flog,"%s\n",msg.Data());
     fclose(crs->flog);
-    mtx_log.unlock();
   }
   prnt("sss;",BRED,msg.Data(),RST);
 }
@@ -1189,6 +1188,7 @@ void ctrl_c_handler(int s){
 
   delete crs;
   delete edec;
+  delete eraw;
   delete hcl;
   gApplication->Terminate(0);
   // delete myM;
@@ -1260,6 +1260,7 @@ int main(int argc, char **argv)
   // cout << "sizeof(opt): " << sizeof(opt) << endl;
 	
   edec = new EDec();
+  eraw = new ERaw();
   hcl = new HClass();
   crs = new CRS();
 
@@ -2015,18 +2016,30 @@ bool TestFile() {
     dir = TString(startdir);
     //cout << "Root_dir: " << dir << endl;
 
+    //crs->rawname=dir;
+    eraw->wr_name=dir;
     edec->wr_name=dir;
     crs->rootname=dir;
-    crs->rawname=dir;
+    //crs->rawname.append("Raw/");
+    eraw->wr_name.append("Raw/");
     edec->wr_name.append("Dec/");
     crs->rootname.append("Root/");
-    crs->rawname.append("Raw/");
 
     opt.dec_write=b_dec;
     opt.root_write=b_root;
     if (b_raw) {
       opt.raw_write=true;
       opt.fProc=true;
+    }
+
+    if (b_raw) {
+#ifdef LINUX
+      mkdir(eraw->wr_name.c_str(),0755);
+      //mkdir(crs->rawname.c_str(),0755);
+#else
+      _mkdir(eraw->wr_name.c_str());
+      //_mkdir(crs->rawname.c_str());
+#endif
     }
 
     if (b_dec) {
@@ -2045,39 +2058,36 @@ bool TestFile() {
 #endif
     }
 
-    if (b_raw) {
-#ifdef LINUX
-      mkdir(crs->rawname.c_str(),0755);
-#else
-      _mkdir(crs->rawname.c_str());
-#endif
-    }
-
+    //crs->rawname.append(name);
+    eraw->wr_name.append(name);
     edec->wr_name.append(name);
     crs->rootname.append(name);
-    crs->rawname.append(name);
   } //batch
   else { //not batch
     //SplitFilename(string(opt.Filename),dir,name,ext);
     dir.append(name);
-    crs->rawname=dir;
+    //crs->rawname=dir;
+    eraw->wr_name=dir;
     edec->wr_name=dir;
     crs->rootname=dir;
   }
 
+  //crs->rawname.append(".raw");
+  eraw->wr_name.append(".raw");
   edec->wr_name.append(".dec");
   crs->rootname.append(".root");
-  crs->rawname.append(".raw");
 
   if (!crs->juststarted) return true;
 
-  bool b1 = opt.raw_write && !stat(crs->rawname.c_str(), &statb);
+  //bool b1 = opt.raw_write && !stat(crs->rawname.c_str(), &statb);
+  bool b1 = opt.raw_write && !stat(eraw->wr_name.c_str(), &statb);
   bool b2 = opt.dec_write && !stat(edec->wr_name.c_str(), &statb);
   bool b3 = opt.root_write && !stat(crs->rootname.c_str(), &statb);
 
   bool b_ident=false;
   if (crs->Fmode==2) {//file analysis - test for identical filename
-    bool c1=b1 && !crs->rawname.compare(crs->Fname);
+    //bool c1=b1 && !crs->rawname.compare(crs->Fname);
+    bool c1=b1 && !eraw->wr_name.compare(crs->Fname);
     bool c2=b2 && !edec->wr_name.compare(crs->Fname);
     bool c3=b3 && !crs->rootname.compare(crs->Fname);
     b_ident=c1||c2||c3;
@@ -2088,7 +2098,7 @@ bool TestFile() {
     if (crs->batch) {
       if (!b_force) {
 	cout << "flags: " << opt.raw_write << opt.dec_write << opt.root_write << endl;
-	cout << crs->rawname << endl;
+	cout << eraw->wr_name.c_str() << endl;
 	cout << "\033[1;31mFile exists. Exiting...\033[0m" << endl;
 	EExit(0);
       }
@@ -2443,6 +2453,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
 MainFrame::~MainFrame() {
   delete crs;
   delete edec;
+  delete eraw;
   delete hcl;
   delete fTimer;
 }
@@ -3644,7 +3655,8 @@ void MainFrame::UpdateStatus(int rst) {
   fStat[ii++]->SetText(TGString::Format("%lld",crs->nbuffers),0);
   fStat[ii++]->SetText(TGString::Format("%0.2f",crs->inputbytes/MB),0);
   fStat[ii++]->SetText(TGString::Format("%0.2f",mb_rate),0);
-  fStat[ii++]->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),0);
+  //fStat[ii++]->SetText(TGString::Format("%0.2f",crs->rawbytes/MB),0);
+  fStat[ii++]->SetText(TGString::Format("%0.2f",eraw->wr_bytes/MB),0);
   fStat[ii++]->SetText(TGString::Format("%0.2f",edec->wr_bytes/MB),0);
 
   fStat[ii++]->SetText(TGString::Format("%0.2f",percent),0);
