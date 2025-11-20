@@ -16,6 +16,7 @@
 #include <TGDockableFrame.h>
 #include <TTimeStamp.h>
 #include <TDataMember.h>
+#include <TGProgressBar.h>
 #include <list>
 
 using namespace std;
@@ -160,6 +161,8 @@ class MainFrame : public TGMainFrame {
   static const Int_t n_stat=13;
   static const Int_t n_stat2=11;
   TGTextEntry* fStat[n_stat];
+
+  TGHProgressBar* fHProgr1;
 
  public:
   MainFrame(const TGWindow *p,UInt_t w,UInt_t h);

@@ -30,6 +30,7 @@ extern Coptions cpar;
 
 using namespace std;
 
+/*
 PulseClass::PulseClass() {
   Pos=-32222; // -> no peak found:
               // Area, Time, Width не имеют смысла
@@ -43,6 +44,7 @@ PulseClass::PulseClass() {
   Time=99999;
   //Width=88888;
 }
+*/
 
 //size_t PulseClass::GetPtr(Mdef* it) {
 size_t PulseClass::GetPtr(Int_t hnum) {
@@ -106,7 +108,7 @@ Float_t PulseClass::CFD(int j, int kk, int delay, Float_t frac, Float_t &drv) {
 
     // CFD сдвинута вправо относительно drv
 
-#ifdef PPK
+#ifdef APK
     // вычисление в целых числах, как в приборе
     Int_t d0 = sData[j+delay] - sData[j-kk+delay]; //d0=drv[j+delay]
     drv = sData[j] - sData[j-kk];
@@ -240,8 +242,9 @@ Short_t  PulseClass::FindPeaks(Int_t sTrig, Int_t kk, Float_t &cfd_frac) {
     Float_t drv;
     for (j=kk;j<sData.size()-opt.DD[Chan];j++) {
       D[j]=CFD(j,kk,opt.DD[Chan],opt.FF[Chan],drv);
-#ifdef PPK
-      D[j]/=32;
+#ifdef APK
+      int ddd = D[j]/32;
+      D[j]=ddd;
 #endif
       if (D[j] > opt.sLT[Chan] && Dpr<=opt.sLT[Chan]) {
 	pp=j;
@@ -313,7 +316,7 @@ void PulseClass::FindZero(Int_t kk, Int_t stg, Int_t thresh, Float_t LT) {
 	Time = Pos;
       }
       //prnt("ss d l d f f fs;",BGRN,"CFD:",Chan,Tstamp64,Pos,DD,Dpr,Time,RST);
-#ifdef PPK
+#ifdef APK
       ppk.CF1=Dpr;
       ppk.CF2=DD;
 #endif

@@ -88,7 +88,7 @@ extern std::mutex mtx_log;
 
 //MemInfo_t info;
 
-TRandom rnd;
+extern thread_local TRandom rnd;
 
 //Int_t ev_max;
 
@@ -374,8 +374,8 @@ static void cback(libusb_transfer *trans) {
       // буфер декодера. Типа *(eraw->buf_it) = *("decoder"->buf_it);
 
       eraw->buf_it->b1=trans->buffer; //начало записи буфера
-      eraw->buf_it->b=trans->buffer+trans->actual_length; //конец записи буфера
-      eraw->buf_it->b3=eraw->buf_it->b; //физический конец буфера
+      eraw->buf_it->u82.b=trans->buffer+trans->actual_length; //конец записи буфера
+      eraw->buf_it->b3=eraw->buf_it->u82.b; //физический конец буфера
 
 
       // пока так. проверить все, что делает Flush3. возможно, для raw не годится
@@ -659,12 +659,16 @@ void SockClass::Poll() {
       n1 = read(newsockfd,buffer,0xFFFF);
       if (n1 < 0) error("ERROR reading from socket");
 
+      //gSystem->Sleep(3000);
       const char* answer = "OK";
       string buf2(buffer);
       int n2 = write(newsockfd,answer,strlen(answer));
       if (n2 < 0) error("ERROR writing to socket");
       //prnt("ssd s sd ss;",BGRN,"Command: ",n1,buffer,"answer: ",n2,answer,RST);
       Eval_Buf();
+
+      close(newsockfd);  // Закрываем соединение после обработки
+      newsockfd = 0;     // Сбрасываем дескриптор
     }
   }
 }
@@ -777,24 +781,6 @@ void SockClass::Eval_Com() {
   //cout << "Eval_Com_end: " << l_com.size() << endl;
 }
 #endif
-
-void BufClass::Ring_Write(const UChar_t* data, size_t data_size) {
-  // нужно добавить проверку на доступность буфера (гонка с анализом)
-
-  //cout << "wrt: " << (size_t) b1 << " " << (size_t) b << " " << (size_t) b3 << endl;
-
-  if (b + data_size <= b3) {
-    // Данные помещаются
-    memcpy(b, data, data_size);
-    b += data_size;
-  } else {
-    // Данные не помещаются - записываем в начало
-    memcpy(b1, data, data_size);
-    b = b1 + data_size;
-  }
-  //prnt("ss f fs;",BMAG,"wrt:",1.*(b-data_size-b1)/Megabyte,1.*(b-b1)/Megabyte, RST);
-}
-
 
 CRS::CRS() {
 
@@ -1003,7 +989,7 @@ void CRS::Ana_start(int rst) {
 
   //cout << "Ana_Start1: " << b_acq << endl;
 #ifdef ANA3
-  decoder->Decode_Start(opt.ibuf_size*Megabyte,2*Megabyte);
+  decoder->Decode_Start(opt.ibuf_size*Megabyte,2*Megabyte,crs->b_acq,crs->module);
 #endif
 
   if (opt.fProc) { //для переобработанных данных (пишем в формате 36)
@@ -3518,13 +3504,13 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   if (prev->b3<buf_it->b1//конец предыдущего раньше начала текущего (есть хвост)
       || prev->b1 > buf_it->b1) { // или начало предыдущего позже начала
     // текущего (переход через конец кольцевого буфера)
-    size_t count = prev->b3 - prev->b;
+    size_t count = prev->b3 - prev->u82.b;
     if (count > OFF_SIZE) {
       prnt("ss l ls",BRED,"Error: count > OFF_SIZE:",buf_it->bufnum,count,RST);
       return;
     }
     buf_it->b1-=count; //сдвигаем начало буфера влево
-    memmove(buf_it->b1, prev->b, count); //копируем хвост
+    memmove(buf_it->b1, prev->u82.b, count); //копируем хвост
   }
   else if (prev->b3>buf_it->b1) {
     //конец предыдущего позже начала текущего: такого не может быть!
@@ -3538,7 +3524,7 @@ void CRS::AnaBuf3(buf_iter buf_it) {
 
   prnt("ss ls;",BBLU,"Step2:",buf_it->bufnum,RST);
 
-  if (buf_it->b) {
+  if (buf_it->u82.b) {
     //анализ, в нем должно быть buf_it->flag++
     Decode_switch3(buf_it);
 
@@ -3546,17 +3532,17 @@ void CRS::AnaBuf3(buf_iter buf_it) {
     //buf_it->flag++; //анализ, в нем должно быть buf_it->flag++
   }
   else { //buf_it->b==0
-    buf_it->b=buf_it->b1; //весь буфер считается куском события,
+    buf_it->u82.b=buf_it->b1; //весь буфер считается куском события,
     // конец b совпадает с началом b1
     buf_it->flag++; //анализ не нужен
     cout << "----tail----" << endl;
   }
 
   prnt("ss l d x x xs;",BMAG,"Step3:",buf_it->bufnum,prev->flag,
-       buf_it->b1,buf_it->b,buf_it->b3,RST);
+       buf_it->b1,buf_it->u82.b,buf_it->b3,RST);
   prnt("ss l d l l ls;",BRED,"Step3:",buf_it->bufnum,prev->flag,
        buf_it->b3-buf_it->b1,
-       buf_it->b-buf_it->b1,
+       buf_it->u82.b-buf_it->b1,
        buf_it->b1-prev->b1,
        RST);
 
@@ -3572,7 +3558,7 @@ void CRS::AnaBuf3(buf_iter buf_it) {
 } //AnaBuf3
 
 void CRS::FindLast3(buf_iter buf_it) {
-  // находит начало последнего события в буфере inbuf
+  // находит начало последнего события в буфере buf_it
   // и записывает указатель на него в buf_it->b
   // если не найдено, buf_it->b не меняется (по умолчанию =0)
 
@@ -3597,7 +3583,7 @@ void CRS::FindLast3(buf_iter buf_it) {
     while (uu.b > buf_it->b1) {
       --uu.us;
       if (*uu.us==ID_EVNT) {
-	buf_it->b = uu.b;
+	buf_it->u82.b = uu.b;
 	break;
       }
     }
@@ -3610,7 +3596,7 @@ void CRS::FindLast3(buf_iter buf_it) {
       //find frmt==0 -> this is the start of a pulse
       frmt = *(uu.b+1) & 0x70;
       if (frmt==0) {
-	buf_it->b = uu.b;
+	buf_it->u82.b = uu.b;
 	break;
       }
     }
@@ -3635,7 +3621,7 @@ void CRS::FindLast3(buf_iter buf_it) {
       //find frmt==0 -> this is the start of a pulse
       frmt = *(uu.b+6) & 0xF0;
       if (frmt==0) {
-	buf_it->b = uu.b;
+	buf_it->u82.b = uu.b;
 	break;
       }
     }
@@ -3652,7 +3638,7 @@ void CRS::FindLast3(buf_iter buf_it) {
       //find frmt==1 -> this is the start of a pulse
       frmt = *(uu.b+7) & 0x80; //event start bit
       if (frmt) {
-	buf_it->b = uu.b;
+	buf_it->u82.b = uu.b;
 	break;
       }
     }
@@ -3760,7 +3746,7 @@ void CRS::Decode36(BufClass &inbuf) {
   Dec_Init(Blist,frmt);
 
   // анализируем от начала буфера до конца "полных" событий (.b)
-  while (uu.b < inbuf.b) {
+  while (uu.b < inbuf.u82.b) {
     frmt = (uu.b[6] & 0xF0) >> 4;
     data = *uu.ul & sixbytes;
     UChar_t ch = uu.b[7];
@@ -4123,7 +4109,7 @@ void CRS::Init_Inp_Buf() {
   // начало и конец которого совпадают с началом InpBuf_ring
   auto buf_it = inp_list.insert(inp_list.end(),BufClass());
   buf_it->b1 = InpBuf_ring.b1;
-  buf_it->b = InpBuf_ring.b1;
+  buf_it->u82.b = InpBuf_ring.b1;
   buf_it->b3 = InpBuf_ring.b1;
   buf_it->flag=2;  // считаем, что сделаны Findlast + анализ
 
@@ -4780,7 +4766,7 @@ void CRS::CheckDSP(PulseClass &ipls, PulseClass &ipls2) {
   if (bad) {
     prnt("ss d lss;",BRED,"bad:",ch,T,oss_bad.str().c_str(),RST);
     prnt("ss d lss;",BYEL,"good:",ch,T,oss_good.str().c_str(),RST);
-#ifdef PPK
+#ifdef APK
     cout << "dsp CF1 CF2: " << ipls.ppk.CF1 << " " << ipls.ppk.CF2 << endl;
     cout << "pls CF1 CF2: " << ipls2.ppk.CF1 << " " << ipls2.ppk.CF2 << endl;
     cout << "ratio: " << 1.0*ipls.ppk.CF1/ipls2.ppk.CF1 << " " << 1.0*ipls.ppk.CF2/ipls2.ppk.CF2 << endl;
@@ -4917,7 +4903,7 @@ void CRS::PulseAna(PulseClass &ipls) {
     ipls.Ecalibr(ipls.RMS2);
     //ipls.Bcalibr();
   }
-}
+} // PulseAna
 
 void CRS::Dec_Init(eventlist* &Blist, UChar_t frmt) {
   decode_mut.Lock();
@@ -5861,7 +5847,7 @@ void CRS::MakePk(PkClass &pk, PulseClass &ipls) {
   //PeakClass *ipk=&ipls.Peaks[0];
   Float_t Area0;
 
-#ifdef PPK
+#ifdef APK
   ipls.ppk=pk;
 #endif
 

@@ -2,6 +2,8 @@
 #define pulseclass_H 1
 
 #include <TROOT.h>
+#include <list>
+
 //#include <TH1.h>
 
 //class HMap;
@@ -47,18 +49,16 @@ public:
 
 class PulseClass {
 
- public:
-  Long64_t Tstamp64; //64-bit timestamp (corrected for overflows)
-  Long64_t Counter; //pulse counter
+public:
+
+  Long64_t Tstamp64=0; //64-bit timestamp (corrected for overflows)
+  Long64_t Counter=0; //pulse counter
   std::vector<Float_t> sData; //(maybe smoothed) pulse data
 
-  //PeakClass Peak;
-  // std::vector <PeakClass> Peaks;
-
-  UChar_t Chan; //channel number
-  Short_t Pos; //position of the trigger relative to pulse start (in samples)
+  UChar_t Chan=255; //channel number
+  Short_t Pos=-32222; //pos of the trigger relative to pulse start (in samples)
                //Pos=-32222 -> default Pos - значит, пик не найден
-  UChar_t Spin;
+  UChar_t Spin=0;
   //bit 0: channel state word (Control word - external input in crs32)
   //bit 2 (Spin|=4): было переполнение канального буфера (ER_OVF)
   //bit 6 (Spin|=64): event is writable in Dec (Ms - master channel)
@@ -66,32 +66,33 @@ class PulseClass {
   //Spin>=254: сигнализирует, что текущий кусок декодера завершился
   //Spin=255 - end of Blist, merge BB and Levents in Make_Events
   //Spin=254 - end of Blist, just splice BB and Levents
-  UChar_t ptype; //pulse type: 0 - good pulse; (see P_* constants)
+  UChar_t ptype=0; //pulse type: 0 - good pulse; (see P_* constants)
 
-  Float_t Area; // pure area (Area0-Base)
-  Float_t Base; // baseline
+  Float_t Area=0; // pure area (Area0-Base)
+  Float_t Base=0; // baseline
   //Float_t Area0; // area+baseline
-  Float_t Sl1; // slope of background
-  Float_t Sl2; // slope of peak
-  Float_t RMS1; // noise of background
-  Float_t RMS2; // noise of peak
-  Float_t Height; // maximum of pulse in the same region as Area
-  Float_t Width; // peak width
-  Float_t Time; // exact time relative to Pos (pulse start) in samples
+  Float_t Sl1=0; // slope of background
+  Float_t Sl2=0; // slope of peak
+  Float_t RMS1=0; // noise of background
+  Float_t RMS2=0; // noise of peak
+  Float_t Height=0; // maximum of pulse in the same region as Area
+  Float_t Width=0; // peak width
+  Float_t Time=99999; // exact time relative to Pos (pulse start) in samples
   //Float_t Time2=-999999; // = Time - T0, в наносекундах
-  Float_t Rtime; // RiseTime
+  Float_t Rtime=0; // RiseTime
 
   //Float_t Simul2; //another version of Time (for simulions)
   //Float_t Noise1;
   //Float_t Noise2;
 
   //bool Analyzed; //true if pulse is already analyzed
-#ifdef PPK
+#ifdef APK
   PkClass ppk;
 #endif
 
- public:
-  PulseClass();// {};
+public:
+  PulseClass() {Pos=-32222;};
+  PulseClass(Short_t p) {Pos=p;};
   virtual ~PulseClass() {};
 
   size_t GetPtr(Int_t hnum);
@@ -119,7 +120,8 @@ typedef std::vector<PulseClass> pulse_vect;
 
 class EventClass { //event of pulses
 
- public:
+public:
+
   Long64_t Nevt=0;
   Long64_t Tstmp; //Event Timestamp (the earliest pulse threshold crossig)
   Float_t T0=99999; //time of the earliest *START* peak, relative to Tstmp, in samples
@@ -138,9 +140,9 @@ class EventClass { //event of pulses
   //std::vector <Long64_t> *Counters;
   //Bool_t Analyzed;
 
- // private:
- //  void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w=1);
- //  void Fill01dw(HMap* map[], int ch, Float_t x, Double_t w=1);
+  // private:
+  //  void Fill1dw(Bool_t first, HMap* map[], int ch, Float_t x, Double_t w=1);
+  //  void Fill01dw(HMap* map[], int ch, Float_t x, Double_t w=1);
 
 public:
   //EventClass();
@@ -152,5 +154,7 @@ public:
   void Fill_Dec(char* buf);
   //ClassDef(EventClass, 0)
 };
+
+typedef std::list<EventClass> eventlist;
 
 #endif

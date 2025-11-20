@@ -16,7 +16,7 @@ extern ParParDlg *parpar;
 extern Coptions cpar;
 extern HClass* hcl;
 extern HistFrame* HiFrm;
-extern TRandom rnd;
+extern thread_local TRandom rnd;
 
 //------------------------------
 
@@ -27,7 +27,7 @@ Float_t Mdef::VarTime(EventClass* e, PulseClass* p){
   if (p->Chan == e->ChT0 && p->Time == e->T0 && opt.hideself) // канал, в котором T0
     return -99999;
   else
-    return (p->Time - e->T0)*opt.Period+opt.sD[p->Chan];
+    return (p->Time - e->T0)*opt.Period/*+opt.sD[p->Chan]*/;
 }
 
 /*
@@ -737,14 +737,14 @@ void Mdef::FillProf(EventClass* evt, Double_t *hcut_flag, int ncut) {
       } //if pp>=crs->PROF_64
 
       else if (pp>=crs->ING_Y) {
-	tt = (ipls->Time - evt->T0)*opt.Period+opt.sD[ipls->Chan];
+	tt = (ipls->Time - evt->T0)*opt.Period/*+opt.sD[ipls->Chan]*/;
 	if (abs(tt)<=opt.Prof64_GAT) {
 	  a_y=pp-crs->ING_Y;
 	  //Fill1d(first,hcl->m_time,ipls->Chan-16,tt);
 	}
       }
       else if (pp>=crs->ING_X) {
-	tt = (ipls->Time - evt->T0)*opt.Period+opt.sD[ipls->Chan];
+	tt = (ipls->Time - evt->T0)*opt.Period/*+opt.sD[ipls->Chan]*/;
 	if (abs(tt)<=opt.Prof64_GAT) {
 	  a_x=pp-crs->ING_X;
 	  //Fill1d(first,hcl->m_time,ipls->Chan-16,tt);
@@ -1730,7 +1730,8 @@ void HClass::Make_Yumo_3d(mdef_iter md) {
   strcat(title,";X(ns);Y(ns);Ntof(mks)");
 
   //3d
-
+  prnt("ss d f f d f f d f fs;",BGRN, "3d:", n2,md2->hd->min,md2->hd->max,n2,md2->hd->min,md2->hd->max,n3,md->hd->min,md->hd->max,RST);
+  
   HHist3(md,hh,name,title,0,
    	 n2,md2->hd->min,md2->hd->max,n2,md2->hd->min,md2->hd->max,
 	 n3,md->hd->min,md->hd->max);

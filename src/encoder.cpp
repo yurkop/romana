@@ -42,7 +42,7 @@ void Encoder::Encode_Start(int rst, int mm, bool &bb, int cc, UChar_t* BBuf,
       buf_list.clear();
       buf_it = buf_list.insert(buf_list.end(),BufClass());
       buf_it->b1 = Buf_ring.b1;
-      buf_it->b = buf_it->b1;
+      buf_it->u82.b = buf_it->b1;
       buf_it->b3 = buf_it->b1+buf_size;
       //buf_it->flag=??;  // считаем, что сделаны Findlast + анализ
 
@@ -124,9 +124,9 @@ void Encoder::Flush3(int end_ana) {
   //сбрасывает заполненный буфер на диск
 
   if (opt.nthreads==1) { //single thread
-    Write3(buf_it->b1, buf_it->b-buf_it->b1);
+    Write3(buf_it->b1, buf_it->u82.b-buf_it->b1);
     buf_it->b1 = Buf_ring.b1;
-    buf_it->b = Buf_ring.b1;
+    buf_it->u82.b = Buf_ring.b1;
     buf_it->b3 = Buf_ring.b1+buf_size;
   }
   else { //multithreading
@@ -138,9 +138,9 @@ void Encoder::Flush3(int end_ana) {
     if (rep>9) {
     // if (rep>p) {
       double rr = Buf_ring.b3-Buf_ring.b1;
-      rr/=(buf_it->b-buf_it->b1);
+      rr/=(buf_it->u82.b-buf_it->b1);
       prnt("s d x d l l l f;","Flush3: ",buf_list.size(),buf_it->b1,
-	   (buf_it->b-buf_it->b1)/1024,(buf_it->b1-Buf_ring.b1)/1024,
+	   (buf_it->u82.b-buf_it->b1)/1024,(buf_it->b1-Buf_ring.b1)/1024,
 	   (Buf_ring.b3-buf_it->b1)/1024,(Buf_ring.b3-Buf_ring.b1)/1024,rr);
       rep=0;
     }
@@ -150,15 +150,15 @@ void Encoder::Flush3(int end_ana) {
     if (!end_ana) {
       // если не конец -> задаем новый буфер
       buf_it = buf_list.insert(buf_list.end(),BufClass());
-      if (prev->b < Buf_ring.b3) {
-	buf_it->b1 = prev->b;
+      if (prev->u82.b < Buf_ring.b3) {
+	buf_it->b1 = prev->u82.b;
       }
       else {
 	prnt("ss d x xs;",BYEL,"---end of Buf---: ",buf_it->bufnum,
-	     prev->b,Buf_ring.b3,RST);
+	     prev->u82.b,Buf_ring.b3,RST);
 	buf_it->b1 = Buf_ring.b1;
       }
-      buf_it->b = buf_it->b1;
+      buf_it->u82.b = buf_it->b1;
       buf_it->b3 = buf_it->b1+buf_size;
 
       buf_it->bufnum = prev->bufnum+1;
@@ -272,7 +272,7 @@ void Encoder::Handle_write() {
 	// т.к. buf_list заполняется всегда последовательно
 	if (it->flag == 9) {
 	  lock.unlock(); // Сначала РАЗБЛОКИРОВАТЬ перед долгой операцией
-          Write3(it->b1, it->b - it->b1);
+          Write3(it->b1, it->u82.b - it->b1);
  	  //gSystem->Sleep(50); // для искусственного замедления (тест)
           lock.lock();
           buf_list.erase(it);
@@ -340,21 +340,21 @@ void EDec::Fill_Dec79(event_iter evt) {
   //    1 byte - channel
   //    7 bits - amplitude
 
-  *buf_it->ul = 0x8000 | evt->Spin;
-  *buf_it->ul <<= 48;
-  *buf_it->ul |= evt->Tstmp & sixbytes;
+  *buf_it->u82.ul = 0x8000 | evt->Spin;
+  *buf_it->u82.ul <<= 48;
+  *buf_it->u82.ul |= evt->Tstmp & sixbytes;
 
-  ++buf_it->ul;
+  ++buf_it->u82.ul;
 
   if (evt->Spin & 128) { //Counters
     //prnt("ss ls;",BRED,"Counter:",evt->Tstmp,RST);
     for (pulse_vect::iterator ipls=evt->pulses.begin();
 	 ipls!=evt->pulses.end();++ipls) {
       //prnt("ss d d ls;",BGRN,"Ch:",ipls->Chan,ipls->Pos,ipls->Counter,RST);
-      *buf_it->ul=ipls->Counter;
+      *buf_it->u82.ul=ipls->Counter;
       //Short_t* Decbuf2 = (Short_t*) DecBuf8;
-      buf_it->s[3] = ipls->Chan;
-      ++buf_it->ul;
+      buf_it->u82.s[3] = ipls->Chan;
+      ++buf_it->u82.ul;
       //++DecBuf8;
     }
   }
@@ -362,39 +362,39 @@ void EDec::Fill_Dec79(event_iter evt) {
     for (pulse_vect::iterator ipls=evt->pulses.begin();
 	 ipls!=evt->pulses.end();++ipls) {
       if (ipls->Pos>-32222) {
-	*buf_it->ul=0;
+	*buf_it->u82.ul=0;
 	//Short_t* Decbuf2 = (Short_t*) DecBuf8;
 	//UShort_t* Decbuf2u = (UShort_t*) Decbuf2;
 	//UChar_t* Decbuf1u = (UChar_t*) DecBuf8;
 	if (ipls->Area<0) {
-	  *buf_it->us = 0;
+	  *buf_it->u82.us = 0;
 	}
 	else if (ipls->Area>13106){
-	  *buf_it->us = 65535;
+	  *buf_it->u82.us = 65535;
 	}
 	else {
-	  *buf_it->us = ipls->Area*5+1;
+	  *buf_it->u82.us = ipls->Area*5+1;
 	}
 	if (ipls->Time>327.6)
-	  buf_it->s[1] = 32767;
+	  buf_it->u82.s[1] = 32767;
 	else if (ipls->Time<-327)
-	  buf_it->s[1] = -32767;
+	  buf_it->u82.s[1] = -32767;
 	else
-	  buf_it->s[1] = ipls->Time*100;
+	  buf_it->u82.s[1] = ipls->Time*100;
 
 	if (ipls->Width>32.76)
-	  buf_it->s[2] = 32767;
+	  buf_it->u82.s[2] = 32767;
 	else if (ipls->Width<-32.76)
-	  buf_it->s[2] = -32767;
+	  buf_it->u82.s[2] = -32767;
 	else
-	  buf_it->s[2] = ipls->Width*1000;
+	  buf_it->u82.s[2] = ipls->Width*1000;
 
-	buf_it->s[3] = ipls->Chan;
+	buf_it->u82.s[3] = ipls->Chan;
 	if (ipls->Height<0)
-	  buf_it->b[7] = 0;
+	  buf_it->u82.b[7] = 0;
 	else
-	  buf_it->b[7] = ((int)ipls->Height)>>8;
-	++buf_it->ul;
+	  buf_it->u82.b[7] = ((int)ipls->Height)>>8;
+	++buf_it->u82.ul;
 	//++DecBuf8;
       }
     }
@@ -402,7 +402,7 @@ void EDec::Fill_Dec79(event_iter evt) {
 
   //idec = (UChar_t*)DecBuf8-DecBuf;
   //if (idec>buf_size) {
-  if (buf_it->b >= buf_it->b3) {
+  if (buf_it->u82.b >= buf_it->b3) {
     Flush3(0);
   }
 

@@ -1089,15 +1089,21 @@ void ParDlg::FEnable(bool state, UInt_t cmd) {
 
   for (UInt_t i=0;i<Plist.size();i++) {
     Pmap* pp = &Plist[i];
-    TGCheckButton* wg = (TGCheckButton*) pp->field;
 
     if (pp->cmd & cmd) {
       if (cmd == 0x100) { //daq
+
+	bool ise=0;
+	if (pp->type==p_cmb)
+	  ise = ((TGComboBox*)pp->field)->IsEnabled();
+	else
+	  ise = ((TGCheckButton*)pp->field)->IsEnabled();
+
 	if (state) { //enable
 	  EnableField(i,Clist[i]);
 	}
 	else { //disable
-	  Clist[i]=wg->IsEnabled();
+	  Clist[i]=ise;
 	  EnableField(i,false);
 	}
       }

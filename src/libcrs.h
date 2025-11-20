@@ -14,7 +14,6 @@
 #include <iostream>
 #include <fstream>
 #include <sys/time.h>
-#include <list>
 
 #include <RQ_OBJECT.h>
 //#include <TTree.h>
@@ -24,6 +23,7 @@
 
 #include "pulseclass.h"
 #include "common.h"
+#include "dec.h"
 
 #include <queue>          // std::queue
 
@@ -59,53 +59,7 @@ using namespace std;
 //   int size;
 // };
 
-union union82 { // текущее положение в Dec буфере
-  UChar_t* b;
-  UShort_t* us;
-  Short_t* s;
-  UInt_t* ui;
-  Int_t* i;
-  Float_t* f;
-  Long64_t* l;
-  ULong64_t* ul;
-};
-
-
-/* struct pair { */
-/*   char* buf; */
-/*   size_t len; */
-/* }; */
-
-class BufClass {
-public:
-  UChar_t* b1=0; // указатель на начало буфера
-  UChar_t* b3=0; // указатель на физический конец буфера
-  union {
-    UChar_t* b=0; // input: указатель на конец "полных" событий в буфере
-                  // или на конец буфера (для записи)
-    UShort_t* us;  // output(dec|raw): текущий указатель на конец буфера
-    Short_t* s;
-    UInt_t* ui;
-    Int_t* i;
-    Float_t* f;
-    Long64_t* l;
-    ULong64_t* ul;
-  };
-  // input: всегда должно быть: b1 <= b < b3
-
-  //size_t Size=0;
-  Long64_t bufnum=0; // номер буфера (=идентификатор)
-  UChar_t flag=0;
-  //0 - empty, can be filled;
-  //1 - filled, can be analyzed;
-  //2 - analyzed, can be deleted.
-  //9 - output: буфер готов, можно писать
-
-  // public:
-  //   BufClass(size_t sz);
-  //   ~BufClass();
-  void Ring_Write(const UChar_t* data, size_t data_size);
-};
+//class BufClass
 
 #ifdef SOCK
 #include <sys/socket.h>
@@ -143,7 +97,7 @@ typedef std::list<EventClass>::reverse_iterator event_reviter;
 
 typedef std::pair<unsigned char*,int> Pair;
 
-typedef std::list<BufClass>::iterator buf_iter;
+//typedef std::list<BufClass>::iterator buf_iter;
 
 
 //---------------------------

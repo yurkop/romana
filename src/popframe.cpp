@@ -488,8 +488,8 @@ void PopFrame::AddPeaks() {
 
   AddNum(opt.Peak_thr,1031,"Threshold","Peak threshold relative to the highest peak");
   AddNum(opt.Peak_smooth,1032,"Smooth","Smooth before peak search");
-  AddNum(opt.Peak_wid,1033,"Width","Minimal width for peak search\npeaks with width below this number are rejected");
-  AddNum(opt.Peak_bwidth,1034,"Background","width of the background");
+  AddNum(opt.Peak_wid,1033,"Width","Minimal width for peak search (in units of the X-axis)\npeaks with width below this number are rejected");
+  AddNum(opt.Peak_bwidth,1034,"Background","width of the background (in units of the X-axis)");
   AddNum(opt.Peak_maxpeaks,1035,"MaxPeaks","Maximal number of peaks");
   AddChk(opt.Peak_show_sm,1036,"Show smoothed","Show smoothed histogram");
   AddChk(opt.Peak_use_mean,1037,"Use Mean/RMS","Use Mean/RMS insted of fit");

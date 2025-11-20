@@ -155,6 +155,111 @@ int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
 
 using namespace std;
 
+
+void prnt(const char* fmt, ...)
+{
+    // Static local mutex - создается при первом вызове, существует до конца программы
+    static std::mutex cmut;
+    std::lock_guard<std::mutex> lock(cmut);
+    
+    // Проверка на nullptr
+    if (!fmt) {
+        std::cout << "Error: prnt format string is null" << std::endl;
+        return;
+    }
+
+    va_list args;
+    va_start(args, fmt);
+
+    int ww = 0;
+    int pp = -1;
+
+    try {
+        while (*fmt != '\0') {
+            if (*fmt == ' ') {
+                std::cout << " ";
+            }
+            else if (*fmt == 'd') {
+                int i = va_arg(args, int);
+                if (ww > 0) std::cout << std::setw(ww);
+                std::cout << i;
+                ww = 0; pp = -1;
+            }
+            else if (*fmt == 'l') {
+                Long64_t i = va_arg(args, Long64_t);
+                if (ww > 0) std::cout << std::setw(ww);
+                std::cout << i;
+                ww = 0; pp = -1;
+            }
+            else if (*fmt == 'x') {
+                ULong64_t i = va_arg(args, ULong64_t);
+                if (ww > 0) std::cout << std::setw(ww);
+                std::cout << std::hex << i << std::dec;
+                ww = 0; pp = -1;
+            }
+            else if (*fmt == 's') {
+                char* s = va_arg(args, char*);
+                if (ww > 0) std::cout << std::setw(ww);
+                // Безопасная проверка указателя
+                if (s) {
+                    std::cout << s;
+                } else {
+                    std::cout << "(null)";
+                }
+                ww = 0; pp = -1;
+            } 
+            else if (*fmt == 'f') {
+                double d = va_arg(args, double);
+                if (ww > 0) std::cout << std::setw(ww);
+                if (pp >= 0) {
+                    std::cout << std::fixed << std::setprecision(pp);
+                }
+                std::cout << d;
+                // Сбрасываем форматирование
+                if (pp >= 0) {
+                    std::cout << std::defaultfloat;
+                    std::cout << std::setprecision(-1);
+                }
+                ww = 0; pp = -1;
+            }
+            else if (std::isdigit(static_cast<unsigned char>(*fmt))) {
+                char c = *fmt - '0';
+                if (pp < 0) { // width
+                    ww = ww * 10 + c;
+                } else { // precision
+                    pp = pp * 10 + c;
+                }
+            }
+            else if (*fmt == '.') {
+                pp = 0;
+            }
+            else if (*fmt == ';') {
+                std::cout << std::endl;
+            }
+            else {
+                // Неизвестный формат - выводим как есть
+                std::cout << *fmt;
+            }
+            ++fmt;
+        }
+
+        // Сбрасываем все флаги форматирования
+        std::cout << std::setw(0) << std::setprecision(-1) << std::defaultfloat << std::dec;
+        
+    } catch (const std::exception& e) {
+        std::cout << std::endl << "Error in prnt: " << e.what() << std::endl;
+    } catch (...) {
+        std::cout << std::endl << "Unknown error in prnt" << std::endl;
+    }
+
+    va_end(args);
+    
+    // Гарантируем вывод
+    std::cout.flush();
+}
+
+
+/*
 void prnt(const char* fmt...)
 {
   //format:
@@ -228,6 +333,9 @@ void prnt(const char* fmt...)
   std::cout << std::setprecision(-1);
   va_end(args);
 }
+*/
+
+
 
 void debug_mess(bool cond, const char* mess, double par1, int par2) {
   if (cond) {
@@ -1665,10 +1773,10 @@ int main(int argc, char **argv)
   exit(1);
   */
 
-
 #ifdef CYUSB
   if (crs->abatch) {
-    if (crs->Fmode!=2 /*&& !rd_root*/) {
+    if (crs->Fmode!=2 && !Rroot && !dat_root) {
+      //if (crs->Fmode!=2 /*&& !rd_root*/) {
       //if (crs->Fmode!=2) {
       bool d = opt.directraw;
       bool w = opt.raw_write;
@@ -2274,7 +2382,7 @@ MainFrame::MainFrame(const TGWindow *p,UInt_t w,UInt_t h)
   // }
 
   LayCT1 = new TGLayoutHints(kLHintsCenterX|kLHintsTop,1,1,5,2);
-  LayE1 = new TGLayoutHints(kLHintsExpandX,1,1,0,0);
+  LayE1 = new TGLayoutHints(kLHintsExpandX|kLHintsCenterY,1,1,0,0);
   LayET0  = new TGLayoutHints(kLHintsExpandX|kLHintsTop);
   LayET1 = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,5);
   LayET1a = new TGLayoutHints(kLHintsExpandX|kLHintsTop,0,0,5,0);
@@ -2748,7 +2856,6 @@ void MainFrame::Build() {
     fStat[i]->ChangeOptions(fStat[i]->GetOptions()|kSunkenFrame|kFixedHeight);
     fStat[i]->SetToolTipText(st_tip[i]);
 
-
     if (i==0) {
       fLab[i]->SetWidth(fwid);
       fLab[i]->ChangeOptions(fLab[i]->GetOptions()|kFixedWidth);
@@ -2769,6 +2876,22 @@ void MainFrame::Build() {
     }
 
   }
+
+
+  hfr1 = new TGHorizontalFrame(vframe1);
+  vframe1->AddFrame(hfr1,LayET0);
+  TGTextEntry* fLab2 = new TGTextEntry(hfr1, "Buf:");
+  fLab2->SetHeight(18);
+  fLab2->SetState(false);
+  fLab2->ChangeOptions(fLab2->GetOptions()|kSunkenFrame|kFixedHeight);
+  fLab2->SetToolTipText("buf");
+  hfr1->AddFrame(fLab2,LayL1);
+
+  fHProgr1 = new TGHProgressBar(hfr1, TGProgressBar::kStandard, 1);
+  fHProgr1->SetBarColor("lightblue");
+  fHProgr1->ShowPosition();
+  hfr1->AddFrame(fHProgr1,LayE1);
+
 
   //fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);  
 
@@ -3355,17 +3478,20 @@ void MainFrame::DoReadRoot() {
 
   vector<string> fnames;
 
-  if (fi.fMultipleSelection && fi.fFileNamesList) {
-    TObjLink *lnk = fi.fFileNamesList->FirstLink();
-    while (lnk) {
-      TObjString* ts = (TObjString*)lnk->GetObject();
-      fnames.push_back(ts->GetString().Data());
-      //cout << "lnk: " << ts->GetString() << endl;
-      lnk = lnk->Next();
-    }        
+  if (fi.fMultipleSelection) {
+    if (fi.fFileNamesList) {
+      TObjLink *lnk = fi.fFileNamesList->FirstLink();
+      while (lnk) {
+	TObjString* ts = (TObjString*)lnk->GetObject();
+	fnames.push_back(ts->GetString().Data());
+	//cout << "lnk: " << ts->GetString() << endl;
+	lnk = lnk->Next();
+      }        
+    }
   }
   else {
-    fnames.push_back(fi.fFilename);
+    if (fi.fFilename)
+      fnames.push_back(fi.fFilename);
   }
 
   for (auto it=fnames.begin(); it!=fnames.end(); ++it) {

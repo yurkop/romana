@@ -1783,7 +1783,8 @@ void HistFrame::PeakSearch(TH1* h1, vpeaks &vv) {
   for (auto i=n1;i<=n2;i++) {
     double bb = hh->GetBinContent(i) - bkg;
     double cc = hh->GetBinCenter(i);
-    // если точка выше hmax и текущего пика -> новое положеие пика, "обнуляем" w
+    //prnt("ss d d f f f f fs;",BGRN,"i:",i,inpeak,bb,hmax,pp.p,pp.h,pp.w,RST);
+    //если точка выше hmax и текущего пика -> новое положеие пика, "обнуляем" w
     if (bb>=hmax && bb>pp.h) {
       inpeak=1;
       pp.h=bb;
@@ -1801,7 +1802,7 @@ void HistFrame::PeakSearch(TH1* h1, vpeaks &vv) {
     }
     // если точка дальше, чем peak+bwidth, пик найден
     if (inpeak==2 && cc-pp.p>opt.Peak_bwidth) {
-      //prnt("ss d d f f fs;",BGRN,"pk:",i,inpeak,pp.p,pp.h,pp.w,RST);
+      //prnt("ss d d f f fs;",BMAG,"pk:",i,inpeak,pp.p,pp.h,pp.w,RST);
       if (pp.w>=opt.Peak_wid)
 	vv.push_back(pp);
       pp.h=-1e9;
