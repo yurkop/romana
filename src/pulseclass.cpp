@@ -763,7 +763,7 @@ void EventClass::AddPulse(PulseClass *pls) {
     }
   }
 
-  if (opt.Ms[pls->Chan]) {
+  if (opt.Ms[pls->Chan]) { //записывает мастер-бит
     Spin|=64;
   }
 

@@ -154,14 +154,14 @@ void Encoder::Flush3(int end_ana) {
 	buf_it->b1 = prev->u82.b;
       }
       else {
-	prnt("ss d x xs;",BYEL,"---end of Buf---: ",buf_it->bufnum,
+	prnt("ss d x xs;",BYEL,"---end of Buf---: ",buf_it->buffer_id,
 	     prev->u82.b,Buf_ring.b3,RST);
 	buf_it->b1 = Buf_ring.b1;
       }
       buf_it->u82.b = buf_it->b1;
       buf_it->b3 = buf_it->b1+buf_size;
 
-      buf_it->bufnum = prev->bufnum+1;
+      buf_it->buffer_id = prev->buffer_id+1;
       // bufnum всегда "линейный", независимо от многопоточности.
       // анализ событий идет всегда последовательно,
       // соответственно, и вызов Flush3 тоже последовательный
@@ -410,6 +410,6 @@ void EDec::Fill_Dec79(event_iter evt) {
 
 //------------------------
 ERaw::ERaw() {
-  cout << "перенести Fill_Raw в ERaw (search Fill_Raw in libcrs.cpp)" << endl;
+  //cout << "перенести Fill_Raw в ERaw (search Fill_Raw in libcrs.cpp)" << endl;
   buf_size=2*Megabyte;
 }

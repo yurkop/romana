@@ -27,8 +27,7 @@ public:
 
   union82 u82; //текущий указатель
   //size_t Size=0;
-  Long64_t bufnum=0; // номер буфера (=идентификатор) = decoder.bufnum
-
+  UInt_t buffer_id;  // ID этого буфера данных
   //std::vector<UChar_t> buffer_storage;
   // input: всегда должно быть: b1 <= b < b3
 

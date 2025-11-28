@@ -54,6 +54,7 @@ const int BFMAX=999999999;
 
 using namespace std;
 
+extern bool b_comment;
 extern MemInfo_t minfo;
 extern ProcInfo_t pinfo;
 // extern double rmem;
@@ -3050,8 +3051,6 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
 	f_read=0;
 	return 1;
       }
-      cout << "opt.Period from file: " << opt.Period << endl;
-      cout << "Git version from file: " << opt.gitver << endl;
 
       //cout << "op2: " << copt  << endl;
       /*
@@ -3101,8 +3100,12 @@ int CRS::DoFopen(char* oname, int copt, int popt) {
     //daqpar->AllEnabled(false);
   }
 
-  prnt("ss s s s ds;",BGRN,"File:",Fname,
-       cpar.GetDevice(module).c_str(),"Module:",module,RST);
+  if (!b_comment) {
+    prnt("ss s s s ds;",BGRN,"File:",Fname,
+	 cpar.GetDevice(module).c_str(),"Module:",module,RST);
+    cout << "opt.Period from file: " << opt.Period << endl;
+    cout << "Git version from file: " << opt.gitver << endl;
+  }
 
   //cout << chanpar << endl;
   if (chanpar) {
@@ -3500,13 +3503,13 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   // 2. Копируем хвост предыдущего буфера.
   //предыдущая запись всегда должна существовать
   buf_iter prev = std::prev(buf_it);
-  buf_it->bufnum = prev->bufnum+1;
+  buf_it->buffer_id = prev->buffer_id+1;
   if (prev->b3<buf_it->b1//конец предыдущего раньше начала текущего (есть хвост)
       || prev->b1 > buf_it->b1) { // или начало предыдущего позже начала
     // текущего (переход через конец кольцевого буфера)
     size_t count = prev->b3 - prev->u82.b;
     if (count > OFF_SIZE) {
-      prnt("ss l ls",BRED,"Error: count > OFF_SIZE:",buf_it->bufnum,count,RST);
+      prnt("ss l ls",BRED,"Error: count > OFF_SIZE:",buf_it->buffer_id,count,RST);
       return;
     }
     buf_it->b1-=count; //сдвигаем начало буфера влево
@@ -3514,7 +3517,7 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   }
   else if (prev->b3>buf_it->b1) {
     //конец предыдущего позже начала текущего: такого не может быть!
-    prnt("ss ls",BRED,"prev->b3>buf_it->b1:",buf_it->bufnum,RST);
+    prnt("ss ls",BRED,"prev->b3>buf_it->b1:",buf_it->buffer_id,RST);
   }
   else {
     //иначе (они равны) ничего не делаем
@@ -3522,7 +3525,7 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   }
   prev->flag++;
 
-  prnt("ss ls;",BBLU,"Step2:",buf_it->bufnum,RST);
+  prnt("ss ls;",BBLU,"Step2:",buf_it->buffer_id,RST);
 
   if (buf_it->u82.b) {
     //анализ, в нем должно быть buf_it->flag++
@@ -3538,9 +3541,9 @@ void CRS::AnaBuf3(buf_iter buf_it) {
     cout << "----tail----" << endl;
   }
 
-  prnt("ss l d x x xs;",BMAG,"Step3:",buf_it->bufnum,prev->flag,
+  prnt("ss l d x x xs;",BMAG,"Step3:",buf_it->buffer_id,prev->flag,
        buf_it->b1,buf_it->u82.b,buf_it->b3,RST);
-  prnt("ss l d l l ls;",BRED,"Step3:",buf_it->bufnum,prev->flag,
+  prnt("ss l d l l ls;",BRED,"Step3:",buf_it->buffer_id,prev->flag,
        buf_it->b3-buf_it->b1,
        buf_it->u82.b-buf_it->b1,
        buf_it->b1-prev->b1,
@@ -3577,7 +3580,7 @@ void CRS::FindLast3(buf_iter buf_it) {
       }
       }
     */
-    prnt("ss ls;",BRED,"Error: adcm raw no last event:",buf_it->bufnum,RST);
+    prnt("ss ls;",BRED,"Error: adcm raw no last event:",buf_it->buffer_id,RST);
     break;
   case 3: //adcm dec
     while (uu.b > buf_it->b1) {
@@ -3588,7 +3591,7 @@ void CRS::FindLast3(buf_iter buf_it) {
       }
     }
     // если дошли до начала и не нашли, b остается равным 0
-    //prnt("ss ls",BRED,"Error: no last event:",buf_it->bufnum,RST);
+    //prnt("ss ls",BRED,"Error: no last event:",buf_it->buffer_id,RST);
     break;
   case 22:
     while (uu.b > buf_it->b1) {
@@ -3649,7 +3652,7 @@ void CRS::FindLast3(buf_iter buf_it) {
     cout << "Wrong module: " << module << endl;
   }
 
-  //prnt("ss ls;",BRED,"Step1. FindLast3:",buf_it->bufnum,RST);
+  //prnt("ss ls;",BRED,"Step1. FindLast3:",buf_it->buffer_id,RST);
 
 } //FindLast3
 
@@ -6647,7 +6650,7 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
     struct stor_packet_hdr_t *hdr = (struct stor_packet_hdr_t *) (GLBuf+p);
     //cout << "hdr: "<<p<<" "<<hex<<hdr->id<<dec<<" "<<hdr->size<<endl;
     if (p + hdr->size > length) {
-      prnt("ss d s ls;",KRED,"size > length:",hdr->size, "at pos:",p,RST);
+      prnt("ss d s ls;",KRED,"size > length:",(int)hdr->size, "at pos:",p,RST);
       break;
     }
     switch (hdr->id) {
@@ -6728,7 +6731,7 @@ void CRS::Decode_adcm_dec(UInt_t iread, UInt_t ibuf) {
       // memcpy (&counters, &buf[dp], sizeof (struct adcm_counters_t));
       break;
     default:
-      prnt("ss x s ls;",BRED,"Bad block ID:",hdr->id, "at pos:",p,RST);
+      prnt("ss x s ls;",BRED,"Bad block ID:",(int)hdr->id, "at pos:",p,RST);
       //fprintf (stderr, "Bad block ID %04X at pos %zu\n", hdr->id, p);
       return;
     }

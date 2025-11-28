@@ -155,7 +155,6 @@ int debug=0; //2|4; //=1 or 2 or 6// for printing debug messages
 
 using namespace std;
 
-
 void prnt(const char* fmt, ...)
 {
     // Static local mutex - создается при первом вызове, существует до конца программы
@@ -200,11 +199,11 @@ void prnt(const char* fmt, ...)
             else if (*fmt == 's') {
                 char* s = va_arg(args, char*);
                 if (ww > 0) std::cout << std::setw(ww);
-                // Безопасная проверка указателя
-                if (s) {
-                    std::cout << s;
+                // ЗАЩИТА: проверяем что это валидная строка, а не число
+                if (s && (uintptr_t)s > 0x1000) {
+                  std::cout << s;
                 } else {
-                    std::cout << "(null)";
+                  std::cout << "(null)";
                 }
                 ww = 0; pp = -1;
             } 
@@ -1422,7 +1421,6 @@ int main(int argc, char **argv)
     //"[par:] - print value(s) of the parameter par\n"
     "----------------------------------------------";
 
-  cout << help << endl;
 
   strcpy(pr_name,argv[0]);
   //strcpy(maintitle,pr_name);
@@ -1445,6 +1443,7 @@ int main(int argc, char **argv)
 	//cout << "sarg: " << i << " " << sarg << " " << (int) sarg[1] << endl;
 	switch (sarg[1]) {
 	case 'h':
+	  cout << help << endl;
 	  EExit(0);
 	case '0':
 	  crs->LogOK=3; //no log
@@ -1679,7 +1678,7 @@ int main(int argc, char **argv)
   else { //read default romana.par file
     ff = gzopen(parfile,"rb");
     if (!ff) {
-      cout << "Can't open " << parfile << " file. Using default parameters." << endl;
+      //cout << "Can't open " << parfile << " file. Using default parameters." << endl;
     }
     else {
       crs->ReadParGz(ff,parfile,0,1,1);
@@ -1736,6 +1735,7 @@ int main(int argc, char **argv)
 
   if (b_comment) { //print comment and exit
     TString txt=crs->Text_time("",cpar.F_start);
+    printf("----------------------------------------\n");
     printf("File: %s F_start: %s\n",datfname,txt.Data());
     printf("Comment: %s\n",opt.Log);
     EExit(0);
