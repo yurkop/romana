@@ -5,21 +5,20 @@
  *                                                                          *
  ****************************************************************************/
 
-
 #define _LARGEFILE64_SOURCE
 #define _FILE_OFFSET_BITS 64
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <time.h>
-#include <sys/time.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <iostream>
 
@@ -28,7 +27,7 @@
 
 using namespace std;
 
-rootclass* rt;
+rootclass *rt;
 
 /*****************************************************************************/
 /*
@@ -61,8 +60,8 @@ size_t process_raw_buf (unsigned char *buf, size_t len)
       nev++;
       pulse.clear();
       for (int n = 0; n < eh->np; n++) {
-        stor_puls_t *hit = (struct stor_puls_t *) & buf[dp + sizeof (struct stor_ev_hdr_t) + n * sizeof (struct stor_puls_t)];
-	pulse.push_back(*hit);
+        stor_puls_t *hit = (struct stor_puls_t *) & buf[dp + sizeof (struct
+stor_ev_hdr_t) + n * sizeof (struct stor_puls_t)]; pulse.push_back(*hit);
         //printf ("%d\t%f\t%f\t%f\n", hit->ch, hit->a, hit->t, hit->w);
       }
 
@@ -86,11 +85,10 @@ size_t process_raw_buf (unsigned char *buf, size_t len)
 }
 */
 
-size_t process_buf (unsigned char *buf, size_t len)
-{
+size_t process_buf(unsigned char *buf, size_t len) {
 
-  UShort_t* buf2;
-  Long64_t* buf8;
+  UShort_t *buf2;
+  Long64_t *buf8;
 
   cout << "len: " << len << endl;
 
@@ -99,41 +97,40 @@ size_t process_buf (unsigned char *buf, size_t len)
 
   pulse_vect rPeaks;
 
-  //while (((dp = p + sizeof (struct stor_packet_hdr_t)) < len)) {
+  // while (((dp = p + sizeof (struct stor_packet_hdr_t)) < len)) {
   while (true) {
 
     cntr = buf[idx];
-    if (cntr!='D') {
-      cout << "wrong control word: " << (Int_t)cntr << " " << (Int_t) 'D' 
-	   << " " << idx << endl;
+    if (cntr != 'D') {
+      cout << "wrong control word: " << (Int_t)cntr << " " << (Int_t)'D' << " "
+           << idx << endl;
     }
 
-    buf2 = (UShort_t*) (buf+idx+1);
+    buf2 = (UShort_t *)(buf + idx + 1);
     UShort_t sz = *buf2;
-    if (idx+sz >len)
+    if (idx + sz > len)
       break;
 
-    buf8 = (Long64_t*) (buf+idx+3);
+    buf8 = (Long64_t *)(buf + idx + 3);
 
-    Long64_t tst = (*buf8)&0xffffff;
-    Char_t state = ((*buf8)&0xff000000)>>48;
+    Long64_t tst = (*buf8) & 0xffffff;
+    Char_t state = ((*buf8) & 0xff000000) >> 48;
 
-    int nn = sz-3-sizeof(Long64_t);
-    cout << "decode: " << nn << " " << 1.0*nn/sizeof(rpeak_type) << " " << sizeof(rpeak_type) << endl;
+    int nn = sz - 3 - sizeof(Long64_t);
+    cout << "decode: " << nn << " " << 1.0 * nn / sizeof(rpeak_type) << " "
+         << sizeof(rpeak_type) << endl;
 
-    if (idx+sz>=len)
+    if (idx + sz >= len)
       break;
 
-    idx+=sz;
+    idx += sz;
   }
 
   return (0);
 }
 /*****************************************************************************/
 
-int main (int argc, char *argv[])
-{
-
+int main(int argc, char *argv[]) {
 
   int fd;
   struct stat statbuf;
@@ -144,53 +141,53 @@ int main (int argc, char *argv[])
   char rootfile[1024];
 
   rt = new rootclass;
-  //rt->bookhist();
+  // rt->bookhist();
 
-  //cout << argc << endl;
-  //exit(1);
+  // cout << argc << endl;
+  // exit(1);
 
   if (argc == 3) {
-    strcpy (dumpfilename, argv[1]);
-    strcpy (rootfile, argv[2]);
+    strcpy(dumpfilename, argv[1]);
+    strcpy(rootfile, argv[2]);
   } else {
     cout << "usage: " << argv[0] << " datafile rootfile" << endl;
-    //fprintf (stderr, "USAGE: %s datafile\n", argv[0]);
-    exit (1);
+    // fprintf (stderr, "USAGE: %s datafile\n", argv[0]);
+    exit(1);
   }
 
   cout << sysconf(_SC_PAGE_SIZE) << endl;
 
-  if ((stat (dumpfilename, &statbuf))) {
-    fprintf (stderr, "stat('%s') failed: %s\n", dumpfilename, strerror (errno));
-    exit (1);
+  if ((stat(dumpfilename, &statbuf))) {
+    fprintf(stderr, "stat('%s') failed: %s\n", dumpfilename, strerror(errno));
+    exit(1);
   }
-  fd = open (dumpfilename, O_RDONLY);
+  fd = open(dumpfilename, O_RDONLY);
   if (fd < 0) {
-    fprintf (stderr, "open('%s') failed: %s\n", dumpfilename, strerror (errno));
-    exit (1);
+    fprintf(stderr, "open('%s') failed: %s\n", dumpfilename, strerror(errno));
+    exit(1);
   }
   nb = statbuf.st_size;
-  maplen=nb;
-  //maplen=4096;
+  maplen = nb;
+  // maplen=4096;
 
   cout << "maplen: " << maplen << endl;
 
-  mapaddr = mmap (0, maplen, PROT_READ, MAP_SHARED, fd, 0);
+  mapaddr = mmap(0, maplen, PROT_READ, MAP_SHARED, fd, 0);
   if (mapaddr == MAP_FAILED) {
-    fprintf (stderr, "mmap('%s') failed: %s\n", dumpfilename, strerror (errno));
-    exit (1);
+    fprintf(stderr, "mmap('%s') failed: %s\n", dumpfilename, strerror(errno));
+    exit(1);
   }
-  //printf ("Mapped %zu bytes from %ld to addr %p\n", maplen, mapoff, mapaddr);
+  // printf ("Mapped %zu bytes from %ld to addr %p\n", maplen, mapoff, mapaddr);
 
-  process_buf ((unsigned char *)mapaddr, maplen);
+  process_buf((unsigned char *)mapaddr, maplen);
 
-  munmap (mapaddr, maplen);
+  munmap(mapaddr, maplen);
 
-  printf ("%ld bytes done \n", maplen);
+  printf("%ld bytes done \n", maplen);
 
   rt->saveroot(rootfile);
   delete rt;
 
-  close (fd);
+  close(fd);
   return 0;
 }

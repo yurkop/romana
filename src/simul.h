@@ -2,7 +2,7 @@
 #define Simul_H 1
 
 class Simul {
- public:
+public:
   Simul();
   double Pshape_Gaus(int j, double pos);
   double Pshape_RC(int j, double pos);

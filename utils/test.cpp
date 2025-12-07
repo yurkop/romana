@@ -1,102 +1,100 @@
-#include <iostream>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
-#include <vector>
 #include <fstream>
+#include <iostream>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 class BufferWriter {
 private:
-    std::vector<int> buffer;
-    std::mutex mtx;
-    std::condition_variable cv;
-    bool buffer_ready = false;
-    bool stop_requested = false;
-    const size_t buffer_size = 1000;
-    std::ofstream file;
+  std::vector<int> buffer;
+  std::mutex mtx;
+  std::condition_variable cv;
+  bool buffer_ready = false;
+  bool stop_requested = false;
+  const size_t buffer_size = 1000;
+  std::ofstream file;
 
 public:
-    BufferWriter(const std::string& filename) : file(filename) {
-        buffer.reserve(buffer_size);
+  BufferWriter(const std::string &filename) : file(filename) {
+    buffer.reserve(buffer_size);
+  }
+
+  // Поток для добавления данных в буфер
+  void producerThread() {
+    for (int i = 0; i < 10000; ++i) {
+      {
+        std::unique_lock<std::mutex> lock(mtx);
+        buffer.push_back(i);
+
+        if (buffer.size() >= buffer_size) {
+          buffer_ready = true;
+          cv.notify_one(); // Уведомляем потребителя
+        }
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    // Поток для добавления данных в буфер
-    void producerThread() {
-        for (int i = 0; i < 10000; ++i) {
-            {
-                std::unique_lock<std::mutex> lock(mtx);
-                buffer.push_back(i);
-                
-                if (buffer.size() >= buffer_size) {
-                    buffer_ready = true;
-                    cv.notify_one(); // Уведомляем потребителя
-                }
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    // Завершаем работу
+    {
+      std::unique_lock<std::mutex> lock(mtx);
+      stop_requested = true;
+      cv.notify_one();
+    }
+  }
+
+  // Поток для записи в файл
+  void consumerThread() {
+    while (true) {
+      std::vector<int> local_buffer;
+
+      {
+        std::unique_lock<std::mutex> lock(mtx);
+        // Ждем, пока буфер не заполнится или не поступит команда остановки
+        cv.wait(lock, [this]() { return buffer_ready || stop_requested; });
+
+        if (stop_requested && !buffer_ready) {
+          break;
         }
-        
-        // Завершаем работу
-        {
-            std::unique_lock<std::mutex> lock(mtx);
-            stop_requested = true;
-            cv.notify_one();
-        }
+
+        // Копируем данные для записи
+        local_buffer = std::move(buffer);
+        buffer.clear();
+        buffer_ready = false;
+      }
+
+      // Записываем в файл (вне критической секции)
+      writeToFile(local_buffer);
     }
 
-    // Поток для записи в файл
-    void consumerThread() {
-        while (true) {
-            std::vector<int> local_buffer;
-            
-            {
-                std::unique_lock<std::mutex> lock(mtx);
-                // Ждем, пока буфер не заполнится или не поступит команда остановки
-                cv.wait(lock, [this]() { 
-                    return buffer_ready || stop_requested; 
-                });
-                
-                if (stop_requested && !buffer_ready) {
-                    break;
-                }
-                
-                // Копируем данные для записи
-                local_buffer = std::move(buffer);
-                buffer.clear();
-                buffer_ready = false;
-            }
-            
-            // Записываем в файл (вне критической секции)
-            writeToFile(local_buffer);
-        }
-        
-        // Записываем оставшиеся данные при остановке
-        if (!buffer.empty()) {
-            writeToFile(buffer);
-        }
+    // Записываем оставшиеся данные при остановке
+    if (!buffer.empty()) {
+      writeToFile(buffer);
     }
+  }
 
-    void writeToFile(const std::vector<int>& data) {
-        for (const auto& item : data) {
-            file << item << "\n";
-        }
-        file.flush();
+  void writeToFile(const std::vector<int> &data) {
+    for (const auto &item : data) {
+      file << item << "\n";
     }
+    file.flush();
+  }
 
-    void run() {
-        std::thread producer(&BufferWriter::producerThread, this);
-        std::thread consumer(&BufferWriter::consumerThread, this);
-        
-        producer.join();
-        consumer.join();
-        
-        file.close();
-    }
+  void run() {
+    std::thread producer(&BufferWriter::producerThread, this);
+    std::thread consumer(&BufferWriter::consumerThread, this);
+
+    producer.join();
+    consumer.join();
+
+    file.close();
+  }
 };
 
 int main() {
-    BufferWriter writer("output.txt");
-    writer.run();
-    return 0;
+  BufferWriter writer("output.txt");
+  writer.run();
+  return 0;
 }
 
 /*

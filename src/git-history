@@ -1,3 +1,18 @@
+git tag -a v0.940e -m 'Промежуточная версия с переформатированием под vscode'
+- перенести Fill_Raw в ERaw (search Fill_Raw in libcrs.cpp): ERaw::ERaw()
+- проверить: округление индивидуальной пролетной базы до целого
+
+- Все файлы .cpp .h были переформатированы под vscode!!!
+
+- ANA3:
+- В decode79 исправлен баг: добавлено Pos=0 в ветке if (opt.fProc)
+- Sorted_pulses вместо Bufevents (в V0.940d предполагалось, что это будет listpulses)
+- добавлен опциональный timeout в wait_for (см. worker_timeouts)
+- сделано (но не проверено):
+  - copy_worker
+  - process_worker
+  - resorting_worker
+
 git tag -a v0.940d -m 'Промежуточная версия перед listpulses'
 - перенести Fill_Raw в ERaw (search Fill_Raw in libcrs.cpp): ERaw::ERaw()
 - проверить: округление индивидуальной пролетной базы до целого

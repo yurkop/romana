@@ -1,21 +1,20 @@
 #ifndef rootclass_H
 #define rootclass_H 1
 
-#include "decoder.h"
 #include "TH1.h"
+#include "decoder.h"
 
 class rootclass {
- public:
-  TH1F* h_count;
+public:
+  TH1F *h_count;
 
- public:
+public:
   rootclass();
-  virtual ~rootclass() {};
+  virtual ~rootclass(){};
 
-  void fillhist(pulse_vect* pulse);
+  void fillhist(pulse_vect *pulse);
   void saveroot(char *name);
-  //void bookhist();
-
+  // void bookhist();
 };
 
 #endif

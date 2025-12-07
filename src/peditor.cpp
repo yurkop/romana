@@ -4,16 +4,15 @@
 #include <sstream>
 
 extern Toptions opt;
-extern MyMainFrame* myM;
-extern CRS* crs;
-extern HistFrame* HiFrm;
+extern MyMainFrame *myM;
+extern CRS *crs;
+extern HistFrame *HiFrm;
 extern char startdir[200];
 
-PEditor::PEditor(const TGWindow *main, MENU_COM mn, UInt_t w, UInt_t h)
-{
+PEditor::PEditor(const TGWindow *main, MENU_COM mn, UInt_t w, UInt_t h) {
   // Create an editor in a dialog.
 
-  menu_id=mn;
+  menu_id = mn;
 
   fMain = new TGTransientFrame(gClient->GetRoot(), main, w, h);
   fMain->Connect("CloseWindow()", "PEditor", this, "CloseWindow()");
@@ -23,9 +22,10 @@ PEditor::PEditor(const TGWindow *main, MENU_COM mn, UInt_t w, UInt_t h)
   fMain->SetCleanup(kDeepCleanup);
 
   fEdit = new TGTextEdit(fMain, w, h, kSunkenFrame | kDoubleBorder);
-  fMain->AddFrame(fEdit, new TGLayoutHints(kLHintsExpandX|kLHintsExpandY,1,1,1,1));
+  fMain->AddFrame(
+      fEdit, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 1, 1, 1, 1));
   fEdit->Connect("Opened()", "PEditor", this, "DoOpen()");
-  fEdit->Connect("Saved()",  "PEditor", this, "DoSave()");
+  fEdit->Connect("Saved()", "PEditor", this, "DoSave()");
   fEdit->Connect("Closed()", "PEditor", this, "DoClose()");
 
   // set selected text colors
@@ -49,30 +49,31 @@ PEditor::PEditor(const TGWindow *main, MENU_COM mn, UInt_t w, UInt_t h)
   case M_EDIT_CUTG:
     LoadCuts();
     break;
-  default:
-    ;
+  default:;
   }
 
-  TGLayoutHints* fLCB5 = new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 5, 5, 0, 0);
+  TGLayoutHints *fLCB5 =
+      new TGLayoutHints(kLHintsCenterX | kLHintsBottom, 5, 5, 0, 0);
 
-  TGHorizontalFrame* fHor = new TGHorizontalFrame(fMain);
-  fMain->AddFrame(fHor, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0, 5, 5));
+  TGHorizontalFrame *fHor = new TGHorizontalFrame(fMain);
+  fMain->AddFrame(
+      fHor, new TGLayoutHints(kLHintsCenterX | kLHintsBottom, 0, 0, 5, 5));
 
-  if (menu_id==M_EDIT_PROF64) {
-    TGTextButton* fTC = new TGTextButton(fHor, "  &Ttime Calibration  ");
+  if (menu_id == M_EDIT_PROF64) {
+    TGTextButton *fTC = new TGTextButton(fHor, "  &Ttime Calibration  ");
     fTC->Connect("Clicked()", "PEditor", this, "DoTCalibr()");
     fHor->AddFrame(fTC, fLCB5);
   }
 
-  TGTextButton* fSave = new TGTextButton(fHor, "  &Save  ");
+  TGTextButton *fSave = new TGTextButton(fHor, "  &Save  ");
   fSave->Connect("Clicked()", "PEditor", this, "DoSavePar()");
   fHor->AddFrame(fSave, fLCB5);
 
-  TGTextButton* fExit = new TGTextButton(fHor, "  Save && &Exit  ");
+  TGTextButton *fExit = new TGTextButton(fHor, "  Save && &Exit  ");
   fExit->Connect("Clicked()", "PEditor", this, "DoPExit()");
   fHor->AddFrame(fExit, fLCB5);
 
-  TGTextButton* fCancel= new TGTextButton(fHor, "  &Cancel  ");
+  TGTextButton *fCancel = new TGTextButton(fHor, "  &Cancel  ");
   fCancel->Connect("Clicked()", "PEditor", this, "CloseWindow()");
   fHor->AddFrame(fCancel, fLCB5);
 
@@ -86,16 +87,14 @@ PEditor::PEditor(const TGWindow *main, MENU_COM mn, UInt_t w, UInt_t h)
   // editor covers right half of parent window
 }
 
-PEditor::~PEditor()
-{
+PEditor::~PEditor() {
   // Delete editor dialog.
 
-  fMain->DeleteWindow();  // deletes fMain
-  //delete this;
+  fMain->DeleteWindow(); // deletes fMain
+  // delete this;
 }
 
-void PEditor::SetTitle()
-{
+void PEditor::SetTitle() {
   // Set title in editor window.
 
   TGText *txt = GetEditor()->GetText();
@@ -111,8 +110,7 @@ void PEditor::SetTitle()
   fMain->SetIconName(title);
 }
 
-void PEditor::Popup()
-{
+void PEditor::Popup() {
   // Show editor.
 
   fMain->MapWindow();
@@ -125,22 +123,20 @@ void PEditor::Popup()
 //   fEdit->LoadBuffer(buffer);
 // }
 
-void PEditor::LoadFile(const char *file)
-{
+void PEditor::LoadFile(const char *file) {
   // Load a file in the editor.
   fEdit->LoadFile(file);
 }
 
-void PEditor::Load_Ing()
-{
+void PEditor::Load_Ing() {
   char ss[100];
 
   fEdit->LoadBuffer("Profilometer settings");
   fEdit->AddLine("");
-  //fEdit->AddLine("# Profilometer type (64 or 8)");
-  sprintf(ss,"Prof_TYP %d # Profilometer type: 64 or 8",opt.Prof_type);
+  // fEdit->AddLine("# Profilometer type (64 or 8)");
+  sprintf(ss, "Prof_TYP %d # Profilometer type: 64 or 8", opt.Prof_type);
   fEdit->AddLine(ss);
-  sprintf(ss,"Ing_TYP %d # Ing type: 256 or 9",opt.Ing_type);
+  sprintf(ss, "Ing_TYP %d # Ing type: 256 or 9", opt.Ing_type);
   fEdit->AddLine(ss);
 
   fEdit->AddLine("");
@@ -164,100 +160,97 @@ void PEditor::Load_Ing()
 
   if (opt.Ing_type == 256) {
     fEdit->AddLine("# Ing N X-ch Y-ch");
-    for (int i=0;i<16;i++) {
-      if (opt.Ing_x[i]>=0 && opt.Ing_y[i]>=0) {
-	sprintf(ss,"Ing  %2d %2d %2d",i,opt.Ing_x[i],opt.Ing_y[i]);
-	fEdit->AddLine(ss);
+    for (int i = 0; i < 16; i++) {
+      if (opt.Ing_x[i] >= 0 && opt.Ing_y[i] >= 0) {
+        sprintf(ss, "Ing  %2d %2d %2d", i, opt.Ing_x[i], opt.Ing_y[i]);
+        fEdit->AddLine(ss);
       }
     }
-  }
-  else {
+  } else {
     fEdit->AddLine("# Ing9 N Alpha-ch");
-    for (int i=0;i<9;i++) {
-      if (opt.Ing_x[i]>=0) {
-	sprintf(ss,"Ing9 %2d %2d",i,opt.Ing_x[i]);
-	fEdit->AddLine(ss);
+    for (int i = 0; i < 9; i++) {
+      if (opt.Ing_x[i] >= 0) {
+        sprintf(ss, "Ing9 %2d %2d", i, opt.Ing_x[i]);
+        fEdit->AddLine(ss);
       }
     }
   }
 }
 
-void PEditor::LoadPar8()
-{
+void PEditor::LoadPar8() {
   char ss[100];
   Load_Ing();
   fEdit->AddLine("# Prof N X-ch Y-ch");
-  //fEdit->AddLine("#");
-  for (int i=0;i<8;i++) {
-    sprintf(ss,"Prof %2d %2d %2d",i,opt.Prof_x[i],opt.Prof_y[i]);
+  // fEdit->AddLine("#");
+  for (int i = 0; i < 8; i++) {
+    sprintf(ss, "Prof %2d %2d %2d", i, opt.Prof_x[i], opt.Prof_y[i]);
     fEdit->AddLine(ss);
   }
 }
 
-void PEditor::LoadPar64()
-{
+void PEditor::LoadPar64() {
   char ss[100];
 
   Load_Ing();
   // fEdit->AddLine("");
   // fEdit->AddLine("# Prof64:");
-  // fEdit->AddLine("# Start channel (Analysis/St) must be the \"threshold\" output");
+  // fEdit->AddLine("# Start channel (Analysis/St) must be the \"threshold\"
+  // output");
 
   fEdit->AddLine("");
   fEdit->AddLine("# Prof64: four channels for Prof64 position signals");
-  //fEdit->AddLine("#");
-  sprintf(ss,"Prof64 %d # X P+(33-64)",opt.Prof64[0]);
+  // fEdit->AddLine("#");
+  sprintf(ss, "Prof64 %d # X P+(33-64)", opt.Prof64[0]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # X P+(1-32)",opt.Prof64[1]);
+  sprintf(ss, "Prof64 %d # X P+(1-32)", opt.Prof64[1]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # Y N+(33-64)",opt.Prof64[2]);
+  sprintf(ss, "Prof64 %d # Y N+(33-64)", opt.Prof64[2]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64 %d # Y N+(1-32)",opt.Prof64[3]);
+  sprintf(ss, "Prof64 %d # Y N+(1-32)", opt.Prof64[3]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_T %d # Channel for clk output",opt.Prof64[4]);
+  sprintf(ss, "Prof64_T %d # Channel for clk output", opt.Prof64[4]);
   fEdit->AddLine(ss);
 
   fEdit->AddLine("");
-  sprintf(ss,"Prof64_TSP %s # Prof64 clock time spectrum",opt.Prof64_TSP);
+  sprintf(ss, "Prof64_TSP %s # Prof64 clock time spectrum", opt.Prof64_TSP);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_PER %d # Period (in samples)",opt.Prof64_W[0]);
+  sprintf(ss, "Prof64_PER %d # Period (in samples)", opt.Prof64_W[0]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_OFF %d # Time offset of the plateau",opt.Prof64_W[1]);
+  sprintf(ss, "Prof64_OFF %d # Time offset of the plateau", opt.Prof64_W[1]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_WID %d # Time width of the plateau",opt.Prof64_W[2]);
+  sprintf(ss, "Prof64_WID %d # Time width of the plateau", opt.Prof64_W[2]);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_THR %d # Threshold",opt.Prof64_THR);
+  sprintf(ss, "Prof64_THR %d # Threshold", opt.Prof64_THR);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_GAT %d # Alpha - Prof coinc. gate (in ns)",opt.Prof64_GAT);
+  sprintf(ss, "Prof64_GAT %d # Alpha - Prof coinc. gate (in ns)",
+          opt.Prof64_GAT);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_X %d # X offset of the profilometer (in mm)",opt.Prof64_X);
+  sprintf(ss, "Prof64_X %d # X offset of the profilometer (in mm)",
+          opt.Prof64_X);
   fEdit->AddLine(ss);
-  sprintf(ss,"Prof64_Y %d # Y offset of the profilometer (in mm)",opt.Prof64_Y);
+  sprintf(ss, "Prof64_Y %d # Y offset of the profilometer (in mm)",
+          opt.Prof64_Y);
   fEdit->AddLine(ss);
-  
+
   fEdit->AddLine("");
   fEdit->AddLine("# Run Profilometer time calibration (TCalibr)");
   fEdit->AddLine("# for period determination");
   fEdit->AddLine("# Prof64_TSP spectrum: start - threshold, stop - clk");
 }
 
-void PEditor::LoadCuts()
-{
+void PEditor::LoadCuts() {
   string str = HiFrm->CutsToStr();
   fEdit->LoadBuffer(str.c_str());
 }
 
-void PEditor::CloseWindow()
-{
+void PEditor::CloseWindow() {
   // Called when closed via window manager action.
 
   delete this;
-  //myM->p_ed=0;
+  // myM->p_ed=0;
 }
 
-void PEditor::DoTCalibr() {
-  new PopFrame(myM,600,600,M_PROF_TIME,this);
-}
+void PEditor::DoTCalibr() { new PopFrame(myM, 600, 600, M_PROF_TIME, this); }
 
 void PEditor::DoSavePar() {
   switch (menu_id) {
@@ -266,77 +259,63 @@ void PEditor::DoSavePar() {
     DoSaveProf();
     break;
   case M_EDIT_CUTG:
-    //LoadCuts();
+    // LoadCuts();
     break;
-  default:
-    ;
+  default:;
   }
 }
 
 void PEditor::DoSaveProf() {
   // Handle Save button.
 
-  TGText* tgt = fEdit->GetText();
-  //cout << tgt->RowCount() << endl;
-  int kk=0;
-  for (int i=0;i<tgt->RowCount();i++) {
-    char* chr = tgt->GetLine(TGLongPosition(0,i),100);
+  TGText *tgt = fEdit->GetText();
+  // cout << tgt->RowCount() << endl;
+  int kk = 0;
+  for (int i = 0; i < tgt->RowCount(); i++) {
+    char *chr = tgt->GetLine(TGLongPosition(0, i), 100);
     if (chr) {
       std::stringstream ss(chr);
-      TString ts,tj;
-      int j,xx,yy;
+      TString ts, tj;
+      int j, xx, yy;
       ss >> ts >> tj >> xx >> yy;
-      j=tj.Atoi();
-      //cout << i << " " << chr << " " << ts << " " << a << " " << b << " " << c << endl;
+      j = tj.Atoi();
+      // cout << i << " " << chr << " " << ts << " " << a << " " << b << " " <<
+      // c << endl;
       ts.ToLower();
       delete[] chr;
       if (ts.EqualTo("prof_typ")) {
-	opt.Prof_type = j;
-      }
-      else if (ts.EqualTo("ing_typ")) {
-	opt.Ing_type = j;
-      }
-      else if (ts.EqualTo("ing") && j>=0 && j<16) {
-	opt.Ing_x[j]=xx;
-	opt.Ing_y[j]=yy;
-      }
-      else if (ts.EqualTo("ing9") && j>=0 && j<9) {
-	opt.Ing_x[j]=xx;
-      }
-      else if (ts.EqualTo("prof") && j>=0 && j<8) {
-	opt.Prof_x[j]=xx;
-	opt.Prof_y[j]=yy;
-      }
-      else if (ts.EqualTo("prof64") && kk>=0 && kk<4) {
-	opt.Prof64[kk]=j;
-	++kk;
-      }
-      else if (ts.EqualTo("prof64_t")) {
-	opt.Prof64[4]=j;
-      }
-      else if (ts.EqualTo("prof64_tsp")) {
-	strcpy(opt.Prof64_TSP,tj.Data());
-      }
-      else if (ts.EqualTo("prof64_per")) {
-	opt.Prof64_W[0]=j;
-      }
-      else if (ts.EqualTo("prof64_off")) {
-	opt.Prof64_W[1]=j;
-      }
-      else if (ts.EqualTo("prof64_wid")) {
-	opt.Prof64_W[2]=j;
-      }
-      else if (ts.EqualTo("prof64_thr")) {
-	opt.Prof64_THR=j;
-      }
-      else if (ts.EqualTo("prof64_gat")) {
-	opt.Prof64_GAT=j;
-      }
-      else if (ts.EqualTo("prof64_x")) {
-	opt.Prof64_X=j;
-      }
-      else if (ts.EqualTo("prof64_y")) {
-	opt.Prof64_Y=j;
+        opt.Prof_type = j;
+      } else if (ts.EqualTo("ing_typ")) {
+        opt.Ing_type = j;
+      } else if (ts.EqualTo("ing") && j >= 0 && j < 16) {
+        opt.Ing_x[j] = xx;
+        opt.Ing_y[j] = yy;
+      } else if (ts.EqualTo("ing9") && j >= 0 && j < 9) {
+        opt.Ing_x[j] = xx;
+      } else if (ts.EqualTo("prof") && j >= 0 && j < 8) {
+        opt.Prof_x[j] = xx;
+        opt.Prof_y[j] = yy;
+      } else if (ts.EqualTo("prof64") && kk >= 0 && kk < 4) {
+        opt.Prof64[kk] = j;
+        ++kk;
+      } else if (ts.EqualTo("prof64_t")) {
+        opt.Prof64[4] = j;
+      } else if (ts.EqualTo("prof64_tsp")) {
+        strcpy(opt.Prof64_TSP, tj.Data());
+      } else if (ts.EqualTo("prof64_per")) {
+        opt.Prof64_W[0] = j;
+      } else if (ts.EqualTo("prof64_off")) {
+        opt.Prof64_W[1] = j;
+      } else if (ts.EqualTo("prof64_wid")) {
+        opt.Prof64_W[2] = j;
+      } else if (ts.EqualTo("prof64_thr")) {
+        opt.Prof64_THR = j;
+      } else if (ts.EqualTo("prof64_gat")) {
+        opt.Prof64_GAT = j;
+      } else if (ts.EqualTo("prof64_x")) {
+        opt.Prof64_X = j;
+      } else if (ts.EqualTo("prof64_y")) {
+        opt.Prof64_Y = j;
       }
     }
   }
@@ -344,36 +323,34 @@ void PEditor::DoSaveProf() {
   crs->Make_prof_ch();
 }
 
-void PEditor::DoPExit()
-{
+void PEditor::DoPExit() {
   // Handle Save&Exit button.
 
   DoSaveProf();
   CloseWindow();
 }
 
-void PEditor::DoOpen()
-{
+void PEditor::DoOpen() {
   SetTitle();
 #ifdef LINUX
-  if (chdir(startdir)) {}
+  if (chdir(startdir)) {
+  }
 #else
   _chdir(startdir);
 #endif
 }
 
-void PEditor::DoSave()
-{
+void PEditor::DoSave() {
   SetTitle();
 #ifdef LINUX
-  if (chdir(startdir)) {}
+  if (chdir(startdir)) {
+  }
 #else
   _chdir(startdir);
 #endif
 }
 
-void PEditor::DoClose()
-{
+void PEditor::DoClose() {
   // Handle close button.
 
   CloseWindow();

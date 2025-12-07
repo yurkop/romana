@@ -1,14 +1,21 @@
 #pragma once
 #include "romana.h"
 
+typedef std::list<PulseClass> pulsecontainer; // список импульсов в буфере
+
 class LocalBuf {
 public:
-  eventlist B;          // list of buffers for decoding
-  UInt_t source_buffer_id;  // ID исходного буфера, откуда события
+  pulsecontainer B; // список импульсов в буфере
+  UInt_t source_buffer_id; // ID исходного буфера, откуда события
   bool is_ready{false}; // Флаг готовности
 };
 class Decoder {
 private:
+  const UInt_t worker_timeouts = 1; // 1 или 2E6(бесконечность)
+  const UInt_t copy_timeout_ms = 100 * worker_timeouts;
+  const UInt_t process_timeout_ms = 150 * worker_timeouts;
+  const UInt_t resorting_timeout_ms = 200 * worker_timeouts;
+
   UInt_t next_expected_bufnum = 1; // номер ожидаемого буфера
 
   static std::atomic<bool> tables_initialized;
@@ -16,7 +23,7 @@ private:
   static const int MAX_HASH = 128;
   // 1. Определяем тип функции
   using FindBackwardFunc = UChar_t *(Decoder::*)(union82, UChar_t *);
-  using DecodeFunc = void (Decoder::*)(BufClass&, eventlist*);
+  using DecodeFunc = void (Decoder::*)(BufClass &, pulsecontainer &);
   // 2. Объявляем таблицу
   static FindBackwardFunc find_backward_table[MAX_HASH];
   static DecodeFunc decode_table[MAX_HASH];
@@ -30,23 +37,55 @@ private:
       w_mean[MAX_CH]; // length of window for bkg, peak and width integration in
                       // DSP
 
-// вспомогательные структуры для Send_for_Process
-struct BufferRange {
-UChar_t *write_start; // - предыдущий конец записи
-UChar_t *write_end;   // - текущий конец записи
-UChar_t *analysis_start; // - вход: конец предыдущего анализа, выход: начало нового
-UChar_t *analysis_end; // - выход: конец нового анализа
+  // вставка в отсортированный контейнер с одновременной сортировкой
+  template <typename Container, typename T>
+  typename Container::iterator sorted_insert(Container &cont, const T &value) {
+    if (cont.empty() || !(value < cont.back())) {
+      cont.push_back(value);
+      return std::prev(cont.end());
+    }
+    // Определяем стратегию по типу контейнера
+    if constexpr (std::is_same_v<Container, std::list<T>>) {
+      // Для list - линейный поиск с конца
+      for (auto it = cont.rbegin(); it != cont.rend(); ++it) {
+        if (!(value < *it)) {
+          return cont.insert(it.base(), value);
+        }
+      }
+      return cont.insert(cont.begin(), value);
+    } else {
+      // Для vector/deque - бинарный поиск
+      auto it = std::upper_bound(cont.begin(), cont.end(), value);
+      return cont.insert(it, value);
+    }
+  }
 
-BufferRange(UChar_t *ws, UChar_t *we, UChar_t *as)
-: write_start(ws), write_end(we), analysis_start(as) {}
-};
+  // вспомогательные структуры для Send_for_Process
+  struct BufferRange {
+    UChar_t *write_start;    // - предыдущий конец записи
+    UChar_t *write_end;      // - текущий конец записи
+    UChar_t *analysis_start; // - вход: конец предыдущего анализа, выход: начало
+                             // нового
+    UChar_t *analysis_end; // - выход: конец нового анализа
 
-  // 🔧 Вспомогательные методы для Send_for_Process
+    BufferRange(UChar_t *ws, UChar_t *we, UChar_t *as)
+        : write_start(ws), write_end(we), analysis_start(as) {}
+  };
+
+  // Вспомогательные методы для Send_for_Process
   bool CheckBufferRanges(BufferRange &range);
   bool HandleRingBufferWrap(BufferRange &range);
   bool FindLastEvent(BufferRange &range);
   void SendToProcessQueue(BufferRange &range);
   bool PrepareProcessBuffer(BufferRange &range);
+
+  // Вспомогательные методы для Resorting_Worker
+
+  bool ResortSingleBuffer(std::list<LocalBuf> &ResortingList,
+                          std::list<LocalBuf>::iterator new_buf_it);
+
+  void ResortNewBuffers(std::list<LocalBuf> &ResortingList,
+                        std::list<LocalBuf> &new_buffers);
 
 public:
   bool first_call = false;
@@ -77,15 +116,26 @@ public:
   std::mutex process_mutex;
   std::condition_variable process_cond;
 
+  // Поток межбуферной сортировки и связанные переменные
+  std::unique_ptr<std::thread> resorting_thread;
+  std::atomic<bool> resorting_running{false};
+  std::mutex resorting_mutex;
+  std::condition_variable resorting_cond;
+
   // Поток склейки и связанные переменные
   std::unique_ptr<std::thread> splice_thread;
   std::atomic<bool> splice_running{false};
   // std::list<BufClass> splice_queue;
-  std::mutex splice_mutex;
+  // std::mutex splice_mutex;
   std::condition_variable splice_cond;
 
-  std::list<LocalBuf> Bufevents; // list of buffers for decoding
-  eventlist Levents;             // global list of events
+  std::list<LocalBuf> Bufpulses;
+  // список буферов. в каждом буфере - контейнер с импульсами
+  // вместо Bufevents;
+  std::list<LocalBuf> Sorted_pulses;
+  // тот же список, но отсортированный (после пересортировки)
+  eventlist Levents; // global list of events
+  // std::list<pulsecontainer> allpulses; //список списков импульсов в буфере
 
 public:
   Decoder();
@@ -96,12 +146,14 @@ public:
 
   void Copy_Start();
   void Process_Start(int num_threads);
+  void Resorting_Start();
   void Splice_Start();
 
   void Copy_Worker(); // блок копирования
   void Send_for_Process(BufferRange &range);
   void Process_Worker(UInt_t thread_id); // рабочий поток анализа
-  void Splice_Worker(); // рабочий поток склейки
+  void Resorting_Worker(); // рабочий поток пересортировки между буферами
+  void Splice_Worker();    // рабочий поток склейки
 
   // Метод для добавления данных в очередь извне
   void Add_to_copy_queue(UChar_t *data, size_t size);
@@ -120,9 +172,10 @@ public:
   UChar_t *FindEvent_backward(union82 From, UChar_t *To);
   LocalBuf &Dec_Init(BufClass &Buf);
   // void Dec_End(eventlist &Blist, BufClass& Buf);
-  void Decode_switch(BufClass &Buf, eventlist* Blist);
-  void Decode22(BufClass &Buf, eventlist* Blist);
-  void Decode36(BufClass &Buf, eventlist* Blist);
+  void Decode_switch(BufClass &Buf, pulsecontainer &pc);
+  void Decode22(BufClass &Buf, pulsecontainer &pc);
+  void Decode36(BufClass &Buf, pulsecontainer &pc);
+  void Add_pulse_to_container(pulsecontainer &pc, PulseClass &pls);
   void Event_Insert_Pulse(eventlist &Elist, PulseClass &pls);
   void PulseAna(PulseClass &ipls);
   void MakePk(PkClass &pk, PulseClass &ipls);
