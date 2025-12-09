@@ -1,3 +1,4 @@
+// clang-format off
 #ifndef toptions_H
 #define toptions_H 1
 
@@ -92,14 +93,10 @@ public:
   Int_t hS[MAX_CHTP];  // [smooth] Hardware Smooth - SS=0..10; S=2^SS
   Int_t Dt[MAX_CHTP];  // [deadTime] B = 1..16383
   Int_t Pre[MAX_CHTP]; // [preWr] pre-length M = 0..4094
-  Int_t Len[MAX_CHTP]; // [durWr] total length N = 1…32763 (internally -
-                       // multiple of 4)
+  Int_t Len[MAX_CHTP]; // [durWr] total length N = 1…32763 (internally - multiple of 4)
   Int_t hD[MAX_CHTP];  // [delay] hardware delay in samples
-  Int_t Trg[MAX_CHTP]; // [trg] Trigget type: 0 - pulse; 1 - threshold crossing
-                       // of derivative;\n2 - maximum of derivative; 3 - rise of
-                       // derivative
-  Int_t Drv[MAX_CHTP]; // [kderiv] K = 0...1023; K=0 - trigger on the signal;
-                       // k!=0 - on derivative
+  Int_t Trg[MAX_CHTP]; // [trg] Trigget type: 0 - pulse; 1 - threshold crossing of derivative;\n2 - maximum of derivative; 3 - rise of derivative
+  Int_t Drv[MAX_CHTP]; // [kderiv] K = 0...1023; K=0 - trigger on the signal; k!=0 - on derivative
   Int_t Thr[MAX_CHTP]; // [threshold] T = –2048 .. +2047
   Int_t LT[MAX_CHTP];  // lower threshold
   Int_t G[MAX_CHTP];   // [adcGain] G = 0..12
@@ -125,7 +122,7 @@ public:
   Int_t Smpl;   // Sampling rate divider
   Int_t St_Per; // Start imitator period
   Int_t F24;    // 24-bit format for CRS-8, CRS-128
-  Int_t DTW;    // Start dead time window
+  Int_t DTW[2]; // Start dead time window
 
   Long64_t F_start; // start of the acquisition
   Long64_t F_stop; // stop of the acquisition (usually time of last modification
@@ -358,8 +355,7 @@ public:
   // std::list<Float_t> gcut2;
 
   Int_t ncuts;
-  Int_t pcuts[MAXCUTS]; // number of points in gcut: 1-formula; 2-1d; >2-2d
-                        // 0- no cut
+  Int_t pcuts[MAXCUTS]; // number of points in gcut: 1-formula; 2-1d; >2-2d; 0- no cut
   Float_t gcut[MAXCUTS][2][MAX_PCUTS]; // 20 cuts; xy; 10 points
   char cut_form[MAXCUTS][100];
 
@@ -397,22 +393,17 @@ public:
 
   // format:
   // Hdef var // hnum hname xtitle ytitle tip
-  Hdef h_rate;   // 21 Rate T(sec) Counts Software count rates as a funtion of
-                 // time in seconds
-  Hdef h_hwrate; // 22 HWRate T(sec) Counts Hardware counters as a funtion of
-                 // time in seconds
+  Hdef h_rate;   // 21 Rate T(sec) Counts Software count rates as a funtion of time in seconds
+  Hdef h_hwrate; // 22 HWRate T(sec) Counts Hardware counters as a funtion of time in seconds
 
   Hdef h_mult; // 49 Mult Multiplicity Counts Event multiplicity
 
-  Hdef h_area; // 1 Area Channel Counts Area of the pulse or energy, calibrated
-               // (see Analysis->E0,E1,E2 for calibration)
+  Hdef h_area; // 1 Area Channel Counts Area of the pulse or energy, calibrated (see Analysis->E0,E1,E2 for calibration)
   // Hdef h_area0; // 9 Area0 Channel Counts Area w/o background, not calibrated
-  Hdef h_time;  // 11 Time t(ns) Counts Time (relative to the starts - see
-                // Analysis->St), in ns
+  Hdef h_time;  // 11 Time t(ns) Counts Time (relative to the starts - see Analysis->St), in ns
   Hdef h_hei;   // 2 Height Channel Counts Maximal pulse height (in channels)
   Hdef h_width; // 3 Width width(a.u.) Counts Pulse width
-  Hdef h_per;   // 15 Period t(mks) Counts Pulse period (distance between two
-                // consecutive pulses), in mks
+  Hdef h_per;   // 15 Period t(mks) Counts Pulse period (distance between two consecutive pulses), in mks
   Hdef h_base;  // 4 Base Channel Counts Base line, calibrated
 
   Hdef h_slope1; // 5 Sl1 Slope Counts Slope1 (baseline)
@@ -421,8 +412,7 @@ public:
   Hdef h_RMS2;   // 8 RMS2 RMS Counts Noise2 (peak)
   Hdef h_RTime;  // 9 RTime RiseTime Counts RiseTime of the pulse
 
-  Hdef h_ampl; // 48 Ampl Channel Counts Distribution of amplitudes from
-               // (inside) oscillogram
+  Hdef h_ampl; // 48 Ampl Channel Counts Distribution of amplitudes from (inside) oscillogram
 
   Hdef h_ntof; // 12 Ntof t(mks) Counts Neutron time of flight, in mks
   Hdef h_etof; // 13 Etof Energy(eV) Counts Neutron energy from NTOF, in eV

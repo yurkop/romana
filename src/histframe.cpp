@@ -2318,6 +2318,8 @@ void HistFrame::HiReset() {
 
   in_gcut = 0;
 
+  hcl->ntof_start=LLONG_MAX;
+  hcl->ntof_time0=0;
   // cout << "Make_hist():: " << endl;
   Clear_Ltree();
   // cout << "Make_hist2():: " << endl;

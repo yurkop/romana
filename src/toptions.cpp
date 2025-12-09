@@ -63,7 +63,8 @@ void Coptions::InitPar(int zero) {
   Smpl = 0;
   St_Per = 0;
   F24 = 0;
-  DTW = 1;
+  DTW[0] = 0;
+  DTW[1] = 0;
 
   F_start = gSystem->Now();
   F_stop = 0;

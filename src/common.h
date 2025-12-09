@@ -162,7 +162,7 @@ struct Pmap {
 
   // cmd bits:
   // 0x1: (bit0) 1: start/stop DAQ
-  // 0xE: (bit1-3) change color (see fCol[7])
+  // 0xE: (bit1-3) ( << 1) change color (see fCol[7])
   // 0xF0: (bit4-7) Action (1..15)
   // 0x100 (bit8) disble during acq
   // 0x200 (bit9) disble fields not existing in certain devices

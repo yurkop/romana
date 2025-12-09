@@ -1041,9 +1041,9 @@ void CRS::Ana2(int end_ana) {
     // std::advance(m_end,-opt.ev_min);
   }
 
-  // YK "костыль" нужен для исключения канала 255 из гистограмм
-  bool save_on = cpar.on[255];
-  cpar.on[255] = false;
+  // YK был "костыль" нужен для исключения канала 255 из гистограмм
+  // bool save_on = cpar.on[255];
+  // cpar.on[255] = false;
   // analyze events from m_event to m_end
   while (m_event != m_end) {
     if ((int)m_event->pulses.size() >= opt.mult1 &&
@@ -1080,8 +1080,8 @@ void CRS::Ana2(int end_ana) {
     // }
     ++m_event;
   } // while
-  // YK "костыль" нужен для исключения канала 255 из гистограмм
-  cpar.on[255] = save_on;
+  // YK был "костыль" нужен для исключения канала 255 из гистограмм
+  // cpar.on[255] = save_on;
 
   // erase events if the list is too long
   for (event_iter it = crs->Levents.begin(); it != m_event && nmax > 0;
@@ -1598,11 +1598,9 @@ int CRS::SetPar() {
   // case 53:
   //   AllParameters43();
   //   break;
-  case 44:
+  case 44: //CRS-8
+  case 54: //CRS-128
     AllParameters_CRS8();
-    break;
-  case 54:
-    AllParameters44();
     break;
   case 45:
     AllParameters_AK32();
@@ -2100,6 +2098,26 @@ void CRS::Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max) {
   // << " " << a2 << " " << len << endl;
 }
 
+void CRS::AllParameters_AK32() { // AK-32
+  AllParameters44();
+  AllParameters44_CFD(); // CFD, Rtime
+
+  // Индивидуальные параметры каналов:
+  for (auto chan = 0; chan < chan_in_module; chan++) {
+    if (cpar.on[chan]) {
+      Command32(2, chan, 37, 0); // входной импеданс - всегда 50 Ом
+    }
+  }
+  // Общие параметры:
+  // Command32(11,10,0,0); // режим работы прибора Multi/Single (игнорируется)
+  Command32(11, 11, 0, 8); // число обслуживаемых рабочих плат MAIN-ом USB3
+}
+
+void CRS::AllParameters_CRS8() { // ЦРС-8
+  AllParameters44();
+  AllParameters44_CFD(); // CFD, Rtime
+}
+
 void CRS::AllParameters44_CFD() { // parameters from TZ CFD+ (2025)
   int F1 = 31,
       // F2=1,
@@ -2130,25 +2148,6 @@ void CRS::AllParameters44_CFD() { // parameters from TZ CFD+ (2025)
       Check33(43, chan, opt.T1[chan], T3, 1, 4095);
     }
   }
-}
-
-void CRS::AllParameters_AK32() { // AK-32
-  AllParameters44();
-  // Индивидуальные параметры каналов:
-  for (auto chan = 0; chan < chan_in_module; chan++) {
-    if (cpar.on[chan]) {
-      Command32(2, chan, 37, 0); // входной импеданс - всегда 50 Ом
-    }
-  }
-  AllParameters44_CFD(); // CFD, Rtime
-  // Общие параметры:
-  // Command32(11,10,0,0); // режим работы прибора Multi/Single (игнорируется)
-  Command32(11, 11, 0, 8); // число обслуживаемых рабочих плат MAIN-ом USB3
-}
-
-void CRS::AllParameters_CRS8() { // ЦРС-8
-  AllParameters44();
-  AllParameters44_CFD(); // CFD, Rtime
 }
 
 void CRS::AllParameters44() {
@@ -2347,9 +2346,8 @@ void CRS::AllParameters36() {
   } // for
 
   // Start dead time DT
-  if (cpar.DTW <= 0)
-    cpar.DTW = 1;
-  UChar_t type = cpar.DTW >> 24;
+  if (cpar.DTW[0] <= 0)
+    cpar.DTW[0] = 1;
 
   // Start source
   int st_src = cpar.St_Per ? 1 : 0;
@@ -2359,7 +2357,11 @@ void CRS::AllParameters36() {
   if (sprd)
     sprd--;
 
-  Command32(11, 0, type, (UInt_t)cpar.DTW); // Start dead time DTW
+  UChar_t type = cpar.DTW[0] >> 24;
+  Command32(11, 0, type, (UInt_t)cpar.DTW[0]); // Start dead time DTW
+  type = cpar.DTW[1] >> 24;
+  Command32(11, 12, type, (UInt_t)cpar.DTW[1]); // Start dead time DTW
+
   Command32(11, 2, 0, st_src);              // Start source
   Command32(11, 3, 0, sprd);                // Start imitator period
 }
@@ -2408,9 +2410,9 @@ void CRS::AllParameters35() {
   } // for
 
   // Start dead time DT
-  if (cpar.DTW <= 0)
-    cpar.DTW = 1;
-  UChar_t type = cpar.DTW >> 24;
+  if (cpar.DTW[0] <= 0)
+    cpar.DTW[0] = 1;
+  UChar_t type = cpar.DTW[0] >> 24;
 
   // Start source
   int st_src = cpar.St_Per ? 1 : 0;
@@ -2420,7 +2422,7 @@ void CRS::AllParameters35() {
   if (sprd)
     sprd--;
 
-  Command32(11, 0, type, (UInt_t)cpar.DTW); // Start dead time DTW
+  Command32(11, 0, type, (UInt_t)cpar.DTW[0]); // Start dead time DTW
   Command32(11, 2, 0, st_src);              // Start source
   Command32(11, 3, 0, sprd);                // Start imitator period
 
@@ -2450,10 +2452,10 @@ void CRS::AllParameters34() {
   } // for
 
   // Start dead time DT
-  if (cpar.DTW == 0)
-    cpar.DTW = 1;
-  UChar_t type = cpar.DTW >> 24;
-  Command32(11, 0, type, (UInt_t)cpar.DTW);
+  if (cpar.DTW[0] == 0)
+    cpar.DTW[0] = 1;
+  UChar_t type = cpar.DTW[0] >> 24;
+  Command32(11, 0, type, (UInt_t)cpar.DTW[0]);
 }
 
 void CRS::AllParameters33() {
@@ -3657,6 +3659,7 @@ void CRS::Decode_switch3(buf_iter buf_it) {
   //--------end
 } // Decode_switch3
 
+// Decode36 is used with ANA3=1
 void CRS::Decode36(BufClass &inbuf) {
   // декодирует буфер inbuf и складывает декодированные данные в Blist
   // Blist записывается в "списке списков" Bufevents
@@ -3738,6 +3741,7 @@ void CRS::Decode36(BufClass &inbuf) {
 
       if (ch == 255) {    // start channel
         ipls.Spin |= 128; // bit 7 - hardware counters
+        ipls.Time = 0; // нужно для nTof
         // prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
       }
 
@@ -5144,6 +5148,8 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
         if (Spn & 128) { // Counters
           ipls->Counter = (*buf8) & sixbytes;
           ipls->Pos = -32222;
+          ipls->Time = 0; // нужно для nTof
+          //cout << "time: " << ipls->Time << endl;
         } else { // Peaks
           ipls->Pos = 0;
           ipls->Area = (*buf2u + rnd.Rndm() - 1.5) * 0.2;
@@ -5199,7 +5205,8 @@ void CRS::Decode79(UInt_t iread, UInt_t ibuf) {
         if (evt->Spin & 128) { // Counters
           ipls->Counter = (*buf8) & sixbytes;
           ipls->Pos = -32222;
-          // prnt("ss l ds;",BRED,"d79:",evt->Tstmp,evt->Spin,RST);
+          ipls->Time = 0; // нужно для nTof
+          // prnt("ss l d fs;", BRED, "d79:", evt->Tstmp, evt->Spin, ipls->Time, RST);
         } else { // Peaks
           ipls->Area = (*buf2u + rnd.Rndm() - 1.5) * 0.2;
           ipls->Time = (buf2[1] + rnd.Rndm() - 0.5) * 0.01 +
@@ -5971,6 +5978,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
       if (ch == 255) {    // start channel
         ipls.Spin |= 128; // bit 7 - hardware counters
+        ipls.Time = 0; // нужно для nTof
         // prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
       }
 

@@ -321,77 +321,83 @@ void Mdef::Fill_02(HMap *map, Float_t x, Float_t y, Double_t *hcut_flag,
 }
 
 void Mdef::Fill_1d(EventClass *evt, Double_t *hcut_flag, int ncut) {
-  for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
-    // пропускаем неактивные каналы и где не найден пик
-    if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
-      // вызываем Fill_01 для данной гистограммы и группы, которой она
-      // принадлежит
-      Float_t x = (this->*GetX)(evt, &*ipls);
-      Fill_01(v_map[ipls->Chan], x, hcut_flag, ncut);
+  if (!(evt->Spin & 128)) // пропускаем счетчики (Spin & 128)
+    for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
+      // пропускаем неактивные каналы и где не найден пик
+      if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
+        // вызываем Fill_01 для данной гистограммы и группы, которой она
+        // принадлежит
+        Float_t x = (this->*GetX)(evt, &*ipls);
+        Fill_01(v_map[ipls->Chan], x, hcut_flag, ncut);
 
-      for (int j = 0; j < NGRP; j++)
-        if (opt.Grp[ipls->Chan][j])
-          Fill_01(v_map[MAX_CH + j], x, hcut_flag, ncut);
+        for (int j = 0; j < NGRP; j++)
+          if (opt.Grp[ipls->Chan][j])
+            Fill_01(v_map[MAX_CH + j], x, hcut_flag, ncut);
+      }
     }
-  }
 }
 
 void Mdef::Fill_1d_Extend(EventClass *evt, Double_t *hcut_flag, int ncut) {
-  for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
-    // пропускаем неактивные каналы и где не найден пик
-    if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
-      // вызываем Fill_01 для данной гистограммы и группы, которой она
-      // принадлежит
-      Float_t x = (this->*GetX)(evt, &*ipls);
-      Time_Extend(ipls->Chan, x);
-      Fill_01(v_map[ipls->Chan], x, hcut_flag, ncut);
+  if (!(evt->Spin & 128)) // пропускаем счетчики (Spin & 128)
+    for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
+      // пропускаем неактивные каналы и где не найден пик
+      if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
+        // вызываем Fill_01 для данной гистограммы и группы, которой она
+        // принадлежит
+        Float_t x = (this->*GetX)(evt, &*ipls);
+        Time_Extend(ipls->Chan, x);
+        Fill_01(v_map[ipls->Chan], x, hcut_flag, ncut);
 
-      for (int j = 0; j < NGRP; j++)
-        if (opt.Grp[ipls->Chan][j])
-          Fill_01(v_map[MAX_CH + j], x, hcut_flag, ncut);
+        for (int j = 0; j < NGRP; j++)
+          if (opt.Grp[ipls->Chan][j])
+            Fill_01(v_map[MAX_CH + j], x, hcut_flag, ncut);
+      }
     }
-  }
 }
 
 void Mdef::Fill_2d(EventClass *evt, Double_t *hcut_flag, int ncut) {
-  for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
-    // пропускаем неактивные каналы и где не найден пик
-    if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
-      // вызываем Fill_02 для данной гистограммы
+  if (!(evt->Spin & 128)) // пропускаем счетчики (Spin & 128)
+    for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
+      // пропускаем неактивные каналы и где не найден пик
+      if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
+        // вызываем Fill_02 для данной гистограммы
 
-      Float_t x = (mx->*mx->GetX)(evt, &*ipls);
-      Float_t y = (my->*my->GetX)(evt, &*ipls);
+        Float_t x = (mx->*mx->GetX)(evt, &*ipls);
+        Float_t y = (my->*my->GetX)(evt, &*ipls);
 
-      Fill_02(v_map[ipls->Chan], x, y, hcut_flag, ncut);
+        Fill_02(v_map[ipls->Chan], x, y, hcut_flag, ncut);
 
-      // YK!!!
-      for (int j = 0; j < NGRP; j++)
-        if (opt.Grp[ipls->Chan][j])
-          Fill_02(v_map[MAX_CH + j], x, y, hcut_flag, ncut);
+        // YK!!!
+        for (int j = 0; j < NGRP; j++)
+          if (opt.Grp[ipls->Chan][j])
+            Fill_02(v_map[MAX_CH + j], x, y, hcut_flag, ncut);
+      }
     }
-  }
 }
 
 void Mdef::Fill_2d_Extend(EventClass *evt, Double_t *hcut_flag, int ncut) {
-  for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
-    // пропускаем неактивные каналы и где не найден пик
-    if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
-      // вызываем Fill_02 для данной гистограммы
+  if (!(evt->Spin & 128)) // пропускаем счетчики (Spin & 128)
+    for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
+      // пропускаем неактивные каналы и где не найден пик
+      if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
+        // вызываем Fill_02 для данной гистограммы
 
-      Float_t x = (mx->*mx->GetX)(evt, &*ipls);
-      Float_t y = (my->*my->GetX)(evt, &*ipls);
+        Float_t x = (mx->*mx->GetX)(evt, &*ipls);
+        Float_t y = (my->*my->GetX)(evt, &*ipls);
 
-      Time_Extend_2d(ipls->Chan, x, y);
-      Fill_02(v_map[ipls->Chan], x, y, hcut_flag, ncut);
+        Time_Extend_2d(ipls->Chan, x, y);
+        Fill_02(v_map[ipls->Chan], x, y, hcut_flag, ncut);
 
-      // for (int j=0;j<NGRP;j++)
-      // 	if (opt.Grp[ipls->Chan][j])
-      // 	  Fill_02(v_map[MAX_CH+j],x,y,hcut_flag);
+        // for (int j=0;j<NGRP;j++)
+        // 	if (opt.Grp[ipls->Chan][j])
+        // 	  Fill_02(v_map[MAX_CH+j],x,y,hcut_flag);
+      }
     }
-  }
 }
 
 void Mdef::Fill_axay(EventClass *evt, Double_t *hcut_flag, int ncut) {
+  if (evt->Spin & 128) // пропускаем счетчики (Spin & 128)
+    return;
   Float_t AA[MAX_CH + 1] = {}; // initialize to zero
   int nmax = hd->bins2 + 1;
 
@@ -512,6 +518,10 @@ void Mdef::Fill_HWRate(EventClass *evt, Double_t *hcut_flag, int ncut) {
         if (!cnt.empty()) {
 
           Long64_t count2 = ipls->Counter - crs->fCounter[ipls->Chan];
+          // if (ipls->Chan==12) {
+          //   prnt("ss l d l ls;", BGRN, "count2:", evt->Tstmp, ipls->Chan,
+          //        ipls->Counter, crs->fCounter[ipls->Chan], RST);
+          // }
           if (!ncut) // записывает fCounter (old counter) только для ncut==0
             crs->fCounter[ipls->Chan] = ipls->Counter;
 
@@ -1804,10 +1814,19 @@ void HClass::FillHist(EventClass *evt, Double_t *hcut_flag) {
   */
 
   // определяем ntof_start
-  if (b_ntof) {
+  if (b_ntof && (!(evt->Spin & 128) || opt.start_ch==255)) {
     for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
-      // пропускаем неактивные каналы и где не найден пик
-      if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
+      // if (ipls->Chan == opt.start_ch) {
+      //   ipls->Time=0;
+      //   cout << "start_ch: " << (int)ipls->Chan << " " << ipls->Pos << " "
+      //        << (int)evt->Spin << " " << evt->Tstmp << " " << ipls->Time << " "
+      //        << cpar.on[ipls->Chan] << endl;
+      // }
+
+      // Было: пропускаем неактивные каналы и где не найден пик
+      // if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
+      // пропускаем неактивные каналы
+      if (cpar.on[ipls->Chan]) {
         if (ipls->Chan == opt.start_ch) {
           ntof_start = evt->Tstmp;
           ntof_time0 = ipls->Time;
@@ -1816,6 +1835,9 @@ void HClass::FillHist(EventClass *evt, Double_t *hcut_flag) {
       }
     }
   }
+
+  // if (evt->Spin & 128)
+  //   cout << "ntof_start: " << ntof_start << " " << ntof_time0 << endl;
 
   // заполняем все гистограммы в Mfill_list
   for (auto it = MFill_list.begin(); it != MFill_list.end(); ++it) {

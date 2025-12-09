@@ -34,6 +34,7 @@ bool Dec79(BufClass &Buf, EventClass &evt) {
     if (evt.Spin & 128) { // Counters
       ipls->Counter = *Buf.u82.ul & sixbytes;
       ipls->Pos = -32222;
+      ipls->Time = 0; // нужно для nTof
       // prnt("ss l ds;",BRED,"d79:",evt.Tstmp,evt.Spin,RST);
     } else { // Peaks
       ipls->Area = (Buf.u82.us[0] + rnd.Rndm() - 1.5) * 0.2;

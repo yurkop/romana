@@ -195,7 +195,7 @@ public:
   bool b_base[MAX_CHTP];    // использовать Base,Sl1,Sl2,RMS1,RMS2
   bool b_ntof =
       0; // analyze ntof ot not !! Переделать для многопоточного анализа
-  Long64_t ntof_start = 0;
+  Long64_t ntof_start = LLONG_MAX;
   Float_t ntof_time0 = 0;
 
   // HMap *cutmap[MAXCUTS];

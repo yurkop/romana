@@ -956,18 +956,19 @@ void ParDlg::UpdateField(int nn) {
 
   UInt_t bit9 = (pp->cmd & 0x200);
   if (bit9) { // disble fields not existing in certain devices
+    //деактивируем для всех???
+    bool f_daq = crs->Fmode == 1;
+    bool f_smpl = pp->data == &cpar.Smpl || pp->data == &cpar.F24;
+    bool f_st_per = pp->data == &cpar.St_Per;
+    bool f_DT = pp->data == &cpar.DTW[0] || pp->data == &cpar.DTW[1];
+    
+    f_smpl = f_smpl && crs->module >= 41 && f_daq;
+    f_st_per = f_st_per && crs->module >= 35 && f_daq;
+    f_DT = f_DT && crs->module >= 35 && f_daq;
 
-    if ((pp->data == &cpar.Smpl || pp->data == &cpar.F24) &&
-        (crs->Fmode != 1 || crs->module < 41)) {
+    if (!f_smpl || !f_st_per || !f_DT || (pp->data == &opt.ntof_period))
       EnableField(nn, false);
-    } else if ((pp->data == &cpar.St_Per) &&
-               (crs->Fmode != 1 || crs->module < 35)) {
-      EnableField(nn, false);
-    } else if ((pp->data == &cpar.DTW) && crs->Fmode != 1) {
-      EnableField(nn, false);
-    } else if (pp->data == &opt.ntof_period) {
-      EnableField(nn, false);
-    }
+
   }
 
   UInt_t bit10 = (pp->cmd & 0x400);
@@ -1675,16 +1676,6 @@ void ParParDlg::AddFileName(TGCompositeFrame *frame) {
     logButton->Connect("Clicked()", "ParParDlg", this, "DoLog()");
   }
 
-  /*
-  id = Plist.size()+1;
-  TGTextEntry* tlog = new TGTextEntry(frame,"ertewrt  фывпывап", id);
-  //tt->SetDefaultSize(380,20);
-  tlog->SetMaxLength(sizeof(opt.Filename)-1);
-  frame->AddFrame(tlog,LayET1);
-  //DoMap(tlog,opt.Filename,p_txt,0,0x100);
-  //tlog->Connect("TextChanged(char*)", "ParDlg", this, "DoTxt()");
-  TGTextEntry* tlog = new TGTextEntry(frame,"ertewrt  фывпывап", id);
-  */
 }
 
 int ParParDlg::AddFiles(TGCompositeFrame *frame) {
@@ -1738,9 +1729,7 @@ int ParParDlg::AddFiles(TGCompositeFrame *frame) {
   fchk->SetToolTipText("input raw: Checked - write processed events; unchecked "
                        "- write direct raw stream\ninput dec: Checked - "
                        "reanalyse .dec file with new coincidence conditions");
-  // fchk2->SetName(txt);
-  // fchk2->ChangeOptions(fchk2->GetOptions()|kFixedWidth);
-  // fchk2->SetWidth(230);
+
   hframe3->AddFrame(fchk, LayCC1);
   DoMap(fchk, &opt.fProc, p_chk, 0, 0x100 | (7 << 1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
@@ -1780,11 +1769,11 @@ int ParParDlg::AddOpt(TGCompositeFrame *frame) {
   AddLine_opt(fF6, ww, &opt.Tstart, &opt.Tstop, tip1, tip2, label, k_r0, k_r0,
               0, 0, 0, 0, 3 << 1, 1 << 1);
 
-  tip1 = "";
+  tip1 = "24-bit data format (only for CRS-8/16, CRS-128, AK-32)";
   tip2 = "Delay between drawing events (in msec)";
-  label = "DrawEvent delay";
-  AddLine_opt(fF6, ww, NULL, &opt.tsleep, tip1, tip2, label, k_lab, k_int, 100,
-              10000, 500, 10000, 0, 7 << 4);
+  label = "F24/DrawEvent delay";
+  AddLine_opt(fF6, ww, &cpar.F24, &opt.tsleep, tip1, tip2, label, k_int, k_int, 0,
+              1, 500, 10000, 0x200 | (5 << 1) | 1, 7 << 4);
 
   tip1 = "Size of the USB buffer in kilobytes (1024 is OK)\n"
          "Small for low count rate; large for high count rate";
@@ -1811,32 +1800,17 @@ int ParParDlg::AddOpt(TGCompositeFrame *frame) {
          "For AK-32:           1: 0.05, 2: 0.11, 3: 0.21, 4: 0.43, 5: 0.86, 6: "
          "1.72, 7: 3.44, 8: 6.87";
   label = "Sampling Rate / Start period";
-  // cout << "Smpl: " << cpar.Smpl << endl;
+
   AddLine_opt(fF6, ww, &cpar.Smpl, &cpar.St_Per, tip1, tip2, label, k_int,
               k_int, 0, 14, 0, 8, 0x200 | (2 << 1) | 1, 0x200 | (6 << 1) | 1);
 
-  // tip1= "[CRS-8/16] Force trigger on all active channels from START
-  // signal.\n"
-  //   "Normal trigger is disabled";
-  // tip2= "START input channel dead time (in samples). All channels are
-  // inhibited during START dead time"; label="START trigger/START dead time";
-  // AddLine_opt(fF6,ww,&cpar.St_trig,&cpar.DTW,tip1,tip2,label,k_chk,k_int,
-  // 	      0,0,1,2e9,0x200|(3<<1)|1,0x200|1);
-
-  tip1 = "24-bit data format (only for CRS-8/16, CRS-128, AK-32)";
-  tip2 = "START input channel dead time (in samples). All channels are "
-         "inhibited during START dead time";
-  label = "F24/START dead time";
-  AddLine_opt(fF6, ww, &cpar.F24, &cpar.DTW, tip1, tip2, label, k_int, k_int, 0,
-              1, 1, 2e9, 0x200 | (5 << 1) | 1, 0x200 | 1);
-
-  // if (crs->module<41 || crs->module>70) {
-  //   int id = Plist.size()-2;
-  //   EnableField(id,false);
-  //   EnableField(id-1,false);
-  //   EnableField(id-2,false);
-  //   if (crs->module==35) EnableField(id-1,true);
-  // }
+  tip1 = "START input channel dead time start (in samples).\nAll channels are "
+         "inhibited during START dead time.";
+  tip2 = "START input channel dead time duration (in samples).\nAll channels are "
+         "inhibited during START dead time.\n0 = infinity.";
+  label = "START dead time start/duration";
+  AddLine_opt(fF6, ww, &cpar.DTW[0], &cpar.DTW[1], tip1, tip2, label, k_int, k_int, 0,
+              2e8, 0, 2e8, 0x200 | (5 << 1) | 1, 0x200 | (5 << 1) | 1);
 
   fF6->Resize();
   return fF6->GetDefaultWidth();
