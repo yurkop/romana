@@ -1387,12 +1387,6 @@ int CRS::Init_device() {
   sz = Command32(1, 0, 0, 0); // не помню, зачем вызывать 2 раза (?)
 
   memcpy(cpar.device, buf_in + 1, 4);
-  for (int i = 0; i < 5; i++) {
-    cout << "buf_in:" << i << " " << (int) buf_in[i] << endl;
-  }
-  for (int i = 0; i < 4; i++) {
-    cout << "idevice:" << i << " " << (int)cpar.device[i] << endl;
-  }
 
   Short_t nplates = buf_in[3];
   opt.ver_po = buf_in[4];
