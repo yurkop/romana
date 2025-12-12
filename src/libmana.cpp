@@ -3093,9 +3093,13 @@ void MainFrame::DoStartStop(int rst) {
 
   } else { // START is pressed here
     // проверяем Log
-    while (crs->LogOK <= 0) {
-      parpar->DoLog();
-    }
+    
+    // while (crs->LogOK <= 0) {
+    parpar->DoLog();
+    // }
+    if (crs->LogOK <=0)
+      return;
+    
     if (crs->LogOK != 3) {
       rst ? crs->LogOK = 1 : crs->LogOK = 2;
     }

@@ -6,7 +6,7 @@
 #include <TSystem.h>
 #include <TVirtualX.h>
 
-#include <sstream>
+#include <filesystem>
 
 extern std::list<VarClass> varlist;
 
@@ -1600,6 +1600,9 @@ void ParParDlg::UpdateLog() {
 }
 
 void ParParDlg::DoLog() {
+  namespace fs = std::filesystem;
+  using namespace std::chrono;
+
   if (crs->b_stop) {
     TmpLogFile(tmplogFilename,
                "# Здесь можно задать комментарий к файлу (макс. ~4000 "
@@ -1625,9 +1628,33 @@ void ParParDlg::DoLog() {
 
     // gSystem->Unlink(tmplogFilename);
 
-    // int result =
-    gSystem->Exec(cmd);
-    UpdateLog();
+    // Время последнего изменения
+    auto file_time1 = fs::last_write_time(tmplogFilename);
+    // Преобразуем file_time_type → system_time
+    auto sctp1 = time_point_cast<milliseconds>(file_time1);
+    // auto sctp1 = time_point_cast<milliseconds>(
+    //   file_time1 - fs::file_time_type::clock::now() + system_clock::now()
+    // );
+
+    int result = gSystem->Exec(cmd);
+    cout << "result: " << result << " " << crs->LogOK << endl;
+
+    auto file_time2 = fs::last_write_time(tmplogFilename);
+    auto sctp2 = time_point_cast<milliseconds>(file_time2);
+    // auto sctp2 = time_point_cast<milliseconds>(
+    //     file_time2 - fs::file_time_type::clock::now() + system_clock::now());
+    auto diff = sctp2 - sctp1;
+
+    //auto ms = diff.time_since_epoch().count();
+    auto ms = diff.count();
+    //std::cout << "Последнее изменение (мс): " << ms << " мс с эпохи Unix\n";
+
+    if (ms)
+      UpdateLog();
+    else if (crs->LogOK!=3)
+      crs->LogOK = -1;
+
+    cout << "LogOK: " << crs->LogOK << " " << ms << endl;
   }
 } // DoLog
 

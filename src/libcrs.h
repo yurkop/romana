@@ -250,6 +250,9 @@ public:
   // char* inp_buf=0; // буфер, куда записываются входные данные (usb или из
   // файла)
 
+  UInt_t mask_discr[MAX_CH + 1]; // маска записи по дискриминатору (ЦРС32) и по
+                                 // СС и пересчету (ЦРС8+)
+
   Long64_t inputbytes;
   Long64_t rawbytes;
   Long64_t npulses; // total number of pulses (zero at Reset (Start button))
@@ -415,8 +418,8 @@ public:
   // void AllParameters42(); // load all parameters
   // void AllParameters43(); // load all parameters
   void AllParameters_AK32();
-  void AllParameters_CRS8();
-  void AllParameters44_CFD(); // parameters from TZ CFD+ (2025)
+  //void AllParameters_CRS8();
+  //void AllParameters_CFD(); // parameters from TZ CFD+ (2025)
   void AllParameters44();     // load all parameters
   void AllParameters36();     // load all parameters
   void AllParameters35();     // load all parameters

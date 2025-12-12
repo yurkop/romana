@@ -1387,6 +1387,12 @@ int CRS::Init_device() {
   sz = Command32(1, 0, 0, 0); // не помню, зачем вызывать 2 раза (?)
 
   memcpy(cpar.device, buf_in + 1, 4);
+  for (int i = 0; i < 5; i++) {
+    cout << "buf_in:" << i << " " << (int) buf_in[i] << endl;
+  }
+  for (int i = 0; i < 4; i++) {
+    cout << "idevice:" << i << " " << (int)cpar.device[i] << endl;
+  }
 
   Short_t nplates = buf_in[3];
   opt.ver_po = buf_in[4];
@@ -1450,7 +1456,7 @@ int CRS::Init_device() {
         module = 34;
       } else if (opt.ver_po >= 5 && opt.ver_po <= 6) { // версия ПО=5 или 6
         module = 35;
-      } else if (opt.ver_po == 7) { // версия ПО=7
+      } else if (opt.ver_po >= 7) { // версия ПО=7,8
         module = 36;
       }
     }
@@ -1600,7 +1606,7 @@ int CRS::SetPar() {
   //   break;
   case 44: //CRS-8
   case 54: //CRS-128
-    AllParameters_CRS8();
+    AllParameters44();
     break;
   case 45:
     AllParameters_AK32();
@@ -2100,7 +2106,7 @@ void CRS::Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max) {
 
 void CRS::AllParameters_AK32() { // AK-32
   AllParameters44();
-  AllParameters44_CFD(); // CFD, Rtime
+  //AllParameters44_CFD(); // CFD, Rtime
 
   // Индивидуальные параметры каналов:
   for (auto chan = 0; chan < chan_in_module; chan++) {
@@ -2113,12 +2119,15 @@ void CRS::AllParameters_AK32() { // AK-32
   Command32(11, 11, 0, 8); // число обслуживаемых рабочих плат MAIN-ом USB3
 }
 
+/*
 void CRS::AllParameters_CRS8() { // ЦРС-8
   AllParameters44();
-  AllParameters44_CFD(); // CFD, Rtime
+  //AllParameters44_CFD(); // CFD, Rtime
 }
+*/
 
-void CRS::AllParameters44_CFD() { // parameters from TZ CFD+ (2025)
+/*
+void CRS::AllParameters_CFD() { // parameters from TZ CFD+ (2025)
   int F1 = 31,
       // F2=1,
       FRR = 5; // делитель=32
@@ -2149,12 +2158,14 @@ void CRS::AllParameters44_CFD() { // parameters from TZ CFD+ (2025)
     }
   }
 }
+*/
 
 void CRS::AllParameters44() {
   // cout << "Allparameters44: " << endl;
-  UInt_t mask_discr, // маска для дискр,СС и пересчета
-      mask_start,    // маска для СТАРТ
-      wmask;         // маска разрешений записи
+  UInt_t // mask_discr, // маска для дискр,СС и пересчета - задаются в
+         // Allparameters36
+      mask_start, // маска для СТАРТ
+      wmask;      // маска разрешений записи
 
   UInt_t mask_group;
 
@@ -2169,17 +2180,17 @@ void CRS::AllParameters44() {
 
     if (cpar.on[chan]) {
 
-      mask_discr = 0b0000000000011; // bits 0,1 (было еще 11,12)
-      if (opt.dsp[chan]) {
-        mask_discr |= 0b11101110000; // write DSP data
-        if (cpar.Trg[chan] == 7) {
-          mask_discr |= 1 << 13; // write CFD
-        }
-      }
+      // mask_discr = 0b0000000000011; // bits 0,1 (было еще 11,12)
+      // if (opt.dsp[chan]) {
+      //   mask_discr |= 0b11101110000; // write DSP data
+      //   if (cpar.Trg[chan] == 7) {
+      //     mask_discr |= 1 << 13; // write CFD
+      //   }
+      // }
 
-      if (cpar.pls[chan]) {   // add 1100
-        mask_discr |= 0b1100; // write pulse
-      }
+      // if (cpar.pls[chan]) {   // add 1100
+      //   mask_discr |= 0b1100; // write pulse
+      // }
 
       mask_start = 0b1100000000001; // bits 0,11,12 - bitmask for START:
                                     // tst,count48,overflow
@@ -2199,7 +2210,7 @@ void CRS::AllParameters44() {
       if (cpar.Trigger == 0) { // discr
         wmask |= 1;
       } else if (cpar.Trigger == 1) { // START
-        mask_start |= mask_discr; // добавляем запись импульса по старту
+        mask_start |= mask_discr[chan]; // добавляем запись импульса по старту
       } else {      // coinc
         wmask |= 4; // запись по СС
         if (cpar.RD[chan]) {
@@ -2207,13 +2218,14 @@ void CRS::AllParameters44() {
           // wmask|=4; // запись по СС
         }
       }
-      // cout << "mask_start: " << hex << mask_start << dec << endl;
-      Command32(2, chan, 23,
-                mask_discr & cpar.RMask); // bitmask для дискр overwr AllPrms36
+      // 23: mask_discr[chan] задаются в Allparameters36
+      // Command32(2, chan, 23,
+      //           mask_discr[chan] & cpar.RMask); // bitmask для дискр overwr
+      //           AllPrms36
       Command32(2, chan, 24, mask_start & cpar.RMask); // bitmask для START
       Command32(2, chan, 25, wmask); // битовая маска разрешений записи
       Command32(2, chan, 26,
-                mask_discr & cpar.RMask); // bitmask для СС и пересчета
+                mask_discr[chan] & cpar.RMask); // bitmask для СС и пересчета
 
       Command32(2, chan, 27, (int)w); // длительность окна совпадений
       Command32(2, chan, 28, (int)0); // тип обработки повторных
@@ -2248,8 +2260,6 @@ void CRS::AllParameters44() {
 
 void CRS::AllParameters36() {
   // cout << "AllParameters36(): " << endl;
-
-  UInt_t mask;
 
   // enable start channel by default
   Command32(2, 255, 11, 1); // enabled
@@ -2299,19 +2309,20 @@ void CRS::AllParameters36() {
       Check33(20, chan, opt.T1[chan], opt.T2[chan], 1, 4095);
       Check33(22, chan, opt.W1[chan], opt.W2[chan], 1, 4095);
 
-      mask = 0b1100000000011; // bits 0,1 (было еще 11,12)
+      //маска форматов по дискриминатору: для ЦРС-32 и старше
+      mask_discr[chan] = 0b0000000000011; // bits 0,1 (было еще 11,12)
       if (opt.dsp[chan]) {
-        mask |= 0b11101110000; // write DSP data
+        mask_discr[chan] |= 0b11101110000; // write DSP data
         if (cpar.Trg[chan] == 7) {
-          mask |= 1 << 13; // write CFD
+          mask_discr[chan] |= 1 << 13; // write CFD
         }
       }
 
       if (cpar.pls[chan]) { // add 1100
-        mask |= 0b1100;     // write pulse
+        mask_discr[chan] |= 0b1100;     // write pulse
       }
 
-      Command32(2, chan, 23, mask & cpar.RMask); // bitmask for discriminator
+      Command32(2, chan, 23, mask_discr[chan] & cpar.RMask); // bitmask for discriminator
       Command32(2, chan, 32, cntr);              // type of centroid
 
       int pwin = opt.P2[chan]; // окно повторных срабатываний
@@ -2342,7 +2353,34 @@ void CRS::AllParameters36() {
       Command32(2, chan, 36, sum); // сглаживание: сумма
       Command32(2, chan, 2, div);  // сглаживание: деление
 
-    } // if
+      // CFD+
+      int F1 = 31,
+          // F2=1,
+          FRR = 5; // делитель=32
+
+      int T3 = 1; // промежуточная длит. центроида
+
+      int MR = opt.Mr[chan] + 1; // способ вычисления QX/RX центроидаX
+      if (MR > 1) {
+        T3 = opt.Mr[chan];
+        MR = 2;
+      }
+
+      int FD = abs(opt.DD[chan]);
+      if (FD == 0)
+        FD = 1;
+      Command32(2, chan, 38, FD); // FD – задержка CFD
+      Command32(2, chan, 39, F1); // F1 – множитель 1 CFD
+      int ff = abs(opt.FF[chan]);
+      if (ff == 0)
+        ff = 1;
+      Command32(2, chan, 40, ff);  // F2 – множитель 2 CFD
+      Command32(2, chan, 41, FRR); // FRR – номер делителя CFD
+      Command32(2, chan, 42, MR); // способ вычисления QX/RX центроидаX
+      // 43: промежут. безусловная длительность центроидаX
+      Check33(43, chan, opt.T1[chan], T3, 1, 4095);
+
+    } // if cpar.on[chan]
   } // for
 
   // Start dead time DT
