@@ -1,8 +1,11 @@
 #include "romana.h"
 
 #include "TGFileDialog.h"
+#include <TCanvas.h>
 #include <TColor.h>
 #include <TGToolTip.h>
+#include <TImage.h>
+#include <TLatex.h>
 #include <TSystem.h>
 #include <TVirtualX.h>
 
@@ -79,8 +82,8 @@ vector<const char *> ptip = {
     //"Negative trigger means:\n"
     //" - use software trigger sTg and pls data for timing (Pos, Rtime, Time)\n"
     //" - use hardware trigger |Trg| and dsp data for other parameters (Area,
-    //Base, Width, Height)\n" " pls and dsp must be checked\n" " Dsp must be NOT
-    //checked",
+    // Base, Width, Height)\n" " pls and dsp must be checked\n" " Dsp must be
+    // NOT checked",
     "Parameter of derivative: S(i) - S(i-Drv)", "Trigger threshold",
     "Trigger lower threshold (for Trg 3-7)",
     "Start channel - used as start in Time spectra\nif there are many start "
@@ -956,19 +959,24 @@ void ParDlg::UpdateField(int nn) {
 
   UInt_t bit9 = (pp->cmd & 0x200);
   if (bit9) { // disble fields not existing in certain devices
-    //деактивируем для всех???
+    // деактивируем для всех???
     bool f_daq = crs->Fmode == 1;
     bool f_smpl = pp->data == &cpar.Smpl || pp->data == &cpar.F24;
     bool f_st_per = pp->data == &cpar.St_Per;
     bool f_DT = pp->data == &cpar.DTW[0] || pp->data == &cpar.DTW[1];
-    
+
     f_smpl = f_smpl && crs->module >= 41 && f_daq;
     f_st_per = f_st_per && crs->module >= 35 && f_daq;
     f_DT = f_DT && crs->module >= 35 && f_daq;
 
-    if (!f_smpl || !f_st_per || !f_DT || (pp->data == &opt.ntof_period))
-      EnableField(nn, false);
+    // cout << "bit^: " << nn << " " << f_daq << " " << f_smpl << " " <<
+    // f_st_per
+    //      << " " << f_DT << " " << f_ntof << endl;
 
+    bool yes = f_smpl || f_st_per || f_DT;
+    // if (!f_smpl || !f_st_per || !f_DT || (pp->data == &opt.ntof_period))
+    if (!yes)
+      EnableField(nn, false);
   }
 
   UInt_t bit10 = (pp->cmd & 0x400);
@@ -1466,50 +1474,68 @@ void ParParDlg::AddChk(TGGroupFrame *frame, const char *txt, Bool_t *opt_chk,
   }
 }
 
-TGPicture *createTextPicture(const char *text, int &height, UInt_t width = 800,
-                             int fontSize = 12) {
-  const double plen = 2.3; // этот параметр управляет длиной разбитых строк
+// оригинал
+TGPicture *createTextPicture(const char *text, int &height, UInt_t width,
+                             int &fontSize) {
+  const double plen = 2.9; // этот параметр управляет длиной разбитых строк
   // чем он больше, тем длиннее будут строки
-  const double phei = 1.6; // этот параметр управляет высотой картинки
+  const double phei = 1.52; // этот параметр управляет высотой картинки
 
   // Сохраняем оригинальное разбиение на строки и проверяем длину
   std::vector<std::string> lines;
-  std::stringstream ss(text);
   std::string line;
 
-  while (std::getline(ss, line)) {
-    // //пропускаем комментарии
-    // if (line[0]=='#') continue;
-    // Проверяем, нужно ли разбивать строку
-    if (line.length() * (fontSize / 2) < width) {
-      lines.push_back(line);
-    } else {
-      // Разбиваем длинную строку на части
-      std::stringstream wordStream(line);
-      std::string word;
-      std::string currentLine;
+  TString Text = text;
+  Text.ReplaceAll("'", "'\\''");
 
-      while (wordStream >> word) {
-        if (currentLine.empty()) {
-          currentLine = word;
-        } else {
-          std::string testLine = currentLine + " " + word;
-          if (testLine.length() * (fontSize / plen) < width) {
-            currentLine = testLine;
-          } else {
-            lines.push_back(currentLine);
+  fontSize = 13;
+  while (true) {
+    std::stringstream ss(Text.Data());
+    lines.clear();
+    while (std::getline(ss, line)) {
+      // //пропускаем комментарии
+      // if (line[0]=='#') continue;
+      // Проверяем, нужно ли разбивать строку
+      if (line.length() * (fontSize / 2) < width) {
+        lines.push_back(line);
+      } else {
+        // Разбиваем длинную строку на части
+        std::stringstream wordStream(line);
+        std::string word;
+        std::string currentLine;
+
+        while (wordStream >> word) {
+          if (currentLine.empty()) {
             currentLine = word;
+          } else {
+            std::string testLine = currentLine + " " + word;
+            if (testLine.length() * (fontSize / plen) < width) {
+              currentLine = testLine;
+            } else {
+              lines.push_back(currentLine);
+              currentLine = word;
+            }
           }
         }
-      }
-      if (!currentLine.empty()) {
-        lines.push_back(currentLine);
+        if (!currentLine.empty()) {
+          lines.push_back(currentLine);
+        }
       }
     }
-  }
 
-  // Рассчитываем высоту исходя из количества строк
-  height = lines.size() * fontSize * phei;
+    // Рассчитываем высоту исходя из количества строк
+    height = lines.size() * fontSize * phei;
+
+    // break;
+
+    // cout << "height: " << height << " " << fontSize << " " << lines.size() <<
+    // endl;
+    if (height > 200) {
+      fontSize--;
+      continue;
+    }
+    break;
+  }
 
   // Собираем текст с переносами строк
   TString formattedText;
@@ -1519,8 +1545,22 @@ TGPicture *createTextPicture(const char *text, int &height, UInt_t width = 800,
     formattedText += lines[i].c_str();
   }
 
+  // cout << formattedText.Length() << " " << formattedText << endl << endl;
+
+  if (formattedText.Length() == 0)
+    return 0;
+
   // Создаем временный файл
-  TString tempFile = TString::Format("/tmp/text_%ld.png", long(gSystem->Now()));
+  TString tempFile =
+      TString::Format("/dev/shm/text_%ld.png", long(gSystem->Now()));
+
+  // cout << TString::Format(
+  //             "convert -size %dx%d -background white -fill black -pointsize
+  //             %d "
+  //             "-gravity west label:'%s' %s",
+  //             width, height, fontSize, formattedText.Data(), tempFile.Data())
+  //      << endl;
+
   gSystem->Exec(TString::Format(
       "convert -size %dx%d -background white -fill black -pointsize %d "
       "-gravity west label:'%s' %s",
@@ -1589,7 +1629,9 @@ void ParParDlg::UpdateLog() {
   // Создаем новую картинку
   TGPicture *newPicture = createTextPicture(opt.Log, log_h, log_w, log_font);
   if (newPicture) {
+    // cout << "log_h: " << log_h << " " << log_w << " " << log_font << endl;
     logButton->SetPicture(newPicture);
+    // if (log_h>200) log_h=200;
     logButton->Resize(log_w, log_h);
     // Resize(fWidth + 55, height + 85);
     Layout();
@@ -1598,6 +1640,40 @@ void ParParDlg::UpdateLog() {
   // cout << "Logg: " << crs->LogOK << " " << opt.Log << " " << strlen(opt.Log)
   // << endl;
 }
+
+/*
+void ParParDlg::DoLog() {
+    if (crs->b_stop) {
+        // 1. Создаём файл
+        TmpLogFile(tmplogFilename, opt.Log, 1);
+
+        // 2. Открываем диалог с сообщением
+        const char* msg = u8"Отредактируйте файл и закройте окно.\n"
+                          u8"Программа будет ждать.";
+        new TGMsgBox(gClient->GetRoot(), this,
+                     "Редактор", msg, kMBIconExclamation, kMBOk);
+
+        // 3. Блокируем кнопки GUI
+        SetEditable(false);  // Отключаем все элементы
+
+        // 4. Запускаем и ЖДЁМ l3afpad
+        TString cmd = "l3afpad --window-position=100,100 ";
+        cmd += tmplogFilename;
+
+        int result = gSystem->Exec(cmd);  // Будет ждать
+
+        // 5. Сюда попадём ТОЛЬКО после закрытия l3afpad
+        cout << "l3afpad закрыт, результат: " << result << endl;
+
+        // 6. Включаем GUI обратно
+        SetEditable(true);
+
+        // 7. Обновляем лог
+        UpdateLog();
+        crs->LogOK = 1;
+    }
+}
+*/
 
 void ParParDlg::DoLog() {
   namespace fs = std::filesystem;
@@ -1637,7 +1713,7 @@ void ParParDlg::DoLog() {
     // );
 
     int result = gSystem->Exec(cmd);
-    cout << "result: " << result << " " << crs->LogOK << endl;
+    // cout << "result: " << result << " " << crs->LogOK << endl;
 
     auto file_time2 = fs::last_write_time(tmplogFilename);
     auto sctp2 = time_point_cast<milliseconds>(file_time2);
@@ -1645,16 +1721,16 @@ void ParParDlg::DoLog() {
     //     file_time2 - fs::file_time_type::clock::now() + system_clock::now());
     auto diff = sctp2 - sctp1;
 
-    //auto ms = diff.time_since_epoch().count();
+    // auto ms = diff.time_since_epoch().count();
     auto ms = diff.count();
-    //std::cout << "Последнее изменение (мс): " << ms << " мс с эпохи Unix\n";
+    // std::cout << "Последнее изменение (мс): " << ms << " мс с эпохи Unix\n";
 
     if (ms)
       UpdateLog();
-    else if (crs->LogOK!=3)
+    else if (crs->LogOK != 3)
       crs->LogOK = -1;
 
-    cout << "LogOK: " << crs->LogOK << " " << ms << endl;
+    // cout << "LogOK: " << crs->LogOK << " " << ms << endl;
   }
 } // DoLog
 
@@ -1698,11 +1774,11 @@ void ParParDlg::AddFileName(TGCompositeFrame *frame) {
     logButton = new TGPictureButton(hframe1, picture);
     // TGIcon* icon = new TGIcon(frame, picture, width, height);
     hframe1->AddFrame(logButton, LayLT8);
+    logButton->Resize(log_w, log_h);
     logButton->SetToolTipText(
         "File description. The same text will be written to the log file.");
     logButton->Connect("Clicked()", "ParParDlg", this, "DoLog()");
   }
-
 }
 
 int ParParDlg::AddFiles(TGCompositeFrame *frame) {
@@ -1799,8 +1875,8 @@ int ParParDlg::AddOpt(TGCompositeFrame *frame) {
   tip1 = "24-bit data format (only for CRS-8/16, CRS-128, AK-32)";
   tip2 = "Delay between drawing events (in msec)";
   label = "F24/DrawEvent delay";
-  AddLine_opt(fF6, ww, &cpar.F24, &opt.tsleep, tip1, tip2, label, k_int, k_int, 0,
-              1, 500, 10000, 0x200 | (5 << 1) | 1, 7 << 4);
+  AddLine_opt(fF6, ww, &cpar.F24, &opt.tsleep, tip1, tip2, label, k_int, k_int,
+              0, 1, 500, 10000, 0x200 | (5 << 1) | 1, 7 << 4);
 
   tip1 = "Size of the USB buffer in kilobytes (1024 is OK)\n"
          "Small for low count rate; large for high count rate";
@@ -1833,11 +1909,13 @@ int ParParDlg::AddOpt(TGCompositeFrame *frame) {
 
   tip1 = "START input channel dead time start (in samples).\nAll channels are "
          "inhibited during START dead time.";
-  tip2 = "START input channel dead time duration (in samples).\nAll channels are "
-         "inhibited during START dead time.\n0 = infinity.";
+  tip2 = "START input channel dead time duration (in samples).\n"
+         "All channels are inhibited during START dead time.\n"
+         "0 = infinity.";
   label = "START dead time start/duration";
-  AddLine_opt(fF6, ww, &cpar.DTW[0], &cpar.DTW[1], tip1, tip2, label, k_int, k_int, 0,
-              2e8, 0, 2e8, 0x200 | (5 << 1) | 1, 0x200 | (5 << 1) | 1);
+  AddLine_opt(fF6, ww, &cpar.DTW[0], &cpar.DTW[1], tip1, tip2, label, k_int,
+              k_int, 0, 2e8, 0, 2e8, 0x200 | (5 << 1) | 1,
+              0x200 | (5 << 1) | 1);
 
   fF6->Resize();
   return fF6->GetDefaultWidth();
@@ -1864,13 +1942,15 @@ int ParParDlg::AddNtof(TGCompositeFrame *frame) {
   // fchk->Connect("Toggled(Bool_t)", "ParParDlg", this, "DoCheckNtof(Bool_t)");
   // hfr1->AddFrame(fchk,LayCC1);
 
-  tip1 = "";
-  tip2 = "Ntof period (mks) (should be always zero if unsure why it's needed)";
-  // tip2= "Ntof start channel (255 for START input)";
-  label = "Ntof period";
-  opt.ntof_period = 0;
-  AddLine_opt(fF6, ww, NULL, &opt.ntof_period, tip1, tip2, label, k_lab, k_r1,
-              0, 1, 0, 1e9, 0, 0x200 | 0x400);
+  // tip1 = "";
+  // tip2 = "Ntof period (mks) (should be always zero if unsure why it's
+  // needed)";
+  // // tip2= "Ntof start channel (255 for START input)";
+  // label = "Ntof period";
+  // opt.ntof_period = 0;
+  // AddLine_opt(fF6, ww, NULL, &opt.ntof_period, tip1, tip2, label, k_lab,
+  // k_r1,
+  //             0, 1, 0, 1e9, 0, 0x200 | 0x400);
 
   tip1 = "Ntof Time offset (in mks) for Ntof-Energy conversion.\n"
          "Ntof Fligh path is individual parameter for each channel.";

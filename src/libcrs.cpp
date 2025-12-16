@@ -2185,8 +2185,9 @@ void CRS::AllParameters44() {
       // if (cpar.pls[chan]) {   // add 1100
       //   mask_discr |= 0b1100; // write pulse
       // }
-
-      mask_start = 0b1100000000001; // bits 0,11,12 - bitmask for START:
+      
+      mask_discr[chan] &= 0xE7FF; //убираем биты 11,12 для ЦРС-8 и старше
+      mask_start = 0b1110000000001; // bits 0,10,11,12 - bitmask for START:
                                     // tst,count48,overflow
 
       int w = 1;
@@ -2212,11 +2213,11 @@ void CRS::AllParameters44() {
           // wmask|=4; // запись по СС
         }
       }
-      // 23: mask_discr[chan] задаются в Allparameters36
-      // Command32(2, chan, 23,
-      //           mask_discr[chan] & cpar.RMask); // bitmask для дискр overwr
-      //           AllPrms36
-      Command32(2, chan, 24, mask_start & cpar.RMask); // bitmask для START
+
+      Command32(2, chan, 23,
+                mask_discr[chan] & cpar.RMask); // переписываем bitmask для дискр
+      Command32(2, chan, 24,
+                          mask_start & cpar.RMask); // bitmask для START
       Command32(2, chan, 25, wmask); // битовая маска разрешений записи
       Command32(2, chan, 26,
                 mask_discr[chan] & cpar.RMask); // bitmask для СС и пересчета
@@ -2303,8 +2304,8 @@ void CRS::AllParameters36() {
       Check33(20, chan, opt.T1[chan], opt.T2[chan], 1, 4095);
       Check33(22, chan, opt.W1[chan], opt.W2[chan], 1, 4095);
 
-      //маска форматов по дискриминатору: для ЦРС-32 и старше
-      mask_discr[chan] = 0b0000000000011; // bits 0,1 (было еще 11,12)
+      //маска форматов по дискриминатору: для ЦРС-32 маска общая для дискр и START
+      mask_discr[chan] = 0b1100000000011; // bits 0,1,11,12
       if (opt.dsp[chan]) {
         mask_discr[chan] |= 0b11101110000; // write DSP data
         if (cpar.Trg[chan] == 7) {
@@ -2378,8 +2379,9 @@ void CRS::AllParameters36() {
   } // for
 
   // Start dead time DT
-  if (cpar.DTW[0] <= 0)
-    cpar.DTW[0] = 1;
+  Int_t DT = cpar.DTW[0];
+  if (DT <= 0)
+    DT = 1;
 
   // Start source
   int st_src = cpar.St_Per ? 1 : 0;
@@ -2389,8 +2391,8 @@ void CRS::AllParameters36() {
   if (sprd)
     sprd--;
 
-  UChar_t type = cpar.DTW[0] >> 24;
-  Command32(11, 0, type, (UInt_t)cpar.DTW[0]); // Start dead time DTW
+  UChar_t type = DT >> 24;
+  Command32(11, 0, type, (UInt_t)DT); // Start dead time DTW
   type = cpar.DTW[1] >> 24;
   Command32(11, 12, type, (UInt_t)cpar.DTW[1]); // Start dead time DTW
 
@@ -2442,9 +2444,10 @@ void CRS::AllParameters35() {
   } // for
 
   // Start dead time DT
-  if (cpar.DTW[0] <= 0)
-    cpar.DTW[0] = 1;
-  UChar_t type = cpar.DTW[0] >> 24;
+  Int_t DT = cpar.DTW[0];
+  if (DT <= 0)
+    DT = 1;
+  UChar_t type = DT >> 24;
 
   // Start source
   int st_src = cpar.St_Per ? 1 : 0;
@@ -2454,7 +2457,7 @@ void CRS::AllParameters35() {
   if (sprd)
     sprd--;
 
-  Command32(11, 0, type, (UInt_t)cpar.DTW[0]); // Start dead time DTW
+  Command32(11, 0, type, (UInt_t)DT); // Start dead time DTW
   Command32(11, 2, 0, st_src);              // Start source
   Command32(11, 3, 0, sprd);                // Start imitator period
 
@@ -2484,10 +2487,11 @@ void CRS::AllParameters34() {
   } // for
 
   // Start dead time DT
-  if (cpar.DTW[0] == 0)
-    cpar.DTW[0] = 1;
-  UChar_t type = cpar.DTW[0] >> 24;
-  Command32(11, 0, type, (UInt_t)cpar.DTW[0]);
+  Int_t DT = cpar.DTW[0];
+  if (DT == 0)
+    DT = 1;
+  UChar_t type = DT >> 24;
+  Command32(11, 0, type, (UInt_t)DT);
 }
 
 void CRS::AllParameters33() {
@@ -6108,10 +6112,16 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       pk.A = data & 0xFFFFFFF;
       pk.A = (pk.A << 4) >> 4;
       break;
-    case 10: // QX – [40]
+    case 10: { // сч переполнений - 8; QX – [40]
       pk.QX = data & 0xFFFFFFFFFF;
       pk.QX = (pk.QX << 24) >> 24;
+      // data >>= 40;
+      // int ov = data & 0xFF;
+      // if (ov) {
+      //   prnt("ss d l x ds;", BBLU, "OV:", ch, ipls.Tstamp64, data, ov, RST);
+      // }
       break;
+    } 
     case 11: { // Counters
       ipls.Counter = data;
       ipls.Spin |= 128; // bit 7 - hardware counters
@@ -6127,27 +6137,27 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       // fs;",BBLU,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate_hard[ipls.Chan],RST);
       break;
     }
-    case 12:
-      if (data & 1) {
-        ++errors[ER_OVF];
-        ipls.Spin |= 128; // bit 7 - hardware counters
-        ipls.Spin |= 4;   // bit 2 - ER_OVF
-      }
-      // prnt("ss d l ls;",KGRN,"OVF:",ch,ipls.Tstamp64,data&1,RST);
-      break;
-    case 13: {
-      int bit23 = (data & 0x800000) >> 23;
-      if (!bit23) {
-        // cout << "bit23: " << data << " " << bit23 << endl;
-        ++errors[ER_CFD];
-      }
-      pk.CF1 = data & 0x7FFFFF;    // 23
-      pk.CF1 = (pk.CF1 << 9) >> 9; // 32-23
-      data >>= 24;
-      pk.CF2 = data & 0x7FFFFF;    // 23
-      pk.CF2 = (pk.CF2 << 9) >> 9; // 32-23
-      // prnt("ss d l d d
-      // ds;",KGRN,"CFD:",ch,ipls.Tstamp64,bit23,pk.CF1,pk.CF2,RST);
+  case 12:
+    if (data & 1) {
+      ++errors[ER_OVF];
+      ipls.Spin |= 128; // bit 7 - hardware counters
+      ipls.Spin |= 4;   // bit 2 - ER_OVF
+    }
+    // prnt("ss d l x ls;",KGRN,"OVF:",ch,ipls.Tstamp64,data,data&1,RST);
+    break;
+  case 13: {
+    int bit23 = (data & 0x800000) >> 23;
+    if (!bit23) {
+      // cout << "bit23: " << data << " " << bit23 << endl;
+      ++errors[ER_CFD];
+    }
+    pk.CF1 = data & 0x7FFFFF;    // 23
+    pk.CF1 = (pk.CF1 << 9) >> 9; // 32-23
+    data >>= 24;
+    pk.CF2 = data & 0x7FFFFF;    // 23
+    pk.CF2 = (pk.CF2 << 9) >> 9; // 32-23
+    // prnt("ss d l d d
+    // ds;",KGRN,"CFD:",ch,ipls.Tstamp64,bit23,pk.CF1,pk.CF2,RST);
     } break;
     default:
       ++errors[ER_FRMT];

@@ -263,9 +263,9 @@ protected:
   const char *tip2;
   const char *label;
 
-  int log_h, log_w = 750, log_font = 12;
+  int log_h, log_w = 750, log_font = 13;
   TGPictureButton *logButton;
-  const char *tmplogFilename = "/tmp/romana_log";
+  const char *tmplogFilename = "/dev/shm/romana_log";
 
 public:
   TrigFrame *tTrig;
