@@ -6133,8 +6133,8 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       Tst3o[ipls.Chan] = ipls.Tstamp64;
       npulses3o[ipls.Chan] = ipls.Counter;
 
-      // prnt("ss d l l f
-      // fs;",BBLU,"CONT:",ch,ipls.Tstamp64,ipls.Counter,dt,rate_hard[ipls.Chan],RST);
+      // prnt("ss d l l f fs;", BBLU, "CONT:", ch, ipls.Tstamp64, ipls.Counter, dt,
+      //      rate_hard[ipls.Chan], RST);
       break;
     }
   case 12:
@@ -6143,7 +6143,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       ipls.Spin |= 128; // bit 7 - hardware counters
       ipls.Spin |= 4;   // bit 2 - ER_OVF
     }
-    // prnt("ss d l x ls;",KGRN,"OVF:",ch,ipls.Tstamp64,data,data&1,RST);
+    // prnt("ss d l x ls;", KGRN, "OVF:", ch, ipls.Tstamp64, data, data & 1, RST);
     break;
   case 13: {
     int bit23 = (data & 0x800000) >> 23;

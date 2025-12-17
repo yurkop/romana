@@ -105,6 +105,8 @@ Float_t Mdef::VarNtof(EventClass *e, PulseClass *p) {
 
   tt *= mks * opt.Period;
 
+  //prnt("ss f l l f fs;", BGRN, "varntof:", tt, e->Tstmp, hcl->ntof_start, p->Time, hcl->ntof_time0, RST);
+
   // check for missed starts - obsolete...
   //  if (opt.ntof_period>0.01 && tt>opt.ntof_period) {
   //    crs->Tstart0+=Long64_t(1000*opt.ntof_period/opt.Period);
@@ -115,20 +117,20 @@ Float_t Mdef::VarNtof(EventClass *e, PulseClass *p) {
 }
 
 Float_t Mdef::VarEtof(EventClass *e, PulseClass *p) {
-  static Long64_t Tstart0 = LLONG_MAX; // Tstamp of the ntof start pulses
-  static Float_t Time0 = 0;            // Exact time of the ntof start pulses
+  // static Long64_t Tstart0 = LLONG_MAX; // Tstamp of the ntof start pulses
+  // static Float_t Time0 = 0;            // Exact time of the ntof start pulses
+  // Float_t tt = 0;
+  // if (p->Chan == opt.start_ch) {
+  //   Tstart0 = e->Tstmp;
+  //   Time0 = p->Time;
+  //   return 0;
+  // }
 
-  Float_t tt = 0;
-  if (p->Chan == opt.start_ch) {
-    Tstart0 = e->Tstmp;
-    Time0 = p->Time;
-    return 0;
-  }
+  // tt = e->Tstmp - Tstart0;
+  // tt += p->Time - Time0;
+  // tt *= mks * opt.Period;
 
-  tt = e->Tstmp - Tstart0;
-  tt += p->Time - Time0;
-  tt *= mks * opt.Period;
-
+  Float_t tt = VarNtof(e,p);
   Float_t ee;
   if (tt != opt.TofZero)
     ee = 72.298 * opt.Fpath[p->Chan] / (tt - opt.TofZero);
@@ -145,20 +147,20 @@ Float_t Mdef::VarEtof(EventClass *e, PulseClass *p) {
 }
 
 Float_t Mdef::VarLtof(EventClass *e, PulseClass *p) {
-  static Long64_t Tstart0 = LLONG_MAX; // Tstamp of the ntof start pulses
-  static Float_t Time0 = 0;            // Exact time of the ntof start pulses
+  // static Long64_t Tstart0 = LLONG_MAX; // Tstamp of the ntof start pulses
+  // static Float_t Time0 = 0;            // Exact time of the ntof start pulses
+  // Float_t tt = 0;
+  // if (p->Chan == opt.start_ch) {
+  //   Tstart0 = e->Tstmp;
+  //   Time0 = p->Time;
+  //   return 0;
+  // }
 
-  Float_t tt = 0;
-  if (p->Chan == opt.start_ch) {
-    Tstart0 = e->Tstmp;
-    Time0 = p->Time;
-    return 0;
-  }
+  // tt = e->Tstmp - Tstart0;
+  // tt += p->Time - Time0;
+  // tt *= mks * opt.Period;
 
-  tt = e->Tstmp - Tstart0;
-  tt += p->Time - Time0;
-  tt *= mks * opt.Period;
-
+  Float_t tt = VarNtof(e,p);
   Float_t sqee;
   if (tt != opt.TofZero)
     sqee = 72.298 * opt.Fpath[p->Chan] / (tt - opt.TofZero);
@@ -1816,6 +1818,7 @@ void HClass::FillHist(EventClass *evt, Double_t *hcut_flag) {
   // определяем ntof_start
   if (b_ntof && (!(evt->Spin & 128) || opt.start_ch==255)) {
     for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
+
       // if (ipls->Chan == opt.start_ch) {
       //   ipls->Time=0;
       //   cout << "start_ch: " << (int)ipls->Chan << " " << ipls->Pos << " "
@@ -1830,6 +1833,9 @@ void HClass::FillHist(EventClass *evt, Double_t *hcut_flag) {
         if (ipls->Chan == opt.start_ch) {
           ntof_start = evt->Tstmp;
           ntof_time0 = ipls->Time;
+          // cout << "start_ch: " << (int)ipls->Chan << " " << ipls->Pos << " "
+          //      << (int)evt->Spin << " " << evt->Tstmp << " " << ipls->Time
+          //      << " " << cpar.on[ipls->Chan] << " " << opt.start_ch << endl;
           break;
         }
       }
