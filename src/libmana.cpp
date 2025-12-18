@@ -1730,6 +1730,8 @@ int main(int argc, char **argv) {
     delete[] cparon;
   }
 
+  cpar.on[255]=1;
+
   // exit(1);
   // change individual parameters if listpar is not empty
   for (auto it = listpar.begin(); it != listpar.end(); ++it) {
