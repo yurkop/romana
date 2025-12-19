@@ -1072,6 +1072,13 @@ void CRS::Ana2(int end_ana) {
           if (opt.fTxt && opt.nthreads == 1) {
             crs->Print_OneEvent(&(*m_event));
           }
+           //Added by Nikita
+		  if (opt.fBin && opt.nthreads==1) {
+			  (*m_event).WriteToBinary(bin_out);
+			//crs->Print_OneEvent(&(*m_event));
+		  }
+		  //END
+		  
         } // maintrig
       } // if spin
     } // mult
@@ -2717,6 +2724,12 @@ int CRS::DoStartStop(int rst) {
       if (opt.fTxt) {
         Reset_Txt();
       }
+      //Added by Nikita
+      if (opt.fBin && opt.nthreads==1) 
+      {
+		Reset_Bin();
+      }
+      //END
     }
 
     ProcessCrs(rst);
@@ -4272,6 +4285,11 @@ void CRS::FAnalyze2(bool nobatch) {
     if (opt.fTxt) {
       Reset_Txt();
     }
+    //Added by Nikita
+    if (opt.fBin && opt.nthreads==1) 
+    {
+		Reset_Bin();
+    }
 
     Ana_start(juststarted);
   }
@@ -4355,6 +4373,11 @@ void CRS::DoNBuf2(int nb) {
     if (opt.fTxt) {
       Reset_Txt();
     }
+	//Added by Nikita
+	if (opt.fBin && opt.nthreads==1) 
+	{
+		Reset_Bin();
+	}
     Ana_start(juststarted);
   }
   juststarted = false;
@@ -7081,7 +7104,18 @@ void CRS::Reset_Txt() {
   //*txt_out << "--- Event: " << endl;
   // exit(-1);
 }
-
+//Added by Nikita
+void CRS::Reset_Bin() {
+  if (bin_out.is_open()) {
+    bin_out.close();
+  }
+  TString BinName(opt.Filename);
+  BinName.ReplaceAll(".raw","");
+  BinName+=(".bin");
+  //cout << "txt_file: " << txtname << " " << txtname.size() << endl;
+  bin_out.open(BinName.Data(),std::ios::binary);
+}
+//END
 void CRS::Fill_Dec80(EventClass *evt) {
   /*
   //Fill_Dec80 - for START trigger type

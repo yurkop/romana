@@ -954,3 +954,89 @@ void EventClass::PrintEvent(bool pls) {
              pulses[i].Time);
     }
 }
+
+//Added by Nikita
+void PulseClass::WriteToBinary(std::ofstream &outfile)
+{
+	outfile.write(reinterpret_cast<const char*>(&Tstamp64), sizeof(Tstamp64));
+	outfile.write(reinterpret_cast<const char*>(&Counter), sizeof(Counter));
+	outfile.write(reinterpret_cast<const char*>(&Chan), sizeof(Chan));
+	outfile.write(reinterpret_cast<const char*>(&Pos), sizeof(Pos));
+	outfile.write(reinterpret_cast<const char*>(&Spin), sizeof(Spin));
+	outfile.write(reinterpret_cast<const char*>(&ptype), sizeof(ptype));
+	outfile.write(reinterpret_cast<const char*>(&Area), sizeof(Area));
+	outfile.write(reinterpret_cast<const char*>(&Base), sizeof(Base));
+	outfile.write(reinterpret_cast<const char*>(&Sl1), sizeof(Sl1));
+	outfile.write(reinterpret_cast<const char*>(&Sl2), sizeof(Sl2));
+	outfile.write(reinterpret_cast<const char*>(&RMS1), sizeof(RMS1));
+	outfile.write(reinterpret_cast<const char*>(&RMS2), sizeof(RMS2));
+	outfile.write(reinterpret_cast<const char*>(&Height), sizeof(Height));
+	outfile.write(reinterpret_cast<const char*>(&Width), sizeof(Width));
+	outfile.write(reinterpret_cast<const char*>(&Time), sizeof(Time));
+	size_t dataSize = sData.size();
+	outfile.write(reinterpret_cast<const char*>(&dataSize), sizeof(dataSize));
+	if (dataSize > 0) 
+	{
+		outfile.write(reinterpret_cast<const char*>(sData.data()), dataSize * sizeof(Float_t));
+	}
+}
+
+void PulseClass::ReadFromBinary(std::ifstream &outfile)
+{
+	outfile.read(reinterpret_cast<char*>(&Tstamp64), sizeof(Tstamp64));
+	outfile.read(reinterpret_cast<char*>(&Counter), sizeof(Counter));
+	outfile.read(reinterpret_cast<char*>(&Chan), sizeof(Chan));
+	outfile.read(reinterpret_cast<char*>(&Pos), sizeof(Pos));
+	outfile.read(reinterpret_cast<char*>(&Spin), sizeof(Spin));
+	outfile.read(reinterpret_cast<char*>(&ptype), sizeof(ptype));
+	outfile.read(reinterpret_cast<char*>(&Area), sizeof(Area));
+	outfile.read(reinterpret_cast<char*>(&Base), sizeof(Base));
+	outfile.read(reinterpret_cast<char*>(&Sl1), sizeof(Sl1));
+	outfile.read(reinterpret_cast<char*>(&Sl2), sizeof(Sl2));
+	outfile.read(reinterpret_cast<char*>(&RMS1), sizeof(RMS1));
+	outfile.read(reinterpret_cast<char*>(&RMS2), sizeof(RMS2));
+	outfile.read(reinterpret_cast<char*>(&Height), sizeof(Height));
+	outfile.read(reinterpret_cast<char*>(&Width), sizeof(Width));
+	outfile.read(reinterpret_cast<char*>(&Time), sizeof(Time));
+	size_t dataSize = sData.size();
+	outfile.read(reinterpret_cast<char*>(&dataSize), sizeof(dataSize));
+	sData.resize(dataSize);
+	
+	if (dataSize > 0) 
+	{
+		outfile.read(reinterpret_cast<char*>(sData.data()), dataSize * sizeof(Float_t));
+	}
+}
+
+void EventClass::WriteToBinary(std::ofstream &outfile)
+{
+	if(Nevt%100000==0)
+	{
+		cout<<"Write "<<Nevt<<" events to binary file"<<"\n";
+	}
+	outfile.write(reinterpret_cast<const char*>(&Nevt), sizeof(Nevt));
+	outfile.write(reinterpret_cast<const char*>(&Spin), sizeof(Spin));
+	outfile.write(reinterpret_cast<const char*>(&Tstmp), sizeof(Tstmp));
+	outfile.write(reinterpret_cast<const char*>(&T0), sizeof(T0));
+	size_t pulseCount = pulses.size();
+	outfile.write(reinterpret_cast<const char*>(&pulseCount), sizeof(pulseCount));
+	for (auto& pulse : pulses) 
+	{
+		pulse.WriteToBinary(outfile);
+	}
+}
+void EventClass::ReadFromBinary(std::ifstream &outfile)
+{
+	outfile.read(reinterpret_cast<char*>(&Nevt), sizeof(Nevt));
+	outfile.read(reinterpret_cast<char*>(&Spin), sizeof(Spin));
+	outfile.read(reinterpret_cast<char*>(&Tstmp), sizeof(Tstmp));
+	outfile.read(reinterpret_cast<char*>(&T0), sizeof(T0));
+	size_t pulseCount = pulses.size();
+	outfile.read(reinterpret_cast<char*>(&pulseCount), sizeof(pulseCount));
+	pulses.resize(pulseCount);
+	for (auto& pulse : pulses) 
+	{
+		pulse.ReadFromBinary(outfile);
+	}
+}
+//END

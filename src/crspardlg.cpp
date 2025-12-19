@@ -1844,6 +1844,14 @@ int ParParDlg::AddFiles(TGCompositeFrame *frame) {
   hframe3->AddFrame(fchk, LayCC1);
   DoMap(fchk, &opt.fTxt, p_chk, 0, 0x100 | (2 << 1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
+  //Added by Nikita
+  id = Plist.size()+1;
+  fchk = new TGCheckButton(hframe3, "fBin", id);
+  fchk->SetToolTipText("Checked - write events in binary format in separate .bin file [Filename].bin. Works only in single-threaded mode.");
+  hframe3->AddFrame(fchk,LayCC1);
+  DoMap(fchk,&opt.fBin,p_chk,0,0x100|(2<<1));
+  fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
+  //End addition
 
   fF6->Resize();
   return fF6->GetDefaultWidth();

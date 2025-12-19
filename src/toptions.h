@@ -266,6 +266,7 @@ public:
   Bool_t raw_write;
   Bool_t fProc; // 0 - write direct raw stream; 1 - write processed events
   Bool_t fTxt;  // 1 - write txt file with events
+  Bool_t fBin; //1-write binary file (Nikita)
   Bool_t dec_write;
   Bool_t root_write;
   Int_t raw_compr;  // raw data compr level
