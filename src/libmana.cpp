@@ -125,7 +125,9 @@ char *batch_fname = 0;
 bool b_raw = false, b_dec = false, b_root = false, b_force = false,
      b_comment = false;
 bool b_resetusb = false;
-
+//Added by Nikita
+bool b_bin=false;
+//END
 char startdir[200];
 char pr_name[200];
 char maintitle[200];
@@ -1429,6 +1431,9 @@ int main(int argc, char **argv) {
       "-w (only in batch mode): create processed .raw file in subdirectory "
       "Raw/\n"
       "-d (only in batch mode): create decoded .dec file in subdirectory Dec/\n"
+       //Added by Nikita
+      "-B (only in batch mode): create binary .bin file\n"
+       //END
       "-r (only in batch mode): create .root file in subdirectory Root/\n"
       "-f (only in batch mode): force overwriting .raw/.dec/.root files\n"
       "-R [file1.root] [file2.root] .. [filen.root]: read root histograms from "
@@ -1557,6 +1562,11 @@ int main(int argc, char **argv) {
         case 'd':
           b_dec = true;
           continue;
+        //Added by Nikita
+        case 'B':
+          b_bin=true;
+        continue;
+        //END
         case 'r':
           b_root = true;
           continue;
@@ -2149,6 +2159,9 @@ bool TestFile() {
 
     opt.dec_write = b_dec;
     opt.root_write = b_root;
+    //Added by Nikita
+    opt.fBin=b_bin;
+    //END
     if (b_raw) {
       opt.raw_write = true;
       opt.fProc = true;

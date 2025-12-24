@@ -114,6 +114,11 @@ public:
   void PoleZero(int tau);
   void PrintPulse(int pdata = 0);
 
+  //Added by Nikita
+  void WriteToBinary(std::ofstream &outfile);
+  void ReadFromBinary(std::ifstream &outfile);
+  //END
+
   // Оператор сравнения >=
   bool operator<(const PulseClass &other) const {
     return Tstamp64 < other.Tstamp64; // Сравниваем по полю Tstamp64
@@ -160,6 +165,10 @@ public:
   void PrintEvent(bool pls = 1);
   void Fill_Dec(char *buf);
   // ClassDef(EventClass, 0)
+    //Added by Nikita
+  void WriteToBinary(std::ofstream &outfile);
+  void ReadFromBinary(std::ifstream &outfile);
+  //END
 };
 
 typedef std::list<EventClass> eventlist;
