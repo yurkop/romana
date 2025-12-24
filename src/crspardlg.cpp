@@ -1590,44 +1590,33 @@ void TmpLogFile(const char *filename, const char *comment = 0, int app = 0) {
   }
 }
 
-void ParParDlg::UpdateLog() {
-  // Читаем текст из файла
-  TString text;
+void ParParDlg::UpdateLog(int rd) {
+  // обновляет картинку Comment'a
+  // Если rd=1: Читаем текст из файла
 
-  std::ifstream inFile(tmplogFilename);
-  std::string line;
-  while (std::getline(inFile, line)) {
-    if (line[0] != '#' && !line.empty()) {
-      // выбрасываем комментарии и пустые строчки
-      text += line;
-      text += '\n';
+  if (rd) {
+    TString text;
+
+    std::ifstream inFile(tmplogFilename);
+    std::string line;
+    while (std::getline(inFile, line)) {
+      if (line[0] != '#' && !line.empty()) {
+        // выбрасываем комментарии и пустые строчки
+        text += line;
+        text += '\n';
+      }
     }
-  }
-  inFile.close();
+    inFile.close();
 
-  if (text.EndsWith("\n")) {
-    text.Remove(text.Length() - 1);
-  }
-
-  /*
-  FILE* file = fopen(tmplogFilename, "r");
-  if (file) {
-    char buffer[1024];
-    while (fgets(buffer, sizeof(buffer), file)) {
-      text += buffer;
+    if (text.EndsWith("\n")) {
+      text.Remove(text.Length() - 1);
     }
-    fclose(file);
-  }
-  // else {
-  //   text=" ";
-  //   //text += logFilename;
-  // }
-  */
 
-  CheckLog(text.Data(), 1); // UpdateLog (from DoLog)
+    CheckLog(text.Data(), 1); // UpdateLog (from DoLog)
+  }
 
   // Создаем новую картинку
-  TGPicture *newPicture = createTextPicture(opt.Log, log_h, log_w, log_font);
+  TGPicture *newPicture = createTextPicture(opt.Comment, log_h, log_w, log_font);
   if (newPicture) {
     // cout << "log_h: " << log_h << " " << log_w << " " << log_font << endl;
     logButton->SetPicture(newPicture);
@@ -1637,45 +1626,28 @@ void ParParDlg::UpdateLog() {
     Layout();
   }
 
-  // cout << "Logg: " << crs->LogOK << " " << opt.Log << " " << strlen(opt.Log)
+  // cout << "Logg: " << crs->LogOK << " " << opt.Comment << " " << strlen(opt.Comment)
   // << endl;
 }
 
-/*
-void ParParDlg::DoLog() {
-    if (crs->b_stop) {
-        // 1. Создаём файл
-        TmpLogFile(tmplogFilename, opt.Log, 1);
-
-        // 2. Открываем диалог с сообщением
-        const char* msg = u8"Отредактируйте файл и закройте окно.\n"
-                          u8"Программа будет ждать.";
-        new TGMsgBox(gClient->GetRoot(), this,
-                     "Редактор", msg, kMBIconExclamation, kMBOk);
-
-        // 3. Блокируем кнопки GUI
-        SetEditable(false);  // Отключаем все элементы
-
-        // 4. Запускаем и ЖДЁМ l3afpad
-        TString cmd = "l3afpad --window-position=100,100 ";
-        cmd += tmplogFilename;
-
-        int result = gSystem->Exec(cmd);  // Будет ждать
-
-        // 5. Сюда попадём ТОЛЬКО после закрытия l3afpad
-        cout << "l3afpad закрыт, результат: " << result << endl;
-
-        // 6. Включаем GUI обратно
-        SetEditable(true);
-
-        // 7. Обновляем лог
-        UpdateLog();
-        crs->LogOK = 1;
-    }
+bool ParParDlg::IsEditor() { // Проверяет, запущен ли редактор
+  TString cmd = TString::Format("kill -0 %d >/dev/null 2>&1", log_pid);
+  int result = gSystem->Exec(cmd);
+  if (result == 0) {
+    // Процесс жив
+    return true;
+  } else {
+    // Процесс умер или никогда не существовал
+    return false;
+  }
 }
-*/
 
 void ParParDlg::DoLog() {
+
+  // если не 0, значит уже запущен
+  if (log_pid > 0)
+    return;
+
   namespace fs = std::filesystem;
   using namespace std::chrono;
 
@@ -1683,54 +1655,79 @@ void ParParDlg::DoLog() {
     TmpLogFile(tmplogFilename,
                "# Здесь можно задать комментарий к файлу (макс. ~4000 "
                "символов)\n# 0 означает отсутствие комментария\n");
-    TmpLogFile(tmplogFilename, opt.Log, 1);
-
-    // команда wmctrl с параметрами делает окно l3afpad always_on_top через 2
-    // сек
-    TString cmd = "bash -c \"";
-    cmd += "l3afpad ";
-    cmd += tmplogFilename;
-    cmd += "& ";
-    cmd += "APP_PID=\\$!; ";
-    cmd += "sleep 2; ";
-    cmd += "WINDOW_ID=\\$(wmctrl -l -p | awk -v pid=\\$APP_PID '\\$3 == pid "
-           "{print \\$1; exit}'); ";
-    cmd += "if [ -n \\\"\\$WINDOW_ID\\\" ]; then ";
-    cmd += "    wmctrl -i -r \\$WINDOW_ID -b add,above; ";
-    // cmd += "else ";
-    // cmd += "    wmctrl -r :ACTIVE: -b add,above; ";
-    cmd += "fi; ";
-    cmd += "wait \\$APP_PID\"";
-
-    // gSystem->Unlink(tmplogFilename);
+    TmpLogFile(tmplogFilename, opt.Comment, 1);
 
     // Время последнего изменения
     auto file_time1 = fs::last_write_time(tmplogFilename);
     // Преобразуем file_time_type → system_time
     auto sctp1 = time_point_cast<milliseconds>(file_time1);
-    // auto sctp1 = time_point_cast<milliseconds>(
-    //   file_time1 - fs::file_time_type::clock::now() + system_clock::now()
-    // );
 
-    int result = gSystem->Exec(cmd);
-    // cout << "result: " << result << " " << crs->LogOK << endl;
+    // 1. Запускаем в фоне и записываем PID в файл
+    std::string pid_file =
+        TString::Format("/dev/shm/parpar_%ld_%d.pid", time(nullptr), rand())
+            .Data();
+    std::string launch_cmd = "l3afpad '" + std::string(tmplogFilename) +
+                             "' & echo $! > '" + pid_file + "'";
+    gSystem->Exec(launch_cmd.c_str());
+
+    // 2. Читаем PID из файла
+    gSystem->Sleep(100); // Ждем записи
+    std::ifstream file(pid_file);
+    if (file) {
+      file >> log_pid;
+      file.close();
+      gSystem->Unlink(pid_file.c_str()); // Удаляем временный файл
+    }
+
+    // После получения PID
+    // std::cout << "PID строкой: '" << pid_str.Data() << "'" << std::endl;
+    std::cout << "PID: " << log_pid << " " << crs->LogOK << std::endl;
+
+    // 3. Always-on-top по PID
+    if (log_pid > 0) {
+      TString top_cmd = "NO";
+      gSystem->Sleep(1000); // Ждем создания окна
+
+      // Ищем окно по PID. timeout 2 убъет процесс, если wmctrl зависнет
+      TString find_cmd =
+          TString::Format("timeout 2 wmctrl -l -p 2>/dev/null | "
+                          "grep ' %d ' | head -1 | awk '{print $1}'",
+                          log_pid);
+
+      TString window_id = gSystem->GetFromPipe(find_cmd);
+      window_id.Remove(TString::kBoth, ' ').Remove(TString::kBoth, '\n');
+
+      if (!window_id.IsNull()) {
+        top_cmd = TString::Format("wmctrl -i -r %s -b add,above 2>/dev/null",
+                                  window_id.Data());
+        gSystem->Exec(top_cmd);
+      }
+      // std::cout << "ON_TOP: " << top_cmd << std::endl;
+    }
+
+    // 4. Ждем закрытия редактора
+    while (log_pid > 0) {
+      if (!IsEditor()) {
+        log_pid = 0;
+        break;
+      }
+      gSystem->Sleep(50);
+      gSystem->ProcessEvents();
+    }
 
     auto file_time2 = fs::last_write_time(tmplogFilename);
     auto sctp2 = time_point_cast<milliseconds>(file_time2);
-    // auto sctp2 = time_point_cast<milliseconds>(
-    //     file_time2 - fs::file_time_type::clock::now() + system_clock::now());
     auto diff = sctp2 - sctp1;
 
-    // auto ms = diff.time_since_epoch().count();
     auto ms = diff.count();
     // std::cout << "Последнее изменение (мс): " << ms << " мс с эпохи Unix\n";
 
     if (ms)
-      UpdateLog();
+      UpdateLog(1);
     else if (crs->LogOK != 3)
       crs->LogOK = -1;
 
-    // cout << "LogOK: " << crs->LogOK << " " << ms << endl;
+    cout << "LogOK: " << crs->LogOK << " " << ms << endl;
   }
 } // DoLog
 
@@ -1765,10 +1762,10 @@ void ParParDlg::AddFileName(TGCompositeFrame *frame) {
   hframe1->AddFrame(fLabel, LayLC0);
 
   if (crs->LogOK == 3)
-    strcpy(opt.Log, "0");
+    strcpy(opt.Comment, "0");
 
-  // CheckLog(opt.Log);
-  TGPicture *picture = createTextPicture(opt.Log, log_h, log_w, log_font);
+  // CheckLog(opt.Comment);
+  TGPicture *picture = createTextPicture(opt.Comment, log_h, log_w, log_font);
 
   if (picture) {
     logButton = new TGPictureButton(hframe1, picture);
@@ -2240,8 +2237,11 @@ void ParParDlg::DoCheckNtof(Bool_t on) {
 void ParParDlg::Update() {
   ParDlg::Update();
   tTrig->UpdateTrigger();
+  UpdateLog(0);
   MapSubwindows();
   Layout();
+  cout << "Logg: " << crs->LogOK << " " << opt.Comment << " "
+       << strlen(opt.Comment) << endl;
 }
 
 // void ParParDlg::UpdateLL(wlist &llist, Bool_t state) {

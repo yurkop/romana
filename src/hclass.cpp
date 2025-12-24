@@ -660,7 +660,7 @@ void Mdef::FillMeanPulse(EventClass *evt, Double_t *hcut_flag, int ncut) {
     // cout << v_map.size() << " " << v_map[ch] << endl;
     // cout << v_map[ch]->hst << endl;
     //  пропускаем неактивные каналы
-    if (cpar.on[ch] && v_map[ch]) {
+    if (cpar.on[ch] && v_map[ch] && v_map[ch]->hst) {
       int newsz = ipls->sData.size();
 
       TH1 *hh = v_map[ch]->hst;
@@ -1847,6 +1847,7 @@ void HClass::FillHist(EventClass *evt, Double_t *hcut_flag) {
 
   // заполняем все гистограммы в Mfill_list
   for (auto it = MFill_list.begin(); it != MFill_list.end(); ++it) {
+    // cout << "md: " << (*it)->h_name << endl;
     ((*it)->*(*it)->MFill)(evt, hcut_flag, 0);
   }
 

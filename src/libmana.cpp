@@ -371,7 +371,7 @@ void CheckLog(const char *txt, int OK) {
   if (OK != 1 && crs->LogOK == 3)
     txt = "0";
 
-  // проверяет текст и записывает его в opt.Log
+  // проверяет текст и записывает его в opt.Comment
   TString str(txt);
   // Удаляем пробелы с двух сторон, после этого проверяем длину
   str.Remove(TString::kBoth, ' ');
@@ -390,8 +390,8 @@ void CheckLog(const char *txt, int OK) {
     // len=MAXLOG-1;
     len = max_cyrillic_length(str.Data(), MAXLOG) - 1;
 
-  strncpy(opt.Log, str.Data(), len);
-  opt.Log[len] = 0; // null termination
+  strncpy(opt.Comment, str.Data(), len);
+  opt.Comment[len] = 0; // null termination
 }
 
 bool check_telegram_send() { // проверяет конфигурацию telegram-send
@@ -995,6 +995,7 @@ int BufToClass(char *buf, char *buf2, int op) {
 
       v_iter it;
       for (it = varlist.begin(); it != varlist.end(); ++it) {
+        // cout << "memname: " << memname << " " << it->name << endl;
         if (memname.EqualTo(it->name)) {
           tp = 1;
           break;
@@ -1439,7 +1440,7 @@ int main(int argc, char **argv) {
       "   examples: Tstop=10 (set time limit to 10 sec)\n"
       "             Thr[5]=20 (set threshold for ch5 to 20)\n"
       "             Thr=20 (set threshold for all channels to 20)\n"
-      "             Log=\"this is test\" (set Log message)\n"
+      "             Comment=\"this is test\" (set Comment message)\n"
       "   works only with Toptions class; doesn't work with 2d/3d hist "
       "parameters\n"
       //"[par:] - print value(s) of the parameter par\n"
@@ -1741,8 +1742,8 @@ int main(int argc, char **argv) {
     if (res >= 200) {
       prnt("ssssds;", BRED, "Parameter ", it->Data(), " not found: ", res, RST);
     }
-    if (it->Contains("Log")) {
-      CheckLog(opt.Log, 1); //"Log="
+    if (it->Contains("Comment")) {
+      CheckLog(opt.Comment, 1); //"Comment="
     }
   }
 
@@ -1752,12 +1753,12 @@ int main(int argc, char **argv) {
     TString txt = crs->Text_time("", cpar.F_start);
     printf("----------------------------------------\n");
     printf("File: %s F_start: %s\n", datfname, txt.Data());
-    printf("Comment: %s\n", opt.Log);
+    printf("Comment: %s\n", opt.Comment);
     EExit(0);
     // cout << "File: " << datfname << " "
   }
 
-  CheckLog(opt.Log, -1); // после зугрузки
+  CheckLog(opt.Comment, -1); // после зугрузки
   crs->SetLogFile(opt.Daqlog);
   crs->SetLogFile(opt.Analog);
   Logname = 0;
@@ -1864,7 +1865,13 @@ int main(int argc, char **argv) {
       // prnt("ssss;",BGRN,"rawname=",crs->rawname.c_str(),RST);
 #ifdef CYUSB
       if (crs->LogOK <= 0) {
-        prnt("ss ss;", BRED, "Please specify Log mesaage:", opt.Log, RST);
+        prnt("sss;", BRED,
+             "Comment is required, e.g.: romana -a filename Comment=\"your "
+             "text\"",
+             RST);
+        prnt("sss;", BRED,
+             "or use option -0 to start without logging: romana -a filename -0",
+             RST);
         EExit(-1);
       }
       crs->DoStartStop(1);

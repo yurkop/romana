@@ -10,7 +10,7 @@
 // #include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 178
+#define CDEF 179
 
 /*
 #include <list>
@@ -280,7 +280,7 @@ public:
   char Filename[255]; //->
   char Daqlog[255];   //
   char Analog[255];   //
-  char Log[MAXLOG];   //
+  char Comment[MAXLOG];   // [Log]
 
   bool addrandom = false; // true: add random number while filling histograms
   // (see Fill_01; Fill_02)

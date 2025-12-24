@@ -353,7 +353,7 @@ Toptions::Toptions() {
 
   memset(Filename, 0, sizeof(Filename));
   memset(Daqlog, 0, sizeof(Daqlog));
-  memset(Log, 0, sizeof(Log));
+  memset(Comment, 0, sizeof(Comment));
 
   memset(ch_name, 0, sizeof(ch_name));
   strcpy(Filename, "test01");

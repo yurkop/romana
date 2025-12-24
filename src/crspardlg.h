@@ -266,6 +266,7 @@ protected:
   int log_h, log_w = 750, log_font = 13;
   TGPictureButton *logButton;
   const char *tmplogFilename = "/dev/shm/romana_log";
+  int log_pid = 0;
 
 public:
   TrigFrame *tTrig;
@@ -273,7 +274,8 @@ public:
   void AddChk(TGGroupFrame *frame, const char *txt, Bool_t *opt_chk,
               Int_t *compr, Bool_t *rflag);
 
-  void UpdateLog();
+  void UpdateLog(int rd);
+  bool IsEditor();
   void DoLog();
 
   void AddFileName(TGCompositeFrame *frame);

@@ -3136,7 +3136,7 @@ void CRS::After_ReadPar(int op) {
     HiFrm->HiReset();
   }
 
-  CheckLog(opt.Log, 0); // After_ReadPar
+  CheckLog(opt.Comment, 0); // After_ReadPar
   // if (!strcmp(opt.Log,"0"))
   //   memset(opt.Log,0,sizeof(opt.Log));
 }
@@ -7947,7 +7947,7 @@ int CRS::OpenLog(FILE *&flog, int daq, const char *f_in, const char *f_out) {
   }
 
   if (wlog[1]) {
-    fprintf(flog, "Comment: %s\n", opt.Log);
+    fprintf(flog, "Comment: %s\n", opt.Comment);
   }
   mtx_log.unlock();
 
