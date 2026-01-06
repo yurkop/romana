@@ -41,6 +41,7 @@ using namespace std;
 // typedef std::vector<TString>::iterator l_iter;
 
 void prnt(const char *fmt, ...);
+void vprnt(const char *fmt, va_list args);
 void debug_mess(bool cond, const char *mess, double par1, int par2 = -9999);
 void CheckLog(const char *txt, int OK);
 bool check_telegram_send();
@@ -151,8 +152,8 @@ public:
 
   int local_nch;
   int local_nrows;
-  static const Int_t n_stat = 13;
-  static const Int_t n_stat2 = 11;
+  static const Int_t n_stat = 16; // число полей в статусной строке, включая боковые
+  static const Int_t n_stat2 = 11; // число полей только в нижней статусной строке
   TGTextEntry *fStat[n_stat];
 
   TGHProgressBar *fHProgr1;

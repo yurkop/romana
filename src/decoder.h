@@ -7,16 +7,21 @@ class LocalBuf {
 public:
   pulsecontainer B; // список импульсов в буфере
   UInt_t source_buffer_id; // ID исходного буфера, откуда события
-  bool is_ready{false}; // Флаг готовности
+  // Флаг готовности
+  std::atomic<UChar_t> flag{0};
+  // 0 - скопировано, 1 - обработано, 2 - отсортировано, 3 - готово
+  // bool is_ready{false}; // Флаг готовности
 };
 class Decoder {
 private:
   const UInt_t worker_timeouts = 1; // 1 или 2E6(бесконечность)
-  const UInt_t copy_timeout_ms = 100 * worker_timeouts;
-  const UInt_t process_timeout_ms = 150 * worker_timeouts;
-  const UInt_t resorting_timeout_ms = 200 * worker_timeouts;
+  const UInt_t copy_timeout_ms = 110 * worker_timeouts;
+  const UInt_t decode_timeout_ms = 50 * worker_timeouts;
+  const UInt_t resorting_timeout_ms = 90 * worker_timeouts;
+  const UInt_t makeevent_timeout_ms = 100 * worker_timeouts;
 
-  UInt_t next_expected_bufnum = 1; // номер ожидаемого буфера
+  Long64_t max_time_diff; // 1 секунда, например
+  // UInt_t next_expected_bufnum = 1; // номер ожидаемого буфера
 
   static std::atomic<bool> tables_initialized;
   // прямой массив как быстрая альтернатива switch-case
@@ -37,69 +42,137 @@ private:
       w_mean[MAX_CH]; // length of window for bkg, peak and width integration in
                       // DSP
 
-  // вставка в отсортированный контейнер с одновременной сортировкой
-  template <typename Container, typename T>
-  typename Container::iterator sorted_insert(Container &cont, const T &value) {
-    if (cont.empty() || !(value < cont.back())) {
-      cont.push_back(value);
-      return std::prev(cont.end());
+  // sorted_move определено как шаблонная функция внутри
+  // класса Decoder в заголовочном файле (decoder.h) Компилятор должен видеть
+  // полное определение шаблона в каждой единице трансляции (translation unit),
+  // где он используется
+
+  // Пересорировка последнего элемента в контейнере. Перемещает последний
+  // элемент в нужное место.
+
+  template <typename Container> void sorted_move(Container &cont) {
+    static_assert(
+        std::is_same_v<Container, std::list<typename Container::value_type>> ||
+        std::is_same_v<Container, std::vector<typename Container::value_type>> ||
+        std::is_same_v<Container, std::deque<typename Container::value_type>>,
+        "Container must be list, vector or deque"
+    );
+
+    if (cont.size() <= 1)
+      return;
+
+    // перемещаем последний элемент в нужное место
+    auto last = std::prev(cont.end());
+
+  // Сравниваем с предпоследним: нужно, т.к. splice с предпоследним запрещено
+    auto prev = std::prev(last);
+    if (!(*last < *prev)) {
+      return; // уже на месте
     }
-    // Определяем стратегию по типу контейнера
-    if constexpr (std::is_same_v<Container, std::list<T>>) {
-      // Для list - линейный поиск с конца
-      for (auto it = cont.rbegin(); it != cont.rend(); ++it) {
-        if (!(value < *it)) {
-          return cont.insert(it.base(), value);
+
+    // Проверка на аномалию
+    if (prev->Tstamp64 > last->Tstamp64 + max_time_diff) {
+        // Аномалия - элемент "сильно меньше"
+        return;  // оставляем на месте
+    }
+    
+    // для list
+    if constexpr (std::is_same_v<Container,
+                                 std::list<typename Container::value_type>>) {
+      // Начинаем с пред-предпоследнего элемента (предпоследний уже прошли)
+      for (auto rit = std::next(cont.rbegin()); rit != cont.rend(); ++rit) {
+        if (!(*last < *rit)) {
+          // Нашли позицию
+          cont.splice(rit.base(), cont, last);
+          return;
         }
       }
-      return cont.insert(cont.begin(), value);
-    } else {
-      // Для vector/deque - бинарный поиск
-      auto it = std::upper_bound(cont.begin(), cont.end(), value);
-      return cont.insert(it, value);
+      // Должен быть в начале
+      cont.splice(cont.begin(), cont, last);
+    } else { // Для vector/deque
+      auto value = *last;
+      auto it = std::upper_bound(cont.begin(), last, value);
+      if (it != last) { // Если нужно переместить
+        // Сдвигаем элементы между it и last
+        std::rotate(it, last, cont.end());
+      }
+      // Иначе уже на месте
     }
   }
 
-  // вспомогательные структуры для Send_for_Process
-  struct BufferRange {
-    UChar_t *write_start;    // - предыдущий конец записи
-    UChar_t *write_end;      // - текущий конец записи
-    UChar_t *analysis_start; // - вход: конец предыдущего анализа, выход: начало
-                             // нового
-    UChar_t *analysis_end; // - выход: конец нового анализа
+  //-------------------------------------
 
-    BufferRange(UChar_t *ws, UChar_t *we, UChar_t *as)
-        : write_start(ws), write_end(we), analysis_start(as) {}
-  };
+// вставка в отсортированный контейнер с одновременной сортировкой
 
-  // Вспомогательные методы для Send_for_Process
-  bool CheckBufferRanges(BufferRange &range);
-  bool HandleRingBufferWrap(BufferRange &range);
-  bool FindLastEvent(BufferRange &range);
-  void SendToProcessQueue(BufferRange &range);
-  bool PrepareProcessBuffer(BufferRange &range);
+// sorted_insert определено как шаблонная функция внутри класса Decoder в
+// заголовочном файле (decoder.h) Компилятор должен видеть полное определение
+// шаблона в каждой единице трансляции (translation unit), где он используется
+
+template <typename Container, typename T>
+typename Container::iterator sorted_insert(Container &cont, const T &value) {
+  if (cont.empty() || !(value < cont.back())) {
+    cont.push_back(value);
+    return std::prev(cont.end());
+  }
+  // Определяем стратегию по типу контейнера
+  if constexpr (std::is_same_v<Container, std::list<T>>) {
+    // Для list - линейный поиск с конца
+    for (auto it = cont.rbegin(); it != cont.rend(); ++it) {
+      if (!(value < *it)) {
+        return cont.insert(it.base(), value);
+      }
+    }
+    return cont.insert(cont.begin(), value);
+  } else {
+    // Для vector/deque - бинарный поиск
+    auto it = std::upper_bound(cont.begin(), cont.end(), value);
+    return cont.insert(it, value);
+  }
+  }
+
+  // Вспомогательные методы для Send_for_Decode
+  bool CheckBufferRanges(BufClass &range);
+  bool HandleRingBufferWrap(BufClass &range);
+  bool FindLast(BufClass &range);
+  void SendToDecodeQueue(BufClass &range);
+  bool PrepareDecodeBuffer(BufClass &range);
 
   // Вспомогательные методы для Resorting_Worker
+  enum class ProcessingType { RESORTING, MAKE_EVENT };
+  void ResortSingleBuffer(std::list<LocalBuf>::iterator itr);
+  // Long64_t Add_Offset_To_Buffer(std::list<LocalBuf>::iterator itr);
 
-  bool ResortSingleBuffer(std::list<LocalBuf> &ResortingList,
-                          std::list<LocalBuf>::iterator new_buf_it);
-
-  void ResortNewBuffers(std::list<LocalBuf> &ResortingList,
-                        std::list<LocalBuf> &new_buffers);
+  // Контейнер активных позиций, откуда потоки могут читать
+  std::list<UChar_t *> active_read_starts;
+  std::mutex active_mutex; // защищает active_read_starts
 
 public:
-  bool first_call = false;
+  // bool first_call = false;
   int crs_module = 0;
 
   std::vector<UChar_t> buffer_storage;
-  BufClass Buf_ring; // указатель на буфер, куда пишутся данные
+  BufClass
+      Buf_ring; // указатель на буфер, куда пишутся и где декодируются данные
   // начало Buf_ring.b1 сдвинуто вправо на o_size
-  BufClass BufProc; // тот же Buf_ring, но используется для process (декод)
+
+  Long64_t ring_size; // размер кольцевого буфера
+
+  double ring_used{0}; // процент использования кольцевого буфера
+
   std::mutex buf_mutex;
   UInt_t next_buffer_id = 0; // Генератор ID: номер буфера (=идентификатор)
   // Управление безопасной записью
   std::atomic<UChar_t *> write_ptr{nullptr}; // текущая позиция записи
-  std::deque<std::atomic<UChar_t *>> worker_ptrs; // позиции каждого worker'а
+  
+  // std::deque<std::atomic<UChar_t *>> worker_ptrs; // позиции каждого worker'а
+  // NOTE: worker_ptrs обновляется сразу после извлечения буфера,
+  //       до начала его декодирования. Это НОРМАЛЬНО, потому что:
+  //         - буфер уже полностью записан и не меняется;
+  //         - Decode_Worker обязательно прочитает весь диапазон [write_start,
+  //         write_end];
+  //         - worker_ptrs защищает от wrap-around в кольцевом буфере;
+  //         - задержка обновления приведёт к ложному освобождению памяти.
+  //       Таким образом, раннее обновление — корректно и необходимо.
 
   // Поток копирования и связанные переменные
   std::unique_ptr<std::thread> copy_thread;
@@ -108,13 +181,17 @@ public:
   std::mutex copy_mutex;
   std::condition_variable copy_cond;
 
-  // Потоки анализа и связанные переменные
-  UInt_t num_process_threads{4}; // количество потоков анализа
-  std::vector<std::unique_ptr<std::thread>> process_threads;
-  std::atomic<bool> process_running{false};
-  std::list<BufClass> process_queue;
-  std::mutex process_mutex;
-  std::condition_variable process_cond;
+  // Потоки декодера и связанные переменные
+  UInt_t num_decode_threads{0}; // количество потоков декодера
+  struct DecodeItem {
+    BufClass buf;                    // Исходный BufClass для декодирования
+    LocalBuf* local_buf_ptr;         // УКАЗАТЕЛЬ на соответствующий LocalBuf в Bufpulses
+  };
+  std::list<std::unique_ptr<std::thread>> decode_threads;
+  std::atomic<bool> decode_running{false};
+  std::list<DecodeItem> decode_queue;
+  std::mutex decode_mutex;
+  std::condition_variable decode_cond;
 
   // Поток межбуферной сортировки и связанные переменные
   std::unique_ptr<std::thread> resorting_thread;
@@ -122,42 +199,72 @@ public:
   std::mutex resorting_mutex;
   std::condition_variable resorting_cond;
 
-  // Поток склейки и связанные переменные
-  std::unique_ptr<std::thread> splice_thread;
-  std::atomic<bool> splice_running{false};
-  // std::list<BufClass> splice_queue;
-  // std::mutex splice_mutex;
-  std::condition_variable splice_cond;
+  // Поток создания событий и связанные переменные
+  std::unique_ptr<std::thread> makeevent_thread;
+  std::atomic<bool> makeevent_running{false};
+  std::condition_variable makeevent_cond;
+
+  // граница удаления буферов
+  // NOTE: boundary - итератор на первый буфер, который нельзя удалять.
+  // Обновляется ТОЛЬКО в ResortSingleBuffer (потоком RESORTING) под
+  // boundary_mutex. В MAKE_EVENT удаление идёт ТОЛЬКО ДО boundary (не включая
+  // его). Поэтому boundary НИКОГДА не становится висячим и всегда валиден или
+  // равен end().
+  std::list<LocalBuf>::iterator boundary; // этот буфер и правее не удаляются
+  std::mutex boundary_mutex;
+  // NOTE: boundary используется в двух потоках (RESORTING и MAKE_EVENT),
+  // но все операции чтения и записи защищены boundary_mutex.
+  // safe_boundary — локальная копия, полученная под мьютексом,
+  // поэтому удаление происходит по консистентному снимку состояния.
+  // Гарантируется отсутствие состояния гонки.
+
+  // time offset
+  // std::atomic<Long64_t> T64_offset{0};
+  // std::atomic<UInt_t> offset_buffer_id{UINT_MAX};
+  // std::atomic<bool> offset_flag{false};
+
+  std::condition_variable ana_cond;
+  // std::unique_ptr<std::thread> splice_thread;
+  // std::atomic<bool> splice_running{false};
+  // // std::list<BufClass> splice_queue;
+  // // std::mutex splice_mutex;
+  // std::condition_variable splice_cond;
 
   std::list<LocalBuf> Bufpulses;
   // список буферов. в каждом буфере - контейнер с импульсами
-  // вместо Bufevents;
-  std::list<LocalBuf> Sorted_pulses;
-  // тот же список, но отсортированный (после пересортировки)
+  // NOTE: local_buf_ptr указывает на элемент в Bufpulses, который
+  // гарантированно не будет удалён до завершения обработки:
+  //  - Decode_Worker использует указатель ДО установки флага в 1;
+  //  - Удаление в MakeEvent происходит ТОЛЬКО для буферов до boundary,
+  //    и только после достижения флага значения 3;
+  //  - Таким образом, use-after-free невозможен при штатной работе.
+  // ВАЖНО: Decoder_Reset() должен вызываться ТОЛЬКО после Decoder_Stop(),
+  //        иначе возможна ситуация обращения к удалённому объекту.
+
   eventlist Levents; // global list of events
   // std::list<pulsecontainer> allpulses; //список списков импульсов в буфере
-
 public:
   Decoder();
   ~Decoder();
-  void Decode_Resize(Long64_t r_size, Long64_t o_size);
-  void Decode_Start(Long64_t r_size, Long64_t o_size, bool b_acq, int module);
-  void Decode_Stop() /*noexcept*/;
+  void Decoder_Reset();
+  void Decoder_Resize(Long64_t r_size, Long64_t o_size);
+  void Decoder_Start(Long64_t r_size, Long64_t o_size, bool b_acq, int module);
+  void Decoder_Stop() /*noexcept*/;
 
   void Copy_Start();
-  void Process_Start(int num_threads);
+  void Decode_Start(int num_threads);
   void Resorting_Start();
-  void Splice_Start();
+  void MakeEvent_Start();
 
   void Copy_Worker(); // блок копирования
-  void Send_for_Process(BufferRange &range);
-  void Process_Worker(UInt_t thread_id); // рабочий поток анализа
-  void Resorting_Worker(); // рабочий поток пересортировки между буферами
-  void Splice_Worker();    // рабочий поток склейки
+  void Send_for_Decode(BufClass &range);
+  void Decode_Worker(UInt_t thread_id); // рабочий поток декодирования
+  void Resorting_Worker(ProcessingType type); // рабочий поток пересортировки между буферами
+  //void MakeEvent_Worker();    // рабочий поток создания событий
 
   // Метод для добавления данных в очередь извне
   void Add_to_copy_queue(UChar_t *data, size_t size);
-  bool CanWriteData(size_t data_size);
+  bool CanWriteData(Long64_t data_size);
   inline bool IsEventStart_1(union82 &u82);
   inline bool IsEventStart_3(union82 &u82);
   inline bool IsEventStart_22(union82 &u82);
@@ -170,7 +277,6 @@ public:
   UChar_t *FindEvent_backward_36(union82 From, UChar_t *To);
   UChar_t *FindEvent_backward_79(union82 From, UChar_t *To);
   UChar_t *FindEvent_backward(union82 From, UChar_t *To);
-  LocalBuf &Dec_Init(BufClass &Buf);
   // void Dec_End(eventlist &Blist, BufClass& Buf);
   void Decode_switch(BufClass &Buf, pulsecontainer &pc);
   void Decode22(BufClass &Buf, pulsecontainer &pc);

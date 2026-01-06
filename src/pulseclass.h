@@ -56,7 +56,7 @@ public:
   Long64_t Counter = 0;       // pulse counter
   std::vector<Float_t> sData; //(maybe smoothed) pulse data
 
-  UChar_t Chan = 255; // channel number
+  UChar_t Chan = 254; // channel number
   Short_t Pos =
       -32222; // pos of the trigger relative to pulse start (in samples)
               // Pos=-32222 -> default Pos - значит, пик не найден
@@ -93,8 +93,9 @@ public:
 #endif
 
 public:
-  PulseClass() { Pos = -32222; };
-  PulseClass(Short_t p) { Pos = p; };
+  PulseClass() {};
+  // PulseClass(Short_t p) { Pos = p; };
+  PulseClass(Short_t p, UChar_t t) : Pos(p), ptype(t){};
   virtual ~PulseClass(){};
 
   size_t GetPtr(Int_t hnum);
@@ -119,7 +120,7 @@ public:
   void ReadFromBinary(std::ifstream &outfile);
   //END
 
-  // Оператор сравнения >=
+  // Оператор сравнения <
   bool operator<(const PulseClass &other) const {
     return Tstamp64 < other.Tstamp64; // Сравниваем по полю Tstamp64
   }

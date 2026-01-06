@@ -13,8 +13,8 @@
 // #endif
 
 // #include <pthread.h>
-#include "decoder.h"
 #include "romana.h"
+#include "decoder.h"
 
 // #include <malloc.h>
 #include <TCanvas.h>
@@ -58,7 +58,7 @@ extern MemInfo_t minfo;
 extern ProcInfo_t pinfo;
 // extern double rmem;
 
-Decoder *decoder;
+extern Decoder *decoder;
 Simul *sim2;
 
 extern CRS *crs;
@@ -250,8 +250,8 @@ static void cback3(libusb_transfer *trans) {
     // if (!opt.directraw) {
     //   // заполняем inp_list
     //   auto buf_it = inp_list.insert(inp_list.end(),BufClass());
-    //   buf_it->b1 = trans->buffer;
-    //   buf_it->b3 = trans->buffer+trans->actual_length;
+    //   buf_it->write_start = trans->buffer;
+    //   buf_it->write_end = trans->buffer+trans->actual_length;
 
     //   // КОПИРОВАНИЕ В ОТДЕЛЬНЫЙ БУФЕР
     //   if (analysis_ring_buffer.write_available(trans->actual_length)) {
@@ -307,8 +307,8 @@ static void cback3(libusb_transfer *trans) {
     int itr = *(int *)trans->user_data; // номер трансфера
     int i_prev = (itr + crs->ntrans - 1) % crs->ntrans; // previous itr
     UChar_t *next_buf = crs->transfer[i_prev]->buffer + TR_SIZE;
-    if (next_buf + TR_SIZE > InpBuf_ring.b3) {
-      next_buf = InpBuf_ring.b1;
+    if (next_buf + TR_SIZE > InpBuf_ring.write_end) {
+      next_buf = InpBuf_ring.write_start;
     }
 
     // prnt("ss d x x
@@ -325,7 +325,64 @@ static void cback3(libusb_transfer *trans) {
 
 } // cback3
 
-#else  // ANA3
+#else  // !ANA3
+
+void print255(UChar_t *trbuf, size_t length, int reset = 0) {
+  // Выводим 64-битные слова
+  typedef long long int int64;
+  const int64 period = 200000; // 1 kHz для ЦРС-32
+  // const int64 period = 8192; // коричневый кабель
+  // const int64 period = 16777216; // синий кабель
+
+  static int64 per[4]={};
+  static int64 anum=0, num[4]={};
+  double fr[4]={};
+
+  if (reset) {
+    anum = 0;
+    for (int i = 0; i < 4; i++) {
+      per[i] = period * (i + 1) + period / 2; // 1.5 2.5 3.5 4.5
+      num[i] = 0;
+    }
+    return;
+  }
+
+  int64 *buffer = (int64 *) trbuf;
+  static int64 tprev = 0;
+  size_t word_count = length / 8;
+  for (size_t i = 0; i < word_count; i++) {
+    u_char *buf = (u_char *)&buffer[i];
+    int ch = buf[7];
+    int fmt = (buf[6] & 0xF0) >> 4;
+    if (ch == 255 && fmt == 0) {
+      int64 tstmp = buffer[i] & 0xFFFFFFFFFFFF;
+      int64 dt = tstmp - tprev;
+      anum++;
+      if (dt < per[0])
+        num[0]++;
+      else if (dt < per[1])
+        num[1]++;
+      else if (dt < per[2])
+        num[2]++;
+      else
+        num[3]++;
+
+      // cout << anum << " " << ch << " " << dt << " " << tstmp << " " << hex
+      //      << buffer[i] << dec;
+
+      printf("%lld %lld",dt,tstmp);
+      if (anum > 0) {
+        for (int i = 0; i < 4; i++) {
+          fr[i] = double(num[i]) / anum;
+          printf(" %lld %0.5f", num[i],fr[i]);
+        }
+        printf("\n");
+      }
+
+      tprev = tstmp;
+    }
+  }
+}
 
 static void cback(libusb_transfer *trans) {
   // сохраняем текущий буфер
@@ -360,15 +417,17 @@ static void cback(libusb_transfer *trans) {
       // для cback3, возможно, переделать, используя
       // буфер декодера. Типа *(eraw->buf_it) = *("decoder"->buf_it);
 
-      eraw->buf_it->b1 = trans->buffer; // начало записи буфера
+      eraw->buf_it->write_start = trans->buffer; // начало записи буфера
       eraw->buf_it->u82.b =
           trans->buffer + trans->actual_length; // конец записи буфера
-      eraw->buf_it->b3 = eraw->buf_it->u82.b; // физический конец буфера
+      eraw->buf_it->write_end = eraw->buf_it->u82.b; // физический конец буфера
 
       // пока так. проверить все, что делает Flush3. возможно, для raw не
       // годится
       eraw->Flush3(0);
     }
+
+    // print255(trans->buffer,trans->actual_length);
 
     // trans->buffer=next_buf;
     //  if (crs->b_acq) {
@@ -398,7 +457,7 @@ static void cback(libusb_transfer *trans) {
   }
 
 } // cback
-#endif // ANA3
+#endif // !ANA3
 
 #endif // CYUSB
 
@@ -755,18 +814,37 @@ void SockClass::Eval_Com() {
 #endif
 
 CRS::CRS() {
-  /*
-  GBuf2.b1 = new UChar_t[16];
-  GBuf2.b3 = GBuf2.b1 + 16;
 
-  GBuf2.b1[0]=11;
-  GBuf2.b1[1]=12;
+  /*
+  std::vector<int> vec = {10, 20, 30, 40, 50, 60};
+
+  auto r_begin = vec.rbegin(); // Указывает на 40 (последний элемент)
+
+  // std::prev(rbegin()) -> Указывает на 30 (предпоследний)
+  auto it_prev_rbegin = std::next(r_begin);
+  std::cout << *std::next(r_begin) << std::endl; // Вывод: 30
+  std::cout << *std::prev(r_begin) << std::endl; // Вывод: 30
+  // std::cout << *it_prev_rbegin << std::endl; // Вывод: 30
+
+  // std::next(rbegin()) -> Указывает на "конец" в обратном порядке (после 40)
+  auto it_next_rbegin = std::next(r_begin);
+  // Этот итератор будет равен vec.rend()
+  std::cout << (it_next_rbegin == vec.rend() ? "Это rend()" : "Не rend()")
+            << std::endl; // Вывод: Это rend()
+
+  exit(0);
+
+  GBuf2.write_start = new UChar_t[16];
+  GBuf2.write_end = GBuf2.write_start + 16;
+
+  GBuf2.write_start[0]=11;
+  GBuf2.write_start[1]=12;
 
   union82 uu; // текущее положение в буфере
-  uu.b = GBuf2.b3;
-  while (uu.b > GBuf2.b1) {
+  uu.b = GBuf2.write_end;
+  while (uu.b > GBuf2.write_start) {
     --uu.ui;
-    cout << (void*)GBuf2.b1 << " " << uu.ui << " " << (int) *uu.ui << endl;
+    cout << (void*)GBuf2.write_start << " " << uu.ui << " " << (int) *uu.ui << endl;
   }
   exit(1);
 
@@ -871,8 +949,8 @@ CRS::CRS() {
 CRS::~CRS() {
   DoExit();
 
-  if (InpBuf_ring2.b1)
-    delete[] InpBuf_ring2.b1;
+  if (InpBuf_ring2.write_start)
+    delete[] InpBuf_ring2.write_start;
 
   delete[] RawBuf;
   delete[] GLBuf2;
@@ -962,7 +1040,7 @@ void CRS::Ana_start(int rst) {
 
   // cout << "Ana_Start1: " << b_acq << endl;
 #ifdef ANA3
-  decoder->Decode_Start(opt.ibuf_size * Megabyte, 2 * Megabyte, crs->b_acq,
+  decoder->Decoder_Start(opt.ibuf_size * Megabyte, 2 * Megabyte, crs->b_acq,
                         crs->module);
 #endif
 
@@ -1713,7 +1791,7 @@ int CRS::Init_Transfer3() {
     int *ntr = new int;
     (*ntr) = i;
 
-    UChar_t *buf = InpBuf_ring.b1 + TR_SIZE * i;
+    UChar_t *buf = InpBuf_ring.write_start + TR_SIZE * i;
 
     // unsigned int timeout=400*(i+1); //0 millisec
     unsigned int timeout = 1000 + 100 * i; // 0 millisec
@@ -2882,6 +2960,7 @@ void CRS::DoReset(int rst) {
   if (!b_stop)
     return;
 
+  // print255(0, 0, 1);
   // Init_Inp_Buf();
 
   if (EvtFrm) {
@@ -2954,6 +3033,9 @@ void CRS::DoReset(int rst) {
 
 #ifdef TIMES
   memset(ttm, 0, sizeof(ttm));
+#endif
+#ifdef ANA3
+  decoder->Decoder_Reset();
 #endif
 }
 
@@ -3463,27 +3545,27 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   // - ищем начало последнего события в конце буфера
   // - если нашли:
   //   - записываем его в b текущего буфера
-  // - если не нашли (дошли до b1, начала события нет):
+  // - если не нашли (дошли до write_start, начала события нет):
   //   - ничего не делаем, b остается равным 0
   // - flag текущего +1: сделан findlast
 
   // 2. Потом смотрим на начало анализируемого буфера:
   // - Проверяем предыдущий буфер.
   // - Если его конец меньше начала текущего (есть хвост)
-  //   или b1 предыдущего > b1 текущего (переход через кольцевой буфер), то:
+  //   или write_start предыдущего > write_start текущего (переход через кольцевой буфер), то:
   //   1) копируем кусок последнего события из предыдущего перед началом
-  //   текущего (от b до b3 предыдущего буфера).
-  //   2) b1 текущего сдвигается влево
+  //   текущего (от b до write_end предыдущего буфера).
+  //   2) write_start текущего сдвигается влево
   // - Если его конец больше начала текущего -> такого не может быть!!!
   // - Если совпадают - ничего не делаем.
   // - flag предыдущего +1: проверен/скопирован хвост.
 
   // 3. Проверяем b==0
   // - если b==0 ->
-  //     b=b1, весь буфер считается куском события
+  //     b=write_start, весь буфер считается куском события
   //     flag текущего +1: анализ (не нужен)
   // - если b!=0 ->
-  //     запускаем анализ текущего буфера от b1 до b.
+  //     запускаем анализ текущего буфера от write_start до b.
   //     Здесь (в анализе) начинается многопоточность
   //     в конце анализа: flag текущего +1: провели анализ
   //
@@ -3500,21 +3582,21 @@ void CRS::AnaBuf3(buf_iter buf_it) {
   // предыдущая запись всегда должна существовать
   buf_iter prev = std::prev(buf_it);
   buf_it->buffer_id = prev->buffer_id + 1;
-  if (prev->b3 <
-          buf_it->b1 // конец предыдущего раньше начала текущего (есть хвост)
-      || prev->b1 > buf_it->b1) { // или начало предыдущего позже начала
+  if (prev->write_end <
+          buf_it->write_start // конец предыдущего раньше начала текущего (есть хвост)
+      || prev->write_start > buf_it->write_start) { // или начало предыдущего позже начала
     // текущего (переход через конец кольцевого буфера)
-    size_t count = prev->b3 - prev->u82.b;
+    size_t count = prev->write_end - prev->u82.b;
     if (count > OFF_SIZE) {
       prnt("ss l ls", BRED, "Error: count > OFF_SIZE:", buf_it->buffer_id,
            count, RST);
       return;
     }
-    buf_it->b1 -= count; // сдвигаем начало буфера влево
-    memmove(buf_it->b1, prev->u82.b, count); // копируем хвост
-  } else if (prev->b3 > buf_it->b1) {
+    buf_it->write_start -= count; // сдвигаем начало буфера влево
+    memmove(buf_it->write_start, prev->u82.b, count); // копируем хвост
+  } else if (prev->write_end > buf_it->write_start) {
     // конец предыдущего позже начала текущего: такого не может быть!
-    prnt("ss ls", BRED, "prev->b3>buf_it->b1:", buf_it->buffer_id, RST);
+    prnt("ss ls", BRED, "prev->write_end>buf_it->write_start:", buf_it->buffer_id, RST);
   } else {
     // иначе (они равны) ничего не делаем
     cout << "----equal----" << endl;
@@ -3529,22 +3611,24 @@ void CRS::AnaBuf3(buf_iter buf_it) {
 
     // buf_it->flag++; //анализ, в нем должно быть buf_it->flag++
   } else { // buf_it->b==0
-    buf_it->u82.b = buf_it->b1; // весь буфер считается куском события,
-    // конец b совпадает с началом b1
+    buf_it->u82.b = buf_it->write_start; // весь буфер считается куском события,
+    // конец b совпадает с началом write_start
     buf_it->flag++; // анализ не нужен
     cout << "----tail----" << endl;
   }
 
   prnt("ss l d x x xs;", BMAG, "Step3:", buf_it->buffer_id, prev->flag,
-       buf_it->b1, buf_it->u82.b, buf_it->b3, RST);
+       buf_it->write_start, buf_it->u82.b, buf_it->write_end, RST);
   prnt("ss l d l l ls;", BRED, "Step3:", buf_it->buffer_id, prev->flag,
-       buf_it->b3 - buf_it->b1, buf_it->u82.b - buf_it->b1,
-       buf_it->b1 - prev->b1, RST);
+       buf_it->write_end - buf_it->write_start, buf_it->u82.b - buf_it->write_start,
+       buf_it->write_start - prev->write_start, RST);
 
   // Decode_switch3(ibuf);
   // Make_Events(Bufevents.begin());
   // crs->Ana2(0);
 } // AnaBuf3
+
+
 
 void CRS::FindLast3(buf_iter buf_it) {
   // находит начало последнего события в буфере buf_it
@@ -3553,13 +3637,13 @@ void CRS::FindLast3(buf_iter buf_it) {
 
   UInt_t frmt;
   union82 uu; // текущее положение в буфере
-  uu.b = buf_it->b3;
+  uu.b = buf_it->write_end;
 
   switch (module) {
   case 1: // adcm raw
     /*
       доделать, проверить!
-      while (uu.b > buf_it->b1) {
+      while (uu.b > buf_it->write_start) {
       --uu.ui;
       if (*uu.ui==0x2a500100) {
       //outbuf.Buf=uu.b;
@@ -3570,7 +3654,7 @@ void CRS::FindLast3(buf_iter buf_it) {
          RST);
     break;
   case 3: // adcm dec
-    while (uu.b > buf_it->b1) {
+    while (uu.b > buf_it->write_start) {
       --uu.us;
       if (*uu.us == ID_EVNT) {
         buf_it->u82.b = uu.b;
@@ -3581,7 +3665,7 @@ void CRS::FindLast3(buf_iter buf_it) {
     // prnt("ss ls",BRED,"Error: no last event:",buf_it->buffer_id,RST);
     break;
   case 22:
-    while (uu.b > buf_it->b1) {
+    while (uu.b > buf_it->write_start) {
       --uu.us;
       // find frmt==0 -> this is the start of a pulse
       frmt = *(uu.b + 1) & 0x70;
@@ -3606,7 +3690,7 @@ void CRS::FindLast3(buf_iter buf_it) {
   case 53:
   case 54:
   case 45:
-    while (uu.b > buf_it->b1) {
+    while (uu.b > buf_it->write_start) {
       --uu.ul;
       // find frmt==0 -> this is the start of a pulse
       frmt = *(uu.b + 6) & 0xF0;
@@ -3623,7 +3707,7 @@ void CRS::FindLast3(buf_iter buf_it) {
   case 78:
   case 79:
   case 80:
-    while (uu.b > buf_it->b1) {
+    while (uu.b > buf_it->write_start) {
       --uu.ul;
       // find frmt==1 -> this is the start of a pulse
       frmt = *(uu.b + 7) & 0x80; // event start bit
@@ -3726,7 +3810,7 @@ void CRS::Decode36(BufClass &inbuf) {
   PulseClass ipls = dummy_pulse;
 
   union82 uu; // текущее положение в буфере
-  uu.b = inbuf.b1;
+  uu.b = inbuf.write_start;
   UChar_t frmt = (uu.b[6] & 0xF0) >> 4;
 
   eventlist *Blist;
@@ -4075,23 +4159,23 @@ int CRS::DoBuf() {
 
 void CRS::Init_Inp_Buf() {
 
-  if (InpBuf_ring2.b1)
-    delete[] InpBuf_ring2.b1;
+  if (InpBuf_ring2.write_start)
+    delete[] InpBuf_ring2.write_start;
 
   size_t sz = opt.ibuf_size * TR_SIZE;
-  InpBuf_ring2.b1 = new UChar_t[OFF_SIZE + sz];
-  InpBuf_ring2.b3 = InpBuf_ring2.b1 + OFF_SIZE + sz;
+  InpBuf_ring2.write_start = new UChar_t[OFF_SIZE + sz];
+  InpBuf_ring2.write_end = InpBuf_ring2.write_start + OFF_SIZE + sz;
 
-  InpBuf_ring.b1 = InpBuf_ring2.b1 + OFF_SIZE;
-  InpBuf_ring.b3 = InpBuf_ring2.b3;
+  InpBuf_ring.write_start = InpBuf_ring2.write_start + OFF_SIZE;
+  InpBuf_ring.write_end = InpBuf_ring2.write_end;
 
   inp_list.clear();
   // inp_list не должен быть пустым. Вставляем в него "пустой" буфер,
   //  начало и конец которого совпадают с началом InpBuf_ring
   auto buf_it = inp_list.insert(inp_list.end(), BufClass());
-  buf_it->b1 = InpBuf_ring.b1;
-  buf_it->u82.b = InpBuf_ring.b1;
-  buf_it->b3 = InpBuf_ring.b1;
+  buf_it->write_start = InpBuf_ring.write_start;
+  buf_it->u82.b = InpBuf_ring.write_start;
+  buf_it->write_end = InpBuf_ring.write_start;
   buf_it->flag = 2; // считаем, что сделаны Findlast + анализ
 
   // prnt("ss l ss;",BMAG,"InpBuf_ring size:",opt.ibuf_size,"MB",RST);
@@ -4136,8 +4220,13 @@ void CRS::InitBuf() {
     for (int i = 0; i < ntrans; i++) {
       buftr[i] = GLBuf + tr_size * i;
 #ifdef CYUSB
-      if (transfer[i])
-        transfer[i]->buffer = buftr[i];
+      // cout << "trans: " << i << " " << transfer[i] << " " << (void*) buftr[i] << endl;
+      // здесь баг! tranfer не инициализирован
+      // if (transfer[i]) {
+      //   cout << "trans2: " << i << " " << transfer[i] << " " << (void *)buftr[i]
+      //        << " " << (void *)transfer[i]->buffer << endl;
+      //   transfer[i]->buffer = buftr[i];
+      // }
 #endif
     }
   } // if Fmode==1
@@ -4201,7 +4290,7 @@ void CRS::EndAna(int end_ana) {
   //          can continue from this point on
 
 #ifdef ANA3
-  decoder->Decode_Stop();
+  decoder->Decoder_Stop();
 #endif
   eraw->Encode_Stop(end_ana, opt.raw_write);
   edec->Encode_Stop(end_ana, opt.dec_write);

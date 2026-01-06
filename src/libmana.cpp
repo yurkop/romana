@@ -11,6 +11,7 @@
 
 #include "popframe.h"
 #include "romana.h"
+#include "decoder.h"
 // #include "peditor.h"
 
 #include <sys/stat.h>
@@ -78,6 +79,7 @@ ERaw *eraw;
 SockClass *gSock;
 #endif
 
+Decoder *decoder;
 MyMainFrame *myM = 0;
 EventFrame *EvtFrm = 0;
 HistFrame *HiFrm = 0;
@@ -160,6 +162,13 @@ int debug = 0; // 2|4; //=1 or 2 or 6// for printing debug messages
 using namespace std;
 
 void prnt(const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprnt(fmt, args);
+  va_end(args);
+}
+
+void vprnt(const char *fmt, va_list args) {
   // Static local mutex - создается при первом вызове, существует до конца
   // программы
   static std::mutex cmut;
@@ -170,9 +179,6 @@ void prnt(const char *fmt, ...) {
     std::cout << "Error: prnt format string is null" << std::endl;
     return;
   }
-
-  va_list args;
-  va_start(args, fmt);
 
   int ww = 0;
   int pp = -1;
@@ -256,8 +262,6 @@ void prnt(const char *fmt, ...) {
   } catch (...) {
     std::cout << std::endl << "Unknown error in prnt" << std::endl;
   }
-
-  va_end(args);
 
   // Гарантируем вывод
   std::cout.flush();
@@ -2818,28 +2822,40 @@ void MainFrame::Build() {
   AddFrame(fStatFrame2, LayET0);
 
   const int fwid = 120;
-  const int fwid2 = 42;
+  const int fwid2 = 40;
 
   const char *txtlab[n_stat] = {
-      "Start",      "AcqTime", "Events", "Ev/sec", "MTrig",
-      "MTrig/sec",  "Buffers", "MB in",  "MB/sec", "Raw MB out",
-      "Dec MB out", "CPU%:",   "Mem%:"};
+      "Start",   "AcqTime", "Events", "Ev/sec",     "MTrig",      "MTrig/sec",
+      "Buffers", "MB in",   "MB/sec", "Raw MB out", "Dec MB out", "CPU%",
+      "Mem%",    "Pbuf",    "Elist",  "Rbuf%",
+  };
 
   const char *st_tip[n_stat] = {
       "Acquisition start",
       //"Total Acquisition Time",
-      "Acquisition Time", "Total number of events received",
-      "Event rate received (in Hz)", "Total number of main trigger events",
-      "Main trigger event rate (in Hz)", "Number of buffers received",
-      "Megabytes received", "Received megabytes per second",
-      "Raw megabytes saved", "Decoded megabytes saved",
-      "CPU used by the program", "Memory used by the program"};
+      "Acquisition Time",
+      "Total number of events received",
+      "Event rate received (in Hz)",
+      "Total number of main trigger events",
+      "Main trigger event rate (in Hz)",
+      "Number of buffers received",
+      "Megabytes received",
+      "Received megabytes per second",
+      "Raw megabytes saved",
+      "Decoded megabytes saved",
+      "CPU used by the program",
+      "Memory used by the program",
+      "Pulse buffer size",
+      "Event list size",
+      "Ring buffer usage (%)",
+  };
 
   TGTextEntry *fLab[n_stat];
   TGHorizontalFrame *hfr1 = 0;
 
   // TGTextEntry* fStat[10];
   for (int i = 0; i < n_stat; i++) {
+    bool b = i!=n_stat-1; // = не последний
     if (i < n_stat2) {
       fLab[i] = new TGTextEntry(fStatFrame1, txtlab[i]);
       fStat[i] = new TGTextEntry(fStatFrame2, " ");
@@ -2847,22 +2863,23 @@ void MainFrame::Build() {
       hfr1 = new TGHorizontalFrame(vframe1);
       vframe1->AddFrame(hfr1, LayET0);
       fLab[i] = new TGTextEntry(hfr1, txtlab[i]);
-      fStat[i] = new TGTextEntry(hfr1, " ");
+      if (b) fStat[i] = new TGTextEntry(hfr1, " ");
     }
+
     if (tfont) {
       fLab[i]->SetFont(tfont, false);
-      fStat[i]->SetFont(tfont, false);
+      if (b) fStat[i]->SetFont(tfont, false);
     }
     fLab[i]->SetHeight(18);
     fLab[i]->SetState(false);
     fLab[i]->ChangeOptions(fLab[i]->GetOptions() | kSunkenFrame | kFixedHeight);
     fLab[i]->SetToolTipText(st_tip[i]);
 
-    fStat[i]->SetHeight(18);
-    fStat[i]->SetState(false);
-    fStat[i]->ChangeOptions(fStat[i]->GetOptions() | kSunkenFrame |
+    if (b) fStat[i]->SetHeight(18);
+    if (b) fStat[i]->SetState(false);
+    if (b) fStat[i]->ChangeOptions(fStat[i]->GetOptions() | kSunkenFrame |
                             kFixedHeight);
-    fStat[i]->SetToolTipText(st_tip[i]);
+    if (b) fStat[i]->SetToolTipText(st_tip[i]);
 
     if (i == 0) {
       fLab[i]->SetWidth(fwid);
@@ -2875,13 +2892,34 @@ void MainFrame::Build() {
       fLab[i]->SetWidth(fwid2);
       fLab[i]->ChangeOptions(fLab[i]->GetOptions() | kFixedWidth);
       hfr1->AddFrame(fLab[i], LayL1);
-      hfr1->AddFrame(fStat[i], LayE1);
+      if (b) // последний: Rbuf%
+        hfr1->AddFrame(fStat[i], LayE1);
+      else {
+        fHProgr1 = new TGHProgressBar(hfr1, TGProgressBar::kStandard, 1);
+        fHProgr1->SetBarColor("lightgreen");
+        fHProgr1->ShowPosition();
+
+        // if (tfont) {
+        //   fHProgr1->SetFont(tfont, false);
+        // }
+        fHProgr1->SetHeight(18);
+        // fLab[i]->SetState(false);
+        // fLab[i]->ChangeOptions(fLab[i]->GetOptions() | kSunkenFrame |
+        //                        kFixedHeight);
+        // fHProgr1->SetToolTipText(st_tip[i]);
+
+        // fStat[i]->SetWidth(fwid);
+        // fStat[i]->ChangeOptions(fStat[i]->GetOptions() | kFixedWidth);
+        // fStatFrame2->AddFrame(fStat[i], LayL1);
+        hfr1->AddFrame(fHProgr1, LayE1);
+      }
     } else {
       fStatFrame1->AddFrame(fLab[i], LayE1);
       fStatFrame2->AddFrame(fStat[i], LayE1);
     }
   }
 
+  /*
   hfr1 = new TGHorizontalFrame(vframe1);
   vframe1->AddFrame(hfr1, LayET0);
   TGTextEntry *fLab2 = new TGTextEntry(hfr1, "Buf:");
@@ -2895,6 +2933,7 @@ void MainFrame::Build() {
   fHProgr1->SetBarColor("lightblue");
   fHProgr1->ShowPosition();
   hfr1->AddFrame(fHProgr1, LayE1);
+  */
 
   // fBar1->SetText(TString("Stop: ")+opt.F_stop.AsSQLString(),2);
 
@@ -3754,6 +3793,16 @@ void MainFrame::UpdateStatus(int rst) {
 
   fStat[ii++]->SetText(TGString::Format("%0.2f", percent), 0);
   fStat[ii++]->SetText(TGString::Format("%0.2f", pmem), 0);
+
+  fStat[ii++]->SetText(TGString::Format("%ld", decoder->Bufpulses.size()), 0);
+  fStat[ii++]->SetText(TGString::Format("%ld", crs->Levents.size()), 0);
+
+  if (decoder->ring_used > 80)
+    fHProgr1->SetBarColor("red");
+  else
+    fHProgr1->SetBarColor("lightgreen");
+
+  fHProgr1->SetPosition(decoder->ring_used);
 
   // cout << "Pinfo: " << clk << " " << proc << " " << percent
   //      << " " << tot << " " << proc-proc_old

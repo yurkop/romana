@@ -10,7 +10,7 @@
 class Encoder {
 public:
   std::vector<UChar_t> buffer_storage;
-  BufClass Buf_ring; // указатель на буфер, куда пишутся [декодированные] данные
+  BufClass Buf_ring; // буфер, куда пишутся [декодированные] данные
   // Реально создается Buf_ring2, КОНЕЦ которого на OFF_SIZE
   // сдвинут ВПРАВО от конца Buf_ring
 

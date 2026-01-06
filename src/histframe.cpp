@@ -820,8 +820,9 @@ void HistFrame::Clear_Ltree() {
     //   ii++;
     // }
     fListTree->DeleteChildren(idir);
+    TGListTreeItem* next = idir->GetNextSibling();
     fListTree->DeleteItem(idir);
-    idir = idir->GetNextSibling();
+    idir = next;
   }
 
   // clear fCutTree

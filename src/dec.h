@@ -23,12 +23,16 @@ public:
   // std::atomic<UChar_t*> b1{nullptr};  // ← атомарный указатель на начало
   // буфера std::atomic<UChar_t*> b3{nullptr};  // ← атомарный указатель на
   // конец буфера
-  UChar_t *b1 = 0; // указатель на начало буфера
-  UChar_t *b3 = 0; // указатель на физический конец буфера
+  UChar_t *write_start = 0; // указатель на начало буфера для записи
+  UChar_t *write_end = 0; // указатель на (физический) конец буфера для записи
+  UChar_t *analysis_start = 0; // - конец предыдущего = начало нового анализа
+  UChar_t *analysis_end = 0; // - конец нового анализа
 
-  union82 u82; // текущий указатель
+  union82 u82; // текущий указатель для записи
   // size_t Size=0;
-  UInt_t buffer_id; // ID этого буфера данных
+  UInt_t buffer_id; // ID этого буфера данных: !!!вобще-то, он нигде не
+                    // используется и не нужен
+
   // std::vector<UChar_t> buffer_storage;
   //  input: всегда должно быть: b1 <= b < b3
 
@@ -38,11 +42,12 @@ public:
   // 2 - analyzed, can be deleted.
   // 9 - output: буфер готов, можно писать
 
-  // public:
-  //   BufClass(size_t sz);
+public:
+  BufClass() {};
+  BufClass(UChar_t *w1, UChar_t *w3, UChar_t *a1)
+      : write_start(w1), write_end(w3), analysis_start(a1){};
   //   ~BufClass();
   void Ring_Write(BufClass &buf);
-  // void Ring_Write(const UChar_t* data, size_t data_size);
 };
 
 typedef std::list<BufClass>::iterator buf_iter;

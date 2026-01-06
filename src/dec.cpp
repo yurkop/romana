@@ -2,13 +2,14 @@
 #include "TRandom.h"
 
 #include "romana.h"
-// const ULong64_t sixbytes=0xFFFFFFFFFFFF;
+// NOTE: sixbytes defined in romana.h
+// const ULong64_t sixbytes = 0xFFFFFFFFFFFF; // ← do not uncomment
 
 #define ID_EVNT 0x5645
 
 extern MyMainFrame *myM;
 
-thread_local PulseClass good_pulse(0);
+thread_local PulseClass good_pulse(0,0);
 thread_local TRandom rnd;
 
 bool Dec79(BufClass &Buf, EventClass &evt) {
@@ -18,11 +19,11 @@ bool Dec79(BufClass &Buf, EventClass &evt) {
 
   // предполагаем, что при вызове Dec79 u82 всегда указывает на начало события
   evt.Tstmp = *Buf.u82.ul & sixbytes;
-  evt.Spin |= Buf.u82.b[6]; // проверить!!! 6 или 7?
+  evt.Spin |= Buf.u82.b[6]; // Spin из байта 6
   ++Buf.u82.ul;
 
   while (true) {
-    if (Buf.u82.b + 7 >= Buf.b3)
+    if (Buf.u82.b + 7 >= Buf.write_end)
       return false; // Сначала границы
     if (Buf.u82.b[7] & 0x80)
       break; // Потом бит события
@@ -69,46 +70,47 @@ void Dum79(BufClass* Buf) {
 */
 
 void BufClass::Ring_Write(BufClass &buf) {
-  // нужно добавить проверку на доступность буфера (гонка с анализом)
-
-  size_t size = buf.b3 - buf.b1;
-  if (u82.b + size <= b3) {
+  size_t size = buf.write_end - buf.write_start;
+  if (u82.b + size < write_end) {
     // Данные помещаются
-    memcpy(u82.b, buf.b1, size);
+    memcpy(u82.b, buf.write_start, size);
     u82.b += size;
   } else {
-    // Данные не помещаются - записываем в начало
-    memcpy(b1, buf.b1, size);
-    u82.b = b1 + size;
+    // Данные не помещаются - переносим хвост в начало
+    size_t part1 = write_end - u82.b;
+    size_t part2 = size - part1;
+    memcpy(u82.b, buf.write_start, part1);
+    memcpy(write_start, buf.write_start+part1, part2);
+    u82.b = write_start + part2;
   }
 
-  double iold = 1. * (u82.b - size - b1) / Megabyte;
-  double inew = 1. * (u82.b - b1) / Megabyte;
+  // double iold = 1. * (u82.b - size - write_start) / Megabyte;
+  // double inew = 1. * (u82.b - write_start) / Megabyte;
 
-  double prc = 1. * (u82.b - b1) / (b3 - b1) * 100;
+  double prc = 1. * (u82.b - write_start) / (write_end - write_start) * 100;
   // myM->fHProgr1->SetPosition(prc);
 
-  prnt("ss f f fs;", BMAG, "wrt:", iold, inew, prc, RST);
+  // prnt("ss fs;", BYEL, "wrt%:", prc, RST);
 }
 
 /*
 void BufClass::Ring_Write(const UChar_t* data, size_t data_size) {
   // нужно добавить проверку на доступность буфера (гонка с анализом)
 
-  if (u82.b + data_size <= b3) {
+  if (u82.b + data_size <= write_end) {
     // Данные помещаются
     memcpy(u82.b, data, data_size);
     u82.b += data_size;
   } else {
     // Данные не помещаются - записываем в начало
-    memcpy(b1, data, data_size);
-    u82.b = b1 + data_size;
+    memcpy(write_start, data, data_size);
+    u82.b = write_start + data_size;
   }
 
-  double iold = 1.*(u82.b-data_size-b1)/Megabyte;
-  double inew = 1.*(u82.b-b1)/Megabyte;
+  double iold = 1.*(u82.b-data_size-write_start)/Megabyte;
+  double inew = 1.*(u82.b-write_start)/Megabyte;
 
-  double prc = 1.*(u82.b-b1)/(b3-b1)*100;
+  double prc = 1.*(u82.b-write_start)/(write_end-write_start)*100;
   myM->fHProgr1->SetPosition(prc);
 
   prnt("ss f f fs;",BMAG,"wrt:",iold,inew,prc,RST);

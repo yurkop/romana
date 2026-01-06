@@ -93,7 +93,7 @@ extern TVirtualFFT *fftr2c;
 Float_t xgr[DSIZE]; // x coordinate for graph
 Float_t ygr[DSIZE]; // y coordinate for graph
 
-char hname[3][MAX_CH + 1][20]; //+all
+char hname[10][MAX_CH + 1][20]; //+all
 
 TText txt;
 

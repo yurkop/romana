@@ -28,20 +28,20 @@ void Encoder::Encode_Start(int rst, int mm, bool &bb, int cc, UChar_t *BBuf,
 
       // Новый код с безопасным управлением памятью:
       if (BBuf) {
-        Buf_ring.b1 = BBuf;
+        Buf_ring.write_start = BBuf;
       } else {
         buffer_storage.resize(r_size + o_size);
-        Buf_ring.b1 = buffer_storage.data();
+        Buf_ring.write_start = buffer_storage.data();
       }
 
-      Buf_ring.b3 =
-          Buf_ring.b1 + r_size; // на o_size меньше, чем выделенный размер
+      Buf_ring.write_end =
+          Buf_ring.write_start + r_size; // на o_size меньше, чем выделенный размер
 
       buf_list.clear();
       buf_it = buf_list.insert(buf_list.end(), BufClass());
-      buf_it->b1 = Buf_ring.b1;
-      buf_it->u82.b = buf_it->b1;
-      buf_it->b3 = buf_it->b1 + buf_size;
+      buf_it->write_start = Buf_ring.write_start;
+      buf_it->u82.b = buf_it->write_start;
+      buf_it->write_end = buf_it->write_start + buf_size;
       // buf_it->flag=??;  // считаем, что сделаны Findlast + анализ
     }
     // if (opt.fTxt) {
@@ -119,10 +119,10 @@ void Encoder::Flush3(int end_ana) {
   // сбрасывает заполненный буфер на диск
 
   if (opt.nthreads == 1) { // single thread
-    Write3(buf_it->b1, buf_it->u82.b - buf_it->b1);
-    buf_it->b1 = Buf_ring.b1;
-    buf_it->u82.b = Buf_ring.b1;
-    buf_it->b3 = Buf_ring.b1 + buf_size;
+    Write3(buf_it->write_start, buf_it->u82.b - buf_it->write_start);
+    buf_it->write_start = Buf_ring.write_start;
+    buf_it->u82.b = Buf_ring.write_start;
+    buf_it->write_end = Buf_ring.write_start + buf_size;
   } else { // multithreading
     std::unique_lock<std::mutex> wr_lock(wr_mut);
 
@@ -131,12 +131,12 @@ void Encoder::Flush3(int end_ana) {
     rep++;
     if (rep > 9) {
       // if (rep>p) {
-      double rr = Buf_ring.b3 - Buf_ring.b1;
-      rr /= (buf_it->u82.b - buf_it->b1);
-      prnt("s d x d l l l f;", "Flush3: ", buf_list.size(), buf_it->b1,
-           (buf_it->u82.b - buf_it->b1) / 1024,
-           (buf_it->b1 - Buf_ring.b1) / 1024, (Buf_ring.b3 - buf_it->b1) / 1024,
-           (Buf_ring.b3 - Buf_ring.b1) / 1024, rr);
+      double rr = Buf_ring.write_end - Buf_ring.write_start;
+      rr /= (buf_it->u82.b - buf_it->write_start);
+      prnt("s d x d l l l f;", "Flush3: ", buf_list.size(), buf_it->write_start,
+           (buf_it->u82.b - buf_it->write_start) / 1024,
+           (buf_it->write_start - Buf_ring.write_start) / 1024, (Buf_ring.write_end - buf_it->write_start) / 1024,
+           (Buf_ring.write_end - Buf_ring.write_start) / 1024, rr);
       rep = 0;
     }
 
@@ -145,15 +145,15 @@ void Encoder::Flush3(int end_ana) {
     if (!end_ana) {
       // если не конец -> задаем новый буфер
       buf_it = buf_list.insert(buf_list.end(), BufClass());
-      if (prev->u82.b < Buf_ring.b3) {
-        buf_it->b1 = prev->u82.b;
+      if (prev->u82.b < Buf_ring.write_end) {
+        buf_it->write_start = prev->u82.b;
       } else {
         prnt("ss d x xs;", BYEL, "---end of Buf---: ", buf_it->buffer_id,
-             prev->u82.b, Buf_ring.b3, RST);
-        buf_it->b1 = Buf_ring.b1;
+             prev->u82.b, Buf_ring.write_end, RST);
+        buf_it->write_start = Buf_ring.write_start;
       }
-      buf_it->u82.b = buf_it->b1;
-      buf_it->b3 = buf_it->b1 + buf_size;
+      buf_it->u82.b = buf_it->write_start;
+      buf_it->write_end = buf_it->write_start + buf_size;
 
       buf_it->buffer_id = prev->buffer_id + 1;
       // bufnum всегда "линейный", независимо от многопоточности.
@@ -268,7 +268,7 @@ void Encoder::Handle_write() {
         // т.к. buf_list заполняется всегда последовательно
         if (it->flag == 9) {
           lock.unlock(); // Сначала РАЗБЛОКИРОВАТЬ перед долгой операцией
-          Write3(it->b1, it->u82.b - it->b1);
+          Write3(it->write_start, it->u82.b - it->write_start);
           // gSystem->Sleep(50); // для искусственного замедления (тест)
           lock.lock();
           buf_list.erase(it);
@@ -391,7 +391,7 @@ void EDec::Fill_Dec79(event_iter evt) {
 
   // idec = (UChar_t*)DecBuf8-DecBuf;
   // if (idec>buf_size) {
-  if (buf_it->u82.b >= buf_it->b3) {
+  if (buf_it->u82.b >= buf_it->write_end) {
     Flush3(0);
   }
 

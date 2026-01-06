@@ -81,7 +81,8 @@ endif
 ifdef DEBUG
   CPPFLAGS += -g
   #CPPFLAGS += -D_GLIBCXX_DEBUG
-  #CPPFLAGS += -fsanitize=address
+  CPPFLAGS += -fsanitize=address
+  LDFLAGS += -lasan
 endif
 
 ifdef TPROC
