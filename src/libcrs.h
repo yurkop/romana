@@ -335,7 +335,8 @@ public:
 
   Long64_t errors[MAX_ERR];
   std::string errlabel[MAX_ERR] = {
-      "Bad buf start (obsolete):", // ER_START,
+      // "Bad buf start (obsolete):", // ER_START,
+      "Pbuf length exceeded:", // ER_PBUF,
       "Bad channel:",              // ER_CH,
       "Channel mismatch:",         // ER_MIS,
       "Bad frmt:",                 // ER_FRMT,

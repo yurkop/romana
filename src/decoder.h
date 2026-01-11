@@ -2,6 +2,7 @@
 #include "romana.h"
 
 typedef std::list<PulseClass> pulsecontainer; // список импульсов в буфере
+typedef std::vector<EventClass> eventcontainer; // список событий в буфере
 
 class LocalBuf {
 public:
@@ -17,8 +18,9 @@ private:
   const UInt_t worker_timeouts = 1; // 1 или 2E6(бесконечность)
   const UInt_t copy_timeout_ms = 110 * worker_timeouts;
   const UInt_t decode_timeout_ms = 50 * worker_timeouts;
-  const UInt_t resorting_timeout_ms = 90 * worker_timeouts;
-  const UInt_t makeevent_timeout_ms = 100 * worker_timeouts;
+  const UInt_t resorting_timeout_ms = 70 * worker_timeouts;
+  const UInt_t makeevent_timeout_ms = 80 * worker_timeouts;
+  const UInt_t ana_timeout_ms = 90 * worker_timeouts;
 
   Long64_t max_time_diff; // 1 секунда, например
   // UInt_t next_expected_bufnum = 1; // номер ожидаемого буфера
@@ -140,7 +142,10 @@ typename Container::iterator sorted_insert(Container &cont, const T &value) {
   // Вспомогательные методы для Resorting_Worker
   enum class ProcessingType { RESORTING, MAKE_EVENT };
   void ResortSingleBuffer(std::list<LocalBuf>::iterator itr);
+  void UpdateBoundary(std::list<LocalBuf>::iterator itr);
   // Long64_t Add_Offset_To_Buffer(std::list<LocalBuf>::iterator itr);
+
+  void Make_Events(std::list<LocalBuf>::iterator itr);
 
   // Контейнер активных позиций, откуда потоки могут читать
   std::list<UChar_t *> active_read_starts;
@@ -160,6 +165,7 @@ public:
   double ring_used{0}; // процент использования кольцевого буфера
 
   std::mutex buf_mutex;
+  std::mutex ana_mutex;
   UInt_t next_buffer_id = 0; // Генератор ID: номер буфера (=идентификатор)
   // Управление безопасной записью
   std::atomic<UChar_t *> write_ptr{nullptr}; // текущая позиция записи
@@ -204,9 +210,14 @@ public:
   std::atomic<bool> makeevent_running{false};
   std::condition_variable makeevent_cond;
 
+  // Поток анализа и связанные переменные
+  std::unique_ptr<std::thread> ana_thread;
+  std::atomic<bool> ana_running{false};
+  std::condition_variable ana_cond;
+
   // граница удаления буферов
   // NOTE: boundary - итератор на первый буфер, который нельзя удалять.
-  // Обновляется ТОЛЬКО в ResortSingleBuffer (потоком RESORTING) под
+  // Обновляется ТОЛЬКО в UpdateBoundary (потоком RESORTING) под
   // boundary_mutex. В MAKE_EVENT удаление идёт ТОЛЬКО ДО boundary (не включая
   // его). Поэтому boundary НИКОГДА не становится висячим и всегда валиден или
   // равен end().
@@ -223,7 +234,6 @@ public:
   // std::atomic<UInt_t> offset_buffer_id{UINT_MAX};
   // std::atomic<bool> offset_flag{false};
 
-  std::condition_variable ana_cond;
   // std::unique_ptr<std::thread> splice_thread;
   // std::atomic<bool> splice_running{false};
   // // std::list<BufClass> splice_queue;
@@ -241,7 +251,11 @@ public:
   // ВАЖНО: Decoder_Reset() должен вызываться ТОЛЬКО после Decoder_Stop(),
   //        иначе возможна ситуация обращения к удалённому объекту.
 
-  eventlist Levents; // global list of events
+  std::list<eventcontainer> Bufevents;
+  std::atomic<size_t> Bufsize{0}; //текущее число событий в буферах
+  std::atomic<size_t> Nevents{0}; //полное число проанализированных событий
+
+  // eventlist Levents; // global list of events
   // std::list<pulsecontainer> allpulses; //список списков импульсов в буфере
 public:
   Decoder();
@@ -255,12 +269,14 @@ public:
   void Decode_Start(int num_threads);
   void Resorting_Start();
   void MakeEvent_Start();
+  void Ana_Start();
 
   void Copy_Worker(); // блок копирования
   void Send_for_Decode(BufClass &range);
   void Decode_Worker(UInt_t thread_id); // рабочий поток декодирования
   void Resorting_Worker(ProcessingType type); // рабочий поток пересортировки между буферами
   //void MakeEvent_Worker();    // рабочий поток создания событий
+  void Ana_Worker(); // рабочий поток анализа событий
 
   // Метод для добавления данных в очередь извне
   void Add_to_copy_queue(UChar_t *data, size_t size);

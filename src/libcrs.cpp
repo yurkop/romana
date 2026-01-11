@@ -4990,8 +4990,8 @@ void CRS::Dec_Init(eventlist *&Blist, UChar_t frmt) {
   // Blist->push_back(EventClass());
   // Blist->front().Nevt=iread;
   if (frmt) {
-    // prnt("ss d ds;",KYEL,"bad buf start: ",nevents,frmt,RST);
-    ++errors[ER_START]; // bad buf start
+    prnt("ss d ds;",KYEL,"bad buf start: ",nevents,frmt,RST);
+    // ++errors[ER_START]; // bad buf start
   }
 }
 

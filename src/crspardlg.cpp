@@ -3683,7 +3683,7 @@ ErrFrame::ErrFrame(const TGWindow *p, UInt_t w, UInt_t h) : ParDlg(p, w, h) {
   }
 }
 
-ErrFrame::~ErrFrame() {}
+// ErrFrame::~ErrFrame() {}
 
 void ErrFrame::Reset() {
   errflag = 0;

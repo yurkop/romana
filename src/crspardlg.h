@@ -348,7 +348,7 @@ public:
 
   // routines
   ErrFrame(const TGWindow *p, UInt_t w, UInt_t h);
-  virtual ~ErrFrame();
+  // virtual ~ErrFrame();
 
   void Reset();
   void ErrUpdate();

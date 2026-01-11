@@ -479,8 +479,8 @@ void Mdef::Fill_HWRate(EventClass *evt, Double_t *hcut_flag, int ncut) {
 
     for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
       HMap *map = v_map[ipls->Chan];
-      // пропускаем неактивные каналы, канал 255 и каналы с неактивным map
-      if (cpar.on[ipls->Chan] && ipls->Chan != 255 && map) {
+      // пропускаем неактивные каналы, /*канал 255*/ и каналы с неактивным map
+      if (cpar.on[ipls->Chan] /*&& ipls->Chan != 255*/ && map) {
         double t1 = crs->fTime[ipls->Chan] * crs->sPeriod; // old time (in sec)
         double t2 = evt->Tstmp * crs->sPeriod; // current time (in sec)
         if (!ncut) // записывает fTime (old time) только для ncut==0
@@ -1816,31 +1816,23 @@ void HClass::FillHist(EventClass *evt, Double_t *hcut_flag) {
   */
 
   // определяем ntof_start
-  if (b_ntof && (!(evt->Spin & 128) || opt.start_ch==255)) {
-    for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
+  if (b_ntof)
+    // если Spin не 128 (счетчик) или стартовый канал
+    if (!(evt->Spin & 128) || opt.start_ch == 255) {
+      for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
 
-      // if (ipls->Chan == opt.start_ch) {
-      //   ipls->Time=0;
-      //   cout << "start_ch: " << (int)ipls->Chan << " " << ipls->Pos << " "
-      //        << (int)evt->Spin << " " << evt->Tstmp << " " << ipls->Time << " "
-      //        << cpar.on[ipls->Chan] << endl;
-      // }
-
-      // Было: пропускаем неактивные каналы и где не найден пик
-      // if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
-      // пропускаем неактивные каналы
-      if (cpar.on[ipls->Chan]) {
-        if (ipls->Chan == opt.start_ch) {
-          ntof_start = evt->Tstmp;
-          ntof_time0 = ipls->Time;
-          // cout << "start_ch: " << (int)ipls->Chan << " " << ipls->Pos << " "
-          //      << (int)evt->Spin << " " << evt->Tstmp << " " << ipls->Time
-          //      << " " << cpar.on[ipls->Chan] << " " << opt.start_ch << endl;
-          break;
+        // Было: пропускаем неактивные каналы и где не найден пик
+        // if (cpar.on[ipls->Chan] && ipls->Pos > -32222) {
+        // активные каналы или 255 (стартовый канал, он всегда неактивный)
+        if (cpar.on[ipls->Chan] || ipls->Chan==255) {
+          if (ipls->Chan == opt.start_ch) {
+            ntof_start = evt->Tstmp;
+            ntof_time0 = ipls->Time;
+            break;
+          }
         }
       }
     }
-  }
 
   // if (evt->Spin & 128)
   //   cout << "ntof_start: " << ntof_start << " " << ntof_time0 << endl;

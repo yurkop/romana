@@ -51,6 +51,8 @@ void Coptions::InitPar(int zero) {
     RD[i] = 0;
   }
 
+  on[255]=false;
+
   for (int i = 0; i < 2; i++) {
     coinc_w[i] = 100;
     mult_w1[i] = 1;

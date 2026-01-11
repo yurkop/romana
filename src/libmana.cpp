@@ -1745,7 +1745,7 @@ int main(int argc, char **argv) {
     delete[] cparon;
   }
 
-  cpar.on[255]=1;
+  cpar.on[255]=0;
 
   // exit(1);
   // change individual parameters if listpar is not empty
@@ -3795,7 +3795,9 @@ void MainFrame::UpdateStatus(int rst) {
   fStat[ii++]->SetText(TGString::Format("%0.2f", pmem), 0);
 
   fStat[ii++]->SetText(TGString::Format("%ld", decoder->Bufpulses.size()), 0);
-  fStat[ii++]->SetText(TGString::Format("%ld", crs->Levents.size()), 0);
+  fStat[ii++]->SetText(TGString::Format("%ld", decoder->Bufsize.load(
+                                                    std::memory_order_relaxed)),
+                       0);
 
   if (decoder->ring_used > 80)
     fHProgr1->SetBarColor("red");

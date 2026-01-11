@@ -112,7 +112,8 @@ enum MENU_COM {
 };
 
 enum ERR_NUM {
-  ER_START = 0,
+  // ER_START = 0,
+  ER_PBUF = 0,
   ER_CH,
   ER_MIS,
   ER_FRMT,
