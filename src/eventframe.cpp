@@ -1249,8 +1249,9 @@ void EventFrame::DrawShapeTxt(PulseClass *pulse) {
   }
 
   if (opt.b_peak[9]) { // draw text
-    sprintf(ss, "Ch%02d A=%0.1f B=%0.1f T=%0.1f W=%0.1f", pulse->Chan,
-            pulse->Area, pulse->Base, pulse->Time, pulse->Width);
+    sprintf(ss, "Ch%02d T=%lld A=%0.1f B=%0.1f t=%0.1f W=%0.1f", pulse->Chan,
+            pulse->Tstamp64, pulse->Area, pulse->Base, pulse->Time,
+            pulse->Width);
 
     ttxt.SetTextAlign(0);
     double sz = 0.025 * ndiv;
@@ -1258,12 +1259,15 @@ void EventFrame::DrawShapeTxt(PulseClass *pulse) {
     ttxt.SetTextColor(chcol[pulse->Chan]);
     double dd = 0.74 * 2.0 / 32;
 
-    ttxt.DrawTextNDC(0.17 + tx * 0.35, 0.85 - ty * dd, ss);
-    tx++;
-    if (tx > 1) {
-      tx = 0;
-      ty++;
-    }
+    ttxt.DrawTextNDC(0.17, 0.85 - ty * dd, ss);
+    ty++;
+
+    // ttxt.DrawTextNDC(0.17 + tx * 0.35, 0.85 - ty * dd, ss);
+    // tx++;
+    // if (tx > 1) {
+    //   tx = 0;
+    //   ty++;
+    // }
   }
 
   if (opt.b_peak[13]) { // draw shape

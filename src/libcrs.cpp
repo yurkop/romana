@@ -327,6 +327,7 @@ static void cback3(libusb_transfer *trans) {
 
 #else  // !ANA3
 
+/*
 void print255(UChar_t *trbuf, size_t length, int reset = 0) {
   // Выводим 64-битные слова
   typedef long long int int64;
@@ -383,6 +384,94 @@ void print255(UChar_t *trbuf, size_t length, int reset = 0) {
     }
   }
 }
+*/
+
+
+/*
+void print_time_shift_old(UChar_t *trbuf, size_t length, int reset = 0) {
+  // Выводим 64-битные слова
+  typedef long long int int64;
+  const int64 limit = 1000; // порог определения начала события
+
+  static int64 nn = 0;
+  static int64 tprev = 0;
+  static int64 T[256]={};
+  static int64 TP[256]={};
+  int64 dt[256]={};
+
+  if (reset) {
+    nn=0;
+
+    // printf("%12lld %12lld %12lld %12lld\n", T[0],T[1],T[2],T[16]);
+    return;
+  }
+
+  int64 *buffer = (int64 *) trbuf;
+  size_t word_count = length / 8;
+  for (size_t i = 0; i < word_count; i++) {
+    u_char *buf = (u_char *)&buffer[i];
+    int ch = buf[7];
+    int fmt = (buf[6] & 0xF0) >> 4;
+    if (fmt == 0) {
+      int64 tstmp = buffer[i] & 0xFFFFFFFFFFFF;
+      int64 diff = tstmp - tprev;
+      if (diff>limit) {
+        dt[0] = T[0] - T[16];
+        dt[1] = T[1] - T[16];
+        dt[2] = T[2] - T[16];
+        printf("%8lld %14lld", nn, T[16]);
+        for (int i=0;i<3;i++) {
+          printf(" %3lld", dt[i]);
+        }
+        for (int i=0;i<3;i++) {
+          printf(" %6lld", T[i]-TP[i]);
+        }
+        printf(" %6lld\n", T[16] - TP[16]);
+        nn++;
+      }
+
+      // cout << ch << " " << diff << " " << tstmp << " " << tprev << " " << hex
+      //       << buffer[i] << dec << endl;
+
+      //printf("%lld %lld",dt,tstmp);
+
+      TP[ch] = T[ch];
+      T[ch] = tstmp;
+
+      tprev = tstmp;
+    }
+  }
+} // print_time_shift_old
+*/
+
+/*
+void print_time_shift(unsigned char *buf, size_t length) {
+  // ловит ошибку сдвижки времени
+  typedef long long int int64;
+  const int64 limit = 20001; // порог определения сдвижки для частоты 10 кГц
+
+  static int64 nn = 0;
+  static int64 T[256]={};
+  static int64 TP[256]={};
+
+  for (size_t i = 0; i < length; i+=8) {
+    int64* buf64 = (int64*)&buf[i];
+    int ch = buf[i+7];
+    int fmt = (buf[i+6] & 0xF0) >> 4;
+    if (fmt == 0) {
+      int64 tstmp = *buf64 & 0xFFFFFFFFFFFF;
+
+      TP[ch] = T[ch];
+      T[ch] = tstmp;
+      int64 dt = T[ch] - TP[ch];
+      if (dt>limit) {
+        cout << "shift: " << nn << " " << ch << " " << T[ch] << " " << TP[ch] << " " << dt << endl;
+      }
+      nn++;
+    }
+  }
+} // print_time_shift
+*/
 
 static void cback(libusb_transfer *trans) {
   // сохраняем текущий буфер
@@ -428,6 +517,7 @@ static void cback(libusb_transfer *trans) {
     }
 
     // print255(trans->buffer,trans->actual_length);
+    // print_time_shift(trans->buffer,trans->actual_length);
 
     // trans->buffer=next_buf;
     //  if (crs->b_acq) {
@@ -2961,6 +3051,7 @@ void CRS::DoReset(int rst) {
     return;
 
   // print255(0, 0, 1);
+  // print_time_shift_old(0, 0, 1);
   // Init_Inp_Buf();
 
   if (EvtFrm) {
@@ -4128,6 +4219,8 @@ int CRS::DoBuf() {
 
     length = gzread(f_read, GLBuf + b_fill[gl_ibuf], opt.rbuf_size * 1024);
     b_end[gl_ibuf] = b_fill[gl_ibuf] + length;
+
+    // print_time_shift(GLBuf + b_fill[gl_ibuf],length);
 
     // читаем и сразу пишем. непонятно, зачем...
     if (opt.raw_write && !opt.fProc) {
