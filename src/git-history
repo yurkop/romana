@@ -1,3 +1,13 @@
+git tag -a v0.949d -m 'промежуточный комммит'
+- перед изменением ana_worker
+- убран PulseBuf
+- переделаны воркеры
+- профайлинг (недоделан)
+
+- исправить: file is too old. Try to use romana v0.930 or earlier:
+  вернуть обработку старых форматов
+-см. v0.944 (нижняя часть)
+
 git tag -a v0.949c -m 'промежуточный комммит'
 - перед профайлингом в decoder.cpp
 - исправить: file is too old. Try to use romana v0.930 or earlier:

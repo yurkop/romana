@@ -1,25 +1,35 @@
 #pragma once
 #include "romana.h"
+//#define PROFILING 1
 
 typedef std::list<PulseClass> pulsecontainer; // список импульсов в буфере
 typedef std::vector<EventClass> eventcontainer; // вектор событий в буфере
+typedef std::vector<EventClass>::iterator eventiter; // итератор по вектору событий
 
+/*
 class PulseBuf {
 public:
-  pulsecontainer B; // список импульсов в буфере
+  pulsecontainer PLS; // список импульсов в буфере
   UInt_t source_buffer_id; // ID исходного буфера, откуда события
   // Флаг готовности
   std::atomic<UChar_t> flag{0};
-  // 0 - скопировано, 1 - обработано, 2 - отсортировано, 3 - готово
+  // 0 - скопировано, 1 - обработано, 2 - отсортировано, 3 - make_events.
 };
+*/
 
 class EventBuf {
 public:
-  eventcontainer B; // список событий в буфере
+  pulsecontainer PLS; // список импульсов в буфере
+  eventcontainer EVT; // список событий в буфере
   UInt_t source_buffer_id; // ID исходного буфера, откуда события
   // Флаг готовности
   std::atomic<UChar_t> flag{0};
-  // ?
+  // 0: буфер создан, данные скопированы, можно декодировать
+  // 1: буфер декодирован, можно сортировать
+  // 2: активная сортировка закончена, но может участвовать в пассивной
+  // 3: сортировка закончена, можно создавать события
+  // 4: события созданы, можно анализировать
+  // 5: анализ закончен, можно удалять
 };
 
 class Decoder {
@@ -149,16 +159,37 @@ typename Container::iterator sorted_insert(Container &cont, const T &value) {
   bool PrepareDecodeBuffer(BufClass &range);
 
   // Вспомогательные методы для Resorting_Worker
-  enum class ProcessingType { RESORTING, MAKE_EVENT };
-  void ResortSingleBuffer(std::list<PulseBuf>::iterator itr);
-  void UpdateBoundary(std::list<PulseBuf>::iterator itr);
-  // Long64_t Add_Offset_To_Buffer(std::list<PulseBuf>::iterator itr);
+  void ResortSingleBuffer(std::list<EventBuf>::iterator itr);
+  bool UpdateBoundary(std::list<EventBuf>::iterator itr);
+  // Long64_t Add_Offset_To_Buffer(std::list<EventBuf>::iterator itr);
 
-  void Make_Events(std::list<PulseBuf>::iterator itr);
+  void Make_Events(std::list<EventBuf>::iterator itr);
 
   // Контейнер активных позиций, откуда потоки могут читать
   std::list<UChar_t *> active_read_starts;
   std::mutex active_mutex; // защищает active_read_starts
+
+#ifdef PROFILING
+class SimpleTimer {
+    std::chrono::steady_clock::time_point start;
+    Decoder* dec;
+    const char* stage;
+
+public:
+    SimpleTimer(Decoder* d, const char* s) : dec(d), stage(s) {
+        start = std::chrono::steady_clock::now();
+    }
+
+    ~SimpleTimer() {
+        auto end = std::chrono::steady_clock::now();
+        auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        dec->LogTime(stage, dur.count());
+    }
+};
+
+void LogTime(const char* stage, long long duration_us);
+#endif
+
 
 public:
   // bool first_call = false;
@@ -200,8 +231,8 @@ public:
   UInt_t num_decode_threads{0}; // количество потоков декодера
   struct DecodeItem {
     BufClass buf; // Исходный BufClass для декодирования
-    std::list<PulseBuf>::iterator local_buf_itr;
-    // Итератор на соответствующий PulseBuf в Bufpulses
+    std::list<EventBuf>::iterator local_buf_itr;
+    // Итератор на соответствующий EventBuf в Bufpulses
   };
   std::list<std::unique_ptr<std::thread>> decode_threads;
   std::atomic<bool> decode_running{false};
@@ -225,15 +256,14 @@ public:
   std::atomic<bool> ana_running{false};
   std::condition_variable ana_cond;
 
-  // граница удаления буферов
-  // NOTE: boundary - итератор на первый буфер, который нельзя удалять.
-  // одновременно, пересортировка происходит ТОЛЬКО для буферов от конца до
-  // boundary.
+  // boundary (итератор) - граница между resorting и make_events.
+  // Пересортировка происходит ТОЛЬКО для буферов от конца до
+  // boundary, включая его.
   // Обновляется ТОЛЬКО в UpdateBoundary (потоком RESORTING) под
-  // boundary_mutex. В MAKE_EVENT удаление идёт ТОЛЬКО ДО boundary (не включая
-  // его). Поэтому boundary НИКОГДА не становится висячим и всегда валиден или
-  // равен end().
-  std::list<PulseBuf>::iterator boundary; // этот буфер и правее не удаляются
+  // boundary_mutex.
+  // В MAKE_EVENT создаются события от начала списка до boundary (не включая
+  // его).
+  std::list<EventBuf>::iterator boundary;
   std::mutex boundary_mutex;
   // NOTE: boundary используется в двух потоках (RESORTING и MAKE_EVENT),
   // но все операции чтения и записи защищены boundary_mutex.
@@ -252,6 +282,7 @@ public:
   // // std::mutex splice_mutex;
   // std::condition_variable splice_cond;
 
+  /*
   std::list<PulseBuf> Bufpulses;
   // список буферов. в каждом буфере - контейнер с импульсами
   // NOTE: local_buf_ptr указывает на элемент в Bufpulses, который
@@ -266,6 +297,7 @@ public:
   // "вечный end" - указатель на пустой буфер в конце, который
   // никогда не инвалидируется (в отличие от Bufpulses.end() - инвалидируется
   // при emplace_back())
+*/
 
   std::list<EventBuf> Bufevents;
   // список буферов. в каждом буфере - контейнер с событиями
@@ -296,8 +328,8 @@ public:
   void Copy_Worker(); // блок копирования
   void Send_for_Decode(BufClass &range);
   void Decode_Worker(UInt_t thread_id); // рабочий поток декодирования
-  void Resorting_Worker(ProcessingType type); // рабочий поток пересортировки между буферами
-  //void MakeEvent_Worker();    // рабочий поток создания событий
+  void Resorting_Worker(); // рабочий поток пересортировки между буферами
+  void MakeEvent_Worker();    // рабочий поток создания событий
   void Ana_Worker(); // рабочий поток анализа событий
 
   // Метод для добавления данных в очередь извне

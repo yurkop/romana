@@ -3794,7 +3794,7 @@ void MainFrame::UpdateStatus(int rst) {
   fStat[ii++]->SetText(TGString::Format("%0.2f", percent), 0);
   fStat[ii++]->SetText(TGString::Format("%0.2f", pmem), 0);
 
-  fStat[ii++]->SetText(TGString::Format("%ld", decoder->Bufpulses.size()), 0);
+  fStat[ii++]->SetText(TGString::Format("%ld", decoder->Bufevents.size()), 0);
   fStat[ii++]->SetText(TGString::Format("%ld", decoder->Bufsize.load(
                                                     std::memory_order_relaxed)),
                        0);

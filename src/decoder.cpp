@@ -15,7 +15,7 @@ extern Toptions opt;
 // double ring_used; // процент использования кольцевого буф (выводить в
 // виджете)
 UInt_t max_deque_size =
-    30; // максимальный размер очереди из буферов (Bufpulses)
+    30; // максимальный размер очереди из буферов (Bufevents)
 int threads = 4; // количество потоков
 
 int print2 = 0; // 0: no print; 1: print
@@ -53,16 +53,12 @@ void Decoder::Decoder_Reset() {
   Decoder_Stop(); // ← Сначала остановить все потоки
   next_buffer_id = 0;
   decode_queue.clear();
-  Bufpulses.clear();
-  Bufpulses.emplace_back();
-  pulses_end = std::prev(Bufpulses.end()); // Указывает на "вечный end"
-  pulses_end->flag.store(0); // Специальный флаг, чтобы не обрабатывать
-  boundary = pulses_end; // в начале boundary указывает на end
-
   Bufevents.clear();
   Bufevents.emplace_back();
   events_end = std::prev(Bufevents.end()); // Указывает на "вечный end"
-  events_end->flag.store(0); // Специальный флаг, чтобы не обрабатывать
+  events_end->source_buffer_id=UINT_MAX;
+  //events_end->flag.store(0); // Специальный флаг, чтобы не обрабатывать
+  boundary = events_end; // в начале boundary указывает на end
 
   Nevents.store(0, std::memory_order_release);
   Bufsize.store(0, std::memory_order_release);
@@ -113,7 +109,7 @@ void Decoder::Decoder_Start(Long64_t r_size, Long64_t o_size, bool b_acq,
   Decoder_Resize(r_size, o_size);
 
   crs_module = module;
-  // Bufpulses.clear();
+  // Bufevents.clear();
 
   for (int i = 0; i < MAX_CH; i++) {
     b_len[i] = opt.B2[i] - opt.B1[i] + 1;
@@ -153,6 +149,7 @@ void Decoder::Decoder_Stop() /*noexcept*/ {
 
     // Останавливаем декодирование
     if (decode_running.load(std::memory_order_acquire)) {
+      prnt("sss;", BYEL, "Decode_stop!!!!!!!", RST);
       decode_running.store(false, std::memory_order_release);
       decode_cond.notify_all(); // Будим потоки декодирования
 
@@ -163,10 +160,12 @@ void Decoder::Decoder_Stop() /*noexcept*/ {
         // thread.reset(); - не нужен, т.к. clear все очищает
       }
       decode_threads.clear();
+      prnt("sss;", BYEL, "Decode_stop2!!!!!!!", RST);
     }
 
     // Останавливаем пересортировку
     if (resorting_running.load(std::memory_order_acquire)) {
+      prnt("sss;", BYEL, "Resorting_stop!!!!!!!", RST);
       resorting_running.store(false, std::memory_order_release);
       resorting_cond.notify_all(); // Будим поток пересортировки
 
@@ -174,10 +173,12 @@ void Decoder::Decoder_Stop() /*noexcept*/ {
         resorting_thread->join();
       }
       resorting_thread.reset(); // освобождаем память
+      prnt("sss;", BYEL, "Resorting_stop2!!!!!!!", RST);
     }
 
     // Останавливаем создание событий
     if (makeevent_running.load(std::memory_order_acquire)) {
+      prnt("sss;", BYEL, "Make_event_stop!!!!!!!", RST);
       makeevent_running.store(false, std::memory_order_release);
       makeevent_cond.notify_all(); // Будим поток создания событий
 
@@ -185,10 +186,12 @@ void Decoder::Decoder_Stop() /*noexcept*/ {
         makeevent_thread->join();
       }
       makeevent_thread.reset(); // освобождаем память
+      prnt("sss;", BYEL, "Make_event_stop2!!!!!!!", RST);
     }
 
     // Останавливаем анализ событий
     if (ana_running.load(std::memory_order_acquire)) {
+      prnt("sss;", BYEL, "Ana_stop!!!!!!!", RST);
       ana_running.store(false, std::memory_order_release);
       ana_cond.notify_all(); // Будим поток анализа событий
 
@@ -196,6 +199,7 @@ void Decoder::Decoder_Stop() /*noexcept*/ {
         ana_thread->join();
       }
       ana_thread.reset(); // освобождаем память
+      prnt("sss;", BYEL, "Ana_stop2!!!!!!!", RST);
     }
 
     // Очистка очередей не нужна, т.к. они уже должны быть пустыми
@@ -231,13 +235,13 @@ void Decoder::Decode_Start(int num_threads) {
 void Decoder::Resorting_Start() {
   resorting_running.store(true, std::memory_order_release);
   resorting_thread = std::make_unique<std::thread>(
-      [this]() { Resorting_Worker(ProcessingType::RESORTING); });
+      [this]() { Resorting_Worker(); });
 }
 
 void Decoder::MakeEvent_Start() {
   makeevent_running.store(true, std::memory_order_release);
   makeevent_thread = std::make_unique<std::thread>(
-      [this]() { Resorting_Worker(ProcessingType::MAKE_EVENT); });
+      [this]() { MakeEvent_Worker(); });
 }
 
 void Decoder::Ana_Start() {
@@ -252,7 +256,11 @@ void Decoder::Copy_Worker() {
 
   while (true) {
     std::list<BufClass> local_queue;
+// --- WAIT: ожидание данных ---
     {
+#ifdef PROFILING
+      SimpleTimer timer(this, "Copy_Wait");
+#endif
       // Общее правило:
       // Для ВСЕХ wait_for с таймаутом нужно:
       //     Проверять условие остановки потока (!running && empty())
@@ -277,68 +285,75 @@ void Decoder::Copy_Worker() {
       local_queue.swap(copy_queue); // O(1) операция!
     } // ОСВОБОЖДАЕМ замок сразу после доступа к очереди
 
-    try {
-      // throw std::runtime_error("Test exception");
-      // throw "C-string exception";
+    {
+#ifdef PROFILING
+      SimpleTimer timer(this, "Copy_Exec");
+#endif
+      try {
+        // throw std::runtime_error("Test exception");
+        // throw "C-string exception";
 
-      // конец предыдущей записи в Buf_ring: новый write_start
-      UChar_t *prev_write_end = write_ptr.load(std::memory_order_acquire);
+        // конец предыдущей записи в Buf_ring: новый write_start
+        UChar_t *prev_write_end = write_ptr.load(std::memory_order_acquire);
 
-      // prnt2("ss f d ls;", BGRN, "Copy0:", ring_used, next_buffer_id,
-      //       Bufpulses.size(), RST);
-      bool written = false;
-      for (auto &item : local_queue) {
-        Long64_t data_size = item.write_end - item.write_start;
-        if (!CanWriteData(data_size)) {
-          prnt("ss fs;", BRED, "Data dropped. Available space(%):", ring_used,
-               RST);
-          continue;
+        // prnt2("ss f d ls;", BGRN, "Copy0:", ring_used, next_buffer_id,
+        //       Bufevents.size(), RST);
+        bool written = false;
+        for (auto &item : local_queue) {
+          Long64_t data_size = item.write_end - item.write_start;
+          if (!CanWriteData(data_size)) {
+            prnt("ss fs;", BRED, "Data dropped. Available space(%):", ring_used,
+                 RST);
+            continue;
+          }
+
+          written = true;
+          Buf_ring.Ring_Write(item);
+          write_ptr.store(Buf_ring.u82.b, std::memory_order_release);
         }
 
-        written = true;
-        Buf_ring.Ring_Write(item);
-        write_ptr.store(Buf_ring.u82.b, std::memory_order_release);
+        // cout << "pos: " << hex << pos << dec << " " << first_call << endl;
+
+        if (written) {
+          // prev_write_end = конец предыдущей записи в Buf_ring: новый
+          // write_start.
+          // Buf_ring.u82 = кoнец текущей записи в Buf_ring: новый
+          // write_end.
+          // analysis_end = конец предыдущего анализа в Buf_ring: новый
+          // analysis_start
+          BufClass range(prev_write_end, Buf_ring.u82.b, Buf_ring.analysis_end);
+
+          /*
+          // все в процентах от общего размера буфера, относительно начала
+          буфера
+          // w1 = конец предыдущей записи в Buf_ring: новый write_start
+          // w2 = кoнец текущей записи в Buf_ring: новый write_end
+          // a1 = конец предыдущего анализа в Buf_ring: новый analysis_start
+          double w1 = 100.0 * (prev_write_end - Buf_ring.write_start) /
+          ring_size; double w2 = 100.0 * (Buf_ring.u82.b - Buf_ring.write_start)
+          / ring_size; double a1 = 100.0 * (Buf_ring.analysis_end -
+          Buf_ring.write_start) / ring_size;
+          // размер последней записи
+          double write_size = 100.0 * (Buf_ring.u82.b - prev_write_end) /
+          ring_size;
+          // на сколько запись опережает анализ
+          double ahead = 100.0 * (prev_write_end - Buf_ring.analysis_end) /
+          ring_size; prnt("s f f f f f;", "w1 w2 a1 sz ahead:", w1, w2, a1,
+          write_size, ahead);
+          */
+
+          // prnt2("ss f d ls;", BGRN, "Copy1:", ring_used, next_buffer_id,
+          //       Bufevents.size(), RST);
+          Send_for_Decode(
+              range); // range будет инвалидирован в SendToDecodeQueue
+        }
+
+      } catch (const std::exception &e) {
+        prnt("ss ss;", BRED, "Exception in Copy_Worker:", e.what(), RST);
+      } catch (...) {
+        prnt("sss;", BRED, "Unknown exception in Copy_Worker", RST);
       }
-
-      // cout << "pos: " << hex << pos << dec << " " << first_call << endl;
-
-      if (written) {
-        // prev_write_end = конец предыдущей записи в Buf_ring: новый
-        // write_start.
-        // Buf_ring.u82 = кoнец текущей записи в Buf_ring: новый
-        // write_end.
-        // analysis_end = конец предыдущего анализа в Buf_ring: новый
-        // analysis_start
-        BufClass range(prev_write_end, Buf_ring.u82.b, Buf_ring.analysis_end);
-
-        /*
-        // все в процентах от общего размера буфера, относительно начала буфера
-        // w1 = конец предыдущей записи в Buf_ring: новый write_start
-        // w2 = кoнец текущей записи в Buf_ring: новый write_end
-        // a1 = конец предыдущего анализа в Buf_ring: новый analysis_start
-        double w1 = 100.0 * (prev_write_end - Buf_ring.write_start) / ring_size;
-        double w2 = 100.0 * (Buf_ring.u82.b - Buf_ring.write_start) / ring_size;
-        double a1 = 100.0 * (Buf_ring.analysis_end - Buf_ring.write_start) /
-        ring_size;
-        // размер последней записи
-        double write_size = 100.0 * (Buf_ring.u82.b - prev_write_end) /
-        ring_size;
-        // на сколько запись опережает анализ
-        double ahead = 100.0 * (prev_write_end - Buf_ring.analysis_end) /
-        ring_size; prnt("s f f f f f;", "w1 w2 a1 sz ahead:", w1, w2, a1,
-        write_size, ahead);
-        */
-
-        // prnt2("ss f d ls;", BGRN, "Copy1:", ring_used, next_buffer_id,
-        //       Bufpulses.size(), RST);
-        Send_for_Decode(range); // range будет инвалидирован в SendToDecodeQueue
-      }
-
-    } catch (const std::exception &e) {
-      prnt("ss ss;", BRED, "Exception in Copy_Worker:", e.what(), RST);
-    } catch (...) {
-      prnt("sss;", BRED, "Unknown exception in Copy_Worker", RST);
-    }
+    } // замер завершён
   }
 
   prnt2("sss;", BGRN, "Copy worker finished", RST);
@@ -529,8 +544,8 @@ bool Decoder::FindLast(BufClass &range) {
 void Decoder::SendToDecodeQueue(BufClass &range) {
   // СОЗДАЕМ DecodeItem
   DecodeItem item;
-  // СОЗДАЕМ PulseBuf и записываем в item
-  item.local_buf_itr = Bufpulses.emplace(pulses_end);
+  // СОЗДАЕМ EventBuf и записываем в item
+  item.local_buf_itr = Bufevents.emplace(events_end);
   item.local_buf_itr->source_buffer_id = next_buffer_id;
   range.buffer_id = next_buffer_id;
   item.buf = std::move(range);
@@ -540,9 +555,9 @@ void Decoder::SendToDecodeQueue(BufClass &range) {
   // потоком (single-producer). Если вызовы станут конкурентными, нужно защитить
   // это присваивание, например:
   //   std::lock_guard<std::mutex> lock(boundary_mutex);
-  //   if (boundary == Bufpulses.end()) boundary = Bufpulses.begin();
-  if (boundary == pulses_end)
-    boundary = Bufpulses.begin();
+  //   if (boundary == Bufevents.end()) boundary = Bufevents.begin();
+  if (boundary == events_end)
+    boundary = Bufevents.begin();
 
   // if (offset_flag.load(std::memory_order_acquire)) {
   //   // если offset_flag, значит уже в другом потоке офсет найден и определен
@@ -556,7 +571,7 @@ void Decoder::SendToDecodeQueue(BufClass &range) {
   // }
 
   // prnt2("ss f d ls;", BGRN, "Copy2:", ring_used, next_buffer_id,
-  //       Bufpulses.size(), RST);
+  //       Bufevents.size(), RST);
 
   // Добавляем в decode_queue (защищаем мьютексом)
   {
@@ -573,8 +588,7 @@ void Decoder::Decode_Worker(UInt_t thread_id) {
         "Decode worker started with timeout:", decode_timeout_ms, thread_id,
         RST);
 
-  while (decode_running.load(std::memory_order_acquire) ||
-         !decode_queue.empty()) {
+  while (true) {
     DecodeItem item;
     bool got_item = false;
 
@@ -613,8 +627,9 @@ void Decoder::Decode_Worker(UInt_t thread_id) {
       std::list<UChar_t *>::iterator my_it;
       {
         std::lock_guard<std::mutex> lock(active_mutex);
-        active_read_starts.push_back(my_read_start);
-        my_it = std::prev(active_read_starts.end());
+        //active_read_starts.push_back(my_read_start);
+        //my_it = std::prev(active_read_starts.end());
+        my_it = active_read_starts.insert(active_read_starts.end(), my_read_start);
       }
 
       try {
@@ -625,10 +640,10 @@ void Decoder::Decode_Worker(UInt_t thread_id) {
         // }
         // throw "C-string exception";  // нестандартное исключение
 
-        pr_zero(item.local_buf_itr->B,"before");
-        Decode_switch(item.buf, item.local_buf_itr->B);
+        pr_zero(item.local_buf_itr->PLS,"before");
+        Decode_switch(item.buf, item.local_buf_itr->PLS);
         // std::this_thread::sleep_for(std::chrono::milliseconds(70));
-        pr_zero(item.local_buf_itr->B,"after");
+        pr_zero(item.local_buf_itr->PLS,"after");
 
       } catch (...) {
         // ПРОСТАЯ ЗАГЛУШКА при ошибке обработки
@@ -657,7 +672,7 @@ void Decoder::Decode_Worker(UInt_t thread_id) {
       //   t2 = item.local_buf_itr->B.back().Tstamp64 / 1e9 * opt.Period;
       // }
       // prnt("ss d d s l l f fs;", BCYN, "Thread/buf", thread_id,
-      //       item.buf.buffer_id, "done. Bufpulses:", Bufpulses.size(),
+      //       item.buf.buffer_id, "done. Bufevents:", Bufevents.size(),
       //       item.local_buf_itr->B.size(), t1, t2, RST);
 
       // удаляем из списка активных
@@ -672,10 +687,11 @@ void Decoder::Decode_Worker(UInt_t thread_id) {
         decode_queue.size(), RST);
 } // Decode_Worker
 
-void Decoder::Resorting_Worker(ProcessingType type) {
+void Decoder::Resorting_Worker() {
 
   max_time_diff = 1 * 1e9 / opt.Period; // 1 секунда
 
+  /*
   const char *worker_name = "Resorting";
   int wait_value = 1;
   int stor_value = 2;
@@ -685,179 +701,128 @@ void Decoder::Resorting_Worker(ProcessingType type) {
   std::atomic<bool> *running = &resorting_running;
   char* col=(char*)KMAG;
   std::mutex *mut = &buf_mutex;
+  */
 
-  if (type == ProcessingType::MAKE_EVENT) {
-    worker_name = "MakeEvent";
-    wait_value = 2;
-    stor_value = 3;
-    cond = &makeevent_cond;
-    next_cond = &ana_cond;
-    timeout_ms = makeevent_timeout_ms;
-    running = &makeevent_running;
-    col=(char*)BMAG;
-    mut = &ana_mutex;
-  }
-
-  prnt2("ss s ls;", BGRN, worker_name,
-        "worker started. Bufpulses:", Bufpulses.size(), RST);
+  prnt2("ss ds;", BGRN, "Resorting worker started with timeout",
+        resorting_timeout_ms, RST);
 
   // itr указывает на последний ОБРАБОТАННЫЙ буфер
-  // next_itr указывает на следующий буфер после обработанного
-  auto itr = pulses_end; // в начале оба указывают на end()
+  // next указывает на следующий буфер после обработанного
+  auto itr = events_end; // в начале оба указывают на конец
   auto next = itr;
   // NOTE: next — итератор на буфер, готовый к обработке.
-  // Используется в обоих режимах:
-  //   - RESORTING: передаётся в ResortSingleBuffer,
-  //   - MAKE_EVENT: для удаления старых буферов до boundary.
-  // Инициализируется как end(), обновляется через ++next.
+  // Инициализируется как events_end, обновляется через ++next.
   // Критически важен для поддержания порядка обработки.
   // NOTE: itr и next управляют цепочкой обработки буферов.
-  // При достижении конца (next == end()) цикл продолжает ожидание новых
-  // буферов. Условие wait_for корректно обрабатывает end(), не вызывая
+  // При достижении конца (next == events_end) цикл продолжает ожидание новых
+  // буферов. Условие wait_for корректно обрабатывает events_end, не вызывая
   // разыменования.
 
   while (true) {
-    /*
-    // засечка времени
-    auto start_time = std::chrono::high_resolution_clock::now();
-    */
-
     // 1. ЖДЁМ под мьютексом
     {
+#ifdef PROFILING
+      SimpleTimer timer(this, "Resort_Wait");
+#endif
       std::unique_lock<std::mutex> lock(buf_mutex);
 
       // Условие: ждём пока itr не будет ready
-      cond->wait_for(lock, std::chrono::milliseconds(timeout_ms), [&]() {
-        if (!running->load(std::memory_order_acquire))
+      resorting_cond.wait_for(lock, std::chrono::milliseconds(resorting_timeout_ms), [&]() {
+        if (!resorting_running.load(std::memory_order_acquire))
           return true;
-        next = (itr == pulses_end) ? Bufpulses.begin() : std::next(itr);
-        if (next == pulses_end)
+        next = (itr == events_end) ? Bufevents.begin() : std::next(itr);
+        if (next == events_end)
           return false;
-        return next->flag.load(std::memory_order_acquire) == wait_value;
+        return next->flag.load(std::memory_order_acquire) == 1;
       });
 
       // next указывает на конец или на неготовый буфер
-      if (next == pulses_end ||
-          next->flag.load(std::memory_order_acquire) != wait_value) {
+      if (next == events_end ||
+          next->flag.load(std::memory_order_acquire) != 1) {
+        // prnt("ss d ls;", KGRN, "Resorting: No buffers:", next->source_buffer_id, Bufevents.size(),
+        //      RST);
         // нет готовых буферов
-        if (running->load(std::memory_order_acquire))
+        if (resorting_running.load(std::memory_order_acquire))
           continue; // продолжаем
         else
           break; // Выходим
       }
+      // есть готовый буфер
+      // else {
+      //   prnt("ss d ls;", BGRN,
+      //        "Resorting: woke up. Next buffer:", next->source_buffer_id,
+      //        Bufevents.size(), RST);
+      // }
     } // конец мьютекса
-
-    /*
-    auto wait_end = std::chrono::high_resolution_clock::now();
-    auto wait_time_ms = std::chrono::duration_cast<std::chrono::microseconds>(
-                            wait_end - start_time)
-                            .count();
-    */
 
     // 2. ОБРАБАТЫВАЕМ
     // bool processed_any = false;
-    while (next != pulses_end &&
-           next->flag.load(std::memory_order_acquire) == wait_value) {
-      // проверяем на конец списка (может быть, если выход по таймауту)
+    {
+#ifdef PROFILING
+      SimpleTimer timer(this, "Resort_Exec");
+#endif
+      // cout << "Resorting: " << next->source_buffer_id << endl;
+      while (next != events_end &&
+             next->flag.load(std::memory_order_acquire) == 1) {
+        // проверяем на конец списка (может быть, если выход по таймауту)
 
-      // Процессинг буфера - без мьютекса
-      try {
-        if (type == ProcessingType::RESORTING) {
-
+        bool moved=false;
+        // Процессинг буфера - без мьютекса
+        try {
           double t1 = -3, t2 = -3;
-          if (next->B.size()) {
-            t1 = next->B.front().Tstamp64 / 1e9 * opt.Period;
-            t2 = next->B.back().Tstamp64 / 1e9 * opt.Period;
+          if (next->PLS.size()) {
+            t1 = next->PLS.front().Tstamp64 / 1e9 * opt.Period;
+            t2 = next->PLS.back().Tstamp64 / 1e9 * opt.Period;
           }
           // prnt("ss d l f fs;", BCYN, "R1:", next->source_buffer_id,
           //      next->B.size(), t1, t2, RST);
 
           // Пересортрировка одного буфера
           ResortSingleBuffer(next);
+          next->flag.store(2, std::memory_order_release);
 
           t1 = -3, t2 = -3;
-          if (next->B.size()) {
-            t1 = next->B.front().Tstamp64 / 1e9 * opt.Period;
-            t2 = next->B.back().Tstamp64 / 1e9 * opt.Period;
+          if (next->PLS.size()) {
+            t1 = next->PLS.front().Tstamp64 / 1e9 * opt.Period;
+            t2 = next->PLS.back().Tstamp64 / 1e9 * opt.Period;
           }
           // prnt("ss d l f fs;", BBLU, "R2:", next->source_buffer_id,
           //      next->B.size(), t1, t2, RST);
 
           // Обновляем (сдвигаем вправо) границу удаления буферов
-          UpdateBoundary(next);
+          moved=UpdateBoundary(next);
           // prnt("ss d ds;", BYEL, "U:", next->source_buffer_id,
           //      boundary->source_buffer_id, RST);
 
-        } else if (type == ProcessingType::MAKE_EVENT) {
-          // cout << "M1: " << next->source_buffer_id << " "
-          //      << (int) next->flag.load(std::memory_order_acquire) << " "
-          //      << wait_value << endl;
-
-          std::list<PulseBuf>::iterator safe_boundary;
-          {
-            std::lock_guard<std::mutex> lock(boundary_mutex);
-            safe_boundary = boundary;
-          }
-
-          // cout << "M2: " << next->source_buffer_id << endl;
-
-          auto buf = Bufpulses.begin();
-          while (buf != safe_boundary && buf != pulses_end) {
-            // cout << "buf: " << buf->source_buffer_id << " "
-            //      << safe_boundary->source_buffer_id << " " << (int)buf->flag
-            //      << endl;
-            if (buf->flag < 3)
-              break;
-            Make_Events(buf);
-            buf = Bufpulses.erase(buf);
-          }
-          // cout << "M3: " << next->source_buffer_id << " "
-          //      << buf->source_buffer_id << endl;
+        } catch (...) {
+          prnt("ss ds;", BRED, "Exception in resorting_worker",
+               next->source_buffer_id, RST);
         }
-      } catch (...) {
-        prnt("ss s ds;", BRED, "Exception in", worker_name,
-             next->source_buffer_id, RST);
-      }
 
-      // processed_any = true;
+        // processed_any = true;
 
-      { // блокируем мьютекс
-        std::lock_guard<std::mutex> lock(*mut);
-        next->flag.store(stor_value, std::memory_order_release);
-        // prnt("ss s d ds;", col, "FLAG:", worker_name, next->source_buffer_id, stor_value, RST);
+
+        if (moved) { // блокируем мьютекс
+          std::lock_guard<std::mutex> lock(buf_mutex);
+          // next->flag.store(3, std::memory_order_release);
+          makeevent_cond.notify_one();
+        } // lock
+
+        prnt2("ss ds;", KMAG, "Resorting done:", next->source_buffer_id, RST);
         itr = next;
         ++next;
-        next_cond->notify_one();
-      } // lock
-    } // while (внутренний)
 
-    /*
-    auto exec_end = std::chrono::high_resolution_clock::now();
-    auto exec_time_ms = std::chrono::duration_cast<std::chrono::microseconds>(
-                            exec_end - wait_end)
-                            .count();
-
-    // 3. Выводим оба времени
-    if (type == ProcessingType::RESORTING) {
-      prnt("ss d l l ls;", KGRN, "Resort:", next->source_buffer_id, wait_time_ms,
-           exec_time_ms, wait_time_ms + exec_time_ms, RST);
-    } else if (type == ProcessingType::MAKE_EVENT) {
-      prnt("ss d d d l l ls;", BGRN, "MakeEv:", next->source_buffer_id,
-           pulses_end->source_buffer_id,
-           next->flag.load(std::memory_order_acquire), wait_time_ms,
-           exec_time_ms, wait_time_ms + exec_time_ms, RST);
-    }
-    */
+      } // while (внутренний)
+    } // замер завершён
 
     // if (processed_any)
     //   prnt2("ss s ls;", col, worker_name,
-    //        "processed. Remaining:", Bufpulses.size(), RST);
+    //        "processed. Remaining:", Bufevents.size(), RST);
 
     // cout << "make event4" << endl;
   } // while (внешний)
 
-  prnt2("sss ls;", BGRN, worker_name,
-        "worker finished. Bufpulses:", Bufpulses.size(), RST);
+  prnt("ss ls;", BGRN, "Resorting worker finished. Bufevents:", Bufevents.size(), RST);
 }
 
 // Ищем от нового к старому
@@ -865,18 +830,11 @@ void Decoder::Resorting_Worker(ProcessingType type) {
 // Если находим буфер где импульс будет в середине → сразу вставляем
 // Если встречаем слишком старый буфер → возвращаемся к последнему подходящему
 // Если дошли до начала → вставляем в начало самого старого подходящего
-
-void Decoder::ResortSingleBuffer(std::list<PulseBuf>::iterator itr) {
+void Decoder::ResortSingleBuffer(std::list<EventBuf>::iterator itr) {
   // itr указывает на текущий буфер, который нужно пересортировать
-  if (itr == Bufpulses.begin() || itr->B.empty()) {
+  if (itr == Bufevents.begin() || itr->PLS.empty()) {
     // Это первый буфер, не с чем сравнивать или он пустой
     return;
-  }
-
-  std::list<PulseBuf>::iterator safe_boundary; // локальная копия boundary
-  {
-    std::lock_guard<std::mutex> lock(boundary_mutex);
-    safe_boundary = boundary; // Копируем под мьютексом
   }
 
   // if (!itr->B.empty()) {
@@ -902,9 +860,9 @@ void Decoder::ResortSingleBuffer(std::list<PulseBuf>::iterator itr) {
   //   }
   // }
 
-  auto pulse_it = itr->B.begin();
+  auto pulse_it = itr->PLS.begin();
 
-  while (pulse_it != itr->B.end()) {
+  while (pulse_it != itr->PLS.end()) {
     // Запоминаем следующий импульс на случай удаления текущего
     auto next_pulse_it = std::next(pulse_it);
 
@@ -915,22 +873,22 @@ void Decoder::ResortSingleBuffer(std::list<PulseBuf>::iterator itr) {
            T0, RST);
     }
 
-    std::list<PulseBuf>::iterator last_suitable = pulses_end;
+    std::list<EventBuf>::iterator last_suitable = events_end;
 
     // Поиск целевого буфера, начинаем с текущего, в цикле сразу же перемещаем
-    // Идем назад от текущего буфера к началу, не переходим через safe_boundary
+    // Идем назад от текущего буфера к началу, не переходим через boundary
     auto target_buf_itr = itr;
-    while (target_buf_itr != safe_boundary &&
-           target_buf_itr != Bufpulses.begin()) {
+    while (target_buf_itr != boundary &&
+           target_buf_itr != Bufevents.begin()) {
       auto prev_buf_itr = std::prev(target_buf_itr);
 
-      if (prev_buf_itr->B.empty()) {
+      if (prev_buf_itr->PLS.empty()) {
         target_buf_itr = prev_buf_itr;
         continue;
       }
 
       // T1 - временная отметка последнего импульса проверяемого буфера
-      Long64_t T1 = prev_buf_itr->B.back().Tstamp64;
+      Long64_t T1 = prev_buf_itr->PLS.back().Tstamp64;
       Long64_t delta_t = T0 - T1;
 
       // if (!time_checked) {
@@ -948,10 +906,10 @@ void Decoder::ResortSingleBuffer(std::list<PulseBuf>::iterator itr) {
       // Проверяем условие окончания сортировки
       if (delta_t > opt.tgate) {
         // Этот буфер слишком старый
-        if (last_suitable != pulses_end) {
+        if (last_suitable != events_end) {
           // Если ранее был найден last_suitable, вставляем в начало последнего
           // подходящего буфера
-          last_suitable->B.splice(last_suitable->B.begin(), itr->B, pulse_it);
+          last_suitable->PLS.splice(last_suitable->PLS.begin(), itr->PLS, pulse_it);
           break;
         }
         // Нет подходящего буфера → импульс остаётся в своём
@@ -962,10 +920,10 @@ void Decoder::ResortSingleBuffer(std::list<PulseBuf>::iterator itr) {
       // Буфер подходит по времени
       last_suitable = prev_buf_itr;
 
-      if (T0 >= prev_buf_itr->B.front().Tstamp64) {
+      if (T0 >= prev_buf_itr->PLS.front().Tstamp64) {
         // Импульс будет в середине/конце → конечный выбор
-        prev_buf_itr->B.splice(prev_buf_itr->B.end(), itr->B, pulse_it);
-        sorted_move(prev_buf_itr->B);
+        prev_buf_itr->PLS.splice(prev_buf_itr->PLS.end(), itr->PLS, pulse_it);
+        sorted_move(prev_buf_itr->PLS);
         break;
       }
 
@@ -974,89 +932,63 @@ void Decoder::ResortSingleBuffer(std::list<PulseBuf>::iterator itr) {
     }
 
     // Если дошли до начала списка и есть подходящий
-    if ((target_buf_itr == safe_boundary ||
-         target_buf_itr == Bufpulses.begin()) &&
-        last_suitable != pulses_end) {
+    if ((target_buf_itr == boundary ||
+         target_buf_itr == Bufevents.begin()) &&
+        last_suitable != events_end) {
       double T_from = pulse_it->Tstamp64 / 1e9 * opt.Period;
-      double T_to = last_suitable->B.begin()->Tstamp64 / 1e9 * opt.Period;
+      double T_to = last_suitable->PLS.begin()->Tstamp64 / 1e9 * opt.Period;
       prnt("ss d d l f fs;", BMAG,
-           "last_suitable:", safe_boundary->source_buffer_id,
-           last_suitable->source_buffer_id, Bufpulses.size(), T_from, T_to,
+           "last_suitable:", boundary->source_buffer_id,
+           last_suitable->source_buffer_id, Bufevents.size(), T_from, T_to,
            RST);
-      if (Bufpulses.size() > max_deque_size - 1) {
-        // почему -1? (было -2 до введения pulses_end)
+      if (Bufevents.size() > max_deque_size - 1) {
+        // почему -1? (было -2 до введения events_end)
         crs->errors[ER_PBUF]++;
         prnt("ss d d ls;", BRED, "ResortEdge:", itr->source_buffer_id,
-             last_suitable->source_buffer_id, Bufpulses.size(), RST);
+             last_suitable->source_buffer_id, Bufevents.size(), RST);
       }
-      last_suitable->B.splice(last_suitable->B.begin(), itr->B, pulse_it);
+      last_suitable->PLS.splice(last_suitable->PLS.begin(), itr->PLS, pulse_it);
     }
 
     pulse_it = next_pulse_it;
   }
 }
 
-void Decoder::UpdateBoundary(std::list<PulseBuf>::iterator itr) {
-  // Обновляем (сдвигаем вправо) границу удаления буферов
-  std::lock_guard<std::mutex> lock(boundary_mutex);
-  size_t sz = Bufpulses.size() - 1; // минус pulses_end
-  // Сколько останется если удалить до boundary
+bool Decoder::UpdateBoundary(std::list<EventBuf>::iterator itr) {
+  // Обновляем (сдвигаем вправо) границу
+  // начинаем от boundary и двигаемся вправо пока выполняются ВСЕ
+  // условия (значит, можно make_event):
+  // 1) flag>=2 (пересортирован) И
+  // 2) ожидаемый размер >= max_deque_size ИЛИ dt > max_time_diff,
+  // где dt - разница времени между последним импульсом в itr и
+  // последним импульсом в boundary
 
-  auto it = boundary;
-  auto prev_boundary = boundary;
+  std::lock_guard<std::mutex> lock(boundary_mutex);
+  size_t sz = Bufevents.size() - 1; // минус events_end
+  // Сколько останется от boundary до конца
+
+  //auto it = boundary;
+  //auto prev_boundary = boundary;
 
   Long64_t dt = -1e10;
-  /*
-  if (it != pulses_end) {
-    if (!itr->B.empty() && !it->B.empty()) {
-      dt = (itr->B.back().Tstamp64 - it->B.back().Tstamp64) / 1e9 * opt.Period;
-    }
-    // cout << "empty: " << itr->B.empty() << " " << it->B.empty()
-    //      << " " << boundary->source_buffer_id << " "
-    //      << itr->source_buffer_id << " " << Bufpulses.size() << endl;
-  }
-    */
+  Long64_t dt_prev = dt;
+  bool moved=false;
 
-  // начинаем от boundary и двигаемся вправо пока выполняются ВСЕ
-  // условия (значит, можно удалять):
-  // 1) flag>=3 (обработан в makeevent) И
-  // 2) ожидаемый размер > max_deque_size ИЛИ dt > max_time_diff
-
-  /*
-  while (it != itr && it != pulses_end) {
-    if (it->flag >= 3 &&
-        (sz > max_deque_size ||
-         (!itr->B.empty() && !it->B.empty() &&
-          itr->B.back().Tstamp64 - it->B.back().Tstamp64 >
-  max_time_diff))) {
-      // cout << "flag: " << (int)it->flag << " " <<
-  it->source_buffer_id
-      //      << endl;
-      prev_boundary = it;
-      ++it; // этот можно удалять, двигаем границу
-      --sz;
-    } else
-      break; // этот буфер не удаляем, вправо не двигаемся
-  }
-*/
-
-  while (it != itr && it != pulses_end) {
-    bool should_remove = false;
-
-    bool b1=itr->B.empty(), b2=it->B.empty();
-    dt = -1e10;
+  while (boundary != itr && boundary != events_end) {
+    bool b_move = false;
 
     // Проверка флага: только если уже отсортирован
-    if (it->flag >= 2) {
+    if (boundary->flag.load(std::memory_order_acquire) >= 2) {
       // Проверка размера
-      if (sz > max_deque_size || it->B.empty()) {
-        should_remove = true;
+      if (sz >= max_deque_size || boundary->PLS.empty()) {
+        b_move = true;
       }
       // Проверка временной разницы, если есть данные в буферах
-      else if (!itr->B.empty()) { // !it->B.empty() уже проверено выше
-        dt = itr->B.back().Tstamp64 - it->B.back().Tstamp64;
+      else if (!itr->PLS.empty()) { // !boundary->PLS.empty() уже проверено выше
+        dt_prev=dt;
+        dt = itr->PLS.back().Tstamp64 - boundary->PLS.back().Tstamp64;
         if (dt > max_time_diff) {
-          should_remove = true;
+          b_move = true;
         }
       }
     }
@@ -1064,41 +996,137 @@ void Decoder::UpdateBoundary(std::list<PulseBuf>::iterator itr) {
     // cout << "flag: " << (int)it->flag << " " << should_remove << " " << b1
     //      << " " << b2 << " " << dt / 1e9 * opt.Period << " "
     //      << it->source_buffer_id << endl;
+    if (!b_move)
+      break; // этот буфер еще может сортироваться, вправо не двигаемся
 
-    if (should_remove) {
-      prev_boundary = it;
-      ++it; // этот можно удалять, двигаем границу
-      --sz;
-    } else {
-      break; // этот буфер не удаляем, вправо не двигаемся
-    }
+    boundary->flag.store(3, std::memory_order_release);
+    ++boundary; // считаем, что этот уже отсортирован, двигаем границу
+    --sz;
+    moved=true;
   }
 
-  boundary = prev_boundary; // обновляем глобальную границу уделания буферов
+  prnt2("ss d d d l f fs;", BYEL, "boundary done:", itr->source_buffer_id,
+        boundary->source_buffer_id,
+        boundary->flag.load(std::memory_order_acquire), sz,
+        dt / 1e9 * opt.Period, dt_prev / 1e9 * opt.Period, RST);
 
-  prnt2("ss l d l fs;", BYEL, "sz:",
-        (ULong64_t)(boundary == pulses_end ? -7 : boundary->source_buffer_id),
-        itr->source_buffer_id, sz, dt / 1e9 * opt.Period, RST);
+  return moved;
 }
 
-void Decoder::Make_Events(std::list<PulseBuf>::iterator itr) {
-  // cout << "make events: " << itr->source_buffer_id << " " << itr->B.size() <<
+void Decoder::MakeEvent_Worker() {
+
+  prnt2("ss ds;", BGRN, "MakeEvent worker started with timeout",
+        makeevent_timeout_ms, RST);
+
+  // itr указывает на последний ОБРАБОТАННЫЙ буфер
+  // next указывает на следующий буфер после обработанного
+  auto itr = events_end; // в начале оба указывают на end()
+  auto next = itr;
+  // NOTE: next — итератор на буфер, готовый к обработке.
+  // Инициализируется как events_end, обновляется через ++next.
+  // Критически важен для поддержания порядка обработки.
+  // NOTE: itr и next управляют цепочкой обработки буферов.
+  // При достижении конца (next == events_end) цикл продолжает ожидание новых
+  // буферов. Условие wait_for корректно обрабатывает events_end, не вызывая
+  // разыменования.
+
+  while (true) {
+    // 1. ЖДЁМ под мьютексом
+    {
+#ifdef PROFILING
+      SimpleTimer timer(this, "MakeEv_Wait");
+#endif
+      std::unique_lock<std::mutex> lock(buf_mutex);
+
+      // Условие: ждём пока itr не будет ready
+      makeevent_cond.wait_for(lock, std::chrono::milliseconds(makeevent_timeout_ms), [&]() {
+        if (!makeevent_running.load(std::memory_order_acquire))
+          return true;
+        next = (itr == events_end) ? Bufevents.begin() : std::next(itr);
+        // prnt("ss d d d d ls;", BRED, "next:", next->source_buffer_id,
+        //      itr->source_buffer_id, events_end->source_buffer_id,
+        //      Bufevents.begin()->source_buffer_id, Bufevents.size(), RST);
+        if (next == events_end)
+          return false;
+        // cout << "next->flag: " << (int) next->flag.load(std::memory_order_acquire) << endl;
+        return next->flag.load(std::memory_order_acquire) == 3;
+      });
+
+      // next указывает на конец или на неготовый буфер
+      if (next == events_end ||
+          next->flag.load(std::memory_order_acquire) != 3) {
+        // prnt("ss d ls;", KGRN, "MakeEvent: No buffers:", next->source_buffer_id, Bufevents.size(),
+        //      RST);
+        // нет готовых буферов
+        if (makeevent_running.load(std::memory_order_acquire))
+          continue; // продолжаем
+        else
+          break; // Выходим
+      }
+      // есть готовый буфер
+      // else {
+      //   prnt("ss d ls;", BGRN,
+      //        "MakeEvent: woke up. Next buffer:", next->source_buffer_id,
+      //        Bufevents.size(), RST);
+      // }
+    } // конец мьютекса
+
+    // 2. ОБРАБАТЫВАЕМ
+    // bool processed_any = false;
+    {
+#ifdef PROFILING
+      SimpleTimer timer(this, "MakeEv_Exec");
+#endif
+      while (next != boundary && next != events_end &&
+             next->flag.load(std::memory_order_acquire) == 3) {
+        // проверяем на конец списка (может быть, если выход по таймауту)
+
+        // Процессинг буфера - без мьютекса
+        try {
+          Make_Events(next);
+        } catch (...) {
+          prnt("ss ds;", BRED, "Exception in makeevent_worker",
+               next->source_buffer_id, RST);
+        }
+
+        { // блокируем мьютекс
+          std::lock_guard<std::mutex> lock(ana_mutex);
+          next->flag.store(4, std::memory_order_release);
+          ana_cond.notify_one();
+        } // lock
+
+        prnt2("ss ds;", BCYN, "MakeEvent done:", next->source_buffer_id, RST);
+        itr = next;
+        ++next;
+
+      } // while (внутренний)
+    } // замер завершён
+
+  } // while (внешний)
+
+  prnt2("ss ls;", BGRN, "MakeEvent worker finished. Bufevents:", Bufevents.size(), RST);
+} // MakeEvent_Worker
+
+void Decoder::Make_Events(std::list<EventBuf>::iterator itr) {
+  // создает контейнер событий из импульсов. удаляет импульсы.
+  
+  // cout << "make events: " << itr->source_buffer_id << " " << itr->PLS.size() <<
   // endl;
-  if (itr->B.empty())
+  if (itr->PLS.empty())
     return; // ← Защита от пустого буфера
 
   // prnt("ss d f fs;", BGRN, "M:", itr->source_buffer_id,
-  //      itr->B.front().Tstamp64 / 1e9 * opt.Period,
-  //      itr->B.back().Tstamp64 / 1e9 * opt.Period, RST);
+  //      itr->PLS.front().Tstamp64 / 1e9 * opt.Period,
+  //      itr->PLS.back().Tstamp64 / 1e9 * opt.Period, RST);
 
   /*
   Levents.emplace_back();
   auto ev = &Levents.back();
-  auto start = itr->B.begin();
+  auto start = itr->PLS.begin();
   ev->Tstmp = start->Tstamp64;
   ev->pulses.push_back(std::move(*start));
   ++start;
-  for (auto pulse_it = start; pulse_it != itr->B.end(); ++pulse_it) {
+  for (auto pulse_it = start; pulse_it != itr->PLS.end(); ++pulse_it) {
     if (pulse_it->Tstamp64 > ev->Tstmp + opt.tgate) {
       Levents.emplace_back();
       ev = &Levents.back();
@@ -1107,26 +1135,26 @@ void Decoder::Make_Events(std::list<PulseBuf>::iterator itr) {
     ev->pulses.push_back(std::move(*pulse_it));
   }
   */
-  auto buf_it = Bufevents.emplace(events_end);
-  auto evect = &buf_it->B; // вектор событий для этого буфера
-  // текущее событие в векторе событий
-  auto ev = evect->emplace(evect->end());
 
-  auto start = itr->B.begin();
-  ev->Tstmp = start->Tstamp64;
-  ev->pulses.push_back(std::move(*start));
-  ++start;
-  for (auto pulse_it = start; pulse_it != itr->B.end(); ++pulse_it) {
-    if (pulse_it->Tstamp64 > ev->Tstmp + opt.tgate) {
-      ev = evect->emplace(evect->end());
+  //auto evect = &itr->EVT; // вектор событий для этого буфера
+  // текущее событие в векторе событий
+
+  eventiter ev = itr->EVT.end();
+  Long64_t TT = -9999999999;
+
+  for (auto pulse_it = itr->PLS.begin(); pulse_it != itr->PLS.end();
+       ++pulse_it) {
+    if (pulse_it->Tstamp64 > TT) {
+      ev = itr->EVT.emplace(itr->EVT.end());
       ev->Tstmp = pulse_it->Tstamp64;
+      TT = ev->Tstmp + opt.tgate;
     }
     ev->pulses.push_back(std::move(*pulse_it));
   }
-  Bufsize.fetch_add(evect->size(), std::memory_order_release);
-  Nevents.fetch_add(evect->size(), std::memory_order_relaxed);
-  buf_it->source_buffer_id = itr->source_buffer_id;
-  buf_it->flag.store(1, std::memory_order_release);
+  Bufsize.fetch_add(itr->EVT.size(), std::memory_order_release);
+  Nevents.fetch_add(itr->EVT.size(), std::memory_order_relaxed);
+  //itr->flag.store(4, std::memory_order_release);
+  itr->PLS.clear(); // очищаем список импульсов
 }
 
 void Decoder::Ana_Worker() {
@@ -1134,55 +1162,81 @@ void Decoder::Ana_Worker() {
 
   while (ana_running.load(std::memory_order_acquire)) {
     { // 1. Ждём по условию: есть данные или пора выходить
+#ifdef PROFILING
+      SimpleTimer timer(this, "Ana_Wait");
+      cout << "Ana wait... " << ana_running << endl;
+#endif
       std::unique_lock<std::mutex> lock(ana_mutex);
       ana_cond.wait_for(lock, std::chrono::milliseconds(ana_timeout_ms));
     }
 
-    if (Bufevents.size() > 1) { // есть как минимум один буфер, кроме events_end
-      // 2. Обходим Bufevents и обрабатываем буферы с flag == 1
-      for (auto it = Bufevents.begin(); it != events_end; ++it) {
-        // Проверяем, что буфер готов к анализу
-        if (it->flag.load(std::memory_order_acquire) == 1) {
-          try {
-            // Здесь можно добавить логику анализа каждого события
-            // Например:
-            // for (auto& ev : it->B) {
-            //   crs->AnalyzeEvent(ev);
-            // }
+    {
+#ifdef PROFILING
+      SimpleTimer timer(this, "Ana_Exec");
+#endif
+      if (Bufevents.size() > 1) {
+        // есть как минимум один буфер, кроме events_end
+        // 2. Обходим Bufevents и обрабатываем буферы с flag == 4
+        for (auto it = Bufevents.begin(); it != events_end; ++it) {
+          // Проверяем, что буфер готов к анализу
+          int fl = it->flag.load(std::memory_order_acquire);
+          prnt2("ss d d ds;", KRED, "Ana:", it->source_buffer_id,
+               boundary->source_buffer_id, fl, RST);
+          if (fl < 4)
+            break; // дальше буферы ещё не готовы
+          else if (fl == 4) {
+            try {
+              // Здесь можно добавить логику анализа каждого события
+              // Например:
+              // for (auto& ev : it->B) {
+              //   crs->AnalyzeEvent(ev);
+              // }
 
-            // Помечаем как обработанный
-          } catch (...) {
-            prnt("ss ds;", BRED, "Exception in Ana_Worker processing buffer:",
-                 it->source_buffer_id, RST);
+              // Помечаем как обработанный
+            } catch (...) {
+              prnt("ss ds;", BRED, "Exception in Ana_Worker processing buffer:",
+                   it->source_buffer_id, RST);
+            }
+            it->flag.store(5, std::memory_order_release);
           }
-          it->flag.store(2, std::memory_order_release);
         }
+
+        // буфер перед boundary нельзя удалять
+        auto before_boundary = (boundary == Bufevents.begin())
+                                 ? Bufevents.begin()
+                                 : std::prev(boundary);
+
+        // 3. Удаляем старые буферы (flag == 5), сохраняя минимум opt.ev_max
+        // событий
+        Long64_t removed_events = 0;
+        while (Bufevents.size() > 1) {
+          if (Bufevents.begin() == before_boundary ||
+              Bufevents.begin()->flag.load(std::memory_order_acquire) < 5)
+            break; // ещё не проанализирован — выходим
+
+          // Удаляем с учётом количества событий
+          Long64_t current_size = Bufsize.load(std::memory_order_acquire);
+          Long64_t new_size = current_size - Bufevents.begin()->EVT.size();
+          if (new_size < opt.ev_max)
+            break;
+
+          removed_events += Bufevents.begin()->EVT.size();
+
+          prnt2("ss d d ds;", BRED, "Pop:", Bufevents.begin()->source_buffer_id,
+               boundary->source_buffer_id,
+               Bufevents.begin()->flag.load(std::memory_order_acquire), RST);
+
+          Bufevents.pop_front();
+        }
+
+        Bufsize.fetch_sub(removed_events, std::memory_order_release);
       }
 
-      // 3. Удаляем старые буферы (flag >= 2), сохраняя минимум opt.ev_max
-      // событий
-      Long64_t removed_events = 0;
-      while (Bufevents.size() > 1) {
-        if (Bufevents.begin()->flag.load(std::memory_order_acquire) < 2)
-          break; // ещё не обработан — останавливаемся
-
-        // Удаляем с учётом количества событий
-        Long64_t current_size = Bufsize.load(std::memory_order_acquire);
-        Long64_t new_size = current_size - Bufevents.begin()->B.size();
-        if (new_size < opt.ev_max)
-          break;
-
-        removed_events += Bufevents.begin()->B.size();
-        Bufevents.pop_front();
-      }
-
-      Bufsize.fetch_sub(removed_events, std::memory_order_release);
-    }
-
-    // 4. Выход, если больше не работаем
-    // if (!ana_running.load(std::memory_order_acquire)) {
-    //   break;
-    // }
+      // 4. Выход, если больше не работаем
+      // if (!ana_running.load(std::memory_order_acquire)) {
+      //   break;
+      // }
+    } // замер завершён
 
   } // while (внешний)
 
@@ -1192,7 +1246,7 @@ void Decoder::Ana_Worker() {
 
 /*
 // добавляет офсет ко всем временным отметкам в буфере
-Long64_t Decoder::Add_Offset_To_Buffer(std::list<PulseBuf>::iterator itr) {
+Long64_t Decoder::Add_Offset_To_Buffer(std::list<EventBuf>::iterator itr) {
   cout << "add_offset: " << T64_offset.load(std::memory_order_acquire) << endl;
   if (!itr->B.empty()) {
     Long64_t dt64 = T64_offset.load(std::memory_order_acquire);
@@ -1928,3 +1982,11 @@ void Decoder::MakePk(PkClass &pk, PulseClass &ipls) {
   }
 
 } // MakePk
+
+#ifdef PROFILING
+void Decoder::LogTime(const char* stage, long long duration_us) {
+    // if (print2) {
+    prnt("ss s l ss;", BMAG, "Timing", stage, duration_us, "μs", RST);
+    // }
+}
+#endif
