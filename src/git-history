@@ -1,3 +1,11 @@
+git tag -a v0.949e -m 'промежуточный комммит: Timing в decoder'
+- добавлена опция TIMING в Makefile
+
+- исправить: file is too old. Try to use romana v0.930 or earlier:
+  вернуть обработку старых форматов
+-см. v0.944 (нижняя часть)
+
+
 git tag -a v0.949d -m 'промежуточный комммит'
 - перед изменением ana_worker
 - убран PulseBuf

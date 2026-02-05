@@ -136,6 +136,7 @@ enum ERR_NUM {
   ER_HEAT,
 };
 const int MAX_ERR = ER_HEAT + 1;
+const int MAX_TIMING = 7;
 
 //---------------------
 enum P_Def {

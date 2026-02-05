@@ -1,23 +1,3 @@
-# commands:
-# make : compile
-# make -j3 : compile using 3 CPUs
-# make clean : clear compilation
-# make cyusblib : compile and install cyusb library (need root password)
-# make r2a : compile r2a (root2ascii)
-
-# make NOUSB=1 compile without cyusb library
-# make TPROC=1 compile with TPROC option
-#      TPROC -> cpu usage in FillHist, only in singlethread
-# make TIMES=1 compile with TIMES option
-# make DEBUG=1 compile with debug option
-# make PROF=1 compile with profiling option
-# make P_TEST=1 compile with Test menu entry
-# make P_LIBUSB=1 compile with printing libusb messages
-# make P_CMD=1 compile with printing cmd32 & cmd2 messages
-# make BITS=N compile with cutting lower bits in sData by N
-# make [-j] yumo compile with YUMO option
-# make ANA3=1 новая версия анализа, USB и т.п.
-
 # removed!!!   make simul to compile with SIMUL option
 
 define HELP_TEXT
@@ -44,6 +24,7 @@ make BITS=N : compile with cutting lower bits in sData by N
 make APK=1 : CFD в целых числах + additional output in Check DSP (CFD)
 make [-j] yumo : compile with YUMO option
 make ANA3=1 : новая версия анализа, USB и т.п.
+make TIMING=1 : добавить измерение времени выполнения этапов декодирования
 endef
 export HELP_TEXT
 
@@ -115,6 +96,10 @@ endif
 
 ifdef ANA3
   CPPFLAGS += -D ANA3=1
+endif
+
+ifdef TIMING
+  CPPFLAGS += -D TIMING=1
 endif
 
 ifeq (yumo,$(findstring $(MAKECMDGOALS),yumo))

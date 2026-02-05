@@ -1,6 +1,5 @@
 #pragma once
 #include "romana.h"
-//#define PROFILING 1
 
 typedef std::list<PulseClass> pulsecontainer; // список импульсов в буфере
 typedef std::vector<EventClass> eventcontainer; // вектор событий в буфере
@@ -31,6 +30,22 @@ public:
   // 4: события созданы, можно анализировать
   // 5: анализ закончен, можно удалять
 };
+
+#ifdef TIMING
+void LogTime(int stage, Long64_t duration_us, Long64_t size=0);
+
+class SimpleTimer {
+    std::chrono::steady_clock::time_point start;
+    //Decoder* dec;
+    int stage;
+    Long64_t size;
+
+public:
+  SimpleTimer(int s, Long64_t z=0);
+  ~SimpleTimer();
+};
+
+#endif
 
 class Decoder {
 private:
@@ -169,33 +184,19 @@ typename Container::iterator sorted_insert(Container &cont, const T &value) {
   std::list<UChar_t *> active_read_starts;
   std::mutex active_mutex; // защищает active_read_starts
 
-#ifdef PROFILING
-class SimpleTimer {
-    std::chrono::steady_clock::time_point start;
-    Decoder* dec;
-    const char* stage;
-
-public:
-    SimpleTimer(Decoder* d, const char* s) : dec(d), stage(s) {
-        start = std::chrono::steady_clock::now();
-    }
-
-    ~SimpleTimer() {
-        auto end = std::chrono::steady_clock::now();
-        auto dur = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        dec->LogTime(stage, dur.count());
-    }
-};
-
-void LogTime(const char* stage, long long duration_us);
-#endif
-
-
 public:
   // bool first_call = false;
   int crs_module = 0;
 
-  std::vector<UChar_t> buffer_storage;
+#ifdef TIMING
+  double timing[MAX_TIMING];
+  std::string timing_label[MAX_TIMING] = {
+      "Acquire", "Copy", "Decode", "Resorting", "MakeEvent", "Ana", "Delete",
+  };
+#endif
+
+  std::vector<UChar_t>
+      buffer_storage;
   BufClass
       Buf_ring; // указатель на буфер, куда пишутся и где декодируются данные
   // начало Buf_ring.b1 сдвинуто вправо на o_size
@@ -331,6 +332,9 @@ public:
   void Resorting_Worker(); // рабочий поток пересортировки между буферами
   void MakeEvent_Worker();    // рабочий поток создания событий
   void Ana_Worker(); // рабочий поток анализа событий
+
+  void Delete_Buf1(std::list<EventBuf>::iterator itr); // удаление буферов из Bufevents
+  void Delete_Buf2(std::list<EventBuf>::iterator itr); // удаление буферов из Bufevents
 
   // Метод для добавления данных в очередь извне
   void Add_to_copy_queue(UChar_t *data, size_t size);

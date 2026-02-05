@@ -344,12 +344,17 @@ public:
 class ErrFrame : public ParDlg {
 public:
   TGTextEntry *fErr[MAX_ERR];
+#ifdef TIMING
+  TGTextEntry *fTiming[MAX_TIMING];
+#endif
   int errflag;
 
   // routines
   ErrFrame(const TGWindow *p, UInt_t w, UInt_t h);
   // virtual ~ErrFrame();
 
+  void Add(int max, TGCompositeFrame *fcont1, TGTextEntry *fE[],
+           std::string label[]);
   void Reset();
   void ErrUpdate();
 

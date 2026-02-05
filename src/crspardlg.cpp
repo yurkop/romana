@@ -1,4 +1,5 @@
 #include "romana.h"
+#include "decoder.h"
 
 #include "TGFileDialog.h"
 #include <TCanvas.h>
@@ -48,6 +49,7 @@ Float_t RGB[MAX_TP + 3][3] = {
 extern HClass *hcl;
 extern ParParDlg *parpar;
 extern ChanParDlg *chanpar;
+extern Decoder *decoder;
 
 const char *ttip_type = "Channel type:\nOther - dummy type\nCopy - copy from "
                         "channel to group\nSwap - first select swap, then "
@@ -3646,6 +3648,29 @@ void ChanParDlg::HandleMouseWheel(Event_t *event) {
   }
 }
 
+void ErrFrame::Add(int max, TGCompositeFrame *fcont1, TGTextEntry *fE[],
+                   std::string label[]) {
+  for (int i = 0; i < max; i++) {
+    TGHorizontalFrame *cframe = new TGHorizontalFrame(fcont1, 10, 10);
+    fcont1->AddFrame(cframe, LayLT0);
+    TGLabel *lb = new TGLabel(cframe, label[i].c_str());
+    lb->SetTextJustify(kTextLeft);
+    lb->ChangeOptions(lb->GetOptions() | kFixedSize);
+    lb->Resize(120, 20);
+    cframe->AddFrame(lb, LayLT5);
+    fE[i] = new TGTextEntry(cframe, "");
+    fE[i]->ChangeOptions(fE[i]->GetOptions() | kFixedSize | kSunkenFrame);
+
+    fE[i]->SetState(false);
+
+    fE[i]->Resize(70, 20);
+    int col = gROOT->GetColor(19)->GetPixel();
+    fE[i]->SetBackgroundColor(col);
+    fE[i]->SetText(0);
+    cframe->AddFrame(fE[i], LayLT5);
+  }
+}
+
 //-------------------------
 ErrFrame::ErrFrame(const TGWindow *p, UInt_t w, UInt_t h) : ParDlg(p, w, h) {
 
@@ -3662,25 +3687,11 @@ ErrFrame::ErrFrame(const TGWindow *p, UInt_t w, UInt_t h) : ParDlg(p, w, h) {
   fcont1 = new TGCompositeFrame(fCanvas1->GetViewPort(), 1, 1, kVerticalFrame);
   fCanvas1->SetContainer(fcont1);
 
-  for (int i = 0; i < MAX_ERR; i++) {
-    TGHorizontalFrame *cframe = new TGHorizontalFrame(fcont1, 10, 10);
-    fcont1->AddFrame(cframe, LayLT0);
-    TGLabel *lb = new TGLabel(cframe, crs->errlabel[i].c_str());
-    lb->SetTextJustify(kTextLeft);
-    lb->ChangeOptions(lb->GetOptions() | kFixedSize);
-    lb->Resize(120, 20);
-    cframe->AddFrame(lb, LayLT5);
-    fErr[i] = new TGTextEntry(cframe, "");
-    fErr[i]->ChangeOptions(fErr[i]->GetOptions() | kFixedSize | kSunkenFrame);
+  Add(MAX_ERR, fcont1, fErr, crs->errlabel);
 
-    fErr[i]->SetState(false);
-
-    fErr[i]->Resize(70, 20);
-    int col = gROOT->GetColor(19)->GetPixel();
-    fErr[i]->SetBackgroundColor(col);
-    fErr[i]->SetText(0);
-    cframe->AddFrame(fErr[i], LayLT5);
-  }
+#ifdef TIMING
+  Add(MAX_TIMING, fcont1, fTiming, decoder->timing_label);
+#endif
 }
 
 // ErrFrame::~ErrFrame() {}
@@ -3708,4 +3719,10 @@ void ErrFrame::ErrUpdate() {
       tab6->Layout();
     }
   }
+#ifdef TIMING
+  for (int i = 0; i < MAX_TIMING; i++) {
+    txt.Form("%0.1f", decoder->timing[i]);
+    fTiming[i]->SetText(txt);
+  }
+#endif
 }

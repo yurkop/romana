@@ -1727,7 +1727,7 @@ int CRS::Init_device() {
   if (Init_Transfer3()) {
     return -8;
   };
-#else  // ANA3
+#else  // !ANA3
   if (Init_Transfer()) {
     return -8;
   };
@@ -1920,7 +1920,7 @@ int CRS::Init_Transfer3() {
   return 0;
 
 } // Init_Transfer3
-#else // ANA3
+#else // !ANA3
 
 int CRS::Init_Transfer() {
 
@@ -2136,6 +2136,7 @@ int CRS::Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par) {
   case 11:
     len_out = 6;
     len_in = 1;
+    
     break;
   default:
     cout << "Wrong CRS32 command: " << (int)cmd << endl;
@@ -3629,259 +3630,6 @@ void CRS::Make_prof_ch() {
 }
 
 #ifdef ANA3
-void CRS::AnaBuf3(buf_iter buf_it) {
-  // анализирует буфер, на который указывает  buf_it
-
-  // 1. Сначала смотрим на конец текущего анализируемого буфера buf_it:
-  // - ищем начало последнего события в конце буфера
-  // - если нашли:
-  //   - записываем его в b текущего буфера
-  // - если не нашли (дошли до write_start, начала события нет):
-  //   - ничего не делаем, b остается равным 0
-  // - flag текущего +1: сделан findlast
-
-  // 2. Потом смотрим на начало анализируемого буфера:
-  // - Проверяем предыдущий буфер.
-  // - Если его конец меньше начала текущего (есть хвост)
-  //   или write_start предыдущего > write_start текущего (переход через кольцевой буфер), то:
-  //   1) копируем кусок последнего события из предыдущего перед началом
-  //   текущего (от b до write_end предыдущего буфера).
-  //   2) write_start текущего сдвигается влево
-  // - Если его конец больше начала текущего -> такого не может быть!!!
-  // - Если совпадают - ничего не делаем.
-  // - flag предыдущего +1: проверен/скопирован хвост.
-
-  // 3. Проверяем b==0
-  // - если b==0 ->
-  //     b=write_start, весь буфер считается куском события
-  //     flag текущего +1: анализ (не нужен)
-  // - если b!=0 ->
-  //     запускаем анализ текущего буфера от write_start до b.
-  //     Здесь (в анализе) начинается многопоточность
-  //     в конце анализа: flag текущего +1: провели анализ
-  //
-  // Итого, если flag==3 (fildlast, скопирован хвост, проанализирован) ->
-  // элемент bufclass можно удалять
-  //
-
-  // 1. ищем начало события в конце буфера
-  // в следующем вызове этот "хвост" прицепится к следующему буферу
-  FindLast3(buf_it);
-  buf_it->flag++;
-
-  // 2. Копируем хвост предыдущего буфера.
-  // предыдущая запись всегда должна существовать
-  buf_iter prev = std::prev(buf_it);
-  buf_it->buffer_id = prev->buffer_id + 1;
-  if (prev->write_end <
-          buf_it->write_start // конец предыдущего раньше начала текущего (есть хвост)
-      || prev->write_start > buf_it->write_start) { // или начало предыдущего позже начала
-    // текущего (переход через конец кольцевого буфера)
-    size_t count = prev->write_end - prev->u82.b;
-    if (count > OFF_SIZE) {
-      prnt("ss l ls", BRED, "Error: count > OFF_SIZE:", buf_it->buffer_id,
-           count, RST);
-      return;
-    }
-    buf_it->write_start -= count; // сдвигаем начало буфера влево
-    memmove(buf_it->write_start, prev->u82.b, count); // копируем хвост
-  } else if (prev->write_end > buf_it->write_start) {
-    // конец предыдущего позже начала текущего: такого не может быть!
-    prnt("ss ls", BRED, "prev->write_end>buf_it->write_start:", buf_it->buffer_id, RST);
-  } else {
-    // иначе (они равны) ничего не делаем
-    cout << "----equal----" << endl;
-  }
-  prev->flag++;
-
-  prnt("ss ls;", BBLU, "Step2:", buf_it->buffer_id, RST);
-
-  if (buf_it->u82.b) {
-    // анализ, в нем должно быть buf_it->flag++
-    Decode_switch3(buf_it);
-
-    // buf_it->flag++; //анализ, в нем должно быть buf_it->flag++
-  } else { // buf_it->b==0
-    buf_it->u82.b = buf_it->write_start; // весь буфер считается куском события,
-    // конец b совпадает с началом write_start
-    buf_it->flag++; // анализ не нужен
-    cout << "----tail----" << endl;
-  }
-
-  prnt("ss l d x x xs;", BMAG, "Step3:", buf_it->buffer_id, prev->flag,
-       buf_it->write_start, buf_it->u82.b, buf_it->write_end, RST);
-  prnt("ss l d l l ls;", BRED, "Step3:", buf_it->buffer_id, prev->flag,
-       buf_it->write_end - buf_it->write_start, buf_it->u82.b - buf_it->write_start,
-       buf_it->write_start - prev->write_start, RST);
-
-  // Decode_switch3(ibuf);
-  // Make_Events(Bufevents.begin());
-  // crs->Ana2(0);
-} // AnaBuf3
-
-
-
-void CRS::FindLast3(buf_iter buf_it) {
-  // находит начало последнего события в буфере buf_it
-  // и записывает указатель на него в buf_it->b
-  // если не найдено, buf_it->b не меняется (по умолчанию =0)
-
-  UInt_t frmt;
-  union82 uu; // текущее положение в буфере
-  uu.b = buf_it->write_end;
-
-  switch (module) {
-  case 1: // adcm raw
-    /*
-      доделать, проверить!
-      while (uu.b > buf_it->write_start) {
-      --uu.ui;
-      if (*uu.ui==0x2a500100) {
-      //outbuf.Buf=uu.b;
-      }
-      }
-    */
-    prnt("ss ls;", BRED, "Error: adcm raw no last event:", buf_it->buffer_id,
-         RST);
-    break;
-  case 3: // adcm dec
-    while (uu.b > buf_it->write_start) {
-      --uu.us;
-      if (*uu.us == ID_EVNT) {
-        buf_it->u82.b = uu.b;
-        break;
-      }
-    }
-    // если дошли до начала и не нашли, b остается равным 0
-    // prnt("ss ls",BRED,"Error: no last event:",buf_it->buffer_id,RST);
-    break;
-  case 22:
-    while (uu.b > buf_it->write_start) {
-      --uu.us;
-      // find frmt==0 -> this is the start of a pulse
-      frmt = *(uu.b + 1) & 0x70;
-      if (frmt == 0) {
-        buf_it->u82.b = uu.b;
-        break;
-      }
-    }
-    // если дошли до начала и не нашли, b остается равным 0
-    break;
-  case 32:
-  case 33:
-  case 34:
-  case 35:
-  case 36:
-  case 41:
-  case 42:
-  case 43:
-  case 44:
-  case 51:
-  case 52:
-  case 53:
-  case 54:
-  case 45:
-    while (uu.b > buf_it->write_start) {
-      --uu.ul;
-      // find frmt==0 -> this is the start of a pulse
-      frmt = *(uu.b + 6) & 0xF0;
-      if (frmt == 0) {
-        buf_it->u82.b = uu.b;
-        break;
-      }
-    }
-    // если дошли до начала и не нашли, b остается равным 0
-    break;
-  case 75:
-  case 76:
-  case 77:
-  case 78:
-  case 79:
-  case 80:
-    while (uu.b > buf_it->write_start) {
-      --uu.ul;
-      // find frmt==1 -> this is the start of a pulse
-      frmt = *(uu.b + 7) & 0x80; // event start bit
-      if (frmt) {
-        buf_it->u82.b = uu.b;
-        break;
-      }
-    }
-    // если дошли до начала и не нашли, b остается равным 0
-    break;
-
-  default:
-    cout << "Wrong module: " << module << endl;
-  }
-
-  // prnt("ss ls;",BRED,"Step1. FindLast3:",buf_it->buffer_id,RST);
-
-} // FindLast3
-
-void CRS::Decode_switch3(buf_iter buf_it) {
-  int ibuf;
-
-  switch (module) {
-  case 32:
-  case 33:
-  case 34:
-  case 41:
-  case 51:
-    // Decode34(dec_iread[ibuf]-1,ibuf);
-    // break;
-  case 42:
-  case 52:
-    Decode34(dec_iread[ibuf] - 1, ibuf);
-    // Decode42(dec_iread[ibuf]-1,ibuf);
-    break;
-  case 35:
-  case 43:
-  case 53:
-  case 36:
-  case 44:
-  case 54:
-  case 45:
-    Decode35(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 80:
-    Decode80(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 79:
-    // decoder->Decode79(dec_iread[ibuf]-1,ibuf);
-    // cout << "Decode79: " << f_read << " " << *decoder->zfile << endl;
-    Decode79(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 78:
-    Decode78(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 77:
-    Decode77(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 76:
-    Decode76(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 75:
-    Decode75(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 22:
-    Decode2(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 1:
-    Decode_adcm(dec_iread[ibuf] - 1, ibuf);
-    break;
-  case 3:
-    Decode_adcm_dec(dec_iread[ibuf] - 1, ibuf);
-    break;
-  default:
-    eventlist *Blist;
-    Dec_Init(Blist, 0);
-    break;
-  }
-
-  // gSystem->Sleep(100);
-  dec_iread[ibuf] = 0;
-  //--------end
-} // Decode_switch3
 
 // Decode36 is used with ANA3=1
 void CRS::Decode36(BufClass &inbuf) {
