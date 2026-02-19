@@ -208,10 +208,10 @@ ParDlg::ParDlg(const TGWindow *p, UInt_t w, UInt_t h)
   k_lab = TGNumberFormat::kNESDayMYear;
   k_hex = TGNumberFormat::kNESHex;
 
-  LayCC0 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 0, 0);
+  LayCC0 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY);
   LayCC0a = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 0, 0, 1, 1);
   LayCC1 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 4, 4, 0, 0);
-  // LayCC1a   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY, 4, 4, 4, 4);
+  LayCC1a   = new TGLayoutHints(kLHintsCenterX|kLHintsCenterY);
   LayCC2 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 10, 0, 0, 0);
   LayET0 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 0, 0, 0, 0);
   LayET1 = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 5, 5, 5, 5);
@@ -222,6 +222,7 @@ ParDlg::ParDlg(const TGWindow *p, UInt_t w, UInt_t h)
   LayLT1 = new TGLayoutHints(kLHintsLeft | kLHintsTop, 5, 0, 5, 0);
   LayLT1a = new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 5, 0);
   LayLT1b = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 0, 5, 5);
+  LayLT1c = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 0, 5, 0);
   LayLT2 = new TGLayoutHints(kLHintsLeft | kLHintsTop, 5, 1, 1, 0);
   LayLT3 = new TGLayoutHints(kLHintsLeft | kLHintsTop, 1, 1, 1, 1);
   LayLT4 = new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 6, 1, 1, 1);
@@ -1423,12 +1424,12 @@ ParParDlg::ParParDlg(const TGWindow *p, UInt_t w, UInt_t h) : ParDlg(p, w, h) {
   //   prnt("ss d d d ds;",col,"parpar: ",i,pp->type,pp->all,pp->cmd,RST);
   // }
 }
-void ParParDlg::AddChk(TGGroupFrame *frame, const char *txt, Bool_t *opt_chk,
-                       Int_t *compr, Bool_t *rflag) {
+void ParParDlg::AddChk(TGCompositeFrame *frame, const char *txt, Bool_t *opt_chk,
+                       Int_t *compr, Int_t *msize, Bool_t *rflag) {
   int id;
 
   TGHorizontalFrame *hframe1 = new TGHorizontalFrame(frame, 10, 10);
-  frame->AddFrame(hframe1, LayLT0);
+  frame->AddFrame(hframe1);
 
   id = Plist.size() + 1;
   TGCheckButton *fchk = new TGCheckButton(hframe1, txt, id);
@@ -1436,7 +1437,8 @@ void ParParDlg::AddChk(TGGroupFrame *frame, const char *txt, Bool_t *opt_chk,
   fchk->ChangeOptions(fchk->GetOptions() | kFixedWidth);
   fchk->SetWidth(220);
 
-  hframe1->AddFrame(fchk, LayCC1);
+  //hframe1->AddFrame(fchk, LayCC1);
+  hframe1->AddFrame(fchk);
   DoMap(fchk, opt_chk, p_chk, 0, 0x100 | (7 << 1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
 
@@ -1454,8 +1456,26 @@ void ParParDlg::AddChk(TGGroupFrame *frame, const char *txt, Bool_t *opt_chk,
   fNum1->GetNumberEntry()->SetToolTipText(
       "Compression factor [0-9]: 0 - no compression (fast); 9- maximum "
       "compression (slow)");
-  TGLabel *fLabel = new TGLabel(hframe1, "compr.");
+  TGLabel *fLabel = new TGLabel(hframe1, "compr");
   hframe1->AddFrame(fLabel, LayCC1);
+
+  if (msize) {
+    /*
+    id = Plist.size() + 1;
+    fNum1 = new TGNumberEntry(hframe1, *msize, 4, id, k_int,
+                              TGNumberFormat::kNEANonNegative,
+                              TGNumberFormat::kNELLimitMinMax, 0, 9999);
+    fNum1->GetNumberEntry()->SetToolTipText(
+        "Files are split into chunks of (approximately) this size (in MB).\n0 = no splitting");
+    hframe1->AddFrame(fNum1, LayCC1);
+    DoMap(fNum1->GetNumberEntry(), msize, p_inum, 0, 0x100);
+    fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+                                     "DoDaqNum()");
+
+    TGLabel *fLabel = new TGLabel(hframe1, "split");
+    hframe1->AddFrame(fLabel, LayCC1a);
+    */
+  }
 
   // fProc
   if (rflag) {
@@ -1784,27 +1804,30 @@ int ParParDlg::AddFiles(TGCompositeFrame *frame) {
   int id;
   char txt[99];
 
-  TGGroupFrame *fF6 = new TGGroupFrame(frame, "Files", kVerticalFrame);
-  fF6->SetTitlePos(TGGroupFrame::kCenter); // right aligned
-  frame->AddFrame(fF6, LayLT1);
+  TGGroupFrame *fG = new TGGroupFrame(frame, "Files", kVerticalFrame);
+  fG->SetTitlePos(TGGroupFrame::kCenter); // right aligned
+  frame->AddFrame(fG);
 
-  AddChk(fF6, "Write raw data [Filename].raw", &opt.raw_write, &opt.raw_compr,
-         0);
-  AddChk(fF6, "Write decoded data [Filename].dec", &opt.dec_write,
-         &opt.dec_compr, 0);
-  AddChk(fF6, "Write root histograms [Filename].root", &opt.root_write,
-         &opt.root_compr, 0);
+  // TGVerticalFrame *fF6 = new TGVerticalFrame(fG);
+  // fG->AddFrame(fF6);
+
+  AddChk(fG, "Write raw data [Filename].raw", &opt.raw_write, &opt.raw_compr,
+         &opt.raw_split, 0);
+  AddChk(fG, "Write decoded data [Filename].dec", &opt.dec_write,
+         &opt.dec_compr, &opt.dec_split, 0);
+  AddChk(fG, "Write root histograms [Filename].root", &opt.root_write,
+         &opt.root_compr, 0, 0);
 
   TGCheckButton *fchk;
-  TGHorizontalFrame *hframe3 = new TGHorizontalFrame(fF6, 10, 10);
-  fF6->AddFrame(hframe3, LayLT0);
+  TGHorizontalFrame *hframe3 = new TGHorizontalFrame(fG, 10, 10);
+  fG->AddFrame(hframe3, LayLT1c);
 
   id = Plist.size() + 1;
   sprintf(txt, "DirectRaw");
   fchk = new TGCheckButton(hframe3, txt, id);
   // fchk->SetName(txt);
   fchk->SetToolTipText("Don't decode raw data: write direct raw stream");
-  hframe3->AddFrame(fchk, LayCC1);
+  hframe3->AddFrame(fchk);
   DoMap(fchk, &opt.directraw, p_chk, 0, 0x100 | (6 << 1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoChk(Bool_t)");
 
@@ -1822,7 +1845,7 @@ int ParParDlg::AddFiles(TGCompositeFrame *frame) {
                        " For some parameters epsilon can be about 3e-3\n"
                        ": Output: first dsp, then pls\n"
                        ": Pulses in Events panel correspond to Dsp analysis");
-  hframe3->AddFrame(fchk, LayCC1);
+  hframe3->AddFrame(fchk, LayLT3);
   DoMap(fchk, &opt.checkdsp, p_chk, 0, 0x100 | (5 << 1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoChk(Bool_t)");
 
@@ -1832,7 +1855,7 @@ int ParParDlg::AddFiles(TGCompositeFrame *frame) {
                        "- write direct raw stream\ninput dec: Checked - "
                        "reanalyse .dec file with new coincidence conditions");
 
-  hframe3->AddFrame(fchk, LayCC1);
+  hframe3->AddFrame(fchk, LayCC1a);
   DoMap(fchk, &opt.fProc, p_chk, 0, 0x100 | (7 << 1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
 
@@ -1840,20 +1863,38 @@ int ParParDlg::AddFiles(TGCompositeFrame *frame) {
   fchk = new TGCheckButton(hframe3, "fTxt", id);
   fchk->SetToolTipText("Checked - write events in text file [Filename].txt. "
                        "Workd only in single-threaded mode.");
-  hframe3->AddFrame(fchk, LayCC1);
+  hframe3->AddFrame(fchk, LayCC1a);
   DoMap(fchk, &opt.fTxt, p_chk, 0, 0x100 | (2 << 1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
   //Added by Nikita
   id = Plist.size()+1;
   fchk = new TGCheckButton(hframe3, "fBin", id);
   fchk->SetToolTipText("Checked - write events in binary format in separate .bin file [Filename].bin. Works only in single-threaded mode.");
-  hframe3->AddFrame(fchk,LayCC1);
+  hframe3->AddFrame(fchk,LayCC1a);
   DoMap(fchk,&opt.fBin,p_chk,0,0x100|(2<<1));
   fchk->Connect("Toggled(Bool_t)", "ParDlg", this, "DoDaqChk(Bool_t)");
   //End addition
 
-  fF6->Resize();
-  return fF6->GetDefaultWidth();
+/*
+  TGVerticalFrame *fF7 = new TGVerticalFrame(fG);
+  fG->AddFrame(fF7,LayLT1b);
+
+  TGLabel *fLabel = new TGLabel(fF7, "MaxSize");
+  fF7->AddFrame(fLabel);
+
+  id = Plist.size() + 1;
+  TGNumberEntry *fNum1 = new TGNumberEntry(
+      fF7, opt.MaxSize, 4, id, k_int, TGNumberFormat::kNEANonNegative,
+      TGNumberFormat::kNELLimitMinMax, 0, 999);
+  fNum1->GetNumberEntry()->SetToolTipText("Maximal raw/dec file size in MB.\n0 = no limit");
+  fF7->AddFrame(fNum1,LayLT1b);
+  DoMap(fNum1->GetNumberEntry(), &opt.MaxSize, p_inum, 0, 0x100);
+  fNum1->GetNumberEntry()->Connect("TextChanged(char*)", "ParDlg", this,
+                                   "DoDaqNum()");
+                                   */
+
+  fG->Resize();
+  return fG->GetDefaultWidth();
 } // AddFiles
 
 int ParParDlg::AddOpt(TGCompositeFrame *frame) {
@@ -2250,8 +2291,8 @@ void ParParDlg::Update() {
   UpdateLog(0);
   MapSubwindows();
   Layout();
-  cout << "Logg: " << crs->LogOK << " " << opt.Comment << " "
-       << strlen(opt.Comment) << endl;
+  // cout << "Logg: " << crs->LogOK << " " << opt.Comment << " "
+  //      << strlen(opt.Comment) << endl;
 }
 
 // void ParParDlg::UpdateLL(wlist &llist, Bool_t state) {
@@ -3649,11 +3690,11 @@ void ChanParDlg::HandleMouseWheel(Event_t *event) {
 }
 
 void ErrFrame::Add(int max, TGCompositeFrame *fcont1, TGTextEntry *fE[],
-                   std::string label[]) {
+                   const char* label[]) {
   for (int i = 0; i < max; i++) {
     TGHorizontalFrame *cframe = new TGHorizontalFrame(fcont1, 10, 10);
     fcont1->AddFrame(cframe, LayLT0);
-    TGLabel *lb = new TGLabel(cframe, label[i].c_str());
+    TGLabel *lb = new TGLabel(cframe, label[i]);
     lb->SetTextJustify(kTextLeft);
     lb->ChangeOptions(lb->GetOptions() | kFixedSize);
     lb->Resize(120, 20);
@@ -3721,7 +3762,7 @@ void ErrFrame::ErrUpdate() {
   }
 #ifdef TIMING
   for (int i = 0; i < MAX_TIMING; i++) {
-    txt.Form("%0.1f", decoder->timing[i]);
+    txt.Form("%0.3f", decoder->timing[i]);
     fTiming[i]->SetText(txt);
   }
 #endif

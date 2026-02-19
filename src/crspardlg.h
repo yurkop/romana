@@ -46,7 +46,7 @@ public:
   TGLayoutHints *LayCC0;
   TGLayoutHints *LayCC0a;
   TGLayoutHints *LayCC1;
-  // TGLayoutHints* LayCC1a ;
+  TGLayoutHints* LayCC1a ;
   TGLayoutHints *LayCC2;
   TGLayoutHints *LayET0;
   TGLayoutHints *LayET1;
@@ -57,6 +57,7 @@ public:
   TGLayoutHints *LayLT1;
   TGLayoutHints *LayLT1a;
   TGLayoutHints *LayLT1b;
+  TGLayoutHints *LayLT1c;
   TGLayoutHints *LayLT2;
   TGLayoutHints *LayLT3;
   TGLayoutHints *LayLT4;
@@ -271,8 +272,8 @@ protected:
 public:
   TrigFrame *tTrig;
 
-  void AddChk(TGGroupFrame *frame, const char *txt, Bool_t *opt_chk,
-              Int_t *compr, Bool_t *rflag);
+  void AddChk(TGCompositeFrame *frame, const char *txt, Bool_t *opt_chk,
+              Int_t *compr, Int_t *msize, Bool_t *rflag);
 
   void UpdateLog(int rd);
   bool IsEditor();
@@ -354,7 +355,7 @@ public:
   // virtual ~ErrFrame();
 
   void Add(int max, TGCompositeFrame *fcont1, TGTextEntry *fE[],
-           std::string label[]);
+           const char* label[]);
   void Reset();
   void ErrUpdate();
 

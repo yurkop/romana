@@ -89,9 +89,6 @@ void Encoder::Encode_Stop(int end_ana, bool opt_wrt) {
 void Encoder::Reset_Wrt() {
   sprintf(wr_opt, "wb%d", w_compr);
 
-  // if (cpar.Trigger==1) //trigger on START channel
-  //   mod=80;
-
   gzf = gzopen(wr_name.c_str(), wr_opt);
   if (gzf) {
     cout << "Writing parameters... : " << wr_name.c_str() << endl;
@@ -114,6 +111,41 @@ void Encoder::Reset_Wrt() {
   // mdec2=0;
   // memset(b_decwrite,0,sizeof(b_decwrite));
 } // Reset_Wrt
+
+int Encoder::Open_File(int rst) { //недоделано
+  TString msg;
+  int rr=0;
+
+  if (rst) {
+    sprintf(wr_opt, "wb%d", w_compr);
+
+    gzf = gzopen(wr_name.c_str(), wr_opt);
+    if (gzf) {
+      cout << "Writing parameters... : " << wr_name.c_str() << endl;
+      crs->SaveParGz(gzf, w_module);
+      gzclose(gzf);
+    } else {
+      msg = TString("Can't open file: ") + wr_name.c_str();
+      EError(1, 1, 1, msg);
+      *b_wrt = false;
+      rr=1;
+    }
+
+    sprintf(wr_opt, "ab%d", w_compr);
+  }
+  else {
+    gzf = gzopen(wr_name.c_str(), wr_opt);
+    if (!gzf) {
+      msg = TString("Can't open file: ") + wr_name.c_str();
+      EError(1, 1, 1, msg);
+      *b_wrt = false;
+      rr = 1;
+    }
+  }
+
+  return rr;
+
+}
 
 void Encoder::Flush3(int end_ana) {
   // сбрасывает заполненный буфер на диск

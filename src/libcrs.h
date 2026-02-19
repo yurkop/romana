@@ -334,7 +334,7 @@ public:
   Long64_t Counter[MAX_CH];
 
   Long64_t errors[MAX_ERR];
-  std::string errlabel[MAX_ERR] = {
+  const char* errlabel[MAX_ERR] = {
       // "Bad buf start (obsolete):", // ER_START,
       "Pbuf length exceeded:", // ER_PBUF,
       "Bad channel:",              // ER_CH,
@@ -458,7 +458,7 @@ public:
   void DoNBuf2(int nb);
   void Show(bool force = false);
 
-  void Decode_switch(UInt_t ibuf);
+  Long64_t Decode_switch(UInt_t ibuf);
   void Decode_any_MT(UInt_t iread, UInt_t ibuf, int loc_ibuf);
   void Decode_any(UInt_t ibuf);
 
@@ -493,7 +493,7 @@ public:
   // void Decode42(UInt_t iread, UInt_t ibuf);
   void Decode34(UInt_t iread, UInt_t ibuf);
   void Decode35(UInt_t iread, UInt_t ibuf);
-  void Decode2(UInt_t iread, UInt_t ibuf);
+  Long64_t Decode2(UInt_t iread, UInt_t ibuf);
   void Decode_adcm(UInt_t iread, UInt_t ibuf);
   void Decode_adcm_dec(UInt_t iread, UInt_t ibuf);
 

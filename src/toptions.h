@@ -10,7 +10,7 @@
 // #include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 179
+#define CDEF 180
 
 /*
 #include <list>
@@ -272,6 +272,8 @@ public:
   Int_t raw_compr;  // raw data compr level
   Int_t dec_compr;  // decoded data compr level
   Int_t root_compr; // root compr level
+  Int_t raw_split=0; // max size of raw Filename (MB) for splitting
+  Int_t dec_split=0; // max size of dec Filename (MB) for splitting
   Int_t dec_format;
   char dec_mask[20];
   // char fname_raw[199];

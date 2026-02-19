@@ -19,6 +19,7 @@ public:
   char wr_opt[5];
   gzFile gzf;
   string wr_name;
+  int Split=0;
   Long64_t wr_bytes;
 
   bool *b_wrt; // указывает либо на opt.raw_write, либо на opt.dec_write
@@ -45,6 +46,7 @@ public:
                     Long64_t r_size, Long64_t o_size);
   void Encode_Stop(int end_ana, bool opt_wrt);
   void Reset_Wrt();
+  int Open_File(int rst);
   void Flush3(int end_ana);
   int Write3(UChar_t *buf, int len);
   void Handle_write();

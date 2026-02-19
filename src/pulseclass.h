@@ -96,7 +96,8 @@ public:
   PulseClass() {};
   // PulseClass(Short_t p) { Pos = p; };
   PulseClass(Short_t p, UChar_t t) : Pos(p), ptype(t){};
-  virtual ~PulseClass(){};
+  // virtual ~PulseClass(){}; // деструктор должен отсутствовать, иначе удаление
+  // слишком медленное
 
   size_t GetPtr(Int_t hnum);
   Float_t CFD(int i, int kk, int delay, Float_t frac, Float_t &drv);

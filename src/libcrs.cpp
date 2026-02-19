@@ -495,8 +495,12 @@ static void cback(libusb_transfer *trans) {
         int length =
             trans->buffer - GLBuf - b_fill[gl_ibuf] + trans->actual_length;
         b_end[gl_ibuf] = b_fill[gl_ibuf] + length;
-        // prnt("ss2d2d2d3ds;",KYEL,"cback:",gl_iread, itr,
-        // gl_ibuf,CheckMem(),RST);
+        //prnt("ss2d2d3d ds;", KBLU, "cback:", gl_iread, gl_ibuf, CheckMem(), length, RST);
+#ifdef TIMING
+          {
+            SimpleTimer timer(0,length); //acquire
+          }
+#endif
         crs->AnaBuf(gl_ibuf);
       }
     } // if !opt.directraw
@@ -584,6 +588,10 @@ void *handle_decode(void *ctx) {
   // cmut.UnLock();
 
   while (decode_thread_run) {
+#ifdef TIMING
+      SimpleTimer timer(2); // decode
+      SimpleTimer timer3(3); // decodePls
+#endif
 
     while (!dec_iread[ibuf])
       // dec_cond[ibuf].Wait();
@@ -592,12 +600,22 @@ void *handle_decode(void *ctx) {
     if (!decode_thread_run) {
       break;
     }
+#ifdef TIMING
+    UShort_t *buf2 = (UShort_t *)GLBuf;
+    UChar_t *b1 = (UChar_t *)(buf2 + b_start[ibuf] / 2);
+    UChar_t *b2 = (UChar_t *)(buf2 + b_end[ibuf] / 2);
+    Long64_t size = b2-b1;
+    timer.SetSize(size);
+#endif
 
-    // prnt("ss2d2d2d .1f d ds;",KGRN,"decWk1:",gl_iread, ibuf, gl_ibuf,
-    // opt.T_acq,crs->Levents.size(),crs->Bufevents.size(),RST);
-    crs->Decode_switch(ibuf);
-    // prnt("ss2d2d2d .1f d ds;",KGRN,"decWk2:",gl_iread, ibuf, gl_ibuf,
-    // opt.T_acq,crs->Levents.size(),crs->Bufevents.size(),RST);
+    Long64_t npls = crs->Decode_switch(ibuf);
+
+    // prnt("ss2d2d2d .1f d d ls;", KGRN, "decWk2: ", gl_iread, ibuf, gl_ibuf,
+    //        opt.T_acq, crs->Levents.size(), crs->Bufevents.size(), npls, RST);
+
+#ifdef TIMING
+    timer3.SetNpls(npls);
+#endif
 
   } // while
 
@@ -1132,6 +1150,9 @@ void CRS::Ana_start(int rst) {
 #ifdef ANA3
   decoder->Decoder_Start(opt.ibuf_size * Megabyte, 2 * Megabyte, crs->b_acq,
                         crs->module);
+#endif
+#ifdef TIMING
+  LogTime(-3, 0); // global start
 #endif
 
   if (opt.fProc) { // для переобработанных данных (пишем в формате 36)
@@ -2789,6 +2810,11 @@ int CRS::DoStartStop(int rst) {
     gSystem->Sleep(50);
     // cout << "Free_Transfer() finished" << endl;
 
+    if (rst && crs->module >= 32 && crs->module <= 70) {
+      Command32(8, 0, 0, 0); // сброс сч./буф.
+      // Command32(9,0,0,0); //сброс времени
+    }
+
     InitBuf();
     // cout << "InitBuf() finished" << endl;
 #ifdef ANA3
@@ -2836,11 +2862,6 @@ int CRS::DoStartStop(int rst) {
     cyusb_reset_device(cy_handle);
 #endif
     */
-
-    if (rst && crs->module >= 32 && crs->module <= 70) {
-      Command32(8, 0, 0, 0); // сброс сч./буф.
-      // Command32(9,0,0,0); //сброс времени
-    }
 
 #ifdef P_LIBUSB
     auto t1 = std::chrono::system_clock::now();
@@ -3125,6 +3146,10 @@ void CRS::DoReset(int rst) {
 
 #ifdef TIMES
   memset(ttm, 0, sizeof(ttm));
+#endif
+#ifdef TIMING
+  SimpleTimer timer(-1); //reset
+  //LogTime(-1,0);
 #endif
 #ifdef ANA3
   decoder->Decoder_Reset();
@@ -3517,6 +3542,18 @@ int CRS::ReadParGz(gzFile &ff, char *pname, int m1, int cp, int op) {
   }
 
   After_ReadPar(op);
+
+  /*
+  Float_t Period=0;
+  std::string str(buf,sz);
+  size_t pos=str.find("Period");
+  if (pos!=std::string::npos) {
+    char* buf2 = buf+pos;
+    buf2 += strlen(buf2)+1+sizeof(short);
+    Period = *(Float_t*) buf2;
+  }
+  cout << "Period: " << " " << Period << endl;
+  */
 
   /*
   //F_start test
@@ -4130,9 +4167,18 @@ void CRS::EndAna(int end_ana) {
   // end_ana=0 -> just stop, buffers remain not analyzed,
   //          can continue from this point on
 
+#ifdef TIMING
+  LogTime(-4, 0); // global stop
+#endif
+
 #ifdef ANA3
   decoder->Decoder_Stop();
 #endif
+
+#ifdef TIMING
+  LogTime(-2, 0); // print
+#endif
+
   eraw->Encode_Stop(end_ana, opt.raw_write);
   edec->Encode_Stop(end_ana, opt.dec_write);
 
@@ -4436,7 +4482,8 @@ void CRS::Show(bool force) {
   // cout << "Show end" << endl;
 }
 
-void CRS::Decode_switch(UInt_t ibuf) {
+Long64_t CRS::Decode_switch(UInt_t ibuf) {
+  Long64_t res=0;
   if (ibuf != gl_Nbuf - 1) { // если текущий буфер (ibuf) не последний в кольце
     FindLast(ibuf, 9, 7);
   }
@@ -4485,7 +4532,7 @@ void CRS::Decode_switch(UInt_t ibuf) {
     Decode75(dec_iread[ibuf] - 1, ibuf);
     break;
   case 22:
-    Decode2(dec_iread[ibuf] - 1, ibuf);
+    res = Decode2(dec_iread[ibuf] - 1, ibuf);
     break;
   case 1:
     Decode_adcm(dec_iread[ibuf] - 1, ibuf);
@@ -4502,6 +4549,7 @@ void CRS::Decode_switch(UInt_t ibuf) {
   // gSystem->Sleep(100);
   dec_iread[ibuf] = 0;
   //--------end
+  return res;
 } // Decode_switch
 
 void CRS::Decode_any_MT(UInt_t iread, UInt_t ibuf, int loc_ibuf) {
@@ -6141,7 +6189,9 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
 } // decode35
 
-void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
+Long64_t CRS::Decode2(UInt_t iread, UInt_t ibuf) {
+
+  Long64_t npls=0;
 
   UShort_t *buf2 = (UShort_t *)GLBuf;
 
@@ -6152,7 +6202,6 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
   Dec_Init(Blist, frmt);
   PulseClass ipls = dummy_pulse;
 
-  // cout << "decode2: " << idx2 << endl;
   while (idx2 < b_end[ibuf] / 2) {
 
     unsigned short uword = buf2[idx2];
@@ -6176,6 +6225,7 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
       if (ipls.ptype == 0) {
         PulseAna(ipls);
         Event_Insert_Pulse(Blist, &ipls);
+        npls++;
         // cout << "Pana: " << Blist->size() << " " << ipls.Tstamp64 << endl;
       }
 
@@ -6218,9 +6268,12 @@ void CRS::Decode2(UInt_t iread, UInt_t ibuf) {
   if (ipls.ptype == 0) {
     PulseAna(ipls);
     Event_Insert_Pulse(Blist, &ipls);
+    npls++;
   }
 
   Dec_End(Blist, iread, 255);
+  // cout << "decode2: " << ibuf << " " << npls << " " << idx2 << endl;
+  return npls;
 
 } // decode2
 

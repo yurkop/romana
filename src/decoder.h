@@ -32,17 +32,20 @@ public:
 };
 
 #ifdef TIMING
-void LogTime(int stage, Long64_t duration_us, Long64_t size=0);
+void LogTime(int stage, Long64_t duration_us, Long64_t size=0, Long64_t npls=0);
 
 class SimpleTimer {
     std::chrono::steady_clock::time_point start;
     //Decoder* dec;
     int stage;
     Long64_t size;
+    Long64_t npls;
 
 public:
-  SimpleTimer(int s, Long64_t z=0);
+  SimpleTimer(int s, Long64_t z=0, Long64_t np=0);
   ~SimpleTimer();
+  void SetSize(Long64_t sz);
+  void SetNpls(Long64_t np);
 };
 
 #endif
@@ -190,9 +193,13 @@ public:
 
 #ifdef TIMING
   double timing[MAX_TIMING];
-  std::string timing_label[MAX_TIMING] = {
-      "Acquire", "Copy", "Decode", "Resorting", "MakeEvent", "Ana", "Delete",
+  const char *timing_label[MAX_TIMING] = {
+      "Acquire",   "Copy",      "Decode", "DecodePls",
+      "Resorting", "MakeEvent", "Ana",    "Delete",
   };
+  const char *timing_units[MAX_TIMING] = {" us/kB", " us/kB", " us/kB",
+                                          "ns/pls", "ns/pls", "ns/pls",
+                                          "ns/pls", "ns/pls"};
 #endif
 
   std::vector<UChar_t>
@@ -334,7 +341,7 @@ public:
   void Ana_Worker(); // рабочий поток анализа событий
 
   void Delete_Buf1(std::list<EventBuf>::iterator itr); // удаление буферов из Bufevents
-  void Delete_Buf2(std::list<EventBuf>::iterator itr); // удаление буферов из Bufevents
+  //void Delete_Buf2(std::list<EventBuf>::iterator itr); // удаление буферов из Bufevents
 
   // Метод для добавления данных в очередь извне
   void Add_to_copy_queue(UChar_t *data, size_t size);
