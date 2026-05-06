@@ -27,9 +27,6 @@
 
 #include <queue> // std::queue
 
-// #include <TServerSocket.h>
-// #include <TMonitor.h>
-
 #define mask_e "TN"
 // T: event Timestamp
 // E: event Number
@@ -60,34 +57,6 @@ using namespace std;
 // class BufClass
 
 #ifdef SOCK
-#include <netinet/in.h>
-#include <poll.h> // For poll and pollfd
-#include <sys/socket.h>
-
-class SockClass {
-  // RQ_OBJECT("SockClass")
-public:
-  int sockfd = 0, //
-      newsockfd = 0;
-  socklen_t clilen;
-  char buffer[0x10000];
-  struct sockaddr_in serv_addr, cli_addr;
-  struct pollfd fds[1]; // Or more if you're monitoring other sockets
-
-  std::queue<TString> l_com;
-  std::queue<TString> l_par;
-
-public:
-  SockClass(int portno);
-  ~SockClass();
-  void Poll();
-  // void Handle();
-  void Eval_Buf();
-  void Eval_Par();
-  void Eval_Com();
-  // void DoReset();
-  // void Created() { Emit("Created()"); } //*SIGNAL*
-};
 #endif
 
 typedef std::list<EventClass>::iterator event_iter;
@@ -297,8 +266,6 @@ public:
   // b_wdog=2: было недостижение порога: ничего не делаем
   */
 
-  // bool b_sockana=false;
-
   Int_t b_run; // used for trd_ana
   // b_run=0 - stop analysis immediately (pause)
   // b_run=1 - analyze events normally
@@ -374,15 +341,6 @@ public:
   const Int_t PROF_64 = 1000000;
 
   // bool chan_changed = false;
-
-  // TServerSocket *serv_sock;
-  // TMonitor *mon;
-
-  // SockClass *gsock;
-  //  int sockfd, newsockfd, portno;
-  //  socklen_t clilen;
-  //  char buffer[256];
-  //  struct sockaddr_in serv_addr, cli_addr;
 
   //--------functions---------
 

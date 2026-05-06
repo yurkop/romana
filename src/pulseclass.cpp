@@ -797,6 +797,7 @@ void EventClass::AddPulse(PulseClass *pls) {
   }
 
   pulses.push_back(*pls);
+  //PrintEvent(1);
 }
 
 void PulseClass::Smooth(int nn) {
@@ -936,7 +937,8 @@ void PulseClass::PoleZero(int Pz) {
   }
 }
 
-void PulseClass::PrintPulse(int pdata) {
+void PulseClass::PrintPulse(int pdata, const char* col) {
+  if (col) cout << col;
   printf("Pulse: %2d %2d %6ld %10lld %10lld\n", Chan, ptype, sData.size(),
          Counter, Tstamp64 /*-crs->Tstart64*/);
   if (pdata) {
@@ -944,6 +946,7 @@ void PulseClass::PrintPulse(int pdata) {
       printf("-- %d %f\n", i, sData[i]);
     }
   }
+  if (col) cout << RST;
 }
 
 void EventClass::PrintEvent(bool pls) {

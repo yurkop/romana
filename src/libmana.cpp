@@ -12,6 +12,8 @@
 #include "popframe.h"
 #include "romana.h"
 #include "decoder.h"
+#include "libsock.h"
+
 // #include "peditor.h"
 
 #include <sys/stat.h>
@@ -1690,7 +1692,6 @@ int main(int argc, char **argv) {
   // потом читаем параметры из datfname - если parfile2 был считан, то из
   // datfname читаем только cpar в конце переписываем cpar.on из parfile2 если
   // они были считаны
-
   char *cparon = 0;
   int rdopt = 1;  // read opt from file
   if (parfile2) { // read -p par file
@@ -1787,7 +1788,8 @@ int main(int argc, char **argv) {
 
   // cout << "detect: " << crs->abatch << " " << endl;
 
-  b_telegram = check_telegram_send();
+  //b_telegram = check_telegram_send();
+  b_telegram = false;
 
   /*
   gzFile gzf = gzopen("sdfa/test.gz","w");
@@ -3690,8 +3692,14 @@ void MainFrame::UpdateTimer(int rst) {
 
 #ifdef SOCK
   gSock->Poll();
-  if (!gSock->l_par.empty())
-    gSock->Eval_Par();
+  if (!gSock->l_par.empty()) {
+    int nn = gSock->Eval_Par();
+    if (nn && myM) {
+      parpar->Update();
+      chanpar->Update();
+      histpar->Update();
+    }
+  }
   if (!gSock->l_com.empty())
     gSock->Eval_Com();
 #endif
