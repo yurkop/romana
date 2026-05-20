@@ -1690,7 +1690,7 @@ int main(int argc, char **argv) {
 
   // сначала читаем -p parfile2
   // потом читаем параметры из datfname - если parfile2 был считан, то из
-  // datfname читаем только cpar в конце переписываем cpar.on из parfile2 если
+  // datfname читаем только cpar; в конце переписываем cpar.on из parfile2 если
   // они были считаны
   char *cparon = 0;
   int rdopt = 1;  // read opt from file

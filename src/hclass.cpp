@@ -1754,8 +1754,8 @@ void HClass::Make_Yumo_3d(mdef_iter md) {
   strcat(title, ";X(ns);Y(ns);Ntof(mks)");
 
   // 3d
-  prnt("ss d f f d f f d f fs;", BGRN, "3d:", n2, md2->hd->min, md2->hd->max,
-       n2, md2->hd->min, md2->hd->max, n3, md->hd->min, md->hd->max, RST);
+  // prnt("ss d f f d f f d f fs;", BGRN, "3d:", n2, md2->hd->min, md2->hd->max,
+  //      n2, md2->hd->min, md2->hd->max, n3, md->hd->min, md->hd->max, RST);
 
   HHist3(md, hh, name, title, 0, n2, md2->hd->min, md2->hd->max, n2,
          md2->hd->min, md2->hd->max, n3, md->hd->min, md->hd->max);

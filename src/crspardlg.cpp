@@ -2708,7 +2708,7 @@ void HistParDlg::Add_yumo(TGGroupFrame *frame, Mdef *md1, Mdef *md2,
   hfr1 = new TGHorizontalFrame(frame);
   frame->AddFrame(hfr1, LayLT1b);
   Check_opt(hfr1, 0, &md1->hd->b, "on/off", 0x100 | (2 << 4), "");
-  Num_opt(hfr1, 40, &md1->hd->bins, 0, "Number of bins per channel", k_r0, 0.01,
+  Num_opt(hfr1, 40, &md1->hd->bins, 0, "Number of bins per channel", k_r0, 0,
           10, 0x100 | (2 << 4), LayLT2);
   Num_opt(hfr1, 50, &md1->hd->min, 0, "Low edge", k_r0, 0, 0, 0x100 | (2 << 4),
           LayLT2);
@@ -2733,7 +2733,7 @@ void HistParDlg::Add_yumo(TGGroupFrame *frame, Mdef *md1, Mdef *md2,
 
   Check_opt(hfr1, 0, &md2->hd->b, "on/off", 0x100 | (2 << 4), "");
   Num_opt(hfr1, 40, &md2->hd->bins, 0,
-          "Number of bins per channel on X and Y axis", k_r0, 0.01, 10,
+          "Number of bins per channel on X and Y axis", k_r0, 0, 10,
           0x100 | (2 << 4), LayLT2);
   Num_opt(hfr1, 50, &md2->hd->min, 0, "Low edge", k_r0, 0, 0, 0x100 | (2 << 4),
           LayLT2);
@@ -2760,13 +2760,13 @@ void HistParDlg::Add_yumo(TGGroupFrame *frame, Mdef *md1, Mdef *md2,
 
   Check_opt(hfr1, 0, &md3->hd->b, "on/off", 0x100 | (2 << 4), "");
   Num_opt(hfr1, 40, &md3->hd->bins, 0,
-          "Number of bins per channel on X and Y axis", k_r0, 0.01, 10,
+          "Number of bins per channel on Z axis (Ntof)", k_r0, 0, 10,
           0x100 | (2 << 4), LayLT2);
-  Num_opt(hfr1, 50, &md3->hd->min, 0, "Low edge", k_r0, 0, 0, 0x100 | (2 << 4),
+  Num_opt(hfr1, 50, &md3->hd->min, 0, "Low edge on Z axis (Ntof)", k_r0, 0, 0, 0x100 | (2 << 4),
           LayLT2);
-  Num_opt(hfr1, 50, &md3->hd->max, 0, "Upper edge", k_r0, 0, 0,
+  Num_opt(hfr1, 50, &md3->hd->max, 0, "Upper edge on Z axis (Ntof)", k_r0, 0, 0,
           0x100 | (2 << 4), LayLT2);
-  Num_opt(hfr1, 40, &md3->hd->rb, &md3->hd->rb2, "Rebin X/Y (only for drawing)",
+  Num_opt(hfr1, 40, &md3->hd->rb, &md3->hd->rb2, "Rebin Z (only for drawing)",
           k_int, 1, 1000, 4 << 1 | 3 << 4, LayLT2);
   Check_opt(hfr1, 0, &md3->hd->htp, "Double/Float", 0x100 | (2 << 1) | (2 << 4),
             "");
@@ -2775,7 +2775,7 @@ void HistParDlg::Add_yumo(TGGroupFrame *frame, Mdef *md1, Mdef *md2,
   // fLabel->SetWidth();
   fLabel->SetState(false);
   fLabel->ChangeOptions(0);
-  fLabel->SetToolTipText("3d YUMO histograms");
+  fLabel->SetToolTipText("3d YUMO histograms\n parameters of X/Y axis are taken from YUMO 2d");
   // fLabel->SetAlignment(kTextCenterY);
   hfr1->AddFrame(fLabel, LayLT2);
 
