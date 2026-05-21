@@ -143,6 +143,7 @@ public:
   UChar_t Spin = 0;
   // bit 0: channel state word (Control word - external input in crs32)
   // bit 2 (=4): ER_OVF - присутствует только в каналах
+  // bit 5 (Spin|=32): event is Ntof Start
   // bit 6 (Spin|=64): event is writable in Dec (Ms - master channel)
   // bit 7 (=128): hardware counters
   // Spin>=254: сигнализирует, что текущий кусок декодера завершился

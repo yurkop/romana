@@ -288,7 +288,9 @@ public:
   bool addrandom = false; // true: add random number while filling histograms
   // (see Fill_01; Fill_02)
 
-  bool hideself = false; // true: add random number while filling histograms
+  bool hideself = false; // true: hide self-coincidences
+  bool alwStart= false; // true: always write Ntof START channel
+
   Int_t wdog_timer = 0;  // watchdog timer
   Float_t wdog1 = 0;     // watchdog threshold (lower threshold?)
   Float_t wdog2 = 10000; // watchdog upper threshold - not used

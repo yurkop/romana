@@ -1032,8 +1032,9 @@ void CRS::Ana2(int end_ana) {
   // cpar.on[255] = false;
   // analyze events from m_event to m_end
   while (m_event != m_end) {
-    if ((int)m_event->pulses.size() >= opt.mult1 &&
-        (int)m_event->pulses.size() <= opt.mult2) {
+    if (((int)m_event->pulses.size() >= opt.mult1 &&
+            (int)m_event->pulses.size() <= opt.mult2) ||
+        (opt.alwStart && m_event->Spin & 32)) {
 
 #ifdef TPROC
       TTimeStamp pt1, pt2;
@@ -1047,7 +1048,8 @@ void CRS::Ana2(int end_ana) {
       tproc += pt2.AsDouble() - pt1.AsDouble();
 #endif
       if (m_event->Spin & 64) { // Ms channel
-        if (!opt.maintrig || hcut_flag[opt.maintrig]) {
+        if (!opt.maintrig || hcut_flag[opt.maintrig] ||
+            (opt.alwStart && m_event->Spin & 32)) {
           ++crs->mtrig;
           if (opt.raw_write && opt.fProc) {
             // crs->Fill_Raw(&(*m_event));
@@ -1059,12 +1061,12 @@ void CRS::Ana2(int end_ana) {
             crs->Print_OneEvent(&(*m_event));
           }
            //Added by Nikita
-		  if (opt.fBin && opt.nthreads==1) {
-			  (*m_event).WriteToBinary(bin_out);
-			//crs->Print_OneEvent(&(*m_event));
-		  }
-		  //END
-		  
+          if (opt.fBin && opt.nthreads == 1) {
+            (*m_event).WriteToBinary(bin_out);
+            // crs->Print_OneEvent(&(*m_event));
+          }
+          // END
+
         } // maintrig
       } // if spin
     } // mult
@@ -5811,6 +5813,7 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       if (ch == 255) {    // start channel
         ipls.Spin |= 128; // bit 7 - hardware counters
         ipls.Time = 0; // нужно для nTof
+        //ipls.Pos = 0; // нужно для FillHist
         // prnt("ss ds;",BYEL,"STARTCH:",ch,RST);
       }
 

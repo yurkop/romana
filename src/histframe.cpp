@@ -829,16 +829,18 @@ void HistFrame::Clear_Ltree() {
   idir = fCutTree->GetFirstItem();
   while (idir) {
     fCutTree->DeleteChildren(idir);
+    TGListTreeItem* next = idir->GetNextSibling();
     fCutTree->DeleteItem(idir);
-    idir = idir->GetNextSibling();
+    idir = next;
   }
 
   // clear fRoiTree
   idir = fRoiTree->GetFirstItem();
   while (idir) {
     fRoiTree->DeleteChildren(idir);
+    TGListTreeItem* next = idir->GetNextSibling();
     fRoiTree->DeleteItem(idir);
-    idir = idir->GetNextSibling();
+    idir = next;
   }
 
 } // Clear_Ltree()

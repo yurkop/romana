@@ -323,6 +323,10 @@ void Mdef::Fill_02(HMap *map, Float_t x, Float_t y, Double_t *hcut_flag,
 }
 
 void Mdef::Fill_1d(EventClass *evt, Double_t *hcut_flag, int ncut) {
+  // if (evt->Tstmp == 38911727 || evt->Tstmp ==39436391) {
+  //   cout << "start:" << evt->Tstmp << " " << (int) evt->Spin 
+  //   << " " << evt->pulses.size() << endl;
+  // }
   if (!(evt->Spin & 128)) // пропускаем счетчики (Spin & 128)
     for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
       // пропускаем неактивные каналы и где не найден пик
@@ -1324,6 +1328,8 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
     NN = 1;
 
   for (int i = 0; i < NN; i++) {
+  // for (int i = 0; i < MAX_CH; i++) {
+  //   if (i >= NN && (i!=255 || maxi==0)) continue;
     if (cpar.on[i]) {
       NameTitle(name2, title2, i, maxi, name.Data(), title.Data());
       int nn = md->hd->bins * (md->hd->max - md->hd->min);
@@ -1828,6 +1834,7 @@ void HClass::FillHist(EventClass *evt, Double_t *hcut_flag) {
           if (ipls->Chan == opt.start_ch) {
             ntof_start = evt->Tstmp;
             ntof_time0 = ipls->Time;
+            evt->Spin |= 32; // bit5: ntof start event
             break;
           }
         }

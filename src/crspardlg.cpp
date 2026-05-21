@@ -2166,6 +2166,10 @@ int ParParDlg::AddExpert(TGCompositeFrame *frame) {
   label = "Hide self-coincidences";
   AddLine_1opt(fF6, ww, &opt.hideself, 0, tip1, label, k_chk, 0, 0);
 
+  tip1 = "For Ntof Start channel Multiplicity (min, max) and Main trigger are ignored";
+  label = "Always write Ntof Start channel";
+  AddLine_1opt(fF6, ww, &opt.alwStart, 0, tip1, label, k_chk, 0, 0);
+
   const char *tip0 = "Watchdog timer (seconds). Zero: watchdog off";
   tip1 = "Watchdog lower threshold (%)";
   tip2 = "Watchdog upper threshold (%)";
