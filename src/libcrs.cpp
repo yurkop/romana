@@ -4649,8 +4649,9 @@ void CRS::PulseAna(PulseClass &ipls) {
     // }
   }
 
-  // prnt("ss d l d f fs;",BRED, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos,
-  // ipls.Time, ipls.Width, RST);
+  // if (ipls.Chan==0)
+  //   prnt("ss d l d f fs;", BRED, "WD:", ipls.Chan, ipls.Tstamp64, ipls.Pos,
+  //        ipls.Time, ipls.Width, RST);
 
   ipls.Ecalibr(ipls.Area);
   if (hcl->b_base[ipls.Chan]) {
@@ -5760,7 +5761,11 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       continue;
     }
 
-    // prnt("sss;",BRED,"Good",RST);
+    //if (ch == 255) {    // start channel
+    //prnt("ss d ds;", BBLU, "CH:", ch, frmt, RST);
+    //}
+
+      // prnt("sss;",BRED,"Good",RST);
     // prnt(" d",frmt);
 
     // UChar_t ini = (GLBuf[idx1+6] & 0xE); //инициирующее запись событие
@@ -5821,8 +5826,8 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
 
     case 1:
       ipls.Spin |= GLBuf[idx1 + 5] & 1;
-      ipls.Counter = data & 0xFFFFFFFFFF;
-      // prnt("ss d l ls;",BMAG,"CONT1:",ch,ipls.Tstamp64,ipls.Counter,RST);
+      //ipls.Counter = data & 0xFFFFFFFFFF;
+      // prnt("ss d l ls;",BMAG,"CONT1:",ch,ipls.Tstamp64,data & 0xFFFFFFFFFF,RST);
       break;
     case 2:
       if ((int)ipls.sData.size() >= cpar.Len[ipls.Chan]) {

@@ -1836,7 +1836,7 @@ int ParParDlg::AddFiles(TGCompositeFrame *frame) {
   fchk = new TGCheckButton(hframe3, txt, id);
   // fchk->SetName(txt);
   fchk->SetToolTipText("Compare Dsp data (1) vs software pulse analysis (2)\n"
-                       ": dsp be checked\n"
+                       ": dsp must be checked\n"
                        ": Dsp must be 1 or 2 (can be tested separately)\n"
                        ": sTg can be any\n"
                        ": Set DrawEvent delay's last digit to 1 to print OK"
