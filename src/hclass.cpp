@@ -481,6 +481,7 @@ void Mdef::Fill_HWRate(EventClass *evt, Double_t *hcut_flag, int ncut) {
     if (evt->pulses.empty())
       return;
 
+    // evt->PrintEvent(1);
     for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
       HMap *map = v_map[ipls->Chan];
       // пропускаем неактивные каналы, /*канал 255*/ и каналы с неактивным map
@@ -524,7 +525,7 @@ void Mdef::Fill_HWRate(EventClass *evt, Double_t *hcut_flag, int ncut) {
         if (!cnt.empty()) {
 
           Long64_t count2 = ipls->Counter - crs->fCounter[ipls->Chan];
-          // if (ipls->Chan==12) {
+          // if (ipls->Chan==4 || ipls->Chan==5) {
           //   prnt("ss l d l ls;", BGRN, "count2:", evt->Tstmp, ipls->Chan,
           //        ipls->Counter, crs->fCounter[ipls->Chan], RST);
           // }

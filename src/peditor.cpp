@@ -214,21 +214,21 @@ void PEditor::LoadPar64() {
   fEdit->AddLine("");
   sprintf(ss, "Prof64_TSP %s # Prof64 clock time spectrum", opt.Prof64_TSP);
   fEdit->AddLine(ss);
-  sprintf(ss, "Prof64_PER %d # Period (in samples)", opt.Prof64_W[0]);
+  sprintf(ss, "Prof64_PER %0.1f # Period (in samples)", opt.Prof64_W[0]);
   fEdit->AddLine(ss);
-  sprintf(ss, "Prof64_OFF %d # Time offset of the plateau", opt.Prof64_W[1]);
+  sprintf(ss, "Prof64_OFF %0.1f # Time offset of the plateau", opt.Prof64_W[1]);
   fEdit->AddLine(ss);
-  sprintf(ss, "Prof64_WID %d # Time width of the plateau", opt.Prof64_W[2]);
+  sprintf(ss, "Prof64_WID %0.1f # Time width of the plateau", opt.Prof64_W[2]);
   fEdit->AddLine(ss);
-  sprintf(ss, "Prof64_THR %d # Threshold", opt.Prof64_THR);
+  sprintf(ss, "Prof64_THR %0.1f # Threshold", opt.Prof64_THR);
   fEdit->AddLine(ss);
-  sprintf(ss, "Prof64_GAT %d # Alpha - Prof coinc. gate (in ns)",
+  sprintf(ss, "Prof64_GAT %0.1f # Alpha - Prof coinc. gate (in ns)",
           opt.Prof64_GAT);
   fEdit->AddLine(ss);
-  sprintf(ss, "Prof64_X %d # X offset of the profilometer (in mm)",
+  sprintf(ss, "Prof64_X %0.1f # X offset of the profilometer (in mm)",
           opt.Prof64_X);
   fEdit->AddLine(ss);
-  sprintf(ss, "Prof64_Y %d # Y offset of the profilometer (in mm)",
+  sprintf(ss, "Prof64_Y %0.1f # Y offset of the profilometer (in mm)",
           opt.Prof64_Y);
   fEdit->AddLine(ss);
 
@@ -277,8 +277,10 @@ void PEditor::DoSaveProf() {
       std::stringstream ss(chr);
       TString ts, tj;
       int j, xx, yy;
+      double ww;
       ss >> ts >> tj >> xx >> yy;
       j = tj.Atoi();
+      ww = tj.Atof();
       // cout << i << " " << chr << " " << ts << " " << a << " " << b << " " <<
       // c << endl;
       ts.ToLower();
@@ -303,11 +305,11 @@ void PEditor::DoSaveProf() {
       } else if (ts.EqualTo("prof64_tsp")) {
         strcpy(opt.Prof64_TSP, tj.Data());
       } else if (ts.EqualTo("prof64_per")) {
-        opt.Prof64_W[0] = j;
+        opt.Prof64_W[0] = ww;
       } else if (ts.EqualTo("prof64_off")) {
-        opt.Prof64_W[1] = j;
+        opt.Prof64_W[1] = ww;
       } else if (ts.EqualTo("prof64_wid")) {
-        opt.Prof64_W[2] = j;
+        opt.Prof64_W[2] = ww;
       } else if (ts.EqualTo("prof64_thr")) {
         opt.Prof64_THR = j;
       } else if (ts.EqualTo("prof64_gat")) {

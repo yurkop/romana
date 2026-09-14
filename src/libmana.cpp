@@ -1275,17 +1275,16 @@ void ReadParTxt(string fname) {
     } // if
 
   } // for
-}
+} //ReadParTxt
 
 //--------------------------------
-int FindVar(char *buf, int sz, const char *name, char *var) {
+int FindVar(char *buf, int sz, const char *name, void *var) {
   std::string str(buf, sz);
   size_t pos = str.find(name);
   if (pos != std::string::npos) {
     char *buf2 = buf + pos;
     buf2 += strlen(buf2) + 1;
     short len = *(short *)buf2;
-    ;
     buf2 += sizeof(len);
     memcpy(var, buf2, len);
     return 1;
@@ -1897,6 +1896,7 @@ int main(int argc, char **argv) {
     } else { // batch, but not abatch
       crs->b_fana = true;
       crs->b_stop = false;
+      opt.nthreads = 1; // анализ файла только в одном потоке
       crs->FAnalyze2(false);
       crs->b_fana = false;
       crs->b_stop = true;
@@ -1928,6 +1928,8 @@ int main(int argc, char **argv) {
   // EvtFrm->StartThread();
 
   // prtime("theRun");
+
+  myM->Update_All();
 
   theApp.Run();
 
@@ -3326,6 +3328,7 @@ void MainFrame::DoAna() {
     return;
   }
 
+  opt.nthreads = 1; // анализ файла только в одном потоке
   if (crs->b_fana) { // analysis is running -> stop it
     crs->b_fana = false;
     crs->b_stop = true;
@@ -3382,6 +3385,7 @@ void MainFrame::Do1buf() {
     return;
   }
 
+  opt.nthreads = 1; // анализ файла только в одном потоке
   if (TestFile()) {
     crs->b_fana = true;
     crs->b_stop = false;
@@ -3400,6 +3404,7 @@ void MainFrame::DoNbuf() {
     return;
   }
 
+  opt.nthreads = 1; // анализ файла только в одном потоке
   if (crs->b_fana) { // analysis is running -> stop it
     fAna->ChangeBackground(fGreen);
     fAna->SetText("&Analyse");
@@ -3692,16 +3697,23 @@ void MainFrame::UpdateTimer(int rst) {
 
 #ifdef SOCK
   gSock->Poll();
-  if (!gSock->l_par.empty()) {
-    int nn = gSock->Eval_Par();
-    if (nn && myM) {
-      parpar->Update();
-      chanpar->Update();
-      histpar->Update();
-    }
-  }
-  if (!gSock->l_com.empty())
-    gSock->Eval_Com();
+
+  // if (!gSock->l_par.empty()) {
+  //   int nn = gSock->Eval_Par();
+  //   if (nn && myM) {
+  //     parpar->Update();
+  //     chanpar->Update();
+  //     histpar->Update();
+  //   }
+  // }
+  // if (!gSock->l_com.empty())
+  //   gSock->Eval_Com();
+
+
+
+
+    // prnt("ss s ss;", KGRN, "Poll:", gSock->l_com.front().Data(),
+  //      gSock->l_par.front().Data(), RST);
 #endif
 }
 
@@ -4025,6 +4037,15 @@ void MainFrame::DoTab(Int_t num) {
     // HiFrm->ReDraw();
   } else if (name.Contains("Errors", TString::kIgnoreCase)) {
   }
+}
+
+void MainFrame::Update_All() {
+  parpar->Update();
+  chanpar->Update();
+  EvtFrm->ChkpkUpdate();
+  histpar->Update();
+  HiFrm->HiUpdate();
+  ErrFrm->Update();
 }
 
 void MainFrame::EventInfo(Int_t event, Int_t px, Int_t py, TObject *selected) {

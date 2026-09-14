@@ -57,7 +57,7 @@ void MakeVarList(int cp, int op);
 Int_t ClassToBuf(const char *clname, const char *varname, char *var, char *buf);
 int BufToClass(char *buf, char *buf2, int op);
 void SaveParTxt(const char *fname);
-int FindVar(char *buf, int sz, const char *name, char *var);
+int FindVar(char *buf, int sz, const char *name, void *var);
 
 void example();
 void saveroot(const char *name);
@@ -187,6 +187,7 @@ public:
   void Do1buf();
   void DoNbuf();
   void DoTab(Int_t num);
+  void Update_All();
 
   // void ParLock();
   // void ParUnLock();

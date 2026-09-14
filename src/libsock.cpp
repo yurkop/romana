@@ -9,6 +9,7 @@ extern MyMainFrame *myM;
 extern ParParDlg *parpar;
 extern ChanParDlg *chanpar;
 extern HistParDlg *histpar;
+extern CRS *crs;
 
 
 SockClass::SockClass(int portno) {
@@ -29,7 +30,7 @@ SockClass::SockClass(int portno) {
   if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     perror("ERROR on binding");
   // cout << "here1: " << endl;
-  listen(sockfd, 5);
+  listen(sockfd, 128);
   // cout << "here2: " << endl;
   clilen = sizeof(cli_addr);
 
@@ -91,12 +92,16 @@ void SockClass::Poll() {
         perror("ERROR reading from socket");
 
       // gSystem->Sleep(3000);
-      const char *answer = "OK";
-      std::string buf2(buffer);
-      int n2 = write(newsockfd, answer, strlen(answer));
-      if (n2 < 0)
-        perror("ERROR writing to socket");
-      // prnt("ssd s sd ss;",BGRN,"Command: ",n1,buffer,"answer:
+
+
+      // const char *answer = "OK";
+      // std::string buf2(buffer);
+      // int n2 = write(newsockfd, answer, strlen(answer));
+      // if (n2 < 0)
+      //   perror("ERROR writing to socket");
+
+
+        // prnt("ssd s sd ss;",BGRN,"Command: ",n1,buffer,"answer:
       // ",n2,answer,RST);
       Eval_Buf();
 
@@ -147,25 +152,48 @@ void SockClass::Eval_Buf() {
   }
   // cout << endl;
 
+  l_par.clear();
+  l_com.clear();
+
   for (auto it = zz.begin(); it != zz.end(); ++it) {
     // cout << "zz: " << *it << endl;
     if (it->Contains("="))
-      l_par.push(*it);
+      l_par.push_back(*it);
     // l_par.push_back(*it);
     else
-      l_com.push(*it);
+      l_com.push_back(*it);
     // l_com.push_back(*it);
   }
 
-  // cout << "EndEval: " << l_par.size() << " " << l_com.size() << endl;
+  if (!l_par.empty()) {
+    int nn = Eval_Par();
+    if (nn && myM) {
+      parpar->Update();
+      chanpar->Update();
+      histpar->Update();
+    }
+  }
+  if (!l_com.empty())
+    Eval_Com();
+
+  //const char *answer = "OK";
+  int n2 = write(newsockfd, answer.c_str(), answer.size());
+  if (n2 < 0)
+    perror("ERROR writing to socket");
+
+  if (!l_com.empty())
+    Run_Com();
+
+    // cout << "EndEval: " << l_par.size() << " " << l_com.size() << endl;
 }
 
 int SockClass::Eval_Par() {
   // cout << "Eval_Par: " << l_par.size() << " " << l_par.front() << endl;
   int npar = 0;
+  answer="OK";
   while (!l_par.empty()) {
     TString ss = l_par.front();
-    l_par.pop();
+    l_par.pop_front();
 
     int res = 0;
     res += evalpar(ss, (char *)&opt, "Toptions");
@@ -176,6 +204,7 @@ int SockClass::Eval_Par() {
       npar++;
     if (res >= 200) {
       prnt("ssssds;", BRED, "Parameter ", ss.Data(), " not found: ", res, RST);
+      answer = "ERROR";
     }
   }
 
@@ -184,24 +213,79 @@ int SockClass::Eval_Par() {
 }
 
 void SockClass::Eval_Com() {
-  // cout << "Eval_Com: " << l_com.size() << " " << l_com.front() << endl;
-  while (!l_com.empty()) {
-    TString ss = l_com.front();
-    l_com.pop();
-    if (ss.EqualTo("reset", TString::kIgnoreCase)) {
-      myM->fReset2->Emit("Clicked()");
-      // myM->DoReset();
-    } else if (ss.EqualTo("analyze", TString::kIgnoreCase)) {
-      myM->fAna->Emit("Clicked()");
-      // myM->DoAna();
-    } else if (ss.EqualTo("start", TString::kIgnoreCase)) {
-      myM->fStart->Emit("Clicked()");
-      // myM->DoAna();
-    } else if (ss.EqualTo("stop", TString::kIgnoreCase)) {
-      myM->fStart->Emit("Clicked()");
-      // myM->DoAna();
+  //cout << "Eval_Com: " << l_com.size() << " " << l_com.front() << endl;
+
+  // Проверка: количество команд совпадает с CMD_COUNT
+  // static_assert(commands.size() == CMD_COUNT, "commands and enum mismatch");
+
+  for (const auto &cmd : l_com) {
+    size_t index = CMD_COUNT;
+    for (size_t i = 0; i < commands.size(); ++i) {
+      if (cmd.EqualTo(commands[i].name, TString::kIgnoreCase)) {
+      //if (cmd == commands[i].name) {
+        index = i;
+        break;
+      }
     }
-    // cout << "commands: " << ss << endl;
+
+    switch (index) {
+    case CMD_DEVICE:
+      if (crs->Fmode == 1)
+        answer = cpar.GetDevice(crs->module, 0);
+      else
+        answer = "NONE";
+      break;
+    case CMD_B_ACQ:
+      answer = std::to_string(crs->b_acq);
+      break;
+    case CMD_B_STOP:
+      answer = std::to_string(crs->b_stop);
+      break;
+    case CMD_B_FANA:
+      answer = std::to_string(crs->b_fana);
+      break;
+    case CMD_RESET:
+    case CMD_START:
+    case CMD_STOP:
+    case CMD_ANALYZE:
+      answer = "OK";
+      break;
+    default: /* не найдено */
+      answer = "Not found";
+      break;
+    }
+    //cout << "commands: " << *cmd << endl;
   }
-  // cout << "Eval_Com_end: " << l_com.size() << endl;
+
+  //cout << "Eval_Com_end: " << l_com.size() << endl;
+}
+
+void SockClass::Run_Com() {
+
+  for (const auto &cmd : l_com) {
+    size_t index = CMD_COUNT;
+    for (size_t i = 0; i < commands.size(); ++i) {
+      if (cmd.EqualTo(commands[i].name, TString::kIgnoreCase)) {
+        index = i;
+        break;
+      }
+    }
+
+    switch (index) {
+    case CMD_RESET:
+      myM->fReset2->Emit("Clicked()");
+      break;
+    case CMD_START:
+      myM->fStart->Emit("Clicked()");
+      break;
+    case CMD_STOP:
+      myM->fStart->Emit("Clicked()");
+      break;
+    case CMD_ANALYZE:
+      myM->fAna->Emit("Clicked()");
+      break;
+    default: /* не найдено */
+      break;
+    }
+  }
 }

@@ -10,7 +10,7 @@
 // #include <TDatime.h>
 #include <TTimeStamp.h>
 
-#define CDEF 184
+#define CDEF 185
 
 /*
 #include <list>
@@ -158,6 +158,7 @@ public:
 
   char gitver[24]; // git version written in the .par file
   char ver_po = 0; // версия ПО прошивки
+  Int_t ver_cdef = CDEF; // номер версии формата файла параметров
 
   Int_t maxch;
   Int_t maxtp;
@@ -328,17 +329,19 @@ public:
 
   Int_t prof_nx;
   Int_t prof_ny;
-  Int_t Ing_x[16];
-  Int_t Ing_y[16];
+  Int_t Ing_x[16]; // номер канала для X стрипа ing27-256 или пикселя для ing27-9
+  Int_t Ing_y[16]; // номер канала для Y стрипа ing27-256
   Int_t Prof_x[8];
   Int_t Prof_y[8];
   Int_t Prof64[5]; // position channels for Prof64 + clock(?) [4]
   char Prof64_TSP[10];
-  Int_t Prof64_W[3];  // Windows: period, offset, width (in smp)
-  Int_t Prof64_THR;   // Threshold
-  Int_t Prof64_GAT;   // Coincidence gate with ing27 alpha
-  Int_t Prof64_X = 0; // X-offset of the profilometer in mm
-  Int_t Prof64_Y = 0; // Y-offset of the profilometer in mm
+
+  // см. LinkDef.h, в конце
+  Float_t Prof64_W[3];  // Windows: period, offset, width (in smp)
+  Float_t Prof64_THR;   // Threshold
+  Float_t Prof64_GAT;   // Coincidence gate with ing27 alpha
+  Float_t Prof64_X = 0; // X-offset of the profilometer in mm
+  Float_t Prof64_Y = 0; // Y-offset of the profilometer in mm
 
   // Int_t prof_ch[MAX_CH];
 

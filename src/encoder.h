@@ -26,6 +26,9 @@ public:
   int w_compr = 1;
   int w_module = 79;
 
+  Double_t height_offs=0;
+  Double_t height_scal=1;
+
   Long64_t buf_size; // размер одного буфера
   Long64_t wtime_prev, wtime_0, wtime_1; // prev, start, last wdog
   Long64_t size_prev;

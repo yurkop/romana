@@ -28,3 +28,40 @@
 #pragma link C++ class TGMatrixLayout2;
 
 #pragma link C++ function DynamicExec;
+
+// ========== I/O Rules for schema evolution ==========
+#ifdef __CINT__
+
+// Prof64_W: Int_t[3] → Float_t[3]
+#pragma read sourceClass="Toptions" version="[1,184]" \
+         targetClass="Toptions" \
+         source="Int_t Prof64_W[3]" target="Prof64_W" \
+         code="{ Prof64_W[0] = (Float_t)onfile.Prof64_W[0]; \
+                 Prof64_W[1] = (Float_t)onfile.Prof64_W[1]; \
+                 Prof64_W[2] = (Float_t)onfile.Prof64_W[2]; }"
+
+// Prof64_THR: Int_t → Float_t
+#pragma read sourceClass="Toptions" version="[1,184]" \
+         targetClass="Toptions" \
+         source="Int_t Prof64_THR" target="Prof64_THR" \
+         code="{ Prof64_THR = (Float_t)onfile.Prof64_THR; }"
+
+// Prof64_GAT: Int_t → Float_t
+#pragma read sourceClass="Toptions" version="[1,184]" \
+         targetClass="Toptions" \
+         source="Int_t Prof64_GAT" target="Prof64_GAT" \
+         code="{ Prof64_GAT = (Float_t)onfile.Prof64_GAT; }"
+
+// Prof64_X: Int_t → Float_t
+#pragma read sourceClass="Toptions" version="[1,184]" \
+         targetClass="Toptions" \
+         source="Int_t Prof64_X" target="Prof64_X" \
+         code="{ Prof64_X = (Float_t)onfile.Prof64_X; }"
+
+// Prof64_Y: Int_t → Float_t
+#pragma read sourceClass="Toptions" version="[1,184]" \
+         targetClass="Toptions" \
+         source="Int_t Prof64_Y" target="Prof64_Y" \
+         code="{ Prof64_Y = (Float_t)onfile.Prof64_Y; }"
+
+#endif

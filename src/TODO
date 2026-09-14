@@ -251,3 +251,6 @@ case 7 для FindZero - сделать!
   - при считывании данных: pulses
   - при создании совпадений: events
 
+вызывать updatefield после каждого изменения параметра
+убрать act из updatefield - ????
+вызывать doact из updatefield

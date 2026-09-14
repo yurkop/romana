@@ -410,11 +410,21 @@ void EDec::Fill_Dec79(event_iter evt) {
         else
           buf_it->u82.s[2] = ipls->Width * 1000;
 
-        buf_it->u82.s[3] = ipls->Chan;
-        if (ipls->Height < 0)
-          buf_it->u82.b[7] = 0;
-        else
-          buf_it->u82.b[7] = ((int)ipls->Height) >> 8;
+        //buf_it->u82.s[3] = ipls->Chan;
+        buf_it->u82.b[6] = ipls->Chan;
+
+        Double_t ht = ipls->Height * height_scal + height_offs;
+        if (ht < 0)
+          ht = 0;
+        if (ht > 127)
+          ht = 127;
+        // prnt("ss f fs;", BGRN, "BEF:", ipls->Height, ht, RST);
+        // memcpy(&buf_it->u82.b[7], &ht, 1);
+        // asm volatile("movb %0, %1" : : "r"(ht), "m"(buf_it->u82.b[7]));
+        buf_it->u82.b[7] = static_cast<Char_t>(ht);
+        // prnt("ss d x x xs;", BRED, "AFT:", ht, buf_it->u82.ul[-1],
+        // buf_it->u82.ul[0], buf_it->u82.ul[1], RST); buf_it->u82.b[7] = 111;
+
         ++buf_it->u82.ul;
         //++DecBuf8;
       }

@@ -51,8 +51,8 @@ PopFrame::PopFrame(const TGWindow *main, UInt_t w, UInt_t h, MENU_COM menu_id,
   LayBut2 = new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 15, 5, 1, 1);
   LayBut3 = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY, 55, 55, 5, 5);
 
-  txt.SetTextSize(0.07);
-  txt.SetTextAlign(22);
+  ttxt.SetTextSize(0.07);
+  ttxt.SetTextAlign(22);
   fMain = new TGTransientFrame(gClient->GetRoot(), main, w, h);
   fMain->Connect("CloseWindow()", "PopFrame", this, "CloseWindow()");
   fMain->DontCallClose(); // to avoid double deletions.
@@ -134,14 +134,9 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
   fMain->AddFrame(
       fCanvas, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 1, 1, 1, 1));
 
-  TCanvas *cv = fCanvas->GetCanvas();
-  cv->Clear();
-  cv->Divide(1, 2);
-
-  TH1 *hh;
-  TGraph *gr;
-  TF1 *fit;
-  int res = 0;
+  t_cv = fCanvas->GetCanvas();
+  t_cv->Clear();
+  t_cv->Divide(1, 2);
 
   TString name = opt.Prof64_TSP;
   TString msg;
@@ -149,66 +144,46 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
   // TGListTreeItem *item=HiFrm->FindItem(ss);
   // cout << "map: " << map << endl;
   if (map) {
-    res++;
-    cv->cd(1);
+    t_cv->cd(1);
     name += 'r';
-    hh = (TH1 *)map->hst->Clone(name.Data());
-    hh->Draw();
-    hh->ShowPeaks(2, "", 0.002);
-    TList *functions = hh->GetListOfFunctions();
+    t_hh = (TH1 *)map->hst->Clone(name.Data());
+    //t_hh->GetXaxis()->SetRangeUser(0,5000);
+    t_hh->Draw();
+    TList *functions = t_hh->GetListOfFunctions();
     TPolyMarker *pm = (TPolyMarker *)functions->FindObject("TPolyMarker");
-    if (pm) {
-      res++;
-      // functions->Remove(pm);
-      int nn = pm->GetN();
-      // cout << nn << " peaks found" << endl;
-      if (nn >= 31) {
-        // nn=31;
-        res++;
-        gr = new TGraph(nn, pm->GetX(), pm->GetX());
-        gr->Sort();
-        nn = 31;
-        gr->Set(nn);
-        for (int i = 0; i < nn; i++) {
-          gr->GetX()[i] = i;
-          // cout << "gr: " << i << " " << gr->GetY()[i] << endl;
-        }
-        gr->SetNameTitle("Time_Calibr", "Time Calibration");
-        gr->Fit("pol1", "Q");
-        cv->cd(2);
-        gr->Draw("AL*");
-
-        fit = gr->GetFunction("pol1");
-        if (fit) {
-          res++;
-        }
-      } //
-      else {
-        msg = "Number of peaks is less than 31: ";
-        msg += nn;
-      }
-    } // pm
-    else {
-      msg = "Peaks not found";
-    }
+    // if (pm) {
+    //   else {
+    //     msg = "Number of peaks is less than 31: ";
+    //     msg += nn;
+    //   }
+    // } // pm
+    // else {
+    //   msg = "Peaks not found";
+    // }
   } else {
     msg = TString("Histogram ") + opt.Prof64_TSP + " not found";
   }
 
-  cv->cd(2);
+  //t_cv->cd(2);
+  /*
   if (res < 4) { // error
-    txt.DrawTextNDC(0.5, 0.5, msg);
+    ttxt.DrawTextNDC(0.5, 0.5, msg);
     // cout << "res: " << res << endl;
   } else { // OK
     opt.Prof64_W[0] = fit->GetParameters()[1] / opt.Period;
     msg = TString("Period = ") + opt.Prof64_W[0];
-    txt.DrawTextNDC(0.5, 0.5, msg);
+    ttxt.DrawTextNDC(0.5, 0.5, msg);
     if (ptr) {
       PEditor *pe = (PEditor *)ptr;
       pe->LoadPar64();
     }
   }
-  cv->Update();
+    */
+  t_cv->Update();
+
+  TGTextButton *fRun = new TGTextButton(fMain, "  Calibrate  ");
+  fRun->Connect("Clicked()", "PopFrame", this, "DoProfTCalibr()");
+  fMain->AddFrame(fRun, LayCB1);
 
   TGTextButton *fClose = new TGTextButton(fMain, "  &Close  ");
   fClose->Connect("Clicked()", "PopFrame", this, "CloseWindow()");
@@ -218,6 +193,39 @@ void PopFrame::AddProfTime(UInt_t w, UInt_t h) {
   // fOK->Connect("Clicked()", "PopFrame", this, "DoProfTime()");
   // fMain->AddFrame(fOK, new TGLayoutHints(kLHintsCenterX|kLHintsBottom, 0, 0,
   // 5, 5));
+}
+
+void PopFrame::DoProfTCalibr() {
+  int res = 0;
+  Double_t p1 = 0;
+  t_hh->ShowPeaks(2, "", 0.002);
+  TList *functions = t_hh->GetListOfFunctions();
+  TPolyMarker *pm = (TPolyMarker *)functions->FindObject("TPolyMarker");
+  if (pm) {
+    res++;
+    // functions->Remove(pm);
+    int nn = pm->GetN();
+
+    TGraph* gr = new TGraph(nn, pm->GetX(), pm->GetX());
+    gr->Sort();
+    for (int i = 0; i < nn; i++) {
+      gr->GetX()[i] = i;
+      // cout << "gr: " << i << " " << gr->GetY()[i] << endl;
+    }
+    gr->SetNameTitle("Time_Calibr", "Time Calibration");
+    gr->Fit("pol1", "Q");
+    t_cv->cd(2);
+    gr->Draw("AL*");
+
+    TF1* fit = gr->GetFunction("pol1");
+    if (fit) {
+      res++;
+      p1 = fit->GetParameters()[1]/opt.Period;
+    }
+  }
+  
+  cout << "res: " << res << " " << p1 << endl;
+  t_cv->Update();
 }
 
 void PopFrame::AddAdj(TGCompositeFrame *fcont1, HMap *map, int i) {

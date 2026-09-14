@@ -9,6 +9,7 @@
 #include <TPolyLine.h>
 #include <TRootEmbeddedCanvas.h>
 #include <TText.h>
+#include <TH1.h>
 
 // class Calibr_Lines {
 // };
@@ -67,7 +68,7 @@ public:
   TGNumberFormat::ELimit kl = TGNumberFormat::kNELLimitMinMax;
 
   TRootEmbeddedCanvas *fCanvas;
-  TText txt;
+  TText ttxt;
   Int_t npeaks;
   // Double_t ee[10];
   Double_t time_ref = 0;
@@ -86,11 +87,15 @@ public:
   PSet ps;
   std::vector<PSet> pss;
 
+  TH1* t_hh; //for DoProfTCalibr
+  TCanvas* t_cv; //for DoProfTCalibr
+
 public:
   PopFrame(const TGWindow *main, UInt_t w, UInt_t h, MENU_COM menu_id,
            void *p = 0);
   virtual ~PopFrame();
   void AddProfTime(UInt_t w, UInt_t h);
+  void DoProfTCalibr();
   void AddAdj(TGCompositeFrame *fcont1, HMap *map, int i);
   void AddNum(double val, int id, const char *label, const char *tip = 0);
   void AddChk(bool val, int id, const char *label, const char *tip = 0);

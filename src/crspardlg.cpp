@@ -988,6 +988,10 @@ void ParDlg::UpdateField(int nn) {
     // EnableField(nn,opt.b_ntof);
   }
 
+  if (act==7 && myM)
+    myM->fTimer->SetTime(opt.tsleep);
+  
+
   // TGNumberEntryField *wg = (TGNumberEntryField*) pp->field;
   // cout << "bit0: " << wg->IsEnabled() << " " << pp->cmd << endl;
 

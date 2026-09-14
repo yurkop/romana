@@ -719,7 +719,6 @@ void *handle_ana(void *ctx) {
 
 #ifdef SOCK
 extern SockClass *gSock;
-
 #endif
 
 CRS::CRS() {
@@ -960,8 +959,18 @@ void CRS::Ana_start(int rst) {
                        2 * Megabyte);
   }
 
+  //вычисляем коэффициенты для записи height в dec79
+  edec->height_scal = opt.h_hei.max-opt.h_hei.min;
+  if (edec->height_scal==0)
+    edec->height_scal=1;
+  else
+    edec->height_scal = 127/edec->height_scal;
+  edec->height_offs = -opt.h_hei.min * edec->height_scal;
+
   edec->Encode_Start(rst, opt.dec_format, opt.dec_write, opt.dec_compr, 0,
                      opt.decbuf_size * Megabyte, 2 * Megabyte);
+
+  
 
   // cout << "Ana_Start2: " << b_acq << endl;
 
@@ -3185,8 +3194,8 @@ int CRS::ReadParGz(gzFile &ff, char *pname, int m1, int cp, int op) {
     gzread(ff, &sz, sizeof(UShort_t));
   }
 
-  // prnt("sss d sd sd sds;",BGRN,"rpgz:
-  // ",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,RST);
+  // prnt("sss d sd sd sd sds;",BGRN,"rpgz:",pname,fmt,"mod=",mod,"module=",module,"sz=",sz,
+  //   "ver_cdef:", opt.ver_cdef, RST);
 
   switch (mod) {
   case 32:
@@ -3258,6 +3267,9 @@ int CRS::ReadParGz(gzFile &ff, char *pname, int m1, int cp, int op) {
   // char* buf = new char[sz];
   gzread(ff, buf, sz);
 
+  Int_t cdf = opt.ver_cdef; // сохраняем текущее значение ver_cdef;
+  opt.ver_cdef=0;
+
   MakeVarList(cp, op);
   int ret = 0;
   ret = FindVar(buf, sz, "gitver", opt.gitver);
@@ -3265,8 +3277,9 @@ int CRS::ReadParGz(gzFile &ff, char *pname, int m1, int cp, int op) {
     memset(opt.gitver, 0, sizeof(opt.gitver));
   }
 
-  // cout << "before: " << opt.gitver << " " << opt.sLT[15] << " " <<
-  // cpar.LT[15] << endl; cout << string(opt.gitver).compare("v0.925") << endl;
+  // cout << "before: " << opt.gitver << " " << opt.sLT[15] << " " << cpar.LT[15]
+  //      << endl;
+  //cout << string(opt.gitver).compare("v0.925") << endl;
 
   // for (UInt_t i=0;i<sizeof(opt.dsp);i++)
   //   prnt("ss d d ds;",BGRN,"Dsp:",i,opt.dsp[i],opt.Dsp[i],RST);
@@ -3276,6 +3289,24 @@ int CRS::ReadParGz(gzFile &ff, char *pname, int m1, int cp, int op) {
     prnt("ssss;", BRED, "Warning: error reading parameters: ", pname, RST);
     gSystem->Sleep(1000);
     res = 1;
+  }
+
+  if (opt.ver_cdef < 185) {
+    Int_t pdata[100];
+    ret = FindVar(buf, sz, "Prof64_W", pdata);
+    for (int i = 0; i < 3; ++i) {
+      opt.Prof64_W[i] = pdata[i];
+    }
+    ret = FindVar(buf, sz, "Prof64_THR", pdata);
+    opt.Prof64_THR = pdata[0];
+    ret = FindVar(buf, sz, "Prof64_GAT", pdata);
+    opt.Prof64_GAT = pdata[0];
+    ret = FindVar(buf, sz, "Prof64_X", pdata);
+    opt.Prof64_X = pdata[0];
+    ret = FindVar(buf, sz, "Prof64_Y", pdata);
+    opt.Prof64_Y = pdata[0];
+    
+    //cout << "cdf: " << opt.Prof64_W[0] << " " << ret << endl;
   }
 
   // for (UInt_t i=0;i<sizeof(opt.dsp);i++)
@@ -3336,6 +3367,7 @@ int CRS::ReadParGz(gzFile &ff, char *pname, int m1, int cp, int op) {
     }
   }
 
+  // cout << "pname: " << pname << " op: " << op << endl;
   After_ReadPar(op);
 
   /*
@@ -3380,6 +3412,8 @@ int CRS::ReadParGz(gzFile &ff, char *pname, int m1, int cp, int op) {
   */
 
   // prtime("ReadParGz1");
+
+  opt.ver_cdef = cdf; // восстанавливаем ver_cdef
 
   return res;
 } // ReadParGz
@@ -3451,10 +3485,15 @@ void CRS::Make_prof_ch() {
     }
   }
 
-  for (int i = 0; i < 16; i++) {
-    DoProf(i, opt.Ing_x, ING_X);
-    DoProf(i, opt.Ing_y, ING_Y);
-  }
+  if (opt.Ing_type == 256)
+    for (int i = 0; i < 16; i++) {
+      DoProf(i, opt.Ing_x, ING_X);
+      DoProf(i, opt.Ing_y, ING_Y);
+    }
+  else
+    for (int i = 0; i < 9; i++) {
+      DoProf(i, opt.Ing_x, ING_X);
+    }
 
   // for (int i=0;i<MAX_CH;i++) {
   //   cout << "Prof: " << i << " " << prof_ch[i] << endl;
@@ -5937,8 +5976,11 @@ void CRS::Decode35(UInt_t iread, UInt_t ibuf) {
       Tst3o[ipls.Chan] = ipls.Tstamp64;
       npulses3o[ipls.Chan] = ipls.Counter;
 
-      // prnt("ss d l l f fs;", BBLU, "CONT:", ch, ipls.Tstamp64, ipls.Counter, dt,
-      //      rate_hard[ipls.Chan], RST);
+      // if (ch == 4) {
+      //   prnt("ss d f l l f fs;", BBLU, "CONT:", ch,
+      //        ipls.Tstamp64 * crs->sPeriod, ipls.Tstamp64, ipls.Counter, dt,
+      //        rate_hard[ipls.Chan], RST);
+      // }
       break;
     }
   case 12:
@@ -6778,10 +6820,12 @@ void CRS::Event_Insert_Pulse(eventlist *Elist, PulseClass *pls) {
       // pls->Tstamp64,pls->Spin,RST);
       // }
 
-      // prnt("sss;",BYEL,"Ev_add0:",RST);
-      rit->AddPulse(pls);
-      // prnt("sss;",BYEL,"Ev_add1:",RST);
-      return;
+      // добавляем только импульсы с тем же Spin&128 (Counters/not_Counters)
+      if ((pls->Spin & 128) == (rit->Spin & 128)) {
+        rit->AddPulse(pls);
+        // prnt("sss;",BYEL,"Ev_add1:",RST);
+        return;
+      }
     }
   }
 

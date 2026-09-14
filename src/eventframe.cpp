@@ -1296,7 +1296,7 @@ void EventFrame::DrawProf(int i, double y1, double y2) {
 
         int xmin = TMath::Max(-dt + x1a, 0);
         // xmin = TMath::Min(xmin,Gr[i][j]->GetN()-1);
-        int xmax = TMath::Min(Gr[i][j]->GetN(), -dt + x1a + opt.Prof64_W[2]);
+        int xmax = TMath::Min(Gr[i][j]->GetN(), int(-dt + x1a + opt.Prof64_W[2]));
         int nnn = xmax - xmin;
         // cout << "Gr: " << j << " " << (int)pulse->Chan << " " << dt
         // 	   << " " << -dt+x1a
