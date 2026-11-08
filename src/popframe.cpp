@@ -20,6 +20,7 @@ extern EventFrame *EvtFrm;
 extern ChanParDlg *chanpar;
 extern Toptions opt;
 extern CRS *crs;
+extern CUSB *cusb;
 
 const int ww[] = {15, 90, 60, 60, 60};
 
@@ -110,9 +111,9 @@ void PopFrame::CloseWindow() {
   if (fListBox) {
     // cout << "CloseW: " << fListBox->GetSelected() << endl;
 #ifdef CYUSB
-    crs->idev = fListBox->GetSelected();
-    // cout << "idev: " << crs->idev << endl;
-    crs->Init_device();
+    cusb->idev = fListBox->GetSelected();
+    // cout << "idev: " << cusb->idev << endl;
+    cusb->Init_device();
 #endif
     myM->Build();
     // myM->EnableBut(myM->fGr1,Fmode==1);
@@ -626,15 +627,15 @@ void PopFrame::AddDevice() {
   fListBox = new TGListBox(fMain, 2);
 
   // char tmp[20];
-  for (UInt_t i = 0; i < crs->cy_list.size(); ++i) {
+  for (UInt_t i = 0; i < cusb->cy_list.size(); ++i) {
     // sprintf(tmp, "Entry %i", i);
-    fListBox->AddEntry(crs->cy_list[i].c_str(), i);
+    fListBox->AddEntry(cusb->cy_list[i].c_str(), i);
   }
 
   fListBox->Connect("DoubleClicked(Int_t)", "PopFrame", this, "CloseWindow()");
 
-  // crs->idev=0;
-  fListBox->Select(crs->idev);
+  // cusb->idev=0;
+  fListBox->Select(cusb->idev);
 
   fListBox->Resize(150, 60);
   fMain->AddFrame(fListBox, LayCC4);

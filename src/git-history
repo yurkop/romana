@@ -1,3 +1,11 @@
+git tag -a v0.954 -m 'libcrs + libcusb'
+- рефакторинг: libcrs разделено на две части: libcrs и libcusb
+- исправлен баг с гистограммой Mult
+- В EvalPar 0 заменено на nullptr (для совместимости с новой версией root)
+- libmana.cpp — обработка -? как -h
+- libmana.cpp — улучшенное сообщение об ошибке:
+  "use 'romana -h' or 'romana -?' for help"
+
 git tag -a v0.953 -m 'Spin/nthreads/height/Prof64/libsock'
 - CDEF 185
 - исправлен баг при чтении параметров профилометра

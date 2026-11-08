@@ -75,6 +75,7 @@ Coptions cpar;
 Toptions opt;
 
 CRS *crs;
+CUSB *cusb;
 EDec *edec;
 ERaw *eraw;
 #ifdef SOCK
@@ -1391,7 +1392,8 @@ int main(int argc, char **argv) {
   edec = new EDec();
   eraw = new ERaw();
   hcl = new HClass();
-  crs = new CRS();
+  crs = new CRS(); // сначала crs, потом cusb!
+  cusb = new CUSB();
 
 #ifdef LINUX
   if (getcwd(startdir, 150)) {
@@ -1477,6 +1479,7 @@ int main(int argc, char **argv) {
         // cout << "sarg: " << i << " " << sarg << " " << (int) sarg[1] << endl;
         switch (sarg[1]) {
         case 'h':
+        case '?':
           cout << help << endl;
           EExit(0);
         case '0':
@@ -1507,9 +1510,9 @@ int main(int argc, char **argv) {
           ++i;
 
           if (i < argc) {
-            crs->devname = TString(argv[i]);
+            cusb->devname = TString(argv[i]);
           }
-          // cout << "dev: " << crs->devname << endl;
+          // cout << "dev: " << cusb->devname << endl;
 
           continue;
         case 'a': // acquisition in batch
@@ -1610,10 +1613,10 @@ int main(int argc, char **argv) {
           EExit(0);
         case 'l':
 #ifdef CYUSB
-          crs->Open_USB();
+          cusb->Open_USB();
 #endif
           prnt("sss;", BGRN, "List of devices:", RST);
-          for (auto i = crs->cy_list.begin(); i != crs->cy_list.end(); ++i) {
+          for (auto i = cusb->cy_list.begin(); i != cusb->cy_list.end(); ++i) {
             prnt("sss;", BBLU, i->c_str(), RST);
           }
           EExit(0);
@@ -1622,6 +1625,7 @@ int main(int argc, char **argv) {
           continue;
         default:
           prnt("ss ss;", BRED, "Unknown parameter:", argv[i], RST);
+          prnt("ss ss;", BRED, "use 'romana -h' or 'romana -?' for help", RST);          
           EExit(-1);
         }
       } // if (sarg[0]=='-')
@@ -1812,9 +1816,9 @@ int main(int argc, char **argv) {
       bool w = opt.raw_write;
       opt.directraw = 1;
       opt.raw_write = 0;
-      crs->Open_USB();
+      cusb->Open_USB();
       if (b_resetusb)
-        crs->DoResetUSB();
+        cusb->DoResetUSB();
       opt.directraw = d;
       opt.raw_write = w;
     }
@@ -1825,7 +1829,7 @@ int main(int argc, char **argv) {
   // int ret=1;
 
   // #ifdef CYUSB
-  //   crs->Open_USB();
+  //   cusb->Open_USB();
   // #endif
 
   // batch loop
@@ -1864,13 +1868,13 @@ int main(int argc, char **argv) {
     }
 
     if (crs->abatch) {
-      if (crs->ndev != 1) {
+      if (cusb->ndev != 1) {
         prnt("ss ds;", BRED,
-             "Number of connected devices:", crs->cy_list.size(), RST);
+             "Number of connected devices:", cusb->cy_list.size(), RST);
         EExit(-1);
       }
 #ifdef CYUSB
-      crs->Init_device();
+      cusb->Init_device();
 #endif
 
       prnt("sss;", BGRN, "Starting in batch mode.", RST);
@@ -1889,7 +1893,7 @@ int main(int argc, char **argv) {
              RST);
         EExit(-1);
       }
-      crs->DoStartStop(1);
+      cusb->DoStartStop(1);
 #endif
       crs->b_acq = false;
       crs->b_stop = true;
@@ -2553,17 +2557,17 @@ MainFrame::MainFrame(const TGWindow *p, UInt_t w, UInt_t h)
   fTab = 0;
 
   // Open_USB уже вызван в main
-  switch (crs->ndev) {
+  switch (cusb->ndev) {
   case 1:
 #ifdef CYUSB
-    crs->Init_device();
+    cusb->Init_device();
 #endif
     // no break;
   case 0:
     Build();
     break;
   default:
-    // cout << "crs->ndev= " << crs->ndev << endl;
+    // cout << "cusb->ndev= " << cusb->ndev << endl;
     if (!pops.at(M_DEVICE)) {
       pops.at(M_DEVICE) = 1;
       new PopFrame(this, 1, 1, M_DEVICE);
@@ -3150,7 +3154,7 @@ void MainFrame::DoStartStop(int rst) {
     }
     // crs->b_stop=false;
     // crs->Show();
-    crs->DoStartStop(rst);
+    cusb->DoStartStop(rst);
 
     // if (opt.root_write || b_root) {
     //   saveroot(crs->rootname.c_str());
@@ -3184,7 +3188,7 @@ void MainFrame::DoStartStop(int rst) {
       // fContinue->SetToolTipText("Stop acquisition");
       // fContinue->SetText("Stop");
 
-      crs->DoStartStop(rst);
+      cusb->DoStartStop(rst);
       // cout << "Start7: " << endl;
 
       fStart->ChangeBackground(fGreen);
@@ -3286,10 +3290,10 @@ void MainFrame::DoClose() {
   chanpar->Update();
 
 #ifdef CYUSB
-  crs->Open_USB();
-  switch (crs->ndev) {
+  cusb->Open_USB();
+  switch (cusb->ndev) {
   case 1:
-    crs->Init_device();
+    cusb->Init_device();
   case 0:
     Build();
     break;
@@ -3850,7 +3854,7 @@ void MainFrame::CloseWindow() {
     // fStart->Emit("Clicked()");
     // cout << "dostartstop7: " << endl;
 #ifdef CYUSB
-    crs->DoStartStop(0);
+    cusb->DoStartStop(0);
     gSystem->Sleep(300);
 #endif
     // cout << "dostartstop8: " << endl;
@@ -4176,10 +4180,10 @@ void MainFrame::HandleMenu(Int_t menu_id) {
     new TBrowser();
     break;
   case M_RESET_USB:
-    crs->DoResetUSB();
+    cusb->DoResetUSB();
     break;
   case M_DETECT_DEV:
-    crs->DoDetectDev();
+    cusb->DoDetectDev();
     break;
   case M_EXPORT:
     Export();

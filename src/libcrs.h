@@ -1,10 +1,6 @@
 #ifndef crs_H
 #define crs_H 1
 
-#ifdef CYUSB
-#include "cyusb.h"
-#endif
-
 // #include <pthread.h>
 // #include <libusb-1.0/libusb.h>
 #include <fstream>
@@ -24,6 +20,7 @@
 #include "common.h"
 #include "dec.h"
 #include "pulseclass.h"
+#include "libcusb.h"
 
 #include <queue> // std::queue
 
@@ -77,7 +74,6 @@ public:
 
   //--------constants---------
   static const int MAXTHREADS = 8;
-  static const int MAXTRANS = 7;       // было 8
   static const int RAWSIZE = 10485760; // 10 MB
 
   // static const int DECSIZE=1048576; //1 MB
@@ -207,20 +203,8 @@ public:
   // 6 - AK32 14 bit
   // 7 - AK32 12 bit
 
-  // buffers for sending parameters...
-  UChar_t buf_out[64];
-  UChar_t buf_in[64];
-
   int ntrans; // actual number of "simultaneous" transfers
-
-  unsigned char *buftr[MAXTRANS];
-  struct libusb_transfer *transfer[MAXTRANS];
-
-  // char* inp_buf=0; // буфер, куда записываются входные данные (usb или из
-  // файла)
-
-  UInt_t mask_discr[MAX_CH + 1]; // маска записи по дискриминатору (ЦРС32) и по
-                                 // СС и пересчету (ЦРС8+)
+  unsigned char *buftr[CUSB::MAXTRANS];
 
   Long64_t inputbytes;
   Long64_t rawbytes;
@@ -345,49 +329,6 @@ public:
   //--------functions---------
 
   // void Dummy_trd();
-
-  void DoDetectDev();
-  void DoResetUSB();
-
-  //---CRS
-  short idev; // номер девайса в cyusb [0,1,2...].
-              // Если =-1 -> номер девайса еще не выбран
-  short ndev; // количество найденных модулей
-  vector<string> cy_list; // список имен ВСЕХ подключенных девайсов
-  TString devname; // имя, заданное в '-m'. Если =0 -> не задано
-#ifdef CYUSB
-  cyusb_handle *cy_handle;
-
-  int Open_USB();
-  void Set_USB(int i);
-  void Device_info();
-  int Init_device();
-  int SetPar();
-  void Free_Transfer();
-  void Submit_all(int ntr);
-  void Cancel_all(int ntr);
-  int Init_Transfer3();
-  int Init_Transfer();
-  int Command32_old(UChar_t cmd, UChar_t ch, UChar_t type, int par);
-  int Command32(UChar_t cmd, UChar_t ch, UChar_t type, int par);
-  void Check33(UChar_t cmd, UChar_t ch, int &a1, int &a2, int min, int max);
-  int Command2(UChar_t cmd, UChar_t ch, UChar_t type, int par);
-  void AllParameters2(); // load all parameters
-  // void AllParameters41(); // load all parameters
-  // void AllParameters42(); // load all parameters
-  // void AllParameters43(); // load all parameters
-  void AllParameters_AK32();
-  //void AllParameters_CRS8();
-  //void AllParameters_CFD(); // parameters from TZ CFD+ (2025)
-  void AllParameters44();     // load all parameters
-  void AllParameters36();     // load all parameters
-  void AllParameters35();     // load all parameters
-  void AllParameters34();     // load all parameters
-  void AllParameters33();     // load all parameters
-  void AllParameters32();     // load all parameters
-  int DoStartStop(int rst);   // start-stop acquisition
-  void ProcessCrs(int rst);   // process events in dostartstop
-#endif
 
   TString Text_time(const char *header, Long64_t f_time);
   void DoExit();

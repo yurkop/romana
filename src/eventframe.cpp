@@ -700,7 +700,7 @@ void EventFrame::DoCheckPoint() {
         par[8] = ipls->Width;
         par[9] = ipls->Sl1;
         par[10] = ipls->Sl2;
-        res = formula->EvalPar(0, par);
+        res = formula->EvalPar(nullptr, par);
         if (res) {
           // prnt("ss f f f
           // fs;",BYEL,"res:",res,par[6],ipls->Time,d_event->T0,RST); YK cout <<

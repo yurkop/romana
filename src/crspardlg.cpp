@@ -189,6 +189,7 @@ const char *tip_dec = "Mask for decoder format (type 81 or higher)\n" mask0
 
 // extern Common* com;
 extern CRS *crs;
+extern CUSB *cusb;
 extern Coptions cpar;
 extern Toptions opt;
 extern MyMainFrame *myM;
@@ -401,7 +402,7 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
 
   int cmd = pp->cmd & 1;
   if (dq && cmd && crs->b_acq) { // && !jtrig) {
-    crs->Command2(4, 0, 0, 0);
+    cusb->Command2(4, 0, 0, 0);
     /*
     prnt("sss;",BYEL,"Sleep 1300",RST);
     gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
@@ -420,7 +421,7 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
     //crs->Command32(8,0,0,0); //сброс сч./буф.
     //crs->Command32(9,0,0,0); //сброс времени
     */
-    crs->SetPar();
+    cusb->SetPar();
     gzFile ff = gzopen("last.par", "wb");
     crs->SaveParGz(ff, crs->module);
     gzclose(ff);
@@ -433,7 +434,7 @@ void ParDlg::DoAct(int id, UShort_t off, Double_t fnum, bool dq) {
     //crs->Submit_all(crs->ntrans);
     gSystem->Sleep(1300); //1300 - проблема 3 в АК-32 устраняется
     */
-    crs->Command2(3, 0, 0, 0);
+    cusb->Command2(3, 0, 0, 0);
   }
 #endif
 }
@@ -1339,12 +1340,12 @@ void TrigFrame::DoCheckTrigger() {
 
 #ifdef CYUSB
   if (crs->b_acq) { // && !jtrig) {
-    crs->Command2(4, 0, 0, 0);
-    crs->SetPar();
+    cusb->Command2(4, 0, 0, 0);
+    cusb->SetPar();
     gzFile ff = gzopen("last.par", "wb");
     crs->SaveParGz(ff, crs->module);
     gzclose(ff);
-    crs->Command2(3, 0, 0, 0);
+    cusb->Command2(3, 0, 0, 0);
   }
 #endif
 }

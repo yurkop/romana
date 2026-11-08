@@ -1331,17 +1331,17 @@ void HClass::Make_1d(mdef_iter md, int maxi) {
   for (int i = 0; i < NN; i++) {
   // for (int i = 0; i < MAX_CH; i++) {
   //   if (i >= NN && (i!=255 || maxi==0)) continue;
-    if (cpar.on[i]) {
-      NameTitle(name2, title2, i, maxi, name.Data(), title.Data());
-      int nn = md->hd->bins * (md->hd->max - md->hd->min);
-      if (nn < 1)
-        nn = 1;
-      if (md->hd->htp)
-        hh = new TH1D(name2, title2, nn, md->hd->min, md->hd->max);
-      else
-        hh = new TH1F(name2, title2, nn, md->hd->min, md->hd->max);
-      MapHist(md, hh, i);
-    }
+  if (cpar.on[i] || md->hnum == 49) { // 49 - mult
+    NameTitle(name2, title2, i, maxi, name.Data(), title.Data());
+    int nn = md->hd->bins * (md->hd->max - md->hd->min);
+    if (nn < 1)
+      nn = 1;
+    if (md->hd->htp)
+      hh = new TH1D(name2, title2, nn, md->hd->min, md->hd->max);
+    else
+      hh = new TH1F(name2, title2, nn, md->hd->min, md->hd->max);
+    MapHist(md, hh, i);
+  }
   }
 
   for (int j = 0; j < NGRP; j++) {
@@ -1855,7 +1855,7 @@ void HClass::FillHist(EventClass *evt, Double_t *hcut_flag) {
   if (b_formula) {
     for (int i = 1; i < opt.ncuts; i++) {
       if (opt.pcuts[i] == 1) { // formula
-        hcut_flag[i] = cform[i]->EvalPar(0, hcut_flag);
+        hcut_flag[i] = cform[i]->EvalPar(nullptr, hcut_flag);
       }
       // cout << "cut_flag: " << Nevt << " " << i << " " << cut_flag[i] << endl;
     }
