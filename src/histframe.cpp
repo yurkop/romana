@@ -1789,13 +1789,13 @@ void HistFrame::PeakSearch(TH1 *h1, vpeaks &vv) {
       continue;
     }
   }
-  // prnt("ss d d f f fs;",BMAG,"pk:",n2,inpeak,pp.p,pp.h,pp.w,RST);
+  // prnt("ss d d f f fs;",BMAG,"pkfin:",n2,inpeak,pp.p,pp.h,pp.w,RST);
 
   // если в последнем пике была найдена w, записываем
   if (pp.h > hmax && n2 - pp.p > pp.w && pp.w >= opt.Peak_wid)
     vv.push_back(pp);
 
-  // cout << vv.size() << endl;
+  // cout << "vsize: " << vv.size() << endl;
   std::sort(vv.begin(), vv.end(), h_comp);
   size_t nn = opt.Peak_maxpeaks;
   if (vv.size() > nn)
@@ -1947,6 +1947,7 @@ void HistFrame::DoPeaks(TH1 *hh, int npad) {
   vfit.push_back("pos :");
   vfit.push_back("fwhm:");
 
+  // cout << "vv_size:" << vv->size() << endl;
   // for (auto pp=vv.begin(); pp!=vv.end();++pp) { //цикл по найденным пикам
   for (size_t i = 0; i < vv->size(); i++) { // цикл по найденным пикам
     // double par[100],err[100];
@@ -2872,6 +2873,17 @@ void HistFrame::AllRebinDraw() {
         }
 
         hh->Draw(dopt[0].Data());
+        // cout << "dopt: " << dopt[0].Data() << endl;
+        if (dopt[0].Contains("hist", TString::kIgnoreCase)) {
+          TIter next(hh->GetListOfFunctions());
+          TObject *obj;
+          while ((obj = next())) {
+            // cout << "name: " << obj->GetName() << " " << obj->ClassName()
+            //      << endl;
+            obj->Draw("same");
+          }
+        }
+
       } else if (hh->GetDimension() == 2) { // 2D hist or projection
         // cout << "dopt: " << dopt[1].Data()+1 << endl;
         gPad->SetLogz(opt.b_logy);

@@ -398,6 +398,7 @@ public:
   //    0 - не определено
   //    1..9 - простые переменные из PulseClass
   //    21..49 - common for the whole event
+  // см. hclass::MakeHist - нумерация
 
   // format:
   // Hdef var // hnum hname xtitle ytitle tip
@@ -409,7 +410,8 @@ public:
   Hdef h_area; // 1 Area Channel Counts Area of the pulse or energy, calibrated (see Analysis->E0,E1,E2 for calibration)
   // Hdef h_area0; // 9 Area0 Channel Counts Area w/o background, not calibrated
   Hdef h_time;  // 11 Time t(ns) Counts Time (relative to the starts - see Analysis->St), in ns
-  Hdef h_hei;   // 2 Height Channel Counts Maximal pulse height (in channels)
+  Hdef h_hei;   // 2 Height Channel Counts Maximal pulse height (in channels) w/o baseline subtraction
+  Hdef h_ampl;  // 16 Ampl Channel Counts Amplitude - maximal pulse height (in channels) with baseline subtraction
   Hdef h_width; // 3 Width width(a.u.) Counts Pulse width
   Hdef h_per;   // 15 Period t(mks) Counts Pulse period (distance between two consecutive pulses), in mks
   Hdef h_base;  // 4 Base Channel Counts Base line, calibrated
@@ -420,7 +422,7 @@ public:
   Hdef h_RMS2;   // 8 RMS2 RMS Counts Noise2 (peak)
   Hdef h_RTime;  // 9 RTime RiseTime Counts RiseTime of the pulse
 
-  Hdef h_ampl; // 48 Ampl Channel Counts Distribution of amplitudes from (inside) oscillogram
+  Hdef h_wfampl; // 48 WFAmpl WF_Amplitude Counts Distribution of amplitudes in the waveform(oscillogram)
 
   Hdef h_ntof; // 12 Ntof t(mks) Counts Neutron time of flight, in mks
   Hdef h_etof; // 13 Etof Energy(eV) Counts Neutron energy from NTOF, in eV

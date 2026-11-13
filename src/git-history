@@ -1,3 +1,10 @@
+git tag -a v0.955 -m 'Ampl=Height-Base'
+- гистограммы Ampl переименованы в WFAmpl
+- добавлены новые гистограммы Ampl - Амплитуда = Height - Base
+- histframe: исправлено: Peaks не работало с опцией рисования hist
+- libmana: исправлено: чтение параметров (опция -p) не работало при открытии    root файлов
+- libmana: добавлено parpar->Update после nthreads=1
+
 git tag -a v0.954 -m 'libcrs + libcusb'
 - рефакторинг: libcrs разделено на две части: libcrs и libcusb
 - исправлен баг с гистограммой Mult

@@ -31,6 +31,10 @@ Float_t Mdef::VarTime(EventClass *e, PulseClass *p) {
     return (p->Time - e->T0) * opt.Period /*+opt.sD[p->Chan]*/;
 }
 
+Float_t Mdef::VarAmpl(EventClass *e, PulseClass *p) {
+    return p->Height - p->Base;
+}
+
 /*
 Float_t Mdef::VarTime(EventClass* e, PulseClass* p){
   // if (e->Spin & 128) //Counters
@@ -692,7 +696,7 @@ void Mdef::FillMeanPulse(EventClass *evt, Double_t *hcut_flag, int ncut) {
   }
 }
 
-void Mdef::Fill_Ampl(EventClass *evt, Double_t *hcut_flag, int ncut) {
+void Mdef::Fill_WFAmpl(EventClass *evt, Double_t *hcut_flag, int ncut) {
   for (auto ipls = evt->pulses.begin(); ipls != evt->pulses.end(); ++ipls) {
     int ch = ipls->Chan;
     // пропускаем неактивные каналы
@@ -1144,6 +1148,10 @@ void HClass::Make_hist() {
       Make_1d(it, opt.Nchan);
       it->GetX = &Mdef::VarPeriod;
       it->MFill = &Mdef::Fill_1d;
+    } else if (it->hnum == 16) { // Ampl
+      Make_1d(it, opt.Nchan);
+      it->GetX = &Mdef::VarAmpl;
+      it->MFill = &Mdef::Fill_1d;
     } else if (it->hnum == 21) { // Rate
       Make_1d(it, opt.Nchan);
       it->GetX = &Mdef::VarRate;
@@ -1151,9 +1159,9 @@ void HClass::Make_hist() {
     } else if (it->hnum == 22) { // HWRate
       Make_1d(it, opt.Nchan);
       it->MFill = &Mdef::Fill_HWRate;
-    } else if (it->hnum == 48) { // Ampl
+    } else if (it->hnum == 48) { // WFAmpl
       Make_1d(it, opt.Nchan);
-      it->MFill = &Mdef::Fill_Ampl;
+      it->MFill = &Mdef::Fill_WFAmpl;
     } else if (it->hnum == 49) { // Mult
       Make_1d(it, 0);
       it->MFill = &Mdef::FillMult;

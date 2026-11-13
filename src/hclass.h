@@ -14,11 +14,11 @@ class HMap; // forward declaration
 
 //-----------------------------------------------
 class Mdef {
-  // класс содержит указатель на Hdef
-  // (сам Hdef должен быть создан в другом месте);
-  // общее имя для всех гистограмм данного типа;
-  // вектор указателей на мапы гистограмм (N штук).
-  // сами указатели создаются при генерации гистограмм
+  // класс содержит:
+  // - указатель на Hdef (сам Hdef должен быть создан в другом месте);
+  // - общее имя для всех гистограмм данного типа;
+  // - вектор указателей на мапы гистограмм (N штук).
+  // - сами указатели создаются при генерации гистограмм
   // N [=v_map.size()] автоматически увеличивается при добавлении нового map
 public:
   Int_t hnum = 0;
@@ -45,6 +45,7 @@ public:
     return *(Float_t *)((char *)p + ptr);
   }
   Float_t VarTime(EventClass *e, PulseClass *p);
+  Float_t VarAmpl(EventClass *e, PulseClass *p);
   Float_t VarRate(EventClass *e, PulseClass *p);
   Float_t VarPeriod(EventClass *e, PulseClass *p);
   Float_t VarNtof(EventClass *e, PulseClass *p);
@@ -75,7 +76,7 @@ public:
   void Fill_Mean1(HMap *map, Float_t *Data, int nbins, int ideriv, int ncut);
   void Fill_FFT(HMap *map, Float_t *Data, int nbins, int ch, int ncut);
   void FillMeanPulse(EventClass *evt, Double_t *hcut_flag, int ncut);
-  void Fill_Ampl(EventClass *evt, Double_t *hcut_flag, int ncut);
+  void Fill_WFAmpl(EventClass *evt, Double_t *hcut_flag, int ncut);
   void FillProf(EventClass *evt, Double_t *hcut_flag, int ncut);
 #ifdef YUMO
   void Fill_03(HMap *map, Float_t x, Float_t y, Float_t z, Double_t *hcut_flag,

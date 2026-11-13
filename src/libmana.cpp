@@ -1728,7 +1728,7 @@ int main(int argc, char **argv) {
     SplitFilename(string(datfname), dir, name, ext);
     if (!ext.compare(".root")) { // root file
       // if (!parfile2) {
-      if (!crs->b_noheader) {
+      if (!crs->b_noheader && rdopt) {
         // cout << "dir3: " << datfname << endl;
         if (readpar_root(datfname, 1))
           EExit(-1);
@@ -3332,7 +3332,12 @@ void MainFrame::DoAna() {
     return;
   }
 
-  opt.nthreads = 1; // анализ файла только в одном потоке
+  if (opt.nthreads != 1) {
+    opt.nthreads = 1; // анализ файла только в одном потоке
+    if (parpar)
+      parpar->Update();
+  }
+
   if (crs->b_fana) { // analysis is running -> stop it
     crs->b_fana = false;
     crs->b_stop = true;
@@ -3389,7 +3394,12 @@ void MainFrame::Do1buf() {
     return;
   }
 
-  opt.nthreads = 1; // анализ файла только в одном потоке
+  if (opt.nthreads != 1) {
+    opt.nthreads = 1; // анализ файла только в одном потоке
+    if (parpar)
+      parpar->Update();
+  }
+
   if (TestFile()) {
     crs->b_fana = true;
     crs->b_stop = false;
@@ -3408,7 +3418,12 @@ void MainFrame::DoNbuf() {
     return;
   }
 
-  opt.nthreads = 1; // анализ файла только в одном потоке
+  if (opt.nthreads != 1) {
+    opt.nthreads = 1; // анализ файла только в одном потоке
+    if (parpar)
+      parpar->Update();
+  }
+
   if (crs->b_fana) { // analysis is running -> stop it
     fAna->ChangeBackground(fGreen);
     fAna->SetText("&Analyse");
